@@ -105,11 +105,49 @@ class TCBSettings:
 @dataclass
 class RedisSettings:
     """Redis configuration settings"""
-    
+
     redis_url: str = field(default_factory=lambda: get_env("REDIS_URL", "redis://localhost:6379/0"))
     redis_host: str = field(default_factory=lambda: get_env("REDIS_HOST", "localhost"))
     redis_port: int = field(default_factory=lambda: get_env_int("REDIS_PORT", 6379))
     redis_db: int = field(default_factory=lambda: get_env_int("REDIS_DB", 0))
+
+
+@dataclass
+class Neo4jSettings:
+    """Neo4j graph database configuration settings"""
+
+    # Neo4j connection settings
+    neo4j_uri: str = field(default_factory=lambda: get_env("NEO4J_URI", "bolt://localhost:7687"))
+    neo4j_user: str = field(default_factory=lambda: get_env("NEO4J_USER", "neo4j"))
+    neo4j_password: str = field(default_factory=lambda: get_env("NEO4J_PASSWORD", "password"))
+    neo4j_database: str = field(default_factory=lambda: get_env("NEO4J_DATABASE", "neo4j"))
+
+    # Connection pool settings
+    neo4j_max_connection_pool_size: int = field(default_factory=lambda: get_env_int("NEO4J_MAX_CONNECTION_POOL_SIZE", 50))
+    neo4j_connection_timeout: int = field(default_factory=lambda: get_env_int("NEO4J_CONNECTION_TIMEOUT", 30))
+    neo4j_max_transaction_retry_time: int = field(default_factory=lambda: get_env_int("NEO4J_MAX_TRANSACTION_RETRY_TIME", 30))
+
+    # Feature flags
+    neo4j_encrypted: bool = field(default_factory=lambda: get_env_bool("NEO4J_ENCRYPTED", False))
+    neo4j_trust: str = field(default_factory=lambda: get_env("NEO4J_TRUST", "TRUST_ALL_CERTIFICATES"))
+
+
+@dataclass
+class KnowledgeGraphSettings:
+    """Knowledge graph specific settings"""
+
+    # NLP settings
+    spacy_model: str = field(default_factory=lambda: get_env("SPACY_MODEL", "zh_core_web_sm"))
+    entity_confidence_threshold: float = field(default_factory=lambda: get_env_float("ENTITY_CONFIDENCE_THRESHOLD", 0.7))
+    relation_confidence_threshold: float = field(default_factory=lambda: get_env_float("RELATION_CONFIDENCE_THRESHOLD", 0.6))
+
+    # Batch processing settings
+    kg_batch_size: int = field(default_factory=lambda: get_env_int("KG_BATCH_SIZE", 100))
+    kg_max_workers: int = field(default_factory=lambda: get_env_int("KG_MAX_WORKERS", 4))
+
+    # Cache settings
+    kg_cache_ttl: int = field(default_factory=lambda: get_env_int("KG_CACHE_TTL", 3600))
+    kg_cache_enabled: bool = field(default_factory=lambda: get_env_bool("KG_CACHE_ENABLED", True))
 
 
 @dataclass
@@ -172,6 +210,8 @@ class Settings:
     security: SecuritySettings = field(default_factory=SecuritySettings)
     tcb: TCBSettings = field(default_factory=TCBSettings)
     redis: RedisSettings = field(default_factory=RedisSettings)
+    neo4j: Neo4jSettings = field(default_factory=Neo4jSettings)
+    knowledge_graph: KnowledgeGraphSettings = field(default_factory=KnowledgeGraphSettings)
     app: AppSettings = field(default_factory=AppSettings)
     health_check: HealthCheckSettings = field(default_factory=HealthCheckSettings)
 

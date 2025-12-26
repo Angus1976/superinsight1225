@@ -645,6 +645,16 @@ async def include_optional_routers():
     except Exception as e:
         logger.warning(f"Text-to-SQL API failed to load: {e}")
 
+    # Knowledge Graph router
+    try:
+        from src.knowledge_graph.api.knowledge_graph_api import router as knowledge_graph_router
+        app.include_router(knowledge_graph_router)
+        logger.info("Knowledge Graph API loaded successfully")
+    except ImportError as e:
+        logger.warning(f"Knowledge Graph API not available: {e}")
+    except Exception as e:
+        logger.warning(f"Knowledge Graph API failed to load: {e}")
+
 
 # Include routers on startup
 @app.on_event("startup")
@@ -676,6 +686,7 @@ async def api_info():
             "collaboration": "/api/collaboration",
             "business_metrics": "/api/business-metrics",
             "text_to_sql": "/api/v1/text-to-sql",
+            "knowledge_graph": "/api/v1/knowledge-graph",
             "health": "/health",
             "system_status": "/system/status",
             "metrics": "/system/metrics",
@@ -698,6 +709,9 @@ async def api_info():
             "多格式数据导出",
             "RAG 和 Agent 测试接口",
             "Text-to-SQL 自然语言查询",
+            "知识图谱 (Neo4j 图数据库)",
+            "实体抽取与关系挖掘 (spaCy + jieba)",
+            "图查询与智能推理",
             "安全控制与权限管理",
             "系统监控与健康检查",
             "统一错误处理",

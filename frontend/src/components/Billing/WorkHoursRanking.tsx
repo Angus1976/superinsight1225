@@ -1,6 +1,26 @@
-// Work hours ranking component
-import { useState } from 'react';
-import { Card, Table, Avatar, Tag, Space, Select, Button, Tooltip, Progress } from 'antd';
+// Work hours ranking component with real API integration
+import { useState, useMemo } from 'react';
+import {
+  Card,
+  Table,
+  Avatar,
+  Tag,
+  Space,
+  Select,
+  Button,
+  Tooltip,
+  Progress,
+  Modal,
+  Form,
+  InputNumber,
+  Input,
+  message,
+  Spin,
+  Empty,
+  Row,
+  Col,
+  Statistic,
+} from 'antd';
 import {
   TrophyOutlined,
   UserOutlined,
@@ -8,8 +28,13 @@ import {
   FallOutlined,
   GiftOutlined,
   ExportOutlined,
+  DollarOutlined,
+  ClockCircleOutlined,
+  BarChartOutlined,
+  TeamOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
+import { useWorkHoursRanking, useExportBilling, useCostTrends } from '@/hooks/useBilling';
 
 interface RankingUser {
   rank: number;
@@ -23,77 +48,26 @@ interface RankingUser {
   trend: 'up' | 'down' | 'stable';
   trend_value: number;
   bonus_eligible: boolean;
+  hourly_rate?: number;
+  total_earnings?: number;
 }
 
 interface WorkHoursRankingProps {
-  tenantId?: string;
+  tenantId: string;
   onExport?: () => void;
-  onReward?: (userId: string, amount: number) => void;
+  onReward?: (userId: string, userName: string, amount: number, reason: string) => Promise<void>;
 }
 
-// Mock data
-const mockRankingData: RankingUser[] = [
-  {
-    rank: 1,
-    user_id: '1',
-    user_name: 'Alice Chen',
-    total_hours: 168.5,
-    annotations_count: 2450,
-    efficiency_score: 98,
-    quality_score: 96,
-    trend: 'up',
-    trend_value: 12,
-    bonus_eligible: true,
-  },
-  {
-    rank: 2,
-    user_id: '2',
-    user_name: 'Bob Wang',
-    total_hours: 156.2,
-    annotations_count: 2180,
-    efficiency_score: 95,
-    quality_score: 94,
-    trend: 'up',
-    trend_value: 8,
-    bonus_eligible: true,
-  },
-  {
-    rank: 3,
-    user_id: '3',
-    user_name: 'Carol Li',
-    total_hours: 142.8,
-    annotations_count: 1920,
-    efficiency_score: 92,
-    quality_score: 97,
-    trend: 'stable',
-    trend_value: 0,
-    bonus_eligible: true,
-  },
-  {
-    rank: 4,
-    user_id: '4',
-    user_name: 'David Zhang',
-    total_hours: 128.5,
-    annotations_count: 1680,
-    efficiency_score: 88,
-    quality_score: 91,
-    trend: 'down',
-    trend_value: -5,
-    bonus_eligible: false,
-  },
-  {
-    rank: 5,
-    user_id: '5',
-    user_name: 'Eva Liu',
-    total_hours: 115.2,
-    annotations_count: 1450,
-    efficiency_score: 85,
-    quality_score: 93,
-    trend: 'up',
-    trend_value: 3,
-    bonus_eligible: false,
-  },
-];
+interface RewardFormValues {
+  amount: number;
+  reason: string;
+}
+
+const periodDays: Record<string, number> = {
+  week: 7,
+  month: 30,
+  quarter: 90,
+};
 
 const getRankIcon = (rank: number) => {
   const colors: Record<number, string> = {
@@ -129,12 +103,105 @@ const getTrendIcon = (trend: 'up' | 'down' | 'stable', value: number) => {
   return <Tag color="default">-</Tag>;
 };
 
+// Transform API data to component format
+const transformRankingData = (apiData: unknown[]): RankingUser[] => {
+  if (!apiData || !Array.isArray(apiData)) return [];
+
+  return apiData.map((item: Record<string, unknown>, index) => {
+    const prevRank = (item.previous_rank as number) || index + 1;
+    const currentRank = (item.rank as number) || index + 1;
+    const rankChange = prevRank - currentRank;
+
+    return {
+      rank: currentRank,
+      user_id: (item.user_id as string) || '',
+      user_name: (item.user_name as string) || 'Unknown',
+      avatar: item.avatar as string | undefined,
+      total_hours: (item.total_hours as number) || 0,
+      annotations_count: (item.annotations_count as number) || 0,
+      efficiency_score: (item.efficiency_score as number) || 0,
+      quality_score: (item.quality_score as number) || (item.efficiency_score as number) || 0,
+      trend: rankChange > 0 ? 'up' : rankChange < 0 ? 'down' : 'stable',
+      trend_value: Math.abs(rankChange) * 10,
+      bonus_eligible: (item.efficiency_score as number) >= 85 && currentRank <= 5,
+      hourly_rate: item.hourly_rate as number | undefined,
+      total_earnings: item.total_earnings as number | undefined,
+    };
+  });
+};
+
 export const WorkHoursRanking: React.FC<WorkHoursRankingProps> = ({
+  tenantId,
   onExport,
   onReward,
 }) => {
   const [period, setPeriod] = useState<'week' | 'month' | 'quarter'>('month');
-  const [loading] = useState(false);
+  const [rewardModalVisible, setRewardModalVisible] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<RankingUser | null>(null);
+  const [rewardLoading, setRewardLoading] = useState(false);
+  const [form] = Form.useForm<RewardFormValues>();
+
+  // API hooks
+  const { data: apiRankingData, isLoading, error, refetch } = useWorkHoursRanking(tenantId, period);
+  const { data: trendsData } = useCostTrends(tenantId, periodDays[period]);
+  const exportMutation = useExportBilling();
+
+  // Transform data
+  const rankingData = useMemo(() => {
+    return transformRankingData(apiRankingData || []);
+  }, [apiRankingData]);
+
+  // Calculate summary statistics
+  const summaryStats = useMemo(() => {
+    if (rankingData.length === 0) {
+      return {
+        totalHours: 0,
+        totalAnnotations: 0,
+        avgEfficiency: 0,
+        topPerformers: 0,
+      };
+    }
+    const totalHours = rankingData.reduce((sum, u) => sum + u.total_hours, 0);
+    const totalAnnotations = rankingData.reduce((sum, u) => sum + u.annotations_count, 0);
+    const avgEfficiency = rankingData.reduce((sum, u) => sum + u.efficiency_score, 0) / rankingData.length;
+    const topPerformers = rankingData.filter((u) => u.efficiency_score >= 90).length;
+
+    return { totalHours, totalAnnotations, avgEfficiency, topPerformers };
+  }, [rankingData]);
+
+  // Handle reward click
+  const handleRewardClick = (user: RankingUser) => {
+    setSelectedUser(user);
+    form.setFieldsValue({ amount: 100, reason: 'Excellent performance' });
+    setRewardModalVisible(true);
+  };
+
+  // Handle reward submission
+  const handleRewardSubmit = async () => {
+    if (!selectedUser || !onReward) return;
+
+    try {
+      const values = await form.validateFields();
+      setRewardLoading(true);
+      await onReward(selectedUser.user_id, selectedUser.user_name, values.amount, values.reason);
+      message.success(`Reward of $${values.amount} sent to ${selectedUser.user_name}`);
+      setRewardModalVisible(false);
+      form.resetFields();
+    } catch {
+      message.error('Failed to send reward');
+    } finally {
+      setRewardLoading(false);
+    }
+  };
+
+  // Handle export
+  const handleExport = () => {
+    if (onExport) {
+      onExport();
+    } else {
+      exportMutation.mutate({ tenantId });
+    }
+  };
 
   const columns: ColumnsType<RankingUser> = [
     {
@@ -222,12 +289,12 @@ export const WorkHoursRanking: React.FC<WorkHoursRankingProps> = ({
       key: 'actions',
       width: 100,
       render: (_, record) =>
-        record.bonus_eligible && (
+        record.bonus_eligible && onReward && (
           <Button
             type="link"
             size="small"
             icon={<GiftOutlined />}
-            onClick={() => onReward?.(record.user_id, 100)}
+            onClick={() => handleRewardClick(record)}
           >
             Reward
           </Button>
@@ -235,41 +302,213 @@ export const WorkHoursRanking: React.FC<WorkHoursRankingProps> = ({
     },
   ];
 
-  return (
-    <Card
-      title={
-        <Space>
-          <TrophyOutlined style={{ color: '#faad14' }} />
-          Work Hours Ranking
-        </Space>
-      }
-      extra={
-        <Space>
-          <Select
-            value={period}
-            onChange={setPeriod}
-            style={{ width: 120 }}
-            options={[
-              { value: 'week', label: 'This Week' },
-              { value: 'month', label: 'This Month' },
-              { value: 'quarter', label: 'This Quarter' },
-            ]}
-          />
-          <Button icon={<ExportOutlined />} onClick={onExport}>
-            Export
+  // Loading state
+  if (isLoading) {
+    return (
+      <Card>
+        <div style={{ textAlign: 'center', padding: '50px 0' }}>
+          <Spin size="large" />
+          <p style={{ marginTop: 16 }}>Loading ranking data...</p>
+        </div>
+      </Card>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <Card>
+        <Empty
+          description="Failed to load ranking data"
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+        >
+          <Button type="primary" onClick={() => refetch()}>
+            Retry
           </Button>
-        </Space>
-      }
-    >
-      <Table<RankingUser>
-        columns={columns}
-        dataSource={mockRankingData}
-        rowKey="user_id"
-        loading={loading}
-        pagination={false}
-        size="middle"
-        rowClassName={(record) => (record.rank <= 3 ? 'highlight-row' : '')}
-      />
-    </Card>
+        </Empty>
+      </Card>
+    );
+  }
+
+  return (
+    <>
+      {/* Summary Statistics */}
+      <Row gutter={16} style={{ marginBottom: 16 }}>
+        <Col span={6}>
+          <Card size="small">
+            <Statistic
+              title="Total Hours"
+              value={summaryStats.totalHours.toFixed(1)}
+              prefix={<ClockCircleOutlined />}
+              suffix="h"
+            />
+          </Card>
+        </Col>
+        <Col span={6}>
+          <Card size="small">
+            <Statistic
+              title="Total Annotations"
+              value={summaryStats.totalAnnotations}
+              prefix={<BarChartOutlined />}
+            />
+          </Card>
+        </Col>
+        <Col span={6}>
+          <Card size="small">
+            <Statistic
+              title="Avg Efficiency"
+              value={summaryStats.avgEfficiency.toFixed(1)}
+              prefix={<RiseOutlined />}
+              suffix="%"
+            />
+          </Card>
+        </Col>
+        <Col span={6}>
+          <Card size="small">
+            <Statistic
+              title="Top Performers"
+              value={summaryStats.topPerformers}
+              prefix={<TeamOutlined />}
+              suffix={`/ ${rankingData.length}`}
+            />
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Ranking Table */}
+      <Card
+        title={
+          <Space>
+            <TrophyOutlined style={{ color: '#faad14' }} />
+            Work Hours Ranking
+          </Space>
+        }
+        extra={
+          <Space>
+            <Select
+              value={period}
+              onChange={setPeriod}
+              style={{ width: 120 }}
+              options={[
+                { value: 'week', label: 'This Week' },
+                { value: 'month', label: 'This Month' },
+                { value: 'quarter', label: 'This Quarter' },
+              ]}
+            />
+            <Button
+              icon={<ExportOutlined />}
+              onClick={handleExport}
+              loading={exportMutation.isPending}
+            >
+              Export
+            </Button>
+          </Space>
+        }
+      >
+        {rankingData.length === 0 ? (
+          <Empty description="No ranking data available" />
+        ) : (
+          <Table<RankingUser>
+            columns={columns}
+            dataSource={rankingData}
+            rowKey="user_id"
+            loading={isLoading}
+            pagination={rankingData.length > 10 ? { pageSize: 10 } : false}
+            size="middle"
+            rowClassName={(record) => (record.rank <= 3 ? 'highlight-row' : '')}
+          />
+        )}
+
+        {/* Cost Trends Summary */}
+        {trendsData && (
+          <div style={{ marginTop: 16, padding: 16, background: '#fafafa', borderRadius: 8 }}>
+            <Space size="large">
+              <Statistic
+                title="Period Cost"
+                value={(trendsData as { total_cost?: number }).total_cost || 0}
+                prefix={<DollarOutlined />}
+                precision={2}
+              />
+              <Statistic
+                title="Cost Trend"
+                value={(trendsData as { trend_percentage?: number }).trend_percentage || 0}
+                suffix="%"
+                valueStyle={{
+                  color:
+                    ((trendsData as { trend_percentage?: number }).trend_percentage || 0) > 0
+                      ? '#cf1322'
+                      : '#3f8600',
+                }}
+              />
+            </Space>
+          </div>
+        )}
+      </Card>
+
+      {/* Reward Modal */}
+      <Modal
+        title={
+          <Space>
+            <GiftOutlined style={{ color: '#faad14' }} />
+            Send Reward to {selectedUser?.user_name}
+          </Space>
+        }
+        open={rewardModalVisible}
+        onOk={handleRewardSubmit}
+        onCancel={() => {
+          setRewardModalVisible(false);
+          form.resetFields();
+        }}
+        confirmLoading={rewardLoading}
+        okText="Send Reward"
+      >
+        <Form form={form} layout="vertical">
+          <Form.Item
+            name="amount"
+            label="Reward Amount ($)"
+            rules={[
+              { required: true, message: 'Please enter reward amount' },
+              { type: 'number', min: 1, message: 'Amount must be at least $1' },
+            ]}
+          >
+            <InputNumber
+              style={{ width: '100%' }}
+              min={1}
+              max={10000}
+              prefix={<DollarOutlined />}
+              placeholder="Enter reward amount"
+            />
+          </Form.Item>
+          <Form.Item
+            name="reason"
+            label="Reason"
+            rules={[{ required: true, message: 'Please enter a reason' }]}
+          >
+            <Input.TextArea
+              rows={3}
+              placeholder="Enter reason for the reward"
+              maxLength={200}
+              showCount
+            />
+          </Form.Item>
+          {selectedUser && (
+            <div style={{ background: '#f5f5f5', padding: 12, borderRadius: 6 }}>
+              <p style={{ margin: 0 }}>
+                <strong>Performance Summary:</strong>
+              </p>
+              <p style={{ margin: '4px 0' }}>
+                Total Hours: {selectedUser.total_hours.toFixed(1)}h
+              </p>
+              <p style={{ margin: '4px 0' }}>
+                Annotations: {selectedUser.annotations_count.toLocaleString()}
+              </p>
+              <p style={{ margin: 0 }}>
+                Efficiency: {selectedUser.efficiency_score}%
+              </p>
+            </div>
+          )}
+        </Form>
+      </Modal>
+    </>
   );
 };

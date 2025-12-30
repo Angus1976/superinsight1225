@@ -18,6 +18,19 @@ from .core.graph_db import (
     GraphDatabase,
     get_graph_database,
 )
+from .update import (
+    DataListener,
+    DataChangeEvent,
+    ChangeType,
+    DataSource,
+    VersionManager,
+    GraphVersion,
+    VersionDiff,
+    ChangeRecord,
+    IncrementalUpdater,
+    UpdateResult,
+    UpdateStrategy,
+)
 
 __all__ = [
     # Models
@@ -31,6 +44,18 @@ __all__ = [
     # Database
     "GraphDatabase",
     "get_graph_database",
+    # Update System
+    "DataListener",
+    "DataChangeEvent",
+    "ChangeType",
+    "DataSource",
+    "VersionManager",
+    "GraphVersion",
+    "VersionDiff",
+    "ChangeRecord",
+    "IncrementalUpdater",
+    "UpdateResult",
+    "UpdateStrategy",
 ]
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"

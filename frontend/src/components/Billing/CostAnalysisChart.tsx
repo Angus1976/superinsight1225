@@ -140,10 +140,13 @@ export const CostAnalysisChart: React.FC<CostAnalysisChartProps> = ({
                 <XAxis dataKey="date" tick={{ fontSize: 12 }} />
                 <YAxis tick={{ fontSize: 12 }} tickFormatter={(value) => `$${value}`} />
                 <RechartsTooltip
-                  formatter={(value: number, name: string) => [
-                    name === 'cost' ? `$${value.toFixed(2)}` : value,
-                    name === 'cost' ? 'Cost' : 'Annotations',
-                  ]}
+                  formatter={(value, name) => {
+                    const v = value as number;
+                    return [
+                      name === 'cost' ? `$${v.toFixed(2)}` : v,
+                      name === 'cost' ? 'Cost' : 'Annotations',
+                    ];
+                  }}
                 />
                 <Area
                   type="monotone"
@@ -178,7 +181,7 @@ export const CostAnalysisChart: React.FC<CostAnalysisChartProps> = ({
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percentage }) => `${name} (${percentage.toFixed(1)}%)`}
+                  label={({ name, payload }) => `${name} (${(payload?.percentage || 0).toFixed(1)}%)`}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
@@ -189,7 +192,7 @@ export const CostAnalysisChart: React.FC<CostAnalysisChartProps> = ({
                 </Pie>
                 <Legend />
                 <RechartsTooltip
-                  formatter={(value: number) => [`$${value.toLocaleString()}`, 'Cost']}
+                  formatter={(value) => [`$${(value as number).toLocaleString()}`, 'Cost']}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -216,10 +219,13 @@ export const CostAnalysisChart: React.FC<CostAnalysisChartProps> = ({
                 <XAxis type="number" tickFormatter={(value) => `$${value}`} />
                 <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 12 }} />
                 <RechartsTooltip
-                  formatter={(value: number, name: string) => [
-                    name === 'cost' ? `$${value.toLocaleString()}` : value,
-                    name === 'cost' ? 'Cost' : 'Users',
-                  ]}
+                  formatter={(value, name) => {
+                    const v = value as number;
+                    return [
+                      name === 'cost' ? `$${v.toLocaleString()}` : v,
+                      name === 'cost' ? 'Cost' : 'Users',
+                    ];
+                  }}
                 />
                 <Bar dataKey="cost" fill="#52c41a" />
               </BarChart>

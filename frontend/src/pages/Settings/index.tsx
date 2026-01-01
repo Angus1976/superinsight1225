@@ -32,7 +32,7 @@ const { TabPane } = Tabs;
 const { Option } = Select;
 
 const SettingsPage: React.FC = () => {
-  const { t, i18n } = useTranslation('common');
+  const { i18n } = useTranslation('common');
   const { user } = useAuthStore();
   const { theme, setTheme } = useUIStore();
   const [profileForm] = Form.useForm();

@@ -107,7 +107,8 @@ const getTrendIcon = (trend: 'up' | 'down' | 'stable', value: number) => {
 const transformRankingData = (apiData: unknown[]): RankingUser[] => {
   if (!apiData || !Array.isArray(apiData)) return [];
 
-  return apiData.map((item: Record<string, unknown>, index) => {
+  return apiData.map((rawItem, index) => {
+    const item = rawItem as Record<string, unknown>;
     const prevRank = (item.previous_rank as number) || index + 1;
     const currentRank = (item.rank as number) || index + 1;
     const rankChange = prevRank - currentRank;

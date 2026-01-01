@@ -1,0 +1,46 @@
+# Prometheus Configuration for Data Sync System
+# This configuration should be merged with your main prometheus.yml
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# Alerting rules files
+rule_files:
+  - "sync_alert_rules.yml"
+
+scrape_configs:
+  # Sync Service Metrics
+  - job_name: 'sync-service'
+    static_configs:
+      - targets: ['localhost:8001']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+    honor_labels: true
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        regex: '(.+):\d+'
+        replacement: '${1}'
+
+  # Connector Pool Metrics
+  - job_name: 'sync-connectors'
+    static_configs:
+      - targets: ['localhost:8002']
+    metrics_path: '/metrics/connectors'
+    scrape_interval: 15s
+
+  # WebSocket Server Metrics
+  - job_name: 'sync-websocket'
+    static_configs:
+      - targets: ['localhost:8003']
+    metrics_path: '/metrics/websocket'
+    scrape_interval: 10s
+
+  # Queue Metrics
+  - job_name: 'sync-queue'
+    static_configs:
+      - targets: ['localhost:8004']
+    metrics_path: '/metrics/queue'
+    scrape_interval: 5s

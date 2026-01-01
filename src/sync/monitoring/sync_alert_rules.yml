@@ -1,0 +1,156 @@
+# Prometheus Alert Rules for Data Sync System
+groups:
+  - name: sync_performance
+    interval: 30s
+    rules:
+      - alert: SyncHighLatency
+        expr: histogram_quantile(0.95, rate(sync_latency_seconds_bucket[5m])) > 5
+        for: 1m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "Sync latency is too high"
+          description: "P95 sync latency is {{ $value | humanizeDuration }} (threshold: 5s)"
+
+      - alert: SyncCriticalLatency
+        expr: histogram_quantile(0.95, rate(sync_latency_seconds_bucket[5m])) > 10
+        for: 30s
+        labels:
+          severity: critical
+          category: performance
+        annotations:
+          summary: "Sync latency is critically high"
+          description: "P95 sync latency is {{ $value | humanizeDuration }} (threshold: 10s)"
+
+      - alert: SyncLowThroughput
+        expr: sum(rate(sync_records_total[5m])) < 100
+        for: 5m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "Sync throughput is below expected"
+          description: "Current throughput: {{ $value | humanize }} records/s (threshold: 100)"
+
+  - name: sync_errors
+    interval: 30s
+    rules:
+      - alert: SyncHighErrorRate
+        expr: |
+          sum(rate(sync_operations_total{status="error"}[5m]))
+          / sum(rate(sync_operations_total[5m])) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+          category: quality
+        annotations:
+          summary: "Sync error rate is too high"
+          description: "Error rate: {{ $value | humanizePercentage }} (threshold: 5%)"
+
+      - alert: SyncCriticalErrorRate
+        expr: |
+          sum(rate(sync_operations_total{status="error"}[5m]))
+          / sum(rate(sync_operations_total[5m])) > 0.20
+        for: 1m
+        labels:
+          severity: critical
+          category: quality
+        annotations:
+          summary: "Sync error rate is critically high"
+          description: "Error rate: {{ $value | humanizePercentage }} (threshold: 20%)"
+
+  - name: sync_capacity
+    interval: 30s
+    rules:
+      - alert: SyncQueueHigh
+        expr: sync_queue_depth > 1000
+        for: 2m
+        labels:
+          severity: warning
+          category: capacity
+        annotations:
+          summary: "Sync queue depth is high"
+          description: "Queue depth: {{ $value }} (threshold: 1000)"
+
+      - alert: SyncQueueCritical
+        expr: sync_queue_depth > 5000
+        for: 1m
+        labels:
+          severity: critical
+          category: capacity
+        annotations:
+          summary: "Sync queue depth is critically high"
+          description: "Queue depth: {{ $value }} (threshold: 5000)"
+
+      - alert: ConnectorPoolExhausted
+        expr: |
+          sum(connector_active_connections)
+          / sum(connector_pool_size) > 0.90
+        for: 1m
+        labels:
+          severity: critical
+          category: capacity
+        annotations:
+          summary: "Connection pool is nearly exhausted"
+          description: "Pool usage: {{ $value | humanizePercentage }} (threshold: 90%)"
+
+  - name: sync_availability
+    interval: 30s
+    rules:
+      - alert: ConnectorHighFailureRate
+        expr: |
+          sum by (connector_type) (rate(connector_failures_total[5m]))
+          / sum by (connector_type) (rate(connector_operations_total[5m])) > 0.10
+        for: 2m
+        labels:
+          severity: warning
+          category: availability
+        annotations:
+          summary: "Connector failure rate is high"
+          description: "{{ $labels.connector_type }} failure rate: {{ $value | humanizePercentage }}"
+
+      - alert: ConnectorDown
+        expr: connector_health_status == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: availability
+        annotations:
+          summary: "Connector is down"
+          description: "Connector {{ $labels.connector_type }} is not healthy"
+
+      - alert: WebSocketHighBackpressure
+        expr: rate(websocket_backpressure_total[1m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "WebSocket backpressure events are high"
+          description: "Backpressure rate: {{ $value | humanize }}/min (threshold: 10)"
+
+  - name: sync_conflicts
+    interval: 60s
+    rules:
+      - alert: ConflictLowResolutionRate
+        expr: |
+          sum(rate(sync_conflicts_resolved_total[10m]))
+          / sum(rate(sync_conflicts_total[10m])) < 0.90
+        for: 5m
+        labels:
+          severity: warning
+          category: quality
+        annotations:
+          summary: "Conflict resolution rate is low"
+          description: "Resolution rate: {{ $value | humanizePercentage }} (threshold: 90%)"
+
+      - alert: ConflictHighRate
+        expr: rate(sync_conflicts_total[5m]) > 100
+        for: 3m
+        labels:
+          severity: warning
+          category: quality
+        annotations:
+          summary: "High rate of sync conflicts"
+          description: "Conflict rate: {{ $value | humanize }}/s (threshold: 100)"

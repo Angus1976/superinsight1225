@@ -1,5 +1,5 @@
 // Security audit service
-import { apiClient } from './api/client';
+import apiClient from './api/client';
 import { API_ENDPOINTS } from '@/constants';
 
 export interface AuditLog {

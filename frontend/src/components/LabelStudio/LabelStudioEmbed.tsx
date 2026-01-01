@@ -86,8 +86,8 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
     return () => window.removeEventListener('message', handleMessage);
   }, [onAnnotationCreate, onAnnotationUpdate, onTaskComplete, taskId]);
 
-  // Send message to Label Studio iframe
-  const sendMessage = useCallback((type: string, payload?: unknown) => {
+  // Send message to Label Studio iframe (reserved for future bi-directional communication)
+  void useCallback((type: string, payload?: unknown) => {
     if (iframeRef.current?.contentWindow) {
       iframeRef.current.contentWindow.postMessage({ type, payload }, '*');
     }

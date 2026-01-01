@@ -14,9 +14,7 @@ import {
   Row,
   Col,
   Statistic,
-  Progress,
   Tabs,
-  List,
   Badge,
   Tooltip,
   message,
@@ -160,13 +158,13 @@ const QualityPage: React.FC = () => {
   const [ruleModalOpen, setRuleModalOpen] = useState(false);
   const [ruleForm] = Form.useForm();
 
-  const handleCreateRule = async (values: Record<string, unknown>) => {
+  const handleCreateRule = async (_values: Record<string, unknown>) => {
     message.success('Quality rule created successfully');
     setRuleModalOpen(false);
     ruleForm.resetFields();
   };
 
-  const handleToggleRule = (id: string, enabled: boolean) => {
+  const handleToggleRule = (_id: string, enabled: boolean) => {
     message.success(`Rule ${enabled ? 'enabled' : 'disabled'}`);
   };
 
@@ -239,7 +237,7 @@ const QualityPage: React.FC = () => {
       title: 'Actions',
       key: 'actions',
       width: 150,
-      render: (_, record) => (
+      render: () => (
         <Space>
           <Tooltip title="Run Rule">
             <Button type="link" size="small" icon={<PlayCircleOutlined />} />
@@ -305,7 +303,7 @@ const QualityPage: React.FC = () => {
   // Calculate stats
   const totalViolations = mockRules.reduce((sum, r) => sum + r.violations_count, 0);
   const openIssues = mockIssues.filter((i) => i.status === 'open').length;
-  const errorCount = mockIssues.filter((i) => i.severity === 'error' && i.status === 'open').length;
+  void mockIssues.filter((i) => i.severity === 'error' && i.status === 'open').length; // Error count for future use
 
   return (
     <div>

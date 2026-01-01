@@ -32,9 +32,9 @@ const priorityColorMap: Record<TaskPriority, string> = {
 };
 
 const TasksPage: React.FC = () => {
-  const { t } = useTranslation('common');
+  useTranslation('common'); // Translation initialized for i18n context
   const navigate = useNavigate();
-  const actionRef = useRef<ActionType>();
+  const actionRef = useRef<ActionType>(null);
   const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [currentParams, setCurrentParams] = useState({});

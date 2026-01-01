@@ -90,7 +90,7 @@ const mockBillingRecords: BillingRecord[] = [
 ];
 
 const BillingPage: React.FC = () => {
-  const { currentTenant } = useAuthStore();
+  useAuthStore(); // Auth context for future tenant integration
   const [selectedRecord, setSelectedRecord] = useState<BillingRecord | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [loading] = useState(false);

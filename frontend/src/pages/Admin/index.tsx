@@ -179,7 +179,7 @@ const AdminPage: React.FC = () => {
     userForm.resetFields();
   };
 
-  const handleDeleteTenant = (id: string) => {
+  const handleDeleteTenant = (_id: string) => {
     Modal.confirm({
       title: 'Delete Tenant',
       icon: <ExclamationCircleOutlined />,
@@ -191,7 +191,7 @@ const AdminPage: React.FC = () => {
     });
   };
 
-  const handleDeleteUser = (id: string) => {
+  const handleDeleteUser = (_id: string) => {
     Modal.confirm({
       title: 'Delete User',
       icon: <ExclamationCircleOutlined />,

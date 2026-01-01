@@ -137,7 +137,7 @@ const AugmentationPage: React.FC = () => {
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [form] = Form.useForm();
 
-  const handleCreateJob = async (values: Record<string, unknown>) => {
+  const handleCreateJob = async (_values: Record<string, unknown>) => {
     message.success('Augmentation job created successfully');
     setCreateModalOpen(false);
     form.resetFields();

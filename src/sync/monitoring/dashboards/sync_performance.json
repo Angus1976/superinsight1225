@@ -1,0 +1,278 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "sync-system-performance",
+    "title": "Data Sync Performance Details",
+    "tags": ["sync", "performance", "monitoring"],
+    "timezone": "browser",
+    "schemaVersion": 30,
+    "version": 1,
+    "refresh": "5s",
+    "time": {
+      "from": "now-30m",
+      "to": "now"
+    },
+    "templating": {
+      "list": [
+        {
+          "name": "connector_type",
+          "type": "query",
+          "datasource": "Prometheus",
+          "query": "label_values(sync_operations_total, connector_type)",
+          "refresh": 1,
+          "includeAll": true,
+          "multi": true
+        },
+        {
+          "name": "operation",
+          "type": "query",
+          "datasource": "Prometheus",
+          "query": "label_values(sync_operations_total, operation)",
+          "refresh": 1,
+          "includeAll": true,
+          "multi": true
+        }
+      ]
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Latency Distribution",
+        "type": "heatmap",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+        "targets": [
+          {
+            "expr": "sum by (le) (rate(sync_latency_seconds_bucket{connector_type=~\"$connector_type\"}[1m]))",
+            "format": "heatmap",
+            "legendFormat": "{{le}}",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "calculate": false,
+          "yAxis": {
+            "unit": "s"
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "Latency Percentiles",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, sum by (le) (rate(sync_latency_seconds_bucket{connector_type=~\"$connector_type\"}[5m])))",
+            "legendFormat": "P50",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.90, sum by (le) (rate(sync_latency_seconds_bucket{connector_type=~\"$connector_type\"}[5m])))",
+            "legendFormat": "P90",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum by (le) (rate(sync_latency_seconds_bucket{connector_type=~\"$connector_type\"}[5m])))",
+            "legendFormat": "P95",
+            "refId": "C"
+          },
+          {
+            "expr": "histogram_quantile(0.99, sum by (le) (rate(sync_latency_seconds_bucket{connector_type=~\"$connector_type\"}[5m])))",
+            "legendFormat": "P99",
+            "refId": "D"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth"
+            }
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "Operation Breakdown",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 8, "x": 0, "y": 8},
+        "targets": [
+          {
+            "expr": "sum by (operation) (rate(sync_operations_total{connector_type=~\"$connector_type\", operation=~\"$operation\"}[5m]))",
+            "legendFormat": "{{operation}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "custom": {
+              "drawStyle": "bars",
+              "stacking": {"mode": "normal"}
+            }
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "Batch Size Distribution",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 8, "x": 8, "y": 8},
+        "targets": [
+          {
+            "expr": "sum by (le) (rate(sync_batch_size_bucket[5m]))",
+            "legendFormat": "{{le}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short"
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "Records per Operation",
+        "type": "timeseries",
+        "gridPos": {"h": 8, "w": 8, "x": 16, "y": 8},
+        "targets": [
+          {
+            "expr": "rate(sync_records_total{connector_type=~\"$connector_type\"}[5m]) / rate(sync_operations_total{connector_type=~\"$connector_type\"}[5m])",
+            "legendFormat": "{{connector_type}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "custom": {
+              "drawStyle": "line"
+            }
+          }
+        }
+      },
+      {
+        "id": 6,
+        "title": "Connection Pool Usage",
+        "type": "gauge",
+        "gridPos": {"h": 6, "w": 6, "x": 0, "y": 16},
+        "targets": [
+          {
+            "expr": "sum(connector_active_connections) / sum(connector_pool_size) * 100",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 70},
+                {"color": "red", "value": 90}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 7,
+        "title": "Retry Rate",
+        "type": "timeseries",
+        "gridPos": {"h": 6, "w": 9, "x": 6, "y": 16},
+        "targets": [
+          {
+            "expr": "sum by (connector_type) (rate(sync_retries_total[5m]))",
+            "legendFormat": "{{connector_type}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "custom": {
+              "drawStyle": "line"
+            }
+          }
+        }
+      },
+      {
+        "id": 8,
+        "title": "Data Transfer Rate",
+        "type": "timeseries",
+        "gridPos": {"h": 6, "w": 9, "x": 15, "y": 16},
+        "targets": [
+          {
+            "expr": "sum by (connector_type, direction) (rate(sync_bytes_total[5m]))",
+            "legendFormat": "{{connector_type}} - {{direction}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "Bps",
+            "custom": {
+              "drawStyle": "line",
+              "fillOpacity": 20
+            }
+          }
+        }
+      },
+      {
+        "id": 9,
+        "title": "Connector Health",
+        "type": "table",
+        "gridPos": {"h": 6, "w": 12, "x": 0, "y": 22},
+        "targets": [
+          {
+            "expr": "connector_health_status",
+            "format": "table",
+            "instant": true,
+            "refId": "A"
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {"Time": true, "__name__": true},
+              "renameByName": {
+                "connector_type": "Connector",
+                "Value": "Status"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Queue Processing Time",
+        "type": "timeseries",
+        "gridPos": {"h": 6, "w": 12, "x": 12, "y": 22},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(sync_queue_wait_seconds_bucket[5m]))",
+            "legendFormat": "Queue Wait P95",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.99, rate(sync_queue_wait_seconds_bucket[5m]))",
+            "legendFormat": "Queue Wait P99",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s"
+          }
+        }
+      }
+    ]
+  },
+  "overwrite": true
+}

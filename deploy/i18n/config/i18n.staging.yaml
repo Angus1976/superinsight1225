@@ -1,0 +1,107 @@
+# Staging i18n configuration
+i18n:
+  # Language Settings
+  default_language: "zh"
+  supported_languages:
+    - "zh"
+    - "en"
+  fallback_language: "zh"
+  
+  # Translation Sources
+  translation_sources:
+    - type: "internal"
+      path: "src/i18n/translations.py"
+      priority: 1
+  
+  # Caching Configuration
+  cache:
+    enabled: true
+    ttl: 60  # 1 minute for faster testing
+    max_size: 1000
+    backend: "redis"
+    
+  # Redis Configuration
+  redis:
+    host: "${I18N_REDIS_HOST:-redis}"
+    port: "${I18N_REDIS_PORT:-6379}"
+    db: "${I18N_REDIS_DB:-1}"  # Different DB for staging
+    password: "${I18N_REDIS_PASSWORD:-}"
+    connection_pool_size: 10
+    socket_timeout: 5
+    socket_connect_timeout: 5
+    
+  # Performance Settings
+  performance:
+    lazy_loading: true
+    preload_languages: ["zh"]
+    batch_size: 100
+    max_concurrent_requests: 50
+    
+  # API Settings
+  api:
+    rate_limit:
+      requests_per_minute: 500
+      burst_size: 50
+    timeout: 30
+    cors_enabled: true
+    cors_origins:
+      - "https://staging.superinsight.com"
+      - "https://staging-api.superinsight.com"
+      - "http://localhost:3000"  # For development
+    
+  # Logging Configuration
+  logging:
+    level: "DEBUG"
+    log_missing_keys: true
+    log_language_changes: true
+    log_performance: true
+    log_format: "json"
+    log_file: "/app/logs/i18n.log"
+    max_file_size: "50MB"
+    backup_count: 3
+    
+  # Validation Settings
+  validation:
+    enabled: true
+    strict_mode: true  # Stricter validation in staging
+    check_completeness: true
+    check_consistency: true
+    startup_validation: true
+    
+  # Security Settings
+  security:
+    max_key_length: 100
+    allowed_key_pattern: "^[a-zA-Z0-9_.-]+$"
+    sanitize_input: true
+    rate_limit_enabled: true
+    
+  # Monitoring
+  monitoring:
+    metrics_enabled: true
+    health_check_enabled: true
+    performance_tracking: true
+    error_tracking: true
+    metrics_port: 9090
+    
+  # Error Handling
+  error_handling:
+    fallback_enabled: true
+    error_reporting: true
+    circuit_breaker:
+      enabled: true
+      failure_threshold: 5  # Lower threshold for staging
+      recovery_timeout: 30
+      
+  # Feature Flags
+  features:
+    external_translation_sources: false
+    translation_caching: true
+    batch_operations: true
+    async_operations: true
+    
+  # Development/Testing Features
+  development:
+    debug_mode: true
+    hot_reload: false
+    translation_editor: false
+    mock_external_services: true

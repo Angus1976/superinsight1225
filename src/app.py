@@ -279,6 +279,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Add i18n middleware
+try:
+    from src.i18n.middleware import language_middleware
+    app.middleware("http")(language_middleware)
+    logger.info("i18n middleware loaded successfully")
+except ImportError as e:
+    logger.warning(f"i18n middleware not available: {e}")
+except Exception as e:
+    logger.warning(f"i18n middleware failed to load: {e}")
+
 
 # Global exception handler
 @app.exception_handler(Exception)
@@ -655,6 +665,16 @@ async def include_optional_routers():
     except Exception as e:
         logger.warning(f"Knowledge Graph API failed to load: {e}")
 
+    # i18n router
+    try:
+        from src.api.i18n import router as i18n_router
+        app.include_router(i18n_router)
+        logger.info("i18n API loaded successfully")
+    except ImportError as e:
+        logger.warning(f"i18n API not available: {e}")
+    except Exception as e:
+        logger.warning(f"i18n API failed to load: {e}")
+
 
 # Include routers on startup
 @app.on_event("startup")
@@ -687,6 +707,8 @@ async def api_info():
             "business_metrics": "/api/business-metrics",
             "text_to_sql": "/api/v1/text-to-sql",
             "knowledge_graph": "/api/v1/knowledge-graph",
+            "i18n": "/api/i18n",
+            "language_settings": "/api/settings/language",
             "health": "/health",
             "system_status": "/system/status",
             "metrics": "/system/metrics",
@@ -728,7 +750,10 @@ async def api_info():
             "实时质量监控仪表盘",
             "异常检测与告警",
             "培训需求分析",
-            "客户反馈收集与情感分析"
+            "客户反馈收集与情感分析",
+            "多语言支持 (中文/英文)",
+            "动态语言切换",
+            "国际化 (i18n) API"
         ],
         "deployment_modes": [
             "腾讯云 TCB 云托管",

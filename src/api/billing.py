@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 from src.billing.service import BillingSystem
 from src.billing.analytics import BillingAnalytics
 from src.billing.models import BillingRule, BillingMode, BillingReport
+from src.i18n import get_translation
 
 
 # Initialize router
@@ -80,14 +81,14 @@ async def track_annotation_work(request: TrackAnnotationRequest) -> Dict[str, An
         if success:
             return {
                 "status": "success",
-                "message": "Annotation work tracked successfully",
+                "message": get_translation("processed_successfully"),
                 "tracked_at": datetime.now().isoformat()
             }
         else:
-            raise HTTPException(status_code=500, detail="Failed to track annotation work")
+            raise HTTPException(status_code=500, detail=get_translation("processing_failed"))
             
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error tracking annotation work: {str(e)}")
+        raise HTTPException(status_code=500, detail=get_translation("processing_failed"))
 
 
 @router.post("/rules")

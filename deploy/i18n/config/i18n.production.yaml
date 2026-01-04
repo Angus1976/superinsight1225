@@ -1,0 +1,99 @@
+# Production i18n configuration
+i18n:
+  # Language Settings
+  default_language: "zh"
+  supported_languages:
+    - "zh"
+    - "en"
+  fallback_language: "zh"
+  
+  # Translation Sources
+  translation_sources:
+    - type: "internal"
+      path: "src/i18n/translations.py"
+      priority: 1
+  
+  # Caching Configuration
+  cache:
+    enabled: true
+    ttl: 300  # 5 minutes
+    max_size: 10000
+    backend: "redis"
+    
+  # Redis Configuration
+  redis:
+    host: "${I18N_REDIS_HOST:-redis}"
+    port: "${I18N_REDIS_PORT:-6379}"
+    db: "${I18N_REDIS_DB:-0}"
+    password: "${I18N_REDIS_PASSWORD:-}"
+    connection_pool_size: 20
+    socket_timeout: 5
+    socket_connect_timeout: 5
+    
+  # Performance Settings
+  performance:
+    lazy_loading: false  # Preload in production
+    preload_languages: ["zh", "en"]
+    batch_size: 1000
+    max_concurrent_requests: 100
+    
+  # API Settings
+  api:
+    rate_limit:
+      requests_per_minute: 1000
+      burst_size: 100
+    timeout: 30
+    cors_enabled: true
+    cors_origins:
+      - "https://superinsight.com"
+      - "https://api.superinsight.com"
+    
+  # Logging Configuration
+  logging:
+    level: "INFO"
+    log_missing_keys: true
+    log_language_changes: false
+    log_performance: true
+    log_format: "json"
+    log_file: "/app/logs/i18n.log"
+    max_file_size: "100MB"
+    backup_count: 5
+    
+  # Validation Settings
+  validation:
+    enabled: true
+    strict_mode: false
+    check_completeness: true
+    check_consistency: true
+    startup_validation: true
+    
+  # Security Settings
+  security:
+    max_key_length: 100
+    allowed_key_pattern: "^[a-zA-Z0-9_.-]+$"
+    sanitize_input: true
+    rate_limit_enabled: true
+    
+  # Monitoring
+  monitoring:
+    metrics_enabled: true
+    health_check_enabled: true
+    performance_tracking: true
+    error_tracking: true
+    metrics_port: 9090
+    
+  # Error Handling
+  error_handling:
+    fallback_enabled: true
+    error_reporting: true
+    circuit_breaker:
+      enabled: true
+      failure_threshold: 10
+      recovery_timeout: 60
+      
+  # Feature Flags
+  features:
+    external_translation_sources: false
+    translation_caching: true
+    batch_operations: true
+    async_operations: true

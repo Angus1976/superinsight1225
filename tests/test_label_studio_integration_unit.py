@@ -847,5 +847,254 @@ class TestLabelStudioIntegrationErrorHandling:
                 await integration._sync_tasks_to_db(project_id, tasks)
 
 
+class TestLabelStudioHealthCheck:
+    """Unit tests for Label Studio health check functionality.
+    
+    Tests the test_connection method for successful connections, failures,
+    timeouts, and authentication validation as specified in Requirements 1.1, 1.2, 1.3.
+    """
+    
+    @pytest.fixture
+    def mock_config(self):
+        """Mock Label Studio configuration."""
+        config = Mock(spec=LabelStudioConfig)
+        config.base_url = "https://labelstudio.example.com"
+        config.api_token = "test_token_123"
+        config.validate_config.return_value = True
+        return config
+    
+    @pytest.fixture
+    def integration(self, mock_config):
+        """Label Studio integration instance with mocked config."""
+        return LabelStudioIntegration(mock_config)
+    
+    @pytest.mark.asyncio
+    async def test_connection_success(self, integration):
+        """Test successful Label Studio connection.
+        
+        Validates: Requirements 1.2 - WHEN Label Studio is accessible, 
+        THE test_connection method SHALL return success status
+        """
+        with patch('httpx.AsyncClient') as mock_client:
+            mock_response = Mock()
+            mock_response.status_code = 200
+            mock_response.json.return_value = {"id": 1, "email": "admin@labelstudio.com"}
+            
+            mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
+            
+            result = await integration.test_connection()
+            
+            # Verify successful connection
+            assert result is True
+            
+            # Verify API call was made to the correct endpoint
+            call_args = mock_client.return_value.__aenter__.return_value.get.call_args
+            assert "whoami" in call_args[0][0]
+            assert "current-user" in call_args[0][0]
+    
+    @pytest.mark.asyncio
+    async def test_connection_failure_unreachable(self, integration):
+        """Test Label Studio connection failure when service is unreachable.
+        
+        Validates: Requirements 1.3 - WHEN Label Studio is unreachable, 
+        THE test_connection method SHALL return failure with error details
+        """
+        with patch('httpx.AsyncClient') as mock_client:
+            mock_response = Mock()
+            mock_response.status_code = 500
+            
+            mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
+            
+            result = await integration.test_connection()
+            
+            # Verify connection failed
+            assert result is False
+    
+    @pytest.mark.asyncio
+    async def test_connection_failure_authentication_error(self, integration):
+        """Test Label Studio connection failure due to authentication error.
+        
+        Validates: Requirements 1.5 - THE test_connection method SHALL 
+        validate Label Studio API authentication
+        """
+        with patch('httpx.AsyncClient') as mock_client:
+            mock_response = Mock()
+            mock_response.status_code = 401
+            
+            mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
+            
+            result = await integration.test_connection()
+            
+            # Verify authentication failure is handled
+            assert result is False
+    
+    @pytest.mark.asyncio
+    async def test_connection_timeout(self, integration):
+        """Test Label Studio connection timeout handling.
+        
+        Validates: Requirements 1.4 - THE test_connection method SHALL 
+        include connection timeout handling
+        """
+        with patch('httpx.AsyncClient') as mock_client:
+            mock_client.return_value.__aenter__.return_value.get = AsyncMock(
+                side_effect=httpx.TimeoutException("Connection timed out")
+            )
+            
+            result = await integration.test_connection(timeout=5.0)
+            
+            # Verify timeout is handled gracefully
+            assert result is False
+    
+    @pytest.mark.asyncio
+    async def test_connection_network_error(self, integration):
+        """Test Label Studio connection with network error.
+        
+        Validates: Requirements 1.3 - WHEN Label Studio is unreachable, 
+        THE test_connection method SHALL return failure with error details
+        """
+        with patch('httpx.AsyncClient') as mock_client:
+            mock_client.return_value.__aenter__.return_value.get = AsyncMock(
+                side_effect=httpx.RequestError("Network connection failed")
+            )
+            
+            result = await integration.test_connection()
+            
+            # Verify network error is handled gracefully
+            assert result is False
+    
+    @pytest.mark.asyncio
+    async def test_connection_with_custom_timeout(self, integration):
+        """Test Label Studio connection with custom timeout value.
+        
+        Validates: Requirements 1.4 - THE test_connection method SHALL 
+        include connection timeout handling
+        """
+        custom_timeout = 15.0
+        
+        with patch('httpx.AsyncClient') as mock_client:
+            mock_response = Mock()
+            mock_response.status_code = 200
+            
+            mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
+            
+            result = await integration.test_connection(timeout=custom_timeout)
+            
+            # Verify custom timeout was used
+            assert result is True
+            
+            # Verify AsyncClient was created with correct timeout
+            call_args = mock_client.call_args
+            assert call_args[1]['timeout'] == custom_timeout
+    
+    @pytest.mark.asyncio
+    async def test_connection_forbidden_error(self, integration):
+        """Test Label Studio connection with forbidden error (403).
+        
+        Validates: Requirements 1.5 - THE test_connection method SHALL 
+        validate Label Studio API authentication
+        """
+        with patch('httpx.AsyncClient') as mock_client:
+            mock_response = Mock()
+            mock_response.status_code = 403
+            
+            mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
+            
+            result = await integration.test_connection()
+            
+            # Verify forbidden error is handled
+            assert result is False
+    
+    @pytest.mark.asyncio
+    async def test_connection_not_found_error(self, integration):
+        """Test Label Studio connection with not found error (404).
+        
+        Validates: Requirements 1.3 - WHEN Label Studio is unreachable, 
+        THE test_connection method SHALL return failure with error details
+        """
+        with patch('httpx.AsyncClient') as mock_client:
+            mock_response = Mock()
+            mock_response.status_code = 404
+            
+            mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
+            
+            result = await integration.test_connection()
+            
+            # Verify not found error is handled
+            assert result is False
+    
+    @pytest.mark.asyncio
+    async def test_connection_unexpected_exception(self, integration):
+        """Test Label Studio connection with unexpected exception.
+        
+        Validates: Requirements 1.3 - WHEN Label Studio is unreachable, 
+        THE test_connection method SHALL return failure with error details
+        """
+        with patch('httpx.AsyncClient') as mock_client:
+            mock_client.return_value.__aenter__.return_value.get = AsyncMock(
+                side_effect=Exception("Unexpected error occurred")
+            )
+            
+            result = await integration.test_connection()
+            
+            # Verify unexpected exception is handled gracefully
+            assert result is False
+    
+    @pytest.mark.asyncio
+    async def test_connection_with_invalid_token(self, integration):
+        """Test Label Studio connection with invalid API token.
+        
+        Validates: Requirements 1.5 - THE test_connection method SHALL 
+        validate Label Studio API authentication
+        """
+        # Create integration with invalid token
+        config = Mock(spec=LabelStudioConfig)
+        config.base_url = "https://labelstudio.example.com"
+        config.api_token = "invalid_token_xyz"
+        config.validate_config.return_value = True
+        
+        integration_invalid = LabelStudioIntegration(config)
+        
+        with patch('httpx.AsyncClient') as mock_client:
+            mock_response = Mock()
+            mock_response.status_code = 401
+            
+            mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
+            
+            result = await integration_invalid.test_connection()
+            
+            # Verify authentication failure with invalid token
+            assert result is False
+            
+            # Verify correct authorization header was sent
+            call_args = mock_client.return_value.__aenter__.return_value.get.call_args
+            headers = call_args[1]['headers']
+            assert 'Authorization' in headers
+            assert 'invalid_token_xyz' in headers['Authorization']
+    
+    @pytest.mark.asyncio
+    async def test_connection_headers_validation(self, integration):
+        """Test that connection request includes proper headers.
+        
+        Validates: Requirements 1.5 - THE test_connection method SHALL 
+        validate Label Studio API authentication
+        """
+        with patch('httpx.AsyncClient') as mock_client:
+            mock_response = Mock()
+            mock_response.status_code = 200
+            
+            mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
+            
+            result = await integration.test_connection()
+            
+            # Verify headers were sent correctly
+            call_args = mock_client.return_value.__aenter__.return_value.get.call_args
+            headers = call_args[1]['headers']
+            
+            assert 'Authorization' in headers
+            assert headers['Authorization'] == 'Token test_token_123'
+            assert 'Content-Type' in headers
+            assert headers['Content-Type'] == 'application/json'
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

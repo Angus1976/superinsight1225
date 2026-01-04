@@ -1,0 +1,169 @@
+version: '3.8'
+
+services:
+  superinsight-api:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      # I18n Configuration
+      - I18N_DEFAULT_LANGUAGE=zh
+      - I18N_SUPPORTED_LANGUAGES=zh,en
+      - I18N_FALLBACK_LANGUAGE=zh
+      
+      # Cache Configuration
+      - I18N_CACHE_ENABLED=true
+      - I18N_CACHE_TTL=300
+      - I18N_CACHE_MAX_SIZE=1000
+      - I18N_CACHE_BACKEND=redis
+      
+      # Redis Configuration
+      - I18N_REDIS_HOST=redis
+      - I18N_REDIS_PORT=6379
+      - I18N_REDIS_DB=0
+      
+      # Performance Settings
+      - I18N_API_RATE_LIMIT=100
+      - I18N_API_TIMEOUT=30
+      
+      # Logging Configuration
+      - I18N_LOG_LEVEL=INFO
+      - I18N_LOG_MISSING_KEYS=true
+      - I18N_LOG_LANGUAGE_CHANGES=false
+      
+      # Validation Settings
+      - I18N_VALIDATION_ENABLED=true
+      - I18N_STRICT_MODE=false
+      
+      # Monitoring
+      - I18N_METRICS_ENABLED=true
+      - I18N_HEALTH_CHECK_ENABLED=true
+      
+      # Database Configuration
+      - DATABASE_URL=postgresql://superinsight:password@postgres:5432/superinsight
+      
+    volumes:
+      - ./config:/app/config:ro
+      - ./logs:/app/logs
+      - i18n_cache:/app/cache
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - superinsight-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/i18n"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf:ro
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - superinsight-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_DB=superinsight
+      - POSTGRES_USER=superinsight
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    ports:
+      - "5432:5432"
+    networks:
+      - superinsight-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U superinsight"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - nginx_cache:/var/cache/nginx
+    depends_on:
+      - superinsight-api
+    networks:
+      - superinsight-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/rules:/etc/prometheus/rules:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - superinsight-network
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    depends_on:
+      - prometheus
+    networks:
+      - superinsight-network
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+  postgres_data:
+  i18n_cache:
+  nginx_cache:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  superinsight-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

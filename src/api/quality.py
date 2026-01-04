@@ -13,6 +13,7 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from pydantic import BaseModel, Field
 
 from src.quality.repair import DataRepairService, RepairRecord, RepairType, RepairStatus
+from src.i18n import get_translation
 
 # Lazy import for quality manager to avoid Ragas dependency issues
 def get_quality_manager():
@@ -146,7 +147,7 @@ async def create_quality_rule(rule_request: QualityRuleRequest) -> Dict[str, str
     
     quality_manager.add_quality_rule(rule)
     
-    return {"message": f"Quality rule '{rule_request.rule_id}' created successfully"}
+    return {"message": get_translation("rule_created", rule_id=rule_request.rule_id)}
 
 
 @router.put("/rules/{rule_id}/enable")
@@ -155,9 +156,9 @@ async def enable_quality_rule(rule_id: str) -> Dict[str, str]:
     quality_manager = get_quality_manager_instance()
     success = quality_manager.enable_rule(rule_id)
     if not success:
-        raise HTTPException(status_code=404, detail=f"Quality rule '{rule_id}' not found")
+        raise HTTPException(status_code=404, detail=get_translation("rule_not_found", rule_id=rule_id))
     
-    return {"message": f"Quality rule '{rule_id}' enabled"}
+    return {"message": get_translation("rule_enabled", rule_id=rule_id)}
 
 
 @router.put("/rules/{rule_id}/disable")
@@ -166,9 +167,9 @@ async def disable_quality_rule(rule_id: str) -> Dict[str, str]:
     quality_manager = get_quality_manager_instance()
     success = quality_manager.disable_rule(rule_id)
     if not success:
-        raise HTTPException(status_code=404, detail=f"Quality rule '{rule_id}' not found")
+        raise HTTPException(status_code=404, detail=get_translation("rule_not_found", rule_id=rule_id))
     
-    return {"message": f"Quality rule '{rule_id}' disabled"}
+    return {"message": get_translation("rule_disabled", rule_id=rule_id)}
 
 
 @router.delete("/rules/{rule_id}")
@@ -177,9 +178,9 @@ async def delete_quality_rule(rule_id: str) -> Dict[str, str]:
     quality_manager = get_quality_manager_instance()
     success = quality_manager.remove_quality_rule(rule_id)
     if not success:
-        raise HTTPException(status_code=404, detail=f"Quality rule '{rule_id}' not found")
+        raise HTTPException(status_code=404, detail=get_translation("rule_not_found", rule_id=rule_id))
     
-    return {"message": f"Quality rule '{rule_id}' deleted"}
+    return {"message": get_translation("rule_deleted", rule_id=rule_id)}
 
 
 # Quality Evaluation Endpoints

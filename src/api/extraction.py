@@ -24,6 +24,7 @@ from src.models.document import Document
 from src.database.connection import get_db_session
 from src.database.models import DocumentModel
 from sqlalchemy.orm import Session
+from src.i18n import get_translation
 
 logger = logging.getLogger(__name__)
 
@@ -342,14 +343,14 @@ async def extract_from_database(
             job_id=job_id,
             status="pending",
             created_at=datetime.now(),
-            message="Database extraction job started"
+            message=get_translation("job_started")
         )
         
     except Exception as e:
         logger.error(f"Failed to start database extraction: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to start extraction: {str(e)}"
+            detail=get_translation("processing_failed")
         )
 
 
@@ -369,14 +370,14 @@ async def extract_from_file(
             job_id=job_id,
             status="pending",
             created_at=datetime.now(),
-            message="File extraction job started"
+            message=get_translation("job_started")
         )
         
     except Exception as e:
         logger.error(f"Failed to start file extraction: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to start extraction: {str(e)}"
+            detail=get_translation("processing_failed")
         )
 
 
@@ -440,7 +441,7 @@ async def get_extraction_job(job_id: str) -> ExtractionResultResponse:
     if job_id not in extraction_jobs:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Job not found"
+            detail=get_translation("resource_not_found")
         )
     
     job = extraction_jobs[job_id]

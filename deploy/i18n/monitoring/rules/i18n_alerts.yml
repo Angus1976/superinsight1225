@@ -1,0 +1,190 @@
+# SuperInsight i18n Alerting Rules
+
+groups:
+  - name: i18n_alerts
+    rules:
+      # High error rate alert
+      - alert: I18nHighErrorRate
+        expr: rate(i18n_translation_errors_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          service: i18n
+        annotations:
+          summary: "High i18n error rate detected"
+          description: "I18n error rate is {{ $value }} errors per second for the last 5 minutes"
+          runbook_url: "https://docs.superinsight.com/runbooks/i18n-high-error-rate"
+          
+      # Cache hit rate too low
+      - alert: I18nCacheHitRateLow
+        expr: i18n_cache_hit_rate < 0.8
+        for: 5m
+        labels:
+          severity: warning
+          service: i18n
+        annotations:
+          summary: "Low i18n cache hit rate"
+          description: "I18n cache hit rate is {{ $value | humanizePercentage }}, which is below the 80% threshold"
+          runbook_url: "https://docs.superinsight.com/runbooks/i18n-cache-performance"
+          
+      # Service down alert
+      - alert: I18nServiceDown
+        expr: up{job="superinsight-i18n"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: i18n
+        annotations:
+          summary: "I18n service is down"
+          description: "I18n service has been down for more than 1 minute"
+          runbook_url: "https://docs.superinsight.com/runbooks/i18n-service-down"
+          
+      # High response time alert
+      - alert: I18nHighResponseTime
+        expr: histogram_quantile(0.95, rate(i18n_translation_duration_seconds_bucket[5m])) > 0.1
+        for: 3m
+        labels:
+          severity: warning
+          service: i18n
+        annotations:
+          summary: "High i18n response time"
+          description: "95th percentile response time is {{ $value }}s, which exceeds 100ms threshold"
+          runbook_url: "https://docs.superinsight.com/runbooks/i18n-performance"
+          
+      # Missing translation keys
+      - alert: I18nMissingTranslations
+        expr: increase(i18n_missing_keys_total[1h]) > 10
+        for: 0m
+        labels:
+          severity: warning
+          service: i18n
+        annotations:
+          summary: "Multiple missing translation keys detected"
+          description: "{{ $value }} missing translation keys detected in the last hour"
+          runbook_url: "https://docs.superinsight.com/runbooks/i18n-missing-translations"
+          
+      # Language switching failures
+      - alert: I18nLanguageSwitchFailures
+        expr: rate(i18n_language_switch_failures_total[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+          service: i18n
+        annotations:
+          summary: "High language switching failure rate"
+          description: "Language switching failure rate is {{ $value }} failures per second"
+          runbook_url: "https://docs.superinsight.com/runbooks/i18n-language-switching"
+
+  - name: i18n_infrastructure_alerts
+    rules:
+      # Redis connection issues
+      - alert: I18nRedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: redis
+          component: i18n-cache
+        annotations:
+          summary: "Redis cache is down"
+          description: "Redis cache used by i18n system is not responding"
+          runbook_url: "https://docs.superinsight.com/runbooks/redis-down"
+          
+      # High Redis memory usage
+      - alert: I18nRedisHighMemory
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          service: redis
+          component: i18n-cache
+        annotations:
+          summary: "Redis memory usage is high"
+          description: "Redis memory usage is {{ $value | humanizePercentage }} of available memory"
+          runbook_url: "https://docs.superinsight.com/runbooks/redis-memory"
+          
+      # Database connection issues
+      - alert: I18nDatabaseDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: postgres
+          component: i18n-storage
+        annotations:
+          summary: "PostgreSQL database is down"
+          description: "PostgreSQL database used by i18n system is not responding"
+          runbook_url: "https://docs.superinsight.com/runbooks/postgres-down"
+
+  - name: i18n_performance_alerts
+    rules:
+      # High CPU usage
+      - alert: I18nHighCPUUsage
+        expr: rate(process_cpu_seconds_total{job="superinsight-i18n"}[5m]) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: i18n
+          component: performance
+        annotations:
+          summary: "High CPU usage in i18n service"
+          description: "CPU usage is {{ $value }}% for the i18n service"
+          runbook_url: "https://docs.superinsight.com/runbooks/high-cpu-usage"
+          
+      # High memory usage
+      - alert: I18nHighMemoryUsage
+        expr: process_resident_memory_bytes{job="superinsight-i18n"} / 1024 / 1024 > 512
+        for: 5m
+        labels:
+          severity: warning
+          service: i18n
+          component: performance
+        annotations:
+          summary: "High memory usage in i18n service"
+          description: "Memory usage is {{ $value }}MB for the i18n service"
+          runbook_url: "https://docs.superinsight.com/runbooks/high-memory-usage"
+          
+      # Too many concurrent requests
+      - alert: I18nHighConcurrency
+        expr: i18n_concurrent_requests > 100
+        for: 2m
+        labels:
+          severity: warning
+          service: i18n
+          component: performance
+        annotations:
+          summary: "High concurrent request count"
+          description: "{{ $value }} concurrent requests to i18n service, which exceeds normal capacity"
+          runbook_url: "https://docs.superinsight.com/runbooks/high-concurrency"
+
+  - name: i18n_business_alerts
+    rules:
+      # Unusual language distribution
+      - alert: I18nUnusualLanguageDistribution
+        expr: |
+          (
+            sum(rate(i18n_requests_total{language="zh"}[1h])) /
+            sum(rate(i18n_requests_total[1h]))
+          ) < 0.3
+        for: 30m
+        labels:
+          severity: info
+          service: i18n
+          component: business-metrics
+        annotations:
+          summary: "Unusual language distribution detected"
+          description: "Chinese language usage is below 30% for the last hour, which is unusual"
+          runbook_url: "https://docs.superinsight.com/runbooks/language-distribution"
+          
+      # Low translation coverage
+      - alert: I18nLowTranslationCoverage
+        expr: i18n_translation_coverage_ratio < 0.95
+        for: 10m
+        labels:
+          severity: warning
+          service: i18n
+          component: content-quality
+        annotations:
+          summary: "Low translation coverage"
+          description: "Translation coverage is {{ $value | humanizePercentage }}, below 95% threshold"
+          runbook_url: "https://docs.superinsight.com/runbooks/translation-coverage"

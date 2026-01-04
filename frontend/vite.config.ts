@@ -61,14 +61,13 @@ const buildConfig: BuildOptions = {
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
   plugins: [
-    react({
-      // Enable Fast Refresh for development
-      fastRefresh: true,
-    }),
+    react(),
   ],
 
   resolve: {
     alias: {
+      // 核心：直接指向 development.js，它有明确的 named exports
+      'react-is': path.resolve(__dirname, 'node_modules/react-is/cjs/react-is.development.js'),
       '@': path.resolve(__dirname, './src'),
       '@components': path.resolve(__dirname, './src/components'),
       '@pages': path.resolve(__dirname, './src/pages'),
@@ -120,21 +119,31 @@ export default defineConfig(({ mode }) => ({
 
   // Optimize dependencies
   optimizeDeps: {
+    // 强制预构建这些模块
     include: [
+      'react-is',
+      'rc-util',
+      '@ant-design/pro-layout',
+      'recharts',
+      'use-sync-external-store',
+      'use-sync-external-store/shim',
+      'use-sync-external-store/shim/index',
+      'use-sync-external-store/shim/with-selector',
+      '@tanstack/react-query',
+      'zustand',
+      'swr',
       'react',
       'react-dom',
       'react-router-dom',
       'antd',
       '@ant-design/icons',
-      '@tanstack/react-query',
       'axios',
       'dayjs',
-      'zustand',
       'i18next',
       'react-i18next',
     ],
-    // Exclude large packages that should be code-split
-    exclude: ['@ant-design/pro-components'],
+    // Force specific versions
+    force: true,
   },
 
   // Enable esbuild optimizations

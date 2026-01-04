@@ -1,4 +1,4 @@
-// Main App component
+// Main App component - Full version
 import { ConfigProvider, App as AntApp, theme } from 'antd';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import zhCN from 'antd/locale/zh_CN';

@@ -320,6 +320,47 @@ async def create_user(user: User):
         }
     }
 
+# 获取当前用户信息
+@app.get("/api/security/users/me")
+async def get_current_user(authorization: Optional[str] = Header(None)):
+    """获取当前登录用户信息"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=401,
+            detail=get_translation("unauthorized")
+        )
+    
+    token = authorization.replace("Bearer ", "")
+    
+    try:
+        # 解码 JWT Token
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username = payload.get("username")
+        
+        if not username or username not in users_db:
+            raise HTTPException(
+                status_code=401,
+                detail=get_translation("unauthorized")
+            )
+        
+        user = users_db[username]
+        return {
+            "username": user["username"],
+            "email": user["email"],
+            "full_name": user["full_name"],
+            "role": user["role"]
+        }
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=401,
+            detail=get_translation("token_expired")
+        )
+    except jwt.InvalidTokenError:
+        raise HTTPException(
+            status_code=401,
+            detail=get_translation("invalid_token")
+        )
+
 # 获取用户列表
 @app.get("/api/security/users")
 async def get_users():
@@ -435,6 +476,527 @@ async def get_tasks():
             }
         ]
     }
+
+# Dashboard / Business Metrics 端点
+@app.get("/api/business-metrics/summary")
+async def get_dashboard_summary():
+    """获取Dashboard摘要数据"""
+    return {
+        "active_tasks": 12,
+        "today_annotations": 156,
+        "total_corpus": 25000,
+        "total_billing": 8500,
+        "active_users": 8,
+        "completion_rate": 0.85,
+        "timestamp": datetime.now().isoformat()
+    }
+
+@app.get("/api/business-metrics/annotation-efficiency")
+async def get_annotation_efficiency(hours: int = 24):
+    """获取标注效率数据"""
+    now = datetime.now()
+    trends = []
+    for i in range(hours):
+        timestamp = now - timedelta(hours=hours-i-1)
+        trends.append({
+            "timestamp": int(timestamp.timestamp() * 1000),
+            "datetime": timestamp.isoformat(),
+            "annotations_per_hour": 20 + (i % 10) * 3,
+            "avg_time_per_annotation": 120 - (i % 5) * 10
+        })
+    
+    return {
+        "current_rate": 25.5,
+        "avg_rate": 22.3,
+        "peak_rate": 35.2,
+        "trends": trends,
+        "period_hours": hours
+    }
+
+@app.get("/api/business-metrics/user-activity")
+async def get_user_activity(hours: int = 24):
+    """获取用户活动数据"""
+    return {
+        "active_users": 8,
+        "total_sessions": 45,
+        "avg_session_duration": 3600,
+        "top_users": [
+            {"username": "admin_test", "annotations": 120, "time_spent": 7200},
+            {"username": "expert_test", "annotations": 95, "time_spent": 5400},
+            {"username": "annotator_test", "annotations": 78, "time_spent": 4800}
+        ],
+        "period_hours": hours
+    }
+
+@app.get("/api/business-metrics/ai-models")
+async def get_ai_models(model_name: Optional[str] = None, hours: int = 24):
+    """获取AI模型指标"""
+    return {
+        "total_predictions": 2500,
+        "avg_confidence": 0.87,
+        "models": [
+            {
+                "name": "sentiment_classifier",
+                "predictions": 1200,
+                "avg_confidence": 0.89,
+                "accuracy": 0.92
+            },
+            {
+                "name": "ner_model",
+                "predictions": 800,
+                "avg_confidence": 0.85,
+                "accuracy": 0.88
+            }
+        ],
+        "period_hours": hours
+    }
+
+@app.get("/api/business-metrics/projects")
+async def get_projects(project_id: Optional[str] = None, hours: int = 24):
+    """获取项目指标"""
+    return {
+        "total_projects": 5,
+        "active_projects": 3,
+        "projects": [
+            {
+                "id": "proj_1",
+                "name": "客户评论分类",
+                "status": "active",
+                "progress": 0.65,
+                "annotations": 1500
+            },
+            {
+                "id": "proj_2",
+                "name": "命名实体识别",
+                "status": "active",
+                "progress": 0.42,
+                "annotations": 890
+            }
+        ],
+        "period_hours": hours
+    }
+
+# 任务统计端点
+@app.get("/api/tasks/stats")
+async def get_task_stats():
+    """获取任务统计"""
+    return {
+        "total": 25,
+        "pending": 8,
+        "in_progress": 12,
+        "completed": 4,
+        "cancelled": 1,
+        "overdue": 2
+    }
+
+# ============================================================================
+# Label Studio 集成 API 端点
+# ============================================================================
+
+# Label Studio 项目和任务的内存存储
+label_studio_projects = {}
+label_studio_tasks = {}
+label_studio_annotations = {}
+
+# Label Studio 数据模型
+class LabelStudioProject(BaseModel):
+    title: str
+    description: Optional[str] = None
+    label_config: Optional[str] = None
+    sampling: Optional[str] = "Sequential sampling"
+    show_instruction: Optional[bool] = True
+    show_skip_button: Optional[bool] = True
+    enable_empty_annotation: Optional[bool] = True
+
+class LabelStudioTask(BaseModel):
+    data: Dict
+    project: Optional[int] = None
+
+class LabelStudioAnnotation(BaseModel):
+    result: List[Dict]
+    task: int
+    completed_by: Optional[int] = None
+
+# Label Studio 项目管理
+@app.get("/api/label-studio/projects")
+async def get_label_studio_projects(authorization: Optional[str] = Header(None)):
+    """获取所有 Label Studio 项目"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    return {
+        "count": len(label_studio_projects),
+        "results": list(label_studio_projects.values())
+    }
+
+@app.post("/api/label-studio/projects")
+async def create_label_studio_project(
+    project: LabelStudioProject,
+    authorization: Optional[str] = Header(None)
+):
+    """创建新的 Label Studio 项目"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    project_id = len(label_studio_projects) + 1
+    project_data = {
+        "id": project_id,
+        "title": project.title,
+        "description": project.description or "",
+        "label_config": project.label_config or get_default_label_config(),
+        "created_at": datetime.now().isoformat(),
+        "updated_at": datetime.now().isoformat(),
+        "sampling": project.sampling,
+        "show_instruction": project.show_instruction,
+        "show_skip_button": project.show_skip_button,
+        "enable_empty_annotation": project.enable_empty_annotation,
+        "task_number": 0,
+        "total_annotations_number": 0,
+        "total_predictions_number": 0,
+        "num_tasks_with_annotations": 0,
+        "useful_annotation_number": 0,
+        "ground_truth_number": 0,
+        "skipped_annotations_number": 0,
+        "created_by": {
+            "id": 1,
+            "email": "admin@test.com",
+            "first_name": "Admin",
+            "last_name": "User"
+        }
+    }
+    
+    label_studio_projects[project_id] = project_data
+    return project_data
+
+@app.get("/api/label-studio/projects/{project_id}")
+async def get_label_studio_project(
+    project_id: int,
+    authorization: Optional[str] = Header(None)
+):
+    """获取指定的 Label Studio 项目"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    if project_id not in label_studio_projects:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    return label_studio_projects[project_id]
+
+@app.patch("/api/label-studio/projects/{project_id}")
+async def update_label_studio_project(
+    project_id: int,
+    project: Dict,
+    authorization: Optional[str] = Header(None)
+):
+    """更新 Label Studio 项目"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    if project_id not in label_studio_projects:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    label_studio_projects[project_id].update(project)
+    label_studio_projects[project_id]["updated_at"] = datetime.now().isoformat()
+    
+    return label_studio_projects[project_id]
+
+@app.delete("/api/label-studio/projects/{project_id}")
+async def delete_label_studio_project(
+    project_id: int,
+    authorization: Optional[str] = Header(None)
+):
+    """删除 Label Studio 项目"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    if project_id not in label_studio_projects:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    del label_studio_projects[project_id]
+    return {"message": "Project deleted successfully"}
+
+# Label Studio 任务管理
+@app.get("/api/label-studio/projects/{project_id}/tasks")
+async def get_label_studio_tasks(
+    project_id: int,
+    authorization: Optional[str] = Header(None)
+):
+    """获取项目的所有任务"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    if project_id not in label_studio_projects:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    project_tasks = [
+        task for task in label_studio_tasks.values()
+        if task.get("project") == project_id
+    ]
+    
+    return {
+        "count": len(project_tasks),
+        "results": project_tasks
+    }
+
+@app.post("/api/label-studio/projects/{project_id}/tasks")
+async def create_label_studio_task(
+    project_id: int,
+    task: LabelStudioTask,
+    authorization: Optional[str] = Header(None)
+):
+    """创建新的标注任务"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    if project_id not in label_studio_projects:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    task_id = len(label_studio_tasks) + 1
+    task_data = {
+        "id": task_id,
+        "data": task.data,
+        "project": project_id,
+        "created_at": datetime.now().isoformat(),
+        "updated_at": datetime.now().isoformat(),
+        "is_labeled": False,
+        "annotations": [],
+        "predictions": [],
+        "file_upload": None,
+        "storage_filename": None
+    }
+    
+    label_studio_tasks[task_id] = task_data
+    
+    # 更新项目的任务计数
+    label_studio_projects[project_id]["task_number"] += 1
+    
+    return task_data
+
+@app.get("/api/label-studio/tasks/{task_id}")
+async def get_label_studio_task(
+    task_id: int,
+    authorization: Optional[str] = Header(None)
+):
+    """获取指定的标注任务"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    if task_id not in label_studio_tasks:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    return label_studio_tasks[task_id]
+
+# Label Studio 标注管理
+@app.get("/api/label-studio/projects/{project_id}/tasks/{task_id}/annotations")
+async def get_task_annotations(
+    project_id: int,
+    task_id: int,
+    authorization: Optional[str] = Header(None)
+):
+    """获取任务的所有标注"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    task_annotations = [
+        ann for ann in label_studio_annotations.values()
+        if ann.get("task") == task_id
+    ]
+    
+    return {
+        "count": len(task_annotations),
+        "results": task_annotations
+    }
+
+@app.post("/api/label-studio/projects/{project_id}/tasks/{task_id}/annotations")
+async def create_annotation(
+    project_id: int,
+    task_id: int,
+    annotation: LabelStudioAnnotation,
+    authorization: Optional[str] = Header(None)
+):
+    """创建新的标注"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    if project_id not in label_studio_projects:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    if task_id not in label_studio_tasks:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    # 从 token 中获取用户信息
+    token = authorization.replace("Bearer ", "")
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username = payload.get("username")
+    except:
+        username = "unknown"
+    
+    annotation_id = len(label_studio_annotations) + 1
+    annotation_data = {
+        "id": annotation_id,
+        "result": annotation.result,
+        "task": task_id,
+        "project": project_id,
+        "completed_by": annotation.completed_by or 1,
+        "created_at": datetime.now().isoformat(),
+        "updated_at": datetime.now().isoformat(),
+        "lead_time": 0,
+        "was_cancelled": False,
+        "ground_truth": False,
+        "created_username": username,
+        "created_ago": "刚刚"
+    }
+    
+    label_studio_annotations[annotation_id] = annotation_data
+    
+    # 更新任务状态
+    if task_id in label_studio_tasks:
+        label_studio_tasks[task_id]["is_labeled"] = True
+        label_studio_tasks[task_id]["annotations"].append(annotation_data)
+    
+    # 更新项目统计
+    if project_id in label_studio_projects:
+        label_studio_projects[project_id]["total_annotations_number"] += 1
+        label_studio_projects[project_id]["useful_annotation_number"] += 1
+    
+    return annotation_data
+
+@app.patch("/api/label-studio/annotations/{annotation_id}")
+async def update_annotation(
+    annotation_id: int,
+    annotation: Dict,
+    authorization: Optional[str] = Header(None)
+):
+    """更新标注"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    if annotation_id not in label_studio_annotations:
+        raise HTTPException(status_code=404, detail="Annotation not found")
+    
+    label_studio_annotations[annotation_id].update(annotation)
+    label_studio_annotations[annotation_id]["updated_at"] = datetime.now().isoformat()
+    
+    return label_studio_annotations[annotation_id]
+
+@app.delete("/api/label-studio/annotations/{annotation_id}")
+async def delete_annotation(
+    annotation_id: int,
+    authorization: Optional[str] = Header(None)
+):
+    """删除标注"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    if annotation_id not in label_studio_annotations:
+        raise HTTPException(status_code=404, detail="Annotation not found")
+    
+    annotation = label_studio_annotations[annotation_id]
+    task_id = annotation.get("task")
+    project_id = annotation.get("project")
+    
+    del label_studio_annotations[annotation_id]
+    
+    # 更新项目统计
+    if project_id and project_id in label_studio_projects:
+        label_studio_projects[project_id]["total_annotations_number"] -= 1
+        label_studio_projects[project_id]["useful_annotation_number"] -= 1
+    
+    return {"message": "Annotation deleted successfully"}
+
+# 辅助函数：获取默认的标注配置
+def get_default_label_config():
+    """返回默认的 Label Studio 配置（文本分类）"""
+    return """<View>
+  <Text name="text" value="$text"/>
+  <Choices name="sentiment" toName="text" choice="single">
+    <Choice value="Positive"/>
+    <Choice value="Negative"/>
+    <Choice value="Neutral"/>
+  </Choices>
+</View>"""
+
+# 初始化一些示例数据
+def initialize_label_studio_data():
+    """初始化示例 Label Studio 数据"""
+    # 创建示例项目
+    project_data = {
+        "id": 1,
+        "title": "客户评论情感分析",
+        "description": "对客户评论进行情感分类标注",
+        "label_config": get_default_label_config(),
+        "created_at": datetime.now().isoformat(),
+        "updated_at": datetime.now().isoformat(),
+        "sampling": "Sequential sampling",
+        "show_instruction": True,
+        "show_skip_button": True,
+        "enable_empty_annotation": True,
+        "task_number": 3,
+        "total_annotations_number": 1,
+        "total_predictions_number": 0,
+        "num_tasks_with_annotations": 1,
+        "useful_annotation_number": 1,
+        "ground_truth_number": 0,
+        "skipped_annotations_number": 0,
+        "created_by": {
+            "id": 1,
+            "email": "admin@test.com",
+            "first_name": "Admin",
+            "last_name": "User"
+        }
+    }
+    label_studio_projects[1] = project_data
+    
+    # 创建示例任务
+    sample_texts = [
+        "这个产品非常好用，我很满意！",
+        "质量太差了，完全不值这个价格。",
+        "还可以吧，没有特别惊艳也没有特别失望。"
+    ]
+    
+    for i, text in enumerate(sample_texts, 1):
+        task_data = {
+            "id": i,
+            "data": {"text": text},
+            "project": 1,
+            "created_at": datetime.now().isoformat(),
+            "updated_at": datetime.now().isoformat(),
+            "is_labeled": i == 1,  # 第一个任务已标注
+            "annotations": [],
+            "predictions": [],
+            "file_upload": None,
+            "storage_filename": None
+        }
+        label_studio_tasks[i] = task_data
+    
+    # 为第一个任务创建示例标注
+    annotation_data = {
+        "id": 1,
+        "result": [
+            {
+                "value": {"choices": ["Positive"]},
+                "from_name": "sentiment",
+                "to_name": "text",
+                "type": "choices"
+            }
+        ],
+        "task": 1,
+        "project": 1,
+        "completed_by": 1,
+        "created_at": datetime.now().isoformat(),
+        "updated_at": datetime.now().isoformat(),
+        "lead_time": 15.5,
+        "was_cancelled": False,
+        "ground_truth": False,
+        "created_username": "annotator_test",
+        "created_ago": "2小时前"
+    }
+    label_studio_annotations[1] = annotation_data
+    label_studio_tasks[1]["annotations"].append(annotation_data)
+
+# 在应用启动时初始化数据
+initialize_label_studio_data()
 
 if __name__ == "__main__":
     import uvicorn

@@ -8,10 +8,18 @@ export interface LoginCredentials {
 export interface LoginResponse {
   access_token: string;
   token_type: string;
-  user_id: string;
-  username: string;
-  role: string;
-  tenant_id: string;
+  message?: string;
+  tenant_id?: string;
+  user?: {
+    username: string;
+    email: string;
+    full_name: string;
+    role: string;
+  };
+  // Legacy flat format (for backward compatibility)
+  user_id?: string;
+  username?: string;
+  role?: string;
 }
 
 export interface RegisterData {
@@ -30,15 +38,15 @@ export interface AuthState {
 }
 
 export interface User {
-  id: string;
+  id?: string;
   username: string;
   email: string;
   full_name?: string;
-  role: UserRole;
-  tenant_id: string;
-  is_active: boolean;
+  role: string;
+  tenant_id?: string;
+  is_active?: boolean;
   last_login?: string;
-  created_at: string;
+  created_at?: string;
 }
 
 export type UserRole = 'admin' | 'manager' | 'annotator' | 'viewer';

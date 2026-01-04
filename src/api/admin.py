@@ -17,7 +17,7 @@ from src.database.models import DocumentModel, TaskModel, BillingRecordModel
 from src.system.integration import system_manager
 from src.system.monitoring import metrics_collector, health_monitor
 from src.system.error_handler import error_handler
-from src.security.models import User, UserRole, AccessLog
+from src.security.models import UserModel, UserRole, AuditAction
 from src.billing.service import BillingSystem
 from src.admin.config_manager import config_manager
 from sqlalchemy.orm import Session

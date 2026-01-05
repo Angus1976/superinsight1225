@@ -1,0 +1,112 @@
+{
+  "validation_timestamp": "2026-01-05T16:02:51.808985",
+  "test_project_id": "validation_test_project",
+  "total_tests": 17,
+  "passed_tests": 17,
+  "failed_tests": 0,
+  "success_rate": 100.0,
+  "test_results": [
+    {
+      "test_name": "模式分析流程",
+      "success": true,
+      "details": "成功分析 3 条数据，发现 4 个模式",
+      "timestamp": "2026-01-05T16:02:51.800410"
+    },
+    {
+      "test_name": "规则提取流程",
+      "success": true,
+      "details": "成功提取 1 个业务规则",
+      "timestamp": "2026-01-05T16:02:51.800480"
+    },
+    {
+      "test_name": "可视化生成流程",
+      "success": true,
+      "details": "成功生成 insight_dashboard 可视化",
+      "timestamp": "2026-01-05T16:02:51.800497"
+    },
+    {
+      "test_name": "变化检测流程",
+      "success": true,
+      "details": "成功检测 2 个变化",
+      "timestamp": "2026-01-05T16:02:51.800515"
+    },
+    {
+      "test_name": "导出功能流程",
+      "success": true,
+      "details": "成功导出 51200 字节数据",
+      "timestamp": "2026-01-05T16:02:51.800540"
+    },
+    {
+      "test_name": "API端点可用性",
+      "success": true,
+      "details": "统计API正常: 规则 15, 模式 8, 洞察 5",
+      "timestamp": "2026-01-05T16:02:51.800560"
+    },
+    {
+      "test_name": "数据一致性验证",
+      "success": true,
+      "details": "数据结构一致: 规则 1, 模式 1, 洞察 1",
+      "timestamp": "2026-01-05T16:02:51.800584"
+    },
+    {
+      "test_name": "规则管理功能",
+      "success": true,
+      "details": "规则管理正常: 置信度更新 True, 状态切换完成",
+      "timestamp": "2026-01-05T16:02:51.800621"
+    },
+    {
+      "test_name": "通知结构验证",
+      "success": true,
+      "details": "通知结构正确: business_insight",
+      "timestamp": "2026-01-05T16:02:51.800631"
+    },
+    {
+      "test_name": "通知过滤功能",
+      "success": true,
+      "details": "过滤正常: 高优先级 1, 最近 1",
+      "timestamp": "2026-01-05T16:02:51.800643"
+    },
+    {
+      "test_name": "通知历史记录",
+      "success": true,
+      "details": "历史记录正常: 记录ID notif_1767600171.800647, 历史条数 1",
+      "timestamp": "2026-01-05T16:02:51.800658"
+    },
+    {
+      "test_name": "JSON导出功能",
+      "success": true,
+      "details": "导出成功: 文件大小 51200 字节",
+      "timestamp": "2026-01-05T16:02:51.800677"
+    },
+    {
+      "test_name": "CSV导出功能",
+      "success": true,
+      "details": "导出成功: 文件大小 51200 字节",
+      "timestamp": "2026-01-05T16:02:51.800690"
+    },
+    {
+      "test_name": "规则应用功能",
+      "success": true,
+      "details": "应用成功: 1 个规则",
+      "timestamp": "2026-01-05T16:02:51.800733"
+    },
+    {
+      "test_name": "导出导入一致性",
+      "success": true,
+      "details": "一致性验证通过: 规则 1, 模式 1, 洞察 1",
+      "timestamp": "2026-01-05T16:02:51.800758"
+    },
+    {
+      "test_name": "模式分析性能",
+      "success": true,
+      "details": "性能达标: 0.01秒处理500条数据，发现 5 个模式",
+      "timestamp": "2026-01-05T16:02:51.808779"
+    },
+    {
+      "test_name": "并发操作性能",
+      "success": true,
+      "details": "并发性能达标: 0.00秒完成3个并发请求",
+      "timestamp": "2026-01-05T16:02:51.808936"
+    }
+  ]
+}

@@ -13,6 +13,7 @@ const RegisterPage = lazy(() => import('@/pages/Register'));
 const DashboardPage = lazy(() => import('@/pages/Dashboard'));
 const TasksPage = lazy(() => import('@/pages/Tasks'));
 const TaskDetailPage = lazy(() => import('@/pages/Tasks/TaskDetail'));
+const TaskAnnotatePage = lazy(() => import('@/pages/Tasks/TaskAnnotate'));
 const BillingPage = lazy(() => import('@/pages/Billing'));
 const SettingsPage = lazy(() => import('@/pages/Settings'));
 const AdminPage = lazy(() => import('@/pages/Admin'));
@@ -61,6 +62,10 @@ export const routes: RouteObject[] = [
       {
         path: 'tasks/:id',
         element: withSuspense(TaskDetailPage),
+      },
+      {
+        path: 'tasks/:id/annotate',
+        element: withSuspense(TaskAnnotatePage),
       },
       {
         path: 'billing',

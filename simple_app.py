@@ -18,6 +18,9 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 from i18n import get_manager, set_language, get_translation
+from business_logic.api import router as business_logic_router
+from business_logic.websocket import router as business_logic_ws_router
+from business_logic.notifications import router as notifications_router
 
 # 初始化翻译管理器（默认中文）
 i18n_manager = get_manager(default_language='zh')
@@ -37,6 +40,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# 注册业务逻辑路由
+app.include_router(business_logic_router)
+app.include_router(business_logic_ws_router)
+app.include_router(notifications_router)
 
 # 语言中间件
 @app.middleware("http")

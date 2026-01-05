@@ -13,6 +13,7 @@ export const ROUTES = {
   TASKS: '/tasks',
   TASK_DETAIL: '/tasks/:id',
   TASK_CREATE: '/tasks/create',
+  TASK_ANNOTATE: '/tasks/:id/annotate',
 
   // Billing (Phase 2)
   BILLING: '/billing',

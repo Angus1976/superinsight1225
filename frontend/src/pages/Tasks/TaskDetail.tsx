@@ -24,6 +24,7 @@ import {
   ClockCircleOutlined,
 } from '@ant-design/icons';
 import { useTask, useUpdateTask, useDeleteTask } from '@/hooks/useTask';
+import { usePermissions } from '@/hooks/usePermissions';
 import type { TaskStatus, TaskPriority } from '@/types';
 
 const statusColorMap: Record<TaskStatus, string> = {
@@ -44,6 +45,7 @@ const TaskDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: task, isLoading, error } = useTask(id || '');
+  const { annotation: annotationPerms } = usePermissions();
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
 
@@ -212,19 +214,42 @@ const TaskDetailPage: React.FC = () => {
             <p>{currentTask.description || 'No description provided.'}</p>
           </Card>
 
-          {/* Label Studio Integration */}
+          {/* 标注集成 */}
           {currentTask.label_studio_project_id && (
-            <Card title="Label Studio" style={{ marginBottom: 16 }}>
+            <Card title="数据标注" style={{ marginBottom: 16 }}>
               <Alert
-                message="Label Studio Integration"
+                message="标注功能"
                 description={
                   <div>
                     <p>
-                      Project ID: <strong>{currentTask.label_studio_project_id}</strong>
+                      项目 ID: <strong>{currentTask.label_studio_project_id}</strong>
                     </p>
-                    <Button type="primary" style={{ marginTop: 8 }}>
-                      Open in Label Studio
-                    </Button>
+                    <p>标注类型: <strong>{currentTask.annotation_type}</strong></p>
+                    <Space style={{ marginTop: 12 }}>
+                      {annotationPerms.canView ? (
+                        <Button 
+                          type="primary" 
+                          size="large"
+                          onClick={() => navigate(`/tasks/${id}/annotate`)}
+                        >
+                          开始标注
+                        </Button>
+                      ) : (
+                        <Button 
+                          type="primary" 
+                          size="large"
+                          disabled
+                          title="您没有标注权限"
+                        >
+                          开始标注
+                        </Button>
+                      )}
+                      <Button 
+                        onClick={() => window.open(`/api/label-studio/projects/${currentTask.label_studio_project_id}`, '_blank')}
+                      >
+                        在新窗口中打开
+                      </Button>
+                    </Space>
                   </div>
                 }
                 type="info"

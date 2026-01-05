@@ -15,12 +15,20 @@ import sys
 import os
 
 # 添加 src 目录到 Python 路径
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+src_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'src')
+if src_path not in sys.path:
+    sys.path.insert(0, src_path)
 
-from i18n import get_manager, set_language, get_translation
-from business_logic.api import router as business_logic_router
-from business_logic.websocket import router as business_logic_ws_router
-from business_logic.notifications import router as notifications_router
+# 确保可以导入所有必要的模块
+try:
+    from i18n import get_manager, set_language, get_translation
+    from business_logic.api import router as business_logic_router
+    from business_logic.websocket import router as business_logic_ws_router
+    from business_logic.notifications import router as notifications_router
+except ImportError as e:
+    print(f"导入错误: {e}")
+    print(f"Python路径: {sys.path}")
+    raise
 
 # 初始化翻译管理器（默认中文）
 i18n_manager = get_manager(default_language='zh')

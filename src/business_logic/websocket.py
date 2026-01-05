@@ -320,9 +320,6 @@ async def cleanup_disconnected_connections():
         except Exception as e:
             logger.error(f"清理连接时出错: {e}")
 
-# 启动清理任务
-asyncio.create_task(cleanup_disconnected_connections())
-
 # 导出主要组件
 __all__ = [
     'websocket_manager',

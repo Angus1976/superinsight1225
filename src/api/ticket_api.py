@@ -20,6 +20,8 @@ from src.ticket.models import (
 from src.ticket.tracker import TicketTracker
 from src.ticket.dispatcher import TicketDispatcher
 from src.ticket.sla_monitor import SLAMonitor
+from src.ticket.intelligent_creator import IntelligentTicketCreator, TicketTemplate
+from src.ticket.classification_manager import TicketClassificationManager
 
 
 router = APIRouter(prefix="/api/v1/tickets", tags=["tickets"])
@@ -28,6 +30,8 @@ router = APIRouter(prefix="/api/v1/tickets", tags=["tickets"])
 _ticket_tracker: Optional[TicketTracker] = None
 _ticket_dispatcher: Optional[TicketDispatcher] = None
 _sla_monitor: Optional[SLAMonitor] = None
+_intelligent_creator: Optional[IntelligentTicketCreator] = None
+_classification_manager: Optional[TicketClassificationManager] = None
 
 
 def get_ticket_tracker() -> TicketTracker:
@@ -52,6 +56,22 @@ def get_sla_monitor() -> SLAMonitor:
     if _sla_monitor is None:
         _sla_monitor = SLAMonitor()
     return _sla_monitor
+
+
+def get_intelligent_creator() -> IntelligentTicketCreator:
+    """Get or create intelligent creator instance."""
+    global _intelligent_creator
+    if _intelligent_creator is None:
+        _intelligent_creator = IntelligentTicketCreator()
+    return _intelligent_creator
+
+
+def get_classification_manager() -> TicketClassificationManager:
+    """Get or create classification manager instance."""
+    global _classification_manager
+    if _classification_manager is None:
+        _classification_manager = TicketClassificationManager()
+    return _classification_manager
 
 
 # ==================== Request/Response Models ====================
@@ -103,12 +123,57 @@ class DispatchTicketRequest(BaseModel):
     """Request model for dispatching a ticket."""
     auto_assign: bool = Field(True, description="Whether to auto-assign")
     preferred_user: Optional[str] = Field(None, description="Preferred user to assign")
+    policy_name: str = Field("default", description="Dispatch policy to use")
+
+
+class UpdateDispatchPolicyRequest(BaseModel):
+    """Request model for updating dispatch policy."""
+    skill_weight: Optional[float] = Field(None, ge=0.0, le=1.0, description="Skill weight")
+    capacity_weight: Optional[float] = Field(None, ge=0.0, le=1.0, description="Capacity weight")
+    performance_weight: Optional[float] = Field(None, ge=0.0, le=1.0, description="Performance weight")
+    min_skill_threshold: Optional[float] = Field(None, ge=0.0, le=1.0, description="Min skill threshold")
+    max_workload_ratio: Optional[float] = Field(None, ge=0.0, le=1.0, description="Max workload ratio")
+    enabled: Optional[bool] = Field(None, description="Whether policy is enabled")
 
 
 class EscalateTicketRequest(BaseModel):
     """Request model for escalating a ticket."""
     reason: str = Field("Manual escalation", description="Reason for escalation")
     escalated_by: str = Field(..., description="User escalating the ticket")
+
+
+class CreateFromQualityIssueRequest(BaseModel):
+    """Request model for creating ticket from quality issue."""
+    quality_issue_id: UUID = Field(..., description="Quality issue ID")
+    task_id: Optional[UUID] = Field(None, description="Related task ID")
+    tenant_id: Optional[str] = Field(None, description="Tenant identifier")
+    created_by: Optional[str] = Field(None, description="User creating the ticket")
+    auto_classify: bool = Field(True, description="Whether to auto-classify")
+    template: Optional[str] = Field(None, description="Specific template to use")
+
+
+class CreateFromTemplateRequest(BaseModel):
+    """Request model for creating ticket from template."""
+    template: str = Field(..., description="Template name")
+    title: str = Field(..., min_length=1, max_length=200, description="Ticket title")
+    description: Optional[str] = Field(None, description="Custom description")
+    priority: Optional[str] = Field(None, description="Custom priority")
+    tenant_id: Optional[str] = Field(None, description="Tenant identifier")
+    created_by: Optional[str] = Field(None, description="User creating the ticket")
+    custom_variables: Optional[Dict[str, Any]] = Field(None, description="Template variables")
+
+
+class ApplyTagsRequest(BaseModel):
+    """Request model for applying tags."""
+    tags: List[str] = Field(..., description="Tags to apply")
+    applied_by: str = Field(..., description="User applying tags")
+    replace_existing: bool = Field(False, description="Replace existing tags")
+
+
+class RemoveTagsRequest(BaseModel):
+    """Request model for removing tags."""
+    tags: List[str] = Field(..., description="Tags to remove")
+    removed_by: str = Field(..., description="User removing tags")
 
 
 class TicketResponse(BaseModel):
@@ -347,8 +412,9 @@ async def dispatch_ticket(
     try:
         dispatcher = get_ticket_dispatcher()
 
-        assigned_to = await dispatcher.dispatch_ticket(
+        assigned_to = await dispatcher.dispatch_ticket_optimized(
             ticket_id,
+            policy_name=request.policy_name,
             auto_assign=request.auto_assign,
             preferred_user=request.preferred_user
         )
@@ -362,7 +428,8 @@ async def dispatch_ticket(
         return {
             "status": "success",
             "assigned_to": assigned_to,
-            "message": f"Ticket dispatched to {assigned_to}"
+            "policy_used": request.policy_name,
+            "message": f"Ticket dispatched to {assigned_to} using {request.policy_name} policy"
         }
 
     except Exception as e:
@@ -370,7 +437,11 @@ async def dispatch_ticket(
 
 
 @router.get("/{ticket_id}/recommendations", response_model=Dict[str, Any])
-async def get_dispatch_recommendations(ticket_id: UUID) -> Dict[str, Any]:
+async def get_dispatch_recommendations(
+    ticket_id: UUID,
+    policy_name: str = Query("default", description="Dispatch policy to use"),
+    include_scores: bool = Query(True, description="Include detailed scores")
+) -> Dict[str, Any]:
     """
     Get dispatch recommendations for a ticket.
 
@@ -379,16 +450,123 @@ async def get_dispatch_recommendations(ticket_id: UUID) -> Dict[str, Any]:
     try:
         dispatcher = get_ticket_dispatcher()
 
-        recommendations = await dispatcher.get_dispatch_recommendations(ticket_id)
+        recommendations = await dispatcher.get_dispatch_recommendations_advanced(
+            ticket_id,
+            policy_name=policy_name,
+            include_scores=include_scores
+        )
 
         return {
             "status": "success",
             "ticket_id": str(ticket_id),
+            "policy_used": policy_name,
             "recommendations": recommendations
         }
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get recommendations: {str(e)}")
+
+
+# ==================== Enhanced Dispatch Management Endpoints ====================
+
+@router.get("/dispatch/policies", response_model=Dict[str, Any])
+async def get_dispatch_policies() -> Dict[str, Any]:
+    """
+    Get available dispatch policies.
+    
+    Returns all configured dispatch policies with their settings.
+    """
+    try:
+        dispatcher = get_ticket_dispatcher()
+        policies = await dispatcher.get_dispatch_policies()
+        
+        return {
+            "status": "success",
+            "policies": policies
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get policies: {str(e)}")
+
+
+@router.put("/dispatch/policies/{policy_name}", response_model=Dict[str, Any])
+async def update_dispatch_policy(
+    policy_name: str,
+    request: UpdateDispatchPolicyRequest
+) -> Dict[str, Any]:
+    """
+    Update a dispatch policy configuration.
+    
+    Modifies the specified policy with new settings.
+    """
+    try:
+        dispatcher = get_ticket_dispatcher()
+        
+        # Filter out None values
+        updates = {k: v for k, v in request.dict().items() if v is not None}
+        
+        if not updates:
+            raise HTTPException(status_code=400, detail="No updates provided")
+        
+        success = await dispatcher.update_dispatch_policy(policy_name, **updates)
+        
+        if not success:
+            raise HTTPException(status_code=404, detail="Policy not found")
+        
+        return {
+            "status": "success",
+            "message": f"Policy {policy_name} updated successfully",
+            "updates": updates
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update policy: {str(e)}")
+
+
+@router.get("/dispatch/rules", response_model=Dict[str, Any])
+async def get_dispatch_rules() -> Dict[str, Any]:
+    """
+    Get dispatch rules configuration.
+    
+    Returns all configured dispatch rules and their settings.
+    """
+    try:
+        dispatcher = get_ticket_dispatcher()
+        rules = await dispatcher.get_dispatch_rules()
+        
+        return {
+            "status": "success",
+            "rules": rules
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get rules: {str(e)}")
+
+
+@router.get("/dispatch/effectiveness", response_model=Dict[str, Any])
+async def evaluate_dispatch_effectiveness(
+    tenant_id: Optional[str] = Query(None, description="Filter by tenant"),
+    days: int = Query(30, ge=1, le=365, description="Analysis period in days")
+) -> Dict[str, Any]:
+    """
+    Evaluate dispatch effectiveness and get optimization suggestions.
+    
+    Analyzes dispatch performance and provides actionable insights.
+    """
+    try:
+        dispatcher = get_ticket_dispatcher()
+        
+        evaluation = await dispatcher.evaluate_dispatch_effectiveness(tenant_id, days)
+        
+        return {
+            "status": "success",
+            "evaluation": evaluation
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to evaluate effectiveness: {str(e)}")
 
 
 # ==================== Status Management Endpoints ====================
@@ -738,6 +916,328 @@ async def run_monitoring_cycle(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to run monitoring: {str(e)}")
+
+
+# ==================== Intelligent Creation Endpoints ====================
+
+@router.post("/create-from-quality-issue", response_model=Dict[str, Any])
+async def create_ticket_from_quality_issue(
+    request: CreateFromQualityIssueRequest
+) -> Dict[str, Any]:
+    """
+    Create a ticket automatically from a quality issue.
+    
+    Uses intelligent classification and template selection.
+    """
+    try:
+        creator = get_intelligent_creator()
+        
+        # Mock quality issue for demonstration (in real implementation, fetch from database)
+        from src.models.quality_issue import QualityIssue, IssueSeverity
+        quality_issue = QualityIssue(
+            id=request.quality_issue_id,
+            task_id=request.task_id or request.quality_issue_id,
+            issue_type="annotation_error",
+            description="Sample quality issue for ticket creation",
+            severity=IssueSeverity.MEDIUM
+        )
+        
+        template = TicketTemplate(request.template) if request.template else None
+        
+        ticket_id = await creator.create_ticket_from_quality_issue(
+            quality_issue=quality_issue,
+            tenant_id=request.tenant_id,
+            created_by=request.created_by,
+            auto_classify=request.auto_classify,
+            template=template
+        )
+        
+        if not ticket_id:
+            raise HTTPException(status_code=500, detail="Failed to create ticket")
+        
+        return {
+            "status": "success",
+            "ticket_id": str(ticket_id),
+            "message": "Ticket created from quality issue"
+        }
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid request: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create ticket: {str(e)}")
+
+
+@router.post("/create-from-template", response_model=Dict[str, Any])
+async def create_ticket_from_template(
+    request: CreateFromTemplateRequest
+) -> Dict[str, Any]:
+    """
+    Create a ticket using a specific template.
+    
+    Applies template configuration and variables.
+    """
+    try:
+        creator = get_intelligent_creator()
+        
+        template = TicketTemplate(request.template)
+        priority = TicketPriority(request.priority) if request.priority else None
+        
+        ticket_id = await creator.create_ticket_from_template(
+            template=template,
+            title=request.title,
+            description=request.description,
+            priority=priority,
+            tenant_id=request.tenant_id,
+            created_by=request.created_by,
+            custom_variables=request.custom_variables
+        )
+        
+        if not ticket_id:
+            raise HTTPException(status_code=500, detail="Failed to create ticket")
+        
+        return {
+            "status": "success",
+            "ticket_id": str(ticket_id),
+            "message": f"Ticket created using {request.template} template"
+        }
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Invalid template or priority: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create ticket: {str(e)}")
+
+
+@router.get("/templates", response_model=Dict[str, Any])
+async def get_available_templates() -> Dict[str, Any]:
+    """
+    Get available ticket templates.
+    
+    Returns template configurations and usage information.
+    """
+    try:
+        creator = get_intelligent_creator()
+        templates = await creator.get_available_templates()
+        
+        return {
+            "status": "success",
+            "templates": templates
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get templates: {str(e)}")
+
+
+# ==================== Classification and Tagging Endpoints ====================
+
+@router.post("/{ticket_id}/classify", response_model=Dict[str, Any])
+async def classify_ticket(
+    ticket_id: UUID,
+    auto_apply: bool = Query(True, description="Auto-apply suggested tags")
+) -> Dict[str, Any]:
+    """
+    Classify a ticket and suggest tags.
+    
+    Uses intelligent classification rules to suggest appropriate tags.
+    """
+    try:
+        # Get ticket details
+        tracker = get_ticket_tracker()
+        ticket = await tracker.get_ticket(ticket_id)
+        
+        if not ticket:
+            raise HTTPException(status_code=404, detail="Ticket not found")
+        
+        # Classify ticket
+        classifier = get_classification_manager()
+        suggested_tags = await classifier.classify_ticket(
+            ticket_id=ticket_id,
+            title=ticket.title,
+            description=ticket.description,
+            ticket_type=ticket.ticket_type,
+            priority=ticket.priority,
+            auto_apply=auto_apply
+        )
+        
+        return {
+            "status": "success",
+            "ticket_id": str(ticket_id),
+            "suggested_tags": suggested_tags,
+            "auto_applied": auto_apply
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to classify ticket: {str(e)}")
+
+
+@router.post("/{ticket_id}/tags", response_model=Dict[str, Any])
+async def apply_tags(
+    ticket_id: UUID,
+    request: ApplyTagsRequest
+) -> Dict[str, Any]:
+    """
+    Apply tags to a ticket.
+    
+    Adds or replaces tags on the specified ticket.
+    """
+    try:
+        classifier = get_classification_manager()
+        
+        success = await classifier.apply_tags(
+            ticket_id=ticket_id,
+            tags=request.tags,
+            applied_by=request.applied_by,
+            replace_existing=request.replace_existing
+        )
+        
+        if not success:
+            raise HTTPException(status_code=404, detail="Ticket not found or tagging failed")
+        
+        return {
+            "status": "success",
+            "message": f"Applied {len(request.tags)} tags to ticket"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to apply tags: {str(e)}")
+
+
+@router.delete("/{ticket_id}/tags", response_model=Dict[str, Any])
+async def remove_tags(
+    ticket_id: UUID,
+    request: RemoveTagsRequest
+) -> Dict[str, Any]:
+    """
+    Remove tags from a ticket.
+    
+    Removes specified tags from the ticket.
+    """
+    try:
+        classifier = get_classification_manager()
+        
+        success = await classifier.remove_tags(
+            ticket_id=ticket_id,
+            tags=request.tags,
+            removed_by=request.removed_by
+        )
+        
+        if not success:
+            raise HTTPException(status_code=404, detail="Ticket not found or tag removal failed")
+        
+        return {
+            "status": "success",
+            "message": f"Removed {len(request.tags)} tags from ticket"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to remove tags: {str(e)}")
+
+
+@router.get("/{ticket_id}/tags", response_model=Dict[str, Any])
+async def get_ticket_tags(ticket_id: UUID) -> Dict[str, Any]:
+    """
+    Get tags for a ticket.
+    
+    Returns all tags currently applied to the ticket.
+    """
+    try:
+        classifier = get_classification_manager()
+        tags = await classifier.get_ticket_tags(ticket_id)
+        
+        return {
+            "status": "success",
+            "ticket_id": str(ticket_id),
+            "tags": tags
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get tags: {str(e)}")
+
+
+@router.get("/search/by-tags", response_model=Dict[str, Any])
+async def search_tickets_by_tags(
+    tags: List[str] = Query(..., description="Tags to search for"),
+    match_all: bool = Query(False, description="Match all tags (AND) vs any tag (OR)"),
+    tenant_id: Optional[str] = Query(None, description="Filter by tenant"),
+    limit: int = Query(50, ge=1, le=200, description="Max results"),
+    offset: int = Query(0, ge=0, description="Pagination offset")
+) -> Dict[str, Any]:
+    """
+    Search tickets by tags.
+    
+    Finds tickets that match the specified tag criteria.
+    """
+    try:
+        classifier = get_classification_manager()
+        
+        ticket_ids, total = await classifier.search_tickets_by_tags(
+            tags=tags,
+            match_all=match_all,
+            tenant_id=tenant_id,
+            limit=limit,
+            offset=offset
+        )
+        
+        return {
+            "status": "success",
+            "ticket_ids": [str(tid) for tid in ticket_ids],
+            "total": total,
+            "search_criteria": {
+                "tags": tags,
+                "match_all": match_all,
+                "tenant_id": tenant_id
+            }
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to search by tags: {str(e)}")
+
+
+@router.get("/tags/statistics", response_model=Dict[str, Any])
+async def get_tag_statistics(
+    tenant_id: Optional[str] = Query(None, description="Filter by tenant")
+) -> Dict[str, Any]:
+    """
+    Get tag usage statistics.
+    
+    Returns statistics about tag usage across tickets.
+    """
+    try:
+        classifier = get_classification_manager()
+        stats = await classifier.get_tag_statistics(tenant_id)
+        
+        return {
+            "status": "success",
+            "statistics": stats
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get statistics: {str(e)}")
+
+
+@router.get("/tags/hierarchy", response_model=Dict[str, Any])
+async def get_tag_hierarchy() -> Dict[str, Any]:
+    """
+    Get tag hierarchy and metadata.
+    
+    Returns the complete tag hierarchy with categories and descriptions.
+    """
+    try:
+        classifier = get_classification_manager()
+        hierarchy = await classifier.get_tag_hierarchy()
+        
+        return {
+            "status": "success",
+            "hierarchy": hierarchy
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get hierarchy: {str(e)}")
 
 
 # ==================== Health Check ====================

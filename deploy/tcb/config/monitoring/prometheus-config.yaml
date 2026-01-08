@@ -1,0 +1,166 @@
+# SuperInsight TCB Prometheus Configuration
+# Enterprise-grade monitoring with multi-tenant isolation
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'superinsight-tcb'
+    environment: '${ENVIRONMENT}'
+
+# Rule files for alerting
+rule_files:
+  - "alert_rules.yml"
+  - "recording_rules.yml"
+
+# Scrape configurations
+scrape_configs:
+  # =============================================================================
+  # SuperInsight Application Metrics
+  # =============================================================================
+  - job_name: 'superinsight-api'
+    static_configs:
+      - targets: ['localhost:8000']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+    honor_labels: true
+    params:
+      format: ['prometheus']
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'superinsight-api'
+      - target_label: service
+        replacement: 'api'
+      - target_label: environment
+        replacement: '${ENVIRONMENT}'
+
+  - job_name: 'label-studio'
+    static_configs:
+      - targets: ['localhost:8080']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'label-studio'
+      - target_label: service
+        replacement: 'label-studio'
+      - target_label: environment
+        replacement: '${ENVIRONMENT}'
+
+  # =============================================================================
+  # Infrastructure Metrics
+  # =============================================================================
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['localhost:9100']
+    scrape_interval: 15s
+    relabel_configs:
+      - target_label: service
+        replacement: 'node'
+      - target_label: environment
+        replacement: '${ENVIRONMENT}'
+
+  - job_name: 'postgres-exporter'
+    static_configs:
+      - targets: ['localhost:9187']
+    scrape_interval: 30s
+    relabel_configs:
+      - target_label: service
+        replacement: 'postgres'
+      - target_label: environment
+        replacement: '${ENVIRONMENT}'
+
+  - job_name: 'redis-exporter'
+    static_configs:
+      - targets: ['localhost:9121']
+    scrape_interval: 30s
+    relabel_configs:
+      - target_label: service
+        replacement: 'redis'
+      - target_label: environment
+        replacement: '${ENVIRONMENT}'
+
+  # =============================================================================
+  # TCB Platform Metrics
+  # =============================================================================
+  - job_name: 'tcb-metrics'
+    static_configs:
+      - targets: ['localhost:9090']
+    metrics_path: '/tcb/metrics'
+    scrape_interval: 60s
+    honor_labels: true
+    relabel_configs:
+      - target_label: service
+        replacement: 'tcb-platform'
+      - target_label: environment
+        replacement: '${ENVIRONMENT}'
+
+  # =============================================================================
+  # Business Logic Metrics
+  # =============================================================================
+  - job_name: 'business-metrics'
+    static_configs:
+      - targets: ['localhost:8000']
+    metrics_path: '/api/v1/metrics/business'
+    scrape_interval: 30s
+    params:
+      tenant: ['${DEFAULT_TENANT_ID}']
+    relabel_configs:
+      - target_label: service
+        replacement: 'business'
+      - target_label: environment
+        replacement: '${ENVIRONMENT}'
+
+  # =============================================================================
+  # Multi-Tenant Metrics (Dynamic Discovery)
+  # =============================================================================
+  - job_name: 'tenant-metrics'
+    http_sd_configs:
+      - url: 'http://localhost:8000/api/v1/discovery/tenants'
+        refresh_interval: 300s
+    relabel_configs:
+      - source_labels: [__meta_tenant_id]
+        target_label: tenant_id
+      - source_labels: [__meta_tenant_name]
+        target_label: tenant_name
+      - target_label: service
+        replacement: 'tenant'
+      - target_label: environment
+        replacement: '${ENVIRONMENT}'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - localhost:9093
+      path_prefix: /alertmanager
+      scheme: http
+      timeout: 10s
+
+# Remote write configuration for long-term storage
+remote_write:
+  - url: "https://prometheus-remote-write.${TCB_REGION}.tencentcloudapi.com/api/v1/write"
+    queue_config:
+      max_samples_per_send: 1000
+      max_shards: 200
+      capacity: 2500
+    write_relabel_configs:
+      - source_labels: [environment]
+        regex: '${ENVIRONMENT}'
+        action: keep
+    basic_auth:
+      username: '${TCB_SECRET_ID}'
+      password: '${TCB_SECRET_KEY}'
+
+# Storage configuration
+storage:
+  tsdb:
+    retention.time: 15d
+    retention.size: 10GB
+    wal-compression: true
+    no-lockfile: false

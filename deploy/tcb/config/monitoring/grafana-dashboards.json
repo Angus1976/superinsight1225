@@ -1,0 +1,382 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "SuperInsight TCB Enterprise Dashboard",
+    "tags": ["superinsight", "tcb", "enterprise"],
+    "timezone": "browser",
+    "refresh": "30s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "System Overview",
+        "type": "stat",
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 0},
+        "targets": [
+          {
+            "expr": "up{job=\"superinsight-api\"}",
+            "legendFormat": "API Status",
+            "refId": "A"
+          },
+          {
+            "expr": "up{job=\"label-studio\"}",
+            "legendFormat": "Label Studio Status",
+            "refId": "B"
+          },
+          {
+            "expr": "pg_up",
+            "legendFormat": "PostgreSQL Status",
+            "refId": "C"
+          },
+          {
+            "expr": "redis_up",
+            "legendFormat": "Redis Status",
+            "refId": "D"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": 0},
+                {"color": "green", "value": 1}
+              ]
+            },
+            "mappings": [
+              {"options": {"0": {"text": "DOWN"}}, "type": "value"},
+              {"options": {"1": {"text": "UP"}}, "type": "value"}
+            ]
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "Request Rate",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+        "targets": [
+          {
+            "expr": "rate(http_requests_total[5m])",
+            "legendFormat": "{{method}} {{status}}",
+            "refId": "A"
+          }
+        ],
+        "yAxes": [
+          {"label": "Requests/sec", "min": 0},
+          {"show": false}
+        ],
+        "xAxis": {"show": true}
+      },
+      {
+        "id": 3,
+        "title": "Response Time (95th percentile)",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "95th percentile",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "50th percentile",
+            "refId": "B"
+          }
+        ],
+        "yAxes": [
+          {"label": "Seconds", "min": 0},
+          {"show": false}
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Error Rate",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+        "targets": [
+          {
+            "expr": "rate(http_requests_total{status=~\"4..|5..\"}[5m]) / rate(http_requests_total[5m]) * 100",
+            "legendFormat": "Error Rate %",
+            "refId": "A"
+          }
+        ],
+        "yAxes": [
+          {"label": "Percentage", "min": 0, "max": 100},
+          {"show": false}
+        ],
+        "thresholds": [
+          {"value": 5, "colorMode": "critical", "op": "gt"}
+        ]
+      },
+      {
+        "id": 5,
+        "title": "CPU Usage",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+        "targets": [
+          {
+            "expr": "100 - (avg by(instance) (irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+            "legendFormat": "CPU Usage %",
+            "refId": "A"
+          }
+        ],
+        "yAxes": [
+          {"label": "Percentage", "min": 0, "max": 100},
+          {"show": false}
+        ],
+        "thresholds": [
+          {"value": 80, "colorMode": "critical", "op": "gt"}
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Memory Usage",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24},
+        "targets": [
+          {
+            "expr": "(node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100",
+            "legendFormat": "Memory Usage %",
+            "refId": "A"
+          }
+        ],
+        "yAxes": [
+          {"label": "Percentage", "min": 0, "max": 100},
+          {"show": false}
+        ],
+        "thresholds": [
+          {"value": 85, "colorMode": "critical", "op": "gt"}
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Database Connections",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24},
+        "targets": [
+          {
+            "expr": "pg_stat_database_numbackends",
+            "legendFormat": "Active Connections",
+            "refId": "A"
+          },
+          {
+            "expr": "pg_settings_max_connections",
+            "legendFormat": "Max Connections",
+            "refId": "B"
+          }
+        ],
+        "yAxes": [
+          {"label": "Connections", "min": 0},
+          {"show": false}
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Multi-Tenant Metrics",
+        "type": "table",
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 32},
+        "targets": [
+          {
+            "expr": "tenant_resource_usage_percent",
+            "legendFormat": "{{tenant_id}}",
+            "refId": "A",
+            "format": "table"
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {"Time": true},
+              "indexByName": {},
+              "renameByName": {
+                "tenant_id": "Tenant ID",
+                "Value": "Resource Usage %"
+              }
+            }
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "displayMode": "color-background",
+              "align": "center"
+            },
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": 0},
+                {"color": "yellow", "value": 70},
+                {"color": "red", "value": 90}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 9,
+        "title": "TCB Platform Metrics",
+        "type": "stat",
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 40},
+        "targets": [
+          {
+            "expr": "tcb_running_instances",
+            "legendFormat": "Running Instances",
+            "refId": "A"
+          },
+          {
+            "expr": "tcb_desired_instances",
+            "legendFormat": "Desired Instances",
+            "refId": "B"
+          },
+          {
+            "expr": "rate(tcb_cold_starts_total[5m]) / rate(tcb_requests_total[5m]) * 100",
+            "legendFormat": "Cold Start Rate %",
+            "refId": "C"
+          },
+          {
+            "expr": "tcb_billing_cost",
+            "legendFormat": "Hourly Cost (CNY)",
+            "refId": "D"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "custom": {"displayMode": "list"},
+            "unit": "short"
+          },
+          "overrides": [
+            {
+              "matcher": {"id": "byName", "options": "Cold Start Rate %"},
+              "properties": [
+                {"id": "unit", "value": "percent"},
+                {"id": "thresholds", "value": {
+                  "steps": [
+                    {"color": "green", "value": 0},
+                    {"color": "yellow", "value": 10},
+                    {"color": "red", "value": 20}
+                  ]
+                }}
+              ]
+            },
+            {
+              "matcher": {"id": "byName", "options": "Hourly Cost (CNY)"},
+              "properties": [
+                {"id": "unit", "value": "currencyCNY"}
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": 10,
+        "title": "Business Metrics",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 48},
+        "targets": [
+          {
+            "expr": "rate(annotation_attempts_total[5m])",
+            "legendFormat": "Annotation Rate",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(annotation_failures_total[5m]) / rate(annotation_attempts_total[5m]) * 100",
+            "legendFormat": "Failure Rate %",
+            "refId": "B"
+          }
+        ],
+        "yAxes": [
+          {"label": "Rate/Percentage", "min": 0},
+          {"show": false}
+        ]
+      },
+      {
+        "id": 11,
+        "title": "Quality Score Trend",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 48},
+        "targets": [
+          {
+            "expr": "avg_over_time(quality_score[10m])",
+            "legendFormat": "Quality Score",
+            "refId": "A"
+          }
+        ],
+        "yAxes": [
+          {"label": "Score", "min": 0, "max": 1},
+          {"show": false}
+        ],
+        "thresholds": [
+          {"value": 0.7, "colorMode": "critical", "op": "lt"}
+        ]
+      },
+      {
+        "id": 12,
+        "title": "Security Events",
+        "type": "logs",
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 56},
+        "targets": [
+          {
+            "expr": "{job=\"superinsight-api\"} |= \"security\" | json",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "showTime": true,
+          "showLabels": false,
+          "showCommonLabels": false,
+          "wrapLogMessage": false,
+          "prettifyLogMessage": false,
+          "enableLogDetails": true,
+          "dedupStrategy": "none",
+          "sortOrder": "Descending"
+        }
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "environment",
+          "type": "query",
+          "query": "label_values(up, environment)",
+          "current": {"text": "All", "value": "$__all"},
+          "includeAll": true,
+          "multi": true
+        },
+        {
+          "name": "tenant",
+          "type": "query",
+          "query": "label_values(tenant_resource_usage_percent, tenant_id)",
+          "current": {"text": "All", "value": "$__all"},
+          "includeAll": true,
+          "multi": true
+        }
+      ]
+    },
+    "annotations": {
+      "list": [
+        {
+          "name": "Deployments",
+          "datasource": "prometheus",
+          "expr": "deployment_timestamp",
+          "titleFormat": "Deployment",
+          "textFormat": "Version: {{version}}",
+          "iconColor": "blue"
+        },
+        {
+          "name": "Alerts",
+          "datasource": "prometheus",
+          "expr": "ALERTS{alertstate=\"firing\"}",
+          "titleFormat": "{{alertname}}",
+          "textFormat": "{{summary}}",
+          "iconColor": "red"
+        }
+      ]
+    }
+  }
+}

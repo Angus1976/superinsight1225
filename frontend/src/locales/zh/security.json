@@ -1,0 +1,109 @@
+{
+  "desensitization": {
+    "name": "规则名称",
+    "description": "描述",
+    "dataType": "数据类型",
+    "method": "脱敏方法",
+    "fieldPattern": "字段模式",
+    "priority": "优先级",
+    "status": "状态",
+    "appliedTables": "应用表",
+    "appliedFields": "应用字段",
+    "maskPattern": "掩码模式",
+    "replaceValue": "替换值",
+    "enabled": "启用",
+    "createRule": "创建规则",
+    "editRule": "编辑规则",
+    "deleteConfirm": "删除脱敏规则",
+    "deleteWarning": "确定要删除规则 '{name}' 吗？此操作无法撤销。",
+    "namePlaceholder": "请输入规则名称",
+    "descriptionPlaceholder": "请输入规则描述",
+    "dataTypePlaceholder": "请选择数据类型",
+    "methodPlaceholder": "请选择脱敏方法",
+    "appliedTablesPlaceholder": "请选择应用此规则的表",
+    "appliedFieldsPlaceholder": "请选择应用此规则的字段"
+  },
+  "permissions": {
+    "table": "表",
+    "field": "字段",
+    "dataType": "数据类型",
+    "roles": "角色",
+    "audit": "审计",
+    "viewDetails": "查看详情",
+    "details": "权限详情",
+    "basicInfo": "基本信息",
+    "rolePermissions": "角色权限",
+    "role": "角色",
+    "read": "读取",
+    "write": "写入",
+    "export": "导出",
+    "sensitivity": "敏感级别"
+  },
+  "audit": {
+    "timestamp": "时间戳",
+    "user": "用户",
+    "action": "操作",
+    "resource": "资源",
+    "riskLevel": "风险级别",
+    "ipAddress": "IP地址"
+  },
+  "compliance": {
+    "gdpr": "GDPR合规报告",
+    "ccpa": "CCPA合规报告",
+    "pipl": "PIPL合规报告",
+    "custom": "自定义合规报告",
+    "period": "报告周期",
+    "totalRecords": "总记录数",
+    "sensitiveRecords": "敏感记录数",
+    "accessCount": "访问次数",
+    "violations": "违规次数",
+    "score": "合规分数",
+    "occurrences": "次",
+    "recommendations": "建议"
+  },
+  "stats": {
+    "totalRules": "规则总数",
+    "activeRules": "活跃规则",
+    "protectedFields": "受保护字段",
+    "auditLogs": "审计日志"
+  },
+  "tabs": {
+    "rules": "脱敏规则",
+    "permissions": "字段权限",
+    "audit": "审计日志",
+    "compliance": "合规报告"
+  },
+  "dataTypes": {
+    "email": "邮箱",
+    "phone": "电话号码",
+    "idcard": "身份证",
+    "bankcard": "银行卡",
+    "name": "姓名",
+    "address": "地址",
+    "custom": "自定义"
+  },
+  "methods": {
+    "mask": "掩码",
+    "hash": "哈希",
+    "encrypt": "加密",
+    "replace": "替换",
+    "remove": "移除"
+  },
+  "sensitivity": {
+    "public": "公开",
+    "internal": "内部",
+    "confidential": "机密",
+    "secret": "绝密"
+  },
+  "actions": {
+    "read": "读取",
+    "write": "写入",
+    "export": "导出",
+    "delete": "删除"
+  },
+  "risk": {
+    "low": "低",
+    "medium": "中",
+    "high": "高"
+  }
+}

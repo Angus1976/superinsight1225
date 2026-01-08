@@ -72,6 +72,27 @@ export function useAuth() {
     }
   }, [token, currentTenant, setAuth, clearAuth]);
 
+  const switchTenant = useCallback(
+    async (tenantId: string) => {
+      try {
+        const response = await authService.switchTenant(tenantId);
+        
+        // Update auth state with new tenant context
+        const updatedUser = { ...user!, tenant_id: tenantId };
+        const newTenant = { id: tenantId, name: tenantId };
+        
+        setAuth(updatedUser, response.access_token, newTenant);
+        
+        return true;
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to switch tenant';
+        message.error(errorMessage);
+        throw error;
+      }
+    },
+    [user, setAuth]
+  );
+
   return {
     user,
     token,
@@ -80,5 +101,6 @@ export function useAuth() {
     login,
     logout,
     checkAuth,
+    switchTenant,
   };
 }

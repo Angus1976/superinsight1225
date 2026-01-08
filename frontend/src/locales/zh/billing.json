@@ -1,0 +1,77 @@
+{
+  "title": "账单管理",
+  "records": "账单记录",
+  "details": "账单详情",
+  "export": "导出",
+  "period": "账期",
+  "amount": "金额",
+  "status": "状态",
+  "dueDate": "到期日期",
+  "paidAt": "支付时间",
+  "actions": "操作",
+  "view": "查看",
+  "download": "下载",
+  "downloadInvoice": "下载发票",
+  "close": "关闭",
+  "totalSpending": "总支出",
+  "averageMonthly": "月均支出",
+  "pendingPayment": "待付款",
+  "description": "描述",
+  "category": "类别",
+  "quantity": "数量",
+  "unitPrice": "单价",
+  "status": {
+    "pending": "待付款",
+    "paid": "已付款",
+    "overdue": "逾期",
+    "cancelled": "已取消"
+  },
+  "categories": {
+    "annotation": "标注服务",
+    "augmentation": "数据增强",
+    "storage": "数据存储",
+    "api": "API调用",
+    "other": "其他"
+  },
+  "workHours": {
+    "title": "工时统计",
+    "ranking": "工时排行榜",
+    "totalHours": "总工时",
+    "billableHours": "计费工时",
+    "efficiency": "效率",
+    "quality": "质量",
+    "trend": "趋势",
+    "reward": "奖励",
+    "topPerformers": "优秀员工",
+    "avgEfficiency": "平均效率"
+  },
+  "analysis": {
+    "title": "成本分析",
+    "trends": "成本趋势",
+    "byProject": "项目成本",
+    "byDepartment": "部门成本",
+    "forecast": "成本预测"
+  },
+  "reports": {
+    "title": "账单报表",
+    "generate": "生成报表",
+    "export": "导出报表",
+    "type": "报表类型",
+    "dateRange": "日期范围",
+    "summary": "概览报表",
+    "detailed": "详细报表",
+    "userBreakdown": "用户分析",
+    "projectBreakdown": "项目分析",
+    "departmentBreakdown": "部门分析",
+    "trendAnalysis": "趋势分析"
+  },
+  "messages": {
+    "exportStarted": "导出已开始，文件将很快下载。",
+    "reportGenerated": "报表生成成功",
+    "reportFailed": "报表生成失败",
+    "exportSuccess": "报表导出成功",
+    "noData": "暂无数据",
+    "loadingData": "加载数据中...",
+    "retryLoad": "重试"
+  }
+}

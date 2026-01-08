@@ -14,6 +14,8 @@ import {
   Row,
   Col,
   Statistic,
+  Tabs,
+  Badge,
 } from 'antd';
 import {
   ArrowLeftOutlined,
@@ -22,9 +24,14 @@ import {
   PlayCircleOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
+  BarChartOutlined,
+  TeamOutlined,
+  FileTextOutlined,
 } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import { useTask, useUpdateTask, useDeleteTask } from '@/hooks/useTask';
 import { usePermissions } from '@/hooks/usePermissions';
+import { ProgressTracker } from '@/components/Tasks';
 import type { TaskStatus, TaskPriority } from '@/types';
 
 const statusColorMap: Record<TaskStatus, string> = {
@@ -44,6 +51,7 @@ const priorityColorMap: Record<TaskPriority, string> = {
 const TaskDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation(['tasks', 'common']);
   const { data: task, isLoading, error } = useTask(id || '');
   const { annotation: annotationPerms } = usePermissions();
   const updateTask = useUpdateTask();
@@ -87,6 +95,16 @@ const TaskDetailPage: React.FC = () => {
     }
   };
 
+  const handleProgressUpdate = (progressData: any) => {
+    console.log('Progress updated:', progressData);
+    // Handle real-time progress updates
+  };
+
+  const handleAnomalyDetected = (anomaly: any) => {
+    console.warn('Anomaly detected:', anomaly);
+    // Handle anomaly detection (show notifications, alerts, etc.)
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -99,12 +117,225 @@ const TaskDetailPage: React.FC = () => {
     return (
       <Alert
         type="error"
-        message="Failed to load task"
-        description="Could not fetch task details. Please try again."
+        message={t('tasks.failedToLoadTask')}
+        description={t('tasks.failedToLoadTaskDescription')}
         showIcon
       />
     );
   }
+
+  const tabItems = [
+    {
+      key: 'overview',
+      label: (
+        <Space>
+          <FileTextOutlined />
+          {t('tasks.overview')}
+        </Space>
+      ),
+      children: (
+        <Row gutter={16}>
+          {/* Main Content */}
+          <Col xs={24} lg={16}>
+            {/* Progress Card */}
+            <Card title={t('tasks.progress')} style={{ marginBottom: 16 }}>
+              <Row gutter={16}>
+                <Col span={8}>
+                  <Statistic
+                    title={t('tasks.totalItems')}
+                    value={currentTask.total_items}
+                    prefix={<ClockCircleOutlined />}
+                  />
+                </Col>
+                <Col span={8}>
+                  <Statistic
+                    title={t('tasks.completed')}
+                    value={currentTask.completed_items}
+                    valueStyle={{ color: '#52c41a' }}
+                    prefix={<CheckCircleOutlined />}
+                  />
+                </Col>
+                <Col span={8}>
+                  <Statistic
+                    title={t('tasks.remaining')}
+                    value={currentTask.total_items - currentTask.completed_items}
+                    valueStyle={{ color: '#faad14' }}
+                  />
+                </Col>
+              </Row>
+              <Divider />
+              <div>
+                <span style={{ marginBottom: 8, display: 'block' }}>
+                  {t('tasks.overallProgress')}: {currentTask.progress}%
+                </span>
+                <Progress
+                  percent={currentTask.progress}
+                  status={currentTask.status === 'completed' ? 'success' : 'active'}
+                  strokeWidth={12}
+                />
+              </div>
+            </Card>
+
+            {/* Description */}
+            <Card title={t('tasks.description')} style={{ marginBottom: 16 }}>
+              <p>{currentTask.description || t('tasks.noDescription')}</p>
+            </Card>
+
+            {/* 标注集成 */}
+            {currentTask.label_studio_project_id && (
+              <Card title={t('tasks.dataAnnotation')} style={{ marginBottom: 16 }}>
+                <Alert
+                  message={t('tasks.annotationFunction')}
+                  description={
+                    <div>
+                      <p>
+                        {t('tasks.projectId')}: <strong>{currentTask.label_studio_project_id}</strong>
+                      </p>
+                      <p>{t('tasks.annotationType')}: <strong>{currentTask.annotation_type}</strong></p>
+                      <Space style={{ marginTop: 12 }}>
+                        {annotationPerms.canView ? (
+                          <Button 
+                            type="primary" 
+                            size="large"
+                            onClick={() => navigate(`/tasks/${id}/annotate`)}
+                          >
+                            {t('tasks.startAnnotation')}
+                          </Button>
+                        ) : (
+                          <Button 
+                            type="primary" 
+                            size="large"
+                            disabled
+                            title={t('tasks.noAnnotationPermission')}
+                          >
+                            {t('tasks.startAnnotation')}
+                          </Button>
+                        )}
+                        <Button 
+                          onClick={() => window.open(`/api/label-studio/projects/${currentTask.label_studio_project_id}`, '_blank')}
+                        >
+                          {t('tasks.openInNewWindow')}
+                        </Button>
+                      </Space>
+                    </div>
+                  }
+                  type="info"
+                  showIcon
+                />
+              </Card>
+            )}
+          </Col>
+
+          {/* Sidebar */}
+          <Col xs={24} lg={8}>
+            {/* Details */}
+            <Card title={t('tasks.details')} style={{ marginBottom: 16 }}>
+              <Descriptions column={1} size="small">
+                <Descriptions.Item label={t('tasks.annotationType')}>
+                  {currentTask.annotation_type.replace('_', ' ')}
+                </Descriptions.Item>
+                <Descriptions.Item label={t('tasks.assignee')}>
+                  {currentTask.assignee_name || t('tasks.unassigned')}
+                </Descriptions.Item>
+                <Descriptions.Item label={t('tasks.createdBy')}>{currentTask.created_by}</Descriptions.Item>
+                <Descriptions.Item label={t('tasks.createdAt')}>
+                  {new Date(currentTask.created_at).toLocaleString()}
+                </Descriptions.Item>
+                <Descriptions.Item label={t('tasks.updatedAt')}>
+                  {new Date(currentTask.updated_at).toLocaleString()}
+                </Descriptions.Item>
+                <Descriptions.Item label={t('tasks.dueDate')}>
+                  {currentTask.due_date
+                    ? new Date(currentTask.due_date).toLocaleDateString()
+                    : t('tasks.noDueDate')}
+                </Descriptions.Item>
+              </Descriptions>
+            </Card>
+
+            {/* Activity Timeline */}
+            <Card title={t('tasks.activity')}>
+              <Timeline
+                items={[
+                  {
+                    color: 'green',
+                    children: (
+                      <>
+                        <p style={{ marginBottom: 4 }}>{t('tasks.taskCreated')}</p>
+                        <small style={{ color: '#999' }}>
+                          {new Date(currentTask.created_at).toLocaleString()}
+                        </small>
+                      </>
+                    ),
+                  },
+                  {
+                    color: 'blue',
+                    children: (
+                      <>
+                        <p style={{ marginBottom: 4 }}>{t('tasks.assignedTo', { name: currentTask.assignee_name })}</p>
+                        <small style={{ color: '#999' }}>
+                          {new Date(currentTask.updated_at).toLocaleString()}
+                        </small>
+                      </>
+                    ),
+                  },
+                  {
+                    color: 'gray',
+                    children: (
+                      <>
+                        <p style={{ marginBottom: 4 }}>{t('tasks.progressUpdated', { progress: 65 })}</p>
+                        <small style={{ color: '#999' }}>
+                          {new Date(currentTask.updated_at).toLocaleString()}
+                        </small>
+                      </>
+                    ),
+                  },
+                ]}
+              />
+            </Card>
+          </Col>
+        </Row>
+      ),
+    },
+    {
+      key: 'progress',
+      label: (
+        <Space>
+          <BarChartOutlined />
+          {t('tasks.progressTracking')}
+          <Badge count={currentTask.progress < 100 ? 'Active' : 'Complete'} />
+        </Space>
+      ),
+      children: (
+        <ProgressTracker
+          taskId={currentTask.id}
+          realtime={true}
+          showTimeEntries={true}
+          showMilestones={true}
+          onProgressUpdate={handleProgressUpdate}
+          onAnomalyDetected={handleAnomalyDetected}
+        />
+      ),
+    },
+    {
+      key: 'team',
+      label: (
+        <Space>
+          <TeamOutlined />
+          {t('tasks.teamCollaboration')}
+        </Space>
+      ),
+      children: (
+        <Card>
+          <Alert
+            type="info"
+            message={t('tasks.teamCollaborationFeature')}
+            description={t('tasks.teamCollaborationDescription')}
+            showIcon
+          />
+        </Card>
+      ),
+    },
+  ];
 
   return (
     <div>
@@ -112,7 +343,7 @@ const TaskDetailPage: React.FC = () => {
       <Card style={{ marginBottom: 16 }}>
         <Space style={{ marginBottom: 16 }}>
           <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/tasks')}>
-            Back to Tasks
+            {t('tasks.backToTasks')}
           </Button>
         </Space>
 
@@ -127,10 +358,10 @@ const TaskDetailPage: React.FC = () => {
             <h2 style={{ marginBottom: 8 }}>{currentTask.name}</h2>
             <Space>
               <Tag color={statusColorMap[currentTask.status]}>
-                {currentTask.status.replace('_', ' ').toUpperCase()}
+                {t(`tasks.status${currentTask.status.charAt(0).toUpperCase() + currentTask.status.slice(1).replace('_', '')}`)}
               </Tag>
               <Tag color={priorityColorMap[currentTask.priority]}>
-                {currentTask.priority.toUpperCase()}
+                {t(`tasks.priority${currentTask.priority.charAt(0).toUpperCase() + currentTask.priority.slice(1)}`)}
               </Tag>
               {currentTask.tags?.map((tag) => (
                 <Tag key={tag}>{tag}</Tag>
@@ -145,7 +376,7 @@ const TaskDetailPage: React.FC = () => {
                 icon={<PlayCircleOutlined />}
                 onClick={() => handleStatusChange('in_progress')}
               >
-                Start Task
+                {t('tasks.startTask')}
               </Button>
             )}
             {currentTask.status === 'in_progress' && (
@@ -154,179 +385,23 @@ const TaskDetailPage: React.FC = () => {
                 icon={<CheckCircleOutlined />}
                 onClick={() => handleStatusChange('completed')}
               >
-                Complete Task
+                {t('tasks.completeTask')}
               </Button>
             )}
             <Button icon={<EditOutlined />} onClick={() => navigate(`/tasks/${id}/edit`)}>
-              Edit
+              {t('tasks.edit')}
             </Button>
             <Button danger icon={<DeleteOutlined />} onClick={handleDelete}>
-              Delete
+              {t('tasks.delete')}
             </Button>
           </Space>
         </div>
       </Card>
 
-      <Row gutter={16}>
-        {/* Main Content */}
-        <Col xs={24} lg={16}>
-          {/* Progress Card */}
-          <Card title="Progress" style={{ marginBottom: 16 }}>
-            <Row gutter={16}>
-              <Col span={8}>
-                <Statistic
-                  title="Total Items"
-                  value={currentTask.total_items}
-                  prefix={<ClockCircleOutlined />}
-                />
-              </Col>
-              <Col span={8}>
-                <Statistic
-                  title="Completed"
-                  value={currentTask.completed_items}
-                  valueStyle={{ color: '#52c41a' }}
-                  prefix={<CheckCircleOutlined />}
-                />
-              </Col>
-              <Col span={8}>
-                <Statistic
-                  title="Remaining"
-                  value={currentTask.total_items - currentTask.completed_items}
-                  valueStyle={{ color: '#faad14' }}
-                />
-              </Col>
-            </Row>
-            <Divider />
-            <div>
-              <span style={{ marginBottom: 8, display: 'block' }}>
-                Overall Progress: {currentTask.progress}%
-              </span>
-              <Progress
-                percent={currentTask.progress}
-                status={currentTask.status === 'completed' ? 'success' : 'active'}
-                strokeWidth={12}
-              />
-            </div>
-          </Card>
-
-          {/* Description */}
-          <Card title="Description" style={{ marginBottom: 16 }}>
-            <p>{currentTask.description || 'No description provided.'}</p>
-          </Card>
-
-          {/* 标注集成 */}
-          {currentTask.label_studio_project_id && (
-            <Card title="数据标注" style={{ marginBottom: 16 }}>
-              <Alert
-                message="标注功能"
-                description={
-                  <div>
-                    <p>
-                      项目 ID: <strong>{currentTask.label_studio_project_id}</strong>
-                    </p>
-                    <p>标注类型: <strong>{currentTask.annotation_type}</strong></p>
-                    <Space style={{ marginTop: 12 }}>
-                      {annotationPerms.canView ? (
-                        <Button 
-                          type="primary" 
-                          size="large"
-                          onClick={() => navigate(`/tasks/${id}/annotate`)}
-                        >
-                          开始标注
-                        </Button>
-                      ) : (
-                        <Button 
-                          type="primary" 
-                          size="large"
-                          disabled
-                          title="您没有标注权限"
-                        >
-                          开始标注
-                        </Button>
-                      )}
-                      <Button 
-                        onClick={() => window.open(`/api/label-studio/projects/${currentTask.label_studio_project_id}`, '_blank')}
-                      >
-                        在新窗口中打开
-                      </Button>
-                    </Space>
-                  </div>
-                }
-                type="info"
-                showIcon
-              />
-            </Card>
-          )}
-        </Col>
-
-        {/* Sidebar */}
-        <Col xs={24} lg={8}>
-          {/* Details */}
-          <Card title="Details" style={{ marginBottom: 16 }}>
-            <Descriptions column={1} size="small">
-              <Descriptions.Item label="Annotation Type">
-                {currentTask.annotation_type.replace('_', ' ')}
-              </Descriptions.Item>
-              <Descriptions.Item label="Assignee">
-                {currentTask.assignee_name || 'Unassigned'}
-              </Descriptions.Item>
-              <Descriptions.Item label="Created By">{currentTask.created_by}</Descriptions.Item>
-              <Descriptions.Item label="Created At">
-                {new Date(currentTask.created_at).toLocaleString()}
-              </Descriptions.Item>
-              <Descriptions.Item label="Updated At">
-                {new Date(currentTask.updated_at).toLocaleString()}
-              </Descriptions.Item>
-              <Descriptions.Item label="Due Date">
-                {currentTask.due_date
-                  ? new Date(currentTask.due_date).toLocaleDateString()
-                  : 'No due date'}
-              </Descriptions.Item>
-            </Descriptions>
-          </Card>
-
-          {/* Activity Timeline */}
-          <Card title="Activity">
-            <Timeline
-              items={[
-                {
-                  color: 'green',
-                  children: (
-                    <>
-                      <p style={{ marginBottom: 4 }}>Task created</p>
-                      <small style={{ color: '#999' }}>
-                        {new Date(currentTask.created_at).toLocaleString()}
-                      </small>
-                    </>
-                  ),
-                },
-                {
-                  color: 'blue',
-                  children: (
-                    <>
-                      <p style={{ marginBottom: 4 }}>Assigned to {currentTask.assignee_name}</p>
-                      <small style={{ color: '#999' }}>
-                        {new Date(currentTask.updated_at).toLocaleString()}
-                      </small>
-                    </>
-                  ),
-                },
-                {
-                  color: 'gray',
-                  children: (
-                    <>
-                      <p style={{ marginBottom: 4 }}>Progress updated to 65%</p>
-                      <small style={{ color: '#999' }}>
-                        {new Date(currentTask.updated_at).toLocaleString()}
-                      </small>
-                    </>
-                  ),
-                },
-              ]}
-            />
-          </Card>
-        </Col>
-      </Row>
+      {/* Tabbed Content */}
+      <Card>
+        <Tabs defaultActiveKey="overview" items={tabItems} />
+      </Card>
     </div>
   );
 };

@@ -3,17 +3,42 @@
   "welcome": "Welcome back, {{name}}",
   "metrics": {
     "activeTasks": "Active Tasks",
+    "activeTasksSubtitle": "Currently active annotation tasks",
     "todayAnnotations": "Today's Annotations",
+    "todayAnnotationsSubtitle": "Annotations completed today",
     "totalCorpus": "Total Corpus",
+    "totalCorpusSubtitle": "Total corpus in the system",
     "totalBilling": "Total Billing",
+    "totalBillingSubtitle": "Total billing amount this month",
     "qualityScore": "Quality Score",
-    "completionRate": "Completion Rate"
+    "qualityScoreSubtitle": "Average annotation quality score",
+    "completionRate": "Completion Rate",
+    "completionRateSubtitle": "Task completion percentage",
+    "activeUsers": "Active Users",
+    "activeUsersSubtitle": "Currently online users",
+    "avgResponseTime": "Avg Response Time",
+    "avgResponseTimeSubtitle": "System average response time",
+    "target": "Target",
+    "avgQualityScore": "Avg Quality Score",
+    "avgCompletionRate": "Avg Completion Rate",
+    "avgRevisionRate": "Avg Revision Rate",
+    "totalWorkHours": "Total Work Hours",
+    "revisionRate": "Revision Rate",
+    "totalHours": "Total Hours",
+    "efficiency": "Efficiency",
+    "tasksCompleted": "Tasks Completed"
   },
   "charts": {
     "annotationTrend": "Annotation Trend",
     "qualityDistribution": "Quality Distribution",
     "userActivity": "User Activity",
-    "projectProgress": "Project Progress"
+    "projectProgress": "Project Progress",
+    "workTimeAnalysis": "Work Time Analysis",
+    "anomalyDetection": "Anomaly Detection",
+    "qualityTrend": "Quality Trend",
+    "lineChart": "Line Chart",
+    "areaChart": "Area Chart",
+    "knowledgeGraph": "Knowledge Graph"
   },
   "quickActions": {
     "title": "Quick Actions",
@@ -25,11 +50,65 @@
   "trends": {
     "increasing": "Increasing",
     "decreasing": "Decreasing",
-    "stable": "Stable"
+    "stable": "Stable",
+    "comparedToYesterday": "vs Yesterday",
+    "comparedToLastWeek": "vs Last Week",
+    "comparedToLastMonth": "vs Last Month",
+    "comparedToLastHour": "vs Last Hour"
   },
   "period": {
     "last24h": "Last 24 Hours",
     "last7d": "Last 7 Days",
     "last30d": "Last 30 Days"
+  },
+  "common": {
+    "refresh": "Refresh",
+    "lastUpdated": "Last Updated",
+    "error": "Error",
+    "warning": "Warning"
+  },
+  "errors": {
+    "dataLoadFailed": "Data Load Failed",
+    "backendConnection": "Unable to connect to backend server. Please ensure backend service is running."
+  },
+  "anomaly": {
+    "clickForDetails": "Click for details",
+    "value": "Anomaly Value"
+  },
+  "graph": {
+    "allCategories": "All Categories",
+    "dataCategory": "Data",
+    "businessCategory": "Business",
+    "aiCategory": "AI",
+    "platformCategory": "Platform",
+    "infrastructureCategory": "Infrastructure",
+    "userCategory": "User",
+    "forceLayout": "Force Layout",
+    "hierarchyLayout": "Hierarchy Layout",
+    "circularLayout": "Circular Layout",
+    "legend": "Legend",
+    "dataNodes": "Data Nodes",
+    "processNodes": "Process Nodes",
+    "systemNodes": "System Nodes",
+    "userNodes": "User Nodes",
+    "nodeDetails": "Node Details",
+    "nodeType": "Node Type",
+    "nodeCategory": "Node Category",
+    "nodeSize": "Node Size",
+    "nodeDescription": "Node Description",
+    "nodeProperties": "Node Properties",
+    "connectedNodes": "Connected Nodes"
+  },
+  "common": {
+    "refresh": "Refresh",
+    "lastUpdated": "Last Updated",
+    "error": "Error",
+    "warning": "Warning",
+    "fullscreen": "Fullscreen"
+  },
+  "tabs": {
+    "overview": "Overview",
+    "qualityReports": "Quality Reports",
+    "knowledgeGraph": "Knowledge Graph"
   }
 }

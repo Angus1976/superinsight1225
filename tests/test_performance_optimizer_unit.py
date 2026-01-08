@@ -404,7 +404,8 @@ class TestBatchProcessor:
 
         assert result.batch_id is not None
         assert result.processing_time_ms > 0
-        assert result.results == [10, 20, 30]
+        # Results may be in different order due to parallel processing
+        assert sorted(result.results) == [10, 20, 30]
 
     def test_batch_processor_shutdown(self, processor):
         """Test processor shutdown"""

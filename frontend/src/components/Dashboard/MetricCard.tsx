@@ -1,6 +1,7 @@
-// Metric card component
-import { Card, Statistic, Tooltip } from 'antd';
-import { ArrowUpOutlined, ArrowDownOutlined, MinusOutlined } from '@ant-design/icons';
+// Enhanced metric card component for enterprise dashboard
+import { Card, Statistic, Tooltip, Badge, Progress } from 'antd';
+import { ArrowUpOutlined, ArrowDownOutlined, MinusOutlined, ReloadOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import type { ReactNode } from 'react';
 
 interface MetricCardProps {
@@ -13,6 +14,15 @@ interface MetricCardProps {
   loading?: boolean;
   color?: string;
   icon?: ReactNode;
+  // Enhanced features for enterprise dashboard
+  subtitle?: string;
+  target?: number;
+  progress?: number;
+  status?: 'normal' | 'warning' | 'error' | 'success';
+  refreshable?: boolean;
+  onRefresh?: () => void;
+  lastUpdated?: Date;
+  extra?: ReactNode;
 }
 
 export const MetricCard: React.FC<MetricCardProps> = ({
@@ -25,7 +35,17 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   loading = false,
   color,
   icon,
+  subtitle,
+  target,
+  progress,
+  status = 'normal',
+  refreshable = false,
+  onRefresh,
+  lastUpdated,
+  extra,
 }) => {
+  const { t } = useTranslation('dashboard');
+
   const getTrendIcon = () => {
     if (trend === undefined || trend === 0) {
       return <MinusOutlined style={{ color: '#999' }} />;
@@ -41,44 +61,113 @@ export const MetricCard: React.FC<MetricCardProps> = ({
     return trend > 0 ? '#52c41a' : '#ff4d4f';
   };
 
-  return (
-    <Card loading={loading}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-        <Statistic
-          title={title}
-          value={value}
-          suffix={suffix}
-          prefix={prefix}
-          valueStyle={{ color }}
-        />
-        {icon && (
-          <div
-            style={{
-              width: 48,
-              height: 48,
-              borderRadius: '50%',
-              backgroundColor: color ? `${color}20` : '#f0f0f0',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 24,
-              color: color || '#1890ff',
-            }}
-          >
-            {icon}
-          </div>
-        )}
-      </div>
-      {trend !== undefined && (
-        <Tooltip title={trendLabel}>
-          <div style={{ marginTop: 8, color: getTrendColor() }}>
-            {getTrendIcon()}
-            <span style={{ marginLeft: 4 }}>
-              {Math.abs(trend).toFixed(1)}%
-            </span>
-          </div>
+  const getStatusColor = () => {
+    switch (status) {
+      case 'success':
+        return '#52c41a';
+      case 'warning':
+        return '#faad14';
+      case 'error':
+        return '#ff4d4f';
+      default:
+        return color || '#1890ff';
+    }
+  };
+
+  const cardExtra = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      {refreshable && (
+        <Tooltip title={t('common.refresh')}>
+          <ReloadOutlined
+            style={{ cursor: 'pointer', color: '#999' }}
+            onClick={onRefresh}
+          />
         </Tooltip>
       )}
-    </Card>
+      {extra}
+    </div>
+  );
+
+  return (
+    <Badge.Ribbon
+      text={status === 'error' ? t('common.error') : status === 'warning' ? t('common.warning') : undefined}
+      color={status === 'error' ? 'red' : status === 'warning' ? 'orange' : undefined}
+    >
+      <Card loading={loading} extra={cardExtra}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <div style={{ flex: 1 }}>
+            <Statistic
+              title={
+                <div>
+                  <div>{title}</div>
+                  {subtitle && (
+                    <div style={{ fontSize: '12px', color: '#999', marginTop: 2 }}>
+                      {subtitle}
+                    </div>
+                  )}
+                </div>
+              }
+              value={value}
+              suffix={suffix}
+              prefix={prefix}
+              valueStyle={{ color: getStatusColor() }}
+            />
+            
+            {/* Progress bar for targets */}
+            {progress !== undefined && target !== undefined && (
+              <div style={{ marginTop: 8 }}>
+                <Progress
+                  percent={Math.min((progress / target) * 100, 100)}
+                  size="small"
+                  strokeColor={getStatusColor()}
+                  showInfo={false}
+                />
+                <div style={{ fontSize: '12px', color: '#999', marginTop: 2 }}>
+                  {t('metrics.target')}: {target.toLocaleString()}{suffix}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {icon && (
+            <div
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: '50%',
+                backgroundColor: `${getStatusColor()}20`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 24,
+                color: getStatusColor(),
+              }}
+            >
+              {icon}
+            </div>
+          )}
+        </div>
+        
+        {/* Trend and last updated info */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+          {trend !== undefined && (
+            <Tooltip title={trendLabel}>
+              <div style={{ color: getTrendColor(), fontSize: '12px' }}>
+                {getTrendIcon()}
+                <span style={{ marginLeft: 4 }}>
+                  {Math.abs(trend).toFixed(1)}%
+                </span>
+              </div>
+            </Tooltip>
+          )}
+          
+          {lastUpdated && (
+            <div style={{ fontSize: '12px', color: '#999' }}>
+              {t('common.lastUpdated')}: {lastUpdated.toLocaleTimeString()}
+            </div>
+          )}
+        </div>
+      </Card>
+    </Badge.Ribbon>
   );
 };

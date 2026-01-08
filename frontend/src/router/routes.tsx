@@ -10,6 +10,8 @@ import { ROUTES } from '@/constants';
 // Lazy load pages
 const LoginPage = lazy(() => import('@/pages/Login'));
 const RegisterPage = lazy(() => import('@/pages/Register'));
+const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPassword'));
+const ResetPasswordPage = lazy(() => import('@/pages/ResetPassword'));
 const DashboardPage = lazy(() => import('@/pages/Dashboard'));
 const TasksPage = lazy(() => import('@/pages/Tasks'));
 const TaskDetailPage = lazy(() => import('@/pages/Tasks/TaskDetail'));
@@ -20,6 +22,7 @@ const AdminPage = lazy(() => import('@/pages/Admin'));
 const AugmentationPage = lazy(() => import('@/pages/Augmentation'));
 const QualityPage = lazy(() => import('@/pages/Quality'));
 const SecurityPage = lazy(() => import('@/pages/Security'));
+const DataSyncPage = lazy(() => import('@/pages/DataSync'));
 const NotFoundPage = lazy(() => import('@/pages/Error/404'));
 const ForbiddenPage = lazy(() => import('@/pages/Error/403'));
 const ServerErrorPage = lazy(() => import('@/pages/Error/500'));
@@ -38,6 +41,14 @@ export const routes: RouteObject[] = [
   {
     path: ROUTES.REGISTER,
     element: withSuspense(RegisterPage),
+  },
+  {
+    path: ROUTES.FORGOT_PASSWORD,
+    element: withSuspense(ForgotPasswordPage),
+  },
+  {
+    path: ROUTES.RESET_PASSWORD,
+    element: withSuspense(ResetPasswordPage),
   },
   {
     path: '/',
@@ -90,6 +101,10 @@ export const routes: RouteObject[] = [
       {
         path: 'security',
         element: withSuspense(SecurityPage),
+      },
+      {
+        path: 'data-sync',
+        element: withSuspense(DataSyncPage),
       },
     ],
   },

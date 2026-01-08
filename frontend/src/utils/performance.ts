@@ -472,3 +472,16 @@ export const performanceTiming = {
     performance.clearMeasures()
   },
 }
+/**
+ * Initialize Web Vitals reporting
+ * Call this function to start monitoring performance metrics
+ */
+export function reportWebVitals(onReport?: (metric: PerformanceMetric) => void): void {
+  // Start collecting Web Vitals
+  collectWebVitals(onReport)
+  
+  // Log initialization in development
+  if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') {
+    console.log('[Performance] Web Vitals monitoring initialized')
+  }
+}

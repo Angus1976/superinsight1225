@@ -1,0 +1,155 @@
+{
+  "title": "Data Synchronization Management",
+  "description": "Manage data sources, synchronization tasks, and security configurations for enterprise data integration.",
+  "notice": {
+    "title": "Data Sync Configuration",
+    "description": "Configure data sources, sync strategies, and security policies to ensure compliant and efficient data synchronization across your enterprise systems."
+  },
+  "tabs": {
+    "dataSources": "Data Sources",
+    "syncTasks": "Sync Tasks",
+    "security": "Security & Compliance"
+  },
+  "dataSource": {
+    "title": "Data Source Management",
+    "name": "Name",
+    "type": "Type",
+    "status": "Status",
+    "connection": "Connection",
+    "host": "Host",
+    "port": "Port",
+    "database": "Database",
+    "username": "Username",
+    "password": "Password",
+    "lastConnected": "Last Connected",
+    "stats": "Statistics",
+    "connections": "Connections",
+    "errors": "Errors",
+    "totalSources": "Total Sources",
+    "connectedSources": "Connected",
+    "errorSources": "Errors",
+    "totalConnections": "Total Connections",
+    "create": "Add Data Source",
+    "edit": "Edit Data Source",
+    "delete": "Delete Data Source",
+    "testConnection": "Test Connection",
+    "viewLogs": "View Logs",
+    "connectionLogs": "Connection Logs",
+    "testResults": "Connection Test Results",
+    "namePlaceholder": "Enter data source name",
+    "typePlaceholder": "Select data source type",
+    "databasePlaceholder": "Optional database name",
+    "usernamePlaceholder": "Database username",
+    "passwordPlaceholder": "Database password",
+    "securityLevel": "Security Level",
+    "permissions": "Permissions",
+    "deleteConfirm": "Delete Data Source",
+    "deleteWarning": "Are you sure you want to delete data source '{name}'? This action cannot be undone."
+  },
+  "syncTask": {
+    "title": "Sync Task Configuration",
+    "name": "Task Name",
+    "description": "Description",
+    "source": "Source",
+    "target": "Target",
+    "strategy": "Strategy",
+    "status": "Status",
+    "schedule": "Schedule",
+    "progress": "Progress",
+    "lastRun": "Last Run",
+    "totalTasks": "Total Tasks",
+    "runningTasks": "Running",
+    "errorTasks": "Errors",
+    "totalRecords": "Total Records",
+    "processedRecords": "Processed",
+    "errorRecords": "Errors",
+    "fieldMapping": "Field Mapping",
+    "scheduleType": "Schedule Type",
+    "create": "Create Sync Task",
+    "edit": "Edit Sync Task",
+    "start": "Start Task",
+    "pause": "Pause Task",
+    "stop": "Stop Task",
+    "viewDetails": "View Details",
+    "namePlaceholder": "Enter task name",
+    "descriptionPlaceholder": "Enter task description",
+    "strategyPlaceholder": "Select sync strategy",
+    "sourcePlaceholder": "Select source data source",
+    "targetPlaceholder": "Select target data source",
+    "deleteConfirm": "Delete Sync Task",
+    "deleteWarning": "Are you sure you want to delete sync task '{name}'? This action cannot be undone."
+  },
+  "status": {
+    "connected": "Connected",
+    "disconnected": "Disconnected",
+    "error": "Error",
+    "testing": "Testing",
+    "running": "Running",
+    "paused": "Paused",
+    "stopped": "Stopped",
+    "completed": "Completed"
+  },
+  "strategy": {
+    "full": "Full Sync",
+    "incremental": "Incremental",
+    "realtime": "Real-time"
+  },
+  "schedule": {
+    "manual": "Manual",
+    "cron": "Cron Expression",
+    "interval": "Interval",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "expression": "Cron Expression"
+  },
+  "mapping": {
+    "sourceField": "Source Field",
+    "targetField": "Target Field",
+    "transformation": "Transformation",
+    "required": "Required"
+  },
+  "monitoring": {
+    "alertsEnabled": "Enable Alerts",
+    "errorRate": "Error Rate Threshold",
+    "latency": "Latency Threshold",
+    "throughput": "Throughput Threshold",
+    "notifications": "Notification Recipients",
+    "notificationsPlaceholder": "Enter email addresses",
+    "alerts": "Alert Configuration",
+    "thresholds": "Monitoring Thresholds"
+  },
+  "steps": {
+    "basic": "Basic Configuration",
+    "mapping": "Field Mapping",
+    "schedule": "Schedule Settings",
+    "monitoring": "Monitoring & Alerts"
+  },
+  "tabs": {
+    "overview": "Overview",
+    "executions": "Execution History",
+    "monitoring": "Monitoring"
+  },
+  "execution": {
+    "running": "Running",
+    "completed": "Completed",
+    "failed": "Failed",
+    "processed": "Records Processed",
+    "errors": "Errors"
+  },
+  "actions": {
+    "connect": "Connect",
+    "disconnect": "Disconnect",
+    "test": "Test",
+    "error": "Error"
+  },
+  "security": {
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High"
+  },
+  "permissions": {
+    "read": "Read",
+    "write": "Write",
+    "delete": "Delete"
+  }
+}

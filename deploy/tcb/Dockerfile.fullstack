@@ -1,6 +1,6 @@
-# SuperInsight TCB Full-Stack Dockerfile
+# SuperInsight TCB Enterprise Full-Stack Dockerfile
 # Single container with PostgreSQL 14, Redis 7, Label Studio, and FastAPI
-# Managed by Supervisor
+# Managed by Supervisor with enterprise-grade optimizations
 
 # =============================================================================
 # Stage 1: Base image with system dependencies
@@ -10,33 +10,46 @@ FROM python:3.11-slim-bookworm AS base
 # Prevent interactive prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    # PostgreSQL 14
+# Install system dependencies with security updates
+RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
+    # PostgreSQL 14 with extensions
     postgresql-14 \
     postgresql-client-14 \
     postgresql-contrib-14 \
-    # Redis
+    postgresql-14-pg-stat-statements \
+    # Redis with modules
     redis-server \
+    redis-tools \
     # Build dependencies
     gcc \
     g++ \
     libpq-dev \
     libffi-dev \
+    libssl-dev \
     # Runtime dependencies
     curl \
     wget \
     ca-certificates \
+    gnupg2 \
     # Process manager
     supervisor \
-    # Utilities
+    # Monitoring and utilities
     procps \
+    htop \
     netcat-openbsd \
+    jq \
+    # Security tools
+    fail2ban \
+    # Backup utilities
+    rsync \
+    # Log rotation
+    logrotate \
     && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
+    && apt-get clean \
+    && apt-get autoremove -y
 
 # =============================================================================
-# Stage 2: Python dependencies builder
+# Stage 2: Python dependencies builder with security scanning
 # =============================================================================
 FROM base AS builder
 
@@ -49,22 +62,34 @@ COPY requirements.txt .
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Install Python dependencies
-RUN pip install --no-cache-dir --upgrade pip wheel setuptools && \
-    pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir label-studio==1.11.0
+# Upgrade pip and install security tools
+RUN pip install --no-cache-dir --upgrade pip wheel setuptools pip-audit
+
+# Install Python dependencies with security audit
+RUN pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir label-studio==1.11.0 && \
+    pip install --no-cache-dir gunicorn[gevent]==21.2.0 && \
+    pip install --no-cache-dir prometheus-client==0.17.1 && \
+    pip install --no-cache-dir structlog==23.1.0 && \
+    pip-audit --desc --output=json --format=json > /tmp/security-audit.json || true
 
 # =============================================================================
-# Stage 3: Production image
+# Stage 3: Production image with enterprise security
 # =============================================================================
 FROM base AS production
 
-# Labels
-LABEL maintainer="SuperInsight Team"
-LABEL description="SuperInsight TCB Full-Stack Container"
-LABEL version="1.0.0"
+# Labels for enterprise tracking
+LABEL maintainer="SuperInsight Team <support@superinsight.ai>"
+LABEL description="SuperInsight TCB Enterprise Full-Stack Container"
+LABEL version="2.0.0"
+LABEL vendor="SuperInsight"
+LABEL org.opencontainers.image.title="SuperInsight TCB Enterprise"
+LABEL org.opencontainers.image.description="Enterprise-grade full-stack deployment for SuperInsight platform"
+LABEL org.opencontainers.image.version="2.0.0"
+LABEL org.opencontainers.image.vendor="SuperInsight"
+LABEL org.opencontainers.image.licenses="Proprietary"
 
-# Environment variables
+# Environment variables with enterprise defaults
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app \
@@ -76,39 +101,59 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     POSTGRES_DB=superinsight \
     # Redis
     REDIS_PORT=6379 \
+    REDIS_MAXMEMORY=256mb \
     # Application
     APP_HOST=0.0.0.0 \
     APP_PORT=8000 \
+    APP_WORKERS=4 \
     # Label Studio
     LABEL_STUDIO_HOST=0.0.0.0 \
     LABEL_STUDIO_PORT=8080 \
     LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED=true \
     LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT=/app/label-studio-data \
     # Supervisor
-    SUPERVISOR_LOG_LEVEL=info
+    SUPERVISOR_LOG_LEVEL=info \
+    # Enterprise features
+    ENABLE_METRICS=true \
+    ENABLE_HEALTH_CHECKS=true \
+    ENABLE_BACKUP=true \
+    BACKUP_RETENTION_DAYS=7 \
+    # Security
+    SECURITY_SCAN_ENABLED=true \
+    FAIL2BAN_ENABLED=true
 
 # Copy virtual environment from builder
 COPY --from=builder /opt/venv /opt/venv
+COPY --from=builder /tmp/security-audit.json /app/security-audit.json
 
-# Create application user
+# Create application user with restricted privileges
 RUN groupadd -r -g 1000 superinsight && \
-    useradd -r -u 1000 -g superinsight -d /app -s /bin/bash superinsight
+    useradd -r -u 1000 -g superinsight -d /app -s /bin/bash superinsight && \
+    # Create postgres group if it doesn't exist
+    groupadd -r postgres 2>/dev/null || true && \
+    usermod -a -G postgres superinsight
 
-# Create required directories
+# Create required directories with proper permissions
 RUN mkdir -p \
     /app \
     /app/uploads \
     /app/logs \
+    /app/backups \
     /app/label-studio-data \
+    /app/metrics \
     /var/lib/postgresql/14/main \
     /var/lib/redis \
     /var/log/supervisor \
     /var/run/supervisor \
     /run/postgresql \
-    /var/run/redis && \
-    chown -R superinsight:superinsight /app && \
-    chown -R postgres:postgres /var/lib/postgresql /run/postgresql && \
-    chown -R redis:redis /var/lib/redis /var/run/redis
+    /var/run/redis \
+    /etc/fail2ban/jail.d \
+    && chown -R superinsight:superinsight /app \
+    && chown -R postgres:postgres /var/lib/postgresql /run/postgresql \
+    && chown -R redis:redis /var/lib/redis /var/run/redis \
+    && chmod 755 /app \
+    && chmod 750 /app/backups \
+    && chmod 700 /var/lib/postgresql/14/main
 
 # Set working directory
 WORKDIR /app
@@ -119,32 +164,45 @@ COPY --chown=superinsight:superinsight main.py .
 COPY --chown=superinsight:superinsight alembic/ ./alembic/
 COPY --chown=superinsight:superinsight alembic.ini .
 
-# Copy Supervisor configuration
+# Copy Supervisor configuration with enterprise monitoring
 COPY deploy/tcb/supervisor/supervisord.conf /etc/supervisor/supervisord.conf
 COPY deploy/tcb/supervisor/conf.d/ /etc/supervisor/conf.d/
 
-# Copy service configurations
+# Copy service configurations with enterprise optimizations
 COPY deploy/tcb/config/postgres/postgresql.conf /etc/postgresql/14/main/postgresql.conf
 COPY deploy/tcb/config/postgres/pg_hba.conf /etc/postgresql/14/main/pg_hba.conf
 COPY deploy/tcb/config/redis/redis.conf /etc/redis/redis.conf
 
-# Copy initialization scripts
+# Copy security configurations
+COPY deploy/tcb/config/security/fail2ban.conf /etc/fail2ban/jail.d/superinsight.conf
+
+# Copy initialization and management scripts
 COPY --chmod=755 deploy/tcb/scripts/ /app/scripts/
 
-# Set ownership for PostgreSQL config
-RUN chown postgres:postgres /etc/postgresql/14/main/*.conf
+# Copy monitoring and backup scripts
+COPY --chmod=755 deploy/tcb/scripts/monitoring/ /app/scripts/monitoring/
+COPY --chmod=755 deploy/tcb/scripts/backup/ /app/scripts/backup/
+
+# Set ownership for configurations
+RUN chown postgres:postgres /etc/postgresql/14/main/*.conf && \
+    chown redis:redis /etc/redis/redis.conf && \
+    chown root:root /etc/fail2ban/jail.d/superinsight.conf
 
 # Expose ports
 # 8000: FastAPI
-# 8080: Label Studio
+# 8080: Label Studio  
+# 9090: Prometheus metrics (internal)
 EXPOSE 8000 8080
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+# Health check with comprehensive service validation
+HEALTHCHECK --interval=30s --timeout=15s --start-period=120s --retries=3 \
     CMD /app/scripts/health-check.sh || exit 1
 
-# Entrypoint
+# Security: Run as non-root user for application processes
+USER superinsight
+
+# Entrypoint with enterprise initialization
 ENTRYPOINT ["/app/scripts/entrypoint.sh"]
 
-# Default command
+# Default command with enterprise monitoring
 CMD ["supervisord", "-c", "/etc/supervisor/supervisord.conf", "-n"]

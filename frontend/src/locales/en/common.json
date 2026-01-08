@@ -3,12 +3,53 @@
   "menu": {
     "dashboard": "Dashboard",
     "tasks": "Task Management",
+    "taskList": "Task List",
+    "taskCreate": "Create Task",
     "augmentation": "Data Augmentation",
+    "samples": "Sample Management",
+    "config": "Configuration",
     "quality": "Quality Management",
+    "rules": "Quality Rules",
+    "reports": "Quality Reports",
     "billing": "Billing",
+    "overview": "Billing Overview",
     "security": "Security Audit",
+    "audit": "Audit Logs",
+    "permissions": "Permission Management",
+    "dataSync": "Data Sync",
+    "dataSources": "Data Sources",
+    "syncTasks": "Sync Tasks",
+    "dataSecurity": "Data Security",
     "settings": "Settings",
-    "admin": "Admin Console"
+    "admin": "Admin Console",
+    "tenants": "Tenant Management",
+    "users": "User Management",
+    "system": "System Monitoring"
+  },
+  "tasks": {
+    "create": "Create Task",
+    "detail": "Task Detail",
+    "annotate": "Annotate Task"
+  },
+  "billing": {
+    "reports": "Billing Reports"
+  },
+  "augmentation": {
+    "samples": "Sample Management",
+    "config": "Configuration"
+  },
+  "quality": {
+    "rules": "Quality Rules",
+    "reports": "Quality Reports"
+  },
+  "security": {
+    "audit": "Audit Logs",
+    "permissions": "Permission Management"
+  },
+  "admin": {
+    "tenants": "Tenant Management",
+    "users": "User Management",
+    "system": "System Monitoring"
   },
   "actions": {
     "submit": "Submit",
@@ -22,7 +63,14 @@
     "refresh": "Refresh",
     "export": "Export",
     "import": "Import",
-    "back": "Back"
+    "back": "Back",
+    "logout": "Logout",
+    "next": "Next",
+    "previous": "Previous",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "allowed": "Allowed",
+    "denied": "Denied"
   },
   "status": {
     "loading": "Loading...",
@@ -35,6 +83,9 @@
     "invalidEmail": "Please enter a valid email",
     "minLength": "Minimum {{min}} characters required",
     "maxLength": "Maximum {{max}} characters allowed"
+  },
+  "pagination": {
+    "total": "Total {{total}} items"
   },
   "time": {
     "today": "Today",
@@ -50,5 +101,70 @@
   "language": {
     "zh": "中文",
     "en": "English"
+  },
+  "common": {
+    "view": "View",
+    "copy": "Copy",
+    "used": "Used",
+    "close": "Close",
+    "active": "Active",
+    "history": "History",
+    "total": "Total",
+    "of": "of",
+    "items": "items",
+    "timeline": "Timeline",
+    "details": "Details",
+    "basicInfo": "Basic Information",
+    "required": "This field is required",
+    "jsonFormat": "JSON format",
+    "minLength": "Minimum Length",
+    "maxLength": "Maximum Length",
+    "allowEmpty": "Allow Empty",
+    "requiredFields": "Required Fields",
+    "selectFields": "Select Fields",
+    "forbiddenWords": "Forbidden Words",
+    "enterWords": "Enter Words",
+    "similarityThreshold": "Similarity Threshold",
+    "checkDuplicates": "Check Duplicates",
+    "crossValidation": "Cross Validation",
+    "pythonCode": "Python Code",
+    "operationFailed": "Operation Failed",
+    "confirmRollback": "Confirm Rollback",
+    "confirmDelete": "Confirm Delete",
+    "changeLog": "Change Log",
+    "tags": "Tags",
+    "createdBy": "Created By",
+    "createdAt": "Created At",
+    "unassigned": "Unassigned",
+    "selectIssues": "Select Issues",
+    "enterTags": "Enter Tags",
+    "selectUser": "Select User",
+    "success": "Success",
+    "addComment": "Add Comment",
+    "upload": "Upload",
+    "rank": "Rank",
+    "user": "User",
+    "tasksCompleted": "Tasks Completed",
+    "achievements": "Achievements",
+    "department": "Department",
+    "all": "All",
+    "annotation": "Annotation",
+    "quality": "Quality",
+    "review": "Review",
+    "thisWeek": "This Week",
+    "thisQuarter": "This Quarter",
+    "totalTasks": "Total Tasks",
+    "improvingUsers": "Improving Users",
+    "efficiency": "Efficiency",
+    "issuesFound": "Issues Found",
+    "strengthenTraining": "Strengthen Training",
+    "improveAnnotationQuality": "Improve annotation quality through targeted training",
+    "optimizeProcess": "Optimize Process",
+    "reduceResolutionTime": "Reduce average issue resolution time",
+    "automateChecks": "Automate Checks",
+    "preventCommonIssues": "Prevent common issues through automated validation",
+    "recommendation": "Recommendation",
+    "focusOnTopIssues": "Focus on addressing the top 3 issue categories to maximize quality improvement impact",
+    "exportSuccess": "Export successful"
   }
 }

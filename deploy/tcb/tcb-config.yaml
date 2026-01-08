@@ -1,124 +1,334 @@
-# 腾讯云 TCB 部署配置
+# SuperInsight TCB Enterprise Kubernetes Configuration
+# Comprehensive deployment configuration for TCB cloud hosting
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: superinsight-enterprise
+  labels:
+    app: superinsight
+    version: "2.0.0"
+    environment: production
+
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: superinsight-config
-  namespace: default
+  namespace: superinsight-enterprise
 data:
-  # 数据库配置
-  database.host: "postgresql.tencentcloudbase.com"
-  database.port: "5432"
-  database.name: "superinsight"
-  database.ssl: "require"
+  # Application Configuration
+  ENVIRONMENT: "production"
+  LOG_LEVEL: "INFO"
+  APP_WORKERS: "4"
   
-  # Label Studio 配置
-  label_studio.url: "https://superinsight-ls.tencentcloudbase.com"
-  label_studio.project_template: "text_classification"
+  # Database Configuration
+  POSTGRES_DB: "superinsight"
   
-  # AI 服务配置
-  ai.hunyuan.endpoint: "https://hunyuan.tencentcloudapi.com"
-  ai.hunyuan.region: "ap-beijing"
-  ai.hunyuan.model: "hunyuan-lite"
+  # Redis Configuration
+  REDIS_PORT: "6379"
+  REDIS_MAXMEMORY: "256mb"
   
-  # 对象存储配置
-  cos.region: "ap-shanghai"
-  cos.bucket: "superinsight-data"
-  cos.domain: "https://superinsight-data.cos.ap-shanghai.myqcloud.com"
+  # Enterprise Features
+  ENABLE_METRICS: "true"
+  ENABLE_HEALTH_CHECKS: "true"
+  ENABLE_BACKUP: "true"
+  BACKUP_RETENTION_DAYS: "7"
+  SECURITY_SCAN_ENABLED: "true"
+  FAIL2BAN_ENABLED: "true"
   
-  # 自动扩缩容配置
-  autoscaling.min_instances: "1"
-  autoscaling.max_instances: "10"
-  autoscaling.target_cpu: "70"
-  autoscaling.target_memory: "80"
+  # Multi-Tenant Configuration
+  MULTI_TENANT_ENABLED: "true"
+  DEFAULT_TENANT_ID: "default"
   
-  # 监控配置
-  monitoring.enabled: "true"
-  monitoring.log_level: "INFO"
-  monitoring.metrics_interval: "60"
+  # Label Studio Configuration
+  LABEL_STUDIO_HOST: "0.0.0.0"
+  LABEL_STUDIO_PORT: "8080"
+  LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED: "true"
+  LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT: "/app/label-studio-data"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: superinsight-secrets
+  namespace: superinsight-enterprise
+type: Opaque
+stringData:
+  POSTGRES_USER: "${POSTGRES_USER}"
+  POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+  SECRET_KEY: "${SECRET_KEY}"
+  JWT_SECRET_KEY: "${JWT_SECRET_KEY}"
+  HUNYUAN_API_KEY: "${HUNYUAN_API_KEY}"
+  HUNYUAN_SECRET_KEY: "${HUNYUAN_SECRET_KEY}"
+  COS_SECRET_ID: "${COS_SECRET_ID}"
+  COS_SECRET_KEY: "${COS_SECRET_KEY}"
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-data-pvc
+  namespace: superinsight-enterprise
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: cbs-ssd
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-data-pvc
+  namespace: superinsight-enterprise
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: cbs-ssd
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: label-studio-data-pvc
+  namespace: superinsight-enterprise
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: cbs-ssd
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: uploads-pvc
+  namespace: superinsight-enterprise
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: cbs-ssd
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: logs-pvc
+  namespace: superinsight-enterprise
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: cbs-ssd
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: backups-pvc
+  namespace: superinsight-enterprise
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: cbs-ssd
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: metrics-pvc
+  namespace: superinsight-enterprise
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: cbs-ssd
 
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: superinsight-api
-  namespace: default
+  name: superinsight-enterprise
+  namespace: superinsight-enterprise
+  labels:
+    app: superinsight
+    version: "2.0.0"
+    tier: fullstack
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
-      app: superinsight-api
+      app: superinsight
+      tier: fullstack
   template:
     metadata:
       labels:
-        app: superinsight-api
+        app: superinsight
+        tier: fullstack
+        version: "2.0.0"
     spec:
       containers:
-      - name: api
-        image: ccr.ccs.tencentyun.com/superinsight/api:latest
+      - name: superinsight-fullstack
+        image: superinsight-enterprise:latest
         ports:
         - containerPort: 8000
-        env:
-        - name: DATABASE_URL
-          valueFrom:
-            secretKeyRef:
-              name: superinsight-secrets
-              key: database-url
-        - name: HUNYUAN_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: superinsight-secrets
-              key: hunyuan-api-key
-        - name: HUNYUAN_SECRET_KEY
-          valueFrom:
-            secretKeyRef:
-              name: superinsight-secrets
-              key: hunyuan-secret-key
+          name: fastapi
+          protocol: TCP
+        - containerPort: 8080
+          name: labelstudio
+          protocol: TCP
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "250m"
+            memory: "2Gi"
+            cpu: "1000m"
           limits:
-            memory: "512Mi"
-            cpu: "500m"
+            memory: "4Gi"
+            cpu: "2000m"
+        env:
+        - name: TCB_ENV_ID
+          value: "${TCB_ENV_ID}"
+        - name: TCB_REGION
+          value: "${TCB_REGION}"
+        - name: COS_REGION
+          value: "${COS_REGION}"
+        - name: COS_BUCKET
+          value: "${COS_BUCKET}"
+        envFrom:
+        - configMapRef:
+            name: superinsight-config
+        - secretRef:
+            name: superinsight-secrets
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/14/main
+        - name: redis-data
+          mountPath: /var/lib/redis
+        - name: label-studio-data
+          mountPath: /app/label-studio-data
+        - name: uploads
+          mountPath: /app/uploads
+        - name: logs
+          mountPath: /app/logs
+        - name: backups
+          mountPath: /app/backups
+        - name: metrics
+          mountPath: /app/metrics
         livenessProbe:
           httpGet:
             path: /health
             port: 8000
-          initialDelaySeconds: 30
-          periodSeconds: 10
+          initialDelaySeconds: 180
+          periodSeconds: 60
+          timeoutSeconds: 30
+          failureThreshold: 3
         readinessProbe:
           httpGet:
-            path: /ready
+            path: /health
             port: 8000
-          initialDelaySeconds: 5
-          periodSeconds: 5
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 120
+          periodSeconds: 30
+          timeoutSeconds: 15
+          failureThreshold: 10
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          runAsGroup: 1000
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+            - ALL
+      volumes:
+      - name: postgres-data
+        persistentVolumeClaim:
+          claimName: postgres-data-pvc
+      - name: redis-data
+        persistentVolumeClaim:
+          claimName: redis-data-pvc
+      - name: label-studio-data
+        persistentVolumeClaim:
+          claimName: label-studio-data-pvc
+      - name: uploads
+        persistentVolumeClaim:
+          claimName: uploads-pvc
+      - name: logs
+        persistentVolumeClaim:
+          claimName: logs-pvc
+      - name: backups
+        persistentVolumeClaim:
+          claimName: backups-pvc
+      - name: metrics
+        persistentVolumeClaim:
+          claimName: metrics-pvc
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 60
 
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: superinsight-api-service
-  namespace: default
+  name: superinsight-service
+  namespace: superinsight-enterprise
+  labels:
+    app: superinsight
+    tier: fullstack
 spec:
-  selector:
-    app: superinsight-api
-  ports:
-  - protocol: TCP
-    port: 80
-    targetPort: 8000
   type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 8000
+    protocol: TCP
+    name: fastapi
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+    name: labelstudio
+  selector:
+    app: superinsight
+    tier: fullstack
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 3600
 
 ---
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: superinsight-api-hpa
-  namespace: default
+  name: superinsight-hpa
+  namespace: superinsight-enterprise
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: superinsight-api
+    name: superinsight-enterprise
   minReplicas: 1
   maxReplicas: 10
   metrics:
@@ -134,3 +344,80 @@ spec:
       target:
         type: Utilization
         averageUtilization: 80
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 60
+      - type: Pods
+        value: 2
+        periodSeconds: 60
+      selectPolicy: Max
+    scaleDown:
+      stabilizationWindowSeconds: 600
+      policies:
+      - type: Percent
+        value: 50
+        periodSeconds: 60
+      selectPolicy: Min
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: superinsight-ingress
+  namespace: superinsight-enterprise
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  tls:
+  - hosts:
+    - "${DOMAIN_NAME}"
+    secretName: superinsight-tls
+  rules:
+  - host: "${DOMAIN_NAME}"
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: superinsight-service
+            port:
+              number: 80
+      - path: /label-studio
+        pathType: Prefix
+        backend:
+          service:
+            name: superinsight-service
+            port:
+              number: 8080
+
+---
+apiVersion: v1
+kind: ServiceMonitor
+metadata:
+  name: superinsight-metrics
+  namespace: superinsight-enterprise
+  labels:
+    app: superinsight
+    tier: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: superinsight
+      tier: fullstack
+  endpoints:
+  - port: fastapi
+    path: /metrics
+    interval: 30s
+    scrapeTimeout: 10s

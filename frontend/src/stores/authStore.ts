@@ -30,7 +30,7 @@ export const useAuthStore = create<AuthState>()(
         set({
           user,
           token,
-          currentTenant: tenant || { id: user.tenant_id, name: user.tenant_id },
+          currentTenant: tenant || { id: user.tenant_id || '', name: user.tenant_id || '' },
           isAuthenticated: true,
         });
       },

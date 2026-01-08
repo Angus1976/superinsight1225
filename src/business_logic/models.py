@@ -21,6 +21,7 @@ class BusinessRuleModel(Base):
     __tablename__ = "business_rules"
     
     id = Column(String(100), primary_key=True)
+    tenant_id = Column(String(100), nullable=False, index=True)
     project_id = Column(String(100), nullable=False, index=True)
     name = Column(String(200), nullable=False)
     description = Column(Text)
@@ -38,6 +39,7 @@ class BusinessPatternModel(Base):
     __tablename__ = "business_patterns"
     
     id = Column(String(100), primary_key=True)
+    tenant_id = Column(String(100), nullable=False, index=True)
     project_id = Column(String(100), nullable=False, index=True)
     pattern_type = Column(String(50), nullable=False, index=True)
     description = Column(Text)
@@ -51,6 +53,7 @@ class BusinessInsightModel(Base):
     __tablename__ = "business_insights"
     
     id = Column(String(100), primary_key=True)
+    tenant_id = Column(String(100), nullable=False, index=True)
     project_id = Column(String(100), nullable=False, index=True)
     insight_type = Column(String(50), nullable=False, index=True)
     title = Column(String(200), nullable=False)
@@ -95,6 +98,7 @@ class AnnotationExample(BaseModel):
 class BusinessRule(BaseModel):
     """业务规则API模型"""
     id: str
+    tenant_id: str
     project_id: str
     name: str
     description: Optional[str] = None
@@ -113,6 +117,7 @@ class BusinessRule(BaseModel):
 class BusinessPattern(BaseModel):
     """业务模式API模型"""
     id: str
+    tenant_id: str
     project_id: str
     pattern_type: PatternTypeEnum
     description: Optional[str] = None
@@ -127,6 +132,7 @@ class BusinessPattern(BaseModel):
 class BusinessInsight(BaseModel):
     """业务洞察API模型"""
     id: str
+    tenant_id: str
     project_id: str
     insight_type: InsightTypeEnum
     title: str

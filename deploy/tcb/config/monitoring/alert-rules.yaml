@@ -1,0 +1,332 @@
+# SuperInsight TCB Alert Rules
+# Enterprise-grade alerting with multi-tenant support
+
+groups:
+  # =============================================================================
+  # Infrastructure Alerts
+  # =============================================================================
+  - name: infrastructure
+    interval: 30s
+    rules:
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          category: infrastructure
+          environment: '{{ $labels.environment }}'
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is above 80% for more than 5 minutes on {{ $labels.instance }}"
+          runbook_url: "https://docs.superinsight.ai/runbooks/high-cpu"
+
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 85
+        for: 3m
+        labels:
+          severity: warning
+          category: infrastructure
+          environment: '{{ $labels.environment }}'
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is above 85% for more than 3 minutes on {{ $labels.instance }}"
+          runbook_url: "https://docs.superinsight.ai/runbooks/high-memory"
+
+      - alert: DiskSpaceLow
+        expr: (node_filesystem_avail_bytes{fstype!="tmpfs"} / node_filesystem_size_bytes{fstype!="tmpfs"}) * 100 < 10
+        for: 1m
+        labels:
+          severity: critical
+          category: infrastructure
+          environment: '{{ $labels.environment }}'
+        annotations:
+          summary: "Disk space critically low"
+          description: "Disk space is below 10% on {{ $labels.instance }} ({{ $labels.mountpoint }})"
+          runbook_url: "https://docs.superinsight.ai/runbooks/disk-space"
+
+      - alert: HighDiskIOWait
+        expr: irate(node_cpu_seconds_total{mode="iowait"}[5m]) * 100 > 20
+        for: 5m
+        labels:
+          severity: warning
+          category: infrastructure
+          environment: '{{ $labels.environment }}'
+        annotations:
+          summary: "High disk I/O wait time"
+          description: "Disk I/O wait time is above 20% on {{ $labels.instance }}"
+
+  # =============================================================================
+  # Application Alerts
+  # =============================================================================
+  - name: application
+    interval: 15s
+    rules:
+      - alert: ApplicationDown
+        expr: up{job=~"superinsight-api|label-studio"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          category: application
+          environment: '{{ $labels.environment }}'
+        annotations:
+          summary: "Application is down"
+          description: "{{ $labels.job }} is down on {{ $labels.instance }}"
+          runbook_url: "https://docs.superinsight.ai/runbooks/app-down"
+
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) * 100 > 5
+        for: 2m
+        labels:
+          severity: warning
+          category: application
+          environment: '{{ $labels.environment }}'
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is above 5% for {{ $labels.job }} on {{ $labels.instance }}"
+          runbook_url: "https://docs.superinsight.ai/runbooks/high-error-rate"
+
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2
+        for: 3m
+        labels:
+          severity: warning
+          category: application
+          environment: '{{ $labels.environment }}'
+        annotations:
+          summary: "High response time detected"
+          description: "95th percentile response time is above 2 seconds for {{ $labels.job }}"
+
+      - alert: LowThroughput
+        expr: rate(http_requests_total[5m]) < 1
+        for: 10m
+        labels:
+          severity: info
+          category: application
+          environment: '{{ $labels.environment }}'
+        annotations:
+          summary: "Low request throughput"
+          description: "Request rate is below 1 req/sec for {{ $labels.job }}"
+
+  # =============================================================================
+  # Database Alerts
+  # =============================================================================
+  - name: database
+    interval: 30s
+    rules:
+      - alert: PostgreSQLDown
+        expr: pg_up == 0
+        for: 30s
+        labels:
+          severity: critical
+          category: database
+          environment: '{{ $labels.environment }}'
+        annotations:
+          summary: "PostgreSQL is down"
+          description: "PostgreSQL database is not responding"
+          runbook_url: "https://docs.superinsight.ai/runbooks/postgres-down"
+
+      - alert: PostgreSQLHighConnections
+        expr: pg_stat_database_numbackends / pg_settings_max_connections * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          category: database
+          environment: '{{ $labels.environment }}'
+        annotations:
+          summary: "PostgreSQL high connection usage"
+          description: "PostgreSQL connection usage is above 80%"
+
+      - alert: PostgreSQLSlowQueries
+        expr: rate(pg_stat_database_tup_returned[5m]) / rate(pg_stat_database_tup_fetched[5m]) < 0.1
+        for: 5m
+        labels:
+          severity: warning
+          category: database
+          environment: '{{ $labels.environment }}'
+        annotations:
+          summary: "PostgreSQL slow queries detected"
+          description: "Query efficiency is below 10%"
+
+      - alert: RedisDown
+        expr: redis_up == 0
+        for: 30s
+        labels:
+          severity: critical
+          category: database
+          environment: '{{ $labels.environment }}'
+        annotations:
+          summary: "Redis is down"
+          description: "Redis cache is not responding"
+          runbook_url: "https://docs.superinsight.ai/runbooks/redis-down"
+
+      - alert: RedisHighMemoryUsage
+        expr: redis_memory_used_bytes / redis_memory_max_bytes * 100 > 90
+        for: 2m
+        labels:
+          severity: warning
+          category: database
+          environment: '{{ $labels.environment }}'
+        annotations:
+          summary: "Redis high memory usage"
+          description: "Redis memory usage is above 90%"
+
+  # =============================================================================
+  # Business Logic Alerts
+  # =============================================================================
+  - name: business
+    interval: 60s
+    rules:
+      - alert: HighAnnotationFailureRate
+        expr: rate(annotation_failures_total[10m]) / rate(annotation_attempts_total[10m]) * 100 > 10
+        for: 5m
+        labels:
+          severity: warning
+          category: business
+          environment: '{{ $labels.environment }}'
+        annotations:
+          summary: "High annotation failure rate"
+          description: "Annotation failure rate is above 10% for tenant {{ $labels.tenant_id }}"
+
+      - alert: QualityScoreDropped
+        expr: avg_over_time(quality_score[30m]) < 0.7
+        for: 10m
+        labels:
+          severity: warning
+          category: business
+          environment: '{{ $labels.environment }}'
+        annotations:
+          summary: "Quality score dropped"
+          description: "Average quality score dropped below 0.7 for tenant {{ $labels.tenant_id }}"
+
+      - alert: UnusualUserActivity
+        expr: rate(user_actions_total[5m]) > 2 * avg_over_time(rate(user_actions_total[5m])[1h:5m])
+        for: 5m
+        labels:
+          severity: info
+          category: business
+          environment: '{{ $labels.environment }}'
+        annotations:
+          summary: "Unusual user activity detected"
+          description: "User activity is 2x higher than normal for tenant {{ $labels.tenant_id }}"
+
+  # =============================================================================
+  # Multi-Tenant Alerts
+  # =============================================================================
+  - name: multi-tenant
+    interval: 60s
+    rules:
+      - alert: TenantResourceExhaustion
+        expr: tenant_resource_usage_percent > 90
+        for: 5m
+        labels:
+          severity: warning
+          category: multi-tenant
+          environment: '{{ $labels.environment }}'
+          tenant_id: '{{ $labels.tenant_id }}'
+        annotations:
+          summary: "Tenant resource exhaustion"
+          description: "Tenant {{ $labels.tenant_id }} is using over 90% of allocated resources"
+
+      - alert: TenantIsolationBreach
+        expr: increase(tenant_isolation_violations_total[5m]) > 0
+        for: 0s
+        labels:
+          severity: critical
+          category: security
+          environment: '{{ $labels.environment }}'
+          tenant_id: '{{ $labels.tenant_id }}'
+        annotations:
+          summary: "Tenant isolation breach detected"
+          description: "Potential tenant isolation breach for tenant {{ $labels.tenant_id }}"
+          runbook_url: "https://docs.superinsight.ai/runbooks/isolation-breach"
+
+      - alert: TenantQuotaExceeded
+        expr: tenant_quota_usage_percent > 100
+        for: 1m
+        labels:
+          severity: warning
+          category: multi-tenant
+          environment: '{{ $labels.environment }}'
+          tenant_id: '{{ $labels.tenant_id }}'
+        annotations:
+          summary: "Tenant quota exceeded"
+          description: "Tenant {{ $labels.tenant_id }} has exceeded their quota"
+
+  # =============================================================================
+  # TCB Platform Alerts
+  # =============================================================================
+  - name: tcb-platform
+    interval: 60s
+    rules:
+      - alert: TCBInstanceScalingIssue
+        expr: tcb_desired_instances != tcb_running_instances
+        for: 10m
+        labels:
+          severity: warning
+          category: platform
+          environment: '{{ $labels.environment }}'
+        annotations:
+          summary: "TCB instance scaling issue"
+          description: "Desired instances ({{ $value }}) != running instances for 10+ minutes"
+
+      - alert: TCBHighColdStartRate
+        expr: rate(tcb_cold_starts_total[5m]) / rate(tcb_requests_total[5m]) * 100 > 20
+        for: 5m
+        labels:
+          severity: warning
+          category: platform
+          environment: '{{ $labels.environment }}'
+        annotations:
+          summary: "High cold start rate"
+          description: "Cold start rate is above 20%"
+
+      - alert: TCBBillingAnomaly
+        expr: increase(tcb_billing_cost[1h]) > 1.5 * avg_over_time(increase(tcb_billing_cost[1h])[24h:1h])
+        for: 0s
+        labels:
+          severity: warning
+          category: billing
+          environment: '{{ $labels.environment }}'
+        annotations:
+          summary: "TCB billing anomaly detected"
+          description: "Hourly billing cost is 50% higher than 24h average"
+
+  # =============================================================================
+  # Security Alerts
+  # =============================================================================
+  - name: security
+    interval: 30s
+    rules:
+      - alert: SuspiciousLoginActivity
+        expr: rate(failed_login_attempts_total[5m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+          category: security
+          environment: '{{ $labels.environment }}'
+        annotations:
+          summary: "Suspicious login activity"
+          description: "High rate of failed login attempts detected"
+
+      - alert: UnauthorizedAPIAccess
+        expr: rate(http_requests_total{status="403"}[5m]) > 5
+        for: 3m
+        labels:
+          severity: warning
+          category: security
+          environment: '{{ $labels.environment }}'
+        annotations:
+          summary: "Unauthorized API access attempts"
+          description: "High rate of 403 responses detected"
+
+      - alert: DataExfiltrationAttempt
+        expr: rate(data_export_bytes_total[5m]) > 100 * 1024 * 1024  # 100MB/5min
+        for: 2m
+        labels:
+          severity: critical
+          category: security
+          environment: '{{ $labels.environment }}'
+        annotations:
+          summary: "Potential data exfiltration attempt"
+          description: "Unusually high data export rate detected"
+          runbook_url: "https://docs.superinsight.ai/runbooks/data-exfiltration"

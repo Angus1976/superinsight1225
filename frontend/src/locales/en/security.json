@@ -1,0 +1,109 @@
+{
+  "desensitization": {
+    "name": "Rule Name",
+    "description": "Description",
+    "dataType": "Data Type",
+    "method": "Method",
+    "fieldPattern": "Field Pattern",
+    "priority": "Priority",
+    "status": "Status",
+    "appliedTables": "Applied Tables",
+    "appliedFields": "Applied Fields",
+    "maskPattern": "Mask Pattern",
+    "replaceValue": "Replace Value",
+    "enabled": "Enabled",
+    "createRule": "Create Rule",
+    "editRule": "Edit Rule",
+    "deleteConfirm": "Delete Desensitization Rule",
+    "deleteWarning": "Are you sure you want to delete rule '{name}'? This action cannot be undone.",
+    "namePlaceholder": "Enter rule name",
+    "descriptionPlaceholder": "Enter rule description",
+    "dataTypePlaceholder": "Select data type",
+    "methodPlaceholder": "Select desensitization method",
+    "appliedTablesPlaceholder": "Select tables to apply this rule",
+    "appliedFieldsPlaceholder": "Select fields to apply this rule"
+  },
+  "permissions": {
+    "table": "Table",
+    "field": "Field",
+    "dataType": "Data Type",
+    "roles": "Roles",
+    "audit": "Audit",
+    "viewDetails": "View Details",
+    "details": "Permission Details",
+    "basicInfo": "Basic Information",
+    "rolePermissions": "Role Permissions",
+    "role": "Role",
+    "read": "Read",
+    "write": "Write",
+    "export": "Export",
+    "sensitivity": "Sensitivity Level"
+  },
+  "audit": {
+    "timestamp": "Timestamp",
+    "user": "User",
+    "action": "Action",
+    "resource": "Resource",
+    "riskLevel": "Risk Level",
+    "ipAddress": "IP Address"
+  },
+  "compliance": {
+    "gdpr": "GDPR Compliance Report",
+    "ccpa": "CCPA Compliance Report",
+    "pipl": "PIPL Compliance Report",
+    "custom": "Custom Compliance Report",
+    "period": "Report Period",
+    "totalRecords": "Total Records",
+    "sensitiveRecords": "Sensitive Records",
+    "accessCount": "Access Count",
+    "violations": "Violations",
+    "score": "Compliance Score",
+    "occurrences": "occurrences",
+    "recommendations": "Recommendations"
+  },
+  "stats": {
+    "totalRules": "Total Rules",
+    "activeRules": "Active Rules",
+    "protectedFields": "Protected Fields",
+    "auditLogs": "Audit Logs"
+  },
+  "tabs": {
+    "rules": "Desensitization Rules",
+    "permissions": "Field Permissions",
+    "audit": "Audit Logs",
+    "compliance": "Compliance Reports"
+  },
+  "dataTypes": {
+    "email": "Email",
+    "phone": "Phone Number",
+    "idcard": "ID Card",
+    "bankcard": "Bank Card",
+    "name": "Name",
+    "address": "Address",
+    "custom": "Custom"
+  },
+  "methods": {
+    "mask": "Mask",
+    "hash": "Hash",
+    "encrypt": "Encrypt",
+    "replace": "Replace",
+    "remove": "Remove"
+  },
+  "sensitivity": {
+    "public": "Public",
+    "internal": "Internal",
+    "confidential": "Confidential",
+    "secret": "Secret"
+  },
+  "actions": {
+    "read": "Read",
+    "write": "Write",
+    "export": "Export",
+    "delete": "Delete"
+  },
+  "risk": {
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High"
+  }
+}

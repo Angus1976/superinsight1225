@@ -3,12 +3,53 @@
   "menu": {
     "dashboard": "仪表盘",
     "tasks": "任务管理",
+    "taskList": "任务列表",
+    "taskCreate": "创建任务",
     "augmentation": "数据增强",
+    "samples": "样本管理",
+    "config": "配置管理",
     "quality": "质量管理",
+    "rules": "质量规则",
+    "reports": "质量报表",
     "billing": "账单管理",
+    "overview": "账单概览",
     "security": "安全审计",
+    "audit": "审计日志",
+    "permissions": "权限管理",
+    "dataSync": "数据同步",
+    "dataSources": "数据源",
+    "syncTasks": "同步任务",
+    "dataSecurity": "数据安全",
     "settings": "系统设置",
-    "admin": "管理控制台"
+    "admin": "管理控制台",
+    "tenants": "租户管理",
+    "users": "用户管理",
+    "system": "系统监控"
+  },
+  "tasks": {
+    "create": "创建任务",
+    "detail": "任务详情",
+    "annotate": "标注任务"
+  },
+  "billing": {
+    "reports": "账单报表"
+  },
+  "augmentation": {
+    "samples": "样本管理",
+    "config": "配置管理"
+  },
+  "quality": {
+    "rules": "质量规则",
+    "reports": "质量报表"
+  },
+  "security": {
+    "audit": "审计日志",
+    "permissions": "权限管理"
+  },
+  "admin": {
+    "tenants": "租户管理",
+    "users": "用户管理",
+    "system": "系统监控"
   },
   "actions": {
     "submit": "提交",
@@ -22,7 +63,14 @@
     "refresh": "刷新",
     "export": "导出",
     "import": "导入",
-    "back": "返回"
+    "back": "返回",
+    "logout": "退出登录",
+    "next": "下一步",
+    "previous": "上一步",
+    "enabled": "已启用",
+    "disabled": "已禁用",
+    "allowed": "允许",
+    "denied": "拒绝"
   },
   "status": {
     "loading": "加载中...",
@@ -50,5 +98,70 @@
   "language": {
     "zh": "中文",
     "en": "English"
+  },
+  "common": {
+    "view": "查看",
+    "copy": "复制",
+    "used": "已使用",
+    "close": "关闭",
+    "active": "活跃",
+    "history": "历史",
+    "total": "总计",
+    "of": "共",
+    "items": "项",
+    "timeline": "时间线",
+    "details": "详情",
+    "basicInfo": "基本信息",
+    "required": "此项为必填项",
+    "jsonFormat": "JSON格式",
+    "minLength": "最小长度",
+    "maxLength": "最大长度",
+    "allowEmpty": "允许为空",
+    "requiredFields": "必填字段",
+    "selectFields": "选择字段",
+    "forbiddenWords": "禁用词汇",
+    "enterWords": "输入词汇",
+    "similarityThreshold": "相似度阈值",
+    "checkDuplicates": "检查重复",
+    "crossValidation": "交叉验证",
+    "pythonCode": "Python代码",
+    "operationFailed": "操作失败",
+    "confirmRollback": "确认回滚",
+    "confirmDelete": "确认删除",
+    "changeLog": "变更日志",
+    "tags": "标签",
+    "createdBy": "创建者",
+    "createdAt": "创建时间",
+    "unassigned": "未分配",
+    "selectIssues": "选择问题",
+    "enterTags": "输入标签",
+    "selectUser": "选择用户",
+    "success": "成功",
+    "addComment": "添加评论",
+    "upload": "上传",
+    "rank": "排名",
+    "user": "用户",
+    "tasksCompleted": "完成任务",
+    "achievements": "成就",
+    "department": "部门",
+    "all": "全部",
+    "annotation": "标注",
+    "quality": "质量",
+    "review": "审核",
+    "thisWeek": "本周",
+    "thisQuarter": "本季度",
+    "totalTasks": "总任务数",
+    "improvingUsers": "改进用户",
+    "efficiency": "效率",
+    "issuesFound": "发现问题",
+    "strengthenTraining": "加强培训",
+    "improveAnnotationQuality": "通过针对性培训提高标注质量",
+    "optimizeProcess": "优化流程",
+    "reduceResolutionTime": "减少平均问题解决时间",
+    "automateChecks": "自动化检查",
+    "preventCommonIssues": "通过自动化验证预防常见问题",
+    "recommendation": "建议",
+    "focusOnTopIssues": "专注于解决前3类问题以最大化质量改进效果",
+    "exportSuccess": "导出成功"
   }
 }

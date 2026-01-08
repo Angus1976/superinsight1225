@@ -1,5 +1,6 @@
 // Global styles
 @use './variables' as *;
+@import './responsive.scss';
 
 * {
   box-sizing: border-box;
@@ -13,8 +14,8 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   font-size: $font-size-base;
   line-height: 1.5715;
-  color: $text-primary;
-  background-color: $bg-base;
+  color: $text-color;
+  background-color: $background-color-light;
 }
 
 #root {
@@ -56,19 +57,19 @@ a {
 }
 
 .mb-sm {
-  margin-bottom: $spacing-sm;
+  margin-bottom: $margin-sm;
 }
 
 .mb-md {
-  margin-bottom: $spacing-md;
+  margin-bottom: $margin-md;
 }
 
 .mb-lg {
-  margin-bottom: $spacing-lg;
+  margin-bottom: $margin-lg;
 }
 
 .mt-md {
-  margin-top: $spacing-md;
+  margin-top: $margin-md;
 }
 
 .flex-center {
@@ -79,6 +80,17 @@ a {
 
 .full-height {
   height: 100%;
+}
+
+// Layout specific styles
+.main-layout {
+  .ant-pro-layout {
+    &.ant-pro-layout-mobile {
+      .ant-pro-layout-content {
+        padding: $padding-sm !important;
+      }
+    }
+  }
 }
 
 // Animation
@@ -98,4 +110,15 @@ a {
 .fade-exit-active {
   opacity: 0;
   transition: opacity 200ms ease-out;
+}
+
+// Dark theme overrides
+[data-theme='dark'] {
+  .ant-pro-layout {
+    background: #141414;
+  }
+  
+  .ant-pro-page-container-children-content {
+    background: #141414;
+  }
 }

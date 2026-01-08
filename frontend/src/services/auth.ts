@@ -35,10 +35,25 @@ export const authService = {
     return response.data;
   },
 
+  async switchTenant(tenantId: string): Promise<LoginResponse> {
+    const response = await apiClient.post<LoginResponse>(API_ENDPOINTS.AUTH.SWITCH_TENANT, {
+      tenant_id: tenantId,
+    });
+    return response.data;
+  },
+
   async refreshToken(refreshToken: string): Promise<LoginResponse> {
     const response = await apiClient.post<LoginResponse>(API_ENDPOINTS.AUTH.REFRESH, {
       refresh_token: refreshToken,
     });
     return response.data;
+  },
+
+  async requestPasswordReset(email: string): Promise<void> {
+    await apiClient.post(API_ENDPOINTS.AUTH.FORGOT_PASSWORD, { email });
+  },
+
+  async resetPassword(data: { token: string; email: string; password: string }): Promise<void> {
+    await apiClient.post(API_ENDPOINTS.AUTH.RESET_PASSWORD, data);
   },
 };

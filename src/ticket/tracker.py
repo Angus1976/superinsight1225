@@ -665,6 +665,6 @@ class TicketTracker:
             created_at=model.created_at,
             updated_at=model.updated_at,
             resolved_at=model.resolved_at,
-            metadata=model.metadata,
+            metadata=model.extra_metadata,
             resolution_notes=model.resolution_notes,
         )

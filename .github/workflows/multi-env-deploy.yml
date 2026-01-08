@@ -1,0 +1,489 @@
+name: Multi-Environment Deployment
+
+on:
+  push:
+    branches: 
+      - main
+      - develop
+      - 'release/*'
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+      deployment_mode:
+        description: 'Deployment strategy'
+        required: true
+        default: 'rolling'
+        type: choice
+        options:
+          - rolling
+          - blue-green
+          - canary
+      skip_tests:
+        description: 'Skip tests'
+        required: false
+        default: false
+        type: boolean
+      force_deploy:
+        description: 'Force deployment (skip validations)'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  REGISTRY: ccr.ccs.tencentyun.com
+  IMAGE_NAME: superinsight/fullstack
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '18'
+
+jobs:
+  # =============================================================================
+  # Determine Deployment Strategy
+  # =============================================================================
+  determine-strategy:
+    name: Determine Deployment Strategy
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.strategy.outputs.environment }}
+      deployment_mode: ${{ steps.strategy.outputs.deployment_mode }}
+      should_deploy: ${{ steps.strategy.outputs.should_deploy }}
+      skip_tests: ${{ steps.strategy.outputs.skip_tests }}
+      
+    steps:
+    - name: Determine deployment strategy
+      id: strategy
+      run: |
+        # Default values
+        ENVIRONMENT=""
+        DEPLOYMENT_MODE="rolling"
+        SHOULD_DEPLOY="false"
+        SKIP_TESTS="false"
+        
+        # Manual workflow dispatch
+        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          ENVIRONMENT="${{ github.event.inputs.environment }}"
+          DEPLOYMENT_MODE="${{ github.event.inputs.deployment_mode }}"
+          SHOULD_DEPLOY="true"
+          SKIP_TESTS="${{ github.event.inputs.skip_tests }}"
+        
+        # Automatic deployment based on branch
+        elif [[ "${{ github.event_name }}" == "push" ]]; then
+          case "${{ github.ref }}" in
+            "refs/heads/main")
+              ENVIRONMENT="production"
+              DEPLOYMENT_MODE="blue-green"
+              SHOULD_DEPLOY="true"
+              ;;
+            "refs/heads/develop")
+              ENVIRONMENT="staging"
+              DEPLOYMENT_MODE="rolling"
+              SHOULD_DEPLOY="true"
+              ;;
+            refs/heads/release/*)
+              ENVIRONMENT="staging"
+              DEPLOYMENT_MODE="canary"
+              SHOULD_DEPLOY="true"
+              ;;
+          esac
+        
+        # Pull requests - no deployment, just testing
+        elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          ENVIRONMENT="development"
+          SHOULD_DEPLOY="false"
+        fi
+        
+        echo "environment=${ENVIRONMENT}" >> $GITHUB_OUTPUT
+        echo "deployment_mode=${DEPLOYMENT_MODE}" >> $GITHUB_OUTPUT
+        echo "should_deploy=${SHOULD_DEPLOY}" >> $GITHUB_OUTPUT
+        echo "skip_tests=${SKIP_TESTS}" >> $GITHUB_OUTPUT
+        
+        echo "Strategy determined:"
+        echo "  Environment: ${ENVIRONMENT}"
+        echo "  Deployment Mode: ${DEPLOYMENT_MODE}"
+        echo "  Should Deploy: ${SHOULD_DEPLOY}"
+        echo "  Skip Tests: ${SKIP_TESTS}"
+
+  # =============================================================================
+  # Run Tests
+  # =============================================================================
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    needs: determine-strategy
+    if: needs.determine-strategy.outputs.skip_tests != 'true'
+    
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_superinsight
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov pytest-asyncio
+
+    - name: Run backend tests
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_superinsight
+        REDIS_URL: redis://localhost:6379/0
+        ENVIRONMENT: test
+      run: |
+        pytest tests/ -v --cov=src --cov-report=xml --cov-report=html
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+
+    - name: Install frontend dependencies
+      working-directory: frontend
+      run: npm ci
+
+    - name: Run frontend tests
+      working-directory: frontend
+      run: npm test -- --run
+
+    - name: Upload test coverage
+      uses: codecov/codecov-action@v4
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-superinsight
+        token: ${{ secrets.CODECOV_TOKEN }}
+
+  # =============================================================================
+  # Build Docker Images
+  # =============================================================================
+  build:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    needs: [determine-strategy, test]
+    if: always() && (needs.test.result == 'success' || needs.test.result == 'skipped') && needs.determine-strategy.outputs.should_deploy == 'true'
+    
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tags }}
+      image_digest: ${{ steps.build.outputs.digest }}
+      
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Login to Tencent Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ secrets.TCB_SECRET_ID }}
+        password: ${{ secrets.TCB_SECRET_KEY }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+          type=raw,value=${{ needs.determine-strategy.outputs.environment }}-latest
+          type=raw,value=${{ needs.determine-strategy.outputs.environment }}-{{date 'YYYYMMDD-HHmmss'}}
+
+    - name: Build and push Docker image
+      id: build
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./deploy/tcb/Dockerfile.fullstack
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        build-args: |
+          ENVIRONMENT=${{ needs.determine-strategy.outputs.environment }}
+          BUILD_DATE=${{ github.event.head_commit.timestamp }}
+          VCS_REF=${{ github.sha }}
+          VERSION=${{ github.ref_name }}
+
+    - name: Generate SBOM
+      uses: anchore/sbom-action@v0
+      with:
+        image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.determine-strategy.outputs.environment }}-latest
+        format: spdx-json
+        output-file: sbom.spdx.json
+
+    - name: Upload SBOM artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: sbom-${{ needs.determine-strategy.outputs.environment }}
+        path: sbom.spdx.json
+
+  # =============================================================================
+  # Deploy to Development
+  # =============================================================================
+  deploy-development:
+    name: Deploy to Development
+    runs-on: ubuntu-latest
+    needs: [determine-strategy, build]
+    if: needs.determine-strategy.outputs.environment == 'development' && needs.determine-strategy.outputs.should_deploy == 'true'
+    environment: development
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Deploy to development
+      run: |
+        chmod +x deploy/tcb/scripts/multi-env-deploy.sh
+        deploy/tcb/scripts/multi-env-deploy.sh \
+          --environment development \
+          --mode rolling \
+          --skip-tests \
+          --no-backup
+      env:
+        TCB_SECRET_ID: ${{ secrets.TCB_SECRET_ID }}
+        TCB_SECRET_KEY: ${{ secrets.TCB_SECRET_KEY }}
+        TCB_ENV_ID: ${{ secrets.TCB_DEV_ENV_ID }}
+
+  # =============================================================================
+  # Deploy to Staging
+  # =============================================================================
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [determine-strategy, build]
+    if: needs.determine-strategy.outputs.environment == 'staging' && needs.determine-strategy.outputs.should_deploy == 'true'
+    environment: staging
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Deploy to staging
+      run: |
+        chmod +x deploy/tcb/scripts/multi-env-deploy.sh
+        deploy/tcb/scripts/multi-env-deploy.sh \
+          --environment staging \
+          --mode ${{ needs.determine-strategy.outputs.deployment_mode }}
+      env:
+        TCB_SECRET_ID: ${{ secrets.TCB_SECRET_ID }}
+        TCB_SECRET_KEY: ${{ secrets.TCB_SECRET_KEY }}
+        TCB_ENV_ID: ${{ secrets.TCB_STAGING_ENV_ID }}
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+    - name: Run staging smoke tests
+      run: |
+        # Wait for deployment to stabilize
+        sleep 60
+        
+        # Run basic smoke tests
+        curl -f https://staging.superinsight.ai/health || exit 1
+        curl -f https://staging.superinsight.ai/api/v1/health || exit 1
+
+  # =============================================================================
+  # Deploy to Production
+  # =============================================================================
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [determine-strategy, build]
+    if: needs.determine-strategy.outputs.environment == 'production' && needs.determine-strategy.outputs.should_deploy == 'true'
+    environment: production
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Pre-deployment backup
+      run: |
+        chmod +x deploy/tcb/scripts/backup/backup-manager.sh
+        deploy/tcb/scripts/backup/backup-manager.sh \
+          --environment production \
+          --type full
+      env:
+        TCB_SECRET_ID: ${{ secrets.TCB_SECRET_ID }}
+        TCB_SECRET_KEY: ${{ secrets.TCB_SECRET_KEY }}
+        TCB_ENV_ID: ${{ secrets.TCB_PROD_ENV_ID }}
+
+    - name: Deploy to production
+      run: |
+        chmod +x deploy/tcb/scripts/multi-env-deploy.sh
+        deploy/tcb/scripts/multi-env-deploy.sh \
+          --environment production \
+          --mode ${{ needs.determine-strategy.outputs.deployment_mode }}
+      env:
+        TCB_SECRET_ID: ${{ secrets.TCB_SECRET_ID }}
+        TCB_SECRET_KEY: ${{ secrets.TCB_SECRET_KEY }}
+        TCB_ENV_ID: ${{ secrets.TCB_PROD_ENV_ID }}
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+    - name: Run production smoke tests
+      run: |
+        # Wait for deployment to stabilize
+        sleep 120
+        
+        # Run comprehensive smoke tests
+        curl -f https://superinsight.ai/health || exit 1
+        curl -f https://superinsight.ai/api/v1/health || exit 1
+        
+        # Test key endpoints
+        curl -f https://superinsight.ai/api/v1/auth/status || exit 1
+
+    - name: Post-deployment monitoring
+      run: |
+        # Monitor for 5 minutes after deployment
+        for i in {1..10}; do
+          echo "Health check $i/10"
+          curl -f https://superinsight.ai/health || exit 1
+          sleep 30
+        done
+        echo "Post-deployment monitoring completed successfully"
+
+  # =============================================================================
+  # Security Scan
+  # =============================================================================
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: needs.build.result == 'success'
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.determine-strategy.outputs.environment }}-latest
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        severity: 'CRITICAL,HIGH'
+
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: 'trivy-results.sarif'
+      if: always()
+
+  # =============================================================================
+  # Notification
+  # =============================================================================
+  notify:
+    name: Send Notifications
+    runs-on: ubuntu-latest
+    needs: [determine-strategy, deploy-development, deploy-staging, deploy-production]
+    if: always() && needs.determine-strategy.outputs.should_deploy == 'true'
+    
+    steps:
+    - name: Determine deployment result
+      id: result
+      run: |
+        if [[ "${{ needs.deploy-development.result }}" == "success" ]] || \
+           [[ "${{ needs.deploy-staging.result }}" == "success" ]] || \
+           [[ "${{ needs.deploy-production.result }}" == "success" ]]; then
+          echo "status=success" >> $GITHUB_OUTPUT
+          echo "message=Deployment completed successfully" >> $GITHUB_OUTPUT
+        else
+          echo "status=failure" >> $GITHUB_OUTPUT
+          echo "message=Deployment failed" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Send Slack notification
+      if: env.SLACK_WEBHOOK_URL != ''
+      run: |
+        curl -X POST -H 'Content-type: application/json' \
+          --data '{
+            "attachments": [
+              {
+                "color": "${{ steps.result.outputs.status == 'success' && 'good' || 'danger' }}",
+                "title": "SuperInsight Deployment ${{ steps.result.outputs.status }}",
+                "fields": [
+                  {
+                    "title": "Environment",
+                    "value": "${{ needs.determine-strategy.outputs.environment }}",
+                    "short": true
+                  },
+                  {
+                    "title": "Mode",
+                    "value": "${{ needs.determine-strategy.outputs.deployment_mode }}",
+                    "short": true
+                  },
+                  {
+                    "title": "Branch",
+                    "value": "${{ github.ref_name }}",
+                    "short": true
+                  },
+                  {
+                    "title": "Commit",
+                    "value": "${{ github.sha }}",
+                    "short": true
+                  },
+                  {
+                    "title": "Message",
+                    "value": "${{ steps.result.outputs.message }}",
+                    "short": false
+                  }
+                ],
+                "ts": $(date +%s)
+              }
+            ]
+          }' \
+          ${{ secrets.SLACK_WEBHOOK_URL }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+    - name: Create deployment summary
+      run: |
+        echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "- **Environment**: ${{ needs.determine-strategy.outputs.environment }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Mode**: ${{ needs.determine-strategy.outputs.deployment_mode }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Status**: ${{ steps.result.outputs.status }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Timestamp**: $(date -Iseconds)" >> $GITHUB_STEP_SUMMARY

@@ -1,8 +1,25 @@
 // Tasks list page
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ProTable, type ProColumns, type ActionType } from '@ant-design/pro-components';
-import { Button, Tag, Space, Modal, Progress, Dropdown, message } from 'antd';
+import { 
+  Button, 
+  Tag, 
+  Space, 
+  Modal, 
+  Progress, 
+  Dropdown, 
+  message, 
+  Select,
+  Input,
+  DatePicker,
+  Tooltip,
+  Badge,
+  Card,
+  Statistic,
+  Row,
+  Col
+} from 'antd';
 import {
   PlusOutlined,
   DeleteOutlined,
@@ -10,10 +27,21 @@ import {
   EyeOutlined,
   MoreOutlined,
   ExclamationCircleOutlined,
+  SearchOutlined,
+  FilterOutlined,
+  ReloadOutlined,
+  DownloadOutlined,
+  PlayCircleOutlined,
+  PauseCircleOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  TagOutlined,
+  UserOutlined,
+  CalendarOutlined,
+  BarChartOutlined
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import { useRef } from 'react';
-import { useTasks, useDeleteTask, useBatchDeleteTasks } from '@/hooks/useTask';
+import { useTasks, useDeleteTask, useBatchDeleteTasks, useUpdateTask, useTaskStats } from '@/hooks/useTask';
 import { TaskCreateModal } from './TaskCreateModal';
 import type { Task, TaskStatus, TaskPriority } from '@/types';
 
@@ -32,16 +60,19 @@ const priorityColorMap: Record<TaskPriority, string> = {
 };
 
 const TasksPage: React.FC = () => {
-  useTranslation('common'); // Translation initialized for i18n context
+  const { t } = useTranslation(['tasks', 'common']);
   const navigate = useNavigate();
   const actionRef = useRef<ActionType>(null);
   const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [currentParams, setCurrentParams] = useState({});
+  const [batchAction, setBatchAction] = useState<string>('');
 
   const { data, isLoading, refetch } = useTasks(currentParams);
+  const { data: stats } = useTaskStats();
   const deleteTask = useDeleteTask();
   const batchDeleteTasks = useBatchDeleteTasks();
+  const updateTask = useUpdateTask();
 
   const handleDelete = (id: string) => {
     Modal.confirm({
@@ -58,13 +89,13 @@ const TasksPage: React.FC = () => {
 
   const handleBatchDelete = () => {
     if (selectedRowKeys.length === 0) {
-      message.warning('Please select tasks to delete');
+      message.warning(t('tasks.selectTasksToDelete'));
       return;
     }
     Modal.confirm({
-      title: 'Delete Tasks',
+      title: t('tasks.deleteTasks'),
       icon: <ExclamationCircleOutlined />,
-      content: `Are you sure you want to delete ${selectedRowKeys.length} tasks?`,
+      content: t('tasks.confirmDeleteTasks', { count: selectedRowKeys.length }),
       okType: 'danger',
       onOk: async () => {
         await batchDeleteTasks.mutateAsync(selectedRowKeys);
@@ -74,122 +105,245 @@ const TasksPage: React.FC = () => {
     });
   };
 
+  const handleBatchStatusUpdate = async (status: TaskStatus) => {
+    if (selectedRowKeys.length === 0) {
+      message.warning(t('tasks.selectTasksToUpdate'));
+      return;
+    }
+    
+    try {
+      // Update each selected task
+      await Promise.all(
+        selectedRowKeys.map(id => 
+          updateTask.mutateAsync({ id, payload: { status } })
+        )
+      );
+      setSelectedRowKeys([]);
+      refetch();
+      message.success(t('tasks.batchUpdateSuccess'));
+    } catch (error) {
+      message.error(t('tasks.batchUpdateError'));
+    }
+  };
+
+  const handleExportTasks = () => {
+    // Export selected tasks or all tasks
+    const tasksToExport = selectedRowKeys.length > 0 
+      ? (data?.items || mockTasks).filter(task => selectedRowKeys.includes(task.id))
+      : (data?.items || mockTasks);
+    
+    const csvContent = [
+      ['ID', 'Name', 'Status', 'Priority', 'Assignee', 'Progress', 'Created', 'Due Date'].join(','),
+      ...tasksToExport.map(task => [
+        task.id,
+        `"${task.name}"`,
+        task.status,
+        task.priority,
+        task.assignee_name || '',
+        `${task.progress}%`,
+        new Date(task.created_at).toLocaleDateString(),
+        task.due_date ? new Date(task.due_date).toLocaleDateString() : ''
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tasks_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    message.success(t('tasks.exportSuccess'));
+  };
+
   const columns: ProColumns<Task>[] = [
     {
-      title: 'Task Name',
+      title: t('tasks.taskName'),
       dataIndex: 'name',
       key: 'name',
       width: 200,
       ellipsis: true,
       render: (_, record) => (
-        <a onClick={() => navigate(`/tasks/${record.id}`)}>{record.name}</a>
+        <Space direction="vertical" size={0}>
+          <a onClick={() => navigate(`/tasks/${record.id}`)}>{record.name}</a>
+          {record.tags && record.tags.length > 0 && (
+            <Space size={4}>
+              {record.tags.slice(0, 2).map(tag => (
+                <Tag key={tag} size="small" icon={<TagOutlined />}>
+                  {tag}
+                </Tag>
+              ))}
+              {record.tags.length > 2 && (
+                <Tooltip title={record.tags.slice(2).join(', ')}>
+                  <Tag size="small">+{record.tags.length - 2}</Tag>
+                </Tooltip>
+              )}
+            </Space>
+          )}
+        </Space>
       ),
     },
     {
-      title: 'Status',
+      title: t('tasks.status'),
       dataIndex: 'status',
       key: 'status',
       width: 120,
       valueType: 'select',
       valueEnum: {
-        pending: { text: 'Pending', status: 'Default' },
-        in_progress: { text: 'In Progress', status: 'Processing' },
-        completed: { text: 'Completed', status: 'Success' },
-        cancelled: { text: 'Cancelled', status: 'Error' },
+        pending: { text: t('tasks.statusPending'), status: 'Default' },
+        in_progress: { text: t('tasks.statusInProgress'), status: 'Processing' },
+        completed: { text: t('tasks.statusCompleted'), status: 'Success' },
+        cancelled: { text: t('tasks.statusCancelled'), status: 'Error' },
       },
-      render: (_, record) => (
-        <Tag color={statusColorMap[record.status]}>
-          {record.status.replace('_', ' ').toUpperCase()}
-        </Tag>
-      ),
+      render: (_, record) => {
+        const statusConfig = {
+          pending: { color: 'default', icon: <CalendarOutlined /> },
+          in_progress: { color: 'processing', icon: <PlayCircleOutlined /> },
+          completed: { color: 'success', icon: <CheckCircleOutlined /> },
+          cancelled: { color: 'error', icon: <CloseCircleOutlined /> },
+        };
+        const config = statusConfig[record.status];
+        return (
+          <Tag color={config.color} icon={config.icon}>
+            {t(`tasks.status${record.status.charAt(0).toUpperCase() + record.status.slice(1).replace('_', '')}`)}
+          </Tag>
+        );
+      },
     },
     {
-      title: 'Priority',
+      title: t('tasks.priority'),
       dataIndex: 'priority',
       key: 'priority',
       width: 100,
       valueType: 'select',
       valueEnum: {
-        low: { text: 'Low' },
-        medium: { text: 'Medium' },
-        high: { text: 'High' },
-        urgent: { text: 'Urgent' },
+        low: { text: t('tasks.priorityLow') },
+        medium: { text: t('tasks.priorityMedium') },
+        high: { text: t('tasks.priorityHigh') },
+        urgent: { text: t('tasks.priorityUrgent') },
       },
-      render: (_, record) => (
-        <Tag color={priorityColorMap[record.priority]}>
-          {record.priority.toUpperCase()}
-        </Tag>
-      ),
+      render: (_, record) => {
+        const priorityConfig = {
+          low: { color: 'green', text: t('tasks.priorityLow') },
+          medium: { color: 'blue', text: t('tasks.priorityMedium') },
+          high: { color: 'orange', text: t('tasks.priorityHigh') },
+          urgent: { color: 'red', text: t('tasks.priorityUrgent') },
+        };
+        const config = priorityConfig[record.priority];
+        return <Tag color={config.color}>{config.text}</Tag>;
+      },
     },
     {
-      title: 'Annotation Type',
+      title: t('tasks.annotationType'),
       dataIndex: 'annotation_type',
       key: 'annotation_type',
       width: 150,
       valueType: 'select',
       valueEnum: {
-        text_classification: { text: 'Text Classification' },
-        ner: { text: 'NER' },
-        sentiment: { text: 'Sentiment' },
-        qa: { text: 'Q&A' },
-        custom: { text: 'Custom' },
+        text_classification: { text: t('tasks.typeTextClassification') },
+        ner: { text: t('tasks.typeNER') },
+        sentiment: { text: t('tasks.typeSentiment') },
+        qa: { text: t('tasks.typeQA') },
+        custom: { text: t('tasks.typeCustom') },
       },
+      render: (_, record) => (
+        <Tag color="blue">
+          {t(`tasks.type${record.annotation_type.charAt(0).toUpperCase() + record.annotation_type.slice(1).replace('_', '')}`)}
+        </Tag>
+      ),
     },
     {
-      title: 'Progress',
+      title: t('tasks.progress'),
       dataIndex: 'progress',
       key: 'progress',
       width: 180,
       search: false,
+      sorter: true,
       render: (_, record) => (
         <Space direction="vertical" size={0} style={{ width: '100%' }}>
           <Progress
             percent={record.progress}
             size="small"
             status={record.status === 'completed' ? 'success' : 'active'}
+            strokeColor={
+              record.progress >= 80 ? '#52c41a' :
+              record.progress >= 50 ? '#1890ff' :
+              record.progress >= 20 ? '#faad14' : '#ff4d4f'
+            }
           />
-          <span style={{ fontSize: 12, color: '#999' }}>
-            {record.completed_items} / {record.total_items}
-          </span>
+          <Space size={4}>
+            <span style={{ fontSize: 12, color: '#999' }}>
+              {record.completed_items} / {record.total_items}
+            </span>
+            <Badge 
+              count={record.progress} 
+              showZero 
+              style={{ backgroundColor: '#52c41a' }}
+              size="small"
+            />
+          </Space>
         </Space>
       ),
     },
     {
-      title: 'Assignee',
+      title: t('tasks.assignee'),
       dataIndex: 'assignee_name',
       key: 'assignee_name',
       width: 120,
       ellipsis: true,
-      render: (text) => text || '-',
+      render: (text, record) => (
+        <Space>
+          <UserOutlined style={{ color: '#1890ff' }} />
+          <span>{text || t('tasks.unassigned')}</span>
+        </Space>
+      ),
     },
     {
-      title: 'Due Date',
+      title: t('tasks.dueDate'),
       dataIndex: 'due_date',
       key: 'due_date',
       width: 120,
       valueType: 'date',
+      sorter: true,
       render: (_, record) => {
-        if (!record.due_date) return '-';
+        if (!record.due_date) return <span style={{ color: '#999' }}>-</span>;
         const dueDate = new Date(record.due_date);
         const isOverdue = dueDate < new Date() && record.status !== 'completed';
+        const isNearDue = dueDate.getTime() - Date.now() < 3 * 24 * 60 * 60 * 1000; // 3 days
+        
         return (
-          <span style={{ color: isOverdue ? '#ff4d4f' : undefined }}>
-            {dueDate.toLocaleDateString()}
-          </span>
+          <Space>
+            <CalendarOutlined style={{ 
+              color: isOverdue ? '#ff4d4f' : isNearDue ? '#faad14' : '#1890ff' 
+            }} />
+            <span style={{ 
+              color: isOverdue ? '#ff4d4f' : isNearDue ? '#faad14' : undefined 
+            }}>
+              {dueDate.toLocaleDateString()}
+            </span>
+            {isOverdue && <Badge status="error" text={t('tasks.overdue')} />}
+            {isNearDue && !isOverdue && <Badge status="warning" text={t('tasks.nearDue')} />}
+          </Space>
         );
       },
     },
     {
-      title: 'Created',
+      title: t('tasks.created'),
       dataIndex: 'created_at',
       key: 'created_at',
       width: 120,
       valueType: 'date',
       search: false,
       sorter: true,
+      render: (_, record) => (
+        <Tooltip title={new Date(record.created_at).toLocaleString()}>
+          {new Date(record.created_at).toLocaleDateString()}
+        </Tooltip>
+      ),
     },
     {
-      title: 'Actions',
+      title: t('tasks.actions'),
       key: 'actions',
       width: 120,
       fixed: 'right',
@@ -201,20 +355,58 @@ const TasksPage: React.FC = () => {
               {
                 key: 'view',
                 icon: <EyeOutlined />,
-                label: 'View',
+                label: t('tasks.view'),
                 onClick: () => navigate(`/tasks/${record.id}`),
+              },
+              {
+                key: 'annotate',
+                icon: <EditOutlined />,
+                label: t('tasks.annotate'),
+                onClick: () => navigate(`/tasks/${record.id}/annotate`),
+                disabled: record.status === 'completed',
               },
               {
                 key: 'edit',
                 icon: <EditOutlined />,
-                label: 'Edit',
+                label: t('tasks.edit'),
                 onClick: () => navigate(`/tasks/${record.id}/edit`),
+              },
+              { type: 'divider' },
+              {
+                key: 'start',
+                icon: <PlayCircleOutlined />,
+                label: t('tasks.start'),
+                onClick: () => updateTask.mutateAsync({ 
+                  id: record.id, 
+                  payload: { status: 'in_progress' } 
+                }),
+                disabled: record.status !== 'pending',
+              },
+              {
+                key: 'complete',
+                icon: <CheckCircleOutlined />,
+                label: t('tasks.complete'),
+                onClick: () => updateTask.mutateAsync({ 
+                  id: record.id, 
+                  payload: { status: 'completed' } 
+                }),
+                disabled: record.status !== 'in_progress',
+              },
+              {
+                key: 'pause',
+                icon: <PauseCircleOutlined />,
+                label: t('tasks.pause'),
+                onClick: () => updateTask.mutateAsync({ 
+                  id: record.id, 
+                  payload: { status: 'pending' } 
+                }),
+                disabled: record.status !== 'in_progress',
               },
               { type: 'divider' },
               {
                 key: 'delete',
                 icon: <DeleteOutlined />,
-                label: 'Delete',
+                label: t('tasks.delete'),
                 danger: true,
                 onClick: () => handleDelete(record.id),
               },
@@ -286,46 +478,181 @@ const TasksPage: React.FC = () => {
 
   return (
     <>
+      {/* Statistics Cards */}
+      {stats && (
+        <Row gutter={16} style={{ marginBottom: 16 }}>
+          <Col span={6}>
+            <Card>
+              <Statistic
+                title={t('tasks.totalTasks')}
+                value={stats.total}
+                prefix={<BarChartOutlined />}
+                valueStyle={{ color: '#1890ff' }}
+              />
+            </Card>
+          </Col>
+          <Col span={6}>
+            <Card>
+              <Statistic
+                title={t('tasks.inProgress')}
+                value={stats.in_progress}
+                prefix={<PlayCircleOutlined />}
+                valueStyle={{ color: '#52c41a' }}
+              />
+            </Card>
+          </Col>
+          <Col span={6}>
+            <Card>
+              <Statistic
+                title={t('tasks.completed')}
+                value={stats.completed}
+                prefix={<CheckCircleOutlined />}
+                valueStyle={{ color: '#52c41a' }}
+              />
+            </Card>
+          </Col>
+          <Col span={6}>
+            <Card>
+              <Statistic
+                title={t('tasks.overdue')}
+                value={stats.overdue}
+                prefix={<ExclamationCircleOutlined />}
+                valueStyle={{ color: '#ff4d4f' }}
+              />
+            </Card>
+          </Col>
+        </Row>
+      )}
+
       <ProTable<Task>
-        headerTitle="Annotation Tasks"
+        headerTitle={t('tasks.annotationTasks')}
         actionRef={actionRef}
         rowKey="id"
         loading={isLoading}
         columns={columns}
         dataSource={data?.items || mockTasks}
-        scroll={{ x: 1200 }}
+        scroll={{ x: 1400 }}
         search={{
           labelWidth: 'auto',
           defaultCollapsed: false,
+          searchText: t('common.search'),
+          resetText: t('common.reset'),
+          collapseRender: (collapsed) => (
+            <Button
+              type="link"
+              icon={<FilterOutlined />}
+            >
+              {collapsed ? t('tasks.expandFilters') : t('tasks.collapseFilters')}
+            </Button>
+          ),
         }}
         pagination={{
           pageSize: 10,
           showSizeChanger: true,
           showQuickJumper: true,
+          showTotal: (total, range) => 
+            t('tasks.paginationTotal', { 
+              start: range[0], 
+              end: range[1], 
+              total 
+            }),
           total: data?.total || mockTasks.length,
         }}
         rowSelection={{
           selectedRowKeys,
           onChange: (keys) => setSelectedRowKeys(keys as string[]),
+          selections: [
+            {
+              key: 'all',
+              text: t('tasks.selectAll'),
+              onSelect: () => {
+                setSelectedRowKeys((data?.items || mockTasks).map(item => item.id));
+              },
+            },
+            {
+              key: 'invert',
+              text: t('tasks.invertSelection'),
+              onSelect: () => {
+                const allKeys = (data?.items || mockTasks).map(item => item.id);
+                setSelectedRowKeys(allKeys.filter(key => !selectedRowKeys.includes(key)));
+              },
+            },
+            {
+              key: 'none',
+              text: t('tasks.selectNone'),
+              onSelect: () => {
+                setSelectedRowKeys([]);
+              },
+            },
+          ],
         }}
         toolBarRender={() => [
           selectedRowKeys.length > 0 && (
-            <Button
-              key="batchDelete"
-              danger
-              icon={<DeleteOutlined />}
-              onClick={handleBatchDelete}
+            <Dropdown
+              key="batchActions"
+              menu={{
+                items: [
+                  {
+                    key: 'batchStart',
+                    icon: <PlayCircleOutlined />,
+                    label: t('tasks.batchStart'),
+                    onClick: () => handleBatchStatusUpdate('in_progress'),
+                  },
+                  {
+                    key: 'batchComplete',
+                    icon: <CheckCircleOutlined />,
+                    label: t('tasks.batchComplete'),
+                    onClick: () => handleBatchStatusUpdate('completed'),
+                  },
+                  {
+                    key: 'batchPause',
+                    icon: <PauseCircleOutlined />,
+                    label: t('tasks.batchPause'),
+                    onClick: () => handleBatchStatusUpdate('pending'),
+                  },
+                  { type: 'divider' },
+                  {
+                    key: 'batchDelete',
+                    icon: <DeleteOutlined />,
+                    label: t('tasks.batchDelete'),
+                    danger: true,
+                    onClick: handleBatchDelete,
+                  },
+                ],
+              }}
             >
-              Delete ({selectedRowKeys.length})
-            </Button>
+              <Button icon={<MoreOutlined />}>
+                {t('tasks.batchActions')} ({selectedRowKeys.length})
+              </Button>
+            </Dropdown>
           ),
+          <Button
+            key="export"
+            icon={<DownloadOutlined />}
+            onClick={handleExportTasks}
+          >
+            {selectedRowKeys.length > 0 
+              ? t('tasks.exportSelected', { count: selectedRowKeys.length })
+              : t('tasks.exportAll')
+            }
+          </Button>,
+          <Button
+            key="refresh"
+            icon={<ReloadOutlined />}
+            onClick={() => {
+              refetch();
+              actionRef.current?.reload();
+            }}
+          >
+            {t('common.refresh')}
+          </Button>,
           <Button
             key="create"
             type="primary"
             icon={<PlusOutlined />}
             onClick={() => setCreateModalOpen(true)}
           >
-            Create Task
+            {t('tasks.createTask')}
           </Button>,
         ]}
         onSubmit={(params) => {
@@ -334,6 +661,29 @@ const TasksPage: React.FC = () => {
         onReset={() => {
           setCurrentParams({});
         }}
+        tableAlertRender={({ selectedRowKeys, onCleanSelected }) => (
+          <Space size={24}>
+            <span>
+              {t('tasks.selectedItems', { count: selectedRowKeys.length })}
+              <a style={{ marginLeft: 8 }} onClick={onCleanSelected}>
+                {t('tasks.clearSelection')}
+              </a>
+            </span>
+          </Space>
+        )}
+        tableAlertOptionRender={({ selectedRowKeys }) => (
+          <Space size={16}>
+            <a onClick={() => handleBatchStatusUpdate('in_progress')}>
+              {t('tasks.batchStart')}
+            </a>
+            <a onClick={() => handleBatchStatusUpdate('completed')}>
+              {t('tasks.batchComplete')}
+            </a>
+            <a onClick={handleBatchDelete} style={{ color: '#ff4d4f' }}>
+              {t('tasks.batchDelete')}
+            </a>
+          </Space>
+        )}
       />
 
       <TaskCreateModal

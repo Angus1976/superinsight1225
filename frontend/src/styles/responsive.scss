@@ -1,0 +1,242 @@
+// Responsive styles for layout
+@import './variables.scss';
+
+// Breakpoints
+$mobile: 576px;
+$tablet: 768px;
+$desktop: 992px;
+$large: 1200px;
+$xlarge: 1600px;
+
+// Mixins for responsive design
+@mixin mobile {
+  @media (max-width: #{$mobile - 1px}) {
+    @content;
+  }
+}
+
+@mixin tablet {
+  @media (min-width: #{$mobile}) and (max-width: #{$tablet - 1px}) {
+    @content;
+  }
+}
+
+@mixin desktop {
+  @media (min-width: #{$tablet}) {
+    @content;
+  }
+}
+
+@mixin large {
+  @media (min-width: #{$desktop}) {
+    @content;
+  }
+}
+
+@mixin xlarge {
+  @media (min-width: #{$large}) {
+    @content;
+  }
+}
+
+// Layout responsive styles
+.main-layout {
+  @include mobile {
+    .ant-pro-layout-content {
+      padding: 12px !important;
+    }
+    
+    .ant-pro-page-container-children-content {
+      padding: 16px !important;
+    }
+  }
+
+  @include tablet {
+    .ant-pro-layout-content {
+      padding: 16px !important;
+    }
+  }
+
+  @include desktop {
+    .ant-pro-layout-content {
+      padding: 24px !important;
+    }
+  }
+}
+
+// Header responsive styles
+.header-content {
+  @include mobile {
+    .ant-space {
+      gap: 8px !important;
+    }
+    
+    .ant-btn {
+      padding: 4px 8px !important;
+      font-size: 12px !important;
+    }
+    
+    .ant-avatar {
+      width: 24px !important;
+      height: 24px !important;
+    }
+  }
+
+  @include tablet {
+    .ant-space {
+      gap: 12px !important;
+    }
+  }
+}
+
+// Navigation responsive styles
+.navigation-menu {
+  @include mobile {
+    .ant-menu-item {
+      padding: 0 16px !important;
+      height: 48px !important;
+      line-height: 48px !important;
+    }
+    
+    .ant-menu-item-icon {
+      font-size: 18px !important;
+    }
+  }
+}
+
+// Page container responsive styles
+.page-container {
+  @include mobile {
+    .ant-page-header {
+      padding: 16px !important;
+      
+      .ant-page-header-heading-title {
+        font-size: 18px !important;
+      }
+      
+      .ant-page-header-heading-sub-title {
+        font-size: 14px !important;
+      }
+    }
+  }
+
+  @include tablet {
+    .ant-page-header {
+      padding: 20px !important;
+    }
+  }
+}
+
+// Breadcrumb responsive styles
+.breadcrumb-container {
+  @include mobile {
+    .ant-breadcrumb {
+      font-size: 12px !important;
+      
+      .ant-breadcrumb-link {
+        max-width: 80px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+  }
+}
+
+// Card responsive styles
+.responsive-card {
+  @include mobile {
+    margin: 8px 0 !important;
+    
+    .ant-card-head {
+      padding: 0 16px !important;
+      min-height: 48px !important;
+    }
+    
+    .ant-card-body {
+      padding: 16px !important;
+    }
+  }
+
+  @include tablet {
+    margin: 12px 0 !important;
+  }
+}
+
+// Table responsive styles
+.responsive-table {
+  @include mobile {
+    .ant-table {
+      font-size: 12px !important;
+    }
+    
+    .ant-table-thead > tr > th {
+      padding: 8px 4px !important;
+    }
+    
+    .ant-table-tbody > tr > td {
+      padding: 8px 4px !important;
+    }
+  }
+}
+
+// Form responsive styles
+.responsive-form {
+  @include mobile {
+    .ant-form-item {
+      margin-bottom: 16px !important;
+    }
+    
+    .ant-form-item-label {
+      padding: 0 0 4px !important;
+    }
+    
+    .ant-btn {
+      width: 100% !important;
+      margin-bottom: 8px !important;
+    }
+  }
+}
+
+// Utility classes
+.hide-mobile {
+  @include mobile {
+    display: none !important;
+  }
+}
+
+.hide-tablet {
+  @include tablet {
+    display: none !important;
+  }
+}
+
+.hide-desktop {
+  @include desktop {
+    display: none !important;
+  }
+}
+
+.show-mobile {
+  display: none !important;
+  
+  @include mobile {
+    display: block !important;
+  }
+}
+
+.show-tablet {
+  display: none !important;
+  
+  @include tablet {
+    display: block !important;
+  }
+}
+
+.show-desktop {
+  display: none !important;
+  
+  @include desktop {
+    display: block !important;
+  }
+}

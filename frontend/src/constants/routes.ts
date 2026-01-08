@@ -4,6 +4,8 @@ export const ROUTES = {
   // Public routes
   LOGIN: '/login',
   REGISTER: '/register',
+  FORGOT_PASSWORD: '/forgot-password',
+  RESET_PASSWORD: '/reset-password',
 
   // Protected routes
   HOME: '/',
@@ -36,6 +38,9 @@ export const ROUTES = {
 
   // Security Audit
   SECURITY: '/security',
+
+  // Data Sync
+  DATA_SYNC: '/data-sync',
 
   // Error pages
   NOT_FOUND: '/404',

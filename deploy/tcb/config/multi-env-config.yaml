@@ -1,0 +1,248 @@
+# SuperInsight TCB Multi-Environment Configuration
+# This file defines environment-specific configurations for development, staging, and production
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: multi-env-config
+  namespace: superinsight
+data:
+  # =============================================================================
+  # Development Environment Configuration
+  # =============================================================================
+  development.yaml: |
+    environment:
+      name: development
+      debug: true
+      log_level: DEBUG
+      
+    tcb:
+      env_id: superinsight-dev
+      region: ap-shanghai
+      
+    resources:
+      cpu: 1
+      memory: 1024Mi
+      min_instances: 1
+      max_instances: 3
+      scale_threshold: 90
+      
+    database:
+      postgres:
+        host: localhost
+        port: 5432
+        database: superinsight_dev
+        user: superinsight_dev
+        pool_size: 5
+        max_overflow: 10
+        volume_size: 20Gi
+      redis:
+        host: localhost
+        port: 6379
+        database: 0
+        maxmemory: 128mb
+        volume_size: 5Gi
+        
+    storage:
+      label_studio: 50Gi
+      uploads: 20Gi
+      logs: 10Gi
+      backups: 20Gi
+      metrics: 5Gi
+      
+    features:
+      multi_tenant: false
+      metrics: false
+      backup: false
+      security_scan: false
+      audit_log: false
+      
+    security:
+      waf_enabled: false
+      ddos_protection: false
+      fail2ban: false
+      
+    monitoring:
+      prometheus: false
+      grafana: false
+      alerts: false
+      
+    cost_control:
+      max_monthly_cost: 200
+      alert_threshold: 50
+      auto_scale_down: true
+      
+    network:
+      vpc_id: vpc-dev-superinsight
+      subnet_id: subnet-dev-superinsight
+      domain: dev.superinsight.ai
+
+  # =============================================================================
+  # Staging Environment Configuration
+  # =============================================================================
+  staging.yaml: |
+    environment:
+      name: staging
+      debug: false
+      log_level: INFO
+      
+    tcb:
+      env_id: superinsight-staging
+      region: ap-shanghai
+      
+    resources:
+      cpu: 1
+      memory: 2048Mi
+      min_instances: 1
+      max_instances: 5
+      scale_threshold: 80
+      
+    database:
+      postgres:
+        host: localhost
+        port: 5432
+        database: superinsight_staging
+        user: superinsight_staging
+        pool_size: 10
+        max_overflow: 20
+        volume_size: 50Gi
+      redis:
+        host: localhost
+        port: 6379
+        database: 0
+        maxmemory: 256mb
+        volume_size: 10Gi
+        
+    storage:
+      label_studio: 100Gi
+      uploads: 50Gi
+      logs: 20Gi
+      backups: 100Gi
+      metrics: 10Gi
+      
+    features:
+      multi_tenant: true
+      metrics: true
+      backup: true
+      security_scan: true
+      audit_log: true
+      
+    security:
+      waf_enabled: false
+      ddos_protection: false
+      fail2ban: false
+      
+    monitoring:
+      prometheus: true
+      grafana: true
+      alerts: true
+      
+    cost_control:
+      max_monthly_cost: 1000
+      alert_threshold: 70
+      auto_scale_down: true
+      
+    network:
+      vpc_id: vpc-staging-superinsight
+      subnet_id: subnet-staging-superinsight
+      domain: staging.superinsight.ai
+
+  # =============================================================================
+  # Production Environment Configuration
+  # =============================================================================
+  production.yaml: |
+    environment:
+      name: production
+      debug: false
+      log_level: WARNING
+      
+    tcb:
+      env_id: superinsight-prod
+      region: ap-shanghai
+      
+    resources:
+      cpu: 2
+      memory: 4096Mi
+      min_instances: 2
+      max_instances: 10
+      scale_threshold: 70
+      
+    database:
+      postgres:
+        host: localhost
+        port: 5432
+        database: superinsight_prod
+        user: superinsight_prod
+        pool_size: 20
+        max_overflow: 40
+        volume_size: 200Gi
+      redis:
+        host: localhost
+        port: 6379
+        database: 0
+        maxmemory: 1024mb
+        volume_size: 20Gi
+        
+    storage:
+      label_studio: 500Gi
+      uploads: 200Gi
+      logs: 100Gi
+      backups: 1000Gi
+      metrics: 50Gi
+      
+    features:
+      multi_tenant: true
+      metrics: true
+      backup: true
+      security_scan: true
+      audit_log: true
+      
+    security:
+      waf_enabled: true
+      ddos_protection: true
+      fail2ban: true
+      
+    monitoring:
+      prometheus: true
+      grafana: true
+      alerts: true
+      
+    cost_control:
+      max_monthly_cost: 10000
+      alert_threshold: 80
+      auto_scale_down: true
+      
+    network:
+      vpc_id: vpc-prod-superinsight
+      subnet_id: subnet-prod-superinsight
+      domain: superinsight.ai
+
+---
+# Environment-specific secrets template
+apiVersion: v1
+kind: Secret
+metadata:
+  name: env-secrets-template
+  namespace: superinsight
+type: Opaque
+stringData:
+  # Development secrets (use weak passwords for dev)
+  dev-postgres-password: "dev_password_123"
+  dev-secret-key: "dev-secret-key-not-secure"
+  dev-jwt-secret: "dev-jwt-secret-not-secure"
+  
+  # Staging secrets (use moderate security)
+  staging-postgres-password: "${STAGING_POSTGRES_PASSWORD}"
+  staging-secret-key: "${STAGING_SECRET_KEY}"
+  staging-jwt-secret: "${STAGING_JWT_SECRET}"
+  
+  # Production secrets (use strong security)
+  prod-postgres-password: "${PROD_POSTGRES_PASSWORD}"
+  prod-secret-key: "${PROD_SECRET_KEY}"
+  prod-jwt-secret: "${PROD_JWT_SECRET}"
+  
+  # Shared API keys
+  hunyuan-api-key: "${HUNYUAN_API_KEY}"
+  hunyuan-secret-key: "${HUNYUAN_SECRET_KEY}"
+  cos-secret-id: "${COS_SECRET_ID}"
+  cos-secret-key: "${COS_SECRET_KEY}"

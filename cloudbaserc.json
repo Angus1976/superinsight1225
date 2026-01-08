@@ -1,83 +1,178 @@
 {
+  "version": "2.0",
   "envId": "${env.TCB_ENV_ID}",
-  "region": "ap-shanghai",
+  "region": "${env.TCB_REGION:-ap-shanghai}",
+  "$schema": "https://framework-1258016615.tcloudbaseapp.com/schema/latest.json",
   "framework": {
-    "name": "superinsight-platform",
+    "name": "superinsight-enterprise",
+    "version": "2.0.0",
+    "description": "SuperInsight Enterprise Platform - Full-Stack Serverless Deployment",
     "plugins": {
       "container": {
         "use": "@cloudbase/framework-plugin-container",
         "inputs": {
-          "serviceName": "superinsight-fullstack",
+          "serviceName": "superinsight-enterprise",
           "servicePath": "/",
-          "description": "SuperInsight Full-Stack Container (FastAPI + Label Studio + PostgreSQL + Redis)",
+          "description": "SuperInsight Enterprise Full-Stack Container with Multi-Tenant Support",
           "dockerfilePath": "./deploy/tcb/Dockerfile.fullstack",
           "buildDir": ".",
           "containerPort": 8000,
-          "cpu": 2,
-          "mem": 2048,
-          "minNum": 1,
-          "maxNum": 10,
+          "cpu": "${env.TCB_CPU:-2}",
+          "mem": "${env.TCB_MEMORY:-4096}",
+          "minNum": "${env.TCB_MIN_INSTANCES:-1}",
+          "maxNum": "${env.TCB_MAX_INSTANCES:-10}",
           "policyType": "cpu",
-          "policyThreshold": 70,
+          "policyThreshold": "${env.TCB_SCALE_THRESHOLD:-70}",
+          "scaleUpCooldown": 300,
+          "scaleDownCooldown": 600,
           "envVariables": {
-            "ENVIRONMENT": "${env.ENVIRONMENT}",
-            "DEBUG": "${env.DEBUG}",
-            "LOG_LEVEL": "${env.LOG_LEVEL}",
+            "ENVIRONMENT": "${env.ENVIRONMENT:-production}",
+            "DEBUG": "${env.DEBUG:-false}",
+            "LOG_LEVEL": "${env.LOG_LEVEL:-INFO}",
             "POSTGRES_USER": "${env.POSTGRES_USER}",
             "POSTGRES_PASSWORD": "${env.POSTGRES_PASSWORD}",
             "POSTGRES_DB": "${env.POSTGRES_DB}",
             "SECRET_KEY": "${env.SECRET_KEY}",
             "JWT_SECRET_KEY": "${env.JWT_SECRET_KEY}",
+            "REDIS_MAXMEMORY": "${env.REDIS_MAXMEMORY:-256mb}",
+            "APP_WORKERS": "${env.APP_WORKERS:-4}",
+            "ENABLE_METRICS": "${env.ENABLE_METRICS:-true}",
+            "ENABLE_HEALTH_CHECKS": "${env.ENABLE_HEALTH_CHECKS:-true}",
+            "ENABLE_BACKUP": "${env.ENABLE_BACKUP:-true}",
+            "BACKUP_RETENTION_DAYS": "${env.BACKUP_RETENTION_DAYS:-7}",
+            "SECURITY_SCAN_ENABLED": "${env.SECURITY_SCAN_ENABLED:-true}",
+            "FAIL2BAN_ENABLED": "${env.FAIL2BAN_ENABLED:-true}",
             "HUNYUAN_API_KEY": "${env.HUNYUAN_API_KEY}",
             "HUNYUAN_SECRET_KEY": "${env.HUNYUAN_SECRET_KEY}",
             "COS_SECRET_ID": "${env.COS_SECRET_ID}",
             "COS_SECRET_KEY": "${env.COS_SECRET_KEY}",
             "COS_REGION": "${env.COS_REGION}",
-            "COS_BUCKET": "${env.COS_BUCKET}"
+            "COS_BUCKET": "${env.COS_BUCKET}",
+            "TCB_ENV_ID": "${env.TCB_ENV_ID}",
+            "TCB_REGION": "${env.TCB_REGION:-ap-shanghai}",
+            "MULTI_TENANT_ENABLED": "${env.MULTI_TENANT_ENABLED:-true}",
+            "DEFAULT_TENANT_ID": "${env.DEFAULT_TENANT_ID:-default}"
           },
           "volumeMounts": {
             "/var/lib/postgresql/14/main": {
               "name": "postgres-data",
-              "readOnly": false
+              "readOnly": false,
+              "size": "${env.POSTGRES_VOLUME_SIZE:-50Gi}"
             },
             "/var/lib/redis": {
               "name": "redis-data",
-              "readOnly": false
+              "readOnly": false,
+              "size": "${env.REDIS_VOLUME_SIZE:-10Gi}"
             },
             "/app/label-studio-data": {
               "name": "label-studio-data",
-              "readOnly": false
+              "readOnly": false,
+              "size": "${env.LABELSTUDIO_VOLUME_SIZE:-100Gi}"
             },
             "/app/uploads": {
               "name": "uploads",
-              "readOnly": false
+              "readOnly": false,
+              "size": "${env.UPLOADS_VOLUME_SIZE:-50Gi}"
             },
             "/app/logs": {
               "name": "logs",
-              "readOnly": false
+              "readOnly": false,
+              "size": "${env.LOGS_VOLUME_SIZE:-20Gi}"
+            },
+            "/app/backups": {
+              "name": "backups",
+              "readOnly": false,
+              "size": "${env.BACKUPS_VOLUME_SIZE:-100Gi}"
+            },
+            "/app/metrics": {
+              "name": "metrics",
+              "readOnly": false,
+              "size": "${env.METRICS_VOLUME_SIZE:-10Gi}"
             }
           },
           "customLogs": {
-            "enabled": true
+            "enabled": true,
+            "logPath": "/app/logs",
+            "logRotate": {
+              "enabled": true,
+              "maxSize": "100MB",
+              "maxFiles": 10
+            }
+          },
+          "healthCheck": {
+            "enabled": true,
+            "path": "/health",
+            "port": 8000,
+            "initialDelaySeconds": 120,
+            "periodSeconds": 30,
+            "timeoutSeconds": 15,
+            "successThreshold": 1,
+            "failureThreshold": 3
+          },
+          "livenessProbe": {
+            "enabled": true,
+            "path": "/health",
+            "port": 8000,
+            "initialDelaySeconds": 180,
+            "periodSeconds": 60,
+            "timeoutSeconds": 30,
+            "failureThreshold": 3
+          },
+          "readinessProbe": {
+            "enabled": true,
+            "path": "/health",
+            "port": 8000,
+            "initialDelaySeconds": 60,
+            "periodSeconds": 10,
+            "timeoutSeconds": 5,
+            "successThreshold": 1,
+            "failureThreshold": 3
           },
           "isPublic": true,
           "flowRatio": 100,
-          "initialDelaySeconds": 60
+          "initialDelaySeconds": 120,
+          "vpc": {
+            "vpcId": "${env.VPC_ID}",
+            "subnetId": "${env.SUBNET_ID}",
+            "createVpc": false
+          },
+          "security": {
+            "enableHttps": true,
+            "httpsRedirect": true,
+            "enableWaf": "${env.ENABLE_WAF:-true}",
+            "enableDdosProtection": "${env.ENABLE_DDOS_PROTECTION:-true}"
+          },
+          "monitoring": {
+            "enabled": true,
+            "alerting": {
+              "enabled": true,
+              "webhookUrl": "${env.ALERT_WEBHOOK_URL}",
+              "channels": ["email", "sms", "webhook"]
+            }
+          },
+          "costControl": {
+            "enabled": true,
+            "maxMonthlyCost": "${env.MAX_MONTHLY_COST:-1000}",
+            "alertThreshold": "${env.COST_ALERT_THRESHOLD:-80}",
+            "autoScaleDown": "${env.AUTO_SCALE_DOWN:-true}"
+          }
         }
       }
     }
   },
-  "functionRoot": "./",
   "functions": [
     {
-      "name": "data-extractor",
+      "name": "data-extractor-enterprise",
       "timeout": 300,
       "runtime": "Python3.11",
       "memorySize": 1024,
       "handler": "src.extractors.api.main",
+      "description": "Enterprise data extraction service with multi-tenant support",
       "envVariables": {
         "DATABASE_URL": "${env.DATABASE_URL}",
-        "REDIS_URL": "${env.REDIS_URL}"
+        "REDIS_URL": "${env.REDIS_URL}",
+        "MULTI_TENANT_ENABLED": "${env.MULTI_TENANT_ENABLED:-true}",
+        "ENABLE_AUDIT_LOG": "${env.ENABLE_AUDIT_LOG:-true}"
       },
       "triggers": [
         {
@@ -85,22 +180,35 @@
           "type": "http",
           "config": {
             "authType": "FUNCTION",
-            "methods": ["GET", "POST", "PUT", "DELETE"]
+            "methods": ["GET", "POST", "PUT", "DELETE"],
+            "cors": {
+              "origin": "*",
+              "allowMethods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+              "allowHeaders": ["Content-Type", "Authorization", "X-Tenant-ID"]
+            }
           }
         }
-      ]
+      ],
+      "vpc": {
+        "vpcId": "${env.VPC_ID}",
+        "subnetId": "${env.SUBNET_ID}"
+      }
     },
     {
-      "name": "ai-annotator",
+      "name": "ai-annotator-enterprise",
       "timeout": 600,
       "runtime": "Python3.11",
       "memorySize": 2048,
       "handler": "src.ai.factory.main",
+      "description": "Enterprise AI annotation service with enhanced security",
       "envVariables": {
         "DATABASE_URL": "${env.DATABASE_URL}",
         "REDIS_URL": "${env.REDIS_URL}",
         "HUNYUAN_API_KEY": "${env.HUNYUAN_API_KEY}",
-        "HUNYUAN_SECRET_KEY": "${env.HUNYUAN_SECRET_KEY}"
+        "HUNYUAN_SECRET_KEY": "${env.HUNYUAN_SECRET_KEY}",
+        "MULTI_TENANT_ENABLED": "${env.MULTI_TENANT_ENABLED:-true}",
+        "ENABLE_AUDIT_LOG": "${env.ENABLE_AUDIT_LOG:-true}",
+        "AI_MODEL_TIMEOUT": "${env.AI_MODEL_TIMEOUT:-300}"
       },
       "triggers": [
         {
@@ -108,20 +216,33 @@
           "type": "http",
           "config": {
             "authType": "FUNCTION",
-            "methods": ["POST"]
+            "methods": ["POST"],
+            "cors": {
+              "origin": "*",
+              "allowMethods": ["POST", "OPTIONS"],
+              "allowHeaders": ["Content-Type", "Authorization", "X-Tenant-ID"]
+            }
           }
         }
-      ]
+      ],
+      "vpc": {
+        "vpcId": "${env.VPC_ID}",
+        "subnetId": "${env.SUBNET_ID}"
+      }
     },
     {
-      "name": "quality-manager",
+      "name": "quality-manager-enterprise",
       "timeout": 180,
       "runtime": "Python3.11",
       "memorySize": 512,
       "handler": "src.quality.manager.main",
+      "description": "Enterprise quality management with advanced analytics",
       "envVariables": {
         "DATABASE_URL": "${env.DATABASE_URL}",
-        "REDIS_URL": "${env.REDIS_URL}"
+        "REDIS_URL": "${env.REDIS_URL}",
+        "MULTI_TENANT_ENABLED": "${env.MULTI_TENANT_ENABLED:-true}",
+        "ENABLE_AUDIT_LOG": "${env.ENABLE_AUDIT_LOG:-true}",
+        "QUALITY_THRESHOLD": "${env.QUALITY_THRESHOLD:-0.8}"
       },
       "triggers": [
         {
@@ -129,18 +250,88 @@
           "type": "http",
           "config": {
             "authType": "FUNCTION",
-            "methods": ["POST", "PUT"]
+            "methods": ["POST", "PUT", "GET"],
+            "cors": {
+              "origin": "*",
+              "allowMethods": ["GET", "POST", "PUT", "OPTIONS"],
+              "allowHeaders": ["Content-Type", "Authorization", "X-Tenant-ID"]
+            }
           }
         }
-      ]
+      ],
+      "vpc": {
+        "vpcId": "${env.VPC_ID}",
+        "subnetId": "${env.SUBNET_ID}"
+      }
+    },
+    {
+      "name": "backup-manager",
+      "timeout": 900,
+      "runtime": "Python3.11",
+      "memorySize": 1024,
+      "handler": "src.backup.manager.main",
+      "description": "Enterprise backup and recovery service",
+      "envVariables": {
+        "DATABASE_URL": "${env.DATABASE_URL}",
+        "COS_SECRET_ID": "${env.COS_SECRET_ID}",
+        "COS_SECRET_KEY": "${env.COS_SECRET_KEY}",
+        "COS_REGION": "${env.COS_REGION}",
+        "COS_BUCKET": "${env.COS_BUCKET}",
+        "BACKUP_RETENTION_DAYS": "${env.BACKUP_RETENTION_DAYS:-7}"
+      },
+      "triggers": [
+        {
+          "name": "timerTrigger",
+          "type": "timer",
+          "config": {
+            "cron": "0 2 * * *",
+            "enable": true
+          }
+        }
+      ],
+      "vpc": {
+        "vpcId": "${env.VPC_ID}",
+        "subnetId": "${env.SUBNET_ID}"
+      }
     }
   ],
   "storage": {
     "rules": [
       {
         "resource": "*",
-        "allow": true
+        "allow": true,
+        "auth": {
+          "enable": true
+        }
       }
+    ],
+    "cors": [
+      {
+        "origin": "*",
+        "allowMethods": ["GET", "POST", "PUT", "DELETE"],
+        "allowHeaders": ["Content-Type", "Authorization", "X-Tenant-ID"],
+        "maxAge": 3600
+      }
+    ]
+  },
+  "database": {
+    "rules": [
+      {
+        "resource": "*",
+        "allow": false,
+        "auth": {
+          "enable": true
+        }
+      }
+    ]
+  },
+  "hosting": {
+    "public": "./frontend/dist",
+    "ignore": [
+      ".git",
+      ".gitignore",
+      "node_modules",
+      ".DS_Store"
     ]
   }
 }

@@ -1,0 +1,88 @@
+# SuperInsight TCB Storage Alerting Configuration
+# Defines alert rules and thresholds for storage monitoring
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: storage-alerts-config
+  namespace: superinsight-enterprise
+data:
+  # Alert thresholds (percentage)
+  disk_warning_threshold: "80"
+  disk_critical_threshold: "90"
+  backup_warning_threshold: "85"
+  
+  # Alert rules configuration
+  alert_rules.yaml: |
+    groups:
+    - name: storage_alerts
+      rules:
+      - alert: HighDiskUsage
+        expr: disk_usage_percent > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: storage
+        annotations:
+          summary: "High disk usage detected"
+          description: "Disk usage is {{ $value }}% on {{ $labels.mount_point }}"
+          
+      - alert: CriticalDiskUsage
+        expr: disk_usage_percent > 90
+        for: 2m
+        labels:
+          severity: critical
+          service: storage
+        annotations:
+          summary: "Critical disk usage detected"
+          description: "Disk usage is {{ $value }}% on {{ $labels.mount_point }}"
+          
+      - alert: BackupFailure
+        expr: backup_last_success_timestamp < (time() - 86400)
+        for: 1m
+        labels:
+          severity: critical
+          service: backup
+        annotations:
+          summary: "Backup failure detected"
+          description: "No successful backup in the last 24 hours"
+          
+      - alert: StorageVolumeUnavailable
+        expr: storage_volume_available == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: storage
+        annotations:
+          summary: "Storage volume unavailable"
+          description: "Storage volume {{ $labels.volume_name }} is not available"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: storage-monitoring-config
+  namespace: superinsight-enterprise
+data:
+  # Monitoring intervals (seconds)
+  check_interval: "300"
+  alert_interval: "60"
+  cleanup_interval: "3600"
+  
+  # Retention policies (days)
+  log_retention_days: "30"
+  metrics_retention_days: "90"
+  backup_retention_days: "7"
+  
+  # Auto-cleanup settings
+  auto_cleanup_enabled: "true"
+  cleanup_threshold: "85"
+  
+  # COS backup settings
+  cos_backup_enabled: "true"
+  cos_backup_retention_days: "30"
+  
+  # Volume expansion settings
+  auto_expand_enabled: "false"
+  expand_threshold: "95"
+  expand_increment: "20Gi"

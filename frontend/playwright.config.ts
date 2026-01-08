@@ -33,6 +33,15 @@ export default defineConfig({
 
     /* Video recording */
     video: 'on-first-retry',
+
+    /* Ignore HTTPS errors for testing */
+    ignoreHTTPSErrors: true,
+
+    /* Set default timeout for actions */
+    actionTimeout: 10000,
+
+    /* Set default timeout for navigation */
+    navigationTimeout: 30000,
   },
 
   /* Configure projects for major browsers */

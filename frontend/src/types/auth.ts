@@ -3,6 +3,7 @@
 export interface LoginCredentials {
   username: string;
   password: string;
+  tenant_id?: string;
 }
 
 export interface LoginResponse {

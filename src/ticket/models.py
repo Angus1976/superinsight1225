@@ -97,7 +97,7 @@ class TicketModel(Base):
     created_by: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
 
     # Additional metadata
-    metadata: Mapped[dict] = mapped_column(JSONB, default={})
+    extra_metadata: Mapped[dict] = mapped_column(JSONB, default={})
     resolution_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
 
@@ -149,6 +149,7 @@ class TicketHistoryModel(Base):
 
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
     ticket_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey("tickets.id"), nullable=False)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, index=True)
 
     action: Mapped[str] = mapped_column(String(50), nullable=False)  # created, assigned, status_changed, etc.
     old_value: Mapped[Optional[str]] = mapped_column(Text, nullable=True)

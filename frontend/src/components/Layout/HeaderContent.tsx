@@ -1,5 +1,5 @@
 // Header content component
-import { Dropdown, Space, Button, Avatar, Switch } from 'antd';
+import { Dropdown, Space, Button, Avatar, Switch, Tooltip } from 'antd';
 import type { MenuProps } from 'antd';
 import {
   UserOutlined,
@@ -7,15 +7,18 @@ import {
   SettingOutlined,
   GlobalOutlined,
   BulbOutlined,
+  SunOutlined,
+  MoonOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { useUIStore } from '@/stores/uiStore';
+import { TenantSelector } from '@/components/Auth/TenantSelector';
 import { THEMES } from '@/constants';
 
 export const HeaderContent: React.FC = () => {
   const { t, i18n } = useTranslation('common');
-  const { user, currentTenant, logout } = useAuth();
+  const { user, logout } = useAuth();
   const { theme, toggleTheme, setLanguage } = useUIStore();
 
   const userMenuItems: MenuProps['items'] = [
@@ -35,7 +38,7 @@ export const HeaderContent: React.FC = () => {
     {
       key: 'logout',
       icon: <LogoutOutlined />,
-      label: '退出登录',
+      label: t('actions.logout', '退出登录'),
       danger: true,
     },
   ];
@@ -43,11 +46,21 @@ export const HeaderContent: React.FC = () => {
   const languageMenuItems: MenuProps['items'] = [
     {
       key: 'zh',
-      label: '中文',
+      label: (
+        <Space>
+          <span>🇨🇳</span>
+          <span>{t('language.zh')}</span>
+        </Space>
+      ),
     },
     {
       key: 'en',
-      label: 'English',
+      label: (
+        <Space>
+          <span>🇺🇸</span>
+          <span>{t('language.en')}</span>
+        </Space>
+      ),
     },
   ];
 
@@ -73,30 +86,44 @@ export const HeaderContent: React.FC = () => {
       }}
     >
       {/* Theme switch */}
-      <Switch
-        checkedChildren={<BulbOutlined />}
-        unCheckedChildren={<BulbOutlined />}
-        checked={theme === THEMES.DARK}
-        onChange={toggleTheme}
-      />
+      <Tooltip title={theme === THEMES.DARK ? t('theme.light') : t('theme.dark')}>
+        <Switch
+          checkedChildren={<MoonOutlined />}
+          unCheckedChildren={<SunOutlined />}
+          checked={theme === THEMES.DARK}
+          onChange={toggleTheme}
+          size="small"
+        />
+      </Tooltip>
 
       {/* Language switch */}
-      <Dropdown menu={{ items: languageMenuItems, onClick: handleLanguageChange }}>
-        <Button type="text" icon={<GlobalOutlined />}>
-          {i18n.language === 'zh' ? '中文' : 'EN'}
+      <Dropdown 
+        menu={{ items: languageMenuItems, onClick: handleLanguageChange }}
+        placement="bottomRight"
+        trigger={['click']}
+      >
+        <Button type="text" icon={<GlobalOutlined />} size="small">
+          <Space>
+            <span>{i18n.language === 'zh' ? '🇨🇳' : '🇺🇸'}</span>
+            <span>{i18n.language === 'zh' ? '中文' : 'EN'}</span>
+          </Space>
         </Button>
       </Dropdown>
 
-      {/* Tenant info */}
-      {currentTenant && (
-        <span style={{ color: 'rgba(0, 0, 0, 0.45)' }}>{currentTenant.name}</span>
-      )}
+      {/* Tenant selector */}
+      <TenantSelector size="small" />
 
       {/* User dropdown */}
-      <Dropdown menu={{ items: userMenuItems, onClick: handleUserMenuClick }}>
-        <Space style={{ cursor: 'pointer' }}>
-          <Avatar size="small" icon={<UserOutlined />} />
-          <span>{user?.username || 'User'}</span>
+      <Dropdown 
+        menu={{ items: userMenuItems, onClick: handleUserMenuClick }}
+        placement="bottomRight"
+        trigger={['click']}
+      >
+        <Space style={{ cursor: 'pointer', padding: '4px 8px', borderRadius: 6 }}>
+          <Avatar size="small" icon={<UserOutlined />} src={user?.avatar} />
+          <span style={{ maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {user?.username || 'User'}
+          </span>
         </Space>
       </Dropdown>
     </div>

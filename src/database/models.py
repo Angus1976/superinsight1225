@@ -171,6 +171,7 @@ class QualityIssueModel(Base):
     
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     task_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tasks.id"), nullable=False)
+    tenant_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, index=True)
     issue_type: Mapped[str] = mapped_column(String(50), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     severity: Mapped[IssueSeverity] = mapped_column(SQLEnum(IssueSeverity), default=IssueSeverity.MEDIUM)

@@ -3,17 +3,42 @@
   "welcome": "欢迎回来，{{name}}",
   "metrics": {
     "activeTasks": "活跃任务",
+    "activeTasksSubtitle": "当前进行中的标注任务",
     "todayAnnotations": "今日标注",
+    "todayAnnotationsSubtitle": "今日完成的标注数量",
     "totalCorpus": "语料总数",
+    "totalCorpusSubtitle": "系统中的语料总量",
     "totalBilling": "账单总额",
+    "totalBillingSubtitle": "本月累计账单金额",
     "qualityScore": "质量评分",
-    "completionRate": "完成率"
+    "qualityScoreSubtitle": "标注质量平均分",
+    "completionRate": "完成率",
+    "completionRateSubtitle": "任务完成百分比",
+    "activeUsers": "活跃用户",
+    "activeUsersSubtitle": "当前在线用户数",
+    "avgResponseTime": "平均响应时间",
+    "avgResponseTimeSubtitle": "系统平均响应时间",
+    "target": "目标",
+    "avgQualityScore": "平均质量分",
+    "avgCompletionRate": "平均完成率",
+    "avgRevisionRate": "平均修订率",
+    "totalWorkHours": "总工时",
+    "revisionRate": "修订率",
+    "totalHours": "总工时",
+    "efficiency": "效率",
+    "tasksCompleted": "完成任务数"
   },
   "charts": {
     "annotationTrend": "标注趋势",
     "qualityDistribution": "质量分布",
     "userActivity": "用户活跃度",
-    "projectProgress": "项目进度"
+    "projectProgress": "项目进度",
+    "workTimeAnalysis": "工时分析",
+    "anomalyDetection": "异常检测",
+    "qualityTrend": "质量趋势",
+    "lineChart": "折线图",
+    "areaChart": "面积图",
+    "knowledgeGraph": "知识图谱"
   },
   "quickActions": {
     "title": "快捷操作",
@@ -25,11 +50,65 @@
   "trends": {
     "increasing": "上升",
     "decreasing": "下降",
-    "stable": "稳定"
+    "stable": "稳定",
+    "comparedToYesterday": "较昨日",
+    "comparedToLastWeek": "较上周",
+    "comparedToLastMonth": "较上月",
+    "comparedToLastHour": "较上小时"
   },
   "period": {
     "last24h": "最近24小时",
     "last7d": "最近7天",
     "last30d": "最近30天"
+  },
+  "common": {
+    "refresh": "刷新",
+    "lastUpdated": "最后更新",
+    "error": "错误",
+    "warning": "警告"
+  },
+  "errors": {
+    "dataLoadFailed": "数据加载失败",
+    "backendConnection": "无法连接到后端服务器。请确保后端服务正在运行。"
+  },
+  "anomaly": {
+    "clickForDetails": "点击查看详情",
+    "value": "异常值"
+  },
+  "graph": {
+    "allCategories": "全部类别",
+    "dataCategory": "数据",
+    "businessCategory": "业务",
+    "aiCategory": "AI",
+    "platformCategory": "平台",
+    "infrastructureCategory": "基础设施",
+    "userCategory": "用户",
+    "forceLayout": "力导向布局",
+    "hierarchyLayout": "层次布局",
+    "circularLayout": "环形布局",
+    "legend": "图例",
+    "dataNodes": "数据节点",
+    "processNodes": "流程节点",
+    "systemNodes": "系统节点",
+    "userNodes": "用户节点",
+    "nodeDetails": "节点详情",
+    "nodeType": "节点类型",
+    "nodeCategory": "节点类别",
+    "nodeSize": "节点大小",
+    "nodeDescription": "节点描述",
+    "nodeProperties": "节点属性",
+    "connectedNodes": "关联节点"
+  },
+  "common": {
+    "refresh": "刷新",
+    "lastUpdated": "最后更新",
+    "error": "错误",
+    "warning": "警告",
+    "fullscreen": "全屏"
+  },
+  "tabs": {
+    "overview": "概览",
+    "qualityReports": "质量报表",
+    "knowledgeGraph": "知识图谱"
   }
 }

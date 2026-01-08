@@ -1,0 +1,155 @@
+{
+  "title": "数据同步配置管理",
+  "description": "管理数据源、同步任务和安全配置，实现企业级数据集成。",
+  "notice": {
+    "title": "数据同步配置",
+    "description": "配置数据源、同步策略和安全策略，确保企业系统间的数据同步合规且高效。"
+  },
+  "tabs": {
+    "dataSources": "数据源",
+    "syncTasks": "同步任务",
+    "security": "安全与合规"
+  },
+  "dataSource": {
+    "title": "数据源管理",
+    "name": "名称",
+    "type": "类型",
+    "status": "状态",
+    "connection": "连接信息",
+    "host": "主机",
+    "port": "端口",
+    "database": "数据库",
+    "username": "用户名",
+    "password": "密码",
+    "lastConnected": "最后连接",
+    "stats": "统计信息",
+    "connections": "连接次数",
+    "errors": "错误次数",
+    "totalSources": "数据源总数",
+    "connectedSources": "已连接",
+    "errorSources": "错误",
+    "totalConnections": "总连接数",
+    "create": "添加数据源",
+    "edit": "编辑数据源",
+    "delete": "删除数据源",
+    "testConnection": "测试连接",
+    "viewLogs": "查看日志",
+    "connectionLogs": "连接日志",
+    "testResults": "连接测试结果",
+    "namePlaceholder": "请输入数据源名称",
+    "typePlaceholder": "请选择数据源类型",
+    "databasePlaceholder": "可选数据库名称",
+    "usernamePlaceholder": "数据库用户名",
+    "passwordPlaceholder": "数据库密码",
+    "securityLevel": "安全级别",
+    "permissions": "权限",
+    "deleteConfirm": "删除数据源",
+    "deleteWarning": "确定要删除数据源 '{name}' 吗？此操作无法撤销。"
+  },
+  "syncTask": {
+    "title": "同步任务配置",
+    "name": "任务名称",
+    "description": "描述",
+    "source": "源数据源",
+    "target": "目标数据源",
+    "strategy": "同步策略",
+    "status": "状态",
+    "schedule": "调度",
+    "progress": "进度",
+    "lastRun": "最后运行",
+    "totalTasks": "任务总数",
+    "runningTasks": "运行中",
+    "errorTasks": "错误",
+    "totalRecords": "总记录数",
+    "processedRecords": "已处理",
+    "errorRecords": "错误",
+    "fieldMapping": "字段映射",
+    "scheduleType": "调度类型",
+    "create": "创建同步任务",
+    "edit": "编辑同步任务",
+    "start": "启动任务",
+    "pause": "暂停任务",
+    "stop": "停止任务",
+    "viewDetails": "查看详情",
+    "namePlaceholder": "请输入任务名称",
+    "descriptionPlaceholder": "请输入任务描述",
+    "strategyPlaceholder": "请选择同步策略",
+    "sourcePlaceholder": "请选择源数据源",
+    "targetPlaceholder": "请选择目标数据源",
+    "deleteConfirm": "删除同步任务",
+    "deleteWarning": "确定要删除同步任务 '{name}' 吗？此操作无法撤销。"
+  },
+  "status": {
+    "connected": "已连接",
+    "disconnected": "未连接",
+    "error": "错误",
+    "testing": "测试中",
+    "running": "运行中",
+    "paused": "已暂停",
+    "stopped": "已停止",
+    "completed": "已完成"
+  },
+  "strategy": {
+    "full": "全量同步",
+    "incremental": "增量同步",
+    "realtime": "实时同步"
+  },
+  "schedule": {
+    "manual": "手动",
+    "cron": "Cron表达式",
+    "interval": "间隔",
+    "enabled": "启用",
+    "disabled": "禁用",
+    "expression": "Cron表达式"
+  },
+  "mapping": {
+    "sourceField": "源字段",
+    "targetField": "目标字段",
+    "transformation": "转换规则",
+    "required": "必需"
+  },
+  "monitoring": {
+    "alertsEnabled": "启用告警",
+    "errorRate": "错误率阈值",
+    "latency": "延迟阈值",
+    "throughput": "吞吐量阈值",
+    "notifications": "通知接收人",
+    "notificationsPlaceholder": "请输入邮箱地址",
+    "alerts": "告警配置",
+    "thresholds": "监控阈值"
+  },
+  "steps": {
+    "basic": "基础配置",
+    "mapping": "字段映射",
+    "schedule": "调度设置",
+    "monitoring": "监控告警"
+  },
+  "tabs": {
+    "overview": "概览",
+    "executions": "执行历史",
+    "monitoring": "监控"
+  },
+  "execution": {
+    "running": "运行中",
+    "completed": "已完成",
+    "failed": "失败",
+    "processed": "已处理记录",
+    "errors": "错误"
+  },
+  "actions": {
+    "connect": "连接",
+    "disconnect": "断开",
+    "test": "测试",
+    "error": "错误"
+  },
+  "security": {
+    "low": "低",
+    "medium": "中",
+    "high": "高"
+  },
+  "permissions": {
+    "read": "读取",
+    "write": "写入",
+    "delete": "删除"
+  }
+}

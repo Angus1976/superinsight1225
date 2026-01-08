@@ -1,0 +1,404 @@
+// Quality reports and trend charts component
+import { Card, Row, Col, Select, DatePicker, Space, Statistic, Alert, Tooltip } from 'antd';
+import {
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
+import { 
+  TrophyOutlined, 
+  ExclamationCircleOutlined, 
+  ClockCircleOutlined,
+  UserOutlined,
+  WarningOutlined,
+} from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
+import { useState } from 'react';
+import dayjs from 'dayjs';
+import type { Dayjs } from 'dayjs';
+
+const { RangePicker } = DatePicker;
+const { Option } = Select;
+
+interface QualityTrendData {
+  timestamp: number;
+  datetime: string;
+  qualityScore: number;
+  completionRate: number;
+  revisionRate: number;
+  avgAnnotationTime: number;
+}
+
+interface QualityDistributionData {
+  range: string;
+  count: number;
+  percentage: number;
+  color: string;
+}
+
+interface WorkTimeData {
+  user: string;
+  totalHours: number;
+  efficiency: number;
+  qualityScore: number;
+  tasksCompleted: number;
+}
+
+interface AnomalyData {
+  timestamp: number;
+  datetime: string;
+  type: 'quality' | 'efficiency' | 'time';
+  severity: 'low' | 'medium' | 'high';
+  description: string;
+  value: number;
+}
+
+interface QualityReportsProps {
+  data?: {
+    trends: QualityTrendData[];
+    distribution: QualityDistributionData[];
+    workTime: WorkTimeData[];
+    anomalies: AnomalyData[];
+  };
+  loading?: boolean;
+}
+
+export const QualityReports: React.FC<QualityReportsProps> = ({
+  data,
+  loading = false,
+}) => {
+  const { t } = useTranslation('dashboard');
+  const [timeRange, setTimeRange] = useState<[Dayjs, Dayjs]>([
+    dayjs().subtract(7, 'days'),
+    dayjs(),
+  ]);
+  const [chartType, setChartType] = useState<'line' | 'area'>('line');
+
+  // Mock data for demonstration
+  const mockTrends: QualityTrendData[] = Array.from({ length: 24 }, (_, i) => {
+    const timestamp = Date.now() - (23 - i) * 3600000;
+    return {
+      timestamp,
+      datetime: new Date(timestamp).toISOString(),
+      qualityScore: 0.75 + Math.random() * 0.2,
+      completionRate: 0.85 + Math.random() * 0.1,
+      revisionRate: 0.05 + Math.random() * 0.1,
+      avgAnnotationTime: 120 + Math.random() * 60,
+    };
+  });
+
+  const mockDistribution: QualityDistributionData[] = [
+    { range: '90-100%', count: 45, percentage: 45, color: '#52c41a' },
+    { range: '80-89%', count: 30, percentage: 30, color: '#1890ff' },
+    { range: '70-79%', count: 15, percentage: 15, color: '#faad14' },
+    { range: '60-69%', count: 8, percentage: 8, color: '#ff7875' },
+    { range: '<60%', count: 2, percentage: 2, color: '#ff4d4f' },
+  ];
+
+  const mockWorkTime: WorkTimeData[] = [
+    { user: '张三', totalHours: 42.5, efficiency: 0.92, qualityScore: 0.88, tasksCompleted: 15 },
+    { user: '李四', totalHours: 38.2, efficiency: 0.85, qualityScore: 0.91, tasksCompleted: 12 },
+    { user: '王五', totalHours: 45.1, efficiency: 0.78, qualityScore: 0.85, tasksCompleted: 18 },
+    { user: '赵六', totalHours: 35.8, efficiency: 0.88, qualityScore: 0.89, tasksCompleted: 11 },
+    { user: '钱七', totalHours: 40.3, efficiency: 0.82, qualityScore: 0.87, tasksCompleted: 14 },
+  ];
+
+  const mockAnomalies: AnomalyData[] = [
+    {
+      timestamp: Date.now() - 2 * 3600000,
+      datetime: new Date(Date.now() - 2 * 3600000).toISOString(),
+      type: 'quality',
+      severity: 'high',
+      description: '质量分数异常下降',
+      value: 0.45,
+    },
+    {
+      timestamp: Date.now() - 5 * 3600000,
+      datetime: new Date(Date.now() - 5 * 3600000).toISOString(),
+      type: 'efficiency',
+      severity: 'medium',
+      description: '标注效率低于平均水平',
+      value: 0.65,
+    },
+  ];
+
+  const trends = data?.trends || mockTrends;
+  const distribution = data?.distribution || mockDistribution;
+  const workTime = data?.workTime || mockWorkTime;
+  const anomalies = data?.anomalies || mockAnomalies;
+
+  // Format trend data for charts
+  const formattedTrends = trends.map((item) => ({
+    ...item,
+    time: dayjs(item.datetime).format('HH:mm'),
+    qualityPercent: (item.qualityScore * 100).toFixed(1),
+    completionPercent: (item.completionRate * 100).toFixed(1),
+    revisionPercent: (item.revisionRate * 100).toFixed(1),
+  }));
+
+  // Calculate summary statistics
+  const avgQuality = trends.reduce((sum, item) => sum + item.qualityScore, 0) / trends.length;
+  const avgCompletion = trends.reduce((sum, item) => sum + item.completionRate, 0) / trends.length;
+  const avgRevision = trends.reduce((sum, item) => sum + item.revisionRate, 0) / trends.length;
+  const totalWorkHours = workTime.reduce((sum, item) => sum + item.totalHours, 0);
+
+  return (
+    <div>
+      {/* Controls */}
+      <Card size="small" style={{ marginBottom: 16 }}>
+        <Space>
+          <RangePicker
+            value={timeRange}
+            onChange={(dates) => dates && setTimeRange(dates as [Dayjs, Dayjs])}
+            format="YYYY-MM-DD"
+          />
+          <Select
+            value={chartType}
+            onChange={setChartType}
+            style={{ width: 120 }}
+          >
+            <Option value="line">{t('charts.lineChart')}</Option>
+            <Option value="area">{t('charts.areaChart')}</Option>
+          </Select>
+        </Space>
+      </Card>
+
+      {/* Summary Statistics */}
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col xs={24} sm={6}>
+          <Card>
+            <Statistic
+              title={t('metrics.avgQualityScore')}
+              value={(avgQuality * 100).toFixed(1)}
+              suffix="%"
+              prefix={<TrophyOutlined />}
+              valueStyle={{ color: avgQuality >= 0.8 ? '#52c41a' : '#faad14' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={6}>
+          <Card>
+            <Statistic
+              title={t('metrics.avgCompletionRate')}
+              value={(avgCompletion * 100).toFixed(1)}
+              suffix="%"
+              prefix={<ClockCircleOutlined />}
+              valueStyle={{ color: avgCompletion >= 0.9 ? '#52c41a' : '#faad14' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={6}>
+          <Card>
+            <Statistic
+              title={t('metrics.avgRevisionRate')}
+              value={(avgRevision * 100).toFixed(1)}
+              suffix="%"
+              prefix={<ExclamationCircleOutlined />}
+              valueStyle={{ color: avgRevision <= 0.1 ? '#52c41a' : '#ff4d4f' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={6}>
+          <Card>
+            <Statistic
+              title={t('metrics.totalWorkHours')}
+              value={totalWorkHours.toFixed(1)}
+              suffix="h"
+              prefix={<UserOutlined />}
+              valueStyle={{ color: '#1890ff' }}
+            />
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Quality Trend Chart */}
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col xs={24} lg={16}>
+          <Card title={t('charts.qualityTrend')} loading={loading}>
+            <ResponsiveContainer width="100%" height={300}>
+              {chartType === 'line' ? (
+                <LineChart data={formattedTrends}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="time" />
+                  <YAxis domain={[0, 100]} />
+                  <RechartsTooltip
+                    formatter={(value, name) => [
+                      `${value}%`,
+                      name === 'qualityPercent' ? t('metrics.qualityScore') :
+                      name === 'completionPercent' ? t('metrics.completionRate') :
+                      t('metrics.revisionRate')
+                    ]}
+                  />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="qualityPercent"
+                    stroke="#52c41a"
+                    strokeWidth={2}
+                    name={t('metrics.qualityScore')}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="completionPercent"
+                    stroke="#1890ff"
+                    strokeWidth={2}
+                    name={t('metrics.completionRate')}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="revisionPercent"
+                    stroke="#ff4d4f"
+                    strokeWidth={2}
+                    name={t('metrics.revisionRate')}
+                  />
+                </LineChart>
+              ) : (
+                <AreaChart data={formattedTrends}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="time" />
+                  <YAxis domain={[0, 100]} />
+                  <RechartsTooltip
+                    formatter={(value, name) => [
+                      `${value}%`,
+                      name === 'qualityPercent' ? t('metrics.qualityScore') :
+                      name === 'completionPercent' ? t('metrics.completionRate') :
+                      t('metrics.revisionRate')
+                    ]}
+                  />
+                  <Legend />
+                  <Area
+                    type="monotone"
+                    dataKey="qualityPercent"
+                    stackId="1"
+                    stroke="#52c41a"
+                    fill="#52c41a"
+                    fillOpacity={0.6}
+                    name={t('metrics.qualityScore')}
+                  />
+                </AreaChart>
+              )}
+            </ResponsiveContainer>
+          </Card>
+        </Col>
+
+        {/* Quality Distribution Pie Chart */}
+        <Col xs={24} lg={8}>
+          <Card title={t('charts.qualityDistribution')} loading={loading}>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={distribution}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={(entry: any) => `${entry.range}: ${entry.percentage}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="count"
+                >
+                  {distribution.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <RechartsTooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Work Time Analysis */}
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col xs={24}>
+          <Card title={t('charts.workTimeAnalysis')} loading={loading}>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={workTime}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="user" />
+                <YAxis yAxisId="left" />
+                <YAxis yAxisId="right" orientation="right" />
+                <RechartsTooltip
+                  formatter={(value, name) => [
+                    name === 'totalHours' ? `${value}h` :
+                    name === 'efficiency' || name === 'qualityScore' ? `${(Number(value) * 100).toFixed(1)}%` :
+                    value,
+                    name === 'totalHours' ? t('metrics.totalHours') :
+                    name === 'efficiency' ? t('metrics.efficiency') :
+                    name === 'qualityScore' ? t('metrics.qualityScore') :
+                    t('metrics.tasksCompleted')
+                  ]}
+                />
+                <Legend />
+                <Bar
+                  yAxisId="left"
+                  dataKey="totalHours"
+                  fill="#1890ff"
+                  name={t('metrics.totalHours')}
+                />
+                <Bar
+                  yAxisId="right"
+                  dataKey="tasksCompleted"
+                  fill="#52c41a"
+                  name={t('metrics.tasksCompleted')}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Anomaly Detection */}
+      {anomalies.length > 0 && (
+        <Row gutter={[16, 16]}>
+          <Col xs={24}>
+            <Card 
+              title={
+                <Space>
+                  <WarningOutlined style={{ color: '#faad14' }} />
+                  {t('charts.anomalyDetection')}
+                </Space>
+              }
+            >
+              <Space direction="vertical" style={{ width: '100%' }}>
+                {anomalies.map((anomaly, index) => (
+                  <Alert
+                    key={index}
+                    type={anomaly.severity === 'high' ? 'error' : anomaly.severity === 'medium' ? 'warning' : 'info'}
+                    message={
+                      <Space>
+                        <span>{anomaly.description}</span>
+                        <span style={{ color: '#999' }}>
+                          {dayjs(anomaly.datetime).format('YYYY-MM-DD HH:mm')}
+                        </span>
+                      </Space>
+                    }
+                    description={
+                      <Tooltip title={t('anomaly.clickForDetails')}>
+                        <span style={{ cursor: 'pointer' }}>
+                          {t('anomaly.value')}: {(anomaly.value * 100).toFixed(1)}%
+                        </span>
+                      </Tooltip>
+                    }
+                    showIcon
+                  />
+                ))}
+              </Space>
+            </Card>
+          </Col>
+        </Row>
+      )}
+    </div>
+  );
+};

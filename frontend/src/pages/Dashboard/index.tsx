@@ -1,17 +1,23 @@
-// Dashboard page
-import { Row, Col, Typography, Alert } from 'antd';
+// Enhanced Dashboard page with enterprise features
+import { Row, Col, Typography, Alert, Tabs } from 'antd';
 import {
-  FileTextOutlined,
-  CheckCircleOutlined,
-  DatabaseOutlined,
-  DollarOutlined,
+  DashboardOutlined,
+  BarChartOutlined,
+  NodeIndexOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import { MetricCard, TrendChart, QuickActions } from '@/components/Dashboard';
+import { 
+  RealTimeMetrics, 
+  TrendChart, 
+  QuickActions, 
+  QualityReports, 
+  KnowledgeGraph 
+} from '@/components/Dashboard';
 import { useDashboard } from '@/hooks/useDashboard';
 import { useAuthStore } from '@/stores/authStore';
 
 const { Title } = Typography;
+const { TabPane } = Tabs;
 
 const DashboardPage: React.FC = () => {
   const { t } = useTranslation('dashboard');
@@ -25,20 +31,12 @@ const DashboardPage: React.FC = () => {
     value: trend.annotations_per_hour,
   })) || [];
 
-  // Calculate mock metrics when no real data
-  const metrics = {
-    activeTasks: 12,
-    todayAnnotations: 156,
-    totalCorpus: 25000,
-    totalBilling: 8500,
-  };
-
   if (error) {
     return (
       <Alert
         type="warning"
-        message="数据加载失败"
-        description="无法连接到后端服务器。请确保后端服务正在运行。"
+        message={t('errors.dataLoadFailed')}
+        description={t('errors.backendConnection')}
         showIcon
       />
     );
@@ -50,68 +48,67 @@ const DashboardPage: React.FC = () => {
         {t('welcome', { name: user?.username || 'User' })}
       </Title>
 
-      {/* Metric Cards */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col xs={24} sm={12} lg={6}>
-          <MetricCard
-            title={t('metrics.activeTasks')}
-            value={metrics.activeTasks}
-            icon={<FileTextOutlined />}
-            color="#1890ff"
-            loading={isLoading}
-            trend={5.2}
-            trendLabel="较昨日"
+      <Tabs defaultActiveKey="overview" size="large">
+        <TabPane
+          tab={
+            <span>
+              <DashboardOutlined />
+              {t('tabs.overview')}
+            </span>
+          }
+          key="overview"
+        >
+          {/* Real-time Metrics */}
+          <RealTimeMetrics 
+            refreshInterval={30000}
+            showTargets={true}
           />
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <MetricCard
-            title={t('metrics.todayAnnotations')}
-            value={metrics.todayAnnotations}
-            icon={<CheckCircleOutlined />}
-            color="#52c41a"
-            loading={isLoading}
-            trend={12.5}
-            trendLabel="较昨日"
-          />
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <MetricCard
-            title={t('metrics.totalCorpus')}
-            value={metrics.totalCorpus.toLocaleString()}
-            icon={<DatabaseOutlined />}
-            color="#faad14"
-            loading={isLoading}
-          />
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <MetricCard
-            title={t('metrics.totalBilling')}
-            value={metrics.totalBilling.toLocaleString()}
-            suffix="¥"
-            icon={<DollarOutlined />}
-            color="#722ed1"
-            loading={isLoading}
-            trend={-3.1}
-            trendLabel="较上月"
-          />
-        </Col>
-      </Row>
 
-      {/* Charts */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col xs={24} lg={16}>
-          <TrendChart
-            title={t('charts.annotationTrend')}
-            data={chartData.length > 0 ? chartData : generateMockChartData()}
+          {/* Charts */}
+          <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
+            <Col xs={24} lg={16}>
+              <TrendChart
+                title={t('charts.annotationTrend')}
+                data={chartData.length > 0 ? chartData : generateMockChartData()}
+                loading={isLoading}
+                color="#1890ff"
+                height={300}
+              />
+            </Col>
+            <Col xs={24} lg={8}>
+              <QuickActions />
+            </Col>
+          </Row>
+        </TabPane>
+
+        <TabPane
+          tab={
+            <span>
+              <BarChartOutlined />
+              {t('tabs.qualityReports')}
+            </span>
+          }
+          key="quality"
+        >
+          <QualityReports loading={isLoading} />
+        </TabPane>
+
+        <TabPane
+          tab={
+            <span>
+              <NodeIndexOutlined />
+              {t('tabs.knowledgeGraph')}
+            </span>
+          }
+          key="knowledge"
+        >
+          <KnowledgeGraph 
             loading={isLoading}
-            color="#1890ff"
-            height={300}
+            height={700}
+            interactive={true}
           />
-        </Col>
-        <Col xs={24} lg={8}>
-          <QuickActions />
-        </Col>
-      </Row>
+        </TabPane>
+      </Tabs>
     </div>
   );
 };

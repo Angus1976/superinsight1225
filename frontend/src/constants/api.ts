@@ -8,6 +8,9 @@ export const API_ENDPOINTS = {
     REGISTER: '/api/security/register',
     CURRENT_USER: '/api/security/users/me',
     REFRESH: '/api/security/refresh',
+    SWITCH_TENANT: '/api/security/switch-tenant',
+    FORGOT_PASSWORD: '/api/security/forgot-password',
+    RESET_PASSWORD: '/api/security/reset-password',
   },
 
   // Label Studio

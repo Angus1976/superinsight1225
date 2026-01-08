@@ -1,0 +1,77 @@
+{
+  "title": "Billing Management",
+  "records": "Billing Records",
+  "details": "Billing Details",
+  "export": "Export",
+  "period": "Period",
+  "amount": "Amount",
+  "status": "Status",
+  "dueDate": "Due Date",
+  "paidAt": "Paid At",
+  "actions": "Actions",
+  "view": "View",
+  "download": "Download",
+  "downloadInvoice": "Download Invoice",
+  "close": "Close",
+  "totalSpending": "Total Spending",
+  "averageMonthly": "Average Monthly",
+  "pendingPayment": "Pending Payment",
+  "description": "Description",
+  "category": "Category",
+  "quantity": "Quantity",
+  "unitPrice": "Unit Price",
+  "status": {
+    "pending": "Pending",
+    "paid": "Paid",
+    "overdue": "Overdue",
+    "cancelled": "Cancelled"
+  },
+  "categories": {
+    "annotation": "Annotation",
+    "augmentation": "Augmentation",
+    "storage": "Storage",
+    "api": "API",
+    "other": "Other"
+  },
+  "workHours": {
+    "title": "Work Hours Statistics",
+    "ranking": "Work Hours Ranking",
+    "totalHours": "Total Hours",
+    "billableHours": "Billable Hours",
+    "efficiency": "Efficiency",
+    "quality": "Quality",
+    "trend": "Trend",
+    "reward": "Reward",
+    "topPerformers": "Top Performers",
+    "avgEfficiency": "Avg Efficiency"
+  },
+  "analysis": {
+    "title": "Cost Analysis",
+    "trends": "Cost Trends",
+    "byProject": "Cost by Project",
+    "byDepartment": "Cost by Department",
+    "forecast": "Cost Forecast"
+  },
+  "reports": {
+    "title": "Billing Reports",
+    "generate": "Generate Report",
+    "export": "Export Report",
+    "type": "Report Type",
+    "dateRange": "Date Range",
+    "summary": "Summary Report",
+    "detailed": "Detailed Report",
+    "userBreakdown": "User Breakdown",
+    "projectBreakdown": "Project Breakdown",
+    "departmentBreakdown": "Department Breakdown",
+    "trendAnalysis": "Trend Analysis"
+  },
+  "messages": {
+    "exportStarted": "Export started. The file will be downloaded shortly.",
+    "reportGenerated": "Report generated successfully",
+    "reportFailed": "Failed to generate report",
+    "exportSuccess": "Report exported successfully",
+    "noData": "No data available",
+    "loadingData": "Loading data...",
+    "retryLoad": "Retry"
+  }
+}

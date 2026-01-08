@@ -66,8 +66,6 @@ export default defineConfig(({ mode }) => ({
 
   resolve: {
     alias: {
-      // 核心：直接指向 development.js，它有明确的 named exports
-      'react-is': path.resolve(__dirname, 'node_modules/react-is/cjs/react-is.development.js'),
       '@': path.resolve(__dirname, './src'),
       '@components': path.resolve(__dirname, './src/components'),
       '@pages': path.resolve(__dirname, './src/pages'),
@@ -119,31 +117,24 @@ export default defineConfig(({ mode }) => ({
 
   // Optimize dependencies
   optimizeDeps: {
-    // 强制预构建这些模块
+    // Pre-build these modules for better performance
     include: [
-      'react-is',
-      'rc-util',
-      '@ant-design/pro-layout',
-      'recharts',
-      'use-sync-external-store',
-      'use-sync-external-store/shim',
-      'use-sync-external-store/shim/index',
-      'use-sync-external-store/shim/with-selector',
-      '@tanstack/react-query',
-      'zustand',
-      'swr',
       'react',
       'react-dom',
       'react-router-dom',
       'antd',
       '@ant-design/icons',
+      '@ant-design/pro-layout',
+      '@ant-design/pro-components',
+      '@tanstack/react-query',
+      'zustand',
       'axios',
       'dayjs',
       'i18next',
       'react-i18next',
+      'recharts',
+      'lodash-es',
     ],
-    // Force specific versions
-    force: true,
   },
 
   // Enable esbuild optimizations

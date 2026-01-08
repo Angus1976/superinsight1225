@@ -1,0 +1,93 @@
+{
+  "sentiment": [
+    {
+      "id": "sentiment_1",
+      "task_type": "sentiment",
+      "input_text": "这个产品真的很棒，我非常满意！",
+      "expected_output": {
+        "sentiment": "positive",
+        "confidence": 0.9
+      },
+      "difficulty_level": "easy",
+      "domain": "product_review",
+      "metadata": {}
+    },
+    {
+      "id": "sentiment_2",
+      "task_type": "sentiment",
+      "input_text": "服务态度一般，还有改进空间。",
+      "expected_output": {
+        "sentiment": "neutral",
+        "confidence": 0.7
+      },
+      "difficulty_level": "medium",
+      "domain": "service_review",
+      "metadata": {}
+    },
+    {
+      "id": "sentiment_3",
+      "task_type": "sentiment",
+      "input_text": "虽然价格有点贵，但是质量确实不错，总体来说还是值得的。",
+      "expected_output": {
+        "sentiment": "positive",
+        "confidence": 0.6
+      },
+      "difficulty_level": "hard",
+      "domain": "product_review",
+      "metadata": {}
+    }
+  ],
+  "classification": [
+    {
+      "id": "class_1",
+      "task_type": "classification",
+      "input_text": "请问如何申请退款？",
+      "expected_output": {
+        "category": "customer_service",
+        "confidence": 0.8
+      },
+      "difficulty_level": "easy",
+      "domain": "customer_support",
+      "metadata": {}
+    },
+    {
+      "id": "class_2",
+      "task_type": "classification",
+      "input_text": "系统登录时出现错误代码500",
+      "expected_output": {
+        "category": "technical_issue",
+        "confidence": 0.9
+      },
+      "difficulty_level": "medium",
+      "domain": "technical_support",
+      "metadata": {}
+    }
+  ],
+  "ner": [
+    {
+      "id": "ner_1",
+      "task_type": "ner",
+      "input_text": "张三在北京大学学习计算机科学。",
+      "expected_output": {
+        "entities": [
+          {
+            "text": "张三",
+            "label": "PERSON",
+            "start": 0,
+            "end": 2
+          },
+          {
+            "text": "北京大学",
+            "label": "ORG",
+            "start": 3,
+            "end": 7
+          }
+        ],
+        "confidence": 0.8
+      },
+      "difficulty_level": "medium",
+      "domain": "education",
+      "metadata": {}
+    }
+  ]
+}

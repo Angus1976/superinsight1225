@@ -15,7 +15,7 @@ from datetime import datetime
 from enum import Enum
 from typing import (
     Dict, Any, List, Optional, Callable, Awaitable,
-    Union, TypeVar, Generic
+    Union, TypeVar, Generic, Tuple
 )
 
 logger = logging.getLogger(__name__)

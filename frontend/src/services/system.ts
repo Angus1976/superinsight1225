@@ -1,5 +1,5 @@
 // System management service
-import { apiClient } from './api/client';
+import apiClient from './api/client';
 import type {
   SystemTenant,
   TenantUsage,

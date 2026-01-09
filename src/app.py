@@ -318,28 +318,29 @@ async def global_exception_handler(request: Request, exc: Exception):
 # Health check endpoint
 @app.get("/health")
 async def health_check():
-    """Comprehensive health check endpoint."""
+    """Simple health check endpoint for Docker."""
     try:
-        health_status = await health_checker.get_system_health()
-        
-        status_code = 200
-        if health_status["overall_status"] == "unhealthy":
-            status_code = 503
-        elif health_status["overall_status"] == "warning":
-            status_code = 200  # Still operational
-        
-        return JSONResponse(
-            status_code=status_code,
-            content=health_status
-        )
+        # Simple health check - just verify database connection
+        from sqlalchemy import text
+        db = SessionLocal()
+        try:
+            db.execute(text("SELECT 1"))
+            db.close()
+            return JSONResponse(
+                status_code=200,
+                content={"status": "healthy", "message": "API is running"}
+            )
+        except Exception as db_error:
+            logger.error(f"Database health check failed: {db_error}")
+            return JSONResponse(
+                status_code=503,
+                content={"status": "unhealthy", "error": "Database connection failed"}
+            )
     except Exception as e:
         logger.error(f"Health check failed: {e}")
         return JSONResponse(
             status_code=503,
-            content={
-                "overall_status": "unhealthy",
-                "error": str(e)
-            }
+            content={"status": "unhealthy", "error": str(e)}
         )
 
 

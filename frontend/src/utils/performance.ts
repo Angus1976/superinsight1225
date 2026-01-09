@@ -478,7 +478,7 @@ export const performanceTiming = {
  */
 export function reportWebVitals(onReport?: (metric: PerformanceMetric) => void): void {
   // Start collecting Web Vitals
-  collectWebVitals(onReport)
+  initWebVitals(onReport, { reportToConsole: true, reportToAnalytics: false })
   
   // Log initialization in development
   if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') {

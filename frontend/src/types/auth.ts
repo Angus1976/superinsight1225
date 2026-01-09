@@ -10,17 +10,16 @@ export interface LoginResponse {
   access_token: string;
   token_type: string;
   message?: string;
-  tenant_id?: string;
-  user?: {
+  user: {
+    id: string;
     username: string;
     email: string;
     full_name: string;
     role: string;
+    tenant_id: string;
+    is_active: boolean;
+    last_login?: string;
   };
-  // Legacy flat format (for backward compatibility)
-  user_id?: string;
-  username?: string;
-  role?: string;
 }
 
 export interface RegisterData {

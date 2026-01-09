@@ -22,9 +22,9 @@ const LoginPage: React.FC = () => {
     <div className={styles.container}>
       <Card className={styles.card}>
         <div className={styles.header}>
-          <img src="/logo.svg" alt="SuperInsight" className={styles.logo} />
+          <img src="/logo-wenshijian.svg" alt="问视间" className={styles.logo} />
           <Title level={2} className={styles.title}>
-            SuperInsight
+            问视间
           </Title>
           <Text type="secondary">{t('login.subtitle')}</Text>
         </div>

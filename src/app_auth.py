@@ -14,6 +14,7 @@ from src.database.connection import get_db_session
 
 # Import API routers
 from src.api.auth import router as auth_router
+from src.api.metrics import router as metrics_router
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +43,7 @@ app.add_middleware(
 
 # Include API routers
 app.include_router(auth_router)
+app.include_router(metrics_router)
 
 # Health check endpoint
 @app.get("/health")

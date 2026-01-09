@@ -178,8 +178,8 @@ export const MainLayout: React.FC = () => {
 
   return (
     <ProLayout
-      title="SuperInsight"
-      logo="/logo.svg"
+      title="问视间"
+      logo="/logo-wenshijian-simple.svg"
       navTheme={theme === 'dark' ? 'realDark' : 'light'}
       layout="mix"
       splitMenus={false}

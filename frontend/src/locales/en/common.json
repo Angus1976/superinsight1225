@@ -1,5 +1,6 @@
 {
   "appName": "SuperInsight",
+  "appNameZh": "问视间",
   "menu": {
     "dashboard": "Dashboard",
     "tasks": "Task Management",

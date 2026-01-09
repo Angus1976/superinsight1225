@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>问视间 LOGO 预览</title>
+    <style>
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            margin: 0;
+            padding: 40px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #262626;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            font-weight: 600;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #8c8c8c;
+            margin-bottom: 50px;
+            font-size: 1.1em;
+        }
+        
+        .logo-section {
+            margin-bottom: 60px;
+            padding: 30px;
+            border: 1px solid #f0f0f0;
+            border-radius: 12px;
+            background: #fafafa;
+        }
+        
+        .logo-section h2 {
+            color: #1890ff;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 2px solid #1890ff;
+            padding-bottom: 10px;
+        }
+        
+        .logo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+        
+        .logo-item {
+            text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        
+        .logo-item h3 {
+            margin: 15px 0 10px 0;
+            color: #262626;
+            font-size: 1.1em;
+        }
+        
+        .logo-item p {
+            color: #8c8c8c;
+            font-size: 0.9em;
+            margin: 5px 0;
+        }
+        
+        .background-demo {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .bg-light {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #f0f0f0;
+        }
+        
+        .bg-dark {
+            background: #262626;
+            padding: 30px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .bg-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .bg-blue {
+            background: #1890ff;
+            padding: 30px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .specs {
+            background: #f6ffed;
+            border: 1px solid #b7eb8f;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+        
+        .specs h3 {
+            color: #389e0d;
+            margin-top: 0;
+        }
+        
+        .specs ul {
+            color: #262626;
+            line-height: 1.6;
+        }
+        
+        .color-palette {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .color-item {
+            text-align: center;
+            flex: 1;
+            min-width: 120px;
+        }
+        
+        .color-swatch {
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            margin: 0 auto 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .primary { background: linear-gradient(135deg, #1890ff, #096dd9); }
+        .accent { background: linear-gradient(135deg, #52c41a, #389e0d); }
+        .neutral { background: #ffffff; border: 2px solid #f0f0f0; }
+        .dark { background: #262626; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>问视间</h1>
+        <p class="subtitle">SuperInsight · 智能数据洞察平台 · LOGO设计方案</p>
+        
+        <!-- 标准版LOGO -->
+        <div class="logo-section">
+            <h2>标准版 LOGO</h2>
+            <p>用于应用图标、大尺寸展示，包含完整的设计元素</p>
+            
+            <div class="logo-grid">
+                <div class="logo-item">
+                    <img src="frontend/public/logo-wenshijian.svg" alt="问视间标准版" width="120" height="120">
+                    <h3>120×120px</h3>
+                    <p>标准尺寸</p>
+                </div>
+                <div class="logo-item">
+                    <img src="frontend/public/logo-wenshijian.svg" alt="问视间标准版" width="80" height="80">
+                    <h3>80×80px</h3>
+                    <p>中等尺寸</p>
+                </div>
+                <div class="logo-item">
+                    <img src="frontend/public/logo-wenshijian.svg" alt="问视间标准版" width="60" height="60">
+                    <h3>60×60px</h3>
+                    <p>常用尺寸</p>
+                </div>
+                <div class="logo-item">
+                    <img src="frontend/public/logo-wenshijian.svg" alt="问视间标准版" width="40" height="40">
+                    <h3>40×40px</h3>
+                    <p>小尺寸</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 简化版LOGO -->
+        <div class="logo-section">
+            <h2>简化版 LOGO</h2>
+            <p>用于小尺寸应用、favicon，简化细节但保持识别性</p>
+            
+            <div class="logo-grid">
+                <div class="logo-item">
+                    <img src="frontend/public/logo-wenshijian-simple.svg" alt="问视间简化版" width="64" height="64">
+                    <h3>64×64px</h3>
+                    <p>标准尺寸</p>
+                </div>
+                <div class="logo-item">
+                    <img src="frontend/public/logo-wenshijian-simple.svg" alt="问视间简化版" width="32" height="32">
+                    <h3>32×32px</h3>
+                    <p>导航栏</p>
+                </div>
+                <div class="logo-item">
+                    <img src="frontend/public/logo-wenshijian-simple.svg" alt="问视间简化版" width="24" height="24">
+                    <h3>24×24px</h3>
+                    <p>按钮图标</p>
+                </div>
+                <div class="logo-item">
+                    <img src="frontend/public/logo-wenshijian-simple.svg" alt="问视间简化版" width="16" height="16">
+                    <h3>16×16px</h3>
+                    <p>Favicon</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 完整版LOGO -->
+        <div class="logo-section">
+            <h2>完整版 LOGO</h2>
+            <p>包含图标、中文名称、英文名称和标语，用于网站头部、文档标题</p>
+            
+            <div style="text-align: center; padding: 40px;">
+                <img src="frontend/public/logo-wenshijian-full.svg" alt="问视间完整版" width="280" height="80">
+            </div>
+        </div>
+        
+        <!-- 背景适应性 -->
+        <div class="logo-section">
+            <h2>背景适应性测试</h2>
+            <p>LOGO在不同背景下的显示效果</p>
+            
+            <div class="background-demo">
+                <div class="bg-light">
+                    <img src="frontend/public/logo-wenshijian.svg" alt="浅色背景" width="80" height="80">
+                    <p style="margin-top: 15px; color: #262626;">浅色背景</p>
+                </div>
+                <div class="bg-dark">
+                    <img src="frontend/public/logo-wenshijian.svg" alt="深色背景" width="80" height="80">
+                    <p style="margin-top: 15px; color: white;">深色背景</p>
+                </div>
+                <div class="bg-gradient">
+                    <img src="frontend/public/logo-wenshijian.svg" alt="渐变背景" width="80" height="80">
+                    <p style="margin-top: 15px; color: white;">渐变背景</p>
+                </div>
+                <div class="bg-blue">
+                    <img src="frontend/public/logo-wenshijian.svg" alt="蓝色背景" width="80" height="80">
+                    <p style="margin-top: 15px; color: white;">品牌色背景</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 色彩方案 -->
+        <div class="logo-section">
+            <h2>色彩方案</h2>
+            <p>LOGO使用的主要颜色和渐变</p>
+            
+            <div class="color-palette">
+                <div class="color-item">
+                    <div class="color-swatch primary"></div>
+                    <h3>主色调</h3>
+                    <p>#1890ff → #096dd9</p>
+                    <p>专业、可信、科技</p>
+                </div>
+                <div class="color-item">
+                    <div class="color-swatch accent"></div>
+                    <h3>辅助色</h3>
+                    <p>#52c41a → #389e0d</p>
+                    <p>增长、成功、数据</p>
+                </div>
+                <div class="color-item">
+                    <div class="color-swatch neutral"></div>
+                    <h3>中性色</h3>
+                    <p>#ffffff</p>
+                    <p>纯净、对比、可读</p>
+                </div>
+                <div class="color-item">
+                    <div class="color-swatch dark"></div>
+                    <h3>深色</h3>
+                    <p>#262626</p>
+                    <p>稳重、专业、文字</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 技术规格 -->
+        <div class="specs">
+            <h3>技术规格</h3>
+            <ul>
+                <li><strong>格式</strong>：SVG矢量格式，支持无损缩放</li>
+                <li><strong>兼容性</strong>：支持所有现代浏览器，IE9+</li>
+                <li><strong>文件大小</strong>：标准版 < 3KB，简化版 < 2KB</li>
+                <li><strong>最小尺寸</strong>：标准版不小于32×32px，简化版不小于16×16px</li>
+                <li><strong>安全区域</strong>：四周预留不少于图标宽度1/4的空白</li>
+                <li><strong>响应式</strong>：完全适配移动端和高分辨率屏幕</li>
+            </ul>
+        </div>
+        
+        <!-- 设计理念 -->
+        <div class="specs" style="background: #f0f9ff; border-color: #91d5ff;">
+            <h3 style="color: #1890ff;">设计理念</h3>
+            <ul>
+                <li><strong>"问"</strong> - 探索、询问、洞察，体现主动的数据探索精神</li>
+                <li><strong>"视"</strong> - 视觉、观察、数据可视化，强调直观的数据呈现</li>
+                <li><strong>"间"</strong> - 空间、时间、维度，体现多维度的数据分析能力</li>
+                <li><strong>数据元素</strong> - 柱状图和洞察之眼，直接体现平台的核心功能</li>
+                <li><strong>现代感</strong> - 几何化设计语言，与科技产品定位相符</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

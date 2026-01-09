@@ -1,5 +1,6 @@
 {
-  "appName": "SuperInsight",
+  "appName": "问视间",
+  "appNameEn": "SuperInsight",
   "menu": {
     "dashboard": "仪表盘",
     "tasks": "任务管理",

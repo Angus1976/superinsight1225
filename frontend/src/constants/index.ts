@@ -3,7 +3,8 @@ export * from './routes';
 export * from './api';
 
 // App constants
-export const APP_NAME = 'SuperInsight';
+export const APP_NAME = '问视间';
+export const APP_NAME_EN = 'SuperInsight';
 export const DEFAULT_LANGUAGE = 'zh';
 export const SUPPORTED_LANGUAGES = ['zh', 'en'] as const;
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];

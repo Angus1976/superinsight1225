@@ -234,200 +234,227 @@ CREATE POLICY workspace_isolation_policy ON tasks
 
 ## Implementation Strategy
 
-### Phase 1: Database Schema Migration
+### Phase 1: 基于现有代码的扩展策略
 
-#### Multi-Tenant Schema Updates
+#### 现有代码基础分析
+SuperInsight已具备多租户的基础架构，我们将基于以下现有模块进行扩展：
+
+**现有租户中间件基础**:
+```python
+# 现有: src/middleware/tenant_middleware.py
+# 扩展策略: 增强租户上下文提取和工作空间隔离
+class TenantContextMiddleware:
+    # 现有功能: 基础租户识别
+    # 新增功能: 工作空间级别隔离
+    pass
+```
+
+**现有数据库模型基础**:
+```python
+# 现有: src/database/models.py
+# 扩展策略: 添加tenant_id和workspace_id字段
+# 现有模型将通过数据库迁移添加多租户支持
+```
+
+**现有Label Studio集成**:
+```python
+# 现有: src/label_studio/tenant_isolation.py
+# 扩展策略: 增强项目级别隔离
+# 现有: src/label_studio/integration.py
+# 扩展策略: 支持工作空间到项目的映射
+```
+
+#### Database Schema Migration (基于现有数据库)
+
+**扩展现有数据库模型**:
 ```sql
--- Add tenant_id and workspace_id to existing tables
+-- 基于现有 src/database/models.py 的扩展
+-- 为现有表添加多租户支持
+
+-- 扩展现有用户表
+ALTER TABLE users ADD COLUMN default_tenant_id UUID;
+ALTER TABLE users ADD COLUMN default_workspace_id UUID;
+
+-- 扩展现有任务表 (基于 src/models/task.py)
 ALTER TABLE tasks ADD COLUMN tenant_id UUID REFERENCES tenants(id);
 ALTER TABLE tasks ADD COLUMN workspace_id UUID REFERENCES workspaces(id);
+
+-- 扩展现有标注表 (基于 src/models/annotation.py)  
 ALTER TABLE annotations ADD COLUMN tenant_id UUID REFERENCES tenants(id);
 ALTER TABLE annotations ADD COLUMN workspace_id UUID REFERENCES workspaces(id);
-ALTER TABLE datasets ADD COLUMN tenant_id UUID REFERENCES tenants(id);
-ALTER TABLE datasets ADD COLUMN workspace_id UUID REFERENCES workspaces(id);
-
--- Create indexes for performance
-CREATE INDEX idx_tasks_tenant_workspace ON tasks(tenant_id, workspace_id);
-CREATE INDEX idx_annotations_tenant_workspace ON annotations(tenant_id, workspace_id);
-CREATE INDEX idx_datasets_tenant_workspace ON datasets(tenant_id, workspace_id);
 ```
 
-### Phase 2: Middleware Implementation
+### Phase 2: 中间件集成 (扩展现有中间件)
 
-#### Tenant Context Middleware
+#### 增强现有租户中间件
 ```python
-from fastapi import Request, HTTPException
-from sqlalchemy.orm import Session
-from typing import Optional
+# 扩展: src/middleware/tenant_middleware.py
+from src.middleware.tenant_middleware import TenantContextMiddleware as BaseTenantMiddleware
 
-class TenantContextMiddleware:
+class EnhancedTenantContextMiddleware(BaseTenantMiddleware):
+    """扩展现有租户中间件，增加工作空间支持"""
+    
     def __init__(self, app):
-        self.app = app
+        super().__init__(app)
+        # 保持现有功能，增加工作空间处理
     
-    async def __call__(self, scope, receive, send):
-        if scope["type"] == "http":
-            request = Request(scope, receive)
-            
-            # Extract tenant context
-            tenant_id = await self.extract_tenant_id(request)
-            workspace_id = await self.extract_workspace_id(request)
-            
-            # Validate permissions
-            if not await self.validate_access(request, tenant_id, workspace_id):
-                raise HTTPException(status_code=403, detail="Access denied")
-            
-            # Set context
-            scope["tenant_id"] = tenant_id
-            scope["workspace_id"] = workspace_id
+    async def extract_workspace_context(self, request: Request) -> Optional[str]:
+        """新增: 工作空间上下文提取"""
+        # 基于现有租户提取逻辑，增加工作空间层级
+        tenant_id = await self.extract_tenant_id(request)  # 复用现有方法
+        workspace_id = request.headers.get("X-Workspace-ID")
         
-        await self.app(scope, receive, send)
-    
-    async def extract_tenant_id(self, request: Request) -> Optional[str]:
-        # Extract from header, subdomain, or JWT token
-        tenant_id = request.headers.get("X-Tenant-ID")
-        if not tenant_id:
-            # Extract from subdomain
-            host = request.headers.get("host", "")
-            if "." in host:
-                subdomain = host.split(".")[0]
-                tenant_id = await self.resolve_tenant_by_subdomain(subdomain)
-        return tenant_id
+        if workspace_id:
+            # 验证工作空间属于当前租户
+            if await self.validate_workspace_access(tenant_id, workspace_id):
+                return workspace_id
+        
+        # 返回默认工作空间
+        return await self.get_default_workspace(tenant_id)
 ```
 
-#### Database Session Context
+#### 扩展现有数据库会话管理
 ```python
-from sqlalchemy import event
-from sqlalchemy.orm import Session
+# 扩展: src/database/connection.py
+from src.database.connection import get_db_session
 
 class TenantAwareSession:
-    def __init__(self, session: Session, tenant_id: str, workspace_id: str):
-        self.session = session
+    """基于现有数据库连接，增加租户上下文"""
+    
+    def __init__(self, session, tenant_id: str, workspace_id: str):
+        self.session = session  # 复用现有session
         self.tenant_id = tenant_id
         self.workspace_id = workspace_id
         self._setup_context()
     
     def _setup_context(self):
-        # Set PostgreSQL session variables for RLS
-        self.session.execute(
-            f"SET app.current_tenant_id = '{self.tenant_id}'"
-        )
-        self.session.execute(
-            f"SET app.current_workspace_id = '{self.workspace_id}'"
-        )
-    
-    def __enter__(self):
-        return self.session
-    
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.session.close()
+        """设置PostgreSQL会话变量，基于现有RLS策略"""
+        # 扩展现有的数据库上下文设置
+        self.session.execute(f"SET app.current_tenant_id = '{self.tenant_id}'")
+        self.session.execute(f"SET app.current_workspace_id = '{self.workspace_id}'")
 ```
 
-### Phase 3: API Layer Integration
+### Phase 3: API层集成 (扩展现有API)
 
-#### Tenant-Aware API Endpoints
+#### 扩展现有认证API
 ```python
-from fastapi import APIRouter, Depends, HTTPException
-from typing import List
+# 扩展: src/api/auth.py
+from src.api.auth import router as auth_router
 
-router = APIRouter()
-
-@router.post("/tenants", response_model=TenantResponse)
-async def create_tenant(
-    tenant_data: TenantCreate,
-    current_user: User = Depends(get_current_admin_user),
+@auth_router.post("/switch-tenant")
+async def switch_tenant(
+    tenant_data: TenantSwitchRequest,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Create a new tenant (platform admin only)"""
-    tenant = await tenant_service.create_tenant(db, tenant_data)
-    await label_studio_service.setup_tenant_integration(tenant.id)
-    return tenant
+    """新增: 租户切换功能，基于现有认证系统"""
+    # 复用现有的用户验证逻辑
+    # 增加租户切换和工作空间管理
+    pass
 
-@router.get("/tenants/{tenant_id}/workspaces", response_model=List[WorkspaceResponse])
+@auth_router.get("/tenants/{tenant_id}/workspaces")
 async def get_workspaces(
     tenant_id: str,
     current_user: User = Depends(get_current_user),
     tenant_context: TenantContext = Depends(get_tenant_context)
 ):
-    """Get workspaces for a tenant"""
-    if not await permission_service.can_access_tenant(current_user.id, tenant_id):
-        raise HTTPException(status_code=403, detail="Access denied")
-    
-    workspaces = await workspace_service.get_tenant_workspaces(tenant_id)
-    return workspaces
-
-@router.post("/workspaces", response_model=WorkspaceResponse)
-async def create_workspace(
-    workspace_data: WorkspaceCreate,
-    tenant_context: TenantContext = Depends(get_tenant_context),
-    current_user: User = Depends(get_current_user)
-):
-    """Create a new workspace within current tenant"""
-    workspace = await workspace_service.create_workspace(
-        tenant_context.tenant_id, 
-        workspace_data,
-        created_by=current_user.id
-    )
-    
-    # Create Label Studio project
-    await label_studio_service.create_project_for_workspace(workspace.id)
-    
-    return workspace
+    """新增: 工作空间管理，集成现有权限系统"""
+    # 基于现有权限检查逻辑
+    # 增加工作空间级别的权限验证
+    pass
 ```
 
-### Phase 4: Label Studio Integration
-
-#### Project Isolation Setup
+#### 扩展现有管理API
 ```python
-class LabelStudioTenantIntegration:
-    def __init__(self, label_studio_client):
-        self.client = label_studio_client
+# 扩展: src/api/admin.py
+from src.api.admin import router as admin_router
+
+@admin_router.post("/tenants")
+async def create_tenant(
+    tenant_data: TenantCreate,
+    current_user: User = Depends(get_current_admin_user),  # 复用现有管理员验证
+    db: Session = Depends(get_db)
+):
+    """新增: 租户管理，基于现有管理员权限"""
+    # 集成现有的管理员权限检查
+    # 增加租户创建和配置逻辑
+    pass
+```
+
+### Phase 4: Label Studio集成 (扩展现有集成)
+
+#### 增强现有Label Studio集成
+```python
+# 扩展: src/label_studio/integration.py
+from src.label_studio.integration import LabelStudioIntegration
+
+class MultiTenantLabelStudioIntegration(LabelStudioIntegration):
+    """扩展现有Label Studio集成，增加多租户支持"""
     
-    async def setup_tenant_integration(self, tenant_id: str):
-        """Setup Label Studio integration for a new tenant"""
-        # Create tenant-specific organization in Label Studio
+    def __init__(self):
+        super().__init__()  # 保持现有初始化逻辑
+    
+    async def create_tenant_organization(self, tenant_id: str):
+        """新增: 为租户创建Label Studio组织"""
+        # 基于现有的Label Studio API调用逻辑
+        # 增加租户级别的组织管理
         org_data = {
             "title": f"Tenant-{tenant_id}",
             "description": f"Organization for tenant {tenant_id}"
         }
-        organization = await self.client.create_organization(org_data)
         
-        # Store organization mapping
-        await self.store_tenant_organization_mapping(tenant_id, organization.id)
+        # 复用现有的API调用方法
+        organization = await self.call_label_studio_api(
+            "POST", "/api/organizations/", org_data
+        )
         
         return organization
     
-    async def create_project_for_workspace(self, workspace_id: str):
-        """Create Label Studio project for workspace"""
-        workspace = await workspace_service.get_workspace(workspace_id)
-        tenant_org_id = await self.get_tenant_organization_id(workspace.tenant_id)
+    async def create_workspace_project(self, workspace_id: str, tenant_org_id: str):
+        """新增: 为工作空间创建Label Studio项目"""
+        # 基于现有的项目创建逻辑
+        # 增加工作空间到项目的映射
+        workspace = await self.get_workspace(workspace_id)
         
         project_data = {
             "title": f"Workspace-{workspace.name}",
-            "description": f"Project for workspace {workspace.name}",
             "organization": tenant_org_id,
-            "label_config": workspace.config.get("label_config", DEFAULT_LABEL_CONFIG)
+            "label_config": workspace.config.get("label_config", self.DEFAULT_CONFIG)
         }
         
-        project = await self.client.create_project(project_data)
+        # 复用现有的项目创建方法
+        project = await self.create_project(project_data)
         
-        # Update workspace with project ID
-        await workspace_service.update_workspace(
-            workspace_id, 
-            {"label_studio_project_id": project.id}
-        )
+        # 更新工作空间配置
+        await self.update_workspace_config(workspace_id, {
+            "label_studio_project_id": project.id
+        })
         
         return project
+```
+
+#### 扩展现有租户隔离
+```python
+# 扩展: src/label_studio/tenant_isolation.py
+from src.label_studio.tenant_isolation import TenantIsolation
+
+class WorkspaceIsolation(TenantIsolation):
+    """基于现有租户隔离，增加工作空间级别隔离"""
     
     async def sync_workspace_users(self, workspace_id: str):
-        """Sync workspace users to Label Studio project"""
-        workspace = await workspace_service.get_workspace(workspace_id)
-        users = await workspace_service.get_workspace_users(workspace_id)
+        """新增: 同步工作空间用户到Label Studio"""
+        # 基于现有的用户同步逻辑
+        # 增加工作空间级别的用户权限管理
+        
+        workspace = await self.get_workspace(workspace_id)
+        users = await self.get_workspace_users(workspace_id)
         
         for user in users:
-            await self.add_user_to_project(
+            # 复用现有的用户同步方法
+            await self.sync_user_to_project(
                 workspace.label_studio_project_id,
                 user.email,
-                self.map_role_to_label_studio(user.workspace_role)
+                self.map_workspace_role_to_label_studio(user.workspace_role)
             )
 ```
 

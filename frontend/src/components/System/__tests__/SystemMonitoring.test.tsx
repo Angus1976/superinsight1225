@@ -19,6 +19,22 @@ vi.mock('recharts', () => ({
   Cell: () => <div data-testid="cell" />,
 }));
 
+// Mock antd DatePicker to avoid dayjs issues
+vi.mock('antd', async () => {
+  const actual = await vi.importActual('antd');
+  return {
+    ...actual,
+    DatePicker: {
+      RangePicker: ({ value, onChange }: any) => (
+        <div data-testid="range-picker">
+          <input type="text" value={value?.[0]?.toString() || ''} readOnly />
+          <input type="text" value={value?.[1]?.toString() || ''} readOnly />
+        </div>
+      ),
+    },
+  };
+});
+
 // Mock the hooks
 vi.mock('@/hooks', () => ({
   useSystemHealth: () => ({
@@ -96,7 +112,7 @@ describe('SystemMonitoring', () => {
     renderWithProviders(<SystemMonitoring />);
     
     expect(screen.getByText('System Status')).toBeInTheDocument();
-    expect(screen.getByText('Uptime')).toBeInTheDocument();
+    expect(screen.getAllByText('Uptime').length).toBeGreaterThan(0);
     expect(screen.getByText('Critical Alerts')).toBeInTheDocument();
   });
 

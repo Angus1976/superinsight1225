@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "NPM Command Interceptor",
+  "description": "Intercepts npm and npx commands (npm *, npx *, npm run *, npm install*, npm ci*) before execution",
+  "version": "1",
+  "when": {
+    "type": "promptSubmit"
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "echo \"NPM command detected\""
+  }
+}

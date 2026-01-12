@@ -1,0 +1,99 @@
+/**
+ * LoadingOverlay Styles
+ * 
+ * Consistent styling for loading overlays following the design system.
+ */
+
+@import '../../../styles/theme/designSystem.scss';
+
+.wrapper {
+  position: relative;
+}
+
+.loadingOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  @include flex-center;
+  background: rgba(255, 255, 255, 0.8);
+  z-index: $z-modal-backdrop;
+  animation: fadeIn $duration-base $ease-in-out;
+  
+  &.fullScreen {
+    position: fixed;
+    z-index: $z-modal;
+  }
+  
+  &.blur {
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+  
+  &.small {
+    .content {
+      gap: $spacing-xs;
+    }
+    
+    .tip {
+      font-size: $font-size-xs;
+    }
+  }
+  
+  &.default {
+    .content {
+      gap: $spacing-sm;
+    }
+    
+    .tip {
+      font-size: $font-size-sm;
+    }
+  }
+  
+  &.large {
+    .content {
+      gap: $spacing-md;
+    }
+    
+    .tip {
+      font-size: $font-size-base;
+    }
+  }
+}
+
+.content {
+  @include flex-column;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.tip {
+  margin-top: $spacing-xs;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.spinner {
+  @include flex-center;
+  padding: $spacing-lg;
+  
+  &.small {
+    padding: $spacing-sm;
+  }
+  
+  &.large {
+    padding: $spacing-xl;
+  }
+  
+  :global(.ant-spin-text) {
+    margin-top: $spacing-sm;
+    color: $color-text-secondary;
+  }
+}
+
+// Dark theme support
+[data-theme='dark'] {
+  .loadingOverlay {
+    background: rgba(0, 0, 0, 0.6);
+  }
+}

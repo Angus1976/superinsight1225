@@ -1,0 +1,118 @@
+/**
+ * StatCard Styles
+ * 
+ * Consistent styling for statistics cards following the design system.
+ */
+
+@import '../../../styles/theme/designSystem.scss';
+
+.statCard {
+  border-radius: $radius-lg !important;
+  box-shadow: $shadow-sm;
+  transition: all $duration-base $ease-in-out;
+  height: 100%;
+  
+  &.clickable {
+    cursor: pointer;
+    
+    &:hover {
+      box-shadow: $shadow-base;
+      transform: translateY(-2px);
+    }
+  }
+  
+  :global(.ant-card-body) {
+    padding: $spacing-lg;
+    
+    @include mobile {
+      padding: $spacing-md;
+    }
+  }
+}
+
+.cardContent {
+  @include flex-column;
+  gap: $spacing-sm;
+}
+
+.header {
+  @include flex-between;
+  margin-bottom: $spacing-xs;
+}
+
+.title {
+  font-size: $font-size-base;
+  font-weight: $font-weight-medium;
+  @include text-truncate;
+}
+
+.iconWrapper {
+  @include flex-center;
+  width: 40px;
+  height: 40px;
+  border-radius: $radius-base;
+  font-size: $font-size-xl;
+  flex-shrink: 0;
+  
+  @include mobile {
+    width: 32px;
+    height: 32px;
+    font-size: $font-size-lg;
+  }
+}
+
+.valueSection {
+  margin: $spacing-xs 0;
+}
+
+.prefix {
+  font-size: $font-size-lg;
+  color: $color-text-secondary;
+}
+
+.value {
+  margin: 0 !important;
+  font-weight: $font-weight-bold !important;
+  line-height: 1.2 !important;
+  
+  @include mobile {
+    font-size: $font-size-xl !important;
+  }
+}
+
+.suffix {
+  font-size: $font-size-base;
+}
+
+.trendSection {
+  margin-top: $spacing-xs;
+}
+
+.trendValue {
+  @include flex-start;
+  gap: 2px;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  
+  :global(.anticon) {
+    font-size: $font-size-xs;
+  }
+}
+
+.trendLabel {
+  font-size: $font-size-sm;
+}
+
+.progressSection {
+  margin-top: $spacing-sm;
+  
+  :global(.ant-progress-text) {
+    font-size: $font-size-xs;
+  }
+}
+
+.description {
+  font-size: $font-size-sm;
+  margin-top: $spacing-xs;
+  @include text-truncate-lines(2);
+}

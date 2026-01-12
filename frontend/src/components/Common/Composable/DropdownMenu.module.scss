@@ -1,0 +1,21 @@
+/**
+ * DropdownMenu Component Styles
+ */
+
+.textTrigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  color: var(--ant-color-text, #000);
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: var(--ant-color-primary, #1890ff);
+  }
+
+  .arrow {
+    font-size: 10px;
+    transition: transform 0.2s ease;
+  }
+}

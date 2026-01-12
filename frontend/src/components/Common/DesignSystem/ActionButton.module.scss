@@ -1,0 +1,164 @@
+/**
+ * ActionButton Styles
+ * 
+ * Consistent styling for action buttons following the design system.
+ */
+
+@import '../../../styles/theme/designSystem.scss';
+
+.actionButton {
+  @include button-base;
+  @include focus-ring;
+  border-radius: $radius-base;
+  font-weight: $font-weight-medium;
+  height: 36px;
+  padding: 0 $spacing-md;
+  
+  &.compact {
+    height: 28px;
+    padding: 0 $spacing-sm;
+    font-size: $font-size-sm;
+  }
+  
+  &.fullWidth {
+    width: 100%;
+  }
+  
+  // Variant styles
+  &.primary {
+    background: $color-primary;
+    border-color: $color-primary;
+    color: #fff;
+    
+    &:hover:not(:disabled) {
+      background: $color-primary-hover;
+      border-color: $color-primary-hover;
+    }
+    
+    &:active:not(:disabled) {
+      background: $color-primary-active;
+      border-color: $color-primary-active;
+    }
+  }
+  
+  &.secondary {
+    background: $color-bg;
+    border-color: $color-border;
+    color: $color-text;
+    
+    &:hover:not(:disabled) {
+      color: $color-primary;
+      border-color: $color-primary;
+    }
+  }
+  
+  &.success {
+    background: $color-success;
+    border-color: $color-success;
+    color: #fff;
+    
+    &:hover:not(:disabled) {
+      background: $color-success-hover;
+      border-color: $color-success-hover;
+    }
+    
+    &:active:not(:disabled) {
+      background: $color-success-active;
+      border-color: $color-success-active;
+    }
+  }
+  
+  &.warning {
+    background: $color-warning;
+    border-color: $color-warning;
+    color: #fff;
+    
+    &:hover:not(:disabled) {
+      background: $color-warning-hover;
+      border-color: $color-warning-hover;
+    }
+    
+    &:active:not(:disabled) {
+      background: $color-warning-active;
+      border-color: $color-warning-active;
+    }
+  }
+  
+  &.danger {
+    background: $color-error;
+    border-color: $color-error;
+    color: #fff;
+    
+    &:hover:not(:disabled) {
+      background: $color-error-hover;
+      border-color: $color-error-hover;
+    }
+    
+    &:active:not(:disabled) {
+      background: $color-error-active;
+      border-color: $color-error-active;
+    }
+  }
+  
+  &.ghost {
+    background: transparent;
+    border-color: transparent;
+    color: $color-text-secondary;
+    
+    &:hover:not(:disabled) {
+      background: $color-fill;
+      color: $color-primary;
+    }
+  }
+  
+  &.link {
+    background: transparent;
+    border-color: transparent;
+    color: $color-primary;
+    padding: 0;
+    height: auto;
+    
+    &:hover:not(:disabled) {
+      color: $color-primary-hover;
+    }
+  }
+  
+  // Icon only button
+  &:global(.ant-btn-icon-only) {
+    width: 36px;
+    padding: 0;
+    
+    &.compact {
+      width: 28px;
+    }
+  }
+}
+
+// Button Group
+.buttonGroup {
+  &.align-left {
+    text-align: left;
+  }
+  
+  &.align-center {
+    text-align: center;
+  }
+  
+  &.align-right {
+    text-align: right;
+  }
+  
+  @include mobile {
+    :global(.ant-space) {
+      width: 100%;
+    }
+    
+    :global(.ant-space-item) {
+      flex: 1;
+    }
+    
+    .actionButton {
+      width: 100%;
+    }
+  }
+}

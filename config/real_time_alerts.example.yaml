@@ -1,0 +1,227 @@
+# Real-time Alert System Configuration
+# Copy this file to real_time_alerts.yaml and customize for your environment
+
+# Email notification configuration
+email:
+  enabled: true
+  smtp_server: "smtp.gmail.com"
+  smtp_port: 587
+  username: "your-email@gmail.com"
+  password: "your-app-password"
+  sender_email: "alerts@yourcompany.com"
+  use_tls: true
+
+# Slack notification configuration
+slack:
+  enabled: true
+  webhook_url: "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK"
+  default_channel: "#security-alerts"
+  username: "SuperInsight Security"
+  icon_emoji: ":warning:"
+
+# Webhook notification configuration
+webhook:
+  enabled: true
+  default_timeout: 10
+  retry_attempts: 3
+
+# SMS notification configuration (optional)
+sms:
+  enabled: false
+  provider: "twilio"  # or "aws_sns"
+  account_sid: "your-twilio-account-sid"
+  auth_token: "your-twilio-auth-token"
+  from_number: "+1234567890"
+
+# Push notification configuration (optional)
+push_notification:
+  enabled: false
+  provider: "firebase"  # or "apns"
+  server_key: "your-firebase-server-key"
+
+# Alert recipients configuration
+recipients:
+  # Critical security alerts
+  critical_alert_recipients:
+    - "security-team@yourcompany.com"
+    - "ciso@yourcompany.com"
+    - "+1234567890"  # SMS number
+  
+  # General security alerts
+  security_alert_recipients:
+    - "security-team@yourcompany.com"
+    - "soc@yourcompany.com"
+  
+  # Authentication alerts
+  auth_alert_recipients:
+    - "identity-team@yourcompany.com"
+    - "admin@yourcompany.com"
+  
+  # Slack channels
+  slack_channels:
+    critical: "#security-critical"
+    general: "#security-alerts"
+    auth: "#identity-alerts"
+
+# Alert processing configuration
+processing:
+  # Notification processing interval (seconds)
+  processing_interval: 5
+  
+  # Maximum pending notifications
+  max_pending_notifications: 10000
+  
+  # Notification retry configuration
+  max_retries: 3
+  retry_delay_minutes: 5
+  
+  # Data retention (days)
+  notification_retention_days: 30
+  cooldown_retention_days: 7
+
+# Default alert rules configuration
+default_rules:
+  # Critical threats rule
+  critical_threats:
+    enabled: true
+    cooldown_minutes: 1
+    escalation_minutes: 15
+    channels: ["email", "slack", "system_log"]
+    priority: "critical"
+  
+  # Anomalous behavior rule
+  anomalous_behavior:
+    enabled: true
+    cooldown_minutes: 10
+    escalation_minutes: 60
+    channels: ["email", "system_log"]
+    priority: "medium"
+  
+  # Authentication failures rule
+  authentication_failures:
+    enabled: true
+    cooldown_minutes: 15
+    escalation_minutes: 120
+    channels: ["system_log"]
+    priority: "low"
+
+# Custom alert rules (examples)
+custom_rules:
+  # High-volume data export alert
+  - rule_id: "high_volume_export"
+    name: "大量数据导出告警"
+    description: "检测到大量数据导出操作"
+    event_types: ["data_exfiltration"]
+    threat_levels: ["high", "critical"]
+    channels: ["email", "slack"]
+    priority: "high"
+    cooldown_minutes: 5
+    escalation_minutes: 30
+    recipients: ["security-team@yourcompany.com"]
+    conditions:
+      export_size_threshold: 100  # MB
+      export_count_threshold: 10
+  
+  # Privilege escalation alert
+  - rule_id: "privilege_escalation"
+    name: "权限提升告警"
+    description: "检测到权限提升攻击"
+    event_types: ["privilege_escalation"]
+    threat_levels: ["medium", "high", "critical"]
+    channels: ["email", "slack", "webhook"]
+    priority: "critical"
+    cooldown_minutes: 2
+    escalation_minutes: 10
+    recipients: ["security-team@yourcompany.com", "admin@yourcompany.com"]
+    conditions:
+      tenant_ids: []  # Empty means all tenants
+      ip_patterns: []  # Empty means all IPs
+  
+  # Suspicious login patterns
+  - rule_id: "suspicious_login"
+    name: "可疑登录模式告警"
+    description: "检测到可疑的登录模式"
+    event_types: ["authentication_failure", "suspicious_activity"]
+    threat_levels: ["medium", "high"]
+    channels: ["email", "system_log"]
+    priority: "medium"
+    cooldown_minutes: 20
+    escalation_minutes: 90
+    recipients: ["identity-team@yourcompany.com"]
+    conditions:
+      failure_threshold: 5
+      time_window_minutes: 10
+
+# Notification templates
+templates:
+  email:
+    critical:
+      subject: "🚨 [CRITICAL] SuperInsight Security Alert: {event_type}"
+      body_template: |
+        CRITICAL SECURITY ALERT
+        
+        Event Type: {event_type}
+        Threat Level: {threat_level}
+        Time: {timestamp}
+        Tenant: {tenant_id}
+        User: {user_id}
+        IP Address: {ip_address}
+        
+        Description: {description}
+        
+        Details:
+        {details}
+        
+        This is a critical security event that requires immediate attention.
+        Please investigate and respond according to your incident response procedures.
+        
+        ---
+        SuperInsight Security Monitoring System
+    
+    high:
+      subject: "⚠️ [HIGH] SuperInsight Security Alert: {event_type}"
+      body_template: |
+        HIGH PRIORITY SECURITY ALERT
+        
+        Event Type: {event_type}
+        Threat Level: {threat_level}
+        Time: {timestamp}
+        
+        Description: {description}
+        
+        Please review this security event and take appropriate action.
+        
+        ---
+        SuperInsight Security Monitoring System
+  
+  slack:
+    critical:
+      color: "#ff0000"
+      title: "🚨 CRITICAL Security Alert"
+      pretext: "Critical security event detected - immediate attention required"
+    
+    high:
+      color: "#ff9500"
+      title: "⚠️ HIGH Priority Security Alert"
+      pretext: "High priority security event detected"
+    
+    medium:
+      color: "#ffcc00"
+      title: "⚡ Security Alert"
+      pretext: "Security event detected"
+
+# Monitoring and health checks
+monitoring:
+  # Health check interval (seconds)
+  health_check_interval: 60
+  
+  # Performance metrics
+  enable_metrics: true
+  metrics_retention_hours: 24
+  
+  # Alert system self-monitoring
+  self_monitoring:
+    enabled: true
+    alert_on_failures: true
+    failure_threshold: 5
+    failure_window_minutes: 10

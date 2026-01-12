@@ -1,6 +1,10 @@
 // Global styles
 @use './variables' as *;
 @import './responsive.scss';
+@import './theme/designSystem.scss';
+@import './components.scss';
+@import './interactions.scss';
+@import './accessibility.scss';
 
 * {
   box-sizing: border-box;
@@ -11,11 +15,13 @@
 html,
 body {
   height: 100%;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: $font-family;
   font-size: $font-size-base;
-  line-height: 1.5715;
-  color: $text-color;
-  background-color: $background-color-light;
+  line-height: $line-height-base;
+  color: $color-text;
+  background-color: $color-bg-tertiary;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 #root {
@@ -31,6 +37,10 @@ body {
 ::-webkit-scrollbar-thumb {
   background-color: rgba(0, 0, 0, 0.2);
   border-radius: 3px;
+  
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.3);
+  }
 }
 
 ::-webkit-scrollbar-track {
@@ -39,12 +49,25 @@ body {
 
 // Link styles
 a {
-  color: $primary-color;
+  color: $color-primary;
   text-decoration: none;
+  transition: color $duration-base $ease-in-out;
 
   &:hover {
-    color: lighten($primary-color, 10%);
+    color: $color-primary-hover;
   }
+}
+
+// Selection styles
+::selection {
+  background-color: $color-primary-light;
+  color: $color-primary;
+}
+
+// Focus styles for accessibility
+:focus-visible {
+  outline: 2px solid $color-primary;
+  outline-offset: 2px;
 }
 
 // Utility classes
@@ -56,20 +79,48 @@ a {
   text-align: right;
 }
 
+.text-left {
+  text-align: left;
+}
+
+.mb-xs {
+  margin-bottom: $spacing-xs;
+}
+
 .mb-sm {
-  margin-bottom: $margin-sm;
+  margin-bottom: $spacing-sm;
 }
 
 .mb-md {
-  margin-bottom: $margin-md;
+  margin-bottom: $spacing-md;
 }
 
 .mb-lg {
-  margin-bottom: $margin-lg;
+  margin-bottom: $spacing-lg;
+}
+
+.mb-xl {
+  margin-bottom: $spacing-xl;
+}
+
+.mt-xs {
+  margin-top: $spacing-xs;
+}
+
+.mt-sm {
+  margin-top: $spacing-sm;
 }
 
 .mt-md {
-  margin-top: $margin-md;
+  margin-top: $spacing-md;
+}
+
+.mt-lg {
+  margin-top: $spacing-lg;
+}
+
+.mt-xl {
+  margin-top: $spacing-xl;
 }
 
 .flex-center {
@@ -78,8 +129,30 @@ a {
   justify-content: center;
 }
 
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.flex-start {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.flex-end {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
 .full-height {
   height: 100%;
+}
+
+.full-width {
+  width: 100%;
 }
 
 // Layout specific styles
@@ -87,20 +160,30 @@ a {
   .ant-pro-layout {
     &.ant-pro-layout-mobile {
       .ant-pro-layout-content {
-        padding: $padding-sm !important;
+        padding: $spacing-sm !important;
       }
     }
   }
 }
 
-// Animation
+// Card hover effect
+.card-hover {
+  transition: box-shadow $duration-base $ease-in-out, transform $duration-base $ease-in-out;
+  
+  &:hover {
+    box-shadow: $shadow-base;
+    transform: translateY(-2px);
+  }
+}
+
+// Animation classes
 .fade-enter {
   opacity: 0;
 }
 
 .fade-enter-active {
   opacity: 1;
-  transition: opacity 200ms ease-in;
+  transition: opacity $duration-base $ease-in-out;
 }
 
 .fade-exit {
@@ -109,16 +192,53 @@ a {
 
 .fade-exit-active {
   opacity: 0;
-  transition: opacity 200ms ease-out;
+  transition: opacity $duration-base $ease-in-out;
+}
+
+.slide-up-enter {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.slide-up-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity $duration-base $ease-out, transform $duration-base $ease-out;
+}
+
+.slide-up-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.slide-up-exit-active {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity $duration-base $ease-in, transform $duration-base $ease-in;
 }
 
 // Dark theme overrides
 [data-theme='dark'] {
+  color-scheme: dark;
+  
   .ant-pro-layout {
     background: #141414;
   }
   
   .ant-pro-page-container-children-content {
     background: #141414;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.2);
+    
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.3);
+    }
+  }
+  
+  ::selection {
+    background-color: rgba(24, 144, 255, 0.3);
+    color: #fff;
   }
 }

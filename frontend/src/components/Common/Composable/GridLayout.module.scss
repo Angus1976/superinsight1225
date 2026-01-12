@@ -1,0 +1,27 @@
+/**
+ * GridLayout Component Styles
+ */
+
+.gridLayout {
+  box-sizing: border-box;
+
+  // Responsive column classes
+  @each $breakpoint, $width in (xs: 575px, sm: 767px, md: 991px, lg: 1199px, xl: 1599px) {
+    @for $i from 1 through 12 {
+      &.cols-#{$breakpoint}-#{$i} {
+        @media (max-width: $width) {
+          grid-template-columns: repeat(#{$i}, 1fr) !important;
+        }
+      }
+    }
+  }
+
+  // XXL breakpoint (no max-width)
+  @for $i from 1 through 12 {
+    &.cols-xxl-#{$i} {
+      @media (min-width: 1600px) {
+        grid-template-columns: repeat(#{$i}, 1fr) !important;
+      }
+    }
+  }
+}

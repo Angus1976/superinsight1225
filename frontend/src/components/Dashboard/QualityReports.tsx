@@ -1,5 +1,6 @@
-// Quality reports and trend charts component
-import { Card, Row, Col, Select, DatePicker, Space, Statistic, Alert, Tooltip } from 'antd';
+// Quality reports and trend charts component with export functionality
+import { Card, Row, Col, Select, DatePicker, Space, Statistic, Alert, Tooltip, Button, Dropdown, message } from 'antd';
+import type { MenuProps } from 'antd';
 import {
   LineChart,
   Line,
@@ -23,9 +24,12 @@ import {
   ClockCircleOutlined,
   UserOutlined,
   WarningOutlined,
+  DownloadOutlined,
+  FilePdfOutlined,
+  FileExcelOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 
@@ -154,24 +158,100 @@ export const QualityReports: React.FC<QualityReportsProps> = ({
   const avgRevision = trends.reduce((sum, item) => sum + item.revisionRate, 0) / trends.length;
   const totalWorkHours = workTime.reduce((sum, item) => sum + item.totalHours, 0);
 
+  // Export to CSV/Excel
+  const exportToCSV = useCallback(() => {
+    const headers = ['Time', 'Quality Score (%)', 'Completion Rate (%)', 'Revision Rate (%)', 'Avg Annotation Time (s)'];
+    const rows = formattedTrends.map(item => [
+      item.time,
+      item.qualityPercent,
+      item.completionPercent,
+      item.revisionPercent,
+      item.avgAnnotationTime.toFixed(1)
+    ]);
+    
+    const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `quality_report_${dayjs().format('YYYY-MM-DD')}.csv`;
+    link.click();
+    message.success(t('export.csvSuccess') || 'CSV exported successfully');
+  }, [formattedTrends, t]);
+
+  // Export to JSON (for PDF generation via backend)
+  const exportToPDF = useCallback(async () => {
+    try {
+      const reportData = {
+        generatedAt: dayjs().toISOString(),
+        period: {
+          start: timeRange[0].format('YYYY-MM-DD'),
+          end: timeRange[1].format('YYYY-MM-DD'),
+        },
+        summary: {
+          avgQualityScore: (avgQuality * 100).toFixed(1),
+          avgCompletionRate: (avgCompletion * 100).toFixed(1),
+          avgRevisionRate: (avgRevision * 100).toFixed(1),
+          totalWorkHours: totalWorkHours.toFixed(1),
+        },
+        trends: formattedTrends,
+        distribution,
+        workTime,
+        anomalies,
+      };
+      
+      // For now, export as JSON (PDF generation would require backend support)
+      const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `quality_report_${dayjs().format('YYYY-MM-DD')}.json`;
+      link.click();
+      message.success(t('export.pdfSuccess') || 'Report exported successfully');
+    } catch (error) {
+      message.error(t('export.error') || 'Export failed');
+    }
+  }, [avgQuality, avgCompletion, avgRevision, totalWorkHours, formattedTrends, distribution, workTime, anomalies, timeRange, t]);
+
+  // Export dropdown menu
+  const exportMenuItems: MenuProps['items'] = [
+    {
+      key: 'csv',
+      icon: <FileExcelOutlined />,
+      label: t('export.csv') || 'Export CSV',
+      onClick: exportToCSV,
+    },
+    {
+      key: 'pdf',
+      icon: <FilePdfOutlined />,
+      label: t('export.pdf') || 'Export PDF',
+      onClick: exportToPDF,
+    },
+  ];
+
   return (
     <div>
       {/* Controls */}
       <Card size="small" style={{ marginBottom: 16 }}>
-        <Space>
-          <RangePicker
-            value={timeRange}
-            onChange={(dates) => dates && setTimeRange(dates as [Dayjs, Dayjs])}
-            format="YYYY-MM-DD"
-          />
-          <Select
-            value={chartType}
-            onChange={setChartType}
-            style={{ width: 120 }}
-          >
-            <Option value="line">{t('charts.lineChart')}</Option>
-            <Option value="area">{t('charts.areaChart')}</Option>
-          </Select>
+        <Space style={{ width: '100%', justifyContent: 'space-between' }}>
+          <Space>
+            <RangePicker
+              value={timeRange}
+              onChange={(dates) => dates && setTimeRange(dates as [Dayjs, Dayjs])}
+              format="YYYY-MM-DD"
+            />
+            <Select
+              value={chartType}
+              onChange={setChartType}
+              style={{ width: 120 }}
+            >
+              <Option value="line">{t('charts.lineChart')}</Option>
+              <Option value="area">{t('charts.areaChart')}</Option>
+            </Select>
+          </Space>
+          <Dropdown menu={{ items: exportMenuItems }} placement="bottomRight">
+            <Button icon={<DownloadOutlined />}>
+              {t('export.button') || 'Export'}
+            </Button>
+          </Dropdown>
         </Space>
       </Card>
 

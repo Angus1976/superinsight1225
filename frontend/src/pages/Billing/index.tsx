@@ -32,11 +32,12 @@ import {
   CalendarOutlined,
   HistoryOutlined,
   ClockCircleOutlined,
+  DashboardOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { useAuthStore } from '@/stores/authStore';
 import { useBillingList, useBillingAnalysis, useExportBilling } from '@/hooks/useBilling';
-import { WorkHoursAnalysis, ExcelExportManager } from '@/components/Billing';
+import { WorkHoursAnalysis, ExcelExportManager, BillingDashboard } from '@/components/Billing';
 import type { BillingRecord, BillingStatus, BillingListParams } from '@/types/billing';
 import dayjs from 'dayjs';
 
@@ -491,7 +492,19 @@ const BillingPage: React.FC = () => {
       </Card>
 
       {/* Main Content Tabs */}
-      <Tabs defaultActiveKey="records">
+      <Tabs defaultActiveKey="dashboard">
+        <TabPane
+          tab={
+            <span>
+              <DashboardOutlined />
+              Analytics Dashboard
+            </span>
+          }
+          key="dashboard"
+        >
+          <BillingDashboard />
+        </TabPane>
+
         <TabPane
           tab={
             <span>

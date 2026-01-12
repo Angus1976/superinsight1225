@@ -1,0 +1,668 @@
+/**
+ * SuperInsight Interaction Styles
+ * 
+ * Provides smooth animations, transitions, and micro-interactions
+ * for a natural and fluid user experience.
+ */
+
+@import './theme/designSystem.scss';
+
+// ============================================
+// Animation Timing Functions
+// ============================================
+$ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+$ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+$ease-elastic: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+$ease-spring: cubic-bezier(0.5, 1.5, 0.8, 1);
+
+// ============================================
+// Transition Durations
+// ============================================
+$transition-instant: 50ms;
+$transition-fast: 150ms;
+$transition-normal: 250ms;
+$transition-slow: 350ms;
+$transition-slower: 500ms;
+
+// ============================================
+// Micro-interaction Animations
+// ============================================
+
+// Button press effect
+@keyframes buttonPress {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.97); }
+  100% { transform: scale(1); }
+}
+
+// Ripple effect
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+// Shake animation for errors
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+// Bounce animation
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+// Pulse animation
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.02); }
+}
+
+// Glow animation
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba($color-primary, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba($color-primary, 0); }
+}
+
+// Success checkmark
+@keyframes checkmark {
+  0% { stroke-dashoffset: 100; }
+  100% { stroke-dashoffset: 0; }
+}
+
+// Slide animations
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutLeft {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+}
+
+// Expand/collapse
+@keyframes expandHeight {
+  from {
+    max-height: 0;
+    opacity: 0;
+  }
+  to {
+    max-height: 500px;
+    opacity: 1;
+  }
+}
+
+@keyframes collapseHeight {
+  from {
+    max-height: 500px;
+    opacity: 1;
+  }
+  to {
+    max-height: 0;
+    opacity: 0;
+  }
+}
+
+// ============================================
+// Interactive Element Mixins
+// ============================================
+
+// Smooth hover lift effect
+@mixin hover-lift($distance: 4px, $shadow: true) {
+  transition: transform $transition-normal $ease-smooth,
+              box-shadow $transition-normal $ease-smooth;
+  
+  &:hover {
+    transform: translateY(-#{$distance});
+    
+    @if $shadow {
+      box-shadow: 0 #{$distance * 2} #{$distance * 4} rgba(0, 0, 0, 0.1);
+    }
+  }
+  
+  &:active {
+    transform: translateY(-#{$distance / 2});
+  }
+}
+
+// Press effect for buttons
+@mixin press-effect {
+  transition: transform $transition-fast $ease-smooth;
+  
+  &:active {
+    transform: scale(0.97);
+  }
+}
+
+// Ripple effect mixin
+@mixin ripple-effect {
+  position: relative;
+  overflow: hidden;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+    pointer-events: none;
+  }
+  
+  &:active::after {
+    animation: ripple $transition-slow $ease-smooth;
+  }
+}
+
+// Focus ring with animation
+@mixin animated-focus-ring($color: $color-primary) {
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba($color, 0.2);
+    animation: glow 1.5s ease-in-out infinite;
+  }
+}
+
+// Smooth color transition
+@mixin smooth-color-transition {
+  transition: color $transition-fast $ease-smooth,
+              background-color $transition-fast $ease-smooth,
+              border-color $transition-fast $ease-smooth;
+}
+
+// ============================================
+// Interactive Classes
+// ============================================
+
+// Clickable elements
+.interactive {
+  cursor: pointer;
+  user-select: none;
+  @include smooth-color-transition;
+  @include press-effect;
+  
+  &:focus-visible {
+    outline: 2px solid $color-primary;
+    outline-offset: 2px;
+  }
+}
+
+// Hover lift cards
+.hover-lift {
+  @include hover-lift;
+}
+
+.hover-lift-sm {
+  @include hover-lift(2px);
+}
+
+.hover-lift-lg {
+  @include hover-lift(8px);
+}
+
+// Ripple buttons
+.ripple-button {
+  @include ripple-effect;
+}
+
+// Animated focus
+.animated-focus {
+  @include animated-focus-ring;
+}
+
+// Shake on error
+.shake-error {
+  animation: shake $transition-slow $ease-smooth;
+}
+
+// Bounce attention
+.bounce-attention {
+  animation: bounce 0.6s $ease-bounce;
+}
+
+// Pulse highlight
+.pulse-highlight {
+  animation: pulse 2s $ease-smooth infinite;
+}
+
+// ============================================
+// Page Transition Classes
+// ============================================
+
+.page-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity $transition-normal $ease-smooth,
+              transform $transition-normal $ease-smooth;
+}
+
+.page-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.page-exit-active {
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity $transition-fast $ease-smooth,
+              transform $transition-fast $ease-smooth;
+}
+
+// Slide transitions
+.slide-left-enter {
+  animation: slideInRight $transition-normal $ease-smooth forwards;
+}
+
+.slide-left-exit {
+  animation: slideOutLeft $transition-normal $ease-smooth forwards;
+}
+
+.slide-right-enter {
+  animation: slideInLeft $transition-normal $ease-smooth forwards;
+}
+
+.slide-right-exit {
+  animation: slideOutRight $transition-normal $ease-smooth forwards;
+}
+
+// ============================================
+// List Item Animations
+// ============================================
+
+.list-item-enter {
+  opacity: 0;
+  transform: translateX(-10px);
+}
+
+.list-item-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity $transition-normal $ease-smooth,
+              transform $transition-normal $ease-smooth;
+}
+
+.list-item-exit {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.list-item-exit-active {
+  opacity: 0;
+  transform: translateX(10px);
+  transition: opacity $transition-fast $ease-smooth,
+              transform $transition-fast $ease-smooth;
+}
+
+// Staggered list animation
+@for $i from 1 through 20 {
+  .stagger-item:nth-child(#{$i}) {
+    animation-delay: #{$i * 50}ms;
+  }
+}
+
+.stagger-item {
+  opacity: 0;
+  animation: slideInUp $transition-normal $ease-smooth forwards;
+}
+
+// ============================================
+// Modal/Drawer Animations
+// ============================================
+
+.modal-enter {
+  opacity: 0;
+  
+  .ant-modal-content {
+    transform: scale(0.95) translateY(20px);
+  }
+}
+
+.modal-enter-active {
+  opacity: 1;
+  transition: opacity $transition-normal $ease-smooth;
+  
+  .ant-modal-content {
+    transform: scale(1) translateY(0);
+    transition: transform $transition-normal $ease-elastic;
+  }
+}
+
+.modal-exit {
+  opacity: 1;
+  
+  .ant-modal-content {
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-exit-active {
+  opacity: 0;
+  transition: opacity $transition-fast $ease-smooth;
+  
+  .ant-modal-content {
+    transform: scale(0.95) translateY(10px);
+    transition: transform $transition-fast $ease-smooth;
+  }
+}
+
+// ============================================
+// Loading State Animations
+// ============================================
+
+.skeleton-pulse {
+  background: linear-gradient(
+    90deg,
+    $color-fill 25%,
+    $color-fill-secondary 50%,
+    $color-fill 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+// Smooth content reveal
+.content-reveal {
+  opacity: 0;
+  transform: translateY(10px);
+  animation: contentReveal $transition-normal $ease-smooth forwards;
+}
+
+@keyframes contentReveal {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// ============================================
+// Tooltip/Popover Animations
+// ============================================
+
+.tooltip-enter {
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+.tooltip-enter-active {
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity $transition-fast $ease-smooth,
+              transform $transition-fast $ease-elastic;
+}
+
+.tooltip-exit {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.tooltip-exit-active {
+  opacity: 0;
+  transform: scale(0.9);
+  transition: opacity $transition-instant $ease-smooth,
+              transform $transition-instant $ease-smooth;
+}
+
+// ============================================
+// Notification Animations
+// ============================================
+
+.notification-enter {
+  opacity: 0;
+  transform: translateX(100%);
+}
+
+.notification-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity $transition-normal $ease-smooth,
+              transform $transition-normal $ease-elastic;
+}
+
+.notification-exit {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.notification-exit-active {
+  opacity: 0;
+  transform: translateX(100%);
+  transition: opacity $transition-fast $ease-smooth,
+              transform $transition-fast $ease-smooth;
+}
+
+// ============================================
+// Form Field Animations
+// ============================================
+
+.field-focus {
+  .ant-input,
+  .ant-select-selector,
+  .ant-picker {
+    transition: border-color $transition-fast $ease-smooth,
+                box-shadow $transition-fast $ease-smooth;
+  }
+}
+
+.field-error {
+  animation: shake $transition-slow $ease-smooth;
+  
+  .ant-input,
+  .ant-select-selector {
+    border-color: $color-error !important;
+  }
+}
+
+.field-success {
+  .ant-input,
+  .ant-select-selector {
+    border-color: $color-success !important;
+    animation: glow 0.5s $ease-smooth;
+  }
+}
+
+// ============================================
+// Tab Animations
+// ============================================
+
+.tab-content-enter {
+  opacity: 0;
+  transform: translateX(10px);
+}
+
+.tab-content-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity $transition-normal $ease-smooth,
+              transform $transition-normal $ease-smooth;
+}
+
+.tab-content-exit {
+  opacity: 1;
+  position: absolute;
+  width: 100%;
+}
+
+.tab-content-exit-active {
+  opacity: 0;
+  transition: opacity $transition-fast $ease-smooth;
+}
+
+// ============================================
+// Collapse/Expand Animations
+// ============================================
+
+.collapse-content {
+  overflow: hidden;
+  transition: max-height $transition-normal $ease-smooth,
+              opacity $transition-normal $ease-smooth;
+}
+
+.collapse-content-enter {
+  max-height: 0;
+  opacity: 0;
+}
+
+.collapse-content-enter-active {
+  max-height: 500px;
+  opacity: 1;
+}
+
+.collapse-content-exit {
+  max-height: 500px;
+  opacity: 1;
+}
+
+.collapse-content-exit-active {
+  max-height: 0;
+  opacity: 0;
+}
+
+// ============================================
+// Drag and Drop Animations
+// ============================================
+
+.dragging {
+  opacity: 0.8;
+  transform: scale(1.02);
+  box-shadow: $shadow-lg;
+  transition: transform $transition-fast $ease-smooth,
+              box-shadow $transition-fast $ease-smooth;
+}
+
+.drag-over {
+  background-color: $color-primary-light;
+  border-color: $color-primary;
+  transition: background-color $transition-fast $ease-smooth,
+              border-color $transition-fast $ease-smooth;
+}
+
+.drop-target {
+  position: relative;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 2px dashed $color-primary;
+    border-radius: $radius-lg;
+    opacity: 0;
+    transition: opacity $transition-fast $ease-smooth;
+    pointer-events: none;
+  }
+  
+  &.active::after {
+    opacity: 1;
+  }
+}
+
+// ============================================
+// Scroll Animations
+// ============================================
+
+.scroll-reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity $transition-slow $ease-smooth,
+              transform $transition-slow $ease-smooth;
+  
+  &.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Smooth scroll behavior
+.smooth-scroll {
+  scroll-behavior: smooth;
+}
+
+// ============================================
+// Touch Feedback
+// ============================================
+
+@media (hover: none) and (pointer: coarse) {
+  .touch-feedback {
+    -webkit-tap-highlight-color: transparent;
+    
+    &:active {
+      background-color: $color-fill;
+      transition: background-color $transition-instant;
+    }
+  }
+}
+
+// ============================================
+// Reduced Motion Support
+// ============================================
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .scroll-reveal {
+    opacity: 1;
+    transform: none;
+  }
+}

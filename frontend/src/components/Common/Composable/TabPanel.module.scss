@@ -1,0 +1,29 @@
+/**
+ * TabPanel Component Styles
+ */
+
+.tabPanel {
+  width: 100%;
+
+  .tabLabel {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .tabIcon {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .tabBadge {
+    margin-left: 4px;
+  }
+
+  .loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+  }
+}

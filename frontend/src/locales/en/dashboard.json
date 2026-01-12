@@ -61,11 +61,30 @@
     "last7d": "Last 7 Days",
     "last30d": "Last 30 Days"
   },
+  "context": {
+    "tenant": "Tenant",
+    "workspace": "Workspace",
+    "currentTenant": "Current Tenant",
+    "currentWorkspace": "Current Workspace"
+  },
+  "overview": {
+    "totalProjects": "Total Projects",
+    "totalProjectsSubtitle": "All projects count",
+    "activeProjects": "Active Projects",
+    "activeProjectsSubtitle": "Projects in progress",
+    "completedTasks": "Completed Tasks",
+    "completedTasksSubtitle": "Task completion status",
+    "qualityScore": "Quality Score",
+    "qualityScoreSubtitle": "Average quality score"
+  },
   "common": {
     "refresh": "Refresh",
     "lastUpdated": "Last Updated",
     "error": "Error",
-    "warning": "Warning"
+    "warning": "Warning",
+    "fullscreen": "Fullscreen",
+    "allTenants": "All Tenants",
+    "allWorkspaces": "All Workspaces"
   },
   "errors": {
     "dataLoadFailed": "Data Load Failed",
@@ -99,16 +118,33 @@
     "nodeProperties": "Node Properties",
     "connectedNodes": "Connected Nodes"
   },
-  "common": {
-    "refresh": "Refresh",
-    "lastUpdated": "Last Updated",
-    "error": "Error",
-    "warning": "Warning",
-    "fullscreen": "Fullscreen"
-  },
   "tabs": {
     "overview": "Overview",
     "qualityReports": "Quality Reports",
     "knowledgeGraph": "Knowledge Graph"
+  },
+  "export": {
+    "button": "Export",
+    "csv": "Export CSV",
+    "pdf": "Export PDF",
+    "csvSuccess": "CSV exported successfully",
+    "pdfSuccess": "Report exported successfully",
+    "error": "Export failed"
+  },
+  "progress": {
+    "totalProjects": "Total Projects",
+    "overallProgress": "Overall Progress",
+    "totalTasks": "Total Tasks",
+    "taskDistribution": "Task Status Distribution",
+    "projectProgress": "Project Progress",
+    "completed": "Completed",
+    "inProgress": "In Progress",
+    "pending": "Pending",
+    "statusCompleted": "Completed",
+    "statusOnTrack": "On Track",
+    "statusAtRisk": "At Risk",
+    "statusDelayed": "Delayed",
+    "deadline": "Deadline",
+    "realTime": "Real-time"
   }
 }

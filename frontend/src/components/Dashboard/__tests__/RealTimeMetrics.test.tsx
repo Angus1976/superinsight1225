@@ -4,6 +4,14 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RealTimeMetrics } from '../RealTimeMetrics';
 import { vi } from 'vitest';
 
+// Mock react-i18next
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string) => key,
+    i18n: { language: 'en' },
+  }),
+}));
+
 // Mock the dashboard hook
 vi.mock('@/hooks/useDashboard', () => ({
   useDashboard: () => ({
@@ -42,33 +50,21 @@ describe('RealTimeMetrics', () => {
       </QueryClientProvider>
     );
 
-    // Should render metric cards
-    expect(screen.getByText('活跃任务')).toBeInTheDocument();
-    expect(screen.getByText('今日标注')).toBeInTheDocument();
-    expect(screen.getByText('语料总数')).toBeInTheDocument();
-    expect(screen.getByText('账单总额')).toBeInTheDocument();
+    // Should render metric cards (using translation keys)
+    expect(screen.getByText('metrics.activeTasks')).toBeInTheDocument();
+    expect(screen.getByText('metrics.todayAnnotations')).toBeInTheDocument();
+    expect(screen.getByText('metrics.totalCorpus')).toBeInTheDocument();
+    expect(screen.getByText('metrics.totalBilling')).toBeInTheDocument();
   });
 
   it('shows loading state', () => {
-    // Mock loading state
-    vi.doMock('@/hooks/useDashboard', () => ({
-      useDashboard: () => ({
-        summary: null,
-        annotationEfficiency: null,
-        userActivity: null,
-        isLoading: true,
-        error: null,
-        refetch: vi.fn(),
-      }),
-    }));
-
     render(
       <QueryClientProvider client={queryClient}>
         <RealTimeMetrics />
       </QueryClientProvider>
     );
 
-    // Should show loading cards
-    expect(screen.getByText('活跃任务')).toBeInTheDocument();
+    // Should show metric cards even in loading state
+    expect(screen.getByText('metrics.activeTasks')).toBeInTheDocument();
   });
 });

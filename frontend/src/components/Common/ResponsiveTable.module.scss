@@ -1,0 +1,151 @@
+/**
+ * ResponsiveTable Styles
+ * 
+ * Provides responsive table styling with card view
+ * for mobile devices.
+ */
+
+@import '../../styles/theme/designSystem.scss';
+
+.responsiveTable {
+  width: 100%;
+}
+
+// Table view styles
+.table {
+  :global(.ant-table) {
+    border-radius: $radius-lg;
+    overflow: hidden;
+  }
+  
+  :global(.ant-table-thead > tr > th) {
+    background: $color-bg-secondary;
+    font-weight: $font-weight-semibold;
+    
+    @include tablet {
+      padding: $spacing-sm $spacing-xs;
+      font-size: $font-size-sm;
+    }
+  }
+  
+  :global(.ant-table-tbody > tr > td) {
+    @include tablet {
+      padding: $spacing-sm $spacing-xs;
+      font-size: $font-size-sm;
+    }
+  }
+  
+  :global(.ant-table-tbody > tr:hover > td) {
+    background: $color-primary-light;
+  }
+}
+
+// Card list view styles
+.cardList {
+  :global(.ant-list-item) {
+    padding: 0;
+    border: none;
+  }
+}
+
+.cardItem {
+  margin-bottom: $spacing-sm;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.card {
+  border-radius: $radius-lg !important;
+  box-shadow: $shadow-sm;
+  transition: box-shadow $duration-base $ease-in-out;
+  
+  &:hover {
+    box-shadow: $shadow-base;
+  }
+  
+  :global(.ant-card-head) {
+    padding: $spacing-sm $spacing-md;
+    min-height: auto;
+    border-bottom: 1px solid $color-border-secondary;
+  }
+  
+  :global(.ant-card-head-title) {
+    padding: 0;
+  }
+  
+  :global(.ant-card-body) {
+    padding: $spacing-md;
+  }
+  
+  :global(.ant-card-actions) {
+    background: $color-bg-secondary;
+    border-top: 1px solid $color-border-secondary;
+    
+    > li {
+      margin: $spacing-xs 0;
+    }
+  }
+}
+
+.cardHeader {
+  @include flex-between;
+  width: 100%;
+  gap: $spacing-sm;
+}
+
+.cardTitle {
+  font-weight: $font-weight-semibold;
+  @include text-truncate;
+  flex: 1;
+  min-width: 0;
+}
+
+.cardExtra {
+  flex-shrink: 0;
+}
+
+.cardDescription {
+  display: block;
+  margin-bottom: $spacing-sm;
+  font-size: $font-size-sm;
+}
+
+.cardTags {
+  @include flex-start;
+  flex-wrap: wrap;
+  gap: $spacing-xs;
+  margin-bottom: $spacing-sm;
+  
+  &:empty {
+    display: none;
+  }
+}
+
+.cardFields {
+  @include flex-column;
+  gap: $spacing-xs;
+}
+
+.cardField {
+  @include flex-start;
+  gap: $spacing-xs;
+  font-size: $font-size-sm;
+}
+
+.fieldLabel {
+  flex-shrink: 0;
+  min-width: 80px;
+}
+
+.fieldValue {
+  flex: 1;
+  min-width: 0;
+  @include text-truncate;
+}
+
+// Empty state
+.empty {
+  padding: $spacing-xl;
+}

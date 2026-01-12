@@ -1,15 +1,48 @@
 // Authentication hook
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { message } from 'antd';
 import { useAuthStore } from '@/stores/authStore';
 import { authService } from '@/services/auth';
 import { ROUTES } from '@/constants';
-import type { LoginCredentials } from '@/types';
+import type { LoginCredentials, Workspace } from '@/types';
 
 export function useAuth() {
   const navigate = useNavigate();
-  const { user, token, currentTenant, isAuthenticated, setAuth, clearAuth } = useAuthStore();
+  const { 
+    user, 
+    token, 
+    currentTenant, 
+    currentWorkspace,
+    workspaces,
+    isAuthenticated, 
+    setAuth, 
+    setWorkspace,
+    setWorkspaces,
+    clearAuth 
+  } = useAuthStore();
+
+  // Load workspaces when user is authenticated
+  useEffect(() => {
+    const loadWorkspaces = async () => {
+      if (isAuthenticated && user) {
+        try {
+          const workspaceList = await authService.getWorkspaces();
+          setWorkspaces(workspaceList);
+          
+          // Set default workspace if not already set
+          if (!currentWorkspace && workspaceList.length > 0) {
+            const defaultWorkspace = workspaceList.find(w => w.is_default) || workspaceList[0];
+            setWorkspace(defaultWorkspace);
+          }
+        } catch (error) {
+          console.error('Failed to load workspaces:', error);
+        }
+      }
+    };
+
+    loadWorkspaces();
+  }, [isAuthenticated, user, currentWorkspace, setWorkspaces, setWorkspace]);
 
   const login = useCallback(
     async (credentials: LoginCredentials) => {
@@ -76,13 +109,13 @@ export function useAuth() {
     }
     try {
       const userInfo = await authService.getCurrentUser();
-      setAuth(userInfo, token, currentTenant || undefined);
+      setAuth(userInfo, token, currentTenant || undefined, currentWorkspace || undefined);
       return true;
     } catch {
       clearAuth();
       return false;
     }
-  }, [token, currentTenant, setAuth, clearAuth]);
+  }, [token, currentTenant, currentWorkspace, setAuth, clearAuth]);
 
   const switchTenant = useCallback(
     async (tenantId: string) => {
@@ -105,14 +138,70 @@ export function useAuth() {
     [user, setAuth]
   );
 
+  const switchWorkspace = useCallback(
+    async (workspaceId: string): Promise<boolean> => {
+      try {
+        const response = await authService.switchWorkspace(workspaceId);
+        
+        if (response.success) {
+          setWorkspace(response.workspace);
+          message.success(`已切换到工作空间: ${response.workspace.name}`);
+          return true;
+        }
+        
+        return false;
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : '切换工作空间失败';
+        message.error(errorMessage);
+        throw error;
+      }
+    },
+    [setWorkspace]
+  );
+
+  const refreshWorkspaces = useCallback(async (): Promise<Workspace[]> => {
+    try {
+      const workspaceList = await authService.getWorkspaces();
+      setWorkspaces(workspaceList);
+      return workspaceList;
+    } catch (error) {
+      console.error('Failed to refresh workspaces:', error);
+      return [];
+    }
+  }, [setWorkspaces]);
+
+  const createWorkspace = useCallback(
+    async (data: { name: string; description?: string }): Promise<Workspace | null> => {
+      try {
+        const newWorkspace = await authService.createWorkspace(data);
+        
+        // Refresh workspace list
+        await refreshWorkspaces();
+        
+        message.success(`工作空间 "${newWorkspace.name}" 创建成功`);
+        return newWorkspace;
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : '创建工作空间失败';
+        message.error(errorMessage);
+        return null;
+      }
+    },
+    [refreshWorkspaces]
+  );
+
   return {
     user,
     token,
     currentTenant,
+    currentWorkspace,
+    workspaces,
     isAuthenticated,
     login,
     logout,
     checkAuth,
     switchTenant,
+    switchWorkspace,
+    refreshWorkspaces,
+    createWorkspace,
   };
 }

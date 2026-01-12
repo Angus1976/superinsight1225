@@ -12,13 +12,17 @@ const mockObserve = vi.fn();
 const mockUnobserve = vi.fn();
 const mockDisconnect = vi.fn();
 
-const mockIntersectionObserver = vi.fn().mockImplementation(() => ({
-  observe: mockObserve,
-  unobserve: mockUnobserve,
-  disconnect: mockDisconnect,
-}));
+class MockIntersectionObserver {
+  constructor(callback: IntersectionObserverCallback) {
+    // Store callback for potential use
+  }
+  observe = mockObserve;
+  unobserve = mockUnobserve;
+  disconnect = mockDisconnect;
+}
 
-window.IntersectionObserver = mockIntersectionObserver;
+// Set up the mock before any tests run
+vi.stubGlobal('IntersectionObserver', MockIntersectionObserver);
 
 describe('LazyLoader Performance Tests', () => {
   let lazyLoader: LazyLoader;

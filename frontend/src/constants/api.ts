@@ -44,6 +44,15 @@ export const API_ENDPOINTS = {
     TENANT_BY_ID: (id: string) => `/auth/tenants/${id}`,
   },
 
+  // Workspaces
+  WORKSPACES: {
+    BASE: '/api/workspaces',
+    BY_ID: (id: string) => `/api/workspaces/${id}`,
+    MEMBERS: (id: string) => `/api/workspaces/${id}/members`,
+    SWITCH: '/api/workspaces/switch',
+    MY_WORKSPACES: '/api/workspaces/my',
+  },
+
   // Billing
   BILLING: {
     RECORDS: (tenantId: string) => `/api/billing/records/${tenantId}`,

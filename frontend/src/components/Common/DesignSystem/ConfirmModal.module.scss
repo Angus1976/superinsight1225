@@ -1,0 +1,76 @@
+/**
+ * ConfirmModal Styles
+ * 
+ * Consistent styling for confirmation modals following the design system.
+ */
+
+@import '../../../styles/theme/designSystem.scss';
+
+.confirmModal {
+  :global(.ant-modal-content) {
+    border-radius: $radius-xl;
+    overflow: hidden;
+  }
+  
+  :global(.ant-modal-body) {
+    padding: $spacing-lg;
+  }
+}
+
+.modalContent {
+  @include flex-column;
+  align-items: center;
+  text-align: center;
+  gap: $spacing-md;
+}
+
+.iconWrapper {
+  @include flex-center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  font-size: 32px;
+  margin-bottom: $spacing-xs;
+}
+
+.textContent {
+  @include flex-column;
+  align-items: center;
+  gap: $spacing-xs;
+  max-width: 100%;
+}
+
+.title {
+  margin: 0 !important;
+  color: $color-text !important;
+  font-weight: $font-weight-semibold !important;
+}
+
+.content {
+  max-width: 320px;
+}
+
+.description {
+  margin: 0 !important;
+  font-size: $font-size-base !important;
+  line-height: $line-height-base !important;
+}
+
+.footer {
+  margin-top: $spacing-md;
+  padding-top: $spacing-md;
+  border-top: 1px solid $color-border-secondary;
+  width: 100%;
+  @include flex-center;
+  
+  @include mobile {
+    :global(.ant-space) {
+      width: 100%;
+      flex-direction: column-reverse;
+    }
+    
+    :global(.ant-btn) {
+      width: 100%;
+    }
+  }
+}

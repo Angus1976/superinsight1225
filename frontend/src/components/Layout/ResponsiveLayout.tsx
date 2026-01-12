@@ -1,73 +1,88 @@
 // Responsive layout wrapper
-import { useState, useEffect } from 'react';
+import { useState, useMemo, ReactNode } from 'react';
 import { Drawer, Button } from 'antd';
-import { MenuOutlined } from '@ant-design/icons';
-import { useUIStore } from '@/stores/uiStore';
+import { MenuOutlined, CloseOutlined } from '@ant-design/icons';
+import { useResponsive } from '@/hooks/useResponsive';
+import styles from './ResponsiveLayout.module.scss';
 
 interface ResponsiveLayoutProps {
-  children: React.ReactNode;
-  siderContent: React.ReactNode;
-  headerContent: React.ReactNode;
+  children: ReactNode;
+  siderContent: ReactNode;
+  headerContent: ReactNode;
+  logo?: ReactNode;
+  title?: string;
 }
 
 export const ResponsiveLayout: React.FC<ResponsiveLayoutProps> = ({
   children,
   siderContent,
   headerContent,
+  logo,
+  title = 'SuperInsight',
 }) => {
-  const [isMobile, setIsMobile] = useState(false);
   const [mobileMenuVisible, setMobileMenuVisible] = useState(false);
-  const { sidebarCollapsed } = useUIStore();
+  const { isMobile, isTablet, isDesktop } = useResponsive();
 
-  useEffect(() => {
-    const checkIsMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
+  // Handler for closing mobile menu
+  const handleCloseMobileMenu = () => {
+    setMobileMenuVisible(false);
+  };
 
-    checkIsMobile();
-    window.addEventListener('resize', checkIsMobile);
-    return () => window.removeEventListener('resize', checkIsMobile);
-  }, []);
+  // Handler for opening mobile menu
+  const handleOpenMobileMenu = () => {
+    setMobileMenuVisible(true);
+  };
 
+  // Automatically close menu when on desktop (computed value)
+  const shouldShowMenu = useMemo(() => {
+    // Don't show menu on desktop regardless of state
+    if (isDesktop) return false;
+    return mobileMenuVisible;
+  }, [isDesktop, mobileMenuVisible]);
+
+  // Mobile layout
   if (isMobile) {
     return (
-      <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <div className={styles.mobileLayout}>
         {/* Mobile Header */}
-        <div
-          style={{
-            height: 56,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '0 16px',
-            borderBottom: '1px solid #f0f0f0',
-            background: '#fff',
-          }}
-        >
+        <header className={styles.mobileHeader}>
           <Button
             type="text"
             icon={<MenuOutlined />}
-            onClick={() => setMobileMenuVisible(true)}
+            onClick={handleOpenMobileMenu}
+            className={styles.menuButton}
+            aria-label="打开菜单"
           />
-          <div style={{ flex: 1, textAlign: 'center' }}>
-            <strong>SuperInsight</strong>
+          <div className={styles.mobileTitle}>
+            {logo && <span className={styles.mobileLogo}>{logo}</span>}
+            <strong>{title}</strong>
           </div>
-          <div>{headerContent}</div>
-        </div>
+          <div className={styles.mobileHeaderContent}>{headerContent}</div>
+        </header>
 
         {/* Mobile Content */}
-        <div style={{ flex: 1, overflow: 'auto' }}>
+        <main className={styles.mobileContent}>
           {children}
-        </div>
+        </main>
 
         {/* Mobile Menu Drawer */}
         <Drawer
-          title="导航菜单"
+          title={
+            <div className={styles.drawerTitle}>
+              {logo && <span className={styles.drawerLogo}>{logo}</span>}
+              <span>{title}</span>
+            </div>
+          }
           placement="left"
-          onClose={() => setMobileMenuVisible(false)}
-          open={mobileMenuVisible}
+          onClose={handleCloseMobileMenu}
+          open={shouldShowMenu}
           width={280}
-          bodyStyle={{ padding: 0 }}
+          className={styles.mobileDrawer}
+          closeIcon={<CloseOutlined />}
+          styles={{
+            body: { padding: 0 },
+            header: { borderBottom: '1px solid #f0f0f0' },
+          }}
         >
           {siderContent}
         </Drawer>
@@ -75,6 +90,56 @@ export const ResponsiveLayout: React.FC<ResponsiveLayoutProps> = ({
     );
   }
 
-  // Desktop layout - return children as-is
+  // Tablet layout
+  if (isTablet) {
+    return (
+      <div className={styles.tabletLayout}>
+        {/* Tablet Header */}
+        <header className={styles.tabletHeader}>
+          <Button
+            type="text"
+            icon={<MenuOutlined />}
+            onClick={handleOpenMobileMenu}
+            className={styles.menuButton}
+            aria-label="打开菜单"
+          />
+          <div className={styles.tabletTitle}>
+            {logo && <span className={styles.tabletLogo}>{logo}</span>}
+            <strong>{title}</strong>
+          </div>
+          <div className={styles.tabletHeaderContent}>{headerContent}</div>
+        </header>
+
+        {/* Tablet Content */}
+        <main className={styles.tabletContent}>
+          {children}
+        </main>
+
+        {/* Tablet Menu Drawer */}
+        <Drawer
+          title={
+            <div className={styles.drawerTitle}>
+              {logo && <span className={styles.drawerLogo}>{logo}</span>}
+              <span>{title}</span>
+            </div>
+          }
+          placement="left"
+          onClose={handleCloseMobileMenu}
+          open={shouldShowMenu}
+          width={300}
+          className={styles.tabletDrawer}
+          closeIcon={<CloseOutlined />}
+          styles={{
+            body: { padding: 0 },
+            header: { borderBottom: '1px solid #f0f0f0' },
+          }}
+        >
+          {siderContent}
+        </Drawer>
+      </div>
+    );
+  }
+
+  // Desktop layout - return children as-is (handled by ProLayout)
   return <>{children}</>;
 };

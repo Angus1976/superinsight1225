@@ -1,0 +1,74 @@
+/**
+ * NotificationBanner Component Styles
+ */
+
+.notificationBanner {
+  &.fullWidth {
+    width: 100%;
+  }
+
+  &.filled {
+    :global(.ant-alert) {
+      border: none;
+    }
+  }
+
+  &.outlined {
+    :global(.ant-alert) {
+      background: transparent;
+    }
+  }
+
+  &.borderless {
+    :global(.ant-alert) {
+      border: none;
+      background: transparent;
+      padding-left: 0;
+      padding-right: 0;
+    }
+  }
+}
+
+.announcementBanner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  background: linear-gradient(90deg, var(--ant-color-primary, #1890ff) 0%, #722ed1 100%);
+  color: #fff;
+
+  .content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .message {
+    font-size: 14px;
+  }
+
+  .link {
+    color: #fff;
+    text-decoration: underline;
+    font-weight: 500;
+
+    &:hover {
+      color: rgba(255, 255, 255, 0.85);
+    }
+  }
+
+  .closeButton {
+    background: none;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    padding: 4px;
+    margin-left: 16px;
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+}

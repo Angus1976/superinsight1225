@@ -71,7 +71,8 @@
     "enabled": "Enabled",
     "disabled": "Disabled",
     "allowed": "Allowed",
-    "denied": "Denied"
+    "denied": "Denied",
+    "create": "Create"
   },
   "status": {
     "loading": "Loading...",
@@ -102,6 +103,93 @@
   "language": {
     "zh": "中文",
     "en": "English"
+  },
+  "accessibility": {
+    "title": "Accessibility Settings",
+    "openSettings": "Open accessibility settings",
+    "settingUpdated": "Setting updated",
+    "settingsReset": "Settings reset to defaults",
+    "reset": "Reset to Defaults",
+    "fontSize": "Text Size",
+    "fontSizeDesc": "Adjust the size of text throughout the application",
+    "fontNormal": "Normal",
+    "fontLarge": "Large (125%)",
+    "fontLarger": "Larger (150%)",
+    "visual": "Visual Settings",
+    "highContrast": "High Contrast Mode",
+    "highContrastDesc": "Increase contrast for better visibility",
+    "linkUnderlines": "Underline Links",
+    "linkUnderlinesDesc": "Always show underlines on links",
+    "focusIndicators": "Focus Indicators",
+    "focusIndicatorsDesc": "Visibility of keyboard focus indicators",
+    "focusDefault": "Default",
+    "focusEnhanced": "Enhanced",
+    "focusHighVisibility": "High Visibility",
+    "motion": "Motion Settings",
+    "reducedMotion": "Reduce Motion",
+    "reducedMotionDesc": "Minimize animations and transitions",
+    "systemPreference": "(System preference detected)",
+    "screenReader": "Screen Reader",
+    "screenReaderOptimized": "Screen Reader Optimized",
+    "screenReaderOptimizedDesc": "Optimize interface for screen readers"
+  },
+  "skipLinks": {
+    "navigation": "Skip navigation",
+    "mainContent": "Skip to main content",
+    "search": "Skip to search"
+  },
+  "error": {
+    "title": "Error Occurred",
+    "code": "Error Code",
+    "id": "Error ID",
+    "fieldErrors": "Field Errors",
+    "retrying": "Retrying ({{attempt}}/{{max}})...",
+    "titles": {
+      "network": "Network Connection Failed",
+      "auth": "Authentication Failed",
+      "validation": "Validation Failed",
+      "server": "Server Error",
+      "client": "Client Error",
+      "timeout": "Request Timeout",
+      "permission": "Permission Denied",
+      "notFound": "Resource Not Found",
+      "conflict": "Data Conflict",
+      "rateLimit": "Too Many Requests",
+      "maintenance": "System Maintenance",
+      "unknown": "Unknown Error"
+    },
+    "messages": {
+      "network": "Unable to connect to the server. Please check your network connection and try again.",
+      "auth": "Your session has expired or is invalid. Please log in again.",
+      "validation": "There are issues with the submitted data. Please review and correct them.",
+      "server": "The server encountered a problem. We're working on it. Please try again later.",
+      "client": "The application encountered an issue. Please refresh the page and try again.",
+      "timeout": "The request timed out. The server took too long to respond. Please try again.",
+      "permission": "You don't have permission to perform this action. Contact your administrator for help.",
+      "notFound": "The requested resource doesn't exist or has been deleted.",
+      "conflict": "The data has been modified by another user. Please refresh and try again.",
+      "rateLimit": "Too many requests. Please wait a moment before trying again.",
+      "maintenance": "The system is under maintenance. Please try again later.",
+      "unknown": "An unexpected error occurred. Please try again or contact support."
+    },
+    "actions": {
+      "retry": "Retry",
+      "retryLater": "Retry Later",
+      "refresh": "Refresh Page",
+      "login": "Log In Again",
+      "goBack": "Go Back",
+      "goHome": "Go Home",
+      "contact": "Contact Support",
+      "dismiss": "Dismiss",
+      "copyError": "Copy Error Info"
+    },
+    "help": {
+      "network": "Please check your network connection or try refreshing the page.",
+      "auth": "Your session may have expired. Please log in again to continue.",
+      "permission": "If you believe you should have this permission, please contact your administrator.",
+      "server": "This is a server-side issue. Our technical team has been notified.",
+      "general": "If the problem persists, please contact support with the error code."
+    }
   },
   "common": {
     "view": "View",

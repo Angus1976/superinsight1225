@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/hooks/useAuth';
 import { useUIStore } from '@/stores/uiStore';
 import { TenantSelector } from '@/components/Auth/TenantSelector';
+import { WorkspaceSwitcher } from '@/components/Auth/WorkspaceSwitcher';
 import { THEMES } from '@/constants';
 
 export const HeaderContent: React.FC = () => {
@@ -112,6 +113,9 @@ export const HeaderContent: React.FC = () => {
 
       {/* Tenant selector */}
       <TenantSelector size="small" />
+
+      {/* Workspace switcher */}
+      <WorkspaceSwitcher size="small" />
 
       {/* User dropdown */}
       <Dropdown 

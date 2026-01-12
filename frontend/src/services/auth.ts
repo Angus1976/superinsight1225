@@ -1,7 +1,7 @@
 // Authentication service
 import apiClient from './api/client';
 import { API_ENDPOINTS } from '@/constants';
-import type { LoginCredentials, LoginResponse, User, Tenant } from '@/types';
+import type { LoginCredentials, LoginResponse, User, Tenant, Workspace } from '@/types';
 
 export interface RegisterPayload {
   username: string;
@@ -9,6 +9,12 @@ export interface RegisterPayload {
   password: string;
   tenant_name?: string;
   invite_code?: string;
+}
+
+export interface SwitchWorkspaceResponse {
+  success: boolean;
+  workspace: Workspace;
+  message?: string;
 }
 
 export const authService = {
@@ -39,6 +45,29 @@ export const authService = {
     const response = await apiClient.post<LoginResponse>(API_ENDPOINTS.AUTH.SWITCH_TENANT, {
       tenant_id: tenantId,
     });
+    return response.data;
+  },
+
+  // Workspace operations
+  async getWorkspaces(): Promise<Workspace[]> {
+    const response = await apiClient.get<Workspace[]>(API_ENDPOINTS.WORKSPACES.MY_WORKSPACES);
+    return response.data;
+  },
+
+  async getWorkspaceById(workspaceId: string): Promise<Workspace> {
+    const response = await apiClient.get<Workspace>(API_ENDPOINTS.WORKSPACES.BY_ID(workspaceId));
+    return response.data;
+  },
+
+  async switchWorkspace(workspaceId: string): Promise<SwitchWorkspaceResponse> {
+    const response = await apiClient.post<SwitchWorkspaceResponse>(API_ENDPOINTS.WORKSPACES.SWITCH, {
+      workspace_id: workspaceId,
+    });
+    return response.data;
+  },
+
+  async createWorkspace(data: { name: string; description?: string }): Promise<Workspace> {
+    const response = await apiClient.post<Workspace>(API_ENDPOINTS.WORKSPACES.BASE, data);
     return response.data;
   },
 

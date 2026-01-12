@@ -1,5 +1,8 @@
 /**
  * LoginForm Component Tests
+ * 
+ * Tests to ensure the existing login experience is preserved
+ * while supporting multi-tenant features.
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -7,8 +10,18 @@ import { render, screen, waitFor } from '@/test/test-utils'
 import userEvent from '@testing-library/user-event'
 import { LoginForm } from '../LoginForm'
 
-// Mock useAuth hook
+// Create persistent mock functions
 const mockLogin = vi.fn()
+const mockGetTenants = vi.fn()
+
+// Mock authService
+vi.mock('@/services/auth', () => ({
+  authService: {
+    getTenants: () => mockGetTenants(),
+  },
+}))
+
+// Mock useAuth hook with persistent mock
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({
     login: mockLogin,
@@ -26,6 +39,9 @@ vi.mock('react-i18next', () => ({
         'login.rememberMe': '记住我',
         'login.forgotPassword': '忘记密码',
         'login.submit': '登录',
+        'tenant.select': '选择租户',
+        'tenant.selectRequired': '请选择租户',
+        'tenant.selectPlaceholder': '请选择您的组织',
       }
       return translations[key] || key
     },
@@ -35,6 +51,8 @@ vi.mock('react-i18next', () => ({
 describe('LoginForm', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // Mock empty tenants by default
+    mockGetTenants.mockResolvedValue([])
   })
 
   it('renders login form with all required elements', () => {
@@ -52,8 +70,35 @@ describe('LoginForm', () => {
     // Check for forgot password link
     expect(screen.getByText('忘记密码')).toBeInTheDocument()
 
-    // Check for submit button
-    expect(screen.getByRole('button', { name: '登录' })).toBeInTheDocument()
+    // Check for submit button (use more flexible selector)
+    expect(screen.getByRole('button', { name: /登录|登 录/ })).toBeInTheDocument()
+  })
+
+  it('shows tenant selection when tenants are available', async () => {
+    const mockTenants = [
+      { id: 'tenant1', name: 'Organization 1' },
+      { id: 'tenant2', name: 'Organization 2' },
+    ]
+    mockGetTenants.mockResolvedValue(mockTenants)
+
+    render(<LoginForm />)
+
+    // Wait for tenants to load and tenant selector to appear
+    await waitFor(() => {
+      expect(screen.getByText('选择租户')).toBeInTheDocument()
+    })
+
+    // Check tenant selector is present
+    expect(screen.getByRole('combobox')).toBeInTheDocument()
+  })
+
+  it('does not show tenant selection when no tenants available', () => {
+    mockGetTenants.mockResolvedValue([])
+    
+    render(<LoginForm />)
+
+    // Tenant selector should not be present
+    expect(screen.queryByText('选择租户')).not.toBeInTheDocument()
   })
 
   it('shows validation errors when submitting empty form', async () => {
@@ -61,7 +106,7 @@ describe('LoginForm', () => {
     render(<LoginForm />)
 
     // Click submit button without filling form
-    await user.click(screen.getByRole('button', { name: '登录' }))
+    await user.click(screen.getByRole('button', { name: /登录|登 录/ }))
 
     // Wait for validation messages
     await waitFor(() => {
@@ -81,14 +126,51 @@ describe('LoginForm', () => {
     await user.type(screen.getByPlaceholderText('请输入密码'), 'password123')
 
     // Submit the form
-    await user.click(screen.getByRole('button', { name: '登录' }))
+    await user.click(screen.getByRole('button', { name: /登录|登 录/ }))
 
     // Wait for login to be called
     await waitFor(() => {
       expect(mockLogin).toHaveBeenCalledWith({
         username: 'testuser',
         password: 'password123',
-        remember: true,
+      })
+    })
+  })
+
+  it('calls login function with tenant_id when tenant is selected', async () => {
+    const user = userEvent.setup()
+    const onSuccess = vi.fn()
+    const mockTenants = [
+      { id: 'tenant1', name: 'Organization 1' },
+      { id: 'tenant2', name: 'Organization 2' },
+    ]
+    mockGetTenants.mockResolvedValue(mockTenants)
+    mockLogin.mockResolvedValueOnce(undefined)
+
+    render(<LoginForm onSuccess={onSuccess} />)
+
+    // Wait for tenants to load
+    await waitFor(() => {
+      expect(screen.getByText('选择租户')).toBeInTheDocument()
+    })
+
+    // Fill in the form
+    await user.type(screen.getByPlaceholderText('请输入用户名'), 'testuser')
+    await user.type(screen.getByPlaceholderText('请输入密码'), 'password123')
+    
+    // Select a tenant
+    await user.click(screen.getByRole('combobox'))
+    await user.click(screen.getByText('Organization 1'))
+
+    // Submit the form
+    await user.click(screen.getByRole('button', { name: /登录|登 录/ }))
+
+    // Wait for login to be called with tenant_id
+    await waitFor(() => {
+      expect(mockLogin).toHaveBeenCalledWith({
+        username: 'testuser',
+        password: 'password123',
+        tenant_id: 'tenant1',
       })
     })
   })
@@ -103,7 +185,7 @@ describe('LoginForm', () => {
     // Fill and submit form
     await user.type(screen.getByPlaceholderText('请输入用户名'), 'testuser')
     await user.type(screen.getByPlaceholderText('请输入密码'), 'password123')
-    await user.click(screen.getByRole('button', { name: '登录' }))
+    await user.click(screen.getByRole('button', { name: /登录|登 录/ }))
 
     // Wait for success callback
     await waitFor(() => {
@@ -120,7 +202,7 @@ describe('LoginForm', () => {
     // Fill and submit form
     await user.type(screen.getByPlaceholderText('请输入用户名'), 'wronguser')
     await user.type(screen.getByPlaceholderText('请输入密码'), 'wrongpass')
-    await user.click(screen.getByRole('button', { name: '登录' }))
+    await user.click(screen.getByRole('button', { name: /登录|登 录/ }))
 
     // Login should be called
     await waitFor(() => {
@@ -129,7 +211,7 @@ describe('LoginForm', () => {
 
     // Button should not be in loading state after error
     await waitFor(() => {
-      const button = screen.getByRole('button', { name: '登录' })
+      const button = screen.getByRole('button', { name: /登录|登 录/ })
       expect(button).not.toBeDisabled()
     })
   })
@@ -146,7 +228,7 @@ describe('LoginForm', () => {
     // Fill and submit form
     await user.type(screen.getByPlaceholderText('请输入用户名'), 'testuser')
     await user.type(screen.getByPlaceholderText('请输入密码'), 'password123')
-    await user.click(screen.getByRole('button', { name: '登录' }))
+    await user.click(screen.getByRole('button', { name: /登录|登 录/ }))
 
     // Button should be loading
     await waitFor(() => {

@@ -1,40 +1,223 @@
 // Responsive styles for layout
 @import './variables.scss';
 
-// Breakpoints
-$mobile: 576px;
-$tablet: 768px;
-$desktop: 992px;
-$large: 1200px;
-$xlarge: 1600px;
+// Breakpoints (matching design system)
+$breakpoint-xs: 480px;
+$breakpoint-sm: 576px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 992px;
+$breakpoint-xl: 1200px;
+$breakpoint-xxl: 1600px;
 
-// Mixins for responsive design
+// Legacy breakpoint aliases
+$mobile: $breakpoint-sm;
+$tablet: $breakpoint-md;
+$desktop: $breakpoint-lg;
+$large: $breakpoint-xl;
+$xlarge: $breakpoint-xxl;
+
+// ============================================
+// Responsive Mixins
+// ============================================
+
+// Mobile first approach (min-width)
+@mixin xs-up {
+  @media (min-width: #{$breakpoint-xs}) {
+    @content;
+  }
+}
+
+@mixin sm-up {
+  @media (min-width: #{$breakpoint-sm}) {
+    @content;
+  }
+}
+
+@mixin md-up {
+  @media (min-width: #{$breakpoint-md}) {
+    @content;
+  }
+}
+
+@mixin lg-up {
+  @media (min-width: #{$breakpoint-lg}) {
+    @content;
+  }
+}
+
+@mixin xl-up {
+  @media (min-width: #{$breakpoint-xl}) {
+    @content;
+  }
+}
+
+@mixin xxl-up {
+  @media (min-width: #{$breakpoint-xxl}) {
+    @content;
+  }
+}
+
+// Desktop first approach (max-width)
+@mixin xs-down {
+  @media (max-width: #{$breakpoint-xs - 1px}) {
+    @content;
+  }
+}
+
+@mixin sm-down {
+  @media (max-width: #{$breakpoint-sm - 1px}) {
+    @content;
+  }
+}
+
+@mixin md-down {
+  @media (max-width: #{$breakpoint-md - 1px}) {
+    @content;
+  }
+}
+
+@mixin lg-down {
+  @media (max-width: #{$breakpoint-lg - 1px}) {
+    @content;
+  }
+}
+
+@mixin xl-down {
+  @media (max-width: #{$breakpoint-xl - 1px}) {
+    @content;
+  }
+}
+
+@mixin xxl-down {
+  @media (max-width: #{$breakpoint-xxl - 1px}) {
+    @content;
+  }
+}
+
+// Range-based breakpoints
+@mixin xs-only {
+  @media (max-width: #{$breakpoint-xs - 1px}) {
+    @content;
+  }
+}
+
+@mixin sm-only {
+  @media (min-width: #{$breakpoint-xs}) and (max-width: #{$breakpoint-sm - 1px}) {
+    @content;
+  }
+}
+
+@mixin md-only {
+  @media (min-width: #{$breakpoint-sm}) and (max-width: #{$breakpoint-md - 1px}) {
+    @content;
+  }
+}
+
+@mixin lg-only {
+  @media (min-width: #{$breakpoint-md}) and (max-width: #{$breakpoint-lg - 1px}) {
+    @content;
+  }
+}
+
+@mixin xl-only {
+  @media (min-width: #{$breakpoint-lg}) and (max-width: #{$breakpoint-xl - 1px}) {
+    @content;
+  }
+}
+
+@mixin xxl-only {
+  @media (min-width: #{$breakpoint-xl}) {
+    @content;
+  }
+}
+
+// Device-based mixins (semantic)
 @mixin mobile {
-  @media (max-width: #{$mobile - 1px}) {
+  @media (max-width: #{$breakpoint-sm - 1px}) {
     @content;
   }
 }
 
 @mixin tablet {
-  @media (min-width: #{$mobile}) and (max-width: #{$tablet - 1px}) {
+  @media (min-width: #{$breakpoint-sm}) and (max-width: #{$breakpoint-lg - 1px}) {
+    @content;
+  }
+}
+
+@mixin tablet-up {
+  @media (min-width: #{$breakpoint-sm}) {
     @content;
   }
 }
 
 @mixin desktop {
-  @media (min-width: #{$tablet}) {
+  @media (min-width: #{$breakpoint-lg}) {
     @content;
   }
 }
 
 @mixin large {
-  @media (min-width: #{$desktop}) {
+  @media (min-width: #{$breakpoint-xl}) {
     @content;
   }
 }
 
 @mixin xlarge {
-  @media (min-width: #{$large}) {
+  @media (min-width: #{$breakpoint-xxl}) {
+    @content;
+  }
+}
+
+// Orientation mixins
+@mixin portrait {
+  @media (orientation: portrait) {
+    @content;
+  }
+}
+
+@mixin landscape {
+  @media (orientation: landscape) {
+    @content;
+  }
+}
+
+// Touch device detection
+@mixin touch {
+  @media (hover: none) and (pointer: coarse) {
+    @content;
+  }
+}
+
+@mixin no-touch {
+  @media (hover: hover) and (pointer: fine) {
+    @content;
+  }
+}
+
+// High DPI screens
+@mixin retina {
+  @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    @content;
+  }
+}
+
+// Reduced motion preference
+@mixin reduced-motion {
+  @media (prefers-reduced-motion: reduce) {
+    @content;
+  }
+}
+
+// Dark mode preference
+@mixin prefers-dark {
+  @media (prefers-color-scheme: dark) {
+    @content;
+  }
+}
+
+// Light mode preference
+@mixin prefers-light {
+  @media (prefers-color-scheme: light) {
     @content;
   }
 }
@@ -238,5 +421,422 @@ $xlarge: 1600px;
   
   @include desktop {
     display: block !important;
+  }
+}
+
+
+// ============================================
+// Enhanced Visibility Utility Classes
+// ============================================
+
+// Hide on specific breakpoints
+.hide-xs {
+  @include xs-only {
+    display: none !important;
+  }
+}
+
+.hide-sm {
+  @include sm-only {
+    display: none !important;
+  }
+}
+
+.hide-md {
+  @include md-only {
+    display: none !important;
+  }
+}
+
+.hide-lg {
+  @include lg-only {
+    display: none !important;
+  }
+}
+
+.hide-xl {
+  @include xl-only {
+    display: none !important;
+  }
+}
+
+.hide-xxl {
+  @include xxl-only {
+    display: none !important;
+  }
+}
+
+// Show only on specific breakpoints
+.show-xs-only {
+  display: none !important;
+  @include xs-only {
+    display: block !important;
+  }
+}
+
+.show-sm-only {
+  display: none !important;
+  @include sm-only {
+    display: block !important;
+  }
+}
+
+.show-md-only {
+  display: none !important;
+  @include md-only {
+    display: block !important;
+  }
+}
+
+.show-lg-only {
+  display: none !important;
+  @include lg-only {
+    display: block !important;
+  }
+}
+
+.show-xl-only {
+  display: none !important;
+  @include xl-only {
+    display: block !important;
+  }
+}
+
+// Inline variants
+.show-mobile-inline {
+  display: none !important;
+  @include mobile {
+    display: inline !important;
+  }
+}
+
+.show-tablet-inline {
+  display: none !important;
+  @include tablet {
+    display: inline !important;
+  }
+}
+
+.show-desktop-inline {
+  display: none !important;
+  @include desktop {
+    display: inline !important;
+  }
+}
+
+// Flex variants
+.show-mobile-flex {
+  display: none !important;
+  @include mobile {
+    display: flex !important;
+  }
+}
+
+.show-tablet-flex {
+  display: none !important;
+  @include tablet {
+    display: flex !important;
+  }
+}
+
+.show-desktop-flex {
+  display: none !important;
+  @include desktop {
+    display: flex !important;
+  }
+}
+
+// ============================================
+// Responsive Spacing Utilities
+// ============================================
+
+// Responsive padding
+.p-responsive {
+  padding: $padding-lg;
+  
+  @include tablet {
+    padding: $padding-md;
+  }
+  
+  @include mobile {
+    padding: $padding-sm;
+  }
+}
+
+.px-responsive {
+  padding-left: $padding-lg;
+  padding-right: $padding-lg;
+  
+  @include tablet {
+    padding-left: $padding-md;
+    padding-right: $padding-md;
+  }
+  
+  @include mobile {
+    padding-left: $padding-sm;
+    padding-right: $padding-sm;
+  }
+}
+
+.py-responsive {
+  padding-top: $padding-lg;
+  padding-bottom: $padding-lg;
+  
+  @include tablet {
+    padding-top: $padding-md;
+    padding-bottom: $padding-md;
+  }
+  
+  @include mobile {
+    padding-top: $padding-sm;
+    padding-bottom: $padding-sm;
+  }
+}
+
+// Responsive margin
+.m-responsive {
+  margin: $margin-lg;
+  
+  @include tablet {
+    margin: $margin-md;
+  }
+  
+  @include mobile {
+    margin: $margin-sm;
+  }
+}
+
+.mx-responsive {
+  margin-left: $margin-lg;
+  margin-right: $margin-lg;
+  
+  @include tablet {
+    margin-left: $margin-md;
+    margin-right: $margin-md;
+  }
+  
+  @include mobile {
+    margin-left: $margin-sm;
+    margin-right: $margin-sm;
+  }
+}
+
+.my-responsive {
+  margin-top: $margin-lg;
+  margin-bottom: $margin-lg;
+  
+  @include tablet {
+    margin-top: $margin-md;
+    margin-bottom: $margin-md;
+  }
+  
+  @include mobile {
+    margin-top: $margin-sm;
+    margin-bottom: $margin-sm;
+  }
+}
+
+// Responsive gap
+.gap-responsive {
+  gap: $padding-lg;
+  
+  @include tablet {
+    gap: $padding-md;
+  }
+  
+  @include mobile {
+    gap: $padding-sm;
+  }
+}
+
+// ============================================
+// Responsive Layout Utilities
+// ============================================
+
+// Stack on mobile (row to column)
+.stack-mobile {
+  display: flex;
+  flex-direction: row;
+  
+  @include mobile {
+    flex-direction: column;
+  }
+}
+
+// Stack on tablet and below
+.stack-tablet {
+  display: flex;
+  flex-direction: row;
+  
+  @include tablet {
+    flex-direction: column;
+  }
+  
+  @include mobile {
+    flex-direction: column;
+  }
+}
+
+// Reverse stack on mobile
+.stack-mobile-reverse {
+  display: flex;
+  flex-direction: row;
+  
+  @include mobile {
+    flex-direction: column-reverse;
+  }
+}
+
+// Full width on mobile
+.full-width-mobile {
+  @include mobile {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+// Full width on tablet and below
+.full-width-tablet {
+  @include tablet {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  @include mobile {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+// ============================================
+// Responsive Typography Utilities
+// ============================================
+
+.text-responsive {
+  font-size: $font-size-base;
+  
+  @include mobile {
+    font-size: $font-size-sm;
+  }
+}
+
+.text-responsive-lg {
+  font-size: $font-size-lg;
+  
+  @include tablet {
+    font-size: $font-size-base;
+  }
+  
+  @include mobile {
+    font-size: $font-size-sm;
+  }
+}
+
+.text-responsive-xl {
+  font-size: $font-size-xl;
+  
+  @include tablet {
+    font-size: $font-size-lg;
+  }
+  
+  @include mobile {
+    font-size: $font-size-base;
+  }
+}
+
+// Center text on mobile
+.text-center-mobile {
+  @include mobile {
+    text-align: center !important;
+  }
+}
+
+// ============================================
+// Responsive Container Utilities
+// ============================================
+
+.container-responsive {
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 $padding-lg;
+  
+  @include tablet {
+    padding: 0 $padding-md;
+  }
+  
+  @include mobile {
+    padding: 0 $padding-sm;
+  }
+}
+
+.container-fluid {
+  width: 100%;
+  padding: 0 $padding-lg;
+  
+  @include tablet {
+    padding: 0 $padding-md;
+  }
+  
+  @include mobile {
+    padding: 0 $padding-sm;
+  }
+}
+
+// ============================================
+// Touch-Friendly Utilities
+// ============================================
+
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+  
+  @include touch {
+    min-height: 48px;
+    min-width: 48px;
+  }
+}
+
+.touch-spacing {
+  @include touch {
+    padding: $padding-md !important;
+    margin: $margin-sm 0 !important;
+  }
+}
+
+// ============================================
+// Reduced Motion Support
+// ============================================
+
+.motion-safe {
+  @include reduced-motion {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+// ============================================
+// Print Utilities
+// ============================================
+
+@media print {
+  .hide-print {
+    display: none !important;
+  }
+  
+  .show-print {
+    display: block !important;
+  }
+  
+  .page-break-before {
+    page-break-before: always;
+  }
+  
+  .page-break-after {
+    page-break-after: always;
+  }
+  
+  .no-page-break {
+    page-break-inside: avoid;
   }
 }

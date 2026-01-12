@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Session Context Restore",
+  "description": "Automatically restore context and continue work when a new session is created (e.g., after context overflow)",
+  "version": "1",
+  "when": {
+    "type": "sessionCreated"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A new session has been created. This may be due to context overflow from a previous session.\n\n**Automatic Context Restoration - Execute these steps:**\n\n1. **Scan for active specs**:\n   - Check `.kiro/specs/new/*/tasks.md` first (newest work)\n   - Check `.kiro/specs/*/tasks.md` for other specs\n   - Look for task markers: `- [ ]` (not started), `- [-]` (in progress), `- [x]` (completed)\n   - Also check for `Acceptance Criteria` with `- [ ]` checkboxes\n\n2. **Check git status**:\n   - Run `git status` to see uncommitted changes\n   - Recent file modifications indicate active work\n\n3. **Check open editor files**:\n   - The EnvironmentContext shows currently open files\n   - These indicate what the user was working on\n\n4. **Load full context for active spec**:\n   - Read `requirements.md` - Feature requirements\n   - Read `design.md` - Technical design\n   - Read `tasks.md` - Task progress\n\n5. **Present status to user**:\n   - Show which feature/spec was being worked on\n   - Show current progress (completed vs pending tasks)\n   - Identify the next task to execute\n   - Ask: '是否继续之前的工作？/ Would you like to continue the previous work?'\n\n**Priority directories:**\n- `.kiro/specs/new/quality-workflow/` - Quality workflow spec\n- `.kiro/specs/new/*/` - Other new specs\n- `.kiro/specs/*/` - All other specs\n\n**Important**: Always read ALL THREE spec documents before executing any task to ensure full context."
+  }
+}

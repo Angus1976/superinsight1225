@@ -1,0 +1,302 @@
+/**
+ * ResponsiveLayout Styles
+ * 
+ * Provides responsive layout styling for mobile, tablet, and desktop views.
+ */
+
+@import '../../styles/theme/designSystem.scss';
+
+// ============================================
+// Mobile Layout
+// ============================================
+
+.mobileLayout {
+  height: 100vh;
+  height: 100dvh; // Dynamic viewport height for mobile browsers
+  display: flex;
+  flex-direction: column;
+  background: $color-bg-tertiary;
+}
+
+.mobileHeader {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 $spacing-sm;
+  background: $color-bg;
+  border-bottom: 1px solid $color-border-secondary;
+  position: sticky;
+  top: 0;
+  z-index: $z-sticky;
+  box-shadow: $shadow-sm;
+}
+
+.menuButton {
+  @include flex-center;
+  width: 40px;
+  height: 40px;
+  border-radius: $radius-base;
+  
+  &:hover {
+    background: $color-fill;
+  }
+  
+  &:active {
+    background: $color-fill-secondary;
+  }
+}
+
+.mobileTitle {
+  @include flex-center;
+  gap: $spacing-xs;
+  flex: 1;
+  justify-content: center;
+  font-size: $font-size-lg;
+  
+  strong {
+    @include text-truncate;
+    max-width: 150px;
+  }
+}
+
+.mobileLogo {
+  @include flex-center;
+  width: 24px;
+  height: 24px;
+  
+  img, svg {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+}
+
+.mobileHeaderContent {
+  @include flex-end;
+  gap: $spacing-xs;
+  
+  // Compact header items on mobile
+  :global(.ant-btn) {
+    padding: $spacing-xxs $spacing-xs !important;
+    font-size: $font-size-sm !important;
+  }
+  
+  :global(.ant-avatar) {
+    width: 28px !important;
+    height: 28px !important;
+  }
+  
+  :global(.ant-select) {
+    display: none; // Hide selectors on mobile header
+  }
+}
+
+.mobileContent {
+  flex: 1;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  
+  // Safe area padding for notched devices
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.mobileDrawer {
+  :global(.ant-drawer-content-wrapper) {
+    max-width: 85vw;
+  }
+  
+  :global(.ant-drawer-body) {
+    padding: 0;
+  }
+}
+
+// ============================================
+// Tablet Layout
+// ============================================
+
+.tabletLayout {
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: $color-bg-tertiary;
+}
+
+.tabletHeader {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 $spacing-md;
+  background: $color-bg;
+  border-bottom: 1px solid $color-border-secondary;
+  position: sticky;
+  top: 0;
+  z-index: $z-sticky;
+  box-shadow: $shadow-sm;
+}
+
+.tabletTitle {
+  @include flex-center;
+  gap: $spacing-sm;
+  flex: 1;
+  justify-content: center;
+  font-size: $font-size-lg;
+  
+  strong {
+    @include text-truncate;
+    max-width: 200px;
+  }
+}
+
+.tabletLogo {
+  @include flex-center;
+  width: 28px;
+  height: 28px;
+  
+  img, svg {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+}
+
+.tabletHeaderContent {
+  @include flex-end;
+  gap: $spacing-sm;
+}
+
+.tabletContent {
+  flex: 1;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tabletDrawer {
+  :global(.ant-drawer-content-wrapper) {
+    max-width: 320px;
+  }
+  
+  :global(.ant-drawer-body) {
+    padding: 0;
+  }
+}
+
+// ============================================
+// Shared Drawer Styles
+// ============================================
+
+.drawerTitle {
+  @include flex-start;
+  gap: $spacing-sm;
+  font-weight: $font-weight-semibold;
+}
+
+.drawerLogo {
+  @include flex-center;
+  width: 24px;
+  height: 24px;
+  
+  img, svg {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+}
+
+// ============================================
+// Touch-Friendly Enhancements
+// ============================================
+
+@include touch {
+  .menuButton {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  
+  .mobileContent,
+  .tabletContent {
+    // Improve scroll performance on touch devices
+    scroll-behavior: smooth;
+    overscroll-behavior: contain;
+  }
+}
+
+// ============================================
+// Landscape Orientation Adjustments
+// ============================================
+
+@include landscape {
+  .mobileHeader {
+    height: 48px;
+  }
+  
+  .mobileTitle {
+    font-size: $font-size-base;
+  }
+}
+
+// ============================================
+// Safe Area Support (Notched Devices)
+// ============================================
+
+@supports (padding: env(safe-area-inset-top)) {
+  .mobileHeader,
+  .tabletHeader {
+    padding-top: env(safe-area-inset-top, 0);
+    height: calc(56px + env(safe-area-inset-top, 0));
+  }
+  
+  .mobileDrawer,
+  .tabletDrawer {
+    :global(.ant-drawer-content) {
+      padding-top: env(safe-area-inset-top, 0);
+    }
+  }
+}
+
+// ============================================
+// Dark Mode Support
+// ============================================
+
+[data-theme='dark'] {
+  .mobileLayout,
+  .tabletLayout {
+    background: #141414;
+  }
+  
+  .mobileHeader,
+  .tabletHeader {
+    background: #1f1f1f;
+    border-bottom-color: #303030;
+  }
+  
+  .menuButton {
+    &:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+    
+    &:active {
+      background: rgba(255, 255, 255, 0.12);
+    }
+  }
+}
+
+// ============================================
+// Reduced Motion Support
+// ============================================
+
+@include reduced-motion {
+  .mobileContent,
+  .tabletContent {
+    scroll-behavior: auto;
+  }
+  
+  .mobileDrawer,
+  .tabletDrawer {
+    :global(.ant-drawer-content-wrapper) {
+      transition: none !important;
+    }
+  }
+}

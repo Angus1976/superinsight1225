@@ -7,6 +7,7 @@ import { useUIStore } from '@/stores/uiStore';
 import { AppRouter } from '@/router';
 import { ErrorBoundary } from '@/components/Common/ErrorBoundary';
 import { THEMES } from '@/constants';
+import { lightTheme, darkTheme } from '@/styles/theme';
 
 // Import i18n config
 import '@/locales/config';
@@ -27,16 +28,16 @@ const queryClient = new QueryClient({
 function App() {
   const { theme: currentTheme, language } = useUIStore();
 
+  // Get the appropriate theme configuration
+  const themeConfig = currentTheme === THEMES.DARK ? darkTheme : lightTheme;
+
   return (
     <QueryClientProvider client={queryClient}>
       <ConfigProvider
         locale={language === 'zh' ? zhCN : enUS}
         theme={{
           algorithm: currentTheme === THEMES.DARK ? theme.darkAlgorithm : theme.defaultAlgorithm,
-          token: {
-            colorPrimary: '#1890ff',
-            borderRadius: 6,
-          },
+          ...themeConfig,
         }}
       >
         <AntApp>

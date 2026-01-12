@@ -1,0 +1,40 @@
+/**
+ * KeyValueDisplay Component Styles
+ */
+
+.keyValueDisplay {
+  width: 100%;
+
+  .label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .tooltipIcon {
+    color: var(--ant-color-text-secondary, #999);
+    font-size: 12px;
+    cursor: help;
+  }
+
+  .copyableValue {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .copyIcon {
+    color: var(--ant-color-text-secondary, #999);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+
+    &:hover {
+      color: var(--ant-color-primary, #1890ff);
+    }
+  }
+
+  .copyableValue:hover .copyIcon {
+    opacity: 1;
+  }
+}

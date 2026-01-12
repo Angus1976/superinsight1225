@@ -1,0 +1,377 @@
+/**
+ * SuperInsight Design System - SCSS Variables and Mixins
+ * 
+ * Provides consistent design tokens as SCSS variables
+ * for beautiful and consistent UI styling.
+ */
+
+// ============================================
+// Brand Colors
+// ============================================
+$color-primary: #1890ff;
+$color-primary-hover: #40a9ff;
+$color-primary-active: #096dd9;
+$color-primary-light: #e6f7ff;
+
+$color-success: #52c41a;
+$color-success-hover: #73d13d;
+$color-success-active: #389e0d;
+$color-success-light: #f6ffed;
+
+$color-warning: #faad14;
+$color-warning-hover: #ffc53d;
+$color-warning-active: #d48806;
+$color-warning-light: #fffbe6;
+
+$color-error: #ff4d4f;
+$color-error-hover: #ff7875;
+$color-error-active: #d9363e;
+$color-error-light: #fff2f0;
+
+$color-info: #1890ff;
+$color-info-light: #e6f7ff;
+
+// ============================================
+// Neutral Colors
+// ============================================
+$color-text: rgba(0, 0, 0, 0.88);
+$color-text-secondary: rgba(0, 0, 0, 0.65);
+$color-text-tertiary: rgba(0, 0, 0, 0.45);
+$color-text-disabled: rgba(0, 0, 0, 0.25);
+
+$color-border: #d9d9d9;
+$color-border-secondary: #f0f0f0;
+
+$color-fill: rgba(0, 0, 0, 0.04);
+$color-fill-secondary: rgba(0, 0, 0, 0.06);
+$color-fill-tertiary: rgba(0, 0, 0, 0.08);
+
+$color-bg: #ffffff;
+$color-bg-secondary: #fafafa;
+$color-bg-tertiary: #f5f5f5;
+
+// ============================================
+// Typography
+// ============================================
+$font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+$font-family-code: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+
+$font-size-xs: 12px;
+$font-size-sm: 12px;
+$font-size-base: 14px;
+$font-size-lg: 16px;
+$font-size-xl: 20px;
+
+$font-size-h1: 38px;
+$font-size-h2: 30px;
+$font-size-h3: 24px;
+$font-size-h4: 20px;
+$font-size-h5: 16px;
+
+$line-height-base: 1.5714;
+$line-height-lg: 1.5;
+$line-height-sm: 1.6667;
+
+$font-weight-normal: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+
+// ============================================
+// Spacing
+// ============================================
+$spacing-xxs: 4px;
+$spacing-xs: 8px;
+$spacing-sm: 12px;
+$spacing-md: 16px;
+$spacing-lg: 24px;
+$spacing-xl: 32px;
+$spacing-xxl: 48px;
+
+// ============================================
+// Border Radius
+// ============================================
+$radius-xs: 2px;
+$radius-sm: 4px;
+$radius-base: 6px;
+$radius-lg: 8px;
+$radius-xl: 12px;
+$radius-full: 9999px;
+
+// ============================================
+// Shadows
+// ============================================
+$shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02);
+$shadow-base: 0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05);
+$shadow-lg: 0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05);
+$shadow-card: 0 1px 2px -2px rgba(0, 0, 0, 0.16), 0 3px 6px 0 rgba(0, 0, 0, 0.12), 0 5px 12px 4px rgba(0, 0, 0, 0.09);
+
+// ============================================
+// Animation
+// ============================================
+$duration-fast: 0.1s;
+$duration-base: 0.2s;
+$duration-slow: 0.3s;
+
+$ease-in-out: cubic-bezier(0.645, 0.045, 0.355, 1);
+$ease-out: cubic-bezier(0.215, 0.61, 0.355, 1);
+$ease-in: cubic-bezier(0.55, 0.055, 0.675, 0.19);
+
+// ============================================
+// Z-Index
+// ============================================
+$z-dropdown: 1050;
+$z-sticky: 1020;
+$z-fixed: 1030;
+$z-modal-backdrop: 1040;
+$z-modal: 1050;
+$z-popover: 1060;
+$z-tooltip: 1070;
+
+// ============================================
+// Breakpoints
+// ============================================
+$breakpoint-xs: 480px;
+$breakpoint-sm: 576px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 992px;
+$breakpoint-xl: 1200px;
+$breakpoint-xxl: 1600px;
+
+// ============================================
+// Mixins
+// ============================================
+
+// Responsive breakpoint mixins
+@mixin xs {
+  @media (max-width: #{$breakpoint-xs - 1px}) {
+    @content;
+  }
+}
+
+@mixin sm {
+  @media (min-width: #{$breakpoint-xs}) and (max-width: #{$breakpoint-sm - 1px}) {
+    @content;
+  }
+}
+
+@mixin md {
+  @media (min-width: #{$breakpoint-sm}) and (max-width: #{$breakpoint-md - 1px}) {
+    @content;
+  }
+}
+
+@mixin lg {
+  @media (min-width: #{$breakpoint-md}) and (max-width: #{$breakpoint-lg - 1px}) {
+    @content;
+  }
+}
+
+@mixin xl {
+  @media (min-width: #{$breakpoint-lg}) and (max-width: #{$breakpoint-xl - 1px}) {
+    @content;
+  }
+}
+
+@mixin xxl {
+  @media (min-width: #{$breakpoint-xl}) {
+    @content;
+  }
+}
+
+// Mobile first breakpoints
+@mixin mobile {
+  @media (max-width: #{$breakpoint-sm - 1px}) {
+    @content;
+  }
+}
+
+@mixin tablet {
+  @media (min-width: #{$breakpoint-sm}) and (max-width: #{$breakpoint-lg - 1px}) {
+    @content;
+  }
+}
+
+@mixin desktop {
+  @media (min-width: #{$breakpoint-lg}) {
+    @content;
+  }
+}
+
+// Flexbox mixins
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@mixin flex-start {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+@mixin flex-end {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+@mixin flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+// Text truncation
+@mixin text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@mixin text-truncate-lines($lines: 2) {
+  display: -webkit-box;
+  -webkit-line-clamp: $lines;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+// Card styles
+@mixin card-base {
+  background: $color-bg;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-sm;
+  transition: box-shadow $duration-base $ease-in-out;
+  
+  &:hover {
+    box-shadow: $shadow-base;
+  }
+}
+
+// Button styles
+@mixin button-base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: $font-weight-medium;
+  border-radius: $radius-base;
+  transition: all $duration-base $ease-in-out;
+  cursor: pointer;
+  
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+}
+
+// Focus styles for accessibility
+@mixin focus-ring {
+  &:focus-visible {
+    outline: 2px solid $color-primary;
+    outline-offset: 2px;
+  }
+}
+
+// Smooth scrollbar
+@mixin smooth-scrollbar {
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+    
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.3);
+    }
+  }
+  
+  &::-webkit-scrollbar-track {
+    background-color: transparent;
+  }
+}
+
+// Glass effect
+@mixin glass-effect {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+// Gradient backgrounds
+@mixin gradient-primary {
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-active 100%);
+}
+
+@mixin gradient-success {
+  background: linear-gradient(135deg, $color-success 0%, $color-success-active 100%);
+}
+
+// Animation keyframes
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

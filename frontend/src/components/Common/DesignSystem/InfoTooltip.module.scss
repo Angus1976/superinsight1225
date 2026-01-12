@@ -1,0 +1,50 @@
+/**
+ * InfoTooltip Styles
+ * 
+ * Consistent styling for info tooltips following the design system.
+ */
+
+@import '../../../styles/theme/designSystem.scss';
+
+.iconWrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: help;
+  font-size: $font-size-sm;
+  transition: color $duration-base $ease-in-out;
+  
+  &:hover {
+    opacity: 0.8;
+  }
+}
+
+.tooltipOverlay {
+  :global(.ant-tooltip-inner) {
+    padding: $spacing-sm $spacing-md;
+    border-radius: $radius-base;
+    max-width: 300px;
+  }
+}
+
+.tooltipContent {
+  @include flex-column;
+  gap: $spacing-xs;
+}
+
+.tooltipTitle {
+  font-size: $font-size-sm;
+  color: #fff;
+  margin-bottom: $spacing-xxs;
+}
+
+.tooltipBody {
+  font-size: $font-size-sm;
+  line-height: $line-height-base;
+}
+
+.tooltipText {
+  margin: 0 !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+  font-size: $font-size-sm !important;
+}

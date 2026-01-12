@@ -1,0 +1,195 @@
+/**
+ * ResponsiveContainer Styles
+ * 
+ * Provides responsive container styling with adaptive
+ * padding, gaps, and layout options.
+ */
+
+@import '../../styles/theme/designSystem.scss';
+
+.responsiveContainer {
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
+  
+  // Centered container
+  &.centered {
+    margin-left: auto;
+    margin-right: auto;
+  }
+  
+  // Full height
+  &.fullHeight {
+    min-height: 100%;
+  }
+  
+  // Wrap
+  &.wrap {
+    flex-wrap: wrap;
+  }
+}
+
+// Direction variants
+.direction-row {
+  flex-direction: row;
+}
+
+.direction-column {
+  flex-direction: column;
+}
+
+// Alignment variants
+.align-start {
+  align-items: flex-start;
+}
+
+.align-center {
+  align-items: center;
+}
+
+.align-end {
+  align-items: flex-end;
+}
+
+.align-stretch {
+  align-items: stretch;
+}
+
+// Justify variants
+.justify-start {
+  justify-content: flex-start;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.justify-end {
+  justify-content: flex-end;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.justify-around {
+  justify-content: space-around;
+}
+
+.justify-evenly {
+  justify-content: space-evenly;
+}
+
+// Padding variants
+.padding-none {
+  padding: 0;
+}
+
+.padding-xs {
+  padding: $spacing-xs;
+  
+  @include mobile {
+    padding: $spacing-xxs;
+  }
+}
+
+.padding-sm {
+  padding: $spacing-sm;
+  
+  @include mobile {
+    padding: $spacing-xs;
+  }
+}
+
+.padding-md {
+  padding: $spacing-md;
+  
+  @include tablet {
+    padding: $spacing-sm;
+  }
+  
+  @include mobile {
+    padding: $spacing-xs;
+  }
+}
+
+.padding-lg {
+  padding: $spacing-lg;
+  
+  @include tablet {
+    padding: $spacing-md;
+  }
+  
+  @include mobile {
+    padding: $spacing-sm;
+  }
+}
+
+.padding-xl {
+  padding: $spacing-xl;
+  
+  @include tablet {
+    padding: $spacing-lg;
+  }
+  
+  @include mobile {
+    padding: $spacing-md;
+  }
+}
+
+// Gap variants
+.gap-none {
+  gap: 0;
+}
+
+.gap-xs {
+  gap: $spacing-xs;
+  
+  @include mobile {
+    gap: $spacing-xxs;
+  }
+}
+
+.gap-sm {
+  gap: $spacing-sm;
+  
+  @include mobile {
+    gap: $spacing-xs;
+  }
+}
+
+.gap-md {
+  gap: $spacing-md;
+  
+  @include tablet {
+    gap: $spacing-sm;
+  }
+  
+  @include mobile {
+    gap: $spacing-xs;
+  }
+}
+
+.gap-lg {
+  gap: $spacing-lg;
+  
+  @include tablet {
+    gap: $spacing-md;
+  }
+  
+  @include mobile {
+    gap: $spacing-sm;
+  }
+}
+
+.gap-xl {
+  gap: $spacing-xl;
+  
+  @include tablet {
+    gap: $spacing-lg;
+  }
+  
+  @include mobile {
+    gap: $spacing-md;
+  }
+}

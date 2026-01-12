@@ -1,0 +1,37 @@
+/**
+ * ResponsiveGrid Styles
+ * 
+ * Provides responsive grid styling with adaptive
+ * spacing and layout options.
+ */
+
+@import '../../styles/theme/designSystem.scss';
+
+.responsiveGrid {
+  width: 100%;
+  
+  // Ensure proper spacing on mobile
+  @include mobile {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+}
+
+.responsiveGridItem {
+  // Ensure items don't overflow
+  min-width: 0;
+  
+  // Add transition for smooth layout changes
+  transition: all $duration-base $ease-in-out;
+  
+  // Ensure proper spacing on mobile
+  @include mobile {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-bottom: $spacing-sm;
+    
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+}

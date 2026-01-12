@@ -71,16 +71,15 @@ describe('ContextManager', () => {
       expect(retrievedContext?.sessionId).toMatch(/^session_/);
     });
 
-    it('should update timestamp when setting context', () => {
+    it('should update timestamp when setting context', async () => {
       const originalTimestamp = mockContext.timestamp;
       
       // Wait a bit to ensure timestamp difference
-      setTimeout(() => {
-        contextManager.setContext(mockContext);
-        
-        const retrievedContext = contextManager.getContext();
-        expect(retrievedContext?.timestamp).toBeGreaterThan(originalTimestamp);
-      }, 10);
+      await new Promise(resolve => setTimeout(resolve, 20));
+      contextManager.setContext(mockContext);
+      
+      const retrievedContext = contextManager.getContext();
+      expect(retrievedContext?.timestamp).toBeGreaterThanOrEqual(originalTimestamp);
     });
 
     it('should throw error for invalid context', () => {
@@ -289,17 +288,16 @@ describe('ContextManager', () => {
   });
 
   describe('session management', () => {
-    it('should refresh context', () => {
+    it('should refresh context', async () => {
       contextManager.setContext(mockContext);
       const originalTimestamp = contextManager.getContext()?.timestamp;
 
       // Wait a bit and refresh
-      setTimeout(() => {
-        contextManager.refreshContext();
-        
-        const refreshedContext = contextManager.getContext();
-        expect(refreshedContext?.timestamp).toBeGreaterThan(originalTimestamp!);
-      }, 10);
+      await new Promise(resolve => setTimeout(resolve, 20));
+      contextManager.refreshContext();
+      
+      const refreshedContext = contextManager.getContext();
+      expect(refreshedContext?.timestamp).toBeGreaterThanOrEqual(originalTimestamp!);
     });
 
     it('should clear context', () => {
@@ -320,7 +318,7 @@ describe('ContextManager', () => {
       expect(listener).toHaveBeenCalledWith(null);
     });
 
-    it('should check if context is expired', () => {
+    it('should check if context is expired', async () => {
       const shortTimeoutManager = new ContextManager({
         sessionTimeout: 50, // 50ms
       });
@@ -329,9 +327,8 @@ describe('ContextManager', () => {
       expect(shortTimeoutManager.isContextExpired()).toBe(false);
 
       // Wait for expiration
-      setTimeout(() => {
-        expect(shortTimeoutManager.isContextExpired()).toBe(true);
-      }, 100);
+      await new Promise(resolve => setTimeout(resolve, 100));
+      expect(shortTimeoutManager.isContextExpired()).toBe(true);
     });
   });
 

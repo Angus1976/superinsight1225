@@ -1,0 +1,860 @@
+/**
+ * SuperInsight Component Styles
+ * 
+ * Consistent styling overrides for Ant Design components
+ * to ensure beautiful and consistent UI across the application.
+ */
+
+@import './theme/designSystem.scss';
+
+// ============================================
+// Button Styles
+// ============================================
+.ant-btn {
+  font-weight: $font-weight-medium;
+  border-radius: $radius-base;
+  transition: all $duration-base $ease-in-out;
+  
+  &:focus-visible {
+    outline: 2px solid $color-primary;
+    outline-offset: 2px;
+  }
+  
+  &.ant-btn-lg {
+    height: 44px;
+    padding: 0 $spacing-lg;
+    font-size: $font-size-lg;
+  }
+  
+  &.ant-btn-sm {
+    height: 28px;
+    padding: 0 $spacing-sm;
+    font-size: $font-size-sm;
+  }
+}
+
+// ============================================
+// Card Styles
+// ============================================
+.ant-card {
+  border-radius: $radius-lg;
+  box-shadow: $shadow-sm;
+  transition: box-shadow $duration-base $ease-in-out;
+  
+  &:hover {
+    box-shadow: $shadow-base;
+  }
+  
+  .ant-card-head {
+    border-bottom: 1px solid $color-border-secondary;
+    padding: $spacing-md $spacing-lg;
+    min-height: auto;
+    
+    .ant-card-head-title {
+      font-weight: $font-weight-semibold;
+      font-size: $font-size-lg;
+    }
+  }
+  
+  .ant-card-body {
+    padding: $spacing-lg;
+  }
+  
+  .ant-card-actions {
+    border-top: 1px solid $color-border-secondary;
+    background: $color-bg-secondary;
+    border-radius: 0 0 $radius-lg $radius-lg;
+  }
+}
+
+// ============================================
+// Table Styles
+// ============================================
+.ant-table {
+  border-radius: $radius-lg;
+  overflow: hidden;
+  
+  .ant-table-thead > tr > th {
+    background: $color-bg-secondary;
+    font-weight: $font-weight-semibold;
+    color: $color-text;
+    border-bottom: 1px solid $color-border-secondary;
+    padding: $spacing-sm $spacing-md;
+  }
+  
+  .ant-table-tbody > tr > td {
+    padding: $spacing-sm $spacing-md;
+    border-bottom: 1px solid $color-border-secondary;
+    transition: background $duration-fast $ease-in-out;
+  }
+  
+  .ant-table-tbody > tr:hover > td {
+    background: $color-fill;
+  }
+  
+  .ant-table-tbody > tr.ant-table-row-selected > td {
+    background: $color-primary-light;
+  }
+}
+
+// ============================================
+// Form Styles
+// ============================================
+.ant-form {
+  .ant-form-item-label > label {
+    font-weight: $font-weight-medium;
+    color: $color-text;
+  }
+  
+  .ant-form-item-explain-error {
+    font-size: $font-size-sm;
+    margin-top: $spacing-xxs;
+  }
+}
+
+.ant-input,
+.ant-input-affix-wrapper,
+.ant-select-selector,
+.ant-picker {
+  border-radius: $radius-base !important;
+  transition: all $duration-base $ease-in-out;
+  
+  &:hover {
+    border-color: $color-primary;
+  }
+  
+  &:focus,
+  &.ant-input-focused,
+  &.ant-select-focused {
+    border-color: $color-primary;
+    box-shadow: 0 0 0 2px rgba($color-primary, 0.1);
+  }
+}
+
+.ant-input-lg,
+.ant-select-lg .ant-select-selector,
+.ant-picker-large {
+  height: 44px !important;
+  font-size: $font-size-lg;
+}
+
+.ant-input-sm,
+.ant-select-sm .ant-select-selector,
+.ant-picker-small {
+  height: 28px !important;
+  font-size: $font-size-sm;
+}
+
+// ============================================
+// Modal Styles
+// ============================================
+.ant-modal {
+  .ant-modal-content {
+    border-radius: $radius-xl;
+    overflow: hidden;
+  }
+  
+  .ant-modal-header {
+    padding: $spacing-lg;
+    border-bottom: 1px solid $color-border-secondary;
+    
+    .ant-modal-title {
+      font-weight: $font-weight-semibold;
+      font-size: $font-size-lg;
+    }
+  }
+  
+  .ant-modal-body {
+    padding: $spacing-lg;
+  }
+  
+  .ant-modal-footer {
+    padding: $spacing-md $spacing-lg;
+    border-top: 1px solid $color-border-secondary;
+  }
+}
+
+// ============================================
+// Drawer Styles
+// ============================================
+.ant-drawer {
+  .ant-drawer-header {
+    padding: $spacing-md $spacing-lg;
+    border-bottom: 1px solid $color-border-secondary;
+    
+    .ant-drawer-title {
+      font-weight: $font-weight-semibold;
+      font-size: $font-size-lg;
+    }
+  }
+  
+  .ant-drawer-body {
+    padding: $spacing-lg;
+  }
+  
+  .ant-drawer-footer {
+    padding: $spacing-md $spacing-lg;
+    border-top: 1px solid $color-border-secondary;
+  }
+}
+
+// ============================================
+// Tabs Styles
+// ============================================
+.ant-tabs {
+  .ant-tabs-tab {
+    font-weight: $font-weight-medium;
+    padding: $spacing-sm $spacing-md;
+    transition: all $duration-base $ease-in-out;
+    
+    &:hover {
+      color: $color-primary;
+    }
+    
+    &.ant-tabs-tab-active {
+      .ant-tabs-tab-btn {
+        font-weight: $font-weight-semibold;
+      }
+    }
+  }
+  
+  .ant-tabs-ink-bar {
+    height: 3px;
+    border-radius: 3px 3px 0 0;
+  }
+  
+  &.ant-tabs-card {
+    .ant-tabs-tab {
+      border-radius: $radius-lg $radius-lg 0 0;
+    }
+  }
+}
+
+// ============================================
+// Tag Styles
+// ============================================
+.ant-tag {
+  border-radius: $radius-sm;
+  font-weight: $font-weight-medium;
+  padding: 0 $spacing-sm;
+  line-height: 22px;
+  
+  &.ant-tag-checkable {
+    cursor: pointer;
+    transition: all $duration-base $ease-in-out;
+    
+    &:hover {
+      opacity: 0.8;
+    }
+  }
+}
+
+// ============================================
+// Badge Styles
+// ============================================
+.ant-badge {
+  .ant-badge-status-dot {
+    width: 8px;
+    height: 8px;
+  }
+  
+  .ant-badge-status-text {
+    font-size: $font-size-sm;
+  }
+}
+
+// ============================================
+// Menu Styles
+// ============================================
+.ant-menu {
+  .ant-menu-item {
+    border-radius: $radius-base;
+    margin: $spacing-xxs 0;
+    transition: all $duration-base $ease-in-out;
+    
+    &:hover {
+      background: $color-fill;
+    }
+    
+    &.ant-menu-item-selected {
+      font-weight: $font-weight-medium;
+    }
+  }
+  
+  .ant-menu-submenu-title {
+    border-radius: $radius-base;
+    
+    &:hover {
+      background: $color-fill;
+    }
+  }
+}
+
+// ============================================
+// Breadcrumb Styles
+// ============================================
+.ant-breadcrumb {
+  .ant-breadcrumb-link {
+    color: $color-text-secondary;
+    transition: color $duration-base $ease-in-out;
+    
+    &:hover {
+      color: $color-primary;
+    }
+  }
+  
+  .ant-breadcrumb-separator {
+    color: $color-text-tertiary;
+  }
+}
+
+// ============================================
+// Progress Styles
+// ============================================
+.ant-progress {
+  .ant-progress-inner {
+    border-radius: $radius-full;
+  }
+  
+  .ant-progress-bg {
+    border-radius: $radius-full;
+  }
+  
+  .ant-progress-text {
+    font-weight: $font-weight-medium;
+    font-size: $font-size-sm;
+  }
+}
+
+// ============================================
+// Alert Styles
+// ============================================
+.ant-alert {
+  border-radius: $radius-lg;
+  
+  .ant-alert-message {
+    font-weight: $font-weight-semibold;
+  }
+  
+  .ant-alert-description {
+    font-size: $font-size-sm;
+  }
+}
+
+// ============================================
+// Message & Notification Styles
+// ============================================
+.ant-message {
+  .ant-message-notice-content {
+    border-radius: $radius-lg;
+    box-shadow: $shadow-base;
+    padding: $spacing-sm $spacing-md;
+  }
+}
+
+.ant-notification {
+  .ant-notification-notice {
+    border-radius: $radius-lg;
+    box-shadow: $shadow-base;
+    
+    .ant-notification-notice-message {
+      font-weight: $font-weight-semibold;
+    }
+  }
+}
+
+// ============================================
+// Tooltip & Popover Styles
+// ============================================
+.ant-tooltip {
+  .ant-tooltip-inner {
+    border-radius: $radius-base;
+    padding: $spacing-xs $spacing-sm;
+    font-size: $font-size-sm;
+  }
+}
+
+.ant-popover {
+  .ant-popover-inner {
+    border-radius: $radius-lg;
+    box-shadow: $shadow-base;
+  }
+  
+  .ant-popover-title {
+    font-weight: $font-weight-semibold;
+    padding: $spacing-sm $spacing-md;
+    border-bottom: 1px solid $color-border-secondary;
+  }
+  
+  .ant-popover-inner-content {
+    padding: $spacing-md;
+  }
+}
+
+// ============================================
+// Dropdown Styles
+// ============================================
+.ant-dropdown {
+  .ant-dropdown-menu {
+    border-radius: $radius-lg;
+    box-shadow: $shadow-base;
+    padding: $spacing-xs;
+    
+    .ant-dropdown-menu-item {
+      border-radius: $radius-base;
+      padding: $spacing-xs $spacing-sm;
+      transition: all $duration-fast $ease-in-out;
+      
+      &:hover {
+        background: $color-fill;
+      }
+    }
+  }
+}
+
+// ============================================
+// Pagination Styles
+// ============================================
+.ant-pagination {
+  .ant-pagination-item {
+    border-radius: $radius-base;
+    font-weight: $font-weight-medium;
+    
+    &:hover {
+      border-color: $color-primary;
+    }
+    
+    &.ant-pagination-item-active {
+      font-weight: $font-weight-semibold;
+    }
+  }
+  
+  .ant-pagination-prev,
+  .ant-pagination-next {
+    border-radius: $radius-base;
+  }
+}
+
+// ============================================
+// Steps Styles
+// ============================================
+.ant-steps {
+  .ant-steps-item-icon {
+    font-weight: $font-weight-semibold;
+  }
+  
+  .ant-steps-item-title {
+    font-weight: $font-weight-medium;
+  }
+  
+  .ant-steps-item-description {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+  }
+}
+
+// ============================================
+// Timeline Styles
+// ============================================
+.ant-timeline {
+  .ant-timeline-item-head {
+    width: 12px;
+    height: 12px;
+  }
+  
+  .ant-timeline-item-content {
+    font-size: $font-size-base;
+  }
+}
+
+// ============================================
+// Avatar Styles
+// ============================================
+.ant-avatar {
+  font-weight: $font-weight-medium;
+  
+  &.ant-avatar-lg {
+    font-size: $font-size-lg;
+  }
+  
+  &.ant-avatar-sm {
+    font-size: $font-size-sm;
+  }
+}
+
+// ============================================
+// Skeleton Styles
+// ============================================
+.ant-skeleton {
+  .ant-skeleton-content {
+    .ant-skeleton-title {
+      border-radius: $radius-base;
+    }
+    
+    .ant-skeleton-paragraph > li {
+      border-radius: $radius-base;
+    }
+  }
+  
+  .ant-skeleton-avatar {
+    border-radius: 50%;
+  }
+  
+  .ant-skeleton-button {
+    border-radius: $radius-base;
+  }
+  
+  .ant-skeleton-input {
+    border-radius: $radius-base;
+  }
+}
+
+// ============================================
+// Empty Styles
+// ============================================
+.ant-empty {
+  .ant-empty-description {
+    color: $color-text-secondary;
+    font-size: $font-size-base;
+  }
+}
+
+// ============================================
+// Result Styles
+// ============================================
+.ant-result {
+  .ant-result-title {
+    font-weight: $font-weight-semibold;
+    font-size: $font-size-xl;
+  }
+  
+  .ant-result-subtitle {
+    font-size: $font-size-base;
+    color: $color-text-secondary;
+  }
+}
+
+// ============================================
+// Spin Styles
+// ============================================
+.ant-spin {
+  .ant-spin-text {
+    color: $color-text-secondary;
+    font-size: $font-size-sm;
+    margin-top: $spacing-sm;
+  }
+}
+
+// ============================================
+// Statistic Styles
+// ============================================
+.ant-statistic {
+  .ant-statistic-title {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    margin-bottom: $spacing-xs;
+  }
+  
+  .ant-statistic-content {
+    font-weight: $font-weight-semibold;
+  }
+  
+  .ant-statistic-content-value {
+    font-size: $font-size-h3;
+  }
+  
+  .ant-statistic-content-suffix {
+    font-size: $font-size-lg;
+    margin-left: $spacing-xxs;
+  }
+}
+
+// ============================================
+// Descriptions Styles
+// ============================================
+.ant-descriptions {
+  .ant-descriptions-item-label {
+    font-weight: $font-weight-medium;
+    color: $color-text-secondary;
+  }
+  
+  .ant-descriptions-item-content {
+    color: $color-text;
+  }
+}
+
+// ============================================
+// List Styles
+// ============================================
+.ant-list {
+  .ant-list-item {
+    padding: $spacing-md;
+    border-bottom: 1px solid $color-border-secondary;
+    transition: background $duration-fast $ease-in-out;
+    
+    &:hover {
+      background: $color-fill;
+    }
+  }
+  
+  .ant-list-item-meta-title {
+    font-weight: $font-weight-medium;
+  }
+  
+  .ant-list-item-meta-description {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+  }
+}
+
+// ============================================
+// Collapse Styles
+// ============================================
+.ant-collapse {
+  border-radius: $radius-lg;
+  
+  .ant-collapse-item {
+    border-bottom: 1px solid $color-border-secondary;
+    
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+  
+  .ant-collapse-header {
+    font-weight: $font-weight-medium;
+    padding: $spacing-md !important;
+  }
+  
+  .ant-collapse-content-box {
+    padding: $spacing-md;
+  }
+}
+
+// ============================================
+// Tree Styles
+// ============================================
+.ant-tree {
+  .ant-tree-node-content-wrapper {
+    border-radius: $radius-base;
+    padding: $spacing-xxs $spacing-xs;
+    transition: all $duration-fast $ease-in-out;
+    
+    &:hover {
+      background: $color-fill;
+    }
+  }
+  
+  .ant-tree-node-selected {
+    background: $color-primary-light !important;
+  }
+}
+
+// ============================================
+// Transfer Styles
+// ============================================
+.ant-transfer {
+  .ant-transfer-list {
+    border-radius: $radius-lg;
+  }
+  
+  .ant-transfer-list-header {
+    border-radius: $radius-lg $radius-lg 0 0;
+    padding: $spacing-sm $spacing-md;
+  }
+  
+  .ant-transfer-list-body {
+    border-radius: 0 0 $radius-lg $radius-lg;
+  }
+}
+
+// ============================================
+// Upload Styles
+// ============================================
+.ant-upload {
+  &.ant-upload-drag {
+    border-radius: $radius-lg;
+    transition: all $duration-base $ease-in-out;
+    
+    &:hover {
+      border-color: $color-primary;
+    }
+    
+    .ant-upload-drag-container {
+      padding: $spacing-xl;
+    }
+  }
+}
+
+// ============================================
+// Calendar Styles
+// ============================================
+.ant-picker-calendar {
+  border-radius: $radius-lg;
+  
+  .ant-picker-calendar-header {
+    padding: $spacing-md;
+  }
+  
+  .ant-picker-cell-inner {
+    border-radius: $radius-base;
+  }
+}
+
+// ============================================
+// Rate Styles
+// ============================================
+.ant-rate {
+  .ant-rate-star {
+    transition: transform $duration-fast $ease-in-out;
+    
+    &:hover {
+      transform: scale(1.1);
+    }
+  }
+}
+
+// ============================================
+// Switch Styles
+// ============================================
+.ant-switch {
+  min-width: 44px;
+  height: 22px;
+  
+  .ant-switch-handle {
+    width: 18px;
+    height: 18px;
+    top: 2px;
+  }
+  
+  &.ant-switch-checked .ant-switch-handle {
+    inset-inline-start: calc(100% - 20px);
+  }
+}
+
+// ============================================
+// Slider Styles
+// ============================================
+.ant-slider {
+  .ant-slider-rail {
+    border-radius: $radius-full;
+  }
+  
+  .ant-slider-track {
+    border-radius: $radius-full;
+  }
+  
+  .ant-slider-handle {
+    width: 14px;
+    height: 14px;
+    
+    &:focus {
+      box-shadow: 0 0 0 4px rgba($color-primary, 0.2);
+    }
+  }
+}
+
+// ============================================
+// Checkbox & Radio Styles
+// ============================================
+.ant-checkbox {
+  .ant-checkbox-inner {
+    border-radius: $radius-xs;
+  }
+}
+
+.ant-radio {
+  .ant-radio-inner {
+    width: 18px;
+    height: 18px;
+    
+    &::after {
+      width: 10px;
+      height: 10px;
+    }
+  }
+}
+
+// ============================================
+// DatePicker Styles
+// ============================================
+.ant-picker-dropdown {
+  .ant-picker-panel-container {
+    border-radius: $radius-lg;
+    box-shadow: $shadow-base;
+  }
+  
+  .ant-picker-cell-inner {
+    border-radius: $radius-base;
+  }
+}
+
+// ============================================
+// Select Dropdown Styles
+// ============================================
+.ant-select-dropdown {
+  border-radius: $radius-lg;
+  box-shadow: $shadow-base;
+  padding: $spacing-xs;
+  
+  .ant-select-item {
+    border-radius: $radius-base;
+    padding: $spacing-xs $spacing-sm;
+    
+    &:hover {
+      background: $color-fill;
+    }
+  }
+  
+  .ant-select-item-option-selected {
+    font-weight: $font-weight-medium;
+  }
+}
+
+// ============================================
+// Cascader Styles
+// ============================================
+.ant-cascader-dropdown {
+  border-radius: $radius-lg;
+  box-shadow: $shadow-base;
+  
+  .ant-cascader-menu {
+    border-radius: $radius-lg;
+  }
+  
+  .ant-cascader-menu-item {
+    border-radius: $radius-base;
+    
+    &:hover {
+      background: $color-fill;
+    }
+  }
+}
+
+// ============================================
+// Segmented Styles
+// ============================================
+.ant-segmented {
+  border-radius: $radius-base;
+  padding: 2px;
+  
+  .ant-segmented-item {
+    border-radius: $radius-sm;
+  }
+  
+  .ant-segmented-item-selected {
+    font-weight: $font-weight-medium;
+  }
+}
+
+// ============================================
+// Image Styles
+// ============================================
+.ant-image {
+  border-radius: $radius-lg;
+  overflow: hidden;
+}
+
+.ant-image-preview-operations {
+  border-radius: $radius-lg;
+}

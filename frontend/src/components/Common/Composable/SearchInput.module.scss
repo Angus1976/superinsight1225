@@ -1,0 +1,30 @@
+/**
+ * SearchInput Component Styles
+ */
+
+.searchInput {
+  display: inline-block;
+
+  .input {
+    transition: all 0.2s ease;
+
+    &:focus,
+    &:hover {
+      border-color: var(--ant-color-primary, #1890ff);
+    }
+  }
+
+  .searchIcon {
+    color: var(--ant-color-text-secondary, #999);
+  }
+
+  .clearIcon {
+    color: var(--ant-color-text-quaternary, #bfbfbf);
+    cursor: pointer;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: var(--ant-color-text-secondary, #999);
+    }
+  }
+}

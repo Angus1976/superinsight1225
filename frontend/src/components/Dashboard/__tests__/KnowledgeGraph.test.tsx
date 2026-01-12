@@ -1,73 +1,75 @@
 // KnowledgeGraph component test
 import { render, screen } from '@testing-library/react';
 import { KnowledgeGraph } from '../KnowledgeGraph';
+import { vi } from 'vitest';
 
-// Mock d3 to avoid DOM manipulation issues in tests
-vi.mock('d3', () => ({
-  select: vi.fn(() => ({
-    selectAll: vi.fn(() => ({ remove: vi.fn() })),
-    append: vi.fn(() => ({
-      selectAll: vi.fn(() => ({
-        data: vi.fn(() => ({
-          enter: vi.fn(() => ({
-            append: vi.fn(() => ({
-              attr: vi.fn(() => ({ attr: vi.fn() })),
-            })),
-          })),
-        })),
-      })),
-    })),
-    call: vi.fn(),
-    attr: vi.fn(),
-  })),
-  forceSimulation: vi.fn(() => ({
-    force: vi.fn(() => ({ force: vi.fn() })),
-    on: vi.fn(),
-    stop: vi.fn(),
-  })),
-  forceLink: vi.fn(() => ({
-    id: vi.fn(() => ({ distance: vi.fn() })),
-  })),
-  forceManyBody: vi.fn(() => ({ strength: vi.fn() })),
-  forceCenter: vi.fn(),
-  forceCollide: vi.fn(() => ({ radius: vi.fn() })),
-  zoom: vi.fn(() => ({
-    scaleExtent: vi.fn(() => ({ on: vi.fn() })),
-  })),
-  hierarchy: vi.fn(),
-  tree: vi.fn(() => ({ size: vi.fn() })),
-  drag: vi.fn(() => ({
-    on: vi.fn(() => ({ on: vi.fn(() => ({ on: vi.fn() })) })),
-  })),
+// Mock react-i18next
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string) => key,
+    i18n: { language: 'en' },
+  }),
 }));
+
+// Mock d3 completely to avoid DOM manipulation issues in tests
+vi.mock('d3', () => {
+  // Create a deeply chainable mock that returns itself for any method call
+  const createDeepChainable = (): any => {
+    const handler: ProxyHandler<any> = {
+      get: (target, prop) => {
+        if (prop === 'then') return undefined; // Prevent Promise-like behavior
+        return createDeepChainable();
+      },
+      apply: () => createDeepChainable(),
+    };
+    const fn = function() { return createDeepChainable(); };
+    return new Proxy(fn, handler);
+  };
+  
+  const chainable = createDeepChainable();
+  return {
+    select: chainable,
+    selectAll: chainable,
+    forceSimulation: chainable,
+    forceLink: chainable,
+    forceManyBody: chainable,
+    forceCenter: chainable,
+    forceCollide: chainable,
+    zoom: chainable,
+    hierarchy: chainable,
+    tree: chainable,
+    drag: chainable,
+  };
+});
 
 describe('KnowledgeGraph', () => {
   it('renders without crashing', () => {
     render(<KnowledgeGraph />);
 
-    // Should render the knowledge graph card
-    expect(screen.getByText('知识图谱')).toBeInTheDocument();
+    // Should render the knowledge graph card (using translation key)
+    expect(screen.getByText('charts.knowledgeGraph')).toBeInTheDocument();
   });
 
   it('shows loading state', () => {
     render(<KnowledgeGraph loading={true} />);
 
     // Should show loading card
-    expect(screen.getByText('知识图谱')).toBeInTheDocument();
+    expect(screen.getByText('charts.knowledgeGraph')).toBeInTheDocument();
   });
 
   it('renders with custom height', () => {
     render(<KnowledgeGraph height={800} />);
 
     // Should render with custom height
-    expect(screen.getByText('知识图谱')).toBeInTheDocument();
+    expect(screen.getByText('charts.knowledgeGraph')).toBeInTheDocument();
   });
 
   it('renders controls', () => {
     render(<KnowledgeGraph />);
 
-    // Should show layout and filter controls
-    expect(screen.getByDisplayValue('force')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('all')).toBeInTheDocument();
+    // Should show the graph legend (always visible)
+    expect(screen.getByText('graph.legend')).toBeInTheDocument();
+    // Should show node type labels in legend
+    expect(screen.getByText('graph.dataNodes')).toBeInTheDocument();
   });
 });

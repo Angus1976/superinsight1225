@@ -1,0 +1,103 @@
+/**
+ * StatusIndicator Component Styles
+ */
+
+.statusIndicator {
+  display: inline-flex;
+  align-items: center;
+}
+
+.dotIndicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  &.small .dot {
+    width: 6px;
+    height: 6px;
+  }
+
+  &.large .dot {
+    width: 10px;
+    height: 10px;
+  }
+
+  &.pulse .dot {
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+}
+
+.iconIndicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  &.small {
+    font-size: 12px;
+  }
+
+  &.default {
+    font-size: 14px;
+  }
+
+  &.large {
+    font-size: 16px;
+  }
+}
+
+.tagIndicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+
+  &.small {
+    font-size: 12px;
+    padding: 0 6px;
+  }
+
+  &.large {
+    font-size: 14px;
+    padding: 4px 10px;
+  }
+
+  .tagText {
+    margin-left: 4px;
+  }
+}
+
+.badgeIndicator {
+  &.small {
+    :global(.ant-badge-status-text) {
+      font-size: 12px;
+    }
+  }
+
+  &.large {
+    :global(.ant-badge-status-text) {
+      font-size: 14px;
+    }
+  }
+}
+
+.text {
+  color: var(--ant-color-text, #000);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.1);
+  }
+}

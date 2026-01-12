@@ -1,0 +1,11 @@
+/**
+ * Collapsible Component Styles
+ */
+
+.collapsible {
+  width: 100%;
+
+  .expandIcon {
+    transition: transform 0.2s ease;
+  }
+}

@@ -1,0 +1,52 @@
+/**
+ * InfiniteScroll Component Styles
+ */
+
+.infiniteScroll {
+  width: 100%;
+
+  &.vertical {
+    .content {
+      display: flex;
+      flex-direction: column;
+    }
+  }
+
+  &.horizontal {
+    .content {
+      display: flex;
+      flex-direction: row;
+    }
+
+    .item {
+      flex-shrink: 0;
+    }
+  }
+
+  .loadingIndicator {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    padding: 16px;
+    color: var(--ant-color-text-secondary, #666);
+    font-size: 14px;
+  }
+
+  .endMessage {
+    text-align: center;
+    padding: 16px;
+    color: var(--ant-color-text-tertiary, #999);
+    font-size: 14px;
+  }
+
+  .errorMessage {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    padding: 16px;
+    color: var(--ant-color-error, #ff4d4f);
+    font-size: 14px;
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "enabled": true,
+  "name": "Python Auto Runner",
+  "description": "When saving .py files, automatically run tests or execute entry files using venv",
+  "version": "1",
+  "when": {
+    "type": "fileSaved",
+    "patterns": ["**/*.py"]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "I just saved a Python file: ${file}\n\nPlease analyze and run the appropriate command:\n\n1. If it's a test file (test_*.py or *_test.py), run:\n   ./venv/bin/python -m pytest ${file} -v --tb=short\n\n2. If it's an entry file (main.py, app.py, run.py, manage.py or contains __main__), run:\n   ./venv/bin/python ${file}\n\n3. For other modules, run related tests if they exist:\n   ./venv/bin/python -m pytest -q -x --lf\n\nIMPORTANT: Always use ./venv/bin/python to ensure virtual environment is used.\n\nProvide a concise summary of the results (pass/fail count, key errors if any)."
+  }
+}

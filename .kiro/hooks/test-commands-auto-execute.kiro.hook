@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Test Commands Auto Execute",
+  "description": "Automatically execute and approve test commands including pytest, vitest, and test-related pipelines",
+  "version": "1",
+  "when": {
+    "type": "agentMessage"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "When executing test commands, proceed automatically without asking for confirmation. These are safe, non-destructive operations.\n\n**Auto-approve test command patterns:**\n\n1. **Python pytest commands:**\n   - `python -m pytest ...`\n   - `python3 -m pytest ...`\n   - `./venv/bin/python -m pytest ...`\n   - `pytest tests/... -v --tb=short`\n   - Any pytest command with output redirection (`2>&1 | head -100`)\n\n2. **Frontend test commands:**\n   - `npm run test`\n   - `npm test`\n   - `npx vitest --run`\n   - `cd frontend && npm run test`\n\n3. **Coverage commands:**\n   - `pytest --cov=src ...`\n   - `npm run test:coverage`\n\n4. **Safe output patterns:**\n   - Commands piped to `head`, `tail`, or `grep`\n   - Commands with `2>&1` error redirection\n   - Commands with `|| true` or `|| echo` fallbacks\n\n**Execution rules:**\n- Execute immediately without user confirmation\n- Report results clearly after execution\n- If tests fail, show the failure summary\n- Continue with next steps based on test results\n\n**Example commands to auto-execute:**\n```bash\npython3 -m pytest tests/test_version_lineage.py -v --tb=short 2>&1 | head -100\npytest tests/ -v --tb=short\nnpm run test -- --run\n```"
+  }
+}

@@ -1,0 +1,40 @@
+/**
+ * SkipLinks Styles
+ */
+
+.skip-links-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10000;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.skip-link {
+  position: absolute;
+  top: -100%;
+  padding: 12px 24px;
+  background-color: #1890ff;
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: top 0.2s ease-in-out;
+  pointer-events: auto;
+
+  &:focus {
+    top: 0;
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+  }
+
+  &:hover {
+    background-color: #096dd9;
+  }
+}

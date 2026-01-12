@@ -1,0 +1,129 @@
+/**
+ * PageHeader Styles
+ * 
+ * Consistent styling for page headers following the design system.
+ */
+
+@import '../../../styles/theme/designSystem.scss';
+
+.pageHeader {
+  padding: $spacing-lg;
+  background: $color-bg;
+  border-radius: $radius-lg;
+  margin-bottom: $spacing-lg;
+  
+  @include mobile {
+    padding: $spacing-md;
+    margin-bottom: $spacing-md;
+  }
+  
+  &.compact {
+    padding: $spacing-md;
+    margin-bottom: $spacing-md;
+    
+    .title {
+      margin-bottom: 0 !important;
+    }
+  }
+}
+
+.breadcrumb {
+  margin-bottom: $spacing-md;
+  
+  :global(.ant-breadcrumb-link) {
+    color: $color-text-secondary;
+    transition: color $duration-base $ease-in-out;
+    
+    &:hover {
+      color: $color-primary;
+    }
+  }
+  
+  :global(.ant-breadcrumb-separator) {
+    color: $color-text-tertiary;
+  }
+}
+
+.headerContent {
+  @include flex-between;
+  flex-wrap: wrap;
+  gap: $spacing-md;
+  
+  @include mobile {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.titleSection {
+  flex: 1;
+  min-width: 0;
+}
+
+.titleRow {
+  @include flex-start;
+  gap: $spacing-sm;
+  flex-wrap: wrap;
+}
+
+.title {
+  margin-bottom: $spacing-xxs !important;
+  color: $color-text !important;
+  font-weight: $font-weight-semibold !important;
+  
+  @include mobile {
+    font-size: $font-size-xl !important;
+  }
+}
+
+.tags {
+  @include flex-start;
+  gap: $spacing-xs;
+}
+
+.subtitle {
+  display: block;
+  font-size: $font-size-lg;
+  margin-bottom: $spacing-xxs;
+  
+  @include mobile {
+    font-size: $font-size-base;
+  }
+}
+
+.description {
+  display: block;
+  font-size: $font-size-base;
+  max-width: 600px;
+  line-height: $line-height-base;
+  
+  @include mobile {
+    font-size: $font-size-sm;
+  }
+}
+
+.actions {
+  flex-shrink: 0;
+  
+  @include mobile {
+    width: 100%;
+    
+    :global(.ant-space) {
+      width: 100%;
+      flex-wrap: wrap;
+    }
+    
+    :global(.ant-btn) {
+      flex: 1;
+      min-width: 120px;
+    }
+  }
+}
+
+.divider {
+  margin: $spacing-md 0 !important;
+}
+
+.extra {
+  padding-top: $spacing-xs;
+}

@@ -2,28 +2,69 @@ import { defineConfig, type BuildOptions } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 
-// Build optimization configuration
+// Build optimization configuration for < 3s page load target
 const buildConfig: BuildOptions = {
-  // Enable minification
+  // Enable minification with esbuild (faster than terser)
   minify: 'esbuild',
 
-  // Generate source maps for production debugging
+  // Disable source maps in production for smaller bundles
   sourcemap: false,
 
-  // Optimize chunk splitting
+  // Optimize chunk splitting for better caching and parallel loading
   rollupOptions: {
     output: {
-      // Manual chunk splitting for better caching
-      manualChunks: {
-        // Vendor chunks
-        'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-        'vendor-antd': ['antd', '@ant-design/icons'],
-        'vendor-query': ['@tanstack/react-query'],
-        'vendor-utils': ['axios', 'dayjs', 'lodash-es', 'zustand'],
-        'vendor-i18n': ['i18next', 'react-i18next', 'i18next-browser-languagedetector'],
-        'vendor-charts': ['recharts'],
+      // Manual chunk splitting for optimal loading
+      manualChunks: (id) => {
+        // Core React runtime - loaded first
+        if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) {
+          return 'vendor-react-core';
+        }
+        // React Router - needed for navigation
+        if (id.includes('node_modules/react-router')) {
+          return 'vendor-react-router';
+        }
+        // Ant Design core - UI framework
+        if (id.includes('node_modules/antd/')) {
+          return 'vendor-antd';
+        }
+        // Ant Design icons - can be loaded separately
+        if (id.includes('node_modules/@ant-design/icons/')) {
+          return 'vendor-antd-icons';
+        }
+        // Ant Design Pro components - loaded on demand
+        if (id.includes('node_modules/@ant-design/pro')) {
+          return 'vendor-antd-pro';
+        }
+        // TanStack Query - data fetching
+        if (id.includes('node_modules/@tanstack/react-query')) {
+          return 'vendor-query';
+        }
+        // State management
+        if (id.includes('node_modules/zustand')) {
+          return 'vendor-state';
+        }
+        // HTTP client
+        if (id.includes('node_modules/axios')) {
+          return 'vendor-http';
+        }
+        // Date utilities
+        if (id.includes('node_modules/dayjs')) {
+          return 'vendor-date';
+        }
+        // Lodash utilities
+        if (id.includes('node_modules/lodash-es')) {
+          return 'vendor-lodash';
+        }
+        // i18n - internationalization
+        if (id.includes('node_modules/i18next') || id.includes('node_modules/react-i18next')) {
+          return 'vendor-i18n';
+        }
+        // Charts - loaded on demand for dashboard
+        if (id.includes('node_modules/recharts') || id.includes('node_modules/d3')) {
+          return 'vendor-charts';
+        }
       },
-      // Asset file naming
+      // Asset file naming with content hash for caching
       assetFileNames: (assetInfo) => {
         const info = assetInfo.name?.split('.') || []
         const ext = info[info.length - 1]
@@ -45,23 +86,32 @@ const buildConfig: BuildOptions = {
     },
   },
 
-  // Target modern browsers for smaller bundle
-  target: 'esnext',
+  // Target modern browsers for smaller bundle (ES2020+)
+  target: 'es2020',
 
-  // Chunk size warnings
-  chunkSizeWarningLimit: 500,
+  // Chunk size warnings - keep chunks under 250KB for fast loading
+  chunkSizeWarningLimit: 250,
 
-  // CSS code splitting
+  // CSS code splitting for parallel loading
   cssCodeSplit: true,
 
   // Enable CSS minification
   cssMinify: true,
+
+  // Inline assets smaller than 4KB
+  assetsInlineLimit: 4096,
+
+  // Report compressed size
+  reportCompressedSize: true,
 }
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
   plugins: [
-    react(),
+    react({
+      // Enable Fast Refresh for development
+      fastRefresh: true,
+    }),
   ],
 
   resolve: {
@@ -108,17 +158,20 @@ export default defineConfig(({ mode }) => ({
     modules: {
       localsConvention: 'camelCase',
     },
+    // Optimize CSS for production
+    devSourcemap: mode !== 'production',
   },
 
   // Production build configuration
   build: mode === 'production' ? buildConfig : {
     ...buildConfig,
     sourcemap: true,
+    minify: false, // Faster dev builds
   },
 
-  // Optimize dependencies
+  // Optimize dependencies for faster cold starts
   optimizeDeps: {
-    // Pre-build these modules for better performance
+    // Pre-bundle these modules for better performance
     include: [
       'react',
       'react-dom',
@@ -136,6 +189,10 @@ export default defineConfig(({ mode }) => ({
       'recharts',
       'lodash-es',
     ],
+    // Exclude large dependencies that should be loaded on demand
+    exclude: [],
+    // Force optimization even if dependencies haven't changed
+    force: false,
   },
 
   // Enable esbuild optimizations
@@ -144,11 +201,18 @@ export default defineConfig(({ mode }) => ({
     drop: mode === 'production' ? ['console', 'debugger'] : [],
     // Enable legal comments removal
     legalComments: 'none',
+    // Target modern browsers
+    target: 'es2020',
   },
 
   // Preview server configuration
   preview: {
     port: 4173,
     strictPort: true,
+  },
+
+  // JSON handling
+  json: {
+    stringify: true, // Smaller JSON imports
   },
 }))

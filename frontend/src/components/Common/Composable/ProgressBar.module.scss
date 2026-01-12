@@ -1,0 +1,33 @@
+/**
+ * ProgressBar Component Styles
+ */
+
+.progressBar {
+  &.animated {
+    :global(.ant-progress-bg) {
+      transition: width 0.3s ease;
+    }
+  }
+
+  .label {
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: var(--ant-color-text-secondary, #666);
+  }
+}
+
+.multiProgressBar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  .progressItem {
+    .itemLabel {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+      font-size: 12px;
+      color: var(--ant-color-text-secondary, #666);
+    }
+  }
+}

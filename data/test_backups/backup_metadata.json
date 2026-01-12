@@ -1,0 +1,77 @@
+{
+  "backups": [
+    {
+      "backup_id": "5c7adbd5",
+      "backup_type": "full",
+      "status": "verified",
+      "created_at": 1768195137.8797529,
+      "completed_at": 1768195138.29235,
+      "size_bytes": 480,
+      "checksum": "58c46479348f66384351eebba2256dac81be9aa8b0c035294696722b3e09f165",
+      "components": [
+        "database",
+        "configurations",
+        "user_data",
+        "files"
+      ],
+      "parent_backup_id": null,
+      "retention_days": 7,
+      "tags": {}
+    },
+    {
+      "backup_id": "ed050866",
+      "backup_type": "full",
+      "status": "verified",
+      "created_at": 1768195138.297438,
+      "completed_at": 1768195138.707925,
+      "size_bytes": 480,
+      "checksum": "fa79e89b7e1821734f0838b7fff64491a995ca5890210778f30d0ec457c9a9cb",
+      "components": [
+        "database",
+        "configurations",
+        "user_data",
+        "files"
+      ],
+      "parent_backup_id": null,
+      "retention_days": 7,
+      "tags": {}
+    },
+    {
+      "backup_id": "5b63e0ab",
+      "backup_type": "full",
+      "status": "verified",
+      "created_at": 1768195164.650482,
+      "completed_at": 1768195165.060854,
+      "size_bytes": 480,
+      "checksum": "bff461235ce69295cdb6a25e210f7727bd134a0b87a2cfb3e89ea84ce5f29b67",
+      "components": [
+        "database",
+        "configurations",
+        "user_data",
+        "files"
+      ],
+      "parent_backup_id": null,
+      "retention_days": 7,
+      "tags": {}
+    },
+    {
+      "backup_id": "e31b9a17",
+      "backup_type": "full",
+      "status": "verified",
+      "created_at": 1768195165.066261,
+      "completed_at": 1768195165.478244,
+      "size_bytes": 482,
+      "checksum": "f8a4cc5edff11996d0a29f9863dbcac68eff1b72d9e4b742f6518d67332a8f07",
+      "components": [
+        "database",
+        "configurations",
+        "user_data",
+        "files"
+      ],
+      "parent_backup_id": null,
+      "retention_days": 7,
+      "tags": {}
+    }
+  ],
+  "updated_at": 1768195165.479198
+}

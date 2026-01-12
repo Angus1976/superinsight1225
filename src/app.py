@@ -223,6 +223,43 @@ async def register_system_services():
         
     except ImportError:
         logger.warning("Business metrics service not available")
+    
+    # Complete Event Capture System (100% Security Event Capture)
+    try:
+        from src.security.complete_event_capture_system import initialize_complete_capture_system
+        from src.security.security_event_monitor import get_security_monitor
+        from src.security.threat_detector import get_threat_detector
+        
+        async def complete_capture_startup():
+            security_monitor = get_security_monitor()
+            threat_detector = get_threat_detector()
+            
+            if security_monitor and threat_detector:
+                capture_system = await initialize_complete_capture_system(
+                    security_monitor, threat_detector
+                )
+                logger.info("Complete Event Capture System initialized successfully")
+                return capture_system
+            else:
+                logger.warning("Security monitor or threat detector not available for complete capture")
+        
+        async def complete_capture_shutdown():
+            from src.security.complete_event_capture_system import get_complete_capture_system
+            capture_system = get_complete_capture_system()
+            if capture_system:
+                await capture_system.stop_capture_system()
+                logger.info("Complete Event Capture System shutdown successfully")
+        
+        system_manager.register_service(
+            name="complete_event_capture",
+            startup_func=complete_capture_startup,
+            shutdown_func=complete_capture_shutdown,
+            dependencies=["database", "security_service"],
+            service_type="security"
+        )
+        
+    except ImportError:
+        logger.warning("Complete Event Capture System not available")
 
 
 @asynccontextmanager
@@ -278,6 +315,25 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add automatic desensitization middleware
+try:
+    from src.security.auto_desensitization_middleware import AutoDesensitizationMiddleware
+    app.add_middleware(
+        AutoDesensitizationMiddleware,
+        enabled=True,
+        mask_requests=True,
+        mask_responses=True,
+        excluded_paths=[
+            "/health", "/metrics", "/docs", "/openapi.json", "/static", "/favicon.ico",
+            "/system/status", "/system/metrics", "/system/services"
+        ]
+    )
+    logger.info("Automatic desensitization middleware loaded successfully")
+except ImportError as e:
+    logger.warning(f"Automatic desensitization middleware not available: {e}")
+except Exception as e:
+    logger.warning(f"Automatic desensitization middleware failed to load: {e}")
 
 # Add i18n middleware
 try:
@@ -482,6 +538,28 @@ async def root():
 # Include routers
 app.include_router(extraction_router)
 
+# Include SOX Compliance API router - critical for compliance functionality
+try:
+    from src.api.sox_compliance_api import router as sox_compliance_router
+    app.include_router(sox_compliance_router)
+    logger.info("SOX Compliance API loaded successfully")
+except ImportError as e:
+    logger.error(f"SOX Compliance API not available: {e}")
+except Exception as e:
+    logger.error(f"SOX Compliance API failed to load: {e}")
+    import traceback
+    traceback.print_exc()
+
+# Include comprehensive audit integration
+try:
+    from src.security.comprehensive_audit_integration import comprehensive_audit
+    comprehensive_audit.integrate_with_fastapi(app)
+    logger.info("Comprehensive audit system integrated successfully")
+except Exception as e:
+    logger.error(f"Failed to integrate comprehensive audit system: {e}")
+    import traceback
+    traceback.print_exc()
+
 # Include admin router
 try:
     from src.api.admin import router as admin_router
@@ -509,6 +587,26 @@ try:
     logger.info("Security API loaded successfully")
 except Exception as e:
     logger.error(f"Security API failed to load: {e}")
+    import traceback
+    traceback.print_exc()
+
+# Force include audit API router
+try:
+    from src.api.audit_api import router as audit_router
+    app.include_router(audit_router)
+    logger.info("Audit API loaded successfully")
+except Exception as e:
+    logger.error(f"Audit API failed to load: {e}")
+    import traceback
+    traceback.print_exc()
+
+# Force include audit integrity API router
+try:
+    from src.api.audit_integrity_api import router as audit_integrity_router
+    app.include_router(audit_integrity_router)
+    logger.info("Audit Integrity API loaded successfully")
+except Exception as e:
+    logger.error(f"Audit Integrity API failed to load: {e}")
     import traceback
     traceback.print_exc()
 
@@ -676,12 +774,226 @@ async def include_optional_routers():
     except Exception as e:
         logger.warning(f"i18n API failed to load: {e}")
 
+    # Compliance Reports API
+    try:
+        from src.api.compliance_reports import router as compliance_router
+        app.include_router(compliance_router)
+        logger.info("Compliance Reports API loaded successfully")
+    except ImportError as e:
+        logger.warning(f"Compliance Reports API not available: {e}")
+    except Exception as e:
+        logger.warning(f"Compliance Reports API failed to load: {e}")
+    
+    # SOX Compliance API - moved to main app setup for immediate availability
+    # This is handled in the main app setup section below
+
+    # Desensitization API (if not already included)
+    try:
+        from src.api.desensitization import router as desensitization_router
+        app.include_router(desensitization_router)
+        logger.info("Desensitization API loaded successfully")
+    except ImportError as e:
+        logger.warning(f"Desensitization API not available: {e}")
+    except Exception as e:
+        logger.warning(f"Desensitization API failed to load: {e}")
+
+    # Auto-Desensitization API
+    try:
+        from src.api.auto_desensitization import router as auto_desensitization_router
+        app.include_router(auto_desensitization_router)
+        logger.info("Auto-Desensitization API loaded successfully")
+    except ImportError as e:
+        logger.warning(f"Auto-Desensitization API not available: {e}")
+    except Exception as e:
+        logger.warning(f"Auto-Desensitization API failed to load: {e}")
+
+    # Real-time Alert API
+    try:
+        from src.api.real_time_alert_api import router as real_time_alert_router
+        app.include_router(real_time_alert_router)
+        logger.info("Real-time Alert API loaded successfully")
+    except ImportError as e:
+        logger.warning(f"Real-time Alert API not available: {e}")
+    
+    # Security Monitoring API (if not already included)
+    try:
+        from src.api.security_monitoring_api import router as security_monitoring_router
+        app.include_router(security_monitoring_router)
+        logger.info("Security Monitoring API loaded successfully")
+    except ImportError as e:
+        logger.warning(f"Security Monitoring API not available: {e}")
+    except Exception as e:
+        logger.warning(f"Security Monitoring API failed to load: {e}")
+
+    # Permission Monitoring API (if not already included)
+    try:
+        from src.api.permission_monitoring import router as permission_monitoring_router
+        app.include_router(permission_monitoring_router)
+        logger.info("Permission Monitoring API loaded successfully")
+    except ImportError as e:
+        logger.warning(f"Permission Monitoring API not available: {e}")
+    except Exception as e:
+        logger.warning(f"Permission Monitoring API failed to load: {e}")
+
+    # Cache Management API (if not already included)
+    try:
+        from src.api.cache_management import router as cache_management_router
+        app.include_router(cache_management_router)
+        logger.info("Cache Management API loaded successfully")
+    except ImportError as e:
+        logger.warning(f"Cache Management API not available: {e}")
+    except Exception as e:
+        logger.warning(f"Cache Management API failed to load: {e}")
+
+    # Security Dashboard API (if not already included)
+    try:
+        from src.api.security_dashboard_api import router as security_dashboard_router
+        app.include_router(security_dashboard_router)
+        logger.info("Security Dashboard API loaded successfully")
+    except ImportError as e:
+        logger.warning(f"Security Dashboard API not available: {e}")
+    except Exception as e:
+        logger.warning(f"Security Dashboard API failed to load: {e}")
+    
+    # Zero Leakage Prevention API
+    try:
+        from src.api.zero_leakage_api import router as zero_leakage_router
+        app.include_router(zero_leakage_router)
+        logger.info("Zero Leakage Prevention API loaded successfully")
+    except ImportError as e:
+        logger.warning(f"Zero Leakage Prevention API not available: {e}")
+    except Exception as e:
+        logger.warning(f"Zero Leakage Prevention API failed to load: {e}")
+    
+    # Compliance Performance API (< 30 seconds target)
+    try:
+        from src.api.compliance_performance_api import router as compliance_performance_router
+        app.include_router(compliance_performance_router)
+        logger.info("Compliance Performance API loaded successfully")
+    except ImportError as e:
+        logger.warning(f"Compliance Performance API not available: {e}")
+    except Exception as e:
+        logger.warning(f"Compliance Performance API failed to load: {e}")
+    
+    # Complete Event Capture API (100% Security Event Capture)
+    try:
+        from src.api.complete_event_capture_api import router as complete_capture_router
+        app.include_router(complete_capture_router)
+        logger.info("Complete Event Capture API loaded successfully")
+    except ImportError as e:
+        logger.warning(f"Complete Event Capture API not available: {e}")
+    except Exception as e:
+        logger.warning(f"Complete Event Capture API failed to load: {e}")
+    
+    # GDPR Compliance Verification API
+    try:
+        from src.api.gdpr_verification_api import router as gdpr_verification_router
+        app.include_router(gdpr_verification_router)
+        logger.info("GDPR Compliance Verification API loaded successfully")
+    except ImportError as e:
+        logger.warning(f"GDPR Compliance Verification API not available: {e}")
+    except Exception as e:
+        logger.warning(f"GDPR Compliance Verification API failed to load: {e}")
+
+    # Quality Governance API (Quality Workflow Module)
+    try:
+        from src.api.quality_governance_api import router as quality_governance_router
+        app.include_router(quality_governance_router)
+        logger.info("Quality Governance API loaded successfully")
+    except ImportError as e:
+        logger.warning(f"Quality Governance API not available: {e}")
+    except Exception as e:
+        logger.warning(f"Quality Governance API failed to load: {e}")
+
+# Include ISO 27001 Compliance API router - comprehensive information security management
+try:
+    from src.api.iso27001_compliance_api import router as iso27001_compliance_router
+    app.include_router(iso27001_compliance_router)
+    logger.info("ISO 27001 Compliance API loaded successfully")
+except ImportError as e:
+    logger.warning(f"ISO 27001 Compliance API not available: {e}")
+except Exception as e:
+    logger.warning(f"ISO 27001 Compliance API failed to load: {e}")
+
+# Include Data Protection Compliance API router - multi-regulation data protection compliance
+try:
+    from src.api.data_protection_compliance_api import router as data_protection_compliance_router
+    app.include_router(data_protection_compliance_router)
+    logger.info("Data Protection Compliance API loaded successfully")
+except ImportError as e:
+    logger.warning(f"Data Protection Compliance API not available: {e}")
+except Exception as e:
+    logger.warning(f"Data Protection Compliance API failed to load: {e}")
+
+# Include Industry-Specific Compliance API router - HIPAA, PCI-DSS, PIPL, etc.
+try:
+    from src.api.industry_compliance_api import router as industry_compliance_router
+    app.include_router(industry_compliance_router)
+    logger.info("Industry-Specific Compliance API loaded successfully")
+except ImportError as e:
+    logger.warning(f"Industry-Specific Compliance API not available: {e}")
+except Exception as e:
+    logger.warning(f"Industry-Specific Compliance API failed to load: {e}")
+
+# Include Version Control API router - data version management
+try:
+    from src.api.version_api import router as version_router
+    app.include_router(version_router)
+    logger.info("Version Control API loaded successfully")
+except ImportError as e:
+    logger.warning(f"Version Control API not available: {e}")
+except Exception as e:
+    logger.warning(f"Version Control API failed to load: {e}")
+
+# Include Data Lineage API router - lineage tracking and impact analysis
+try:
+    from src.api.lineage_api import router as lineage_router
+    app.include_router(lineage_router)
+    logger.info("Data Lineage API loaded successfully")
+except ImportError as e:
+    logger.warning(f"Data Lineage API not available: {e}")
+except Exception as e:
+    logger.warning(f"Data Lineage API failed to load: {e}")
+
 
 # Include routers on startup
 @app.on_event("startup")
 async def startup_event():
     """Application startup event."""
+    logger.info("Starting SuperInsight application...")
+    
+    # Initialize real-time alert system
+    try:
+        from src.security.alert_system_startup import initialize_real_time_alerts
+        alert_success = await initialize_real_time_alerts()
+        if alert_success:
+            logger.info("Real-time alert system started successfully")
+        else:
+            logger.warning("Real-time alert system failed to start")
+    except Exception as e:
+        logger.error(f"Failed to initialize real-time alerts: {e}")
+    
     await include_optional_routers()
+    logger.info("SuperInsight application startup completed")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Application shutdown event."""
+    logger.info("Shutting down SuperInsight application...")
+    
+    # Shutdown real-time alert system
+    try:
+        from src.security.alert_system_startup import shutdown_real_time_alerts
+        alert_success = await shutdown_real_time_alerts()
+        if alert_success:
+            logger.info("Real-time alert system shutdown successfully")
+        else:
+            logger.warning("Real-time alert system failed to shutdown cleanly")
+    except Exception as e:
+        logger.error(f"Failed to shutdown real-time alerts: {e}")
+    
+    logger.info("SuperInsight application shutdown completed")
 
 
 # Additional API information
@@ -704,11 +1016,19 @@ async def api_info():
             "export": "/api/export",
             "rag_agent": "/api/rag",
             "security": "/api/security",
+            "audit": "/api/audit",
             "collaboration": "/api/collaboration",
             "business_metrics": "/api/business-metrics",
             "text_to_sql": "/api/v1/text-to-sql",
             "knowledge_graph": "/api/v1/knowledge-graph",
             "i18n": "/api/i18n",
+            "desensitization": "/api/desensitization",
+            "auto_desensitization": "/api/auto-desensitization",
+            "zero_leakage": "/api/zero-leakage",
+            "compliance_reports": "/api/compliance",
+            "compliance_performance": "/api/compliance/performance",
+            "complete_event_capture": "/api/v1/security/capture",
+            "data_protection_compliance": "/api/data-protection-compliance",
             "language_settings": "/api/settings/language",
             "health": "/health",
             "system_status": "/system/status",
@@ -736,6 +1056,16 @@ async def api_info():
             "实体抽取与关系挖掘 (spaCy + jieba)",
             "图查询与智能推理",
             "安全控制与权限管理",
+            "企业级审计日志系统",
+            "审计事件查询与导出",
+            "风险评估与威胁检测",
+            "安全监控与告警",
+            "合规报告生成",
+            "敏感数据自动检测与脱敏",
+            "实时数据脱敏中间件",
+            "批量数据脱敏处理",
+            "脱敏质量验证与监控",
+            "脱敏策略管理",
             "系统监控与健康检查",
             "统一错误处理",
             "性能指标收集",

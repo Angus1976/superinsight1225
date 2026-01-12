@@ -1,0 +1,13 @@
+{
+  "enabled": false,
+  "name": "Pytest Auto Confirm (Disabled)",
+  "description": "Disabled - use pytest-venv.kiro.hook instead",
+  "version": "1",
+  "when": {
+    "type": "promptSubmit"
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "./venv/bin/python -m pytest"
+  }
+}

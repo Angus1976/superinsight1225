@@ -6,3 +6,4 @@ export * from './BillingReports';
 export * from './WorkHoursReport';
 export * from './WorkHoursAnalysis';
 export * from './ExcelExportManager';
+export * from './BillingDashboard';

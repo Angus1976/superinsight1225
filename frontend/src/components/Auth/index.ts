@@ -3,5 +3,8 @@ export * from './LoginForm';
 export * from './RegisterForm';
 export * from './PermissionGuard';
 export * from './TenantSelector';
+export * from './WorkspaceSwitcher';
 export * from './ForgotPasswordForm';
 export * from './ResetPasswordForm';
+export * from './TenantIsolationGuard';
+export * from './LoginExperiencePreserver';

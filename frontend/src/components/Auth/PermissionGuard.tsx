@@ -1,17 +1,30 @@
-// 权限保护组件
-import React from 'react';
-import { Alert, Button } from 'antd';
+// 权限保护组件 - 包含租户隔离
+import React, { useEffect, useCallback, useState } from 'react';
+import { Alert, Button, Space, Tag, Skeleton, Spin } from 'antd';
 import { useNavigate } from 'react-router-dom';
-import { LockOutlined } from '@ant-design/icons';
+import { LockOutlined, TeamOutlined, AppstoreOutlined, LoadingOutlined } from '@ant-design/icons';
 import { usePermissions } from '@/hooks/usePermissions';
-import { Permission } from '@/utils/permissions';
+import { Permission, ResourceContext } from '@/utils/permissions';
+
+// 降级模式类型
+export type FallbackMode = 'alert' | 'skeleton' | 'hidden' | 'custom';
 
 interface PermissionGuardProps {
   permission?: Permission;
   permissions?: Permission[];
   requireAll?: boolean; // 是否需要所有权限，默认false（只需要其中一个）
   fallback?: React.ReactNode;
+  fallbackMode?: FallbackMode; // 降级模式，默认'alert'
   children: React.ReactNode;
+  // 租户隔离相关属性
+  resourceTenantId?: string; // 资源所属租户ID
+  resourceWorkspaceId?: string; // 资源所属工作空间ID
+  resourceOwnerId?: string; // 资源所有者ID
+  requireTenantIsolation?: boolean; // 是否需要租户隔离检查，默认true
+  requireWorkspaceIsolation?: boolean; // 是否需要工作空间隔离检查，默认false
+  // 实时响应相关属性
+  onPermissionChange?: (hasAccess: boolean) => void; // 权限变更回调
+  showLoading?: boolean; // 是否显示加载状态
 }
 
 export const PermissionGuard: React.FC<PermissionGuardProps> = ({
@@ -19,20 +32,118 @@ export const PermissionGuard: React.FC<PermissionGuardProps> = ({
   permissions = [],
   requireAll = false,
   fallback,
-  children
+  fallbackMode = 'alert',
+  children,
+  resourceTenantId,
+  resourceWorkspaceId,
+  resourceOwnerId,
+  requireTenantIsolation = true,
+  requireWorkspaceIsolation = false,
+  onPermissionChange,
+  showLoading = false
 }) => {
-  const { checkPermission, roleDisplayName } = usePermissions();
+  const { 
+    checkPermission, 
+    checkPermissionWithIsolation,
+    checkTenantAccess,
+    checkWorkspaceAccess,
+    roleDisplayName,
+    tenantRoleDisplayName,
+    workspaceRoleDisplayName,
+    tenantContext
+  } = usePermissions();
   const navigate = useNavigate();
+  
+  // 加载状态（用于异步权限检查场景）
+  const [isChecking, setIsChecking] = useState(showLoading);
 
   // 构建需要检查的权限列表
   const permissionsToCheck = permission ? [permission] : permissions;
 
-  // 检查权限
-  const hasRequiredPermissions = requireAll
-    ? permissionsToCheck.every(p => checkPermission(p))
-    : permissionsToCheck.some(p => checkPermission(p));
+  // 检查租户隔离
+  const passesTenantIsolation = React.useMemo(() => {
+    if (!requireTenantIsolation || !resourceTenantId) {
+      return true;
+    }
+    return checkTenantAccess(resourceTenantId);
+  }, [requireTenantIsolation, resourceTenantId, checkTenantAccess]);
 
-  if (hasRequiredPermissions) {
+  // 检查工作空间隔离
+  const passesWorkspaceIsolation = React.useMemo(() => {
+    if (!requireWorkspaceIsolation || !resourceWorkspaceId) {
+      return true;
+    }
+    return checkWorkspaceAccess(resourceWorkspaceId);
+  }, [requireWorkspaceIsolation, resourceWorkspaceId, checkWorkspaceAccess]);
+
+  // 检查权限（带租户隔离）
+  const hasRequiredPermissions = React.useMemo(() => {
+    // 如果需要租户隔离检查且有资源上下文
+    if ((requireTenantIsolation && resourceTenantId) || 
+        (requireWorkspaceIsolation && resourceWorkspaceId)) {
+      const resourceContext: ResourceContext = {
+        resourceTenantId: resourceTenantId || tenantContext.tenantId,
+        resourceWorkspaceId: resourceWorkspaceId,
+        resourceOwnerId: resourceOwnerId
+      };
+
+      if (requireAll) {
+        return permissionsToCheck.every(p => 
+          checkPermissionWithIsolation(p, resourceContext)
+        );
+      }
+      return permissionsToCheck.some(p => 
+        checkPermissionWithIsolation(p, resourceContext)
+      );
+    }
+
+    // 基本权限检查（不含租户隔离）
+    if (requireAll) {
+      return permissionsToCheck.every(p => checkPermission(p));
+    }
+    return permissionsToCheck.some(p => checkPermission(p));
+  }, [
+    permissionsToCheck, 
+    requireAll, 
+    checkPermission, 
+    checkPermissionWithIsolation,
+    requireTenantIsolation,
+    requireWorkspaceIsolation,
+    resourceTenantId,
+    resourceWorkspaceId,
+    resourceOwnerId,
+    tenantContext.tenantId
+  ]);
+
+  // 综合检查：权限 + 租户隔离 + 工作空间隔离
+  const hasAccess = hasRequiredPermissions && passesTenantIsolation && passesWorkspaceIsolation;
+
+  // 权限变更实时响应
+  useEffect(() => {
+    if (onPermissionChange) {
+      onPermissionChange(hasAccess);
+    }
+  }, [hasAccess, onPermissionChange]);
+
+  // 模拟加载完成（用于showLoading场景）
+  useEffect(() => {
+    if (showLoading && isChecking) {
+      // 短暂延迟后完成检查，模拟异步权限验证
+      const timer = setTimeout(() => setIsChecking(false), 100);
+      return () => clearTimeout(timer);
+    }
+  }, [showLoading, isChecking]);
+
+  // 显示加载状态
+  if (isChecking) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
+        <Spin indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} tip="验证权限中..." />
+      </div>
+    );
+  }
+
+  if (hasAccess) {
     return <>{children}</>;
   }
 
@@ -41,17 +152,72 @@ export const PermissionGuard: React.FC<PermissionGuardProps> = ({
     return <>{fallback}</>;
   }
 
+  // 根据fallbackMode选择降级方式
+  if (fallbackMode === 'hidden') {
+    return null;
+  }
+
+  if (fallbackMode === 'skeleton') {
+    return (
+      <div style={{ padding: '20px' }}>
+        <Skeleton active paragraph={{ rows: 4 }} />
+      </div>
+    );
+  }
+
+  // 确定拒绝原因
+  const getDenialReason = () => {
+    if (!passesTenantIsolation) {
+      return {
+        title: '租户访问受限',
+        description: '您没有权限访问此租户的资源。请确保您正在访问自己租户的数据。',
+        icon: <TeamOutlined />
+      };
+    }
+    if (!passesWorkspaceIsolation) {
+      return {
+        title: '工作空间访问受限',
+        description: '您没有权限访问此工作空间的资源。请切换到正确的工作空间或联系管理员获取访问权限。',
+        icon: <AppstoreOutlined />
+      };
+    }
+    return {
+      title: '权限不足',
+      description: '访问此功能需要更高的权限。请联系管理员获取相应权限。',
+      icon: <LockOutlined />
+    };
+  };
+
+  const denialReason = getDenialReason();
+
   // 默认的权限不足提示
   return (
     <Alert
       type="warning"
       showIcon
-      icon={<LockOutlined />}
-      message="权限不足"
+      icon={denialReason.icon}
+      message={denialReason.title}
       description={
         <div>
-          <p>您当前的角色是：<strong>{roleDisplayName}</strong></p>
-          <p>访问此功能需要更高的权限。请联系管理员获取相应权限。</p>
+          <p>{denialReason.description}</p>
+          <Space direction="vertical" size="small" style={{ marginTop: 8 }}>
+            <div>
+              <span>当前角色：</span>
+              <Tag color="blue">{roleDisplayName}</Tag>
+            </div>
+            {tenantContext.tenantId && (
+              <div>
+                <span>租户角色：</span>
+                <Tag color="green">{tenantRoleDisplayName}</Tag>
+              </div>
+            )}
+            {tenantContext.workspaceId && (
+              <div>
+                <span>工作空间角色：</span>
+                <Tag color="orange">{workspaceRoleDisplayName}</Tag>
+              </div>
+            )}
+          </Space>
         </div>
       }
       action={

@@ -1,0 +1,112 @@
+/**
+ * EmptyState Styles
+ * 
+ * Consistent styling for empty states following the design system.
+ */
+
+@import '../../../styles/theme/designSystem.scss';
+
+.emptyState {
+  @include flex-center;
+  flex-direction: column;
+  padding: $spacing-xl;
+  text-align: center;
+  
+  &.small {
+    padding: $spacing-lg;
+    
+    .iconWrapper {
+      width: 48px;
+      height: 48px;
+      font-size: 24px;
+    }
+    
+    .title {
+      font-size: $font-size-base !important;
+      margin-bottom: $spacing-xs !important;
+    }
+    
+    .description {
+      font-size: $font-size-sm;
+    }
+  }
+  
+  &.default {
+    padding: $spacing-xl;
+    
+    .iconWrapper {
+      width: 64px;
+      height: 64px;
+      font-size: 32px;
+    }
+  }
+  
+  &.large {
+    padding: $spacing-xxl;
+    
+    .iconWrapper {
+      width: 80px;
+      height: 80px;
+      font-size: 40px;
+    }
+    
+    .title {
+      font-size: $font-size-xl !important;
+    }
+    
+    .description {
+      font-size: $font-size-lg;
+    }
+  }
+}
+
+.iconWrapper {
+  @include flex-center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: $color-fill;
+  color: $color-text-tertiary;
+  font-size: 32px;
+  margin-bottom: $spacing-md;
+  
+  :global(.anticon) {
+    transition: transform $duration-base $ease-in-out;
+  }
+  
+  &:hover :global(.anticon) {
+    transform: scale(1.1);
+  }
+}
+
+.content {
+  @include flex-column;
+  align-items: center;
+  gap: $spacing-xs;
+  max-width: 400px;
+}
+
+.title {
+  margin: 0 0 $spacing-xs 0 !important;
+  color: $color-text !important;
+  font-weight: $font-weight-semibold !important;
+}
+
+.description {
+  font-size: $font-size-base;
+  line-height: $line-height-base;
+  max-width: 300px;
+}
+
+.actions {
+  margin-top: $spacing-lg;
+  
+  @include mobile {
+    flex-direction: column;
+    width: 100%;
+    
+    :global(.ant-btn) {
+      width: 100%;
+    }
+  }
+}

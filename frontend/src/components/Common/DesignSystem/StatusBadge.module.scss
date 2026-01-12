@@ -1,0 +1,79 @@
+/**
+ * StatusBadge Styles
+ * 
+ * Consistent styling for status badges following the design system.
+ */
+
+@import '../../../styles/theme/designSystem.scss';
+
+.tagBadge {
+  border-radius: $radius-sm;
+  font-weight: $font-weight-medium;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  
+  &.small {
+    font-size: $font-size-xs;
+    padding: 0 $spacing-xs;
+    line-height: 18px;
+    
+    :global(.anticon) {
+      font-size: 10px;
+    }
+  }
+  
+  &.default {
+    font-size: $font-size-sm;
+    padding: 0 $spacing-sm;
+    line-height: 22px;
+    
+    :global(.anticon) {
+      font-size: 12px;
+    }
+  }
+}
+
+.dotBadge {
+  :global(.ant-badge-status-dot) {
+    width: 8px;
+    height: 8px;
+  }
+  
+  :global(.ant-badge-status-text) {
+    color: $color-text;
+    font-size: $font-size-sm;
+  }
+  
+  &.small {
+    :global(.ant-badge-status-dot) {
+      width: 6px;
+      height: 6px;
+    }
+    
+    :global(.ant-badge-status-text) {
+      font-size: $font-size-xs;
+    }
+  }
+}
+
+.textBadge {
+  display: inline-flex;
+  align-items: center;
+  
+  &.small {
+    font-size: $font-size-xs;
+    
+    :global(.anticon) {
+      font-size: 12px;
+    }
+  }
+  
+  &.default {
+    font-size: $font-size-sm;
+    
+    :global(.anticon) {
+      font-size: 14px;
+    }
+  }
+}

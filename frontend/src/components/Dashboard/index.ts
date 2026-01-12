@@ -5,3 +5,5 @@ export * from './QuickActions';
 export * from './RealTimeMetrics';
 export * from './QualityReports';
 export * from './KnowledgeGraph';
+export * from './OverviewCards';
+export * from './ProgressOverview';

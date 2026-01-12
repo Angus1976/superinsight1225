@@ -1,0 +1,64 @@
+{
+  "versions": [
+    {
+      "version_id": "351b434d",
+      "version_number": "1.0.0",
+      "created_at": 1768195138.719003,
+      "description": "Test version",
+      "components": {
+        "api": "1.0.0",
+        "db": "1.0.0"
+      },
+      "configuration_snapshot": {
+        "captured_at": 1768195138.719006,
+        "settings": {},
+        "environment": {}
+      },
+      "is_stable": true,
+      "tags": {}
+    },
+    {
+      "version_id": "3f56ff2e",
+      "version_number": "1.0.0",
+      "created_at": 1768195165.489504,
+      "description": "Test version",
+      "components": {
+        "api": "1.0.0",
+        "db": "1.0.0"
+      },
+      "configuration_snapshot": {
+        "captured_at": 1768195165.489506,
+        "settings": {},
+        "environment": {}
+      },
+      "is_stable": true,
+      "tags": {}
+    }
+  ],
+  "rollback_points": [
+    {
+      "point_id": "4c7654c4",
+      "version_id": "351b434d",
+      "created_at": 1768195138.719056,
+      "rollback_type": "full_system",
+      "can_rollback": true,
+      "dependencies": [],
+      "metadata": {
+        "description": "Auto-created for version 1.0.0"
+      }
+    },
+    {
+      "point_id": "e6b2545b",
+      "version_id": "3f56ff2e",
+      "created_at": 1768195165.4895291,
+      "rollback_type": "full_system",
+      "can_rollback": true,
+      "dependencies": [],
+      "metadata": {
+        "description": "Auto-created for version 1.0.0"
+      }
+    }
+  ],
+  "current_version": "3f56ff2e",
+  "updated_at": 1768195165.4906828
+}

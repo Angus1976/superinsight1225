@@ -61,11 +61,30 @@
     "last7d": "最近7天",
     "last30d": "最近30天"
   },
+  "context": {
+    "tenant": "租户",
+    "workspace": "工作空间",
+    "currentTenant": "当前租户",
+    "currentWorkspace": "当前工作空间"
+  },
+  "overview": {
+    "totalProjects": "项目总数",
+    "totalProjectsSubtitle": "所有项目数量",
+    "activeProjects": "活跃项目",
+    "activeProjectsSubtitle": "进行中的项目",
+    "completedTasks": "已完成任务",
+    "completedTasksSubtitle": "任务完成情况",
+    "qualityScore": "质量评分",
+    "qualityScoreSubtitle": "平均质量分数"
+  },
   "common": {
     "refresh": "刷新",
     "lastUpdated": "最后更新",
     "error": "错误",
-    "warning": "警告"
+    "warning": "警告",
+    "fullscreen": "全屏",
+    "allTenants": "全部租户",
+    "allWorkspaces": "全部工作空间"
   },
   "errors": {
     "dataLoadFailed": "数据加载失败",
@@ -99,16 +118,33 @@
     "nodeProperties": "节点属性",
     "connectedNodes": "关联节点"
   },
-  "common": {
-    "refresh": "刷新",
-    "lastUpdated": "最后更新",
-    "error": "错误",
-    "warning": "警告",
-    "fullscreen": "全屏"
-  },
   "tabs": {
     "overview": "概览",
     "qualityReports": "质量报表",
     "knowledgeGraph": "知识图谱"
+  },
+  "export": {
+    "button": "导出",
+    "csv": "导出 CSV",
+    "pdf": "导出 PDF",
+    "csvSuccess": "CSV 导出成功",
+    "pdfSuccess": "报告导出成功",
+    "error": "导出失败"
+  },
+  "progress": {
+    "totalProjects": "项目总数",
+    "overallProgress": "整体进度",
+    "totalTasks": "任务总数",
+    "taskDistribution": "任务状态分布",
+    "projectProgress": "项目进度",
+    "completed": "已完成",
+    "inProgress": "进行中",
+    "pending": "待处理",
+    "statusCompleted": "已完成",
+    "statusOnTrack": "进度正常",
+    "statusAtRisk": "存在风险",
+    "statusDelayed": "已延期",
+    "deadline": "截止日期",
+    "realTime": "实时更新"
   }
 }

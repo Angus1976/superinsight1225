@@ -1,0 +1,77 @@
+/**
+ * ResponsiveText Styles
+ * 
+ * Provides responsive typography styling with adaptive
+ * font sizes and line heights.
+ */
+
+@import '../../styles/theme/designSystem.scss';
+
+.responsiveText {
+  transition: font-size $duration-base $ease-in-out;
+  
+  // Ensure proper word wrapping
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+// Heading variants
+.h1 {
+  margin-bottom: $spacing-lg !important;
+  
+  @include mobile {
+    margin-bottom: $spacing-md !important;
+  }
+}
+
+.h2 {
+  margin-bottom: $spacing-md !important;
+  
+  @include mobile {
+    margin-bottom: $spacing-sm !important;
+  }
+}
+
+.h3 {
+  margin-bottom: $spacing-md !important;
+  
+  @include mobile {
+    margin-bottom: $spacing-sm !important;
+  }
+}
+
+.h4 {
+  margin-bottom: $spacing-sm !important;
+  
+  @include mobile {
+    margin-bottom: $spacing-xs !important;
+  }
+}
+
+.h5 {
+  margin-bottom: $spacing-sm !important;
+  
+  @include mobile {
+    margin-bottom: $spacing-xs !important;
+  }
+}
+
+// Body text
+.body {
+  margin-bottom: $spacing-sm !important;
+  
+  &:last-child {
+    margin-bottom: 0 !important;
+  }
+}
+
+// Caption text
+.caption {
+  color: $color-text-secondary;
+}
+
+// Label text
+.label {
+  color: $color-text;
+  text-transform: none;
+}

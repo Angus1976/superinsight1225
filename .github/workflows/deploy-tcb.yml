@@ -1,335 +1,257 @@
-name: Deploy to Tencent Cloud TCB
+name: Deploy to TCB
 
 on:
   push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main ]
+    branches:
+      - main
+      - release/*
+    tags:
+      - 'v*'
   workflow_dispatch:
     inputs:
-      action:
-        description: 'Action to perform'
+      environment:
+        description: 'Deployment environment'
         required: true
-        default: 'deploy'
+        default: 'staging'
         type: choice
         options:
-          - deploy
-          - rollback
+          - staging
+          - production
+      version:
+        description: 'Version to deploy (leave empty for auto)'
+        required: false
+        type: string
 
 env:
-  TCB_ENV_ID: ${{ secrets.TCB_ENV_ID }}
-  TCB_SECRET_ID: ${{ secrets.TCB_SECRET_ID }}
-  TCB_SECRET_KEY: ${{ secrets.TCB_SECRET_KEY }}
+  IMAGE_NAME: superinsight-enterprise
   REGISTRY: ccr.ccs.tencentyun.com
-  IMAGE_NAME: superinsight/fullstack
 
 jobs:
-  # =============================================================================
-  # Test Job - Runs on all pushes and PRs
-  # =============================================================================
   test:
+    name: Run Tests
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    services:
-      postgres:
-        image: postgres:14
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov pytest-asyncio
+
+      - name: Run tests
+        run: |
+          python -m pytest tests/ -v --tb=short --cov=src --cov-report=xml
         env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: test_superinsight
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
+          DATABASE_URL: sqlite:///./test.db
+          REDIS_URL: redis://localhost:6379/0
 
-      redis:
-        image: redis:7
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 6379:6379
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage.xml
+          fail_ci_if_error: false
 
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-
-    - name: Cache pip dependencies
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pytest pytest-cov pytest-asyncio
-
-    - name: Run tests
-      env:
-        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_superinsight
-        REDIS_URL: redis://localhost:6379/0
-      run: |
-        pytest tests/ -v --cov=src --cov-report=xml --cov-report=html
-
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v4
-      with:
-        file: ./coverage.xml
-        flags: unittests
-        name: codecov-superinsight
-        token: ${{ secrets.CODECOV_TOKEN }}
-
-  # =============================================================================
-  # Build and Deploy to Production
-  # =============================================================================
-  build-and-deploy:
-    needs: test
+  build:
+    name: Build Docker Image
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-
+    needs: test
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      image_url: ${{ steps.build.outputs.image_url }}
     steps:
-    - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      - name: Determine version
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            VERSION="${{ github.ref_name }}"
+          else
+            VERSION="$(date +%Y%m%d%H%M%S)-${GITHUB_SHA::8}"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building version: $VERSION"
 
-    - name: Login to Tencent Container Registry
-      uses: docker/login-action@v3
-      with:
-        registry: ${{ env.REGISTRY }}
-        username: ${{ secrets.TCB_SECRET_ID }}
-        password: ${{ secrets.TCB_SECRET_KEY }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-    - name: Extract metadata for Docker
-      id: meta
-      uses: docker/metadata-action@v5
-      with:
-        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-        tags: |
-          type=sha,prefix=
-          type=raw,value=latest
-          type=raw,value=prod-${{ github.run_number }}
+      - name: Login to TCB Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.TCB_SECRET_ID }}
+          password: ${{ secrets.TCB_SECRET_KEY }}
 
-    - name: Build and push fullstack image
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        file: ./deploy/tcb/Dockerfile.fullstack
-        push: true
-        tags: ${{ steps.meta.outputs.tags }}
-        labels: ${{ steps.meta.outputs.labels }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
-        build-args: |
-          BUILD_DATE=${{ github.event.head_commit.timestamp }}
-          VCS_REF=${{ github.sha }}
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: deploy/tcb/Dockerfile.fullstack
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ secrets.TCB_ENV_ID }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}
+            ${{ env.REGISTRY }}/${{ secrets.TCB_ENV_ID }}/${{ env.IMAGE_NAME }}:latest
+          build-args: |
+            VERSION=${{ steps.version.outputs.version }}
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
+      - name: Output image URL
+        run: |
+          IMAGE_URL="${{ env.REGISTRY }}/${{ secrets.TCB_ENV_ID }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}"
+          echo "image_url=$IMAGE_URL" >> $GITHUB_OUTPUT
+          echo "Built image: $IMAGE_URL"
 
-    - name: Install CloudBase CLI
-      run: |
-        npm install -g @cloudbase/cli
-
-    - name: Deploy to CloudBase
-      env:
-        ENVIRONMENT: production
-        DEBUG: 'false'
-        LOG_LEVEL: WARNING
-        POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-        POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-        POSTGRES_DB: superinsight
-        SECRET_KEY: ${{ secrets.SECRET_KEY }}
-        JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
-        HUNYUAN_API_KEY: ${{ secrets.HUNYUAN_API_KEY }}
-        HUNYUAN_SECRET_KEY: ${{ secrets.HUNYUAN_SECRET_KEY }}
-        COS_SECRET_ID: ${{ secrets.COS_SECRET_ID }}
-        COS_SECRET_KEY: ${{ secrets.COS_SECRET_KEY }}
-        COS_REGION: ap-shanghai
-        COS_BUCKET: ${{ secrets.COS_BUCKET }}
-      run: |
-        echo '${{ secrets.TCB_KEY_FILE }}' > tcb-key.json
-        tcb login --key-file tcb-key.json
-        tcb framework:deploy --envId ${{ env.TCB_ENV_ID }} --mode production
-
-    - name: Deploy cloud functions
-      run: |
-        tcb functions:deploy data-extractor --envId ${{ env.TCB_ENV_ID }}
-        tcb functions:deploy ai-annotator --envId ${{ env.TCB_ENV_ID }}
-        tcb functions:deploy quality-manager --envId ${{ env.TCB_ENV_ID }}
-
-    - name: Health check
-      run: |
-        echo "Waiting for service to start..."
-        sleep 60
-
-        # Get service URL
-        SERVICE_URL=$(tcb hosting:detail --envId ${{ env.TCB_ENV_ID }} | grep -o 'https://[^"]*' | head -1)
-
-        if [ -n "$SERVICE_URL" ]; then
-          echo "Checking health at ${SERVICE_URL}/health"
-
-          # Retry health check up to 5 times
-          for i in {1..5}; do
-            if curl -sf "${SERVICE_URL}/health" -o /dev/null; then
-              echo "Health check passed!"
-              exit 0
-            fi
-            echo "Health check attempt $i failed, retrying in 15s..."
-            sleep 15
-          done
-
-          echo "Health check failed after 5 attempts"
-          exit 1
-        else
-          echo "Could not get service URL"
-          exit 1
-        fi
-
-    - name: Notify deployment success
-      if: success()
-      run: |
-        echo "=== Deployment Successful ==="
-        echo "Environment: production"
-        echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
-        echo "Commit: ${{ github.sha }}"
-        echo "Deployed at: $(date -Iseconds)"
-
-    - name: Notify deployment failure
-      if: failure()
-      run: |
-        echo "=== Deployment Failed ==="
-        echo "Environment: production"
-        echo "Commit: ${{ github.sha }}"
-        echo "Please check the logs for details."
-
-  # =============================================================================
-  # Build and Deploy to Staging
-  # =============================================================================
   deploy-staging:
-    needs: test
+    name: Deploy to Staging
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
-
+    needs: build
+    if: github.ref == 'refs/heads/main' || github.event.inputs.environment == 'staging'
+    environment:
+      name: staging
+      url: https://${{ env.IMAGE_NAME }}.${{ secrets.TCB_ENV_ID_STAGING }}.ap-shanghai.tcb.qcloud.la
     steps:
-    - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
 
-    - name: Login to Tencent Container Registry
-      uses: docker/login-action@v3
-      with:
-        registry: ${{ env.REGISTRY }}
-        username: ${{ secrets.TCB_SECRET_ID }}
-        password: ${{ secrets.TCB_SECRET_KEY }}
+      - name: Install TCB CLI
+        run: npm install -g @cloudbase/cli
 
-    - name: Build and push staging image
-      uses: docker/build-push-action@v5
-      with:
-        context: .
-        file: ./deploy/tcb/Dockerfile.fullstack
-        push: true
-        tags: |
-          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:staging
-          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:staging-${{ github.sha }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+      - name: Deploy to TCB Staging
+        run: |
+          tcb login --apiKeyId "${{ secrets.TCB_SECRET_ID }}" --apiKey "${{ secrets.TCB_SECRET_KEY }}"
+          tcb framework deploy --mode container --envId "${{ secrets.TCB_ENV_ID_STAGING }}"
+        env:
+          TCB_ENV_ID: ${{ secrets.TCB_ENV_ID_STAGING }}
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-
-    - name: Install CloudBase CLI
-      run: |
-        npm install -g @cloudbase/cli
-
-    - name: Deploy to staging environment
-      env:
-        TCB_ENV_ID: ${{ secrets.TCB_STAGING_ENV_ID }}
-        ENVIRONMENT: staging
-        DEBUG: 'false'
-        LOG_LEVEL: INFO
-        POSTGRES_USER: ${{ secrets.STAGING_POSTGRES_USER }}
-        POSTGRES_PASSWORD: ${{ secrets.STAGING_POSTGRES_PASSWORD }}
-        POSTGRES_DB: superinsight_staging
-      run: |
-        echo '${{ secrets.TCB_KEY_FILE }}' > tcb-key.json
-        tcb login --key-file tcb-key.json
-        tcb framework:deploy --envId ${{ secrets.TCB_STAGING_ENV_ID }} --mode staging
-
-    - name: Health check staging
-      run: |
-        echo "Waiting for staging service to start..."
-        sleep 60
-
-        STAGING_URL=$(tcb hosting:detail --envId ${{ secrets.TCB_STAGING_ENV_ID }} | grep -o 'https://[^"]*' | head -1)
-
-        if [ -n "$STAGING_URL" ]; then
-          for i in {1..3}; do
-            if curl -sf "${STAGING_URL}/health" -o /dev/null; then
-              echo "Staging health check passed!"
+      - name: Verify deployment
+        run: |
+          HEALTH_URL="https://${{ env.IMAGE_NAME }}.${{ secrets.TCB_ENV_ID_STAGING }}.ap-shanghai.tcb.qcloud.la/health"
+          for i in {1..30}; do
+            if curl -sf "$HEALTH_URL" > /dev/null 2>&1; then
+              echo "Staging deployment verified"
               exit 0
             fi
+            echo "Waiting for service... ($i/30)"
             sleep 10
           done
-          echo "Staging health check failed"
+          echo "Deployment verification failed"
           exit 1
-        fi
 
-    - name: Notify staging deployment
-      if: success()
-      run: |
-        echo "=== Staging Deployment Successful ==="
-        echo "Environment: staging"
-        echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:staging-${{ github.sha }}"
-
-  # =============================================================================
-  # Rollback Job (Manual trigger)
-  # =============================================================================
-  rollback:
+  deploy-production:
+    name: Deploy to Production
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'rollback'
-
+    needs: [build, deploy-staging]
+    if: startsWith(github.ref, 'refs/tags/v') || github.event.inputs.environment == 'production'
+    environment:
+      name: production
+      url: https://${{ env.IMAGE_NAME }}.${{ secrets.TCB_ENV_ID_PROD }}.ap-shanghai.tcb.qcloud.la
     steps:
-    - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
 
-    - name: Install CloudBase CLI
-      run: |
-        npm install -g @cloudbase/cli
+      - name: Install TCB CLI
+        run: npm install -g @cloudbase/cli
 
-    - name: Rollback to previous version
-      run: |
-        echo '${{ secrets.TCB_KEY_FILE }}' > tcb-key.json
-        tcb login --key-file tcb-key.json
+      - name: Deploy to TCB Production
+        run: |
+          tcb login --apiKeyId "${{ secrets.TCB_SECRET_ID }}" --apiKey "${{ secrets.TCB_SECRET_KEY }}"
+          tcb framework deploy --mode container --envId "${{ secrets.TCB_ENV_ID_PROD }}"
+        env:
+          TCB_ENV_ID: ${{ secrets.TCB_ENV_ID_PROD }}
 
-        # Get previous version and rollback
-        echo "Rolling back to previous version..."
-        tcb framework:rollback --envId ${{ env.TCB_ENV_ID }}
+      - name: Verify deployment
+        run: |
+          HEALTH_URL="https://${{ env.IMAGE_NAME }}.${{ secrets.TCB_ENV_ID_PROD }}.ap-shanghai.tcb.qcloud.la/health"
+          for i in {1..30}; do
+            if curl -sf "$HEALTH_URL" > /dev/null 2>&1; then
+              echo "Production deployment verified"
+              exit 0
+            fi
+            echo "Waiting for service... ($i/30)"
+            sleep 10
+          done
+          echo "Deployment verification failed"
+          exit 1
 
-    - name: Verify rollback
-      run: |
-        sleep 30
-        SERVICE_URL=$(tcb hosting:detail --envId ${{ env.TCB_ENV_ID }} | grep -o 'https://[^"]*' | head -1)
-        curl -sf "${SERVICE_URL}/health" || exit 1
-        echo "Rollback verified successfully"
+      - name: Create release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v1
+        with:
+          generate_release_notes: true
+          body: |
+            ## Deployment Info
+            - Version: ${{ needs.build.outputs.version }}
+            - Environment: Production
+            - Image: ${{ needs.build.outputs.image_url }}
+
+  rollback:
+    name: Rollback Deployment
+    runs-on: ubuntu-latest
+    if: failure() && (needs.deploy-staging.result == 'failure' || needs.deploy-production.result == 'failure')
+    needs: [deploy-staging, deploy-production]
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install TCB CLI
+        run: npm install -g @cloudbase/cli
+
+      - name: Rollback
+        run: |
+          tcb login --apiKeyId "${{ secrets.TCB_SECRET_ID }}" --apiKey "${{ secrets.TCB_SECRET_KEY }}"
+          
+          # Determine which environment to rollback
+          if [ "${{ needs.deploy-production.result }}" == "failure" ]; then
+            ENV_ID="${{ secrets.TCB_ENV_ID_PROD }}"
+          else
+            ENV_ID="${{ secrets.TCB_ENV_ID_STAGING }}"
+          fi
+          
+          echo "Rolling back environment: $ENV_ID"
+          tcb service rollback --envId "$ENV_ID" --serviceName "${{ env.IMAGE_NAME }}"
+
+      - name: Notify rollback
+        uses: slackapi/slack-github-action@v1
+        if: always()
+        with:
+          payload: |
+            {
+              "text": "⚠️ Deployment rollback triggered for SuperInsight",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Deployment Rollback*\nRepository: ${{ github.repository }}\nRef: ${{ github.ref }}\nTriggered by: ${{ github.actor }}"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

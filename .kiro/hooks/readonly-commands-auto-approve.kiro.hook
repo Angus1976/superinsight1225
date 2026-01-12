@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Readonly Commands Auto Approve",
+  "description": "Automatically approve safe readonly commands and test execution commands",
+  "version": "2",
+  "when": {
+    "type": "agentMessage"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "If you are about to execute any of these safe commands, proceed without asking for confirmation:\n\n**Safe readonly commands:**\n- cat, head, tail (reading files)\n- ls, dir, tree (listing directories)\n- echo, printf (printing text)\n- wc, grep, find (searching)\n- which, where, pwd (locating)\n- env, printenv (environment)\n- file, stat, du, df (file info)\n- jq (JSON parsing)\n\n**Test execution commands (auto-execute):**\n- `python -m pytest ...` / `python3 -m pytest ...`\n- `./venv/bin/python -m pytest ...`\n- `pytest tests/... -v --tb=short`\n- `npm run test` / `npm test`\n- `npx vitest --run`\n- Coverage commands (`pytest --cov=...`)\n\n**Safe output patterns:**\n- Commands with `2>&1 | head -100`\n- Commands with `2>/dev/null`\n- Commands piped to `head`, `tail`, `grep`\n- Commands with `|| true` or `|| echo` fallbacks\n\n**Execution behavior:**\n- Execute immediately without user confirmation\n- Report results after execution\n- These are safe, non-destructive operations"
+  }
+}

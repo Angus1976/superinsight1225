@@ -2,15 +2,110 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- Performance: DNS Prefetch for external resources -->
+    <link rel="dns-prefetch" href="//fonts.googleapis.com" />
+    <link rel="dns-prefetch" href="//cdn.jsdelivr.net" />
+    
+    <!-- Performance: Preconnect to API server -->
+    <link rel="preconnect" href="http://localhost:8000" crossorigin />
+    
+    <!-- Favicon with multiple formats for faster loading -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="alternate icon" href="/logo-wenshijian-simple.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- SEO Meta Tags -->
     <title>问视间 - 智能数据洞察平台</title>
     <meta name="description" content="问视间(SuperInsight)是一个智能数据洞察平台，提供数据标注、AI训练、业务分析等企业级服务。" />
     <meta name="keywords" content="问视间,SuperInsight,数据标注,AI训练,数据分析,智能洞察" />
+    
+    <!-- Performance: Critical CSS for initial loading state -->
+    <style>
+      /* Critical CSS for initial render - prevents layout shift */
+      *,*::before,*::after{box-sizing:border-box}
+      html{line-height:1.15;-webkit-text-size-adjust:100%}
+      body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif}
+      #root{min-height:100vh}
+      
+      /* Initial loading skeleton */
+      .initial-loader{
+        position:fixed;
+        top:0;left:0;right:0;bottom:0;
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        justify-content:center;
+        background:#fff;
+        z-index:9999;
+        transition:opacity 0.3s ease-out;
+      }
+      .initial-loader.fade-out{opacity:0;pointer-events:none}
+      .initial-loader-logo{
+        width:80px;height:80px;
+        margin-bottom:24px;
+        animation:pulse 1.5s ease-in-out infinite;
+      }
+      .initial-loader-spinner{
+        width:40px;height:40px;
+        border:3px solid #f3f3f3;
+        border-top:3px solid #1890ff;
+        border-radius:50%;
+        animation:spin 1s linear infinite;
+      }
+      .initial-loader-text{
+        margin-top:16px;
+        color:#666;
+        font-size:14px;
+      }
+      @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+      @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+      
+      /* Prevent FOUC (Flash of Unstyled Content) */
+      .js-loading *{visibility:hidden}
+    </style>
+    
+    <!-- Performance: Preload critical resources -->
+    <link rel="modulepreload" href="/src/main.tsx" />
   </head>
   <body>
+    <!-- Initial loading state shown before React hydrates -->
+    <div id="initial-loader" class="initial-loader">
+      <img src="/logo-wenshijian-simple.svg" alt="问视间" class="initial-loader-logo" width="80" height="80" />
+      <div class="initial-loader-spinner"></div>
+      <div class="initial-loader-text">正在加载...</div>
+    </div>
+    
     <div id="root"></div>
+    
+    <!-- Performance: Remove initial loader once app is ready -->
+    <script>
+      // Hide initial loader when React app is ready
+      window.addEventListener('DOMContentLoaded', function() {
+        // Set a maximum timeout to hide loader
+        setTimeout(function() {
+          var loader = document.getElementById('initial-loader');
+          if (loader) {
+            loader.classList.add('fade-out');
+            setTimeout(function() { loader.remove(); }, 300);
+          }
+        }, 3000);
+      });
+      
+      // Performance: Report load time
+      window.addEventListener('load', function() {
+        var loadTime = performance.now();
+        console.log('[Performance] Page load time:', Math.round(loadTime), 'ms');
+        
+        // Hide loader immediately when fully loaded
+        var loader = document.getElementById('initial-loader');
+        if (loader) {
+          loader.classList.add('fade-out');
+          setTimeout(function() { loader.remove(); }, 300);
+        }
+      });
+    </script>
+    
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

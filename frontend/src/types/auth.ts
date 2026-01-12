@@ -57,6 +57,37 @@ export interface Tenant {
   logo?: string;
 }
 
+export interface Workspace {
+  id: string;
+  name: string;
+  description?: string;
+  tenant_id: string;
+  is_default?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  member_count?: number;
+  project_count?: number;
+  settings?: WorkspaceSettings;
+}
+
+export interface WorkspaceSettings {
+  default_language?: string;
+  timezone?: string;
+  notification_enabled?: boolean;
+  auto_assign_tasks?: boolean;
+}
+
+export interface WorkspaceMember {
+  id: string;
+  user_id: string;
+  workspace_id: string;
+  role: WorkspaceRole;
+  joined_at: string;
+  user?: User;
+}
+
+export type WorkspaceRole = 'owner' | 'admin' | 'member' | 'viewer';
+
 export interface Permission {
   id: string;
   user_id: string;

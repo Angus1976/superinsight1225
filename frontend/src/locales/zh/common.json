@@ -71,7 +71,8 @@
     "enabled": "已启用",
     "disabled": "已禁用",
     "allowed": "允许",
-    "denied": "拒绝"
+    "denied": "拒绝",
+    "create": "创建"
   },
   "status": {
     "loading": "加载中...",
@@ -99,6 +100,93 @@
   "language": {
     "zh": "中文",
     "en": "English"
+  },
+  "accessibility": {
+    "title": "无障碍设置",
+    "openSettings": "打开无障碍设置",
+    "settingUpdated": "设置已更新",
+    "settingsReset": "设置已重置为默认值",
+    "reset": "重置为默认",
+    "fontSize": "文字大小",
+    "fontSizeDesc": "调整应用程序中的文字大小",
+    "fontNormal": "正常",
+    "fontLarge": "大 (125%)",
+    "fontLarger": "更大 (150%)",
+    "visual": "视觉设置",
+    "highContrast": "高对比度模式",
+    "highContrastDesc": "增加对比度以提高可见性",
+    "linkUnderlines": "链接下划线",
+    "linkUnderlinesDesc": "始终显示链接下划线",
+    "focusIndicators": "焦点指示器",
+    "focusIndicatorsDesc": "键盘焦点指示器的可见性",
+    "focusDefault": "默认",
+    "focusEnhanced": "增强",
+    "focusHighVisibility": "高可见性",
+    "motion": "动画设置",
+    "reducedMotion": "减少动画",
+    "reducedMotionDesc": "最小化动画和过渡效果",
+    "systemPreference": "(检测到系统偏好)",
+    "screenReader": "屏幕阅读器",
+    "screenReaderOptimized": "屏幕阅读器优化",
+    "screenReaderOptimizedDesc": "为屏幕阅读器优化界面"
+  },
+  "skipLinks": {
+    "navigation": "跳过导航",
+    "mainContent": "跳转到主要内容",
+    "search": "跳转到搜索"
+  },
+  "error": {
+    "title": "出错了",
+    "code": "错误代码",
+    "id": "错误ID",
+    "fieldErrors": "字段错误",
+    "retrying": "正在重试 ({{attempt}}/{{max}})...",
+    "titles": {
+      "network": "网络连接失败",
+      "auth": "认证失败",
+      "validation": "数据验证失败",
+      "server": "服务器错误",
+      "client": "客户端错误",
+      "timeout": "请求超时",
+      "permission": "权限不足",
+      "notFound": "资源未找到",
+      "conflict": "数据冲突",
+      "rateLimit": "请求过于频繁",
+      "maintenance": "系统维护中",
+      "unknown": "未知错误"
+    },
+    "messages": {
+      "network": "无法连接到服务器，请检查您的网络连接后重试。",
+      "auth": "您的登录已过期或无效，请重新登录。",
+      "validation": "提交的数据存在问题，请检查并修正后重试。",
+      "server": "服务器遇到了问题，我们正在处理中。请稍后重试。",
+      "client": "应用程序遇到了问题，请刷新页面后重试。",
+      "timeout": "请求超时，服务器响应时间过长。请稍后重试。",
+      "permission": "您没有权限执行此操作。如需帮助，请联系管理员。",
+      "notFound": "您请求的资源不存在或已被删除。",
+      "conflict": "数据已被其他用户修改，请刷新后重试。",
+      "rateLimit": "请求过于频繁，请稍等片刻后再试。",
+      "maintenance": "系统正在维护中，请稍后访问。",
+      "unknown": "发生了未知错误，请稍后重试或联系技术支持。"
+    },
+    "actions": {
+      "retry": "重试",
+      "retryLater": "稍后重试",
+      "refresh": "刷新页面",
+      "login": "重新登录",
+      "goBack": "返回上页",
+      "goHome": "返回首页",
+      "contact": "联系支持",
+      "dismiss": "关闭",
+      "copyError": "复制错误信息"
+    },
+    "help": {
+      "network": "请检查您的网络连接是否正常，或尝试刷新页面。",
+      "auth": "您的会话可能已过期，请重新登录以继续操作。",
+      "permission": "如果您认为应该有此权限，请联系系统管理员。",
+      "server": "这是服务器端的问题，我们的技术团队已收到通知。",
+      "general": "如果问题持续存在，请联系技术支持并提供错误代码。"
+    }
   },
   "common": {
     "view": "查看",

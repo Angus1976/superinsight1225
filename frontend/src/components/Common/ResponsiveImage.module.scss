@@ -1,0 +1,73 @@
+/**
+ * ResponsiveImage Styles
+ * 
+ * Provides responsive image styling with lazy loading
+ * and placeholder support.
+ */
+
+@import '../../styles/theme/designSystem.scss';
+
+.responsiveImage {
+  position: relative;
+  overflow: hidden;
+  background-color: $color-fill;
+  
+  &.hasAspectRatio {
+    width: 100%;
+    height: 0;
+  }
+}
+
+.placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  :global(.ant-skeleton-image) {
+    width: 100% !important;
+    height: 100% !important;
+  }
+}
+
+.blurPlaceholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  filter: blur(20px);
+  transform: scale(1.1);
+  transition: opacity $duration-base $ease-in-out;
+}
+
+.image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity $duration-slow $ease-in-out;
+  
+  .hasAspectRatio & {
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+  
+  &.visible {
+    opacity: 1;
+  }
+}
+
+// Loaded state - hide placeholder
+.loaded {
+  .placeholder,
+  .blurPlaceholder {
+    opacity: 0;
+    pointer-events: none;
+  }
+}

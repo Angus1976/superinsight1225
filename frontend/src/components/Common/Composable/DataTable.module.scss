@@ -1,0 +1,32 @@
+/**
+ * DataTable Component Styles
+ */
+
+.dataTable {
+  width: 100%;
+
+  .toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .searchInput {
+    width: 280px;
+  }
+
+  :global {
+    .ant-table-row {
+      transition: background-color 0.2s ease;
+    }
+
+    .ant-table-row:hover {
+      td {
+        background-color: var(--ant-color-bg-container-hover, #fafafa) !important;
+      }
+    }
+  }
+}

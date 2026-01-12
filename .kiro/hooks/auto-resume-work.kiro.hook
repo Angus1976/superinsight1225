@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Auto Resume Work Detection",
+  "description": "Automatically detects and offers to resume incomplete work when user sends first message in a new session",
+  "version": "1",
+  "when": {
+    "type": "promptSubmit"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "**Work Resumption Detection:**\n\nWhen the user's message suggests they want to continue previous work (e.g., '继续', 'continue', 'resume', '接着做', 'next task', '下一个任务'), automatically:\n\n1. **Scan for active specs:**\n   ```\n   .kiro/specs/*/tasks.md\n   ```\n   Look for files containing `- [-]` (in-progress) or recent `- [x]` completions\n\n2. **Identify the active feature:**\n   - Check `.kiro/specs/new/` first for newest work\n   - Look for the most recently modified tasks.md\n   - Find tasks marked in-progress `- [-]`\n\n3. **Load full context:**\n   - Read requirements.md for the active spec\n   - Read design.md for implementation details\n   - Read tasks.md for current progress\n\n4. **Present status to user:**\n   - Show which feature was being worked on\n   - Show current task progress (X of Y completed)\n   - Identify the next task to execute\n   - Ask for confirmation before proceeding\n\n5. **If multiple specs have incomplete work:**\n   - List all specs with pending tasks\n   - Let user choose which to continue\n\n**Trigger phrases (Chinese & English):**\n- 继续 / continue / resume\n- 接着做 / keep going\n- 下一个任务 / next task\n- 继续执行 / continue execution\n- 恢复工作 / resume work\n\nThis ensures seamless work continuation across sessions."
+  }
+}

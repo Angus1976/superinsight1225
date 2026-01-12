@@ -1,0 +1,75 @@
+/**
+ * FilterGroup Component Styles
+ */
+
+.filterGroup {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+
+  &.horizontal {
+    flex-direction: row;
+  }
+
+  &.vertical {
+    flex-direction: column;
+    align-items: stretch;
+
+    .filters {
+      flex-direction: column;
+    }
+
+    .filterItem {
+      flex-direction: row;
+      justify-content: flex-start;
+    }
+  }
+
+  &.inline {
+    flex-direction: row;
+    align-items: center;
+
+    .filterItem {
+      flex-direction: row;
+    }
+  }
+
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .filterItem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .filterLabel {
+    color: var(--ant-color-text-secondary, #666);
+    font-size: 14px;
+    white-space: nowrap;
+  }
+
+  .toggleButton {
+    padding: 0;
+  }
+
+  .countTag {
+    margin-left: 4px;
+  }
+
+  .activeTags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .filterTag {
+    margin: 0;
+  }
+}

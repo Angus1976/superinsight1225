@@ -1,0 +1,125 @@
+/**
+ * ContentCard Styles
+ * 
+ * Consistent styling for content cards following the design system.
+ */
+
+@import '../../../styles/theme/designSystem.scss';
+
+.contentCard {
+  border-radius: $radius-lg !important;
+  box-shadow: $shadow-sm;
+  transition: box-shadow $duration-base $ease-in-out, transform $duration-base $ease-in-out;
+  
+  &.hoverable {
+    cursor: pointer;
+    
+    &:hover {
+      box-shadow: $shadow-base;
+      transform: translateY(-2px);
+    }
+  }
+  
+  &.fullHeight {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    
+    :global(.ant-card-body) {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+  }
+  
+  :global(.ant-card-head) {
+    border-bottom: 1px solid $color-border-secondary;
+    padding: $spacing-md $spacing-lg;
+    min-height: auto;
+    
+    @include mobile {
+      padding: $spacing-sm $spacing-md;
+    }
+  }
+  
+  :global(.ant-card-head-title) {
+    padding: 0;
+  }
+  
+  :global(.ant-card-body) {
+    padding: $spacing-lg;
+    
+    @include mobile {
+      padding: $spacing-md;
+    }
+  }
+  
+  :global(.ant-card-actions) {
+    border-top: 1px solid $color-border-secondary;
+    background: $color-bg-secondary;
+    border-radius: 0 0 $radius-lg $radius-lg;
+    
+    > li {
+      margin: $spacing-sm 0;
+    }
+  }
+}
+
+.cardHeader {
+  @include flex-between;
+  width: 100%;
+  gap: $spacing-md;
+}
+
+.titleSection {
+  @include flex-start;
+  gap: $spacing-sm;
+  min-width: 0;
+  flex: 1;
+}
+
+.icon {
+  @include flex-center;
+  width: 32px;
+  height: 32px;
+  border-radius: $radius-base;
+  background: $color-primary-light;
+  color: $color-primary;
+  font-size: $font-size-lg;
+  flex-shrink: 0;
+}
+
+.titleContent {
+  min-width: 0;
+  flex: 1;
+}
+
+.title {
+  margin: 0 !important;
+  font-weight: $font-weight-semibold !important;
+  color: $color-text !important;
+  @include text-truncate;
+}
+
+.tooltipIcon {
+  color: $color-text-tertiary;
+  font-size: $font-size-sm;
+  cursor: help;
+  
+  &:hover {
+    color: $color-primary;
+  }
+}
+
+.subtitle {
+  display: block;
+  font-size: $font-size-sm;
+  @include text-truncate;
+  margin-top: 2px;
+}
+
+.headerActions {
+  @include flex-end;
+  gap: $spacing-xs;
+  flex-shrink: 0;
+}

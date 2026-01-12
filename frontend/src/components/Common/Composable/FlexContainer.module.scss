@@ -1,0 +1,39 @@
+/**
+ * FlexContainer Component Styles
+ */
+
+.flexContainer {
+  box-sizing: border-box;
+
+  &.responsive {
+    &.responsive-xs {
+      @media (max-width: 575px) {
+        flex-direction: column !important;
+      }
+    }
+
+    &.responsive-sm {
+      @media (max-width: 767px) {
+        flex-direction: column !important;
+      }
+    }
+
+    &.responsive-md {
+      @media (max-width: 991px) {
+        flex-direction: column !important;
+      }
+    }
+
+    &.responsive-lg {
+      @media (max-width: 1199px) {
+        flex-direction: column !important;
+      }
+    }
+
+    &.responsive-xl {
+      @media (max-width: 1599px) {
+        flex-direction: column !important;
+      }
+    }
+  }
+}

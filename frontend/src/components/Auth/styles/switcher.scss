@@ -1,0 +1,124 @@
+// Shared styles for TenantSelector and WorkspaceSwitcher components
+@use '../../../styles/variables' as *;
+
+// Switcher container styles
+.switcher-container {
+  display: flex;
+  align-items: center;
+  gap: $padding-xs;
+}
+
+// Switcher label styles
+.switcher-label {
+  font-size: $font-size-sm;
+  color: $text-color-secondary;
+}
+
+// Switcher select styles
+.switcher-select {
+  min-width: 150px;
+  
+  &.ant-select-sm {
+    min-width: 120px;
+  }
+  
+  &.ant-select-lg {
+    min-width: 180px;
+  }
+}
+
+// Switcher option styles
+.switcher-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $padding-xs;
+  padding: $padding-xs 0;
+  
+  &-content {
+    display: flex;
+    align-items: center;
+    gap: $padding-xs;
+  }
+  
+  &-icon {
+    color: $primary-color;
+    font-size: $font-size-base;
+  }
+  
+  &-name {
+    font-weight: 400;
+    
+    &--active {
+      font-weight: 500;
+    }
+  }
+  
+  &-badge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  
+  &-check {
+    color: $success-color;
+    font-size: $font-size-base;
+  }
+}
+
+// Switcher dropdown footer styles
+.switcher-dropdown-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 $padding-xs $padding-xs;
+  
+  &-actions {
+    display: flex;
+    gap: $padding-xs;
+  }
+}
+
+// Loading state styles
+.switcher-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $padding-sm;
+}
+
+// Error state styles
+.switcher-error {
+  display: flex;
+  align-items: center;
+  gap: $padding-xs;
+  color: $error-color;
+}
+
+// Responsive styles
+@media (max-width: $screen-md) {
+  .switcher-select {
+    min-width: 100px;
+    
+    &.ant-select-sm {
+      min-width: 80px;
+    }
+  }
+  
+  .switcher-label {
+    display: none;
+  }
+}
+
+// Dark theme support
+[data-theme='dark'] {
+  .switcher-option {
+    &-icon {
+      color: lighten($primary-color, 10%);
+    }
+  }
+  
+  .switcher-label {
+    color: rgba(255, 255, 255, 0.65);
+  }
+}

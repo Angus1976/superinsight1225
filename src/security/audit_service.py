@@ -1,7 +1,9 @@
 """
-Audit Service for SuperInsight Platform.
+Enhanced Audit Service for SuperInsight Platform.
 
-Provides comprehensive audit logging, analysis, and alerting functionality.
+Provides comprehensive audit logging, analysis, and alerting functionality
+with enterprise-level features including risk assessment, detailed information
+extraction, and real-time monitoring.
 """
 
 import logging
@@ -12,9 +14,19 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, func, desc, select, delete
 from collections import defaultdict, Counter
+import asyncio
+from enum import Enum
 
 from src.security.models import AuditLogModel, AuditAction, UserModel
 from src.database.connection import get_db_session
+
+
+class RiskLevel(Enum):
+    """审计事件风险等级"""
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    CRITICAL = "critical"
 
 
 class AuditService:
@@ -525,3 +537,509 @@ class AuditService:
             "newest_log": newest_log.isoformat() if newest_log else None,
             "storage_size_estimate": f"{storage_size_mb:.2f} MB"
         }
+
+
+class EnhancedAuditService(AuditService):
+    """
+    企业级增强审计服务，扩展现有审计功能。
+    
+    新增功能：
+    - 风险评估和分类
+    - 详细信息提取
+    - 实时监控
+    - 多租户审计支持
+    - 高级威胁检测
+    """
+    
+    def __init__(self):
+        super().__init__()
+        self.risk_rules = self._initialize_risk_rules()
+        self.threat_patterns = self._initialize_threat_patterns()
+        self.monitoring_enabled = True
+        
+    def _initialize_risk_rules(self) -> Dict[str, Dict[str, Any]]:
+        """初始化风险评估规则"""
+        return {
+            "failed_login_burst": {
+                "threshold": 5,
+                "time_window": 300,  # 5分钟
+                "risk_level": RiskLevel.HIGH,
+                "description": "短时间内多次登录失败"
+            },
+            "sensitive_data_access": {
+                "actions": [AuditAction.EXPORT, AuditAction.DELETE],
+                "resources": ["user", "annotation", "dataset"],
+                "risk_level": RiskLevel.MEDIUM,
+                "description": "敏感数据操作"
+            },
+            "privilege_escalation": {
+                "actions": [AuditAction.UPDATE],
+                "resources": ["permission", "role", "user"],
+                "risk_level": RiskLevel.HIGH,
+                "description": "权限提升操作"
+            },
+            "after_hours_activity": {
+                "time_range": (22, 6),  # 22:00 - 06:00
+                "risk_level": RiskLevel.MEDIUM,
+                "description": "非工作时间活动"
+            },
+            "bulk_operations": {
+                "threshold": 50,
+                "time_window": 60,  # 1分钟
+                "risk_level": RiskLevel.MEDIUM,
+                "description": "批量操作"
+            }
+        }
+    
+    def _initialize_threat_patterns(self) -> Dict[str, Dict[str, Any]]:
+        """初始化威胁检测模式"""
+        return {
+            "sql_injection_attempt": {
+                "patterns": ["'", "union", "select", "drop", "insert", "update", "delete"],
+                "risk_level": RiskLevel.CRITICAL,
+                "description": "SQL注入尝试"
+            },
+            "unusual_ip_pattern": {
+                "max_unique_ips": 10,
+                "time_window": 3600,  # 1小时
+                "risk_level": RiskLevel.MEDIUM,
+                "description": "异常IP访问模式"
+            },
+            "data_exfiltration": {
+                "export_threshold": 1000,  # MB
+                "time_window": 3600,
+                "risk_level": RiskLevel.HIGH,
+                "description": "数据泄露风险"
+            }
+        }
+    
+    async def log_enhanced_audit_event(
+        self,
+        user_id: Optional[UUID],
+        tenant_id: str,
+        action: AuditAction,
+        resource_type: str,
+        resource_id: Optional[str] = None,
+        ip_address: Optional[str] = None,
+        user_agent: Optional[str] = None,
+        details: Optional[Dict[str, Any]] = None,
+        db: Session = None
+    ) -> Dict[str, Any]:
+        """记录增强的审计事件，包含风险评估"""
+        
+        # 基础审计日志记录
+        audit_log = AuditLogModel(
+            user_id=user_id,
+            tenant_id=tenant_id,
+            action=action,
+            resource_type=resource_type,
+            resource_id=resource_id,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            details=details or {},
+            timestamp=datetime.utcnow()  # 显式设置时间戳
+        )
+        
+        # 风险评估
+        risk_assessment = await self._assess_event_risk(
+            audit_log, db
+        )
+        
+        # 增强详细信息
+        enhanced_details = await self._extract_detailed_info(
+            audit_log, risk_assessment
+        )
+        
+        # 更新审计日志
+        audit_log.details.update({
+            "risk_level": risk_assessment["risk_level"].value,
+            "risk_score": risk_assessment["risk_score"],
+            "risk_factors": risk_assessment["risk_factors"],
+            "enhanced_info": enhanced_details
+        })
+        
+        try:
+            db.add(audit_log)
+            db.commit()
+            
+            # 实时监控处理
+            if self.monitoring_enabled:
+                await self._process_real_time_monitoring(audit_log, risk_assessment)
+            
+            return {
+                "audit_log_id": audit_log.id,
+                "risk_assessment": risk_assessment,
+                "enhanced_details": enhanced_details,
+                "status": "success"
+            }
+            
+        except Exception as e:
+            db.rollback()
+            self.logger.error(f"记录增强审计事件失败: {e}")
+            return {
+                "status": "error",
+                "error": str(e)
+            }
+    
+    async def _assess_event_risk(
+        self,
+        audit_log: AuditLogModel,
+        db: Session
+    ) -> Dict[str, Any]:
+        """评估事件风险等级"""
+        
+        risk_factors = []
+        risk_score = 0
+        risk_level = RiskLevel.LOW
+        
+        # 检查失败登录爆发
+        if audit_log.action == AuditAction.LOGIN and audit_log.details.get("status") == "failed":
+            recent_failures = await self._count_recent_failed_logins(
+                audit_log.tenant_id, audit_log.ip_address, db
+            )
+            
+            if recent_failures >= self.risk_rules["failed_login_burst"]["threshold"]:
+                risk_factors.append("failed_login_burst")
+                risk_score += 30
+                risk_level = RiskLevel.HIGH
+        
+        # 检查敏感数据访问
+        sensitive_rule = self.risk_rules["sensitive_data_access"]
+        if (audit_log.action in sensitive_rule["actions"] and 
+            audit_log.resource_type in sensitive_rule["resources"]):
+            risk_factors.append("sensitive_data_access")
+            risk_score += 20
+            if risk_level.value == "low":
+                risk_level = RiskLevel.MEDIUM
+        
+        # 检查权限提升
+        privilege_rule = self.risk_rules["privilege_escalation"]
+        if (audit_log.action in privilege_rule["actions"] and 
+            audit_log.resource_type in privilege_rule["resources"]):
+            risk_factors.append("privilege_escalation")
+            risk_score += 40
+            risk_level = RiskLevel.HIGH
+        
+        # 检查非工作时间活动
+        current_hour = audit_log.timestamp.hour
+        after_hours_rule = self.risk_rules["after_hours_activity"]
+        if (current_hour >= after_hours_rule["time_range"][0] or 
+            current_hour <= after_hours_rule["time_range"][1]):
+            risk_factors.append("after_hours_activity")
+            risk_score += 15
+            if risk_level.value == "low":
+                risk_level = RiskLevel.MEDIUM
+        
+        # 检查批量操作
+        recent_actions = await self._count_recent_actions(
+            audit_log.user_id, audit_log.tenant_id, db
+        )
+        
+        bulk_rule = self.risk_rules["bulk_operations"]
+        if recent_actions >= bulk_rule["threshold"]:
+            risk_factors.append("bulk_operations")
+            risk_score += 25
+            if risk_level.value == "low":
+                risk_level = RiskLevel.MEDIUM
+        
+        # 威胁模式检测
+        threat_factors = await self._detect_threat_patterns(audit_log, db)
+        risk_factors.extend(threat_factors)
+        
+        # 根据威胁因素调整风险等级
+        if any("critical" in factor for factor in threat_factors):
+            risk_level = RiskLevel.CRITICAL
+            risk_score += 50
+        elif any("high" in factor for factor in threat_factors):
+            if risk_level.value in ["low", "medium"]:
+                risk_level = RiskLevel.HIGH
+            risk_score += 35
+        
+        return {
+            "risk_level": risk_level,
+            "risk_score": min(risk_score, 100),  # 最大100分
+            "risk_factors": risk_factors,
+            "assessment_timestamp": datetime.utcnow().isoformat()
+        }
+    
+    async def _extract_detailed_info(
+        self,
+        audit_log: AuditLogModel,
+        risk_assessment: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """提取详细信息"""
+        
+        enhanced_info = {
+            "timestamp_iso": audit_log.timestamp.isoformat(),
+            "session_info": {},
+            "context_info": {},
+            "technical_details": {}
+        }
+        
+        # 会话信息
+        if audit_log.user_agent:
+            enhanced_info["session_info"] = {
+                "user_agent_parsed": self._parse_user_agent(audit_log.user_agent),
+                "browser_fingerprint": self._generate_browser_fingerprint(audit_log.user_agent)
+            }
+        
+        # 上下文信息
+        enhanced_info["context_info"] = {
+            "risk_context": risk_assessment["risk_factors"],
+            "tenant_context": audit_log.tenant_id,
+            "resource_context": {
+                "type": audit_log.resource_type,
+                "id": audit_log.resource_id
+            }
+        }
+        
+        # 技术详细信息
+        if audit_log.ip_address:
+            enhanced_info["technical_details"] = {
+                "ip_info": await self._get_ip_info(audit_log.ip_address),
+                "geolocation": await self._get_geolocation(audit_log.ip_address)
+            }
+        
+        return enhanced_info
+    
+    async def _process_real_time_monitoring(
+        self,
+        audit_log: AuditLogModel,
+        risk_assessment: Dict[str, Any]
+    ):
+        """实时监控处理"""
+        
+        # 高风险事件立即告警
+        if risk_assessment["risk_level"] in [RiskLevel.HIGH, RiskLevel.CRITICAL]:
+            await self._trigger_security_alert(audit_log, risk_assessment)
+        
+        # 更新实时统计
+        await self._update_real_time_stats(audit_log, risk_assessment)
+        
+        # 检查是否需要自动响应
+        if risk_assessment["risk_level"] == RiskLevel.CRITICAL:
+            await self._trigger_automatic_response(audit_log, risk_assessment)
+    
+    async def _count_recent_failed_logins(
+        self,
+        tenant_id: str,
+        ip_address: Optional[str],
+        db: Session
+    ) -> int:
+        """统计最近的失败登录次数"""
+        
+        time_threshold = datetime.utcnow() - timedelta(
+            seconds=self.risk_rules["failed_login_burst"]["time_window"]
+        )
+        
+        stmt = select(AuditLogModel).where(
+            and_(
+                AuditLogModel.tenant_id == tenant_id,
+                AuditLogModel.action == AuditAction.LOGIN,
+                AuditLogModel.timestamp >= time_threshold,
+                AuditLogModel.details["status"].astext == "failed"
+            )
+        )
+        
+        if ip_address:
+            stmt = stmt.where(AuditLogModel.ip_address == ip_address)
+        
+        return len(db.execute(stmt).scalars().all())
+    
+    async def _count_recent_actions(
+        self,
+        user_id: Optional[UUID],
+        tenant_id: str,
+        db: Session
+    ) -> int:
+        """统计最近的用户操作次数"""
+        
+        time_threshold = datetime.utcnow() - timedelta(
+            seconds=self.risk_rules["bulk_operations"]["time_window"]
+        )
+        
+        stmt = select(AuditLogModel).where(
+            and_(
+                AuditLogModel.tenant_id == tenant_id,
+                AuditLogModel.timestamp >= time_threshold
+            )
+        )
+        
+        if user_id:
+            stmt = stmt.where(AuditLogModel.user_id == user_id)
+        
+        return len(db.execute(stmt).scalars().all())
+    
+    async def _detect_threat_patterns(
+        self,
+        audit_log: AuditLogModel,
+        db: Session
+    ) -> List[str]:
+        """检测威胁模式"""
+        
+        threat_factors = []
+        
+        # SQL注入检测
+        if audit_log.details:
+            details_str = json.dumps(audit_log.details).lower()
+            sql_patterns = self.threat_patterns["sql_injection_attempt"]["patterns"]
+            
+            if any(pattern in details_str for pattern in sql_patterns):
+                threat_factors.append("sql_injection_attempt_critical")
+        
+        # 异常IP模式检测
+        if audit_log.ip_address:
+            recent_unique_ips = await self._count_recent_unique_ips(
+                audit_log.tenant_id, db
+            )
+            
+            ip_rule = self.threat_patterns["unusual_ip_pattern"]
+            if recent_unique_ips > ip_rule["max_unique_ips"]:
+                threat_factors.append("unusual_ip_pattern_medium")
+        
+        # 数据泄露检测
+        if audit_log.action == AuditAction.EXPORT:
+            export_size = audit_log.details.get("export_size_mb", 0)
+            
+            exfiltration_rule = self.threat_patterns["data_exfiltration"]
+            if export_size > exfiltration_rule["export_threshold"]:
+                threat_factors.append("data_exfiltration_high")
+        
+        return threat_factors
+    
+    async def _count_recent_unique_ips(
+        self,
+        tenant_id: str,
+        db: Session
+    ) -> int:
+        """统计最近的唯一IP数量"""
+        
+        time_threshold = datetime.utcnow() - timedelta(
+            seconds=self.threat_patterns["unusual_ip_pattern"]["time_window"]
+        )
+        
+        stmt = select(AuditLogModel.ip_address).where(
+            and_(
+                AuditLogModel.tenant_id == tenant_id,
+                AuditLogModel.timestamp >= time_threshold,
+                AuditLogModel.ip_address.isnot(None)
+            )
+        ).distinct()
+        
+        return len(db.execute(stmt).scalars().all())
+    
+    def _parse_user_agent(self, user_agent: str) -> Dict[str, Any]:
+        """解析用户代理字符串"""
+        # 简化的用户代理解析
+        parsed = {
+            "browser": "unknown",
+            "version": "unknown",
+            "os": "unknown",
+            "device": "unknown"
+        }
+        
+        user_agent_lower = user_agent.lower()
+        
+        # 浏览器检测
+        if "chrome" in user_agent_lower:
+            parsed["browser"] = "Chrome"
+        elif "firefox" in user_agent_lower:
+            parsed["browser"] = "Firefox"
+        elif "safari" in user_agent_lower:
+            parsed["browser"] = "Safari"
+        elif "edge" in user_agent_lower:
+            parsed["browser"] = "Edge"
+        
+        # 操作系统检测
+        if "windows" in user_agent_lower:
+            parsed["os"] = "Windows"
+        elif "mac" in user_agent_lower:
+            parsed["os"] = "macOS"
+        elif "linux" in user_agent_lower:
+            parsed["os"] = "Linux"
+        elif "android" in user_agent_lower:
+            parsed["os"] = "Android"
+        elif "ios" in user_agent_lower:
+            parsed["os"] = "iOS"
+        
+        return parsed
+    
+    def _generate_browser_fingerprint(self, user_agent: str) -> str:
+        """生成浏览器指纹"""
+        import hashlib
+        return hashlib.md5(user_agent.encode()).hexdigest()[:16]
+    
+    async def _get_ip_info(self, ip_address: str) -> Dict[str, Any]:
+        """获取IP信息（简化版本）"""
+        # 在实际实现中，这里会调用IP地理位置服务
+        return {
+            "is_private": self._is_private_ip(ip_address),
+            "is_tor": False,  # 需要集成Tor检测服务
+            "is_vpn": False,  # 需要集成VPN检测服务
+            "reputation": "unknown"
+        }
+    
+    async def _get_geolocation(self, ip_address: str) -> Dict[str, Any]:
+        """获取地理位置信息（简化版本）"""
+        # 在实际实现中，这里会调用地理位置服务
+        return {
+            "country": "unknown",
+            "city": "unknown",
+            "latitude": None,
+            "longitude": None
+        }
+    
+    def _is_private_ip(self, ip_address: str) -> bool:
+        """检查是否为私有IP"""
+        import ipaddress
+        try:
+            ip = ipaddress.ip_address(ip_address)
+            return ip.is_private
+        except:
+            return False
+    
+    async def _trigger_security_alert(
+        self,
+        audit_log: AuditLogModel,
+        risk_assessment: Dict[str, Any]
+    ):
+        """触发安全告警"""
+        alert_data = {
+            "alert_type": "security_event",
+            "severity": risk_assessment["risk_level"].value,
+            "tenant_id": audit_log.tenant_id,
+            "user_id": str(audit_log.user_id) if audit_log.user_id else None,
+            "event_details": {
+                "action": audit_log.action.value,
+                "resource": audit_log.resource_type,
+                "risk_factors": risk_assessment["risk_factors"],
+                "timestamp": audit_log.timestamp.isoformat()
+            }
+        }
+        
+        # 这里会集成到告警系统
+        self.logger.warning(f"安全告警: {alert_data}")
+    
+    async def _update_real_time_stats(
+        self,
+        audit_log: AuditLogModel,
+        risk_assessment: Dict[str, Any]
+    ):
+        """更新实时统计"""
+        # 这里会更新实时监控仪表盘的统计数据
+        pass
+    
+    async def _trigger_automatic_response(
+        self,
+        audit_log: AuditLogModel,
+        risk_assessment: Dict[str, Any]
+    ):
+        """触发自动响应"""
+        # 对于关键风险事件的自动响应
+        if "sql_injection_attempt" in risk_assessment["risk_factors"]:
+            # 可能的响应：临时封禁IP、通知管理员等
+            self.logger.critical(f"检测到SQL注入尝试，来自IP: {audit_log.ip_address}")
+        
+        if "data_exfiltration" in risk_assessment["risk_factors"]:
+            # 可能的响应：暂停用户账户、通知安全团队等
+            self.logger.critical(f"检测到数据泄露风险，用户: {audit_log.user_id}")

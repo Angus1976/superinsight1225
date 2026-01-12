@@ -1,5 +1,6 @@
 // Quality management page
 import { useState } from 'react';
+import { Outlet, useLocation, Link } from 'react-router-dom';
 import {
   Card,
   Table,
@@ -19,6 +20,7 @@ import {
   Tooltip,
   message,
   Drawer,
+  Menu,
 } from 'antd';
 import {
   CheckCircleOutlined,
@@ -34,6 +36,8 @@ import {
   HistoryOutlined,
   SendOutlined,
   BarChartOutlined,
+  FileTextOutlined,
+  DashboardOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import type { ColumnsType } from 'antd/es/table';
@@ -177,6 +181,38 @@ const QualityPage: React.FC = () => {
   const [versionDrawerOpen, setVersionDrawerOpen] = useState(false);
   const [selectedRule, setSelectedRule] = useState<QualityRule | null>(null);
   const [ruleForm] = Form.useForm();
+  const location = useLocation();
+
+  // Check if we're on a sub-route
+  const isSubRoute = location.pathname !== '/quality';
+
+  // If on sub-route, render the child component
+  if (isSubRoute) {
+    return (
+      <div>
+        <Card style={{ marginBottom: 16 }}>
+          <Menu mode="horizontal" selectedKeys={[location.pathname.split('/').pop() || '']}>
+            <Menu.Item key="quality">
+              <Link to="/quality">
+                <DashboardOutlined /> 质量概览
+              </Link>
+            </Menu.Item>
+            <Menu.Item key="rules">
+              <Link to="/quality/rules">
+                <SafetyCertificateOutlined /> 质量规则
+              </Link>
+            </Menu.Item>
+            <Menu.Item key="reports">
+              <Link to="/quality/reports">
+                <FileTextOutlined /> 质量报告
+              </Link>
+            </Menu.Item>
+          </Menu>
+        </Card>
+        <Outlet />
+      </div>
+    );
+  }
 
   // Mock templates data
   const mockTemplates: RuleTemplate[] = [

@@ -1,5 +1,6 @@
 // Security audit page
 import { useState } from 'react';
+import { Outlet, useLocation, Link } from 'react-router-dom';
 import {
   Card,
   Table,
@@ -18,6 +19,7 @@ import {
   Modal,
   Descriptions,
   Typography,
+  Menu,
 } from 'antd';
 import {
   SecurityScanOutlined,
@@ -30,6 +32,9 @@ import {
   FilterOutlined,
   GlobalOutlined,
   ClockCircleOutlined,
+  AuditOutlined,
+  KeyOutlined,
+  DashboardOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 
@@ -160,6 +165,38 @@ const severityColors = {
 const SecurityPage: React.FC = () => {
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
+  const location = useLocation();
+
+  // Check if we're on a sub-route
+  const isSubRoute = location.pathname !== '/security';
+
+  // If on sub-route, render the child component
+  if (isSubRoute) {
+    return (
+      <div>
+        <Card style={{ marginBottom: 16 }}>
+          <Menu mode="horizontal" selectedKeys={[location.pathname.split('/').pop() || '']}>
+            <Menu.Item key="security">
+              <Link to="/security">
+                <DashboardOutlined /> 安全概览
+              </Link>
+            </Menu.Item>
+            <Menu.Item key="audit">
+              <Link to="/security/audit">
+                <AuditOutlined /> 审计日志
+              </Link>
+            </Menu.Item>
+            <Menu.Item key="permissions">
+              <Link to="/security/permissions">
+                <KeyOutlined /> 权限管理
+              </Link>
+            </Menu.Item>
+          </Menu>
+        </Card>
+        <Outlet />
+      </div>
+    );
+  }
 
   const handleViewDetail = (log: AuditLog) => {
     setSelectedLog(log);

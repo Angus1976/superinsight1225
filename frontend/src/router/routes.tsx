@@ -35,10 +35,32 @@ const TaskAnnotatePage = lazyWithPreload(() => import('@/pages/Tasks/TaskAnnotat
 const BillingPage = lazyWithPreload(() => import('@/pages/Billing'));
 const SettingsPage = lazyWithPreload(() => import('@/pages/Settings'));
 const AdminPage = lazyWithPreload(() => import('@/pages/Admin'));
+
+// Augmentation pages
 const AugmentationPage = lazyWithPreload(() => import('@/pages/Augmentation'));
+const AugmentationSamplesPage = lazyWithPreload(() => import('@/pages/Augmentation/Samples'));
+const AugmentationConfigPage = lazyWithPreload(() => import('@/pages/Augmentation/Config'));
+
+// Quality pages
 const QualityPage = lazyWithPreload(() => import('@/pages/Quality'));
+const QualityRulesPage = lazyWithPreload(() => import('@/pages/Quality/Rules'));
+const QualityReportsPage = lazyWithPreload(() => import('@/pages/Quality/Reports'));
+
+// Security pages
 const SecurityPage = lazyWithPreload(() => import('@/pages/Security'));
+const SecurityAuditPage = lazyWithPreload(() => import('@/pages/Security/Audit'));
+const SecurityPermissionsPage = lazyWithPreload(() => import('@/pages/Security/Permissions'));
+
+// Data Sync pages
 const DataSyncPage = lazyWithPreload(() => import('@/pages/DataSync'));
+const DataSyncSourcesPage = lazyWithPreload(() => import('@/pages/DataSync/Sources'));
+const DataSyncSecurityPage = lazyWithPreload(() => import('@/pages/DataSync/Security'));
+
+// Admin pages
+const AdminTenantsPage = lazyWithPreload(() => import('@/pages/Admin/Tenants'));
+const AdminUsersPage = lazyWithPreload(() => import('@/pages/Admin/Users'));
+const AdminSystemPage = lazyWithPreload(() => import('@/pages/Admin/System'));
+
 const NotFoundPage = lazyWithPreload(() => import('@/pages/Error/404'));
 const ForbiddenPage = lazyWithPreload(() => import('@/pages/Error/403'));
 const ServerErrorPage = lazyWithPreload(() => import('@/pages/Error/500'));
@@ -155,22 +177,76 @@ export const routes: RouteObject[] = [
       {
         path: 'admin',
         element: withSuspense(AdminPage, 'table'),
+        children: [
+          {
+            path: 'tenants',
+            element: withSuspense(AdminTenantsPage, 'table'),
+          },
+          {
+            path: 'users',
+            element: withSuspense(AdminUsersPage, 'table'),
+          },
+          {
+            path: 'system',
+            element: withSuspense(AdminSystemPage, 'form'),
+          },
+        ],
       },
       {
         path: 'augmentation',
         element: withSuspense(AugmentationPage, 'page'),
+        children: [
+          {
+            path: 'samples',
+            element: withSuspense(AugmentationSamplesPage, 'table'),
+          },
+          {
+            path: 'config',
+            element: withSuspense(AugmentationConfigPage, 'form'),
+          },
+        ],
       },
       {
         path: 'quality',
         element: withSuspense(QualityPage, 'dashboard'),
+        children: [
+          {
+            path: 'rules',
+            element: withSuspense(QualityRulesPage, 'table'),
+          },
+          {
+            path: 'reports',
+            element: withSuspense(QualityReportsPage, 'dashboard'),
+          },
+        ],
       },
       {
         path: 'security',
         element: withSuspense(SecurityPage, 'table'),
+        children: [
+          {
+            path: 'audit',
+            element: withSuspense(SecurityAuditPage, 'table'),
+          },
+          {
+            path: 'permissions',
+            element: withSuspense(SecurityPermissionsPage, 'table'),
+          },
+        ],
       },
       {
         path: 'data-sync',
         element: withSuspense(DataSyncPage, 'table'),
+        children: [
+          {
+            path: 'sources',
+            element: withSuspense(DataSyncSourcesPage, 'table'),
+          },
+          {
+            path: 'security',
+            element: withSuspense(DataSyncSecurityPage, 'form'),
+          },
+        ],
       },
     ],
   },

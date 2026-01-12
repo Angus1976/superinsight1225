@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
-import { Card, Tabs, Typography, Space, Alert, Button } from 'antd';
+import { Outlet, useLocation, Link } from 'react-router-dom';
+import { Card, Tabs, Typography, Space, Alert, Button, Menu } from 'antd';
 import {
   DatabaseOutlined,
   SyncOutlined,
   SecurityScanOutlined,
   InfoCircleOutlined,
+  DashboardOutlined,
+  ShieldOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import DataSourceManager from '../../components/DataSync/DataSourceManager';
@@ -17,6 +20,38 @@ const { TabPane } = Tabs;
 const DataSyncPage: React.FC = () => {
   const { t } = useTranslation(['dataSync', 'common']);
   const [activeTab, setActiveTab] = useState('dataSources');
+  const location = useLocation();
+
+  // Check if we're on a sub-route
+  const isSubRoute = location.pathname !== '/data-sync';
+
+  // If on sub-route, render the child component
+  if (isSubRoute) {
+    return (
+      <div>
+        <Card style={{ marginBottom: 16 }}>
+          <Menu mode="horizontal" selectedKeys={[location.pathname.split('/').pop() || '']}>
+            <Menu.Item key="data-sync">
+              <Link to="/data-sync">
+                <DashboardOutlined /> 同步概览
+              </Link>
+            </Menu.Item>
+            <Menu.Item key="sources">
+              <Link to="/data-sync/sources">
+                <DatabaseOutlined /> 数据源管理
+              </Link>
+            </Menu.Item>
+            <Menu.Item key="security">
+              <Link to="/data-sync/security">
+                <ShieldOutlined /> 安全配置
+              </Link>
+            </Menu.Item>
+          </Menu>
+        </Card>
+        <Outlet />
+      </div>
+    );
+  }
 
   return (
     <div style={{ padding: '24px' }}>

@@ -1,31 +1,20 @@
 """
-Simplified FastAPI application for SuperInsight Platform.
-This version disables complex initialization for Docker deployment.
+Simple FastAPI application for SuperInsight Platform.
+This version includes only basic endpoints without complex imports.
 """
 
 import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from contextlib import asynccontextmanager
-
-from src.config.settings import settings
-from src.database.connection import get_db_session
 
 logger = logging.getLogger(__name__)
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Simple lifespan manager."""
-    logger.info(f"Starting {settings.app.app_name}")
-    yield
-    logger.info(f"Shutting down {settings.app.app_name}")
-
 # Create FastAPI app
 app = FastAPI(
-    title=settings.app.app_name,
-    version=settings.app.app_version,
-    lifespan=lifespan
+    title="SuperInsight API - Simple",
+    version="2.3.0",
+    description="Simple SuperInsight API for testing"
 )
 
 # Add CORS middleware
@@ -41,39 +30,75 @@ app.add_middleware(
 @app.get("/health")
 async def health_check():
     """Simple health check endpoint."""
-    try:
-        db = get_db_session()
-        db.close()
-        return JSONResponse(
-            status_code=200,
-            content={"status": "healthy", "message": "API is running"}
-        )
-    except Exception as e:
-        logger.error(f"Health check failed: {e}")
-        return JSONResponse(
-            status_code=503,
-            content={"status": "unhealthy", "error": str(e)}
-        )
+    return JSONResponse(
+        status_code=200,
+        content={"status": "healthy", "message": "Simple API is running"}
+    )
 
 # Root endpoint
 @app.get("/")
 async def root():
     """Root endpoint."""
     return {
-        "message": "SuperInsight API",
-        "version": settings.app.app_version,
-        "status": "running"
+        "message": "SuperInsight Simple API",
+        "version": "2.3.0",
+        "status": "running",
+        "features": ["health_check"]
     }
 
-# API info endpoint
-@app.get("/api/info")
-async def api_info():
-    """API information endpoint."""
+# Mock API endpoints for testing
+@app.get("/api/v1/tasks")
+async def list_tasks():
+    """Mock tasks endpoint."""
     return {
-        "name": settings.app.app_name,
-        "version": settings.app.app_version,
-        "environment": settings.app.environment,
-        "debug": settings.app.debug
+        "items": [
+            {
+                "id": "task-1",
+                "name": "Sample Task 1",
+                "status": "pending",
+                "priority": "medium"
+            },
+            {
+                "id": "task-2", 
+                "name": "Sample Task 2",
+                "status": "in_progress",
+                "priority": "high"
+            }
+        ],
+        "total": 2,
+        "page": 1,
+        "size": 10
     }
 
-logger.info(f"FastAPI app initialized: {settings.app.app_name} v{settings.app.app_version}")
+@app.get("/api/v1/dashboard/metrics")
+async def dashboard_metrics():
+    """Mock dashboard metrics endpoint."""
+    return {
+        "tasks": {
+            "total": 150,
+            "pending": 45,
+            "in_progress": 30,
+            "completed": 75
+        },
+        "users": {
+            "total": 25,
+            "active": 18
+        },
+        "projects": {
+            "total": 12,
+            "active": 8
+        }
+    }
+
+@app.get("/auth/me")
+async def get_current_user():
+    """Mock user profile endpoint."""
+    return {
+        "id": "user-1",
+        "username": "admin",
+        "email": "admin@example.com",
+        "role": "admin",
+        "tenant_id": "default_tenant"
+    }
+
+logger.info("Simple FastAPI app initialized")

@@ -1,5 +1,6 @@
 // Data augmentation management page
 import { useState } from 'react';
+import { Outlet, useLocation, Link } from 'react-router-dom';
 import {
   Card,
   Table,
@@ -19,6 +20,7 @@ import {
   message,
   Tabs,
   Alert,
+  Menu,
 } from 'antd';
 import {
   UploadOutlined,
@@ -30,6 +32,8 @@ import {
   DeleteOutlined,
   EyeOutlined,
   PlusOutlined,
+  SettingOutlined,
+  ExperimentOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import type { UploadProps } from 'antd';
@@ -136,6 +140,38 @@ const AugmentationPage: React.FC = () => {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [form] = Form.useForm();
+  const location = useLocation();
+
+  // Check if we're on a sub-route
+  const isSubRoute = location.pathname !== '/augmentation';
+
+  // If on sub-route, render the child component
+  if (isSubRoute) {
+    return (
+      <div>
+        <Card style={{ marginBottom: 16 }}>
+          <Menu mode="horizontal" selectedKeys={[location.pathname.split('/').pop() || '']}>
+            <Menu.Item key="augmentation">
+              <Link to="/augmentation">
+                <ExperimentOutlined /> 概览
+              </Link>
+            </Menu.Item>
+            <Menu.Item key="samples">
+              <Link to="/augmentation/samples">
+                <DatabaseOutlined /> 样本管理
+              </Link>
+            </Menu.Item>
+            <Menu.Item key="config">
+              <Link to="/augmentation/config">
+                <SettingOutlined /> 配置管理
+              </Link>
+            </Menu.Item>
+          </Menu>
+        </Card>
+        <Outlet />
+      </div>
+    );
+  }
 
   const handleCreateJob = async (_values: Record<string, unknown>) => {
     message.success('Augmentation job created successfully');

@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { Alert, Button, Space, Spin } from 'antd';
 import { TeamOutlined } from '@ant-design/icons';
+import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import { usePermissions } from '@/hooks/usePermissions';
 import { ROUTES } from '@/constants';
@@ -36,6 +37,34 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     roleDisplayName 
   } = usePermissions();
   const location = useLocation();
+  const [isChecking, setIsChecking] = useState(true);
+
+  // Check authentication status on mount
+  useEffect(() => {
+    // Give a small delay to ensure store is properly hydrated
+    const timer = setTimeout(() => {
+      setIsChecking(false);
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Show loading while checking authentication
+  if (isChecking) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh' 
+      }}>
+        <Space direction="vertical" align="center">
+          <Spin size="large" />
+          <span>正在验证身份...</span>
+        </Space>
+      </div>
+    );
+  }
 
   // 检查认证状态
   if (!isAuthenticated || !token) {

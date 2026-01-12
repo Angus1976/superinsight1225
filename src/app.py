@@ -538,6 +538,26 @@ async def root():
 # Include routers
 app.include_router(extraction_router)
 
+# Include tasks API router
+try:
+    from src.api.tasks import router as tasks_router
+    app.include_router(tasks_router)
+    logger.info("Tasks API loaded successfully")
+except ImportError as e:
+    logger.error(f"Tasks API not available: {e}")
+except Exception as e:
+    logger.error(f"Tasks API failed to load: {e}")
+
+# Include dashboard API router
+try:
+    from src.api.dashboard import router as dashboard_router
+    app.include_router(dashboard_router)
+    logger.info("Dashboard API loaded successfully")
+except ImportError as e:
+    logger.error(f"Dashboard API not available: {e}")
+except Exception as e:
+    logger.error(f"Dashboard API failed to load: {e}")
+
 # Include SOX Compliance API router - critical for compliance functionality
 try:
     from src.api.sox_compliance_api import router as sox_compliance_router

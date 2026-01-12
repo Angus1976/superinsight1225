@@ -2,6 +2,7 @@
 import { Card, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { Navigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { LoginForm } from '@/components/Auth/LoginForm';
 import { useAuthStore } from '@/stores/authStore';
 import { ROUTES } from '@/constants';
@@ -11,10 +12,26 @@ const { Title, Text } = Typography;
 
 const LoginPage: React.FC = () => {
   const { t } = useTranslation('auth');
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, token } = useAuthStore();
+  const [isChecking, setIsChecking] = useState(true);
+
+  // Check authentication status on mount
+  useEffect(() => {
+    // Give a small delay to ensure store is properly hydrated
+    const timer = setTimeout(() => {
+      setIsChecking(false);
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Show loading while checking authentication
+  if (isChecking) {
+    return null; // or a loading spinner
+  }
 
   // Redirect if already authenticated
-  if (isAuthenticated) {
+  if (isAuthenticated && token) {
     return <Navigate to={ROUTES.DASHBOARD} replace />;
   }
 

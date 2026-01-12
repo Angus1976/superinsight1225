@@ -18,6 +18,58 @@ from src.api.metrics import router as metrics_router
 
 logger = logging.getLogger(__name__)
 
+# Import new API routers
+try:
+    from src.api.tasks import router as tasks_router
+    TASKS_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"Tasks API not available: {e}")
+    TASKS_AVAILABLE = False
+
+try:
+    from src.api.dashboard import router as dashboard_router
+    DASHBOARD_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"Dashboard API not available: {e}")
+    DASHBOARD_AVAILABLE = False
+
+try:
+    from src.api.augmentation import router as augmentation_router
+    AUGMENTATION_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"Augmentation API not available: {e}")
+    AUGMENTATION_AVAILABLE = False
+
+try:
+    from src.api.quality import router as quality_router
+    QUALITY_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"Quality API not available: {e}")
+    QUALITY_AVAILABLE = False
+
+try:
+    from src.api.security import router as security_router
+    SECURITY_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"Security API not available: {e}")
+    SECURITY_AVAILABLE = False
+
+try:
+    from src.api.data_sync import router as data_sync_router
+    DATA_SYNC_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"Data Sync API not available: {e}")
+    DATA_SYNC_AVAILABLE = False
+
+try:
+    from src.api.admin import router as admin_router
+    ADMIN_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"Admin API not available: {e}")
+    ADMIN_AVAILABLE = False
+
+logger = logging.getLogger(__name__)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Simple lifespan manager."""
@@ -45,6 +97,35 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(metrics_router)
 
+# Include new API routers if available
+if TASKS_AVAILABLE:
+    app.include_router(tasks_router)
+    logger.info("Tasks API loaded successfully")
+
+if DASHBOARD_AVAILABLE:
+    app.include_router(dashboard_router)
+    logger.info("Dashboard API loaded successfully")
+
+if AUGMENTATION_AVAILABLE:
+    app.include_router(augmentation_router)
+    logger.info("Augmentation API loaded successfully")
+
+if QUALITY_AVAILABLE:
+    app.include_router(quality_router)
+    logger.info("Quality API loaded successfully")
+
+if SECURITY_AVAILABLE:
+    app.include_router(security_router)
+    logger.info("Security API loaded successfully")
+
+if DATA_SYNC_AVAILABLE:
+    app.include_router(data_sync_router)
+    logger.info("Data Sync API loaded successfully")
+
+if ADMIN_AVAILABLE:
+    app.include_router(admin_router)
+    logger.info("Admin API loaded successfully")
+
 # Health check endpoint
 @app.get("/health")
 async def health_check():
@@ -71,7 +152,7 @@ async def root():
         "message": "SuperInsight API with Authentication",
         "version": settings.app.app_version,
         "status": "running",
-        "features": ["authentication", "health_check"]
+        "features": ["authentication", "health_check", "tasks_management", "dashboard_metrics", "augmentation", "quality", "security", "data_sync", "admin"]
     }
 
 # API info endpoint
@@ -83,7 +164,7 @@ async def api_info():
         "version": settings.app.app_version,
         "environment": settings.app.environment,
         "debug": settings.app.debug,
-        "features": ["authentication", "health_check"]
+        "features": ["authentication", "health_check", "tasks_management", "dashboard_metrics", "augmentation", "quality", "security", "data_sync", "admin"]
     }
 
 logger.info(f"FastAPI app with auth initialized: {settings.app.app_name} v{settings.app.app_version}")

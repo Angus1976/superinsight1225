@@ -1,0 +1,26 @@
+{
+  "frontend_routes": {
+    "route__": false,
+    "route__login": false,
+    "route__dashboard": false,
+    "route__tasks": false,
+    "route__projects": false,
+    "route__users": false,
+    "route__settings": false,
+    "route__reports": false,
+    "route__quality": false,
+    "route__label-studio": false
+  },
+  "user_admin": {
+    "authentication": false
+  },
+  "user_manager": {
+    "authentication": false
+  },
+  "user_annotator": {
+    "authentication": false
+  },
+  "user_viewer": {
+    "authentication": false
+  }
+}

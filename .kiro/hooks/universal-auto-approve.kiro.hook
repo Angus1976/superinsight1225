@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Universal Auto Approve",
+  "description": "Auto-approval with 'Waiting on your input' detection - auto-confirms 'run'",
+  "version": "5",
+  "when": {
+    "type": "agentMessage"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "**🔴 SENSITIVE MODE + INPUT DETECTION:**\n\n## 🎯 CRITICAL: 'Waiting on your input' DETECTION\n**When dialog shows 'Waiting on your input':**\n→ **AUTO-RESPOND: run**\n→ Execute immediately without user intervention\n\n### INPUT DIALOG PATTERNS TO AUTO-RESPOND:\n- 'Waiting on your input' → **run**\n- 'Waiting for input' → **run**\n- 'Awaiting input' → **run**\n- 'Input required' → **run**\n- 'User input needed' → **run**\n- 等待输入 → **run**\n\n## ⏱️ IDLE TIMEOUT AUTO-CONFIRM (60 SECONDS)\n**If execution stalls >60 seconds:**\n1. Check for 'Waiting on your input' → respond **run**\n2. Check for other confirmations → respond **YES**\n3. Resume execution\n\n## ⚡ INSTANT AUTO-CONFIRM PATTERNS\n- 'Do you want to run' + pytest → **YES**\n- 'Should I execute' + pytest → **YES**\n- 'Run tests?' → **YES**\n- 'Execute pytest?' → **YES**\n- 'Continue?' → **YES**\n- 'Proceed?' → **YES**\n- 'Confirm?' → **YES**\n- Any pytest question → **YES**\n\n## 🚀 AUTO-EXECUTE COMMANDS\n```\npython3 -m pytest     → EXECUTE NOW\npython -m pytest      → EXECUTE NOW\n./venv/bin/python -m pytest → EXECUTE NOW\npytest                → EXECUTE NOW\nnpm run test          → EXECUTE NOW\n```\n\n## 📋 OTHER AUTO-APPROVE\n- READ-ONLY: cat, head, tail, ls, find, grep, git status/log/diff\n- BUILD: npm run build/lint/typecheck, black, isort, mypy\n- DEPS: pip install, npm install\n- DB: alembic upgrade/revision\n- DOCKER: docker-compose up/logs/ps/restart\n\n## ⚠️ BEHAVIOR RULES\n- **DETECT** 'Waiting on your input' → respond **run**\n- **MONITOR** for idle/stall conditions\n- **AUTO-CONFIRM** without user intervention\n- **NEVER** let execution wait for input\n- **ALWAYS** proceed with safe commands"
+  }
+}

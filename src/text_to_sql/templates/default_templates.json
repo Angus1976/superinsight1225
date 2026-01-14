@@ -1,0 +1,209 @@
+{
+  "version": "1.0.0",
+  "description": "Default SQL templates for Text-to-SQL generation",
+  "templates": [
+    {
+      "id": "select_columns",
+      "name": "查询指定列",
+      "pattern": "(?:查询|获取|显示)(.+?)的(.+?)(?:字段|列|信息)?",
+      "template": "SELECT {columns} FROM {table}",
+      "param_types": {
+        "table": "string",
+        "columns": "string"
+      },
+      "category": "filter",
+      "description": "Select specific columns from a table",
+      "examples": ["查询用户的姓名和邮箱", "获取订单的金额和状态"],
+      "priority": 4,
+      "enabled": true
+    },
+    {
+      "id": "filter_like",
+      "name": "模糊查询",
+      "pattern": "(?:查询|搜索|查找)(.+?)(?:包含|含有|像)(.+?)的(.+)",
+      "template": "SELECT * FROM {table} WHERE {column} LIKE '%{pattern}%'",
+      "param_types": {
+        "table": "string",
+        "column": "string",
+        "pattern": "string"
+      },
+      "category": "filter",
+      "description": "Search with LIKE pattern",
+      "examples": ["查询名称包含手机的产品"],
+      "priority": 5,
+      "enabled": true
+    },
+    {
+      "id": "filter_in_list",
+      "name": "列表筛选",
+      "pattern": "(?:查询|获取)(.+?)(?:在|属于)(.+?)(?:中|内|里)的(.+)",
+      "template": "SELECT * FROM {table} WHERE {column} IN ({values})",
+      "param_types": {
+        "table": "string",
+        "column": "string",
+        "values": "list"
+      },
+      "category": "filter",
+      "description": "Filter by list of values",
+      "examples": ["查询状态在已完成,已发货中的订单"],
+      "priority": 5,
+      "enabled": true
+    },
+    {
+      "id": "filter_null",
+      "name": "空值筛选",
+      "pattern": "(?:查询|获取)(.+?)(?:为空|是空|没有)(.+?)的(.+)",
+      "template": "SELECT * FROM {table} WHERE {column} IS NULL",
+      "param_types": {
+        "table": "string",
+        "column": "string"
+      },
+      "category": "filter",
+      "description": "Filter null values",
+      "examples": ["查询邮箱为空的用户"],
+      "priority": 4,
+      "enabled": true
+    },
+    {
+      "id": "filter_not_null",
+      "name": "非空筛选",
+      "pattern": "(?:查询|获取)(.+?)(?:不为空|非空|有)(.+?)的(.+)",
+      "template": "SELECT * FROM {table} WHERE {column} IS NOT NULL",
+      "param_types": {
+        "table": "string",
+        "column": "string"
+      },
+      "category": "filter",
+      "description": "Filter non-null values",
+      "examples": ["查询邮箱不为空的用户"],
+      "priority": 4,
+      "enabled": true
+    },
+    {
+      "id": "group_having",
+      "name": "分组过滤",
+      "pattern": "(?:按|根据)(.+?)分组(?:统计|计算)(.+?)(?:大于|超过)(.+?)的(.+)",
+      "template": "SELECT {group_column}, COUNT(*) AS count FROM {table} GROUP BY {group_column} HAVING COUNT(*) > {threshold}",
+      "param_types": {
+        "table": "string",
+        "group_column": "string",
+        "threshold": "number"
+      },
+      "category": "group",
+      "description": "Group with HAVING clause",
+      "examples": ["按类别分组统计数量大于10的产品"],
+      "priority": 6,
+      "enabled": true
+    },
+    {
+      "id": "distinct_values",
+      "name": "去重查询",
+      "pattern": "(?:查询|获取|列出)(.+?)(?:不同|唯一|去重)的(.+)",
+      "template": "SELECT DISTINCT {column} FROM {table}",
+      "param_types": {
+        "table": "string",
+        "column": "string"
+      },
+      "category": "filter",
+      "description": "Select distinct values",
+      "examples": ["查询订单不同的状态"],
+      "priority": 4,
+      "enabled": true
+    },
+    {
+      "id": "count_distinct",
+      "name": "去重计数",
+      "pattern": "(?:统计|计算)(.+?)(?:不同|唯一)(.+?)的数量",
+      "template": "SELECT COUNT(DISTINCT {column}) AS distinct_count FROM {table}",
+      "param_types": {
+        "table": "string",
+        "column": "string"
+      },
+      "category": "aggregate",
+      "description": "Count distinct values",
+      "examples": ["统计订单不同客户的数量"],
+      "priority": 7,
+      "enabled": true
+    },
+    {
+      "id": "left_join",
+      "name": "左连接",
+      "pattern": "(?:查询|获取)(.+?)(?:左连接|left join)(.+?)的(?:数据|记录)?",
+      "template": "SELECT * FROM {table1} LEFT JOIN {table2} ON {table1}.{join_column1} = {table2}.{join_column2}",
+      "param_types": {
+        "table1": "string",
+        "table2": "string",
+        "join_column1": "string",
+        "join_column2": "string"
+      },
+      "category": "join",
+      "description": "Left join two tables",
+      "examples": ["查询订单左连接用户的数据"],
+      "priority": 5,
+      "enabled": true
+    },
+    {
+      "id": "subquery_in",
+      "name": "子查询IN",
+      "pattern": "(?:查询|获取)(.+?)(?:在|属于)(.+?)(?:子查询|结果)中的(.+)",
+      "template": "SELECT * FROM {table1} WHERE {column} IN (SELECT {subquery_column} FROM {table2})",
+      "param_types": {
+        "table1": "string",
+        "table2": "string",
+        "column": "string",
+        "subquery_column": "string"
+      },
+      "category": "subquery",
+      "description": "Subquery with IN clause",
+      "examples": ["查询用户ID在活跃用户子查询中的订单"],
+      "priority": 4,
+      "enabled": true
+    },
+    {
+      "id": "date_today",
+      "name": "今日数据",
+      "pattern": "(?:查询|获取)今(?:天|日)的(.+)",
+      "template": "SELECT * FROM {table} WHERE DATE({date_column}) = CURRENT_DATE",
+      "param_types": {
+        "table": "string",
+        "date_column": "string"
+      },
+      "category": "filter",
+      "description": "Filter today's records",
+      "examples": ["查询今天的订单"],
+      "priority": 6,
+      "enabled": true
+    },
+    {
+      "id": "date_this_month",
+      "name": "本月数据",
+      "pattern": "(?:查询|获取)(?:本月|这个月)的(.+)",
+      "template": "SELECT * FROM {table} WHERE EXTRACT(YEAR FROM {date_column}) = EXTRACT(YEAR FROM CURRENT_DATE) AND EXTRACT(MONTH FROM {date_column}) = EXTRACT(MONTH FROM CURRENT_DATE)",
+      "param_types": {
+        "table": "string",
+        "date_column": "string"
+      },
+      "category": "filter",
+      "description": "Filter this month's records",
+      "examples": ["查询本月的订单"],
+      "priority": 6,
+      "enabled": true
+    },
+    {
+      "id": "recent_n_days",
+      "name": "最近N天",
+      "pattern": "(?:查询|获取)最近(\\d+)(?:天|日)的(.+)",
+      "template": "SELECT * FROM {table} WHERE {date_column} >= CURRENT_DATE - INTERVAL '{days} days'",
+      "param_types": {
+        "table": "string",
+        "date_column": "string",
+        "days": "number"
+      },
+      "category": "filter",
+      "description": "Filter recent N days",
+      "examples": ["查询最近7天的订单"],
+      "priority": 6,
+      "enabled": true
+    }
+  ]
+}

@@ -1,7 +1,8 @@
 """
 FastAPI endpoints for Text-to-SQL in SuperInsight Platform.
 
-Provides RESTful API for natural language to SQL query generation.
+Provides RESTful API for natural language to SQL query generation,
+including method switching, plugin management, and configuration.
 """
 
 import logging
@@ -23,6 +24,20 @@ from src.text_to_sql import (
 from src.text_to_sql.sql_generator import SQLGenerator, get_sql_generator
 from src.text_to_sql.advanced_sql import AdvancedSQLGenerator, get_advanced_sql_generator
 from src.text_to_sql.schema_manager import SchemaManager, get_schema_manager
+
+# New imports for Method Switcher and Plugin Manager
+from src.text_to_sql import (
+    MethodSwitcher,
+    get_method_switcher,
+    MethodInfo,
+    PluginInfo,
+    PluginConfig,
+    TextToSQLConfig,
+    MethodType,
+    ConnectionType,
+    SQLGenerationResult as NewSQLGenerationResult,
+)
+from src.text_to_sql.schema_analyzer import DatabaseSchema
 
 logger = logging.getLogger(__name__)
 
@@ -97,6 +112,57 @@ class SchemaResponse(BaseModel):
     table_count: int = Field(default=0, description="Number of tables")
     relationships: Dict[str, List[str]] = Field(default_factory=dict, description="Table relationships")
     error: Optional[str] = Field(None, description="Error message if failed")
+
+
+# =============================================================================
+# New Request/Response Models for Method Switcher and Plugin Manager
+# =============================================================================
+
+class MethodGenerateRequest(BaseModel):
+    """Request model for method-based SQL generation."""
+    query: str = Field(..., min_length=1, description="Natural language query")
+    method: Optional[MethodType] = Field(None, description="Override method (template/llm/hybrid/third_party)")
+    db_type: Optional[str] = Field(None, description="Database type (postgresql/mysql/sqlite)")
+    tool_name: Optional[str] = Field(None, description="Third-party tool name (for third_party method)")
+    include_metadata: bool = Field(default=True, description="Include generation metadata")
+
+
+class MethodGenerateResponse(BaseModel):
+    """Response model for method-based SQL generation."""
+    success: bool = Field(..., description="Generation success status")
+    sql: str = Field(..., description="Generated SQL query")
+    method_used: str = Field(..., description="Method used for generation")
+    confidence: float = Field(..., description="Confidence score (0-1)")
+    execution_time_ms: float = Field(..., description="Execution time in milliseconds")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
+
+
+class TestGenerateRequestModel(BaseModel):
+    """Request model for testing SQL generation."""
+    query: str = Field(..., min_length=1, description="Natural language query to test")
+    method: Optional[MethodType] = Field(None, description="Method to test")
+    db_type: str = Field(default="postgresql", description="Database type")
+
+
+class ConfigUpdateRequest(BaseModel):
+    """Request model for configuration update."""
+    default_method: Optional[MethodType] = Field(None, description="Default generation method")
+    auto_select_enabled: Optional[bool] = Field(None, description="Enable auto method selection")
+    fallback_enabled: Optional[bool] = Field(None, description="Enable fallback on failure")
+    template_config: Optional[Dict[str, Any]] = Field(None, description="Template method config")
+    llm_config: Optional[Dict[str, Any]] = Field(None, description="LLM method config")
+    hybrid_config: Optional[Dict[str, Any]] = Field(None, description="Hybrid method config")
+
+
+class PluginRegisterRequest(BaseModel):
+    """Request model for plugin registration."""
+    name: str = Field(..., min_length=1, max_length=100, description="Plugin name")
+    connection_type: ConnectionType = Field(..., description="Connection type (rest_api/grpc/local_sdk)")
+    endpoint: Optional[str] = Field(None, description="API endpoint URL")
+    api_key: Optional[str] = Field(None, description="API key for authentication")
+    timeout: int = Field(default=30, ge=1, le=300, description="Request timeout in seconds")
+    enabled: bool = Field(default=True, description="Enable plugin on registration")
+    extra_config: Dict[str, Any] = Field(default_factory=dict, description="Additional configuration")
 
 
 # Service instances
@@ -480,3 +546,499 @@ async def get_supported_dialects() -> JSONResponse:
     return JSONResponse(content={
         "dialects": [d.value for d in DatabaseDialect]
     })
+
+
+# =============================================================================
+# Method Switcher Endpoints (Task 11.1)
+# =============================================================================
+
+@router.post("/methods/generate", response_model=MethodGenerateResponse)
+async def generate_sql_with_method(request: MethodGenerateRequest) -> MethodGenerateResponse:
+    """
+    Generate SQL using the Method Switcher.
+    
+    Supports multiple methods: template, llm, hybrid, third_party.
+    If no method specified, uses configured default or auto-selection.
+    """
+    try:
+        logger.info(f"Generating SQL with method switcher: {request.query[:50]}...")
+        
+        switcher = get_method_switcher()
+        
+        result = await switcher.generate_sql(
+            query=request.query,
+            method=request.method,
+            db_type=request.db_type,
+            tool_name=request.tool_name,
+        )
+        
+        return MethodGenerateResponse(
+            success=bool(result.sql),
+            sql=result.sql,
+            method_used=result.method_used,
+            confidence=result.confidence,
+            execution_time_ms=result.execution_time_ms,
+            metadata=result.metadata if request.include_metadata else {},
+        )
+        
+    except Exception as e:
+        logger.error(f"Method-based SQL generation failed: {e}")
+        return MethodGenerateResponse(
+            success=False,
+            sql="",
+            method_used="error",
+            confidence=0.0,
+            execution_time_ms=0.0,
+            metadata={"error": str(e)},
+        )
+
+
+@router.get("/methods", response_model=List[MethodInfo])
+async def list_methods() -> List[MethodInfo]:
+    """
+    List all available SQL generation methods.
+    
+    Returns built-in methods (template, llm, hybrid) and registered third-party tools.
+    """
+    try:
+        switcher = get_method_switcher()
+        return switcher.list_available_methods()
+        
+    except Exception as e:
+        logger.error(f"Failed to list methods: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to list methods: {str(e)}"
+        )
+
+
+@router.post("/methods/test", response_model=MethodGenerateResponse)
+async def test_generate(request: TestGenerateRequestModel) -> MethodGenerateResponse:
+    """
+    Test SQL generation without persisting results.
+    
+    Useful for previewing SQL before actual use.
+    """
+    try:
+        logger.info(f"Testing SQL generation: {request.query[:50]}...")
+        
+        switcher = get_method_switcher()
+        
+        result = await switcher.generate_sql(
+            query=request.query,
+            method=request.method,
+            db_type=request.db_type,
+        )
+        
+        return MethodGenerateResponse(
+            success=bool(result.sql),
+            sql=result.sql,
+            method_used=result.method_used,
+            confidence=result.confidence,
+            execution_time_ms=result.execution_time_ms,
+            metadata={
+                **result.metadata,
+                "test_mode": True,
+            },
+        )
+        
+    except Exception as e:
+        logger.error(f"Test generation failed: {e}")
+        return MethodGenerateResponse(
+            success=False,
+            sql="",
+            method_used="error",
+            confidence=0.0,
+            execution_time_ms=0.0,
+            metadata={"error": str(e), "test_mode": True},
+        )
+
+
+@router.post("/methods/switch")
+async def switch_method(method: MethodType) -> JSONResponse:
+    """
+    Switch the default SQL generation method.
+    
+    Returns the time taken to switch (should be < 500ms).
+    """
+    try:
+        switcher = get_method_switcher()
+        switch_time = switcher.switch_method(method)
+        
+        return JSONResponse(content={
+            "success": True,
+            "new_method": method.value,
+            "switch_time_ms": switch_time,
+            "message": f"Switched to {method.value} method in {switch_time:.2f}ms"
+        })
+        
+    except Exception as e:
+        logger.error(f"Failed to switch method: {e}")
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"success": False, "error": str(e)}
+        )
+
+
+@router.get("/methods/current")
+async def get_current_method() -> JSONResponse:
+    """
+    Get the current default SQL generation method.
+    """
+    try:
+        switcher = get_method_switcher()
+        current = switcher.get_current_method()
+        
+        return JSONResponse(content={
+            "method": current.value,
+            "description": _get_method_description(current),
+        })
+        
+    except Exception as e:
+        logger.error(f"Failed to get current method: {e}")
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"error": str(e)}
+        )
+
+
+def _get_method_description(method: MethodType) -> str:
+    """Get description for a method type."""
+    descriptions = {
+        MethodType.TEMPLATE: "基于预定义模板的SQL生成，适用于结构化查询",
+        MethodType.LLM: "基于大语言模型的SQL生成，适用于复杂自然语言查询",
+        MethodType.HYBRID: "混合方法：模板优先，LLM回退，结合两者优势",
+        MethodType.THIRD_PARTY: "第三方专业工具生成",
+    }
+    return descriptions.get(method, "Unknown method")
+
+
+# =============================================================================
+# Configuration Endpoints (Task 11.2)
+# =============================================================================
+
+@router.get("/config")
+async def get_config() -> JSONResponse:
+    """
+    Get current Text-to-SQL configuration.
+    """
+    try:
+        switcher = get_method_switcher()
+        config = switcher.get_config()
+        
+        return JSONResponse(content={
+            "success": True,
+            "config": {
+                "default_method": config.default_method.value,
+                "auto_select_enabled": config.auto_select_enabled,
+                "fallback_enabled": config.fallback_enabled,
+                "template_config": config.template_config,
+                "llm_config": config.llm_config,
+                "hybrid_config": config.hybrid_config,
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Failed to get config: {e}")
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"success": False, "error": str(e)}
+        )
+
+
+@router.put("/config")
+async def update_config(request: ConfigUpdateRequest) -> JSONResponse:
+    """
+    Update Text-to-SQL configuration.
+    """
+    try:
+        switcher = get_method_switcher()
+        current_config = switcher.get_config()
+        
+        # Build new config with updates
+        new_config = TextToSQLConfig(
+            default_method=request.default_method or current_config.default_method,
+            auto_select_enabled=request.auto_select_enabled if request.auto_select_enabled is not None else current_config.auto_select_enabled,
+            fallback_enabled=request.fallback_enabled if request.fallback_enabled is not None else current_config.fallback_enabled,
+            template_config=request.template_config or current_config.template_config,
+            llm_config=request.llm_config or current_config.llm_config,
+            hybrid_config=request.hybrid_config or current_config.hybrid_config,
+        )
+        
+        switcher.update_config(new_config)
+        
+        return JSONResponse(content={
+            "success": True,
+            "message": "Configuration updated successfully",
+            "config": {
+                "default_method": new_config.default_method.value,
+                "auto_select_enabled": new_config.auto_select_enabled,
+                "fallback_enabled": new_config.fallback_enabled,
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Failed to update config: {e}")
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"success": False, "error": str(e)}
+        )
+
+
+@router.get("/statistics")
+async def get_switcher_statistics() -> JSONResponse:
+    """
+    Get Method Switcher statistics.
+    """
+    try:
+        switcher = get_method_switcher()
+        stats = switcher.get_statistics()
+        
+        return JSONResponse(content={
+            "success": True,
+            "statistics": stats
+        })
+        
+    except Exception as e:
+        logger.error(f"Failed to get statistics: {e}")
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"success": False, "error": str(e)}
+        )
+
+
+# =============================================================================
+# Plugin Management Endpoints (Task 11.3)
+# =============================================================================
+
+@router.get("/plugins", response_model=List[PluginInfo])
+async def list_plugins() -> List[PluginInfo]:
+    """
+    List all registered third-party plugins.
+    """
+    try:
+        switcher = get_method_switcher()
+        plugins = await switcher.plugin_manager.list_plugins()
+        return plugins
+        
+    except Exception as e:
+        logger.error(f"Failed to list plugins: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to list plugins: {str(e)}"
+        )
+
+
+@router.post("/plugins", response_model=PluginInfo)
+async def register_plugin(request: PluginRegisterRequest) -> PluginInfo:
+    """
+    Register a new third-party plugin.
+    """
+    try:
+        switcher = get_method_switcher()
+        
+        config = PluginConfig(
+            name=request.name,
+            connection_type=request.connection_type,
+            endpoint=request.endpoint,
+            api_key=request.api_key,
+            timeout=request.timeout,
+            enabled=request.enabled,
+            extra_config=request.extra_config,
+        )
+        
+        info = await switcher.plugin_manager.register_plugin(config)
+        return info
+        
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Failed to register plugin: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to register plugin: {str(e)}"
+        )
+
+
+@router.put("/plugins/{name}", response_model=PluginInfo)
+async def update_plugin(name: str, request: PluginRegisterRequest) -> PluginInfo:
+    """
+    Update an existing plugin configuration.
+    """
+    try:
+        switcher = get_method_switcher()
+        
+        config = PluginConfig(
+            name=request.name,
+            connection_type=request.connection_type,
+            endpoint=request.endpoint,
+            api_key=request.api_key,
+            timeout=request.timeout,
+            enabled=request.enabled,
+            extra_config=request.extra_config,
+        )
+        
+        await switcher.plugin_manager.update_plugin_config(name, config)
+        
+        # Get updated info
+        plugin = switcher.plugin_manager.get_plugin(name)
+        if plugin:
+            return plugin.get_info()
+        
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Plugin not found: {name}"
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to update plugin: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update plugin: {str(e)}"
+        )
+
+
+@router.delete("/plugins/{name}")
+async def unregister_plugin(name: str) -> JSONResponse:
+    """
+    Unregister a third-party plugin.
+    """
+    try:
+        switcher = get_method_switcher()
+        await switcher.plugin_manager.unregister_plugin(name)
+        
+        return JSONResponse(content={
+            "success": True,
+            "message": f"Plugin '{name}' unregistered successfully"
+        })
+        
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Failed to unregister plugin: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to unregister plugin: {str(e)}"
+        )
+
+
+@router.post("/plugins/{name}/enable")
+async def enable_plugin(name: str) -> JSONResponse:
+    """
+    Enable a third-party plugin.
+    """
+    try:
+        switcher = get_method_switcher()
+        await switcher.plugin_manager.enable_plugin(name)
+        
+        return JSONResponse(content={
+            "success": True,
+            "message": f"Plugin '{name}' enabled successfully"
+        })
+        
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Failed to enable plugin: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to enable plugin: {str(e)}"
+        )
+
+
+@router.post("/plugins/{name}/disable")
+async def disable_plugin(name: str) -> JSONResponse:
+    """
+    Disable a third-party plugin.
+    """
+    try:
+        switcher = get_method_switcher()
+        await switcher.plugin_manager.disable_plugin(name)
+        
+        return JSONResponse(content={
+            "success": True,
+            "message": f"Plugin '{name}' disabled successfully"
+        })
+        
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Failed to disable plugin: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to disable plugin: {str(e)}"
+        )
+
+
+@router.get("/plugins/health")
+async def plugins_health() -> JSONResponse:
+    """
+    Check health status of all registered plugins.
+    """
+    try:
+        switcher = get_method_switcher()
+        health_status = await switcher.plugin_manager.health_check_all()
+        
+        return JSONResponse(content={
+            "success": True,
+            "health": health_status,
+            "summary": {
+                "total": len(health_status),
+                "healthy": sum(1 for v in health_status.values() if v),
+                "unhealthy": sum(1 for v in health_status.values() if not v),
+            }
+        })
+        
+    except Exception as e:
+        logger.error(f"Failed to check plugins health: {e}")
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"success": False, "error": str(e)}
+        )
+
+
+@router.get("/plugins/{name}/health")
+async def plugin_health(name: str) -> JSONResponse:
+    """
+    Check health status of a specific plugin.
+    """
+    try:
+        switcher = get_method_switcher()
+        plugin = switcher.plugin_manager.get_plugin(name)
+        
+        if not plugin:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Plugin not found: {name}"
+            )
+        
+        is_healthy = await plugin.health_check()
+        
+        return JSONResponse(content={
+            "success": True,
+            "plugin": name,
+            "healthy": is_healthy,
+        })
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to check plugin health: {e}")
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"success": False, "error": str(e)}
+        )

@@ -119,3 +119,20 @@ export type {
   AuditEventHandler as SecurityAuditEventHandler,
 } from './SecurityAuditLogger';
 export { IframeStatus, BridgeStatus, SyncStatus } from './types';
+
+// Template Library and Version Manager
+export { TemplateLibrary } from './TemplateLibrary';
+export type {
+  LabelConfig,
+  TemplateConfig,
+  TemplateCategory,
+  TemplateLibraryConfig,
+} from './TemplateLibrary';
+
+export { VersionManager } from './VersionManager';
+export type {
+  LabelStudioVersion,
+  VersionCompatibility,
+  VersionManagerConfig,
+  VersionCheckResult,
+} from './VersionManager';

@@ -1,4 +1,4 @@
-// Security audit page
+// Security page with navigation
 import { useState } from 'react';
 import { Outlet, useLocation, Link } from 'react-router-dom';
 import {
@@ -35,6 +35,8 @@ import {
   AuditOutlined,
   KeyOutlined,
   DashboardOutlined,
+  SafetyCertificateOutlined,
+  TeamOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 
@@ -181,9 +183,29 @@ const SecurityPage: React.FC = () => {
                 <DashboardOutlined /> 安全概览
               </Link>
             </Menu.Item>
+            <Menu.Item key="rbac">
+              <Link to="/security/rbac">
+                <TeamOutlined /> RBAC 配置
+              </Link>
+            </Menu.Item>
+            <Menu.Item key="sso">
+              <Link to="/security/sso">
+                <SafetyCertificateOutlined /> SSO 配置
+              </Link>
+            </Menu.Item>
             <Menu.Item key="audit">
               <Link to="/security/audit">
                 <AuditOutlined /> 审计日志
+              </Link>
+            </Menu.Item>
+            <Menu.Item key="dashboard">
+              <Link to="/security/dashboard">
+                <SecurityScanOutlined /> 安全仪表板
+              </Link>
+            </Menu.Item>
+            <Menu.Item key="sessions">
+              <Link to="/security/sessions">
+                <ClockCircleOutlined /> 会话管理
               </Link>
             </Menu.Item>
             <Menu.Item key="permissions">

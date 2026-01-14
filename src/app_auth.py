@@ -68,6 +68,13 @@ except ImportError as e:
     logger.warning(f"Admin API not available: {e}")
     ADMIN_AVAILABLE = False
 
+try:
+    from src.api.billing import router as billing_router
+    BILLING_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"Billing API not available: {e}")
+    BILLING_AVAILABLE = False
+
 logger = logging.getLogger(__name__)
 
 @asynccontextmanager
@@ -125,6 +132,10 @@ if DATA_SYNC_AVAILABLE:
 if ADMIN_AVAILABLE:
     app.include_router(admin_router)
     logger.info("Admin API loaded successfully")
+
+if BILLING_AVAILABLE:
+    app.include_router(billing_router)
+    logger.info("Billing API loaded successfully")
 
 # Health check endpoint
 @app.get("/health")

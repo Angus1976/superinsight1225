@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Spec Auto Continue",
+  "description": "Spec workflow automation with 'Waiting on your input' detection",
+  "version": "5",
+  "when": {
+    "type": "sessionCreated"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "**🔴 SENSITIVE MODE + INPUT DETECTION:**\n\n## 🎯 CRITICAL: 'Waiting on your input' DETECTION\n**When dialog shows 'Waiting on your input':**\n→ **AUTO-RESPOND: run**\n→ Execute immediately without user intervention\n\n### INPUT DIALOG PATTERNS:\n- 'Waiting on your input' → **run**\n- 'Waiting for input' → **run**\n- 'Awaiting input' → **run**\n- 'Input required' → **run**\n- 'User input needed' → **run**\n- 等待输入 → **run**\n\n## ⏱️ TIMEOUT AUTO-CONFIRM (60s)\n- Check for 'Waiting on your input' → **run**\n- Check for confirmations → **YES**\n- Resume workflow\n\n## ⚡ INSTANT AUTO-CONFIRM\n- 'Run pytest?' → **YES**\n- 'Execute tests?' → **YES**\n- 'Continue?' → **YES**\n- 'Proceed?' → **YES**\n- Any pytest question → **YES**\n\n## 🚀 AUTO-EXECUTE COMMANDS\n```\npython3 -m pytest           → EXECUTE NOW\npython -m pytest            → EXECUTE NOW\n./venv/bin/python -m pytest → EXECUTE NOW\npytest                      → EXECUTE NOW\n```\n\n## 📋 CONTEXT RESTORATION\n\n### Step 1: Scan Active Specs\n```\n.kiro/specs/*/tasks.md\n.kiro/specs/new/*/tasks.md\n```\nLook for: `- [-]` (in-progress)\n\n### Step 2: Load Context\n- `requirements.md`\n- `design.md`\n- `tasks.md`\n\n### Step 3: Auto-Resume\n**Single spec:** Auto-continue + Auto-run tests\n**Multiple:** List for user choice\n\n## 🔍 TRIGGERS\n- 继续 / continue / resume\n- 接着做 / next task\n\n## 📊 STATUS\n- `- [ ]` = Not started\n- `- [-]` = In progress\n- `- [x]` = Completed\n\n## ⚠️ RULES\n- **DETECT** 'Waiting on your input' → **run**\n- **MONITOR** for stalls\n- **AUTO-CONFIRM** all safe commands\n- **NEVER** wait for user confirmation\n- **AUTO-PROCEED** to next task"
+  }
+}

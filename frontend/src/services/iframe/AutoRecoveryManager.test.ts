@@ -122,33 +122,65 @@ describe('AutoRecoveryManager', () => {
     });
 
     it('should retry reconnection up to max attempts', async () => {
-      // Mock failed health checks
-      (global.fetch as Mock).mockRejectedValue(new Error('Network error'));
+      // Mock failed health checks - make postMessageBridge.send fail
+      mockPostMessageBridge.send = vi.fn().mockRejectedValue(new Error('Communication failed'));
+      
+      // Also disable failover to ensure it returns false
+      const configWithoutFailover: AutoRecoveryConfig = {
+        enableAutoReconnect: true,
+        reconnectInterval: 1000,
+        maxReconnectAttempts: 3,
+        enableFailover: false,  // Disable failover
+        failoverUrls: [],
+        enableHealthCheck: true,
+        healthCheckInterval: 5000,
+        enableErrorLogging: true,
+        logRetentionDays: 7,
+        enableMetrics: true,
+      };
+      
+      const testManager = new AutoRecoveryManager(mockErrorHandler, configWithoutFailover);
+      testManager.initialize(
+        mockIframeManager as IframeManager,
+        mockPostMessageBridge as PostMessageBridge,
+        mockContextManager as ContextManager
+      );
 
-      const result = await autoRecoveryManager.implementAutoReconnect();
+      // Start the reconnection (don't await yet)
+      const promise = testManager.implementAutoReconnect();
+      
+      // Advance timers to allow all retry attempts to complete
+      // With 3 max attempts and exponential backoff (1000ms * attempt number)
+      // We need: attempt 1 (immediate) + delay 1000ms + attempt 2 + delay 2000ms + attempt 3
+      await vi.advanceTimersByTimeAsync(5000);
+      
+      const result = await promise;
 
       expect(result).toBe(false);
-      // Should have attempted multiple times but we can't easily verify the exact count
-      // due to the async nature and private methods
+      
+      testManager.cleanup();
     });
 
     it('should not attempt reconnection when already recovering', async () => {
       // Set isRecovering flag manually by starting a reconnection
       // and checking the behavior
       
-      // Mock slow health check
-      let resolveHealthCheck: () => void = () => {};
-      (global.fetch as Mock).mockImplementation(() => 
-        new Promise(resolve => {
-          resolveHealthCheck = () => resolve({ ok: true, type: 'basic' });
-        })
-      );
+      // Mock slow health check by making send take a long time
+      let callCount = 0;
+      const slowSend = vi.fn().mockImplementation(() => {
+        callCount++;
+        return new Promise(() => {
+          // Never resolve - this simulates a stuck connection
+        });
+      });
+      mockPostMessageBridge.send = slowSend;
 
-      // Start first reconnection (don't await)
+      // Start first reconnection (don't await - it will hang)
       const promise1 = autoRecoveryManager.implementAutoReconnect();
       
-      // Advance timers slightly to let the first call start
-      await vi.advanceTimersByTimeAsync(10);
+      // Wait a tiny bit for the first call to set isRecovering = true
+      await Promise.resolve();
+      await Promise.resolve();
       
       // Attempt second reconnection while first is in progress
       const result2 = await autoRecoveryManager.implementAutoReconnect();
@@ -156,17 +188,10 @@ describe('AutoRecoveryManager', () => {
       // The second call should return false because isRecovering is true
       expect(result2).toBe(false);
       
-      // Resolve the health check and complete the first promise
-      resolveHealthCheck();
-      await vi.runAllTimersAsync();
-      
-      // Wait for the first promise to complete
-      try {
-        await promise1;
-      } catch {
-        // Ignore any errors from the first promise
-      }
-    });
+      // The first promise is still hanging, but we don't need to wait for it
+      // Just verify that send was called at least once (from the first attempt)
+      expect(callCount).toBeGreaterThan(0);
+    }, 1000); // Set a shorter timeout for this test
 
     it('should not attempt reconnection when disabled', async () => {
       const disabledConfig: AutoRecoveryConfig = {

@@ -57,9 +57,28 @@ const DataSyncSourcesPage = lazyWithPreload(() => import('@/pages/DataSync/Sourc
 const DataSyncSecurityPage = lazyWithPreload(() => import('@/pages/DataSync/Security'));
 
 // Admin pages
+const AdminConsolePage = lazyWithPreload(() => import('@/pages/Admin/Console'));
 const AdminTenantsPage = lazyWithPreload(() => import('@/pages/Admin/Tenants'));
 const AdminUsersPage = lazyWithPreload(() => import('@/pages/Admin/Users'));
 const AdminSystemPage = lazyWithPreload(() => import('@/pages/Admin/System'));
+const AdminLLMConfigPage = lazyWithPreload(() => import('@/pages/Admin/LLMConfig'));
+const AdminTextToSQLConfigPage = lazyWithPreload(() => import('@/pages/Admin/TextToSQLConfig'));
+const AdminPermissionConfigPage = lazyWithPreload(() => import('@/pages/Admin/PermissionConfig'));
+const AdminQuotaManagementPage = lazyWithPreload(() => import('@/pages/Admin/QuotaManagement'));
+const AdminBillingManagementPage = lazyWithPreload(() => import('@/pages/Admin/BillingManagement'));
+
+// Admin Configuration pages (new admin-configuration module)
+const AdminConfigDashboardPage = lazyWithPreload(() => import('@/pages/Admin/ConfigDashboard'));
+const AdminConfigLLMPage = lazyWithPreload(() => import('@/pages/Admin/ConfigLLM'));
+const AdminConfigDBPage = lazyWithPreload(() => import('@/pages/Admin/ConfigDB'));
+const AdminConfigSyncPage = lazyWithPreload(() => import('@/pages/Admin/ConfigSync'));
+const AdminSQLBuilderPage = lazyWithPreload(() => import('@/pages/Admin/SQLBuilder'));
+const AdminConfigHistoryPage = lazyWithPreload(() => import('@/pages/Admin/ConfigHistory'));
+const AdminThirdPartyConfigPage = lazyWithPreload(() => import('@/pages/Admin/ThirdPartyConfig'));
+
+// Workspace pages
+const WorkspaceManagementPage = lazyWithPreload(() => import('@/pages/Workspace/WorkspaceManagement'));
+const MemberManagementPage = lazyWithPreload(() => import('@/pages/Workspace/MemberManagement'));
 
 const NotFoundPage = lazyWithPreload(() => import('@/pages/Error/404'));
 const ForbiddenPage = lazyWithPreload(() => import('@/pages/Error/403'));
@@ -179,8 +198,32 @@ export const routes: RouteObject[] = [
         element: withSuspense(AdminPage, 'table'),
         children: [
           {
+            path: 'console',
+            element: withSuspense(AdminConsolePage, 'dashboard'),
+          },
+          {
             path: 'tenants',
             element: withSuspense(AdminTenantsPage, 'table'),
+          },
+          {
+            path: 'workspaces',
+            element: withSuspense(WorkspaceManagementPage, 'table'),
+          },
+          {
+            path: 'members',
+            element: withSuspense(MemberManagementPage, 'table'),
+          },
+          {
+            path: 'permissions',
+            element: withSuspense(AdminPermissionConfigPage, 'table'),
+          },
+          {
+            path: 'quotas',
+            element: withSuspense(AdminQuotaManagementPage, 'table'),
+          },
+          {
+            path: 'billing',
+            element: withSuspense(AdminBillingManagementPage, 'table'),
           },
           {
             path: 'users',
@@ -189,6 +232,43 @@ export const routes: RouteObject[] = [
           {
             path: 'system',
             element: withSuspense(AdminSystemPage, 'form'),
+          },
+          {
+            path: 'llm-config',
+            element: withSuspense(AdminLLMConfigPage, 'form'),
+          },
+          {
+            path: 'text-to-sql',
+            element: withSuspense(AdminTextToSQLConfigPage, 'form'),
+          },
+          // Admin Configuration Module Routes
+          {
+            path: 'config',
+            element: withSuspense(AdminConfigDashboardPage, 'dashboard'),
+          },
+          {
+            path: 'config/llm',
+            element: withSuspense(AdminConfigLLMPage, 'table'),
+          },
+          {
+            path: 'config/databases',
+            element: withSuspense(AdminConfigDBPage, 'table'),
+          },
+          {
+            path: 'config/sync',
+            element: withSuspense(AdminConfigSyncPage, 'table'),
+          },
+          {
+            path: 'config/sql-builder',
+            element: withSuspense(AdminSQLBuilderPage, 'form'),
+          },
+          {
+            path: 'config/history',
+            element: withSuspense(AdminConfigHistoryPage, 'table'),
+          },
+          {
+            path: 'config/third-party',
+            element: withSuspense(AdminThirdPartyConfigPage, 'table'),
           },
         ],
       },

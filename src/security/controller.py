@@ -18,7 +18,7 @@ from sqlalchemy import and_, or_, select
 
 from src.security.models import (
     UserModel, ProjectPermissionModel, IPWhitelistModel, 
-    AuditLogModel, DataMaskingRuleModel,
+    SecurityAuditLogModel, DataMaskingRuleModel,
     UserRole, PermissionType, AuditAction
 )
 from src.database.connection import get_db_session
@@ -408,7 +408,7 @@ class SecurityController:
     ) -> bool:
         """Log a user action for audit purposes."""
         try:
-            audit_log = AuditLogModel(
+            audit_log = SecurityAuditLogModel(
                 user_id=user_id,
                 tenant_id=tenant_id,
                 action=action,
@@ -436,24 +436,24 @@ class SecurityController:
         end_date: Optional[datetime] = None,
         limit: int = 100,
         db: Session = None
-    ) -> List[AuditLogModel]:
+    ) -> List[SecurityAuditLogModel]:
         """Retrieve audit logs with filtering."""
-        query = db.query(AuditLogModel).filter(
-            AuditLogModel.tenant_id == tenant_id
+        query = db.query(SecurityAuditLogModel).filter(
+            SecurityAuditLogModel.tenant_id == tenant_id
         )
         
         if user_id:
-            query = query.filter(AuditLogModel.user_id == user_id)
+            query = query.filter(SecurityAuditLogModel.user_id == user_id)
         if action:
-            query = query.filter(AuditLogModel.action == action)
+            query = query.filter(SecurityAuditLogModel.action == action)
         if resource_type:
-            query = query.filter(AuditLogModel.resource_type == resource_type)
+            query = query.filter(SecurityAuditLogModel.resource_type == resource_type)
         if start_date:
-            query = query.filter(AuditLogModel.timestamp >= start_date)
+            query = query.filter(SecurityAuditLogModel.timestamp >= start_date)
         if end_date:
-            query = query.filter(AuditLogModel.timestamp <= end_date)
+            query = query.filter(SecurityAuditLogModel.timestamp <= end_date)
         
-        return query.order_by(AuditLogModel.timestamp.desc()).limit(limit).all()
+        return query.order_by(SecurityAuditLogModel.timestamp.desc()).limit(limit).all()
     
     # User Management Methods
     
@@ -605,8 +605,8 @@ class SecurityController:
             if not hasattr(AuditAction, 'LOGIN'):
                 return False
 
-            # Verify AuditLogModel is available
-            if not AuditLogModel:
+            # Verify SecurityAuditLogModel is available
+            if not SecurityAuditLogModel:
                 return False
 
             # Verify the log_user_action method exists and is callable

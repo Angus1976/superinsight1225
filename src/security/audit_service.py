@@ -17,7 +17,7 @@ from collections import defaultdict, Counter
 import asyncio
 from enum import Enum
 
-from src.security.models import AuditLogModel, AuditAction, UserModel
+from src.security.models import SecurityAuditLogModel as AuditLogModel, AuditAction, UserModel
 from src.database.connection import get_db_session
 
 

@@ -1,537 +1,751 @@
 """
-Configuration management system for SuperInsight platform.
+Config Manager for SuperInsight Platform Admin Configuration.
 
-Provides centralized configuration management with validation, persistence, and hot-reloading.
+Provides unified configuration management with:
+- CRUD operations for all config types
+- Automatic history tracking
+- Redis caching for performance
+- Validation before save
+
+**Feature: admin-configuration**
+**Validates: Requirements 2.4, 3.4**
 """
 
-import os
-import json
-import yaml
 import logging
-from typing import Dict, Any, Optional, List, Union
+import json
 from datetime import datetime
-from pathlib import Path
-from dataclasses import dataclass, asdict
-from threading import Lock
-import threading
+from typing import Optional, Dict, Any, List, Union
+from uuid import uuid4
+
+from sqlalchemy import select, and_, update, delete
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.admin.schemas import (
+    ConfigType,
+    ValidationResult,
+    ConnectionTestResult,
+    LLMConfigCreate,
+    LLMConfigUpdate,
+    LLMConfigResponse,
+    DBConfigCreate,
+    DBConfigUpdate,
+    DBConfigResponse,
+    ThirdPartyConfigCreate,
+    ThirdPartyConfigUpdate,
+    ThirdPartyConfigResponse,
+)
+from src.admin.credential_encryptor import CredentialEncryptor, get_credential_encryptor
+from src.admin.config_validator import ConfigValidator, get_config_validator
+from src.admin.history_tracker import HistoryTracker, get_history_tracker
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class ConfigChange:
-    """配置变更记录"""
-    timestamp: datetime
-    section: str
-    key: str
-    old_value: Any
-    new_value: Any
-    user: str
-    reason: str = ""
-
-
-class ConfigValidator:
-    """配置验证器"""
-    
-    def __init__(self):
-        self.validators = {
-            'api_rate_limit': self._validate_positive_int,
-            'max_concurrent_jobs': self._validate_positive_int,
-            'log_retention_days': self._validate_positive_int,
-            'maintenance_mode': self._validate_boolean,
-            'auto_backup_enabled': self._validate_boolean,
-            'backup_retention_days': self._validate_positive_int,
-            'database_pool_size': self._validate_positive_int,
-            'redis_max_connections': self._validate_positive_int,
-            'ai_request_timeout': self._validate_positive_number,
-            'extraction_batch_size': self._validate_positive_int,
-        }
-    
-    def validate(self, key: str, value: Any) -> bool:
-        """验证配置值"""
-        validator = self.validators.get(key)
-        if validator:
-            return validator(value)
-        return True  # 未知配置项默认通过
-    
-    def _validate_positive_int(self, value: Any) -> bool:
-        """验证正整数"""
-        try:
-            return isinstance(value, int) and value > 0
-        except:
-            return False
-    
-    def _validate_positive_number(self, value: Any) -> bool:
-        """验证正数"""
-        try:
-            return isinstance(value, (int, float)) and value > 0
-        except:
-            return False
-    
-    def _validate_boolean(self, value: Any) -> bool:
-        """验证布尔值"""
-        return isinstance(value, bool)
-
-
 class ConfigManager:
-    """配置管理器"""
+    """
+    Unified configuration manager.
     
-    def __init__(self, config_dir: str = ".kiro/config"):
-        self.config_dir = Path(config_dir)
-        self.config_dir.mkdir(parents=True, exist_ok=True)
+    Manages all configuration types with validation, encryption,
+    history tracking, and caching.
+    
+    **Feature: admin-configuration**
+    **Validates: Requirements 2.4, 3.4**
+    """
+    
+    # Cache TTL in seconds
+    CACHE_TTL = 300  # 5 minutes
+    
+    def __init__(
+        self,
+        db: Optional[AsyncSession] = None,
+        cache: Optional[Any] = None,  # Redis client
+        encryptor: Optional[CredentialEncryptor] = None,
+        validator: Optional[ConfigValidator] = None,
+        history_tracker: Optional[HistoryTracker] = None,
+    ):
+        """
+        Initialize the config manager.
         
-        self.config_file = self.config_dir / "system.yaml"
-        self.changes_file = self.config_dir / "changes.json"
+        Args:
+            db: Async database session
+            cache: Redis cache client
+            encryptor: Credential encryptor
+            validator: Config validator
+            history_tracker: History tracker
+        """
+        self._db = db
+        self._cache = cache
+        self._encryptor = encryptor or get_credential_encryptor()
+        self._validator = validator or get_config_validator()
+        self._history_tracker = history_tracker or get_history_tracker()
         
-        self._config: Dict[str, Any] = {}
-        self._lock = Lock()
-        self._validator = ConfigValidator()
-        self._changes: List[ConfigChange] = []
-        
-        # 默认配置
-        self._default_config = {
-            'system': {
-                'api_rate_limit': 1000,
-                'max_concurrent_jobs': 10,
-                'log_retention_days': 30,
-                'maintenance_mode': False,
-                'debug_mode': False
-            },
-            'database': {
-                'pool_size': 20,
-                'pool_timeout': 30,
-                'pool_recycle': 3600,
-                'echo_sql': False
-            },
-            'redis': {
-                'max_connections': 50,
-                'socket_timeout': 5,
-                'socket_connect_timeout': 5,
-                'retry_on_timeout': True
-            },
-            'ai': {
-                'request_timeout': 60,
-                'max_retries': 3,
-                'cache_enabled': True,
-                'cache_ttl': 3600
-            },
-            'extraction': {
-                'batch_size': 100,
-                'max_file_size_mb': 100,
-                'supported_formats': ['pdf', 'docx', 'txt', 'html'],
-                'timeout_seconds': 300
-            },
-            'quality': {
-                'auto_check_enabled': True,
-                'min_confidence_threshold': 0.7,
-                'max_issues_per_batch': 10
-            },
-            'billing': {
-                'auto_calculation': True,
-                'currency': 'CNY',
-                'default_rate_per_annotation': 0.10,
-                'default_rate_per_hour': 50.00
-            },
-            'security': {
-                'session_timeout_minutes': 60,
-                'max_login_attempts': 5,
-                'password_min_length': 8,
-                'require_2fa': False
-            },
-            'monitoring': {
-                'metrics_retention_days': 90,
-                'alert_enabled': True,
-                'health_check_interval': 30,
-                'performance_sampling_rate': 0.1
-            },
-            'backup': {
-                'auto_backup_enabled': True,
-                'backup_interval_hours': 24,
-                'backup_retention_days': 7,
-                'backup_location': './backups'
-            }
+        # In-memory storage for testing without database
+        self._in_memory_configs: Dict[str, Dict[str, Any]] = {
+            ConfigType.LLM.value: {},
+            ConfigType.DATABASE.value: {},
+            ConfigType.SYNC_STRATEGY.value: {},
+            ConfigType.THIRD_PARTY.value: {},
         }
-        
-        # 加载配置
-        self._load_config()
-        self._load_changes()
     
-    def _load_config(self):
-        """加载配置文件"""
-        with self._lock:
-            if self.config_file.exists():
-                try:
-                    with open(self.config_file, 'r', encoding='utf-8') as f:
-                        loaded_config = yaml.safe_load(f) or {}
-                    
-                    # 合并默认配置和加载的配置
-                    self._config = self._merge_configs(self._default_config, loaded_config)
-                    logger.info(f"配置已从 {self.config_file} 加载")
-                    
-                except Exception as e:
-                    logger.error(f"加载配置文件失败: {e}")
-                    self._config = self._default_config.copy()
+    @property
+    def db(self) -> Optional[AsyncSession]:
+        """Get the database session."""
+        return self._db
+    
+    @db.setter
+    def db(self, session: AsyncSession) -> None:
+        """Set the database session."""
+        self._db = session
+        self._history_tracker.db = session
+    
+    # ========== LLM Configuration ==========
+    
+    async def get_llm_config(
+        self,
+        config_id: str,
+        tenant_id: Optional[str] = None,
+    ) -> Optional[LLMConfigResponse]:
+        """
+        Get LLM configuration by ID.
+        
+        Args:
+            config_id: Configuration ID
+            tenant_id: Optional tenant ID for multi-tenant
+            
+        Returns:
+            LLMConfigResponse if found, None otherwise
+        """
+        # Try cache first
+        cache_key = f"llm_config:{config_id}"
+        cached = await self._get_from_cache(cache_key)
+        if cached:
+            return LLMConfigResponse(**cached)
+        
+        if self._db is not None:
+            config = await self._get_llm_from_db(config_id, tenant_id)
+        else:
+            config = self._in_memory_configs[ConfigType.LLM.value].get(config_id)
+        
+        if config:
+            # Mask sensitive fields
+            response = self._to_llm_response(config)
+            await self._set_cache(cache_key, response.model_dump())
+            return response
+        
+        return None
+    
+    async def list_llm_configs(
+        self,
+        tenant_id: Optional[str] = None,
+        active_only: bool = True,
+    ) -> List[LLMConfigResponse]:
+        """
+        List all LLM configurations.
+        
+        Args:
+            tenant_id: Optional tenant ID filter
+            active_only: Only return active configs
+            
+        Returns:
+            List of LLMConfigResponse
+        """
+        if self._db is not None:
+            configs = await self._list_llm_from_db(tenant_id, active_only)
+        else:
+            configs = list(self._in_memory_configs[ConfigType.LLM.value].values())
+            if active_only:
+                configs = [c for c in configs if c.get("is_active", True)]
+        
+        return [self._to_llm_response(c) for c in configs]
+    
+    async def save_llm_config(
+        self,
+        config: Union[LLMConfigCreate, LLMConfigUpdate],
+        user_id: str,
+        user_name: str = "Unknown",
+        config_id: Optional[str] = None,
+        tenant_id: Optional[str] = None,
+    ) -> LLMConfigResponse:
+        """
+        Save LLM configuration (create or update).
+        
+        Args:
+            config: Configuration data
+            user_id: User making the change
+            user_name: User name for history
+            config_id: Existing config ID for update
+            tenant_id: Tenant ID for multi-tenant
+            
+        Returns:
+            Saved LLMConfigResponse
+        """
+        # Validate configuration
+        validation = self._validator.validate_llm_config(config)
+        if not validation.is_valid:
+            raise ValueError(f"Invalid LLM config: {validation.errors}")
+        
+        # Get old value for history and merging
+        old_value = None
+        existing_config = None
+        if config_id:
+            if self._db is not None:
+                existing_config = await self._get_llm_from_db(config_id, tenant_id)
             else:
-                # 使用默认配置并保存
-                self._config = self._default_config.copy()
-                self._save_config()
-                logger.info("使用默认配置并已保存")
-    
-    def _save_config(self):
-        """保存配置文件"""
-        try:
-            with open(self.config_file, 'w', encoding='utf-8') as f:
-                yaml.dump(self._config, f, default_flow_style=False, allow_unicode=True)
-            logger.info(f"配置已保存到 {self.config_file}")
-        except Exception as e:
-            logger.error(f"保存配置文件失败: {e}")
-            raise
-    
-    def _load_changes(self):
-        """加载变更历史"""
-        if self.changes_file.exists():
-            try:
-                with open(self.changes_file, 'r', encoding='utf-8') as f:
-                    changes_data = json.load(f)
-                
-                self._changes = [
-                    ConfigChange(
-                        timestamp=datetime.fromisoformat(change['timestamp']),
-                        section=change['section'],
-                        key=change['key'],
-                        old_value=change['old_value'],
-                        new_value=change['new_value'],
-                        user=change['user'],
-                        reason=change.get('reason', '')
-                    )
-                    for change in changes_data
-                ]
-                
-            except Exception as e:
-                logger.error(f"加载变更历史失败: {e}")
-                self._changes = []
-    
-    def _save_changes(self):
-        """保存变更历史"""
-        try:
-            changes_data = [
-                {
-                    'timestamp': change.timestamp.isoformat(),
-                    'section': change.section,
-                    'key': change.key,
-                    'old_value': change.old_value,
-                    'new_value': change.new_value,
-                    'user': change.user,
-                    'reason': change.reason
-                }
-                for change in self._changes[-1000:]  # 只保留最近1000条记录
-            ]
+                existing_config = self._in_memory_configs[ConfigType.LLM.value].get(config_id)
             
-            with open(self.changes_file, 'w', encoding='utf-8') as f:
-                json.dump(changes_data, f, indent=2, ensure_ascii=False)
-                
-        except Exception as e:
-            logger.error(f"保存变更历史失败: {e}")
-    
-    def _merge_configs(self, default: Dict[str, Any], loaded: Dict[str, Any]) -> Dict[str, Any]:
-        """合并配置"""
-        result = default.copy()
+            if existing_config:
+                old_value = existing_config.copy()
         
-        for key, value in loaded.items():
-            if key in result and isinstance(result[key], dict) and isinstance(value, dict):
-                result[key] = self._merge_configs(result[key], value)
-            else:
-                result[key] = value
+        # Prepare config data
+        config_dict = config.model_dump(exclude_unset=True) if hasattr(config, 'model_dump') else config.dict(exclude_unset=True)
         
-        return result
+        # For updates, merge with existing config
+        if config_id and existing_config:
+            merged_config = existing_config.copy()
+            merged_config.update(config_dict)
+            config_dict = merged_config
+        
+        # Encrypt API key if present
+        if "api_key" in config_dict and config_dict["api_key"]:
+            config_dict["api_key_encrypted"] = self._encryptor.encrypt(config_dict["api_key"])
+            del config_dict["api_key"]
+        
+        # Set timestamps and IDs
+        now = datetime.utcnow()
+        if config_id:
+            config_dict["id"] = config_id
+            config_dict["updated_at"] = now
+        else:
+            config_dict["id"] = str(uuid4())
+            config_dict["created_at"] = now
+            config_dict["updated_at"] = now
+        
+        config_dict["tenant_id"] = tenant_id
+        
+        # Save to storage
+        if self._db is not None:
+            saved = await self._save_llm_to_db(config_dict, config_id is not None)
+        else:
+            self._in_memory_configs[ConfigType.LLM.value][config_dict["id"]] = config_dict
+            saved = config_dict
+        
+        # Record history
+        await self._history_tracker.record_change(
+            config_type=ConfigType.LLM,
+            old_value=old_value,
+            new_value=config_dict,
+            user_id=user_id,
+            user_name=user_name,
+            tenant_id=tenant_id,
+            config_id=config_dict["id"],
+        )
+        
+        # Invalidate cache
+        await self._invalidate_cache(f"llm_config:{config_dict['id']}")
+        
+        return self._to_llm_response(saved)
     
-    def get(self, section: str, key: Optional[str] = None, default: Any = None) -> Any:
-        """获取配置值"""
-        with self._lock:
-            if key is None:
-                return self._config.get(section, default)
+    async def delete_llm_config(
+        self,
+        config_id: str,
+        user_id: str,
+        user_name: str = "Unknown",
+        tenant_id: Optional[str] = None,
+    ) -> bool:
+        """
+        Delete LLM configuration.
+        
+        Args:
+            config_id: Configuration ID to delete
+            user_id: User making the change
+            user_name: User name for history
+            tenant_id: Tenant ID for multi-tenant
             
-            section_config = self._config.get(section, {})
-            if isinstance(section_config, dict):
-                return section_config.get(key, default)
-            
-            return default
+        Returns:
+            True if deleted, False if not found
+        """
+        # Get old value for history
+        existing = await self.get_llm_config(config_id, tenant_id)
+        if not existing:
+            return False
+        
+        old_value = existing.model_dump()
+        
+        # Delete from storage
+        if self._db is not None:
+            await self._delete_llm_from_db(config_id, tenant_id)
+        else:
+            if config_id in self._in_memory_configs[ConfigType.LLM.value]:
+                del self._in_memory_configs[ConfigType.LLM.value][config_id]
+        
+        # Record history (new_value indicates deletion)
+        await self._history_tracker.record_change(
+            config_type=ConfigType.LLM,
+            old_value=old_value,
+            new_value={"_deleted": True, "id": config_id},
+            user_id=user_id,
+            user_name=user_name,
+            tenant_id=tenant_id,
+            config_id=config_id,
+        )
+        
+        # Invalidate cache
+        await self._invalidate_cache(f"llm_config:{config_id}")
+        
+        return True
     
-    def set(self, section: str, key: str, value: Any, user: str = "system", reason: str = "") -> bool:
-        """设置配置值"""
-        with self._lock:
-            # 验证配置值
-            full_key = f"{section}.{key}" if section else key
-            if not self._validator.validate(full_key, value):
-                logger.error(f"配置值验证失败: {full_key} = {value}")
-                return False
+    # ========== Database Configuration ==========
+    
+    async def get_db_config(
+        self,
+        config_id: str,
+        tenant_id: Optional[str] = None,
+    ) -> Optional[DBConfigResponse]:
+        """Get database configuration by ID."""
+        cache_key = f"db_config:{config_id}"
+        cached = await self._get_from_cache(cache_key)
+        if cached:
+            return DBConfigResponse(**cached)
+        
+        if self._db is not None:
+            config = await self._get_db_from_db(config_id, tenant_id)
+        else:
+            config = self._in_memory_configs[ConfigType.DATABASE.value].get(config_id)
+        
+        if config:
+            response = self._to_db_response(config)
+            await self._set_cache(cache_key, response.model_dump())
+            return response
+        
+        return None
+    
+    async def list_db_configs(
+        self,
+        tenant_id: Optional[str] = None,
+        active_only: bool = True,
+    ) -> List[DBConfigResponse]:
+        """List all database configurations."""
+        if self._db is not None:
+            configs = await self._list_db_from_db(tenant_id, active_only)
+        else:
+            configs = list(self._in_memory_configs[ConfigType.DATABASE.value].values())
+            if active_only:
+                configs = [c for c in configs if c.get("is_active", True)]
+        
+        return [self._to_db_response(c) for c in configs]
+    
+    async def save_db_config(
+        self,
+        config: Union[DBConfigCreate, DBConfigUpdate],
+        user_id: str,
+        user_name: str = "Unknown",
+        config_id: Optional[str] = None,
+        tenant_id: Optional[str] = None,
+    ) -> DBConfigResponse:
+        """Save database configuration (create or update)."""
+        # Validate configuration
+        validation = self._validator.validate_db_config(config)
+        if not validation.is_valid:
+            raise ValueError(f"Invalid DB config: {validation.errors}")
+        
+        # Get old value for history
+        old_value = None
+        if config_id:
+            existing = await self.get_db_config(config_id, tenant_id)
+            if existing:
+                old_value = existing.model_dump()
+        
+        # Prepare config data
+        config_dict = config.model_dump(exclude_unset=True) if hasattr(config, 'model_dump') else config.dict(exclude_unset=True)
+        
+        # Encrypt password if present
+        if "password" in config_dict and config_dict["password"]:
+            config_dict["password_encrypted"] = self._encryptor.encrypt(config_dict["password"])
+            del config_dict["password"]
+        
+        # Set timestamps and IDs
+        now = datetime.utcnow()
+        if config_id:
+            config_dict["id"] = config_id
+            config_dict["updated_at"] = now
+        else:
+            config_dict["id"] = str(uuid4())
+            config_dict["created_at"] = now
+            config_dict["updated_at"] = now
+        
+        config_dict["tenant_id"] = tenant_id
+        
+        # Save to storage
+        if self._db is not None:
+            saved = await self._save_db_to_db(config_dict, config_id is not None)
+        else:
+            self._in_memory_configs[ConfigType.DATABASE.value][config_dict["id"]] = config_dict
+            saved = config_dict
+        
+        # Record history
+        await self._history_tracker.record_change(
+            config_type=ConfigType.DATABASE,
+            old_value=old_value,
+            new_value=config_dict,
+            user_id=user_id,
+            user_name=user_name,
+            tenant_id=tenant_id,
+            config_id=config_dict["id"],
+        )
+        
+        # Invalidate cache
+        await self._invalidate_cache(f"db_config:{config_dict['id']}")
+        
+        return self._to_db_response(saved)
+    
+    async def delete_db_config(
+        self,
+        config_id: str,
+        user_id: str,
+        user_name: str = "Unknown",
+        tenant_id: Optional[str] = None,
+    ) -> bool:
+        """Delete database configuration."""
+        existing = await self.get_db_config(config_id, tenant_id)
+        if not existing:
+            return False
+        
+        old_value = existing.model_dump()
+        
+        if self._db is not None:
+            await self._delete_db_from_db(config_id, tenant_id)
+        else:
+            if config_id in self._in_memory_configs[ConfigType.DATABASE.value]:
+                del self._in_memory_configs[ConfigType.DATABASE.value][config_id]
+        
+        await self._history_tracker.record_change(
+            config_type=ConfigType.DATABASE,
+            old_value=old_value,
+            new_value={"_deleted": True, "id": config_id},
+            user_id=user_id,
+            user_name=user_name,
+            tenant_id=tenant_id,
+            config_id=config_id,
+        )
+        
+        await self._invalidate_cache(f"db_config:{config_id}")
+        
+        return True
+    
+    async def test_db_connection(
+        self,
+        config_id: str,
+        tenant_id: Optional[str] = None,
+    ) -> ConnectionTestResult:
+        """
+        Test database connection.
+        
+        Args:
+            config_id: Database configuration ID
+            tenant_id: Tenant ID for multi-tenant
             
-            # 获取旧值
-            old_value = self.get(section, key)
-            
-            # 设置新值
-            if section not in self._config:
-                self._config[section] = {}
-            
-            if not isinstance(self._config[section], dict):
-                self._config[section] = {}
-            
-            self._config[section][key] = value
-            
-            # 记录变更
-            change = ConfigChange(
-                timestamp=datetime.now(),
-                section=section,
-                key=key,
-                old_value=old_value,
-                new_value=value,
-                user=user,
-                reason=reason
+        Returns:
+            ConnectionTestResult with test status
+        """
+        config = await self.get_db_config(config_id, tenant_id)
+        if not config:
+            return ConnectionTestResult(
+                success=False,
+                latency_ms=0,
+                error_message="Configuration not found",
             )
-            self._changes.append(change)
+        
+        # Get decrypted password
+        password = None
+        if self._db is not None:
+            raw_config = await self._get_db_from_db(config_id, tenant_id)
+            if raw_config and raw_config.get("password_encrypted"):
+                password = self._encryptor.decrypt(raw_config["password_encrypted"])
+        else:
+            raw_config = self._in_memory_configs[ConfigType.DATABASE.value].get(config_id)
+            if raw_config and raw_config.get("password_encrypted"):
+                password = self._encryptor.decrypt(raw_config["password_encrypted"])
+        
+        # Test connection
+        return await self._validator.test_db_connection(config.model_dump(), password)
+    
+    # ========== Validation ==========
+    
+    def validate_config(
+        self,
+        config_type: ConfigType,
+        config: Dict[str, Any],
+    ) -> ValidationResult:
+        """
+        Validate configuration without saving.
+        
+        Args:
+            config_type: Type of configuration
+            config: Configuration data to validate
             
-            # 保存配置和变更历史
-            try:
-                self._save_config()
-                self._save_changes()
-                logger.info(f"配置已更新: {section}.{key} = {value} (用户: {user})")
-                return True
-            except Exception as e:
-                logger.error(f"保存配置失败: {e}")
-                return False
+        Returns:
+            ValidationResult with validation status
+        """
+        if config_type == ConfigType.LLM:
+            return self._validator.validate_llm_config(config)
+        elif config_type == ConfigType.DATABASE:
+            return self._validator.validate_db_config(config)
+        elif config_type == ConfigType.SYNC_STRATEGY:
+            return self._validator.validate_sync_config(config)
+        else:
+            return ValidationResult(is_valid=True)
     
-    def update_section(self, section: str, updates: Dict[str, Any], user: str = "system", reason: str = "") -> bool:
-        """批量更新配置节"""
-        success = True
+    # ========== Cache Operations ==========
+    
+    async def _get_from_cache(self, key: str) -> Optional[Dict[str, Any]]:
+        """Get value from cache."""
+        if self._cache is None:
+            return None
         
-        for key, value in updates.items():
-            if not self.set(section, key, value, user, reason):
-                success = False
-        
-        return success
-    
-    def get_all(self) -> Dict[str, Any]:
-        """获取所有配置"""
-        with self._lock:
-            return self._config.copy()
-    
-    def get_changes(self, limit: int = 100) -> List[ConfigChange]:
-        """获取变更历史"""
-        with self._lock:
-            return self._changes[-limit:] if limit > 0 else self._changes.copy()
-    
-    def reset_to_default(self, section: Optional[str] = None, user: str = "system", reason: str = "重置为默认值") -> bool:
-        """重置为默认配置"""
-        with self._lock:
-            try:
-                if section:
-                    if section in self._default_config:
-                        old_value = self._config.get(section)
-                        self._config[section] = self._default_config[section].copy()
-                        
-                        # 记录变更
-                        change = ConfigChange(
-                            timestamp=datetime.now(),
-                            section=section,
-                            key="*",
-                            old_value=old_value,
-                            new_value=self._config[section],
-                            user=user,
-                            reason=reason
-                        )
-                        self._changes.append(change)
-                else:
-                    old_config = self._config.copy()
-                    self._config = self._default_config.copy()
-                    
-                    # 记录变更
-                    change = ConfigChange(
-                        timestamp=datetime.now(),
-                        section="*",
-                        key="*",
-                        old_value=old_config,
-                        new_value=self._config,
-                        user=user,
-                        reason=reason
-                    )
-                    self._changes.append(change)
-                
-                self._save_config()
-                self._save_changes()
-                logger.info(f"配置已重置: {section or 'all'} (用户: {user})")
-                return True
-                
-            except Exception as e:
-                logger.error(f"重置配置失败: {e}")
-                return False
-    
-    def export_config(self, file_path: str, format: str = "yaml") -> bool:
-        """导出配置"""
         try:
-            with self._lock:
-                config_data = self._config.copy()
-            
-            if format.lower() == "json":
-                with open(file_path, 'w', encoding='utf-8') as f:
-                    json.dump(config_data, f, indent=2, ensure_ascii=False)
-            else:  # yaml
-                with open(file_path, 'w', encoding='utf-8') as f:
-                    yaml.dump(config_data, f, default_flow_style=False, allow_unicode=True)
-            
-            logger.info(f"配置已导出到 {file_path}")
-            return True
-            
+            cached = await self._cache.get(key)
+            if cached:
+                return json.loads(cached)
         except Exception as e:
-            logger.error(f"导出配置失败: {e}")
-            return False
-    
-    def import_config(self, file_path: str, user: str = "system", reason: str = "导入配置") -> bool:
-        """导入配置"""
-        try:
-            file_path = Path(file_path)
-            if not file_path.exists():
-                logger.error(f"配置文件不存在: {file_path}")
-                return False
-            
-            # 根据文件扩展名确定格式
-            if file_path.suffix.lower() == '.json':
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    imported_config = json.load(f)
-            else:  # yaml
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    imported_config = yaml.safe_load(f)
-            
-            if not isinstance(imported_config, dict):
-                logger.error("导入的配置格式无效")
-                return False
-            
-            with self._lock:
-                old_config = self._config.copy()
-                self._config = self._merge_configs(self._default_config, imported_config)
-                
-                # 记录变更
-                change = ConfigChange(
-                    timestamp=datetime.now(),
-                    section="*",
-                    key="*",
-                    old_value=old_config,
-                    new_value=self._config,
-                    user=user,
-                    reason=reason
-                )
-                self._changes.append(change)
-                
-                self._save_config()
-                self._save_changes()
-            
-            logger.info(f"配置已从 {file_path} 导入 (用户: {user})")
-            return True
-            
-        except Exception as e:
-            logger.error(f"导入配置失败: {e}")
-            return False
-    
-    def validate_all(self) -> Dict[str, List[str]]:
-        """验证所有配置"""
-        errors = {}
+            logger.warning(f"Cache get failed: {e}")
         
-        with self._lock:
-            for section, section_config in self._config.items():
-                if isinstance(section_config, dict):
-                    for key, value in section_config.items():
-                        full_key = f"{section}.{key}"
-                        if not self._validator.validate(full_key, value):
-                            if section not in errors:
-                                errors[section] = []
-                            errors[section].append(f"{key}: 无效值 {value}")
-        
-        return errors
-
-
-# 全局配置管理器实例
-config_manager = ConfigManager()
-
-
-def get_config(section: str, key: Optional[str] = None, default: Any = None) -> Any:
-    """获取配置值的便捷函数"""
-    return config_manager.get(section, key, default)
-
-
-def set_config(section: str, key: str, value: Any, user: str = "system", reason: str = "") -> bool:
-    """设置配置值的便捷函数"""
-    return config_manager.set(section, key, value, user, reason)
-
-
-# 配置热重载支持
-class ConfigWatcher:
-    """配置文件监控器"""
+        return None
     
-    def __init__(self, config_manager: ConfigManager, check_interval: int = 5):
-        self.config_manager = config_manager
-        self.check_interval = check_interval
-        self.last_modified = None
-        self.running = False
-        self.thread = None
-        
-        self._update_last_modified()
-    
-    def _update_last_modified(self):
-        """更新最后修改时间"""
-        try:
-            if self.config_manager.config_file.exists():
-                self.last_modified = self.config_manager.config_file.stat().st_mtime
-        except:
-            pass
-    
-    def start(self):
-        """启动监控"""
-        if self.running:
+    async def _set_cache(self, key: str, value: Dict[str, Any]) -> None:
+        """Set value in cache."""
+        if self._cache is None:
             return
         
-        self.running = True
-        self.thread = threading.Thread(target=self._watch_loop, daemon=True)
-        self.thread.start()
-        logger.info("配置文件监控已启动")
+        try:
+            await self._cache.setex(key, self.CACHE_TTL, json.dumps(value, default=str))
+        except Exception as e:
+            logger.warning(f"Cache set failed: {e}")
     
-    def stop(self):
-        """停止监控"""
-        self.running = False
-        if self.thread:
-            self.thread.join(timeout=self.check_interval + 1)
-        logger.info("配置文件监控已停止")
-    
-    def _watch_loop(self):
-        """监控循环"""
-        import time
+    async def _invalidate_cache(self, key: str) -> None:
+        """Invalidate cache key."""
+        if self._cache is None:
+            return
         
-        while self.running:
+        try:
+            await self._cache.delete(key)
+        except Exception as e:
+            logger.warning(f"Cache invalidate failed: {e}")
+    
+    # ========== Response Converters ==========
+    
+    def _to_llm_response(self, config: Dict[str, Any]) -> LLMConfigResponse:
+        """Convert config dict to LLMConfigResponse."""
+        # Mask API key
+        api_key_masked = None
+        if config.get("api_key_encrypted"):
             try:
-                if self.config_manager.config_file.exists():
-                    current_modified = self.config_manager.config_file.stat().st_mtime
-                    
-                    if self.last_modified and current_modified > self.last_modified:
-                        logger.info("检测到配置文件变更，重新加载...")
-                        self.config_manager._load_config()
-                        self.last_modified = current_modified
-                    elif not self.last_modified:
-                        self.last_modified = current_modified
-                
-                time.sleep(self.check_interval)
-                
-            except Exception as e:
-                logger.error(f"配置文件监控异常: {e}")
-                time.sleep(self.check_interval)
+                decrypted = self._encryptor.decrypt(config["api_key_encrypted"])
+                api_key_masked = self._encryptor.mask(decrypted)
+            except Exception:
+                api_key_masked = "****"
+        
+        return LLMConfigResponse(
+            id=str(config.get("id", "")),
+            name=config.get("name", ""),
+            description=config.get("description"),
+            llm_type=config.get("llm_type"),
+            model_name=config.get("model_name", ""),
+            api_endpoint=config.get("api_endpoint"),
+            api_key=None,  # Never return actual key
+            api_key_masked=api_key_masked,
+            temperature=config.get("temperature", 0.7),
+            max_tokens=config.get("max_tokens", 2048),
+            timeout_seconds=config.get("timeout_seconds", 60),
+            extra_config=config.get("extra_config", {}),
+            is_active=config.get("is_active", True),
+            is_default=config.get("is_default", False),
+            created_at=config.get("created_at", datetime.utcnow()),
+            updated_at=config.get("updated_at", datetime.utcnow()),
+        )
+    
+    def _to_db_response(self, config: Dict[str, Any]) -> DBConfigResponse:
+        """Convert config dict to DBConfigResponse."""
+        # Mask password
+        password_masked = None
+        if config.get("password_encrypted"):
+            try:
+                decrypted = self._encryptor.decrypt(config["password_encrypted"])
+                password_masked = self._encryptor.mask(decrypted)
+            except Exception:
+                password_masked = "****"
+        
+        return DBConfigResponse(
+            id=str(config.get("id", "")),
+            name=config.get("name", ""),
+            description=config.get("description"),
+            db_type=config.get("db_type"),
+            host=config.get("host", ""),
+            port=config.get("port", 5432),
+            database=config.get("database", ""),
+            username=config.get("username", ""),
+            password_masked=password_masked,
+            is_readonly=config.get("is_readonly", True),
+            ssl_enabled=config.get("ssl_enabled", False),
+            extra_config=config.get("extra_config", {}),
+            is_active=config.get("is_active", True),
+            created_at=config.get("created_at", datetime.utcnow()),
+            updated_at=config.get("updated_at", datetime.utcnow()),
+        )
+    
+    # ========== Database Operations (stubs for now) ==========
+    
+    async def _get_llm_from_db(self, config_id: str, tenant_id: Optional[str]) -> Optional[Dict[str, Any]]:
+        """Get LLM config from database."""
+        from src.models.admin_config import AdminConfiguration
+        
+        conditions = [
+            AdminConfiguration.id == config_id,
+            AdminConfiguration.config_type == ConfigType.LLM.value,
+        ]
+        if tenant_id:
+            conditions.append(AdminConfiguration.tenant_id == tenant_id)
+        
+        query = select(AdminConfiguration).where(and_(*conditions))
+        result = await self._db.execute(query)
+        record = result.scalar_one_or_none()
+        
+        if record:
+            return {**record.config_data, "id": str(record.id), "tenant_id": str(record.tenant_id) if record.tenant_id else None}
+        return None
+    
+    async def _list_llm_from_db(self, tenant_id: Optional[str], active_only: bool) -> List[Dict[str, Any]]:
+        """List LLM configs from database."""
+        from src.models.admin_config import AdminConfiguration
+        
+        conditions = [AdminConfiguration.config_type == ConfigType.LLM.value]
+        if tenant_id:
+            conditions.append(AdminConfiguration.tenant_id == tenant_id)
+        if active_only:
+            conditions.append(AdminConfiguration.is_active == True)
+        
+        query = select(AdminConfiguration).where(and_(*conditions))
+        result = await self._db.execute(query)
+        records = result.scalars().all()
+        
+        return [{**r.config_data, "id": str(r.id)} for r in records]
+    
+    async def _save_llm_to_db(self, config: Dict[str, Any], is_update: bool) -> Dict[str, Any]:
+        """Save LLM config to database."""
+        from src.models.admin_config import AdminConfiguration
+        
+        if is_update:
+            query = update(AdminConfiguration).where(
+                AdminConfiguration.id == config["id"]
+            ).values(
+                config_data=config,
+                updated_at=datetime.utcnow(),
+            )
+            await self._db.execute(query)
+        else:
+            record = AdminConfiguration(
+                id=config["id"],
+                tenant_id=config.get("tenant_id"),
+                config_type=ConfigType.LLM.value,
+                name=config.get("name"),
+                config_data=config,
+            )
+            self._db.add(record)
+        
+        await self._db.commit()
+        return config
+    
+    async def _delete_llm_from_db(self, config_id: str, tenant_id: Optional[str]) -> None:
+        """Delete LLM config from database."""
+        from src.models.admin_config import AdminConfiguration
+        
+        conditions = [
+            AdminConfiguration.id == config_id,
+            AdminConfiguration.config_type == ConfigType.LLM.value,
+        ]
+        if tenant_id:
+            conditions.append(AdminConfiguration.tenant_id == tenant_id)
+        
+        query = delete(AdminConfiguration).where(and_(*conditions))
+        await self._db.execute(query)
+        await self._db.commit()
+    
+    async def _get_db_from_db(self, config_id: str, tenant_id: Optional[str]) -> Optional[Dict[str, Any]]:
+        """Get DB config from database."""
+        from src.models.admin_config import DatabaseConnection
+        
+        conditions = [DatabaseConnection.id == config_id]
+        if tenant_id:
+            conditions.append(DatabaseConnection.tenant_id == tenant_id)
+        
+        query = select(DatabaseConnection).where(and_(*conditions))
+        result = await self._db.execute(query)
+        record = result.scalar_one_or_none()
+        
+        if record:
+            return record.to_dict(mask_password=False)
+        return None
+    
+    async def _list_db_from_db(self, tenant_id: Optional[str], active_only: bool) -> List[Dict[str, Any]]:
+        """List DB configs from database."""
+        from src.models.admin_config import DatabaseConnection
+        
+        conditions = []
+        if tenant_id:
+            conditions.append(DatabaseConnection.tenant_id == tenant_id)
+        if active_only:
+            conditions.append(DatabaseConnection.is_active == True)
+        
+        query = select(DatabaseConnection)
+        if conditions:
+            query = query.where(and_(*conditions))
+        
+        result = await self._db.execute(query)
+        records = result.scalars().all()
+        
+        return [r.to_dict(mask_password=False) for r in records]
+    
+    async def _save_db_to_db(self, config: Dict[str, Any], is_update: bool) -> Dict[str, Any]:
+        """Save DB config to database."""
+        from src.models.admin_config import DatabaseConnection
+        
+        if is_update:
+            query = update(DatabaseConnection).where(
+                DatabaseConnection.id == config["id"]
+            ).values(**{k: v for k, v in config.items() if k != "id"})
+            await self._db.execute(query)
+        else:
+            record = DatabaseConnection(**config)
+            self._db.add(record)
+        
+        await self._db.commit()
+        return config
+    
+    async def _delete_db_from_db(self, config_id: str, tenant_id: Optional[str]) -> None:
+        """Delete DB config from database."""
+        from src.models.admin_config import DatabaseConnection
+        
+        conditions = [DatabaseConnection.id == config_id]
+        if tenant_id:
+            conditions.append(DatabaseConnection.tenant_id == tenant_id)
+        
+        query = delete(DatabaseConnection).where(and_(*conditions))
+        await self._db.execute(query)
+        await self._db.commit()
+    
+    def clear_in_memory_storage(self) -> None:
+        """Clear in-memory storage (for testing)."""
+        for key in self._in_memory_configs:
+            self._in_memory_configs[key].clear()
+        self._history_tracker.clear_in_memory_history()
 
 
-# 全局配置监控器
-config_watcher = ConfigWatcher(config_manager)
+# Global manager instance
+_config_manager: Optional[ConfigManager] = None
 
 
-def start_config_watcher():
-    """启动配置监控"""
-    config_watcher.start()
-
-
-def stop_config_watcher():
-    """停止配置监控"""
-    config_watcher.stop()
+def get_config_manager() -> ConfigManager:
+    """Get the global config manager instance."""
+    global _config_manager
+    if _config_manager is None:
+        _config_manager = ConfigManager()
+    return _config_manager

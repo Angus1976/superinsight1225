@@ -69,7 +69,7 @@ class UserModel(Base):
     
     # Relationships
     permissions: Mapped[List["ProjectPermissionModel"]] = relationship("ProjectPermissionModel", back_populates="user", foreign_keys="ProjectPermissionModel.user_id")
-    audit_logs: Mapped[List["AuditLogModel"]] = relationship("AuditLogModel", back_populates="user")
+    audit_logs: Mapped[List["SecurityAuditLogModel"]] = relationship("SecurityAuditLogModel", back_populates="user")
 
 
 class ProjectPermissionModel(Base):
@@ -113,7 +113,7 @@ class IPWhitelistModel(Base):
     creator: Mapped["UserModel"] = relationship("UserModel")
 
 
-class AuditLogModel(Base):
+class SecurityAuditLogModel(Base):
     """
     Audit log table for tracking user operations.
     

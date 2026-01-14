@@ -21,7 +21,7 @@ from src.security.permission_performance_optimizer import (
     get_permission_performance_optimizer,
     OptimizationConfig
 )
-from src.security.auth import get_current_user
+from src.api.auth import get_current_user
 from src.security.models import UserModel
 
 logger = logging.getLogger(__name__)

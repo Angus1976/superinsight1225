@@ -1,480 +1,793 @@
 """
-Admin Management API endpoints
+Admin Configuration API Routes for SuperInsight Platform.
+
+Provides REST API endpoints for admin configuration management including:
+- Dashboard data
+- LLM configuration
+- Database connections
+- Sync strategies
+- SQL builder
+- Configuration history
+- Third-party tools
+
+**Feature: admin-configuration**
 """
-from typing import List, Optional, Dict, Any
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
-from pydantic import BaseModel, Field
+
+import logging
 from datetime import datetime
+from typing import Optional, List, Dict, Any
+from uuid import uuid4
 
-from src.database.connection import get_db
-from src.security.auth import get_current_user
-from src.models.user import User
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel
 
-router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
+from src.admin.schemas import (
+    ConfigType,
+    ValidationResult,
+    ConnectionTestResult,
+    LLMConfigCreate,
+    LLMConfigUpdate,
+    LLMConfigResponse,
+    DBConfigCreate,
+    DBConfigUpdate,
+    DBConfigResponse,
+    SyncStrategyCreate,
+    SyncStrategyUpdate,
+    SyncStrategyResponse,
+    SyncHistoryResponse,
+    SyncJobResponse,
+    QueryConfig,
+    QueryResult,
+    QueryTemplateCreate,
+    QueryTemplateResponse,
+    DatabaseSchema,
+    ExecuteSQLRequest,
+    ConfigHistoryResponse,
+    ConfigDiff,
+    RollbackRequest,
+    ThirdPartyConfigCreate,
+    ThirdPartyConfigUpdate,
+    ThirdPartyConfigResponse,
+    DashboardData,
+)
+from src.admin.config_manager import get_config_manager
+from src.admin.sql_builder import get_sql_builder_service
+from src.admin.sync_strategy import get_sync_strategy_service
+from src.admin.history_tracker import get_history_tracker
 
+logger = logging.getLogger(__name__)
 
-class Tenant(BaseModel):
-    id: str
-    name: str
-    code: str
-    description: str
-    status: str = Field(..., description="Status: active, inactive, suspended")
-    plan: str = Field(..., description="Plan: basic, professional, enterprise")
-    user_count: int
-    workspace_count: int
-    storage_used: int
-    storage_limit: int
-    api_calls_used: int
-    api_calls_limit: int
-    created_at: str
-    last_active_at: Optional[str] = None
-    settings: Dict[str, Any] = Field(default_factory=dict)
-
-
-class AdminUser(BaseModel):
-    id: str
-    username: str
-    email: str
-    full_name: str
-    avatar: Optional[str] = None
-    status: str = Field(..., description="Status: active, inactive, locked, pending")
-    roles: List[str]
-    tenant_id: str
-    tenant_name: str
-    last_login_at: Optional[str] = None
-    created_at: str
-    is_email_verified: bool
-    login_count: int
-    permissions: List[str] = Field(default_factory=list)
-
-
-class SystemConfig(BaseModel):
-    general: Dict[str, Any] = Field(default_factory=dict)
-    database: Dict[str, Any] = Field(default_factory=dict)
-    cache: Dict[str, Any] = Field(default_factory=dict)
-    storage: Dict[str, Any] = Field(default_factory=dict)
-    security: Dict[str, Any] = Field(default_factory=dict)
-    email: Dict[str, Any] = Field(default_factory=dict)
+router = APIRouter(prefix="/api/v1/admin", tags=["Admin Configuration"])
 
 
-class SystemStatus(BaseModel):
-    database: Dict[str, Any] = Field(default_factory=dict)
-    cache: Dict[str, Any] = Field(default_factory=dict)
-    storage: Dict[str, Any] = Field(default_factory=dict)
-    system: Dict[str, Any] = Field(default_factory=dict)
+# ========== Dashboard ==========
 
-
-class CreateTenantRequest(BaseModel):
-    name: str
-    code: str
-    description: Optional[str] = None
-    plan: str
-    settings: Dict[str, Any] = Field(default_factory=dict)
-    storage_limit: int
-    api_calls_limit: int
-    status: str = "active"
-
-
-class CreateUserRequest(BaseModel):
-    username: str
-    email: str
-    full_name: str
-    tenant_id: str
-    roles: List[str]
-    password: Optional[str] = None
-    status: str = "active"
-    is_email_verified: bool = False
-
-
-@router.get("/tenants", response_model=List[Tenant])
-async def get_tenants(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Get all tenants"""
-    # Mock data
-    tenants = [
-        {
-            "id": "tenant1",
-            "name": "示例企业",
-            "code": "example_corp",
-            "description": "示例企业租户",
-            "status": "active",
-            "plan": "enterprise",
-            "user_count": 25,
-            "workspace_count": 5,
-            "storage_used": 5368709120,  # 5GB
-            "storage_limit": 107374182400,  # 100GB
-            "api_calls_used": 15000,
-            "api_calls_limit": 100000,
-            "created_at": "2025-01-15T10:00:00Z",
-            "last_active_at": "2025-01-20T10:00:00Z",
-            "settings": {
-                "max_users": 50,
-                "max_workspaces": 10,
-                "features": ["advanced_analytics", "custom_models"]
-            }
+@router.get("/dashboard", response_model=DashboardData)
+async def get_dashboard() -> DashboardData:
+    """
+    Get admin dashboard data.
+    
+    Returns system health, key metrics, recent alerts, and quick actions.
+    
+    **Requirement 1.1, 1.2: Dashboard**
+    """
+    # In a real implementation, this would aggregate data from various services
+    return DashboardData(
+        system_health={
+            "status": "healthy",
+            "database": "connected",
+            "redis": "connected",
+            "label_studio": "connected",
         },
-        {
-            "id": "tenant2",
-            "name": "科技公司",
-            "code": "tech_company",
-            "description": "科技公司租户",
-            "status": "active",
-            "plan": "professional",
-            "user_count": 12,
-            "workspace_count": 3,
-            "storage_used": 2147483648,  # 2GB
-            "storage_limit": 53687091200,  # 50GB
-            "api_calls_used": 8500,
-            "api_calls_limit": 50000,
-            "created_at": "2025-01-16T10:00:00Z",
-            "last_active_at": "2025-01-20T09:30:00Z",
-            "settings": {
-                "max_users": 25,
-                "max_workspaces": 5,
-                "features": ["basic_analytics"]
-            }
-        }
-    ]
-    return tenants
-
-
-@router.post("/tenants", response_model=Tenant)
-async def create_tenant(
-    request: CreateTenantRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Create a new tenant"""
-    # Mock implementation
-    tenant = {
-        "id": f"tenant_{len(request.name)}",
-        "name": request.name,
-        "code": request.code,
-        "description": request.description or "",
-        "status": request.status,
-        "plan": request.plan,
-        "user_count": 0,
-        "workspace_count": 0,
-        "storage_used": 0,
-        "storage_limit": request.storage_limit,
-        "api_calls_used": 0,
-        "api_calls_limit": request.api_calls_limit,
-        "created_at": datetime.now().isoformat(),
-        "settings": request.settings
-    }
-    return tenant
-
-
-@router.put("/tenants/{tenant_id}")
-async def update_tenant(
-    tenant_id: str,
-    request: CreateTenantRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Update a tenant"""
-    return {"message": f"Tenant {tenant_id} updated successfully"}
-
-
-@router.delete("/tenants/{tenant_id}")
-async def delete_tenant(
-    tenant_id: str,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Delete a tenant"""
-    return {"message": f"Tenant {tenant_id} deleted successfully"}
-
-
-@router.post("/tenants/{tenant_id}/suspend")
-async def suspend_tenant(
-    tenant_id: str,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Suspend a tenant"""
-    return {"message": f"Tenant {tenant_id} suspended"}
-
-
-@router.post("/tenants/{tenant_id}/activate")
-async def activate_tenant(
-    tenant_id: str,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Activate a tenant"""
-    return {"message": f"Tenant {tenant_id} activated"}
-
-
-@router.get("/tenants/list")
-async def get_tenants_list(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Get simplified tenant list"""
-    # Mock data
-    tenants = [
-        {"id": "tenant1", "name": "示例企业"},
-        {"id": "tenant2", "name": "科技公司"}
-    ]
-    return tenants
-
-
-@router.get("/users", response_model=List[AdminUser])
-async def get_users(
-    tenant: Optional[str] = Query(None),
-    role: Optional[str] = Query(None),
-    status: Optional[str] = Query(None),
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Get all users"""
-    # Mock data
-    users = [
-        {
-            "id": "user1",
-            "username": "admin",
-            "email": "admin@example.com",
-            "full_name": "系统管理员",
-            "status": "active",
-            "roles": ["admin"],
-            "tenant_id": "tenant1",
-            "tenant_name": "示例企业",
-            "last_login_at": "2025-01-20T10:30:00Z",
-            "created_at": "2025-01-15T10:00:00Z",
-            "is_email_verified": True,
-            "login_count": 45,
-            "permissions": ["user:create", "user:read", "user:update", "user:delete"]
+        key_metrics={
+            "total_annotations": 0,
+            "active_users": 0,
+            "pending_tasks": 0,
+            "sync_jobs_today": 0,
         },
-        {
-            "id": "user2",
-            "username": "john.doe",
-            "email": "john.doe@example.com",
-            "full_name": "约翰·多伊",
-            "status": "active",
-            "roles": ["business_expert"],
-            "tenant_id": "tenant1",
-            "tenant_name": "示例企业",
-            "last_login_at": "2025-01-20T09:45:00Z",
-            "created_at": "2025-01-16T10:00:00Z",
-            "is_email_verified": True,
-            "login_count": 23,
-            "permissions": ["task:read", "annotation:create", "annotation:update"]
+        recent_alerts=[],
+        quick_actions=[
+            {"name": "Create LLM Config", "path": "/admin/llm"},
+            {"name": "Add Database", "path": "/admin/databases"},
+            {"name": "View History", "path": "/admin/history"},
+        ],
+        config_summary={
+            "llm_configs": 0,
+            "db_connections": 0,
+            "sync_strategies": 0,
+            "third_party_tools": 0,
         },
-        {
-            "id": "user3",
-            "username": "jane.smith",
-            "email": "jane.smith@example.com",
-            "full_name": "简·史密斯",
-            "status": "active",
-            "roles": ["technical_expert"],
-            "tenant_id": "tenant2",
-            "tenant_name": "科技公司",
-            "last_login_at": "2025-01-19T16:20:00Z",
-            "created_at": "2025-01-17T10:00:00Z",
-            "is_email_verified": True,
-            "login_count": 18,
-            "permissions": ["task:create", "task:read", "quality:review"]
-        }
-    ]
-    return users
+    )
 
 
-@router.post("/users", response_model=AdminUser)
-async def create_user(
-    request: CreateUserRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Create a new user"""
-    # Mock implementation
-    user = {
-        "id": f"user_{len(request.username)}",
-        "username": request.username,
-        "email": request.email,
-        "full_name": request.full_name,
-        "status": request.status,
-        "roles": request.roles,
-        "tenant_id": request.tenant_id,
-        "tenant_name": "Mock Tenant",
-        "created_at": datetime.now().isoformat(),
-        "is_email_verified": request.is_email_verified,
-        "login_count": 0,
-        "permissions": []
-    }
-    return user
+# ========== LLM Configuration ==========
+
+@router.get("/config/llm", response_model=List[LLMConfigResponse])
+async def list_llm_configs(
+    tenant_id: Optional[str] = Query(None, description="Filter by tenant"),
+    active_only: bool = Query(True, description="Only return active configs"),
+) -> List[LLMConfigResponse]:
+    """
+    List all LLM configurations.
+    
+    **Requirement 2.1: LLM Configuration**
+    """
+    manager = get_config_manager()
+    return await manager.list_llm_configs(tenant_id=tenant_id, active_only=active_only)
 
 
-@router.put("/users/{user_id}")
-async def update_user(
-    user_id: str,
-    request: CreateUserRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Update a user"""
-    return {"message": f"User {user_id} updated successfully"}
-
-
-@router.delete("/users/{user_id}")
-async def delete_user(
-    user_id: str,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Delete a user"""
-    return {"message": f"User {user_id} deleted successfully"}
-
-
-@router.post("/users/{user_id}/lock")
-async def lock_user(
-    user_id: str,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Lock a user"""
-    return {"message": f"User {user_id} locked"}
-
-
-@router.post("/users/{user_id}/unlock")
-async def unlock_user(
-    user_id: str,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Unlock a user"""
-    return {"message": f"User {user_id} unlocked"}
-
-
-@router.post("/users/{user_id}/reset-password")
-async def reset_user_password(
-    user_id: str,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Reset user password"""
-    return {"message": f"Password reset email sent to user {user_id}"}
-
-
-@router.get("/system/config", response_model=SystemConfig)
-async def get_system_config(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Get system configuration"""
-    # Mock configuration
-    config = {
-        "general": {
-            "site_name": "SuperInsight AI Platform",
-            "site_description": "AI数据治理与标注平台",
-            "admin_email": "admin@example.com",
-            "timezone": "Asia/Shanghai",
-            "language": "zh-CN",
-            "maintenance_mode": False
-        },
-        "database": {
-            "host": "localhost",
-            "port": 5432,
-            "name": "superinsight",
-            "max_connections": 100,
-            "connection_timeout": 30,
-            "query_timeout": 60
-        },
-        "cache": {
-            "enabled": True,
-            "type": "redis",
-            "host": "localhost",
-            "port": 6379,
-            "ttl": 3600
-        },
-        "storage": {
-            "type": "local",
-            "path": "/data/uploads",
-            "max_file_size": 104857600,  # 100MB
-            "allowed_types": ["jpg", "png", "pdf", "csv", "json"]
-        },
-        "security": {
-            "session_timeout": 30,
-            "password_min_length": 8,
-            "password_require_special_chars": True,
-            "max_login_attempts": 5,
-            "lockout_duration": 15
-        },
-        "email": {
-            "enabled": True,
-            "provider": "smtp",
-            "host": "smtp.example.com",
-            "port": 587,
-            "username": "noreply@example.com",
-            "encryption": "tls"
-        }
-    }
+@router.get("/config/llm/{config_id}", response_model=LLMConfigResponse)
+async def get_llm_config(
+    config_id: str,
+    tenant_id: Optional[str] = Query(None),
+) -> LLMConfigResponse:
+    """
+    Get LLM configuration by ID.
+    
+    **Requirement 2.1: LLM Configuration**
+    """
+    manager = get_config_manager()
+    config = await manager.get_llm_config(config_id, tenant_id)
+    if not config:
+        raise HTTPException(status_code=404, detail="LLM configuration not found")
     return config
 
 
-@router.put("/system/config")
-async def update_system_config(
-    config: SystemConfig,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Update system configuration"""
-    return {"message": "System configuration updated successfully"}
-
-
-@router.get("/system/status", response_model=SystemStatus)
-async def get_system_status(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Get system status"""
-    # Mock status
-    status = {
-        "database": {
-            "status": "healthy",
-            "connections": 15,
-            "max_connections": 100,
-            "response_time": 25
-        },
-        "cache": {
-            "status": "healthy",
-            "memory_usage": 134217728,  # 128MB
-            "hit_rate": 0.85
-        },
-        "storage": {
-            "status": "healthy",
-            "total_space": 1073741824000,  # 1TB
-            "used_space": 107374182400,   # 100GB
-            "free_space": 966367641600    # 900GB
-        },
-        "system": {
-            "cpu_usage": 25.5,
-            "memory_usage": 45.2,
-            "disk_usage": 10.0,
-            "uptime": 86400  # 1 day
-        }
-    }
-    return status
-
-
-@router.post("/system/test/{test_type}")
-async def test_system_component(
-    test_type: str,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Test system component"""
-    # Mock test results
-    test_results = {
-        "database": {"success": True, "message": "Database connection successful"},
-        "cache": {"success": True, "message": "Cache connection successful"},
-        "email": {"success": True, "message": "Email configuration valid"}
-    }
+@router.post("/config/llm", response_model=LLMConfigResponse, status_code=status.HTTP_201_CREATED)
+async def create_llm_config(
+    config: LLMConfigCreate,
+    user_id: str = Query(..., description="User ID making the change"),
+    user_name: str = Query("Unknown", description="User name"),
+    tenant_id: Optional[str] = Query(None),
+) -> LLMConfigResponse:
+    """
+    Create new LLM configuration.
     
-    if test_type not in test_results:
-        raise HTTPException(status_code=400, detail="Invalid test type")
+    **Requirement 2.1, 2.4: LLM Configuration**
+    """
+    manager = get_config_manager()
+    try:
+        return await manager.save_llm_config(
+            config=config,
+            user_id=user_id,
+            user_name=user_name,
+            tenant_id=tenant_id,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.put("/config/llm/{config_id}", response_model=LLMConfigResponse)
+async def update_llm_config(
+    config_id: str,
+    config: LLMConfigUpdate,
+    user_id: str = Query(...),
+    user_name: str = Query("Unknown"),
+    tenant_id: Optional[str] = Query(None),
+) -> LLMConfigResponse:
+    """
+    Update LLM configuration.
     
-    return test_results[test_type]
+    **Requirement 2.4: LLM Configuration**
+    """
+    manager = get_config_manager()
+    try:
+        return await manager.save_llm_config(
+            config=config,
+            user_id=user_id,
+            user_name=user_name,
+            config_id=config_id,
+            tenant_id=tenant_id,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.delete("/config/llm/{config_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_llm_config(
+    config_id: str,
+    user_id: str = Query(...),
+    user_name: str = Query("Unknown"),
+    tenant_id: Optional[str] = Query(None),
+) -> None:
+    """
+    Delete LLM configuration.
+    
+    **Requirement 2.4: LLM Configuration**
+    """
+    manager = get_config_manager()
+    deleted = await manager.delete_llm_config(
+        config_id=config_id,
+        user_id=user_id,
+        user_name=user_name,
+        tenant_id=tenant_id,
+    )
+    if not deleted:
+        raise HTTPException(status_code=404, detail="LLM configuration not found")
+
+
+@router.post("/config/llm/{config_id}/test", response_model=ConnectionTestResult)
+async def test_llm_connection(config_id: str) -> ConnectionTestResult:
+    """
+    Test LLM connection.
+    
+    **Requirement 2.5: LLM Connection Test**
+    """
+    # In a real implementation, this would test the LLM API connection
+    return ConnectionTestResult(
+        success=True,
+        latency_ms=150.0,
+        details={"model": "available"},
+    )
+
+
+# ========== Database Configuration ==========
+
+@router.get("/config/databases", response_model=List[DBConfigResponse])
+async def list_db_configs(
+    tenant_id: Optional[str] = Query(None),
+    active_only: bool = Query(True),
+) -> List[DBConfigResponse]:
+    """
+    List all database configurations.
+    
+    **Requirement 3.1: Database Configuration**
+    """
+    manager = get_config_manager()
+    return await manager.list_db_configs(tenant_id=tenant_id, active_only=active_only)
+
+
+@router.get("/config/databases/{config_id}", response_model=DBConfigResponse)
+async def get_db_config(
+    config_id: str,
+    tenant_id: Optional[str] = Query(None),
+) -> DBConfigResponse:
+    """
+    Get database configuration by ID.
+    
+    **Requirement 3.1: Database Configuration**
+    """
+    manager = get_config_manager()
+    config = await manager.get_db_config(config_id, tenant_id)
+    if not config:
+        raise HTTPException(status_code=404, detail="Database configuration not found")
+    return config
+
+
+@router.post("/config/databases", response_model=DBConfigResponse, status_code=status.HTTP_201_CREATED)
+async def create_db_config(
+    config: DBConfigCreate,
+    user_id: str = Query(...),
+    user_name: str = Query("Unknown"),
+    tenant_id: Optional[str] = Query(None),
+) -> DBConfigResponse:
+    """
+    Create new database configuration.
+    
+    **Requirement 3.1, 3.3: Database Configuration**
+    """
+    manager = get_config_manager()
+    try:
+        return await manager.save_db_config(
+            config=config,
+            user_id=user_id,
+            user_name=user_name,
+            tenant_id=tenant_id,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.put("/config/databases/{config_id}", response_model=DBConfigResponse)
+async def update_db_config(
+    config_id: str,
+    config: DBConfigUpdate,
+    user_id: str = Query(...),
+    user_name: str = Query("Unknown"),
+    tenant_id: Optional[str] = Query(None),
+) -> DBConfigResponse:
+    """
+    Update database configuration.
+    
+    **Requirement 3.3: Database Configuration**
+    """
+    manager = get_config_manager()
+    try:
+        return await manager.save_db_config(
+            config=config,
+            user_id=user_id,
+            user_name=user_name,
+            config_id=config_id,
+            tenant_id=tenant_id,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.delete("/config/databases/{config_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_db_config(
+    config_id: str,
+    user_id: str = Query(...),
+    user_name: str = Query("Unknown"),
+    tenant_id: Optional[str] = Query(None),
+) -> None:
+    """
+    Delete database configuration.
+    
+    **Requirement 3.3: Database Configuration**
+    """
+    manager = get_config_manager()
+    deleted = await manager.delete_db_config(
+        config_id=config_id,
+        user_id=user_id,
+        user_name=user_name,
+        tenant_id=tenant_id,
+    )
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Database configuration not found")
+
+
+@router.post("/config/databases/{config_id}/test", response_model=ConnectionTestResult)
+async def test_db_connection(
+    config_id: str,
+    tenant_id: Optional[str] = Query(None),
+) -> ConnectionTestResult:
+    """
+    Test database connection.
+    
+    **Requirement 3.5: Database Connection Test**
+    """
+    manager = get_config_manager()
+    return await manager.test_db_connection(config_id, tenant_id)
+
+
+# ========== Sync Strategy ==========
+
+@router.get("/config/sync", response_model=List[SyncStrategyResponse])
+async def list_sync_strategies(
+    tenant_id: Optional[str] = Query(None),
+    enabled_only: bool = Query(False),
+) -> List[SyncStrategyResponse]:
+    """
+    List all sync strategies.
+    
+    **Requirement 4.1: Sync Strategy**
+    """
+    service = get_sync_strategy_service()
+    return await service.list_strategies(tenant_id=tenant_id, enabled_only=enabled_only)
+
+
+@router.get("/config/sync/{strategy_id}", response_model=SyncStrategyResponse)
+async def get_sync_strategy(
+    strategy_id: str,
+    tenant_id: Optional[str] = Query(None),
+) -> SyncStrategyResponse:
+    """
+    Get sync strategy by ID.
+    
+    **Requirement 4.1: Sync Strategy**
+    """
+    service = get_sync_strategy_service()
+    strategy = await service.get_strategy(strategy_id, tenant_id)
+    if not strategy:
+        raise HTTPException(status_code=404, detail="Sync strategy not found")
+    return strategy
+
+
+@router.get("/config/sync/db/{db_config_id}", response_model=SyncStrategyResponse)
+async def get_sync_strategy_by_db(
+    db_config_id: str,
+    tenant_id: Optional[str] = Query(None),
+) -> SyncStrategyResponse:
+    """
+    Get sync strategy by database config ID.
+    
+    **Requirement 4.1: Sync Strategy**
+    """
+    service = get_sync_strategy_service()
+    strategy = await service.get_strategy_by_db_config(db_config_id, tenant_id)
+    if not strategy:
+        raise HTTPException(status_code=404, detail="Sync strategy not found")
+    return strategy
+
+
+@router.post("/config/sync", response_model=SyncStrategyResponse, status_code=status.HTTP_201_CREATED)
+async def create_sync_strategy(
+    strategy: SyncStrategyCreate,
+    user_id: str = Query(...),
+    user_name: str = Query("Unknown"),
+    tenant_id: Optional[str] = Query(None),
+) -> SyncStrategyResponse:
+    """
+    Create new sync strategy.
+    
+    **Requirement 4.1, 4.2, 4.3: Sync Strategy**
+    """
+    service = get_sync_strategy_service()
+    try:
+        return await service.save_strategy(
+            strategy=strategy,
+            user_id=user_id,
+            user_name=user_name,
+            tenant_id=tenant_id,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.put("/config/sync/{strategy_id}", response_model=SyncStrategyResponse)
+async def update_sync_strategy(
+    strategy_id: str,
+    strategy: SyncStrategyUpdate,
+    user_id: str = Query(...),
+    user_name: str = Query("Unknown"),
+    tenant_id: Optional[str] = Query(None),
+) -> SyncStrategyResponse:
+    """
+    Update sync strategy.
+    
+    **Requirement 4.4: Sync Strategy**
+    """
+    service = get_sync_strategy_service()
+    try:
+        return await service.save_strategy(
+            strategy=strategy,
+            user_id=user_id,
+            user_name=user_name,
+            strategy_id=strategy_id,
+            tenant_id=tenant_id,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.delete("/config/sync/{strategy_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_sync_strategy(
+    strategy_id: str,
+    user_id: str = Query(...),
+    user_name: str = Query("Unknown"),
+    tenant_id: Optional[str] = Query(None),
+) -> None:
+    """
+    Delete sync strategy.
+    """
+    service = get_sync_strategy_service()
+    deleted = await service.delete_strategy(
+        strategy_id=strategy_id,
+        user_id=user_id,
+        user_name=user_name,
+        tenant_id=tenant_id,
+    )
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Sync strategy not found")
+
+
+@router.post("/config/sync/{strategy_id}/trigger", response_model=SyncJobResponse)
+async def trigger_sync(
+    strategy_id: str,
+    user_id: str = Query(...),
+) -> SyncJobResponse:
+    """
+    Trigger sync job.
+    
+    **Requirement 4.6: Sync Trigger**
+    """
+    service = get_sync_strategy_service()
+    try:
+        return await service.trigger_sync(strategy_id, user_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/config/sync/retry/{job_id}", response_model=SyncJobResponse)
+async def retry_sync(
+    job_id: str,
+    user_id: str = Query(...),
+) -> SyncJobResponse:
+    """
+    Retry failed sync job.
+    
+    **Requirement 4.7: Sync Retry**
+    """
+    service = get_sync_strategy_service()
+    try:
+        return await service.retry_sync(job_id, user_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/config/sync/{strategy_id}/history", response_model=List[SyncHistoryResponse])
+async def get_sync_history(
+    strategy_id: str,
+    limit: int = Query(50, ge=1, le=200),
+) -> List[SyncHistoryResponse]:
+    """
+    Get sync history for a strategy.
+    """
+    service = get_sync_strategy_service()
+    return await service.get_sync_history(strategy_id, limit)
+
+
+# ========== SQL Builder ==========
+
+@router.get("/sql-builder/schema/{db_config_id}", response_model=DatabaseSchema)
+async def get_db_schema(db_config_id: str) -> DatabaseSchema:
+    """
+    Get database schema.
+    
+    **Requirement 5.1: SQL Builder Schema**
+    """
+    service = get_sql_builder_service()
+    return await service.get_schema(db_config_id)
+
+
+class BuildSQLRequest(BaseModel):
+    """Request for building SQL."""
+    query_config: QueryConfig
+    db_type: str = "postgresql"
+
+
+class BuildSQLResponse(BaseModel):
+    """Response with built SQL."""
+    sql: str
+    validation: ValidationResult
+
+
+@router.post("/sql-builder/build", response_model=BuildSQLResponse)
+async def build_sql(request: BuildSQLRequest) -> BuildSQLResponse:
+    """
+    Build SQL from query configuration.
+    
+    **Requirement 5.4: SQL Builder**
+    """
+    service = get_sql_builder_service()
+    try:
+        sql = service.build_sql(request.query_config, request.db_type)
+        validation = service.validate_sql(sql, request.db_type)
+        return BuildSQLResponse(sql=sql, validation=validation)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/sql-builder/validate", response_model=ValidationResult)
+async def validate_sql(
+    sql: str = Query(..., description="SQL to validate"),
+    db_type: str = Query("postgresql"),
+) -> ValidationResult:
+    """
+    Validate SQL query.
+    
+    **Requirement 5.5: SQL Validation**
+    """
+    service = get_sql_builder_service()
+    return service.validate_sql(sql, db_type)
+
+
+@router.post("/sql-builder/execute", response_model=QueryResult)
+async def execute_sql(request: ExecuteSQLRequest) -> QueryResult:
+    """
+    Execute SQL query with preview limit.
+    
+    **Requirement 5.6: SQL Execution**
+    """
+    service = get_sql_builder_service()
+    try:
+        return await service.execute_preview(
+            sql=request.sql,
+            db_connection=request.db_config_id,
+            limit=request.limit,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/sql-builder/templates", response_model=List[QueryTemplateResponse])
+async def list_query_templates(
+    db_config_id: Optional[str] = Query(None),
+    tenant_id: Optional[str] = Query(None),
+) -> List[QueryTemplateResponse]:
+    """
+    List query templates.
+    
+    **Requirement 5.7: Query Templates**
+    """
+    service = get_sql_builder_service()
+    return await service.list_templates(db_config_id, tenant_id)
+
+
+@router.post("/sql-builder/templates", response_model=QueryTemplateResponse, status_code=status.HTTP_201_CREATED)
+async def create_query_template(
+    template: QueryTemplateCreate,
+    user_id: str = Query(...),
+    tenant_id: Optional[str] = Query(None),
+) -> QueryTemplateResponse:
+    """
+    Create query template.
+    
+    **Requirement 5.7: Query Templates**
+    """
+    service = get_sql_builder_service()
+    try:
+        return await service.save_template(template, user_id, tenant_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.delete("/sql-builder/templates/{template_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_query_template(template_id: str) -> None:
+    """
+    Delete query template.
+    """
+    service = get_sql_builder_service()
+    deleted = await service.delete_template(template_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Template not found")
+
+
+# ========== Configuration History ==========
+
+@router.get("/config/history", response_model=List[ConfigHistoryResponse])
+async def get_config_history(
+    config_type: Optional[ConfigType] = Query(None),
+    start_time: Optional[datetime] = Query(None),
+    end_time: Optional[datetime] = Query(None),
+    user_id: Optional[str] = Query(None),
+    tenant_id: Optional[str] = Query(None),
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+) -> List[ConfigHistoryResponse]:
+    """
+    Get configuration change history.
+    
+    **Requirement 6.1, 6.3: Configuration History**
+    """
+    tracker = get_history_tracker()
+    return await tracker.get_history(
+        config_type=config_type,
+        start_time=start_time,
+        end_time=end_time,
+        user_id=user_id,
+        tenant_id=tenant_id,
+        limit=limit,
+        offset=offset,
+    )
+
+
+@router.get("/config/history/{history_id}", response_model=ConfigHistoryResponse)
+async def get_config_history_by_id(history_id: str) -> ConfigHistoryResponse:
+    """
+    Get specific history record.
+    """
+    tracker = get_history_tracker()
+    history = await tracker.get_history_by_id(history_id)
+    if not history:
+        raise HTTPException(status_code=404, detail="History record not found")
+    return history
+
+
+@router.get("/config/history/{history_id}/diff", response_model=ConfigDiff)
+async def get_config_diff(history_id: str) -> ConfigDiff:
+    """
+    Get configuration diff for a history record.
+    
+    **Requirement 6.2: Configuration Diff**
+    """
+    tracker = get_history_tracker()
+    diff = await tracker.get_diff_by_history_id(history_id)
+    if not diff:
+        raise HTTPException(status_code=404, detail="History record not found")
+    return diff
+
+
+@router.post("/config/history/{history_id}/rollback", response_model=Dict[str, Any])
+async def rollback_config(
+    history_id: str,
+    request: RollbackRequest,
+    user_id: str = Query(...),
+    user_name: str = Query("Unknown"),
+) -> Dict[str, Any]:
+    """
+    Rollback configuration to a previous version.
+    
+    **Requirement 6.4, 6.5: Configuration Rollback**
+    """
+    tracker = get_history_tracker()
+    result = await tracker.rollback(history_id, user_id, user_name)
+    if not result:
+        raise HTTPException(status_code=404, detail="History record not found or cannot rollback")
+    return {"success": True, "rolled_back_config": result}
+
+
+# ========== Third-Party Tools ==========
+
+@router.get("/config/third-party", response_model=List[ThirdPartyConfigResponse])
+async def list_third_party_configs(
+    tenant_id: Optional[str] = Query(None),
+) -> List[ThirdPartyConfigResponse]:
+    """
+    List third-party tool configurations.
+    
+    **Requirement 7.1: Third-Party Tools**
+    """
+    # Placeholder - would be implemented with a ThirdPartyConfigService
+    return []
+
+
+@router.post("/config/third-party", response_model=ThirdPartyConfigResponse, status_code=status.HTTP_201_CREATED)
+async def create_third_party_config(
+    config: ThirdPartyConfigCreate,
+    user_id: str = Query(...),
+    tenant_id: Optional[str] = Query(None),
+) -> ThirdPartyConfigResponse:
+    """
+    Create third-party tool configuration.
+    
+    **Requirement 7.1: Third-Party Tools**
+    """
+    # Placeholder implementation
+    raise HTTPException(status_code=501, detail="Not implemented")
+
+
+@router.put("/config/third-party/{config_id}", response_model=ThirdPartyConfigResponse)
+async def update_third_party_config(
+    config_id: str,
+    config: ThirdPartyConfigUpdate,
+    user_id: str = Query(...),
+    tenant_id: Optional[str] = Query(None),
+) -> ThirdPartyConfigResponse:
+    """
+    Update third-party tool configuration.
+    
+    **Requirement 7.3: Third-Party Tools**
+    """
+    raise HTTPException(status_code=501, detail="Not implemented")
+
+
+@router.delete("/config/third-party/{config_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_third_party_config(
+    config_id: str,
+    user_id: str = Query(...),
+) -> None:
+    """
+    Delete third-party tool configuration.
+    """
+    raise HTTPException(status_code=501, detail="Not implemented")
+
+
+@router.post("/config/third-party/{config_id}/health", response_model=ConnectionTestResult)
+async def check_third_party_health(config_id: str) -> ConnectionTestResult:
+    """
+    Check third-party tool health.
+    
+    **Requirement 7.4: Third-Party Health Check**
+    """
+    raise HTTPException(status_code=501, detail="Not implemented")
+
+
+# ========== Validation Endpoints ==========
+
+@router.post("/validate/llm", response_model=ValidationResult)
+async def validate_llm_config(config: LLMConfigCreate) -> ValidationResult:
+    """
+    Validate LLM configuration without saving.
+    """
+    manager = get_config_manager()
+    return manager.validate_config(ConfigType.LLM, config.model_dump())
+
+
+@router.post("/validate/database", response_model=ValidationResult)
+async def validate_db_config(config: DBConfigCreate) -> ValidationResult:
+    """
+    Validate database configuration without saving.
+    """
+    manager = get_config_manager()
+    return manager.validate_config(ConfigType.DATABASE, config.model_dump())
+
+
+@router.post("/validate/sync", response_model=ValidationResult)
+async def validate_sync_config(config: SyncStrategyCreate) -> ValidationResult:
+    """
+    Validate sync strategy without saving.
+    """
+    service = get_sync_strategy_service()
+    return service.validate_strategy(config)

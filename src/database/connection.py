@@ -118,6 +118,12 @@ def get_db_session() -> Session:
         yield session
 
 
+# Alias for backward compatibility
+def get_db() -> Session:
+    """Alias for get_db_session for backward compatibility"""
+    return get_db_session()
+
+
 def init_database() -> None:
     """Initialize database connection"""
     db_manager.initialize()

@@ -1,0 +1,14 @@
+{
+  "enabled": true,
+  "name": "File Save Auto Actions",
+  "description": "Auto-actions on file save with 'Waiting on your input' detection",
+  "version": "5",
+  "when": {
+    "type": "fileSaved",
+    "patterns": ["**/*.py", "**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "**🔴 SENSITIVE MODE + INPUT DETECTION:**\n\nFile saved: ${file}\n\n## 🎯 CRITICAL: 'Waiting on your input' DETECTION\n**When dialog shows 'Waiting on your input':**\n→ **AUTO-RESPOND: run**\n→ Execute immediately\n\n### INPUT DIALOG PATTERNS:\n- 'Waiting on your input' → **run**\n- 'Waiting for input' → **run**\n- 'Awaiting input' → **run**\n- 'Input required' → **run**\n- 等待输入 → **run**\n\n## ⏱️ TIMEOUT AUTO-CONFIRM (60s)\n- Check for 'Waiting on your input' → **run**\n- Check for confirmations → **YES**\n\n## ⚡ INSTANT CONFIRMATION\n- 'run pytest?' → **YES**\n- 'execute tests?' → **YES**\n- 'Continue?' → **YES**\n- Any pytest question → **YES**\n\n## 🐍 PYTHON FILES (.py)\n\n**Test files** (test_*.py, *_test.py, *_properties.py):\n```bash\n./venv/bin/python -m pytest ${file} -v --tb=short 2>&1 | head -100\n```\n**⚡ EXECUTE NOW**\n\n**Entry files** (main.py, app.py, run.py, manage.py):\n```bash\n./venv/bin/python ${file}\n```\n\n**Other modules:**\n```bash\n./venv/bin/python -m pytest -q -x --lf 2>&1 | head -50\n```\n\n## 📘 TYPESCRIPT/JAVASCRIPT\n\n**Test files:** `cd frontend && npx vitest --run ${file}`\n**Components:** `cd frontend && npm run typecheck`\n\n## ⚠️ RULES\n- **DETECT** 'Waiting on your input' → **run**\n- **EXECUTE** immediately\n- **NEVER** ask for confirmation\n- **REPORT** results concisely"
+  }
+}

@@ -3,7 +3,7 @@
 from .controller import SecurityController
 from .models import (
     UserModel, ProjectPermissionModel, IPWhitelistModel, 
-    AuditLogModel, DataMaskingRuleModel,
+    SecurityAuditLogModel, DataMaskingRuleModel,
     UserRole, PermissionType, AuditAction
 )
 from .middleware import (
@@ -20,7 +20,7 @@ from .log_config import (
 __all__ = [
     "SecurityController",
     "UserModel", "ProjectPermissionModel", "IPWhitelistModel", 
-    "AuditLogModel", "DataMaskingRuleModel",
+    "SecurityAuditLogModel", "DataMaskingRuleModel",
     "UserRole", "PermissionType", "AuditAction",
     "SecurityMiddleware", "security_middleware",
     "get_current_user", "get_current_active_user",

@@ -975,6 +975,26 @@ except ImportError as e:
 except Exception as e:
     logger.warning(f"Data Lineage API failed to load: {e}")
 
+# LLM Integration API
+try:
+    from src.api.llm import router as llm_router
+    app.include_router(llm_router)
+    logger.info("LLM Integration API loaded successfully")
+except ImportError as e:
+    logger.warning(f"LLM Integration API not available: {e}")
+except Exception as e:
+    logger.warning(f"LLM Integration API failed to load: {e}")
+
+# Multi-Tenant Workspace API
+try:
+    from src.api.multi_tenant import router as multi_tenant_router
+    app.include_router(multi_tenant_router)
+    logger.info("Multi-Tenant Workspace API loaded successfully")
+except ImportError as e:
+    logger.warning(f"Multi-Tenant Workspace API not available: {e}")
+except Exception as e:
+    logger.warning(f"Multi-Tenant Workspace API failed to load: {e}")
+
 
 # Include routers on startup
 @app.on_event("startup")
@@ -1050,6 +1070,11 @@ async def api_info():
             "complete_event_capture": "/api/v1/security/capture",
             "data_protection_compliance": "/api/data-protection-compliance",
             "language_settings": "/api/settings/language",
+            "multi_tenant": "/api/v1/tenants",
+            "workspaces": "/api/v1/workspaces",
+            "quotas": "/api/v1/quotas",
+            "shares": "/api/v1/shares",
+            "admin": "/api/v1/admin",
             "health": "/health",
             "system_status": "/system/status",
             "metrics": "/system/metrics",

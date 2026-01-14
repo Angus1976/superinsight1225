@@ -29,6 +29,8 @@ export const ROUTES = {
   ADMIN: '/admin',
   ADMIN_TENANTS: '/admin/tenants',
   ADMIN_USERS: '/admin/users',
+  ADMIN_SYSTEM: '/admin/system',
+  ADMIN_LLM_CONFIG: '/admin/llm-config',
 
   // Data Augmentation
   AUGMENTATION: '/augmentation',

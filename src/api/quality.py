@@ -1,253 +1,420 @@
 """
-Quality Management API endpoints
+Quality API - 质量评分和检查 API
 """
+
 from typing import List, Optional, Dict, Any
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
-from pydantic import BaseModel, Field
 from datetime import datetime
 
-from src.database.connection import get_db
-from src.security.auth import get_current_user
-from src.models.user import User
+from fastapi import APIRouter, HTTPException, Depends, Query
+from pydantic import BaseModel, Field
 
-router = APIRouter(prefix="/api/v1/quality", tags=["quality"])
+from src.quality.quality_scorer import QualityScorer, QualityScore, ConsistencyScore
+from src.quality.quality_checker import QualityChecker, CheckResult, BatchCheckResult
+from src.quality.quality_rule_engine import QualityRuleEngine
+from src.quality.ragas_evaluator import RagasEvaluator, RagasEvaluationResult, BatchRagasResult
 
 
-class QualityRule(BaseModel):
+router = APIRouter(prefix="/api/v1/quality", tags=["Quality"])
+
+
+# 全局实例
+_rule_engine: Optional[QualityRuleEngine] = None
+_scorer: Optional[QualityScorer] = None
+_checker: Optional[QualityChecker] = None
+_ragas_evaluator: Optional[RagasEvaluator] = None
+
+
+def get_rule_engine() -> QualityRuleEngine:
+    global _rule_engine
+    if _rule_engine is None:
+        _rule_engine = QualityRuleEngine()
+    return _rule_engine
+
+
+def get_scorer() -> QualityScorer:
+    global _scorer
+    if _scorer is None:
+        _scorer = QualityScorer(rule_engine=get_rule_engine())
+    return _scorer
+
+
+def get_checker() -> QualityChecker:
+    global _checker
+    if _checker is None:
+        _checker = QualityChecker(rule_engine=get_rule_engine())
+    return _checker
+
+
+def get_ragas_evaluator() -> RagasEvaluator:
+    global _ragas_evaluator
+    if _ragas_evaluator is None:
+        _ragas_evaluator = RagasEvaluator()
+    return _ragas_evaluator
+
+
+# Request/Response Models
+class ScoreRequest(BaseModel):
+    """评分请求"""
+    gold_standard: Optional[Dict[str, Any]] = None
+    project_id: Optional[str] = None
+
+
+class ScoreResponse(BaseModel):
+    """评分响应"""
     id: str
-    name: str
-    description: str
-    type: str = Field(..., description="Rule type: semantic, syntactic, completeness, consistency, accuracy")
-    enabled: bool
-    priority: str = Field(..., description="Priority: low, medium, high, critical")
-    threshold: float
-    conditions: List[Any] = Field(default_factory=list)
-    actions: List[str] = Field(default_factory=list)
-    created_at: str
-    updated_at: str
-    last_executed: Optional[str] = None
-    execution_count: int = 0
+    annotation_id: str
+    project_id: Optional[str] = None
+    dimension_scores: Dict[str, float]
+    total_score: float
+    weights: Dict[str, float]
+    scored_at: datetime
 
 
-class QualityMetrics(BaseModel):
-    overall_score: float
-    total_samples: int
-    passed_samples: int
-    failed_samples: int
-    trend_data: List[Dict[str, Any]] = Field(default_factory=list)
-    score_distribution: List[Dict[str, Any]] = Field(default_factory=list)
-    rule_violations: List[Dict[str, Any]] = Field(default_factory=list)
+class ConsistencyRequest(BaseModel):
+    """一致性评分请求"""
+    annotations: List[Dict[str, Any]]
 
 
-class QualityReport(BaseModel):
+class ConsistencyResponse(BaseModel):
+    """一致性评分响应"""
+    task_id: str
+    score: float
+    method: str
+    annotator_count: int
+
+
+class CheckRequest(BaseModel):
+    """检查请求"""
+    annotation_data: Optional[Dict[str, Any]] = None
+    project_id: Optional[str] = None
+
+
+class CheckResponse(BaseModel):
+    """检查响应"""
     id: str
-    name: str
-    type: str = Field(..., description="Report type: daily, weekly, monthly, custom")
+    annotation_id: str
+    passed: bool
+    issues: List[Dict[str, Any]]
+    checked_rules: int
+    checked_at: datetime
+
+
+class BatchCheckRequest(BaseModel):
+    """批量检查请求"""
+    project_id: str
+    annotation_ids: Optional[List[str]] = None
+    annotations: Optional[List[Dict[str, Any]]] = None
+
+
+class BatchCheckResponse(BaseModel):
+    """批量检查响应"""
+    project_id: str
+    total_checked: int
+    passed_count: int
+    failed_count: int
+    results: List[CheckResponse]
+
+
+class RagasEvaluateRequest(BaseModel):
+    """Ragas 评估请求"""
+    question: str
+    answer: str
+    contexts: List[str] = Field(default_factory=list)
+    ground_truth: Optional[str] = None
+    metrics: Optional[List[str]] = None
+
+
+class RagasEvaluateResponse(BaseModel):
+    """Ragas 评估响应"""
+    id: str
+    question: str
+    answer: str
+    contexts: List[str]
+    ground_truth: Optional[str] = None
+    scores: Dict[str, float]
     overall_score: float
-    semantic_score: float
-    syntactic_score: float
-    completeness_score: float
-    consistency_score: float
-    accuracy_score: float
-    total_samples: int
-    passed_samples: int
-    failed_samples: int
-    created_at: str
+    metrics_used: List[str]
 
 
-class CreateRuleRequest(BaseModel):
-    name: str
-    description: str
-    type: str
-    priority: str
-    threshold: float
-    enabled: bool = True
+class RagasBatchRequest(BaseModel):
+    """Ragas 批量评估请求"""
+    dataset: List[Dict[str, Any]]
+    metrics: Optional[List[str]] = None
 
 
-@router.get("/rules", response_model=List[QualityRule])
-async def get_rules(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000)
-):
-    """Get quality rules"""
-    # Mock data
-    rules = [
-        {
-            "id": "rule1",
-            "name": "语义一致性检查",
-            "description": "检查相似样本的标签一致性",
-            "type": "semantic",
-            "enabled": True,
-            "priority": "high",
-            "threshold": 0.9,
-            "conditions": [],
-            "actions": ["alert", "flag"],
-            "created_at": "2025-01-15T10:00:00Z",
-            "updated_at": "2025-01-20T10:00:00Z",
-            "last_executed": "2025-01-20T09:00:00Z",
-            "execution_count": 25
-        },
-        {
-            "id": "rule2",
-            "name": "文本长度验证",
-            "description": "检查标注文本是否满足最小长度要求",
-            "type": "syntactic",
-            "enabled": True,
-            "priority": "medium",
-            "threshold": 0.8,
-            "conditions": [],
-            "actions": ["warn"],
-            "created_at": "2025-01-15T10:00:00Z",
-            "updated_at": "2025-01-20T10:00:00Z",
-            "last_executed": "2025-01-20T09:00:00Z",
-            "execution_count": 18
-        }
-    ]
-    return rules[skip:skip + limit]
+class RagasBatchResponse(BaseModel):
+    """Ragas 批量评估响应"""
+    total_evaluated: int
+    average_scores: Dict[str, float]
+    results: List[RagasEvaluateResponse]
 
 
-@router.post("/rules", response_model=QualityRule)
-async def create_rule(
-    request: CreateRuleRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Create a new quality rule"""
-    # Mock implementation
-    rule = {
-        "id": f"rule_{len(request.name)}",
-        "name": request.name,
-        "description": request.description,
-        "type": request.type,
-        "enabled": request.enabled,
-        "priority": request.priority,
-        "threshold": request.threshold,
-        "conditions": [],
-        "actions": [],
-        "created_at": datetime.now().isoformat(),
-        "updated_at": datetime.now().isoformat(),
-        "execution_count": 0
-    }
-    return rule
+# API Endpoints
+@router.post("/score/{annotation_id}", response_model=ScoreResponse)
+async def score_annotation(
+    annotation_id: str,
+    request: ScoreRequest = None,
+    scorer: QualityScorer = Depends(get_scorer)
+) -> ScoreResponse:
+    """
+    评估标注质量
+    
+    - **annotation_id**: 标注ID
+    - **gold_standard**: 黄金标准数据 (可选)
+    - **project_id**: 项目ID (可选)
+    """
+    request = request or ScoreRequest()
+    
+    score = await scorer.score_annotation(
+        annotation_id=annotation_id,
+        gold_standard=request.gold_standard,
+        project_id=request.project_id
+    )
+    
+    return ScoreResponse(
+        id=score.id,
+        annotation_id=score.annotation_id,
+        project_id=score.project_id,
+        dimension_scores=score.dimension_scores,
+        total_score=score.total_score,
+        weights=score.weights,
+        scored_at=score.scored_at
+    )
 
 
-@router.put("/rules/{rule_id}")
-async def update_rule(
-    rule_id: str,
-    request: CreateRuleRequest,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Update a quality rule"""
-    # Mock implementation
-    return {"message": f"Rule {rule_id} updated successfully"}
+@router.post("/consistency/{task_id}", response_model=ConsistencyResponse)
+async def calculate_consistency(
+    task_id: str,
+    request: ConsistencyRequest,
+    scorer: QualityScorer = Depends(get_scorer)
+) -> ConsistencyResponse:
+    """
+    计算标注员间一致性
+    
+    - **task_id**: 任务ID
+    - **annotations**: 标注数据列表
+    """
+    result = await scorer.calculate_consistency(
+        task_id=task_id,
+        annotations=request.annotations
+    )
+    
+    return ConsistencyResponse(
+        task_id=result.task_id,
+        score=result.score,
+        method=result.method,
+        annotator_count=result.annotator_count
+    )
 
 
-@router.delete("/rules/{rule_id}")
-async def delete_rule(
-    rule_id: str,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Delete a quality rule"""
-    # Mock implementation
-    return {"message": f"Rule {rule_id} deleted successfully"}
+@router.post("/check/{annotation_id}", response_model=CheckResponse)
+async def check_annotation(
+    annotation_id: str,
+    request: CheckRequest = None,
+    checker: QualityChecker = Depends(get_checker)
+) -> CheckResponse:
+    """
+    检查标注质量
+    
+    - **annotation_id**: 标注ID
+    - **annotation_data**: 标注数据 (可选)
+    - **project_id**: 项目ID (可选)
+    """
+    request = request or CheckRequest()
+    
+    result = await checker.check_annotation(
+        annotation_id=annotation_id,
+        annotation_data=request.annotation_data,
+        project_id=request.project_id
+    )
+    
+    return CheckResponse(
+        id=result.id,
+        annotation_id=result.annotation_id,
+        passed=result.passed,
+        issues=[i.dict() for i in result.issues],
+        checked_rules=result.checked_rules,
+        checked_at=result.checked_at
+    )
 
 
-@router.patch("/rules/{rule_id}/toggle")
-async def toggle_rule(
-    rule_id: str,
-    enabled: bool,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Toggle rule enabled status"""
-    # Mock implementation
-    return {"message": f"Rule {rule_id} {'enabled' if enabled else 'disabled'}"}
-
-
-@router.get("/metrics", response_model=QualityMetrics)
-async def get_metrics(
-    start_date: str = Query(...),
-    end_date: str = Query(...),
-    type: Optional[str] = Query(None),
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Get quality metrics"""
-    # Mock data
-    metrics = {
-        "overall_score": 0.92,
-        "total_samples": 5000,
-        "passed_samples": 4600,
-        "failed_samples": 400,
-        "trend_data": [
-            {"date": "2025-01-14", "score": 0.85, "samples": 500},
-            {"date": "2025-01-15", "score": 0.87, "samples": 520},
-            {"date": "2025-01-16", "score": 0.89, "samples": 480},
-            {"date": "2025-01-17", "score": 0.91, "samples": 510},
-            {"date": "2025-01-18", "score": 0.93, "samples": 490},
-            {"date": "2025-01-19", "score": 0.92, "samples": 505},
-            {"date": "2025-01-20", "score": 0.94, "samples": 515}
-        ],
-        "score_distribution": [
-            {"type": "semantic", "score": 0.94},
-            {"type": "syntactic", "score": 0.91},
-            {"type": "completeness", "score": 0.89},
-            {"type": "consistency", "score": 0.93},
-            {"type": "accuracy", "score": 0.95}
-        ],
-        "rule_violations": [
-            {"rule": "语义一致性", "count": 25, "severity": "high"},
-            {"rule": "文本格式", "count": 15, "severity": "medium"},
-            {"rule": "数据完整性", "count": 10, "severity": "low"}
+@router.post("/batch-check", response_model=BatchCheckResponse)
+async def batch_check(
+    request: BatchCheckRequest,
+    checker: QualityChecker = Depends(get_checker)
+) -> BatchCheckResponse:
+    """
+    批量检查标注质量
+    
+    - **project_id**: 项目ID
+    - **annotation_ids**: 标注ID列表 (可选)
+    - **annotations**: 标注数据列表 (可选)
+    """
+    result = await checker.batch_check(
+        project_id=request.project_id,
+        annotation_ids=request.annotation_ids,
+        annotations=request.annotations
+    )
+    
+    return BatchCheckResponse(
+        project_id=result.project_id,
+        total_checked=result.total_checked,
+        passed_count=result.passed_count,
+        failed_count=result.failed_count,
+        results=[
+            CheckResponse(
+                id=r.id,
+                annotation_id=r.annotation_id,
+                passed=r.passed,
+                issues=[i.dict() for i in r.issues],
+                checked_rules=r.checked_rules,
+                checked_at=r.checked_at
+            )
+            for r in result.results
         ]
-    }
-    return metrics
+    )
 
 
-@router.get("/reports", response_model=List[QualityReport])
-async def get_reports(
-    start_date: str = Query(...),
-    end_date: str = Query(...),
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """Get quality reports"""
-    # Mock data
-    reports = [
-        {
-            "id": "report1",
-            "name": "每日质量报告 - 2025-01-20",
-            "type": "daily",
-            "overall_score": 0.92,
-            "semantic_score": 0.94,
-            "syntactic_score": 0.91,
-            "completeness_score": 0.89,
-            "consistency_score": 0.93,
-            "accuracy_score": 0.95,
-            "total_samples": 500,
-            "passed_samples": 460,
-            "failed_samples": 40,
-            "created_at": "2025-01-20T18:00:00Z"
-        },
-        {
-            "id": "report2",
-            "name": "每日质量报告 - 2025-01-19",
-            "type": "daily",
-            "overall_score": 0.90,
-            "semantic_score": 0.92,
-            "syntactic_score": 0.89,
-            "completeness_score": 0.87,
-            "consistency_score": 0.91,
-            "accuracy_score": 0.93,
-            "total_samples": 480,
-            "passed_samples": 432,
-            "failed_samples": 48,
-            "created_at": "2025-01-19T18:00:00Z"
-        }
-    ]
-    return reports
+@router.post("/ragas/evaluate", response_model=RagasEvaluateResponse)
+async def ragas_evaluate(
+    request: RagasEvaluateRequest,
+    evaluator: RagasEvaluator = Depends(get_ragas_evaluator)
+) -> RagasEvaluateResponse:
+    """
+    Ragas 单条评估
+    
+    - **question**: 问题
+    - **answer**: 答案
+    - **contexts**: 上下文列表
+    - **ground_truth**: 标准答案 (可选)
+    - **metrics**: 评估指标列表 (可选)
+    """
+    result = await evaluator.evaluate(
+        question=request.question,
+        answer=request.answer,
+        contexts=request.contexts,
+        ground_truth=request.ground_truth,
+        metrics=request.metrics
+    )
+    
+    return RagasEvaluateResponse(
+        id=result.id,
+        question=result.question,
+        answer=result.answer,
+        contexts=result.contexts,
+        ground_truth=result.ground_truth,
+        scores=result.scores,
+        overall_score=result.overall_score,
+        metrics_used=result.metrics_used
+    )
+
+
+@router.post("/ragas/batch-evaluate", response_model=RagasBatchResponse)
+async def ragas_batch_evaluate(
+    request: RagasBatchRequest,
+    evaluator: RagasEvaluator = Depends(get_ragas_evaluator)
+) -> RagasBatchResponse:
+    """
+    Ragas 批量评估
+    
+    - **dataset**: 数据集列表
+    - **metrics**: 评估指标列表 (可选)
+    """
+    result = await evaluator.batch_evaluate(
+        dataset=request.dataset,
+        metrics=request.metrics
+    )
+    
+    return RagasBatchResponse(
+        total_evaluated=result.total_evaluated,
+        average_scores=result.average_scores,
+        results=[
+            RagasEvaluateResponse(
+                id=r.id,
+                question=r.question,
+                answer=r.answer,
+                contexts=r.contexts,
+                ground_truth=r.ground_truth,
+                scores=r.scores,
+                overall_score=r.overall_score,
+                metrics_used=r.metrics_used
+            )
+            for r in result.results
+        ]
+    )
+
+
+# 配置端点
+class WeightsRequest(BaseModel):
+    """权重配置请求"""
+    weights: Dict[str, float]
+
+
+class RequiredFieldsRequest(BaseModel):
+    """必填字段配置请求"""
+    fields: List[str]
+
+
+class DurationRequest(BaseModel):
+    """时长配置请求"""
+    duration: int
+
+
+@router.post("/config/{project_id}/weights")
+async def set_score_weights(
+    project_id: str,
+    request: WeightsRequest,
+    rule_engine: QualityRuleEngine = Depends(get_rule_engine)
+) -> Dict[str, Any]:
+    """设置评分权重"""
+    await rule_engine.set_score_weights(project_id, request.weights)
+    return {"success": True, "weights": request.weights}
+
+
+@router.get("/config/{project_id}/weights")
+async def get_score_weights(
+    project_id: str,
+    rule_engine: QualityRuleEngine = Depends(get_rule_engine)
+) -> Dict[str, float]:
+    """获取评分权重"""
+    return await rule_engine.get_score_weights(project_id)
+
+
+@router.post("/config/{project_id}/required-fields")
+async def set_required_fields(
+    project_id: str,
+    request: RequiredFieldsRequest,
+    rule_engine: QualityRuleEngine = Depends(get_rule_engine)
+) -> Dict[str, Any]:
+    """设置必填字段"""
+    await rule_engine.set_required_fields(project_id, request.fields)
+    return {"success": True, "fields": request.fields}
+
+
+@router.get("/config/{project_id}/required-fields")
+async def get_required_fields(
+    project_id: str,
+    rule_engine: QualityRuleEngine = Depends(get_rule_engine)
+) -> List[str]:
+    """获取必填字段"""
+    return await rule_engine.get_required_fields(project_id)
+
+
+@router.post("/config/{project_id}/expected-duration")
+async def set_expected_duration(
+    project_id: str,
+    request: DurationRequest,
+    rule_engine: QualityRuleEngine = Depends(get_rule_engine)
+) -> Dict[str, Any]:
+    """设置预期标注时长"""
+    await rule_engine.set_expected_duration(project_id, request.duration)
+    return {"success": True, "duration": request.duration}
+
+
+@router.get("/config/{project_id}/expected-duration")
+async def get_expected_duration(
+    project_id: str,
+    rule_engine: QualityRuleEngine = Depends(get_rule_engine)
+) -> int:
+    """获取预期标注时长"""
+    return await rule_engine.get_expected_duration(project_id)

@@ -14,6 +14,7 @@ cx-Oracle>=8.3.0
 # Web framework
 fastapi>=0.95.0
 uvicorn>=0.20.0
+python-multipart>=0.0.6
 
 # Environment configuration
 python-dotenv>=1.0.0

@@ -7,8 +7,8 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
 
 from src.database.connection import get_db
-from src.security.auth import get_current_user
-from src.models.user import User
+from src.api.auth import get_current_user
+from src.security.models import UserModel as User
 
 router = APIRouter(prefix="/api/v1/augmentation", tags=["augmentation"])
 

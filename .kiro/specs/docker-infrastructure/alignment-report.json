@@ -1,0 +1,12 @@
+{
+  "feature": "docker-infrastructure",
+  "success": true,
+  "message": "Found 0 alignment issues",
+  "summary": {
+    "total_issues": 0,
+    "critical": 0,
+    "warnings": 0,
+    "info": 0
+  },
+  "issues": []
+}

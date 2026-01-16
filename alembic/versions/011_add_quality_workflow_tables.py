@@ -1,7 +1,7 @@
 """Add quality workflow tables
 
 Revision ID: 011_quality_workflow
-Revises: 010_collaboration_workflow
+Revises: 010_collab_workflow
 Create Date: 2026-01-14
 
 """
@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = '011_quality_workflow'
-down_revision = '010_collaboration_workflow'
+down_revision = '010_collab_workflow'
 branch_labels = None
 depends_on = None
 

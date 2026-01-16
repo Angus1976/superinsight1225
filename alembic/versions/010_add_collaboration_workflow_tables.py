@@ -1,7 +1,7 @@
 """Add collaboration workflow tables
 
 Revision ID: 010_collab_workflow
-Revises: 009_add_ai_annotation_tables
+Revises: 009_ai_annotation
 Create Date: 2026-01-14
 
 """
@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = '010_collab_workflow'
-down_revision = '009_add_ai_annotation_tables'
+down_revision = '009_ai_annotation'
 branch_labels = None
 depends_on = None
 

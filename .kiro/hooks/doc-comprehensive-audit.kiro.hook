@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Documentation Comprehensive Audit",
+  "description": "Provides manual trigger for comprehensive documentation audit including size checks, redundancy detection, and alignment verification",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "🔍 COMPREHENSIVE DOCUMENTATION AUDIT INITIATED\n\nPerforming full documentation system audit:\n\n## 1. ALIGNMENT AUDIT\n- Check all features in .kiro/specs/ for doc-code alignment\n- Generate alignment score (target: 100%)\n- List all misalignments with severity levels\n\n## 2. SIZE AUDIT\n- Calculate token count for all documentation files\n- Identify files exceeding 10,000 tokens\n- Recommend splitting strategy for oversized files\n- Verify index.md exists for split documents\n\n## 3. REDUNDANCY AUDIT\n- Scan for duplicate content across all documents\n- Calculate redundancy score (target: <5%)\n- Suggest cross-references to replace duplications\n- Validate proper use of references\n\n## 4. COMPLETENESS AUDIT\n- Verify all features have complete documentation set:\n  * requirements.md with EARS notation\n  * design.md with diagrams\n  * tasks.md with breakdown\n  * CHANGELOG.md with version history\n- Check for missing sections in each document\n- Validate all diagrams render correctly\n\n## 5. STRUCTURE AUDIT\n- Verify consistent heading hierarchy (H1→H2→H3)\n- Check proper use of tables and bullet points\n- Validate Markdown syntax and formatting\n- Ensure proper cross-reference links\n\n## 6. METRICS REPORT\n- Documentation-code alignment score\n- Average document size\n- Redundancy percentage\n- Completeness percentage\n- Last update timestamps\n\n## 7. RECOMMENDATIONS\n- List documents needing splitting\n- Suggest archival candidates (old versions)\n- Recommend structure improvements\n- Highlight priority fixes\n\nExecute: python scripts/audit_docs.py --comprehensive --output audit-report.md"
+  }
+}

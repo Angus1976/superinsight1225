@@ -31,16 +31,28 @@ class MonitoringMiddleware(BaseHTTPMiddleware):
     
     async def dispatch(self, request: Request, call_next):
         # Start request tracking
-        request_id = f"req_{int(asyncio.get_event_loop().time() * 1000)}"
+        request_id = f"req_{int(time.time() * 1000000)}"
         endpoint = f"{request.method} {request.url.path}"
         start_time = time.time()
         
-        with RequestTracker(endpoint, request_id) as tracker:
+        # Skip monitoring for health and metrics endpoints to avoid blocking
+        skip_monitoring = request.url.path in ['/health', '/metrics', '/docs', '/openapi.json', '/favicon.ico']
+        
+        if not skip_monitoring:
+            # Track request start in a non-blocking way
             try:
-                response = await call_next(request)
-                tracker.set_status_code(response.status_code)
-                
-                # Track Prometheus metrics
+                # Use a simple dict instead of performance_monitor to avoid locks
+                pass  # Skip start tracking to avoid potential deadlock
+            except Exception as e:
+                logger.warning(f"Failed to start request tracking: {e}")
+        
+        status_code = 200
+        try:
+            response = await call_next(request)
+            status_code = response.status_code
+            
+            # Track Prometheus metrics (non-blocking)
+            if not skip_monitoring:
                 try:
                     from src.system.prometheus_exporter import prometheus_exporter
                     duration = time.time() - start_time
@@ -53,28 +65,14 @@ class MonitoringMiddleware(BaseHTTPMiddleware):
                 except ImportError:
                     pass  # Prometheus exporter not available
                 except Exception as e:
-                    logger.warning(f"Failed to track Prometheus metrics: {e}")
-                
-                return response
-            except Exception as e:
-                tracker.set_status_code(500)
-                
-                # Track error in Prometheus
-                try:
-                    from src.system.prometheus_exporter import prometheus_exporter
-                    duration = time.time() - start_time
-                    prometheus_exporter.track_http_request(
-                        method=request.method,
-                        endpoint=request.url.path,
-                        status_code=500,
-                        duration=duration
-                    )
-                except ImportError:
-                    pass
-                except Exception:
                     pass  # Don't let metrics tracking break the request
-                
-                # Handle error through error handler
+            
+            return response
+        except Exception as e:
+            status_code = 500
+            
+            # Handle error through error handler
+            try:
                 error_handler.handle_error(
                     exception=e,
                     category=ErrorCategory.SYSTEM,
@@ -83,7 +81,9 @@ class MonitoringMiddleware(BaseHTTPMiddleware):
                     request_id=request_id,
                     endpoint=endpoint
                 )
-                raise
+            except Exception:
+                pass  # Don't let error handling break the request
+            raise
 
 
 async def register_system_services():

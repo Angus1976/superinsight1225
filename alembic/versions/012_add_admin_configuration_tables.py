@@ -1,7 +1,7 @@
 """Add Admin Configuration tables
 
 Revision ID: 012_add_admin_config
-Revises: 011_add_quality_workflow_tables
+Revises: 011_quality_workflow
 Create Date: 2026-01-14
 
 This migration adds tables for admin configuration management:
@@ -22,7 +22,7 @@ from sqlalchemy.dialects.postgresql import UUID, JSONB
 
 # revision identifiers, used by Alembic.
 revision: str = '012_add_admin_config'
-down_revision: Union[str, Sequence[str], None] = '011_add_quality_workflow_tables'
+down_revision: Union[str, Sequence[str], None] = '011_quality_workflow'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

@@ -5,6 +5,21 @@ All notable changes to the SuperInsight Platform will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- **MonitoringMiddleware Blocking Issue**: Fixed critical issue where `MonitoringMiddleware` was causing API requests to hang/timeout. The middleware was using `threading.Lock` in `MetricsCollector` which caused deadlocks in async context. Simplified the middleware to avoid calling `performance_monitor.start_request()` and `end_request()` which use locks.
+- **PostgreSQL Init Script**: Fixed SQL syntax error in `scripts/init-db.sql` - changed DO block delimiter from single `$` to `$$` for proper PL/pgSQL syntax compliance. This resolves container startup failures where PostgreSQL would fail with "ERROR: syntax error at or near '$'" during database initialization.
+- **Alembic Migration Dependencies**: Fixed multiple migration script dependency issues where revision IDs didn't match (e.g., `009_add_ai_annotation_tables` → `009_ai_annotation`)
+- **Alembic CREATE TYPE Statements**: Added `DO $$ ... EXCEPTION WHEN duplicate_object` wrappers to prevent errors when types already exist
+- **Alembic ENUM Default Values**: Fixed server_default syntax for ENUM columns using `sa.text()` wrapper
+
+### Added
+- **Docker Infrastructure Documentation**: Created comprehensive documentation for Docker containerization infrastructure including requirements, design, and task breakdown in `.kiro/specs/docker-infrastructure/`
+- **Core Database Tables Migration**: Created `000_create_core_tables.py` migration with essential tables (audit_logs, users, documents, tasks, billing_records, quality_issues)
+- **Documentation Audit Script**: Added `scripts/audit_docs.py` for comprehensive documentation quality auditing
+- **API Diagnostic Tools**: Added `diagnose_api.py` and shell scripts for troubleshooting
+
 ## [2.3.0] - 2026-01-11
 
 ### 🚀 Major Security & Audit System Implementation

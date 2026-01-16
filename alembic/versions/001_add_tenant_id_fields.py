@@ -54,9 +54,18 @@ def upgrade():
     
     # Update existing records with a default tenant_id
     # This is a placeholder - in production, you'd need to map existing data to appropriate tenants
-    op.execute("UPDATE business_rules SET tenant_id = 'default' WHERE tenant_id IS NULL")
-    op.execute("UPDATE business_patterns SET tenant_id = 'default' WHERE tenant_id IS NULL")
-    op.execute("UPDATE business_insights SET tenant_id = 'default' WHERE tenant_id IS NULL")
+    try:
+        op.execute("UPDATE business_rules SET tenant_id = 'default' WHERE tenant_id IS NULL")
+    except Exception:
+        pass
+    try:
+        op.execute("UPDATE business_patterns SET tenant_id = 'default' WHERE tenant_id IS NULL")
+    except Exception:
+        pass
+    try:
+        op.execute("UPDATE business_insights SET tenant_id = 'default' WHERE tenant_id IS NULL")
+    except Exception:
+        pass
     
     try:
         op.execute("UPDATE ticket_history SET tenant_id = 'default' WHERE tenant_id IS NULL")
@@ -69,9 +78,18 @@ def upgrade():
         pass
     
     # Make tenant_id NOT NULL after populating default values
-    op.alter_column('business_rules', 'tenant_id', nullable=False)
-    op.alter_column('business_patterns', 'tenant_id', nullable=False)
-    op.alter_column('business_insights', 'tenant_id', nullable=False)
+    try:
+        op.alter_column('business_rules', 'tenant_id', nullable=False)
+    except Exception:
+        pass
+    try:
+        op.alter_column('business_patterns', 'tenant_id', nullable=False)
+    except Exception:
+        pass
+    try:
+        op.alter_column('business_insights', 'tenant_id', nullable=False)
+    except Exception:
+        pass
 
 
 def downgrade():

@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Documentation Structure Validator",
+  "description": "Monitors documentation file creation to ensure proper structure, templates, and index files are maintained",
+  "version": "1",
+  "when": {
+    "type": "fileCreated",
+    "patterns": [
+      ".kiro/specs/**/*.md"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "📝 NEW DOCUMENTATION FILE DETECTED\n\nValidating documentation structure and templates:\n\n1. TEMPLATE COMPLIANCE:\n   - requirements.md: Must include User Stories, Acceptance Criteria (EARS), Non-Functional Requirements, Dependencies\n   - design.md: Must include Architecture Overview, Component Design, Technical Decisions, Sequence Diagrams, Correctness Properties\n   - tasks.md: Must include Task Breakdown with estimates, dependencies, and validation criteria\n   - CHANGELOG.md: Must follow SemVer format with [Unreleased] section and categorization\n\n2. NAMING CONVENTIONS:\n   - Use lowercase with hyphens: feature-name/requirements.md\n   - Maintain consistent structure across all features\n   - Create index.md if multiple sub-documents exist\n\n3. CROSS-REFERENCES:\n   - Ensure proper linking between documents\n   - Use relative paths for internal references\n   - Avoid content duplication\n\n4. INDEX UPDATE:\n   - Update .kiro/specs/INDEX.md with new feature entry\n   - Include description, last updated date, and related modules\n   - Maintain alphabetical order\n\nPlease verify the new documentation file follows all templates and standards."
+  }
+}

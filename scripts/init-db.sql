@@ -8,13 +8,13 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "btree_gin";
 
 -- Create database user if not exists (for development)
-DO $
+DO $$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'superinsight') THEN
         CREATE ROLE superinsight WITH LOGIN PASSWORD 'password';
     END IF;
 END
-$;
+$$;
 
 -- Grant necessary permissions
 GRANT ALL PRIVILEGES ON DATABASE superinsight TO superinsight;

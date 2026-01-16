@@ -1,0 +1,79 @@
+{
+  "feature": "docker-infrastructure",
+  "path": ".kiro/specs/docker-infrastructure",
+  "files": {
+    "requirements.md": {
+      "clarity_score": 86.64420544945533,
+      "completeness": {
+        "found": [
+          "Introduction",
+          "Glossary",
+          "Requirements",
+          "Acceptance Criteria",
+          "Non-Functional Requirements"
+        ],
+        "missing": [],
+        "score": 100.0
+      },
+      "cross_references": {
+        "valid": [],
+        "broken": [],
+        "score": 100
+      },
+      "ears_notation": {
+        "total_criteria": 32,
+        "ears_compliant": 6,
+        "compliance_rate": 0.1875
+      }
+    },
+    "design.md": {
+      "clarity_score": 71.38005180081123,
+      "completeness": {
+        "found": [
+          "Architecture Overview",
+          "Component Design",
+          "Technical Decisions",
+          "Correctness Properties"
+        ],
+        "missing": [],
+        "score": 100.0
+      },
+      "cross_references": {
+        "valid": [],
+        "broken": [],
+        "score": 100
+      }
+    },
+    "tasks.md": {
+      "clarity_score": 78.17580440532424,
+      "completeness": {
+        "found": [
+          "Task Breakdown",
+          "Progress Tracking",
+          "Dependencies",
+          "Success Criteria"
+        ],
+        "missing": [],
+        "score": 100.0
+      },
+      "cross_references": {
+        "valid": [],
+        "broken": [],
+        "score": 100
+      }
+    }
+  },
+  "overall": {
+    "clarity_score": 78.73335388519693,
+    "completeness_score": 100.0,
+    "redundancy_score": 100,
+    "cross_ref_score": 100.0
+  },
+  "issues": [
+    {
+      "severity": "warning",
+      "file": "requirements.md",
+      "message": "Low EARS notation compliance: 18.8%"
+    }
+  ]
+}

@@ -1,0 +1,238 @@
+{
+  "success": true,
+  "message": "Checked 4 files, 0 need splitting",
+  "total_tokens": 7818,
+  "files": [
+    {
+      "filename": "requirements.md",
+      "path": ".kiro/specs/docker-infrastructure/requirements.md",
+      "chars": 5823,
+      "tokens": 1455,
+      "lines": 127,
+      "needs_split": false,
+      "sections": [
+        {
+          "title": "Docker Infrastructure - Requirements Document",
+          "lines": 1,
+          "tokens": 0
+        },
+        {
+          "title": "Introduction",
+          "lines": 3,
+          "tokens": 65
+        },
+        {
+          "title": "Glossary",
+          "lines": 6,
+          "tokens": 73
+        },
+        {
+          "title": "Requirements",
+          "lines": 87,
+          "tokens": 1095
+        },
+        {
+          "title": "Non-Functional Requirements",
+          "lines": 16,
+          "tokens": 126
+        },
+        {
+          "title": "Dependencies",
+          "lines": 8,
+          "tokens": 31
+        }
+      ],
+      "utilization": "14.5%"
+    },
+    {
+      "filename": "DOCUMENTATION_VALIDATION_REPORT.md",
+      "path": ".kiro/specs/docker-infrastructure/DOCUMENTATION_VALIDATION_REPORT.md",
+      "chars": 7120,
+      "tokens": 1780,
+      "lines": 261,
+      "needs_split": false,
+      "sections": [
+        {
+          "title": "Documentation Validation Report",
+          "lines": 5,
+          "tokens": 30
+        },
+        {
+          "title": "Executive Summary",
+          "lines": 5,
+          "tokens": 62
+        },
+        {
+          "title": "Validation Results",
+          "lines": 72,
+          "tokens": 359
+        },
+        {
+          "title": "Issues Found",
+          "lines": 23,
+          "tokens": 168
+        },
+        {
+          "title": "Completeness Check ✅",
+          "lines": 25,
+          "tokens": 155
+        },
+        {
+          "title": "Redundancy Check ✅",
+          "lines": 10,
+          "tokens": 51
+        },
+        {
+          "title": "Cross-Reference Check ✅",
+          "lines": 7,
+          "tokens": 32
+        },
+        {
+          "title": "CHANGELOG Verification ✅",
+          "lines": 6,
+          "tokens": 17
+        },
+        {
+          "title": "[Unreleased]",
+          "lines": 12,
+          "tokens": 101
+        },
+        {
+          "title": "Documentation-First Workflow Compliance ✅",
+          "lines": 21,
+          "tokens": 193
+        },
+        {
+          "title": "Recommendations",
+          "lines": 15,
+          "tokens": 97
+        },
+        {
+          "title": "Metrics Summary",
+          "lines": 11,
+          "tokens": 92
+        },
+        {
+          "title": "Conclusion",
+          "lines": 12,
+          "tokens": 114
+        },
+        {
+          "title": "Next Steps",
+          "lines": 7,
+          "tokens": 53
+        },
+        {
+          "title": "Validation Artifacts",
+          "lines": 15,
+          "tokens": 102
+        }
+      ],
+      "utilization": "17.8%"
+    },
+    {
+      "filename": "tasks.md",
+      "path": ".kiro/specs/docker-infrastructure/tasks.md",
+      "chars": 7019,
+      "tokens": 1754,
+      "lines": 165,
+      "needs_split": false,
+      "sections": [
+        {
+          "title": "Docker Infrastructure - Tasks",
+          "lines": 1,
+          "tokens": 0
+        },
+        {
+          "title": "Task Breakdown",
+          "lines": 125,
+          "tokens": 1410
+        },
+        {
+          "title": "Progress Tracking",
+          "lines": 7,
+          "tokens": 33
+        },
+        {
+          "title": "Dependencies",
+          "lines": 9,
+          "tokens": 98
+        },
+        {
+          "title": "Critical Path",
+          "lines": 8,
+          "tokens": 69
+        },
+        {
+          "title": "Success Criteria",
+          "lines": 9,
+          "tokens": 72
+        }
+      ],
+      "utilization": "17.5%"
+    },
+    {
+      "filename": "design.md",
+      "path": ".kiro/specs/docker-infrastructure/design.md",
+      "chars": 11316,
+      "tokens": 2829,
+      "lines": 391,
+      "needs_split": false,
+      "sections": [
+        {
+          "title": "Docker Infrastructure - Design Document",
+          "lines": 1,
+          "tokens": 0
+        },
+        {
+          "title": "1. Architecture Overview",
+          "lines": 21,
+          "tokens": 107
+        },
+        {
+          "title": "2. Component Design",
+          "lines": 132,
+          "tokens": 974
+        },
+        {
+          "title": "3. Technical Decisions",
+          "lines": 49,
+          "tokens": 392
+        },
+        {
+          "title": "4. Sequence Diagrams",
+          "lines": 55,
+          "tokens": 368
+        },
+        {
+          "title": "5. Data Models",
+          "lines": 44,
+          "tokens": 215
+        },
+        {
+          "title": "6. Correctness Properties",
+          "lines": 35,
+          "tokens": 289
+        },
+        {
+          "title": "7. Performance Considerations",
+          "lines": 19,
+          "tokens": 117
+        },
+        {
+          "title": "8. Security Considerations",
+          "lines": 19,
+          "tokens": 122
+        },
+        {
+          "title": "References",
+          "lines": 6,
+          "tokens": 80
+        }
+      ],
+      "utilization": "28.3%"
+    }
+  ],
+  "needs_split": [],
+  "recommendations": []
+}

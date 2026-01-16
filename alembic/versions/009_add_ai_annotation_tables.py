@@ -1,7 +1,7 @@
 """Add AI annotation tables
 
 Revision ID: 009_ai_annotation
-Revises: 008_add_llm_integration_tables
+Revises: 008_add_llm_integration
 Create Date: 2026-01-14
 
 This migration adds tables for AI annotation features:
@@ -21,7 +21,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = '009_ai_annotation'
-down_revision = '008_add_llm_integration_tables'
+down_revision = '008_add_llm_integration'
 branch_labels = None
 depends_on = None
 

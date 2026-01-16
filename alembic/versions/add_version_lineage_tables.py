@@ -28,24 +28,36 @@ def upgrade():
     
     # VersionStatus enum
     op.execute("""
-        CREATE TYPE versionstatus AS ENUM (
+        DO $$ BEGIN
+            CREATE TYPE versionstatus AS ENUM (
             'active', 'archived', 'deleted', 'pending'
-        )
+        );
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
     """)
     
     # VersionType enum
     op.execute("""
-        CREATE TYPE versiontype AS ENUM (
+        DO $$ BEGIN
+            CREATE TYPE versiontype AS ENUM (
             'full', 'delta', 'checkpoint'
-        )
+        );
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
     """)
     
     # LineageRelationType enum
     op.execute("""
-        CREATE TYPE lineagerelationtype AS ENUM (
+        DO $$ BEGIN
+            CREATE TYPE lineagerelationtype AS ENUM (
             'derived_from', 'transformed_to', 'copied_from',
             'aggregated_from', 'filtered_from', 'joined_from', 'enriched_by'
-        )
+        );
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
     """)
 
     # ========================================================================

@@ -35,111 +35,167 @@ def upgrade():
 
     # SyncDirection enum
     op.execute("""
-        CREATE TYPE syncdirection AS ENUM (
+        DO $$ BEGIN
+            CREATE TYPE syncdirection AS ENUM (
             'local_to_cloud', 'cloud_to_local', 'bidirectional', 'pull', 'push'
-        )
+        );
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
     """)
 
     # SyncFrequency enum
     op.execute("""
-        CREATE TYPE syncfrequency AS ENUM (
+        DO $$ BEGIN
+            CREATE TYPE syncfrequency AS ENUM (
             'real_time', 'scheduled', 'manual', 'on_change'
-        )
+        );
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
     """)
 
     # SyncJobStatus enum
     op.execute("""
-        CREATE TYPE syncjobstatus AS ENUM (
+        DO $$ BEGIN
+            CREATE TYPE syncjobstatus AS ENUM (
             'draft', 'active', 'paused', 'disabled', 'archived'
-        )
+        );
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
     """)
 
     # SyncExecutionStatus enum
     op.execute("""
-        CREATE TYPE syncexecutionstatus AS ENUM (
+        DO $$ BEGIN
+            CREATE TYPE syncexecutionstatus AS ENUM (
             'pending', 'running', 'completed', 'failed', 'cancelled', 'partial'
-        )
+        );
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
     """)
 
     # ConflictType enum
     op.execute("""
-        CREATE TYPE conflicttype AS ENUM (
+        DO $$ BEGIN
+            CREATE TYPE conflicttype AS ENUM (
             'version_conflict', 'content_conflict', 'schema_conflict',
             'delete_conflict', 'constraint_conflict'
-        )
+        );
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
     """)
 
     # ConflictResolutionStrategy enum
     op.execute("""
-        CREATE TYPE conflictresolutionstrategy AS ENUM (
+        DO $$ BEGIN
+            CREATE TYPE conflictresolutionstrategy AS ENUM (
             'timestamp_based', 'source_wins', 'target_wins',
             'manual', 'field_merge', 'business_rule'
-        )
+        );
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
     """)
 
     # ConflictStatus enum
     op.execute("""
-        CREATE TYPE conflictstatus AS ENUM (
+        DO $$ BEGIN
+            CREATE TYPE conflictstatus AS ENUM (
             'pending', 'auto_resolved', 'manually_resolved', 'escalated', 'ignored'
-        )
+        );
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
     """)
 
     # DataSourceType enum
     op.execute("""
-        CREATE TYPE datasourcetype AS ENUM (
+        DO $$ BEGIN
+            CREATE TYPE datasourcetype AS ENUM (
             'mysql', 'postgresql', 'oracle', 'mongodb', 'sqlserver',
             'rest_api', 'graphql_api', 'soap_api',
             'ftp', 'sftp', 's3', 'local_file', 'webhook'
-        )
+        );
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
     """)
 
     # DataSourceStatus enum
     op.execute("""
-        CREATE TYPE datasourcestatus AS ENUM (
+        DO $$ BEGIN
+            CREATE TYPE datasourcestatus AS ENUM (
             'active', 'inactive', 'error', 'testing'
-        )
+        );
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
     """)
 
     # TransformationType enum
     op.execute("""
-        CREATE TYPE transformationtype AS ENUM (
+        DO $$ BEGIN
+            CREATE TYPE transformationtype AS ENUM (
             'field_mapping', 'data_type_conversion', 'value_transformation',
             'aggregation', 'filtering', 'enrichment', 'normalization', 'custom_script'
-        )
+        );
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
     """)
 
     # DatasetCategory enum
     op.execute("""
-        CREATE TYPE datasetcategory AS ENUM (
+        DO $$ BEGIN
+            CREATE TYPE datasetcategory AS ENUM (
             'finance', 'healthcare', 'legal', 'general',
             'technology', 'retail', 'manufacturing', 'education'
-        )
+        );
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
     """)
 
     # DatasetStatus enum
     op.execute("""
-        CREATE TYPE datasetstatus AS ENUM (
+        DO $$ BEGIN
+            CREATE TYPE datasetstatus AS ENUM (
             'available', 'downloading', 'processing', 'integrated', 'error', 'deprecated'
-        )
+        );
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
     """)
 
     # AuditAction enum
     op.execute("""
-        CREATE TYPE auditaction AS ENUM (
-            'job_created', 'job_updated', 'job_deleted',
-            'job_started', 'job_stopped', 'job_paused', 'job_resumed',
-            'sync_started', 'sync_completed', 'sync_failed',
-            'conflict_detected', 'conflict_resolved',
-            'data_pushed', 'data_pulled',
-            'source_connected', 'source_disconnected'
-        )
+        DO $$ BEGIN
+            CREATE TYPE auditaction AS ENUM (
+                'job_created', 'job_updated', 'job_deleted',
+                'job_started', 'job_stopped', 'job_paused', 'job_resumed',
+                'sync_started', 'sync_completed', 'sync_failed',
+                'conflict_detected', 'conflict_resolved',
+                'data_pushed', 'data_pulled',
+                'source_connected', 'source_disconnected'
+            );
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
     """)
 
     # SyncStatus enum for documents/tasks
     op.execute("""
-        CREATE TYPE syncstatus AS ENUM (
-            'pending', 'syncing', 'synced', 'conflict', 'failed'
-        )
+        DO $$ BEGIN
+            CREATE TYPE syncstatus AS ENUM (
+                'pending', 'syncing', 'synced', 'conflict', 'failed'
+            );
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
     """)
 
     # ========================================================================
@@ -207,11 +263,11 @@ def upgrade():
         sa.Column('description', sa.Text(), nullable=True),
         sa.Column('source_id', postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column('target_config', postgresql.JSONB(astext_type=sa.Text()), nullable=False, server_default='{}'),
-        sa.Column('direction', postgresql.ENUM('local_to_cloud', 'cloud_to_local', 'bidirectional', 'pull', 'push', name='syncdirection', create_type=False), nullable=True, server_default="'pull'"),
-        sa.Column('frequency', postgresql.ENUM('real_time', 'scheduled', 'manual', 'on_change', name='syncfrequency', create_type=False), nullable=True, server_default="'manual'"),
-        sa.Column('status', postgresql.ENUM('draft', 'active', 'paused', 'disabled', 'archived', name='syncjobstatus', create_type=False), nullable=True, server_default="'draft'"),
+        sa.Column('direction', postgresql.ENUM('local_to_cloud', 'cloud_to_local', 'bidirectional', 'pull', 'push', name='syncdirection', create_type=False), nullable=True, server_default=sa.text("'pull'")),
+        sa.Column('frequency', postgresql.ENUM('real_time', 'scheduled', 'manual', 'on_change', name='syncfrequency', create_type=False), nullable=True, server_default=sa.text("'manual'")),
+        sa.Column('status', postgresql.ENUM('draft', 'active', 'paused', 'disabled', 'archived', name='syncjobstatus', create_type=False), nullable=True, server_default=sa.text("'draft'")),
         sa.Column('schedule_cron', sa.String(100), nullable=True),
-        sa.Column('schedule_timezone', sa.String(50), nullable=True, server_default="'UTC'"),
+        sa.Column('schedule_timezone', sa.String(50), nullable=True, server_default=sa.text("'UTC'")),
         sa.Column('batch_size', sa.Integer(), nullable=True, server_default='1000'),
         sa.Column('max_retries', sa.Integer(), nullable=True, server_default='3'),
         sa.Column('retry_delay', sa.Integer(), nullable=True, server_default='60'),
@@ -219,7 +275,7 @@ def upgrade():
         sa.Column('enable_incremental', sa.Boolean(), nullable=True, server_default='true'),
         sa.Column('incremental_field', sa.String(100), nullable=True),
         sa.Column('last_sync_value', sa.String(500), nullable=True),
-        sa.Column('conflict_resolution', postgresql.ENUM('timestamp_based', 'source_wins', 'target_wins', 'manual', 'field_merge', 'business_rule', name='conflictresolutionstrategy', create_type=False), nullable=True, server_default="'timestamp_based'"),
+        sa.Column('conflict_resolution', postgresql.ENUM('timestamp_based', 'source_wins', 'target_wins', 'manual', 'field_merge', 'business_rule', name='conflictresolutionstrategy', create_type=False), nullable=True, server_default=sa.text("'timestamp_based'")),
         sa.Column('transformation_rules', postgresql.JSONB(astext_type=sa.Text()), nullable=True, server_default='[]'),
         sa.Column('filter_conditions', postgresql.JSONB(astext_type=sa.Text()), nullable=True, server_default='{}'),
         sa.Column('enable_encryption', sa.Boolean(), nullable=True, server_default='true'),
@@ -247,7 +303,7 @@ def upgrade():
         sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False, default=sa.text('gen_random_uuid()')),
         sa.Column('job_id', postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column('tenant_id', sa.String(100), nullable=False),
-        sa.Column('status', postgresql.ENUM('pending', 'running', 'completed', 'failed', 'cancelled', 'partial', name='syncexecutionstatus', create_type=False), nullable=True, server_default="'pending'"),
+        sa.Column('status', postgresql.ENUM('pending', 'running', 'completed', 'failed', 'cancelled', 'partial', name='syncexecutionstatus', create_type=False), nullable=True, server_default=sa.text("'pending'")),
         sa.Column('started_at', sa.DateTime(timezone=True), nullable=True),
         sa.Column('completed_at', sa.DateTime(timezone=True), nullable=True),
         sa.Column('duration_seconds', sa.Float(), nullable=True),
@@ -264,7 +320,7 @@ def upgrade():
         sa.Column('retry_count', sa.Integer(), nullable=True, server_default='0'),
         sa.Column('checkpoint_data', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
         sa.Column('triggered_by', sa.String(100), nullable=True),
-        sa.Column('trigger_type', sa.String(50), nullable=True, server_default="'manual'"),
+        sa.Column('trigger_type', sa.String(50), nullable=True, server_default=sa.text("'manual'")),
         sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
         sa.ForeignKeyConstraint(['job_id'], ['sync_jobs.id']),
         sa.PrimaryKeyConstraint('id')
@@ -282,7 +338,7 @@ def upgrade():
         sa.Column('execution_id', postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column('tenant_id', sa.String(100), nullable=False),
         sa.Column('conflict_type', postgresql.ENUM('version_conflict', 'content_conflict', 'schema_conflict', 'delete_conflict', 'constraint_conflict', name='conflicttype', create_type=False), nullable=False),
-        sa.Column('status', postgresql.ENUM('pending', 'auto_resolved', 'manually_resolved', 'escalated', 'ignored', name='conflictstatus', create_type=False), nullable=True, server_default="'pending'"),
+        sa.Column('status', postgresql.ENUM('pending', 'auto_resolved', 'manually_resolved', 'escalated', 'ignored', name='conflictstatus', create_type=False), nullable=True, server_default=sa.text("'pending'")),
         sa.Column('record_id', sa.String(500), nullable=False),
         sa.Column('table_name', sa.String(200), nullable=True),
         sa.Column('field_name', sa.String(200), nullable=True),
@@ -349,7 +405,7 @@ def upgrade():
         sa.Column('target_field', sa.String(200), nullable=True),
         sa.Column('transformation_config', postgresql.JSONB(astext_type=sa.Text()), nullable=False, server_default='{}'),
         sa.Column('custom_script', sa.Text(), nullable=True),
-        sa.Column('script_language', sa.String(50), nullable=True, server_default="'python'"),
+        sa.Column('script_language', sa.String(50), nullable=True, server_default=sa.text("'python'")),
         sa.Column('validation_rules', postgresql.JSONB(astext_type=sa.Text()), nullable=True, server_default='{}'),
         sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
         sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
@@ -366,14 +422,14 @@ def upgrade():
         sa.Column('name', sa.String(200), nullable=False),
         sa.Column('display_name', sa.String(200), nullable=False),
         sa.Column('description', sa.Text(), nullable=True),
-        sa.Column('version', sa.String(50), nullable=True, server_default="'1.0.0'"),
+        sa.Column('version', sa.String(50), nullable=True, server_default=sa.text("'1.0.0'")),
         sa.Column('source_platform', sa.String(100), nullable=False),
         sa.Column('source_url', sa.String(500), nullable=False),
         sa.Column('source_identifier', sa.String(200), nullable=False),
         sa.Column('category', postgresql.ENUM('finance', 'healthcare', 'legal', 'general', 'technology', 'retail', 'manufacturing', 'education', name='datasetcategory', create_type=False), nullable=False),
         sa.Column('domain_tags', postgresql.JSONB(astext_type=sa.Text()), nullable=True, server_default='[]'),
-        sa.Column('language', sa.String(50), nullable=True, server_default="'zh'"),
-        sa.Column('status', postgresql.ENUM('available', 'downloading', 'processing', 'integrated', 'error', 'deprecated', name='datasetstatus', create_type=False), nullable=True, server_default="'available'"),
+        sa.Column('language', sa.String(50), nullable=True, server_default=sa.text("'zh'")),
+        sa.Column('status', postgresql.ENUM('available', 'downloading', 'processing', 'integrated', 'error', 'deprecated', name='datasetstatus', create_type=False), nullable=True, server_default=sa.text("'available'")),
         sa.Column('is_public', sa.Boolean(), nullable=True, server_default='true'),
         sa.Column('total_records', sa.BigInteger(), nullable=True, server_default='0'),
         sa.Column('file_size_bytes', sa.BigInteger(), nullable=True, server_default='0'),
@@ -410,7 +466,7 @@ def upgrade():
         sa.Column('execution_id', postgresql.UUID(as_uuid=True), nullable=True),
         sa.Column('source_id', postgresql.UUID(as_uuid=True), nullable=True),
         sa.Column('actor_id', sa.String(100), nullable=True),
-        sa.Column('actor_type', sa.String(50), nullable=True, server_default="'user'"),
+        sa.Column('actor_type', sa.String(50), nullable=True, server_default=sa.text("'user'")),
         sa.Column('actor_ip', sa.String(50), nullable=True),
         sa.Column('action_details', postgresql.JSONB(astext_type=sa.Text()), nullable=True, server_default='{}'),
         sa.Column('state_before', postgresql.JSONB(astext_type=sa.Text()), nullable=True),

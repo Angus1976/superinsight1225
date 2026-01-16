@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Documentation Alignment Validator",
+  "description": "Triggers documentation audit and alignment check after agent completes work to ensure docs and code remain synchronized",
+  "version": "1",
+  "when": {
+    "type": "agentStop"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "📋 POST-EXECUTION DOCUMENTATION VALIDATION\n\nRunning mandatory documentation-code alignment checks:\n\n1. ALIGNMENT CHECK:\n   - Verify requirements.md matches implemented features\n   - Verify design.md reflects actual architecture\n   - Verify tasks.md completion status is accurate\n   - Verify CHANGELOG.md includes all changes\n\n2. DOCUMENT SIZE CHECK:\n   - Check if any document exceeds 10,000 tokens\n   - Recommend splitting if threshold exceeded\n   - Generate index.md if split needed\n\n3. REDUNDANCY CHECK:\n   - Scan for duplicate content across documents\n   - Ensure cross-references are used properly\n   - Validate document structure and hierarchy\n\n4. COMPLETENESS CHECK:\n   - All required sections present in each document\n   - All diagrams and technical decisions documented\n   - All acceptance criteria defined with EARS notation\n\nPlease run: python scripts/check_doc_alignment.py && python scripts/check_doc_size.py && python scripts/audit_docs.py\n\nReport any misalignments or issues found."
+  }
+}

@@ -1,73 +1,33 @@
 """
-Minimal FastAPI application for SuperInsight Platform.
-This version includes only essential endpoints for testing.
+Minimal FastAPI application for debugging
 """
 
+from fastapi import FastAPI
 import logging
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Create FastAPI app
-app = FastAPI(
-    title="SuperInsight API - Minimal",
-    version="2.3.0",
-    description="Minimal SuperInsight API for testing"
-)
+app = FastAPI(title="SuperInsight Minimal Test")
 
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Health check endpoint
-@app.get("/health")
-async def health_check():
-    """Simple health check endpoint."""
-    return JSONResponse(
-        status_code=200,
-        content={"status": "healthy", "message": "Minimal API is running"}
-    )
-
-# Root endpoint
 @app.get("/")
 async def root():
-    """Root endpoint."""
+    logger.info("Root endpoint called")
+    return {"status": "ok", "message": "minimal app working"}
+
+@app.get("/health")
+async def health():
+    logger.info("Health endpoint called")
+    return {"status": "healthy", "service": "minimal"}
+
+@app.get("/test")
+async def test():
+    logger.info("Test endpoint called")
     return {
-        "message": "SuperInsight Minimal API",
-        "version": "2.3.0",
-        "status": "running",
-        "features": ["health_check"]
+        "status": "success",
+        "message": "If you see this, the minimal app is working correctly"
     }
 
-# Include auth API
-try:
-    from src.api.auth import router as auth_router
-    app.include_router(auth_router)
-    logger.info("Auth API loaded successfully")
-except Exception as e:
-    logger.error(f"Auth API failed to load: {e}")
-
-# Include tasks API
-try:
-    from src.api.tasks import router as tasks_router
-    app.include_router(tasks_router)
-    logger.info("Tasks API loaded successfully")
-except Exception as e:
-    logger.error(f"Tasks API failed to load: {e}")
-
-# Include dashboard API
-try:
-    from src.api.dashboard import router as dashboard_router
-    app.include_router(dashboard_router)
-    logger.info("Dashboard API loaded successfully")
-except Exception as e:
-    logger.error(f"Dashboard API failed to load: {e}")
-
-logger.info("Minimal FastAPI app initialized")
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

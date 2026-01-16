@@ -1,0 +1,18 @@
+{
+  "enabled": true,
+  "name": "Documentation-First Enforcer",
+  "description": "Blocks code file edits and prompts to update documentation first (requirements.md, design.md, tasks.md, CHANGELOG.md) before any code changes",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.py",
+      "frontend/src/**/*.tsx",
+      "frontend/src/**/*.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "⚠️ DOCUMENTATION-FIRST WORKFLOW VIOLATION DETECTED ⚠️\n\nYou are attempting to modify code without updating documentation first. This violates the mandatory doc-first workflow.\n\nREQUIRED ACTIONS BEFORE CODE CHANGES:\n1. Update requirements.md - Add/modify user stories with EARS notation acceptance criteria\n2. Update design.md - Add architecture diagrams, technical decisions, and sequence diagrams\n3. Update tasks.md - Break down into atomic tasks with time estimates and dependencies\n4. Update CHANGELOG.md - Add to [Unreleased] section with proper categorization (Added/Changed/Fixed/Deprecated)\n\nVERIFICATION STEPS:\n- Run alignment check: python scripts/check_doc_alignment.py --feature [feature-name]\n- Check document size: python scripts/check_doc_size.py --path .kiro/specs/[feature]/\n- Ensure no redundancy: Use cross-references instead of duplication\n\nHave you completed ALL documentation updates? If yes, proceed with code changes. If no, STOP and update documentation first."
+  }
+}

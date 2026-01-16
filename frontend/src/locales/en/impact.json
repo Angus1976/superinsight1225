@@ -1,0 +1,21 @@
+{
+  "analysis": "Impact Analysis",
+  "analyzeError": "Failed to analyze impact",
+  "analyzing": "Analyzing impact...",
+  "clickToAnalyze": "Click Analyze to assess impact",
+  "analyze": "Analyze",
+  "update": "Update",
+  "delete": "Delete",
+  "create": "Create",
+  "riskLevel": "Risk Level",
+  "affectedEntities": "Affected Entities",
+  "estimatedRecords": "Est. Records",
+  "criticalPaths": "Critical Paths",
+  "riskFactors": "Risk Factors",
+  "severityBreakdown": "Severity Breakdown",
+  "recommendations": "Recommendations",
+  "affectedEntitiesList": "Affected Entities",
+  "type": "Type",
+  "distance": "Distance",
+  "impactType": "Impact"
+}

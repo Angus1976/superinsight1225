@@ -63,7 +63,7 @@ const RuleConfigForm: React.FC<RuleConfigFormProps> = ({
   onTest,
   loading = false,
 }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation(['quality', 'common']);
   const [form] = Form.useForm();
   const [ruleType, setRuleType] = useState<string>(rule?.type || 'format');
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
@@ -97,9 +97,9 @@ const RuleConfigForm: React.FC<RuleConfigFormProps> = ({
       };
 
       await onSave(ruleData);
-      message.success(t('quality.messages.ruleUpdated'));
+      message.success(t('messages.ruleUpdated'));
     } catch (error) {
-      message.error(t('quality.messages.validationFailed'));
+      message.error(t('messages.validationFailed'));
     }
   };
 
@@ -124,44 +124,44 @@ const RuleConfigForm: React.FC<RuleConfigFormProps> = ({
       setTestResult(result);
       
       if (result.success) {
-        message.success(t('quality.messages.testPassed'));
+        message.success(t('messages.testPassed'));
       } else {
-        message.error(t('quality.messages.testFailed'));
+        message.error(t('messages.testFailed'));
       }
     } catch (error) {
-      message.error(t('quality.messages.validationFailed'));
+      message.error(t('messages.validationFailed'));
     } finally {
       setTesting(false);
     }
   };
 
   const renderFormatConfig = () => (
-    <Card size="small" title={t('quality.rules.types.format')}>
+    <Card size="small" title={t('rules.types.format')}>
       <Form.Item
         name="minLength"
-        label={t('common.minLength')}
+        label={t('minLength')}
       >
         <InputNumber min={0} placeholder="0" style={{ width: '100%' }} />
       </Form.Item>
       
       <Form.Item
         name="maxLength"
-        label={t('common.maxLength')}
+        label={t('maxLength')}
       >
         <InputNumber min={1} placeholder="1000" style={{ width: '100%' }} />
       </Form.Item>
       
       <Form.Item
         name="pattern"
-        label={t('quality.rules.pattern')}
-        help={t('quality.rules.regex')}
+        label={t('rules.pattern')}
+        help={t('rules.regex')}
       >
         <Input placeholder="^[A-Za-z0-9]+$" />
       </Form.Item>
       
       <Form.Item
         name="allowEmpty"
-        label={t('common.allowEmpty')}
+        label={t('allowEmpty')}
         valuePropName="checked"
       >
         <Switch />
@@ -170,14 +170,14 @@ const RuleConfigForm: React.FC<RuleConfigFormProps> = ({
   );
 
   const renderContentConfig = () => (
-    <Card size="small" title={t('quality.rules.types.content')}>
+    <Card size="small" title={t('rules.types.content')}>
       <Form.Item
         name="requiredFields"
-        label={t('common.requiredFields')}
+        label={t('requiredFields')}
       >
         <Select
           mode="tags"
-          placeholder={t('common.selectFields')}
+          placeholder={t('selectFields')}
           style={{ width: '100%' }}
         >
           <Select.Option value="label">Label</Select.Option>
@@ -188,18 +188,18 @@ const RuleConfigForm: React.FC<RuleConfigFormProps> = ({
       
       <Form.Item
         name="forbiddenWords"
-        label={t('common.forbiddenWords')}
+        label={t('forbiddenWords')}
       >
         <Select
           mode="tags"
-          placeholder={t('common.enterWords')}
+          placeholder={t('enterWords')}
           style={{ width: '100%' }}
         />
       </Form.Item>
       
       <Form.Item
         name="qualityThreshold"
-        label={t('quality.rules.threshold')}
+        label={t('rules.threshold')}
       >
         <InputNumber
           min={0}
@@ -213,10 +213,10 @@ const RuleConfigForm: React.FC<RuleConfigFormProps> = ({
   );
 
   const renderConsistencyConfig = () => (
-    <Card size="small" title={t('quality.rules.types.consistency')}>
+    <Card size="small" title={t('rules.types.consistency')}>
       <Form.Item
         name="similarityThreshold"
-        label={t('common.similarityThreshold')}
+        label={t('similarityThreshold')}
       >
         <InputNumber
           min={0}
@@ -229,7 +229,7 @@ const RuleConfigForm: React.FC<RuleConfigFormProps> = ({
       
       <Form.Item
         name="checkDuplicates"
-        label={t('common.checkDuplicates')}
+        label={t('checkDuplicates')}
         valuePropName="checked"
       >
         <Switch />
@@ -237,7 +237,7 @@ const RuleConfigForm: React.FC<RuleConfigFormProps> = ({
       
       <Form.Item
         name="crossValidation"
-        label={t('common.crossValidation')}
+        label={t('crossValidation')}
         valuePropName="checked"
       >
         <Switch />
@@ -246,11 +246,11 @@ const RuleConfigForm: React.FC<RuleConfigFormProps> = ({
   );
 
   const renderCustomConfig = () => (
-    <Card size="small" title={t('quality.rules.types.custom')}>
+    <Card size="small" title={t('rules.types.custom')}>
       <Form.Item
         name="customLogic"
-        label={t('quality.rules.customLogic')}
-        help={t('common.pythonCode')}
+        label={t('rules.customLogic')}
+        help={t('pythonCode')}
       >
         <TextArea
           rows={8}
@@ -260,8 +260,8 @@ const RuleConfigForm: React.FC<RuleConfigFormProps> = ({
       
       <Form.Item
         name="parameters"
-        label={t('quality.rules.parameters')}
-        help={t('common.jsonFormat')}
+        label={t('rules.parameters')}
+        help={t('jsonFormat')}
       >
         <TextArea
           rows={4}
@@ -301,54 +301,54 @@ const RuleConfigForm: React.FC<RuleConfigFormProps> = ({
         items={[
           {
             key: 'basic',
-            label: t('common.basicInfo'),
+            label: t('basicInfo'),
             children: (
               <div>
                 <Form.Item
                   name="name"
-                  label={t('quality.rules.name')}
-                  rules={[{ required: true, message: t('common.required') }]}
+                  label={t('rules.name')}
+                  rules={[{ required: true, message: t('required') }]}
                 >
-                  <Input placeholder={t('quality.rules.name')} />
+                  <Input placeholder={t('rules.name')} />
                 </Form.Item>
 
                 <Form.Item
                   name="type"
-                  label={t('quality.rules.type')}
-                  rules={[{ required: true, message: t('common.required') }]}
+                  label={t('rules.type')}
+                  rules={[{ required: true, message: t('required') }]}
                 >
                   <Select
-                    placeholder={t('quality.rules.type')}
+                    placeholder={t('rules.type')}
                     onChange={setRuleType}
                   >
-                    <Select.Option value="format">{t('quality.rules.types.format')}</Select.Option>
-                    <Select.Option value="content">{t('quality.rules.types.content')}</Select.Option>
-                    <Select.Option value="consistency">{t('quality.rules.types.consistency')}</Select.Option>
-                    <Select.Option value="custom">{t('quality.rules.types.custom')}</Select.Option>
+                    <Select.Option value="format">{t('rules.types.format')}</Select.Option>
+                    <Select.Option value="content">{t('rules.types.content')}</Select.Option>
+                    <Select.Option value="consistency">{t('rules.types.consistency')}</Select.Option>
+                    <Select.Option value="custom">{t('rules.types.custom')}</Select.Option>
                   </Select>
                 </Form.Item>
 
                 <Form.Item
                   name="severity"
-                  label={t('quality.rules.severity')}
-                  rules={[{ required: true, message: t('common.required') }]}
+                  label={t('rules.severity')}
+                  rules={[{ required: true, message: t('required') }]}
                 >
                   <Radio.Group>
-                    <Radio value="warning">{t('quality.rules.severities.warning')}</Radio>
-                    <Radio value="error">{t('quality.rules.severities.error')}</Radio>
+                    <Radio value="warning">{t('rules.severities.warning')}</Radio>
+                    <Radio value="error">{t('rules.severities.error')}</Radio>
                   </Radio.Group>
                 </Form.Item>
 
                 <Form.Item
                   name="description"
-                  label={t('quality.rules.description')}
+                  label={t('rules.description')}
                 >
-                  <TextArea rows={3} placeholder={t('quality.rules.description')} />
+                  <TextArea rows={3} placeholder={t('rules.description')} />
                 </Form.Item>
 
                 <Form.Item
                   name="enabled"
-                  label={t('quality.rules.enabled')}
+                  label={t('rules.enabled')}
                   valuePropName="checked"
                 >
                   <Switch />
@@ -361,7 +361,7 @@ const RuleConfigForm: React.FC<RuleConfigFormProps> = ({
             label: (
               <Space>
                 <SettingOutlined />
-                {t('quality.rules.config')}
+                {t('rules.config')}
               </Space>
             ),
             children: (
@@ -392,7 +392,7 @@ const RuleConfigForm: React.FC<RuleConfigFormProps> = ({
           htmlType="submit"
           loading={loading}
         >
-          {t('common.save')}
+          {t('save')}
         </Button>
         
         {onTest && (
@@ -401,7 +401,7 @@ const RuleConfigForm: React.FC<RuleConfigFormProps> = ({
             onClick={handleTest}
             loading={testing}
           >
-            {t('quality.rules.test')}
+            {t('rules.test')}
           </Button>
         )}
         
@@ -409,7 +409,7 @@ const RuleConfigForm: React.FC<RuleConfigFormProps> = ({
           icon={<ReloadOutlined />}
           onClick={() => form.resetFields()}
         >
-          {t('common.reset')}
+          {t('reset')}
         </Button>
       </Space>
     </Form>

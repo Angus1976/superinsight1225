@@ -76,11 +76,11 @@ const TasksPage: React.FC = () => {
 
   const handleDelete = (id: string) => {
     Modal.confirm({
-      title: t('tasks.delete'),
+      title: t('delete'),
       icon: <ExclamationCircleOutlined />,
-      content: t('tasks.confirmDeleteTask'),
-      okText: t('common.confirm'),
-      cancelText: t('common.cancel'),
+      content: t('confirmDeleteTask'),
+      okText: t('confirm'),
+      cancelText: t('cancel'),
       okType: 'danger',
       onOk: async () => {
         await deleteTask.mutateAsync(id);
@@ -91,13 +91,13 @@ const TasksPage: React.FC = () => {
 
   const handleBatchDelete = () => {
     if (selectedRowKeys.length === 0) {
-      message.warning(t('tasks.selectTasksToDelete'));
+      message.warning(t('selectTasksToDelete'));
       return;
     }
     Modal.confirm({
-      title: t('tasks.deleteTasks'),
+      title: t('deleteTasks'),
       icon: <ExclamationCircleOutlined />,
-      content: t('tasks.confirmDeleteTasks', { count: selectedRowKeys.length }),
+      content: t('confirmDeleteTasks', { count: selectedRowKeys.length }),
       okType: 'danger',
       onOk: async () => {
         await batchDeleteTasks.mutateAsync(selectedRowKeys);
@@ -109,7 +109,7 @@ const TasksPage: React.FC = () => {
 
   const handleBatchStatusUpdate = async (status: TaskStatus) => {
     if (selectedRowKeys.length === 0) {
-      message.warning(t('tasks.selectTasksToUpdate'));
+      message.warning(t('selectTasksToUpdate'));
       return;
     }
     
@@ -122,9 +122,9 @@ const TasksPage: React.FC = () => {
       );
       setSelectedRowKeys([]);
       refetch();
-      message.success(t('tasks.batchUpdateSuccess'));
+      message.success(t('batchUpdateSuccess'));
     } catch (error) {
-      message.error(t('tasks.batchUpdateError'));
+      message.error(t('batchUpdateError'));
     }
   };
 
@@ -156,12 +156,12 @@ const TasksPage: React.FC = () => {
     a.click();
     URL.revokeObjectURL(url);
     
-    message.success(t('tasks.exportSuccess'));
+    message.success(t('exportSuccess'));
   };
 
   const columns: ProColumns<Task>[] = [
     {
-      title: t('tasks.taskName'),
+      title: t('taskName'),
       dataIndex: 'name',
       key: 'name',
       width: 200,
@@ -187,16 +187,16 @@ const TasksPage: React.FC = () => {
       ),
     },
     {
-      title: t('tasks.status'),
+      title: t('status'),
       dataIndex: 'status',
       key: 'status',
       width: 120,
       valueType: 'select',
       valueEnum: {
-        pending: { text: t('tasks.statusPending'), status: 'Default' },
-        in_progress: { text: t('tasks.statusInProgress'), status: 'Processing' },
-        completed: { text: t('tasks.statusCompleted'), status: 'Success' },
-        cancelled: { text: t('tasks.statusCancelled'), status: 'Error' },
+        pending: { text: t('statusPending'), status: 'Default' },
+        in_progress: { text: t('statusInProgress'), status: 'Processing' },
+        completed: { text: t('statusCompleted'), status: 'Success' },
+        cancelled: { text: t('statusCancelled'), status: 'Error' },
       },
       render: (_, record) => {
         const statusConfig = {
@@ -205,58 +205,73 @@ const TasksPage: React.FC = () => {
           completed: { color: 'success', icon: <CheckCircleOutlined /> },
           cancelled: { color: 'error', icon: <CloseCircleOutlined /> },
         };
+        const statusKeyMap: Record<TaskStatus, string> = {
+          pending: 'statusPending',
+          in_progress: 'statusInProgress',
+          completed: 'statusCompleted',
+          cancelled: 'statusCancelled',
+        };
         const config = statusConfig[record.status];
         return (
           <Tag color={config.color} icon={config.icon}>
-            {t(`tasks.status${record.status.charAt(0).toUpperCase() + record.status.slice(1).replace('_', '')}`)}
+            {t(statusKeyMap[record.status])}
           </Tag>
         );
       },
     },
     {
-      title: t('tasks.priority'),
+      title: t('priority'),
       dataIndex: 'priority',
       key: 'priority',
       width: 100,
       valueType: 'select',
       valueEnum: {
-        low: { text: t('tasks.priorityLow') },
-        medium: { text: t('tasks.priorityMedium') },
-        high: { text: t('tasks.priorityHigh') },
-        urgent: { text: t('tasks.priorityUrgent') },
+        low: { text: t('priorityLow') },
+        medium: { text: t('priorityMedium') },
+        high: { text: t('priorityHigh') },
+        urgent: { text: t('priorityUrgent') },
       },
       render: (_, record) => {
         const priorityConfig = {
-          low: { color: 'green', text: t('tasks.priorityLow') },
-          medium: { color: 'blue', text: t('tasks.priorityMedium') },
-          high: { color: 'orange', text: t('tasks.priorityHigh') },
-          urgent: { color: 'red', text: t('tasks.priorityUrgent') },
+          low: { color: 'green', text: t('priorityLow') },
+          medium: { color: 'blue', text: t('priorityMedium') },
+          high: { color: 'orange', text: t('priorityHigh') },
+          urgent: { color: 'red', text: t('priorityUrgent') },
         };
         const config = priorityConfig[record.priority];
         return <Tag color={config.color}>{config.text}</Tag>;
       },
     },
     {
-      title: t('tasks.annotationType'),
+      title: t('annotationType'),
       dataIndex: 'annotation_type',
       key: 'annotation_type',
       width: 150,
       valueType: 'select',
       valueEnum: {
-        text_classification: { text: t('tasks.typeTextClassification') },
-        ner: { text: t('tasks.typeNER') },
-        sentiment: { text: t('tasks.typeSentiment') },
-        qa: { text: t('tasks.typeQA') },
-        custom: { text: t('tasks.typeCustom') },
+        text_classification: { text: t('typeTextClassification') },
+        ner: { text: t('typeNER') },
+        sentiment: { text: t('typeSentiment') },
+        qa: { text: t('typeQA') },
+        custom: { text: t('typeCustom') },
       },
-      render: (_, record) => (
-        <Tag color="blue">
-          {t(`tasks.type${record.annotation_type.charAt(0).toUpperCase() + record.annotation_type.slice(1).replace('_', '')}`)}
-        </Tag>
-      ),
+      render: (_, record) => {
+        const typeKeyMap: Record<string, string> = {
+          text_classification: 'typeTextClassification',
+          ner: 'typeNER',
+          sentiment: 'typeSentiment',
+          qa: 'typeQA',
+          custom: 'typeCustom',
+        };
+        return (
+          <Tag color="blue">
+            {t(typeKeyMap[record.annotation_type] || 'typeCustom')}
+          </Tag>
+        );
+      },
     },
     {
-      title: t('tasks.progress'),
+      title: t('progress'),
       dataIndex: 'progress',
       key: 'progress',
       width: 180,
@@ -289,7 +304,7 @@ const TasksPage: React.FC = () => {
       ),
     },
     {
-      title: t('tasks.assignee'),
+      title: t('assignee'),
       dataIndex: 'assignee_name',
       key: 'assignee_name',
       width: 120,
@@ -297,12 +312,12 @@ const TasksPage: React.FC = () => {
       render: (text, record) => (
         <Space>
           <UserOutlined style={{ color: '#1890ff' }} />
-          <span>{text || t('tasks.unassigned')}</span>
+          <span>{text || t('unassigned')}</span>
         </Space>
       ),
     },
     {
-      title: t('tasks.dueDate'),
+      title: t('dueDate'),
       dataIndex: 'due_date',
       key: 'due_date',
       width: 120,
@@ -324,14 +339,14 @@ const TasksPage: React.FC = () => {
             }}>
               {dueDate.toLocaleDateString()}
             </span>
-            {isOverdue && <Badge status="error" text={t('tasks.overdue')} />}
-            {isNearDue && !isOverdue && <Badge status="warning" text={t('tasks.nearDue')} />}
+            {isOverdue && <Badge status="error" text={t('overdue')} />}
+            {isNearDue && !isOverdue && <Badge status="warning" text={t('nearDue')} />}
           </Space>
         );
       },
     },
     {
-      title: t('tasks.created'),
+      title: t('created'),
       dataIndex: 'created_at',
       key: 'created_at',
       width: 120,
@@ -345,7 +360,7 @@ const TasksPage: React.FC = () => {
       ),
     },
     {
-      title: t('tasks.actions'),
+      title: t('actions'),
       key: 'actions',
       width: 120,
       fixed: 'right',
@@ -357,27 +372,27 @@ const TasksPage: React.FC = () => {
               {
                 key: 'view',
                 icon: <EyeOutlined />,
-                label: t('tasks.view'),
+                label: t('view'),
                 onClick: () => navigate(`/tasks/${record.id}`),
               },
               {
                 key: 'annotate',
                 icon: <EditOutlined />,
-                label: t('tasks.annotate'),
+                label: t('annotateAction'),
                 onClick: () => navigate(`/tasks/${record.id}/annotate`),
                 disabled: record.status === 'completed',
               },
               {
                 key: 'edit',
                 icon: <EditOutlined />,
-                label: t('tasks.edit'),
+                label: t('edit'),
                 onClick: () => navigate(`/tasks/${record.id}/edit`),
               },
               { type: 'divider' },
               {
                 key: 'start',
                 icon: <PlayCircleOutlined />,
-                label: t('tasks.start'),
+                label: t('start'),
                 onClick: () => updateTask.mutateAsync({ 
                   id: record.id, 
                   payload: { status: 'in_progress' } 
@@ -387,7 +402,7 @@ const TasksPage: React.FC = () => {
               {
                 key: 'complete',
                 icon: <CheckCircleOutlined />,
-                label: t('tasks.complete'),
+                label: t('complete'),
                 onClick: () => updateTask.mutateAsync({ 
                   id: record.id, 
                   payload: { status: 'completed' } 
@@ -397,7 +412,7 @@ const TasksPage: React.FC = () => {
               {
                 key: 'pause',
                 icon: <PauseCircleOutlined />,
-                label: t('tasks.pause'),
+                label: t('pause'),
                 onClick: () => updateTask.mutateAsync({ 
                   id: record.id, 
                   payload: { status: 'pending' } 
@@ -408,7 +423,7 @@ const TasksPage: React.FC = () => {
               {
                 key: 'delete',
                 icon: <DeleteOutlined />,
-                label: t('tasks.delete'),
+                label: t('delete'),
                 danger: true,
                 onClick: () => handleDelete(record.id),
               },
@@ -486,7 +501,7 @@ const TasksPage: React.FC = () => {
           <Col span={6}>
             <Card>
               <Statistic
-                title={t('tasks.totalTasks')}
+                title={t('totalTasks')}
                 value={stats.total}
                 prefix={<BarChartOutlined />}
                 valueStyle={{ color: '#1890ff' }}
@@ -496,7 +511,7 @@ const TasksPage: React.FC = () => {
           <Col span={6}>
             <Card>
               <Statistic
-                title={t('tasks.inProgress')}
+                title={t('inProgress')}
                 value={stats.in_progress}
                 prefix={<PlayCircleOutlined />}
                 valueStyle={{ color: '#52c41a' }}
@@ -506,7 +521,7 @@ const TasksPage: React.FC = () => {
           <Col span={6}>
             <Card>
               <Statistic
-                title={t('tasks.completed')}
+                title={t('completed')}
                 value={stats.completed}
                 prefix={<CheckCircleOutlined />}
                 valueStyle={{ color: '#52c41a' }}
@@ -516,7 +531,7 @@ const TasksPage: React.FC = () => {
           <Col span={6}>
             <Card>
               <Statistic
-                title={t('tasks.overdue')}
+                title={t('overdue')}
                 value={stats.overdue}
                 prefix={<ExclamationCircleOutlined />}
                 valueStyle={{ color: '#ff4d4f' }}
@@ -527,7 +542,7 @@ const TasksPage: React.FC = () => {
       )}
 
       <ProTable<Task>
-        headerTitle={t('tasks.annotationTasks')}
+        headerTitle={t('annotationTasks')}
         actionRef={actionRef}
         rowKey="id"
         loading={isLoading}
@@ -537,14 +552,14 @@ const TasksPage: React.FC = () => {
         search={{
           labelWidth: 'auto',
           defaultCollapsed: false,
-          searchText: t('common.search'),
-          resetText: t('common.reset'),
+          searchText: t('search'),
+          resetText: t('reset'),
           collapseRender: (collapsed) => (
             <Button
               type="link"
               icon={<FilterOutlined />}
             >
-              {collapsed ? t('tasks.expandFilters') : t('tasks.collapseFilters')}
+              {collapsed ? t('expandFilters') : t('collapseFilters')}
             </Button>
           ),
         }}
@@ -553,7 +568,7 @@ const TasksPage: React.FC = () => {
           showSizeChanger: true,
           showQuickJumper: true,
           showTotal: (total, range) => 
-            t('tasks.paginationTotal', { 
+            t('paginationTotal', { 
               start: range[0], 
               end: range[1], 
               total 
@@ -566,14 +581,14 @@ const TasksPage: React.FC = () => {
           selections: [
             {
               key: 'all',
-              text: t('tasks.selectAll'),
+              text: t('selectAll'),
               onSelect: () => {
                 setSelectedRowKeys((data?.items || mockTasks).map(item => item.id));
               },
             },
             {
               key: 'invert',
-              text: t('tasks.invertSelection'),
+              text: t('invertSelection'),
               onSelect: () => {
                 const allKeys = (data?.items || mockTasks).map(item => item.id);
                 setSelectedRowKeys(allKeys.filter(key => !selectedRowKeys.includes(key)));
@@ -581,7 +596,7 @@ const TasksPage: React.FC = () => {
             },
             {
               key: 'none',
-              text: t('tasks.selectNone'),
+              text: t('selectNone'),
               onSelect: () => {
                 setSelectedRowKeys([]);
               },
@@ -597,26 +612,26 @@ const TasksPage: React.FC = () => {
                   {
                     key: 'batchStart',
                     icon: <PlayCircleOutlined />,
-                    label: t('tasks.batchStart'),
+                    label: t('batchStart'),
                     onClick: () => handleBatchStatusUpdate('in_progress'),
                   },
                   {
                     key: 'batchComplete',
                     icon: <CheckCircleOutlined />,
-                    label: t('tasks.batchComplete'),
+                    label: t('batchComplete'),
                     onClick: () => handleBatchStatusUpdate('completed'),
                   },
                   {
                     key: 'batchPause',
                     icon: <PauseCircleOutlined />,
-                    label: t('tasks.batchPause'),
+                    label: t('batchPause'),
                     onClick: () => handleBatchStatusUpdate('pending'),
                   },
                   { type: 'divider' },
                   {
                     key: 'batchDelete',
                     icon: <DeleteOutlined />,
-                    label: t('tasks.batchDelete'),
+                    label: t('batchDelete'),
                     danger: true,
                     onClick: handleBatchDelete,
                   },
@@ -624,7 +639,7 @@ const TasksPage: React.FC = () => {
               }}
             >
               <Button icon={<MoreOutlined />}>
-                {t('tasks.batchActions')} ({selectedRowKeys.length})
+                {t('batchActions')} ({selectedRowKeys.length})
               </Button>
             </Dropdown>
           ),
@@ -634,8 +649,8 @@ const TasksPage: React.FC = () => {
             onClick={handleExportTasks}
           >
             {selectedRowKeys.length > 0 
-              ? t('tasks.exportSelected', { count: selectedRowKeys.length })
-              : t('tasks.exportAll')
+              ? t('exportSelected', { count: selectedRowKeys.length })
+              : t('exportAll')
             }
           </Button>,
           <Button
@@ -646,7 +661,7 @@ const TasksPage: React.FC = () => {
               actionRef.current?.reload();
             }}
           >
-            {t('common.refresh')}
+            {t('refresh')}
           </Button>,
           <Button
             key="create"
@@ -654,7 +669,7 @@ const TasksPage: React.FC = () => {
             icon={<PlusOutlined />}
             onClick={() => setCreateModalOpen(true)}
           >
-            {t('tasks.createTask')}
+            {t('createTask')}
           </Button>,
         ]}
         onSubmit={(params) => {
@@ -666,9 +681,9 @@ const TasksPage: React.FC = () => {
         tableAlertRender={({ selectedRowKeys, onCleanSelected }) => (
           <Space size={24}>
             <span>
-              {t('tasks.selectedItems', { count: selectedRowKeys.length })}
+              {t('selectedItems', { count: selectedRowKeys.length })}
               <a style={{ marginLeft: 8 }} onClick={onCleanSelected}>
-                {t('tasks.clearSelection')}
+                {t('clearSelection')}
               </a>
             </span>
           </Space>
@@ -676,13 +691,13 @@ const TasksPage: React.FC = () => {
         tableAlertOptionRender={({ selectedRowKeys }) => (
           <Space size={16}>
             <a onClick={() => handleBatchStatusUpdate('in_progress')}>
-              {t('tasks.batchStart')}
+              {t('batchStart')}
             </a>
             <a onClick={() => handleBatchStatusUpdate('completed')}>
-              {t('tasks.batchComplete')}
+              {t('batchComplete')}
             </a>
             <a onClick={handleBatchDelete} style={{ color: '#ff4d4f' }}>
-              {t('tasks.batchDelete')}
+              {t('batchDelete')}
             </a>
           </Space>
         )}

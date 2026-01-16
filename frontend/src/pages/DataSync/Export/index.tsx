@@ -124,24 +124,24 @@ const ExportConfig: React.FC = () => {
 
   const columns: ColumnsType<ExportRecord> = [
     {
-      title: '导出ID',
+      title: t('export.exportId'),
       dataIndex: 'id',
       key: 'id',
       render: (text) => <code>{text}</code>,
     },
     {
-      title: '数据源',
+      title: t('export.dataSource'),
       dataIndex: 'sourceName',
       key: 'sourceName',
     },
     {
-      title: '格式',
+      title: t('export.format'),
       dataIndex: 'format',
       key: 'format',
       render: (format) => <Tag>{formatLabels[format] || format}</Tag>,
     },
     {
-      title: '状态',
+      title: t('export.status'),
       dataIndex: 'status',
       key: 'status',
       render: (status, record) => (
@@ -156,31 +156,31 @@ const ExportConfig: React.FC = () => {
       ),
     },
     {
-      title: '行数',
+      title: t('export.rows'),
       dataIndex: 'totalRows',
       key: 'totalRows',
       render: (count) => count > 0 ? count.toLocaleString() : '-',
     },
     {
-      title: '大小',
+      title: t('export.size'),
       dataIndex: 'totalSizeBytes',
       key: 'totalSizeBytes',
       render: formatSize,
     },
     {
-      title: '文件数',
+      title: t('export.files'),
       dataIndex: 'files',
       key: 'files',
       render: (files) => files.length || '-',
     },
     {
-      title: '创建时间',
+      title: t('export.createdAt'),
       dataIndex: 'createdAt',
       key: 'createdAt',
       render: (text) => new Date(text).toLocaleString(),
     },
     {
-      title: '操作',
+      title: t('export.actions'),
       key: 'actions',
       render: (_, record) => (
         <Space>
@@ -191,7 +191,7 @@ const ExportConfig: React.FC = () => {
               icon={<DownloadOutlined />}
               onClick={() => handleDownload(record.id)}
             >
-              下载
+              {t('export.download')}
             </Button>
           )}
           <Button
@@ -206,12 +206,12 @@ const ExportConfig: React.FC = () => {
   ];
 
   const handleDownload = (exportId: string) => {
-    message.success('开始下载导出文件');
+    message.success(t('export.downloadStarted'));
   };
 
   const handleDelete = (exportId: string) => {
     setExports(exports.filter(e => e.id !== exportId));
-    message.success('导出记录已删除');
+    message.success(t('export.deleted'));
   };
 
   const handleCreateExport = (values: any) => {
@@ -232,7 +232,7 @@ const ExportConfig: React.FC = () => {
     setExports([newExport, ...exports]);
     setIsModalVisible(false);
     form.resetFields();
-    message.success('导出任务已创建');
+    message.success(t('export.created'));
 
     // Simulate progress
     setTimeout(() => {
@@ -271,12 +271,12 @@ const ExportConfig: React.FC = () => {
     <div style={{ padding: 24 }}>
       <Title level={3}>
         <ExportOutlined style={{ marginRight: 8 }} />
-        AI 友好数据导出
+        {t('export.title')}
       </Title>
 
       <Alert
-        message="AI 友好导出"
-        description="支持多种 AI/ML 训练格式，包括数据分割、语义增强和自动脱敏功能。"
+        message={t('export.alertTitle')}
+        description={t('export.alertDesc')}
         type="info"
         showIcon
         style={{ marginBottom: 24 }}
@@ -285,33 +285,33 @@ const ExportConfig: React.FC = () => {
       <Row gutter={16} style={{ marginBottom: 24 }}>
         <Col span={6}>
           <Card>
-            <Statistic title="总导出数" value={exports.length} />
+            <Statistic title={t('export.totalExports')} value={exports.length} />
           </Card>
         </Col>
         <Col span={6}>
           <Card>
-            <Statistic title="已完成" value={completedExports} valueStyle={{ color: '#3f8600' }} />
+            <Statistic title={t('export.completed')} value={completedExports} valueStyle={{ color: '#3f8600' }} />
           </Card>
         </Col>
         <Col span={6}>
           <Card>
-            <Statistic title="总行数" value={totalRows} />
+            <Statistic title={t('export.totalRows')} value={totalRows} />
           </Card>
         </Col>
         <Col span={6}>
           <Card>
-            <Statistic title="总大小" value={formatSize(totalSize)} />
+            <Statistic title={t('export.totalSize')} value={formatSize(totalSize)} />
           </Card>
         </Col>
       </Row>
 
       <Card
-        title="导出记录"
+        title={t('export.records')}
         extra={
           <Space>
-            <Button icon={<ReloadOutlined />}>刷新</Button>
+            <Button icon={<ReloadOutlined />}>{t('common:refresh')}</Button>
             <Button type="primary" icon={<ExportOutlined />} onClick={() => setIsModalVisible(true)}>
-              新建导出
+              {t('export.createExport')}
             </Button>
           </Space>
         }
@@ -320,39 +320,39 @@ const ExportConfig: React.FC = () => {
       </Card>
 
       <Modal
-        title="创建数据导出"
+        title={t('export.createTitle')}
         open={isModalVisible}
         onCancel={() => setIsModalVisible(false)}
         footer={null}
         width={700}
       >
         <Form form={form} layout="vertical" onFinish={handleCreateExport}>
-          <Form.Item name="sourceId" label="数据源">
-            <Select placeholder="选择数据源（可选，不选则导出全部）" allowClear>
+          <Form.Item name="sourceId" label={t('export.dataSource')}>
+            <Select placeholder={t('export.selectSource')} allowClear>
               <Option value="ds_1">Production DB</Option>
               <Option value="ds_2">Orders DB</Option>
             </Select>
           </Form.Item>
 
-          <Form.Item name="format" label="导出格式" rules={[{ required: true }]}>
-            <Select placeholder="选择导出格式">
-              <Option value="json">JSON - 通用格式</Option>
-              <Option value="csv">CSV - 表格格式</Option>
-              <Option value="jsonl">JSON Lines - 流式处理</Option>
-              <Option value="coco">COCO - 目标检测</Option>
-              <Option value="pascal_voc">Pascal VOC - 图像标注</Option>
+          <Form.Item name="format" label={t('export.format')} rules={[{ required: true }]}>
+            <Select placeholder={t('export.selectFormat')}>
+              <Option value="json">{t('export.formatJson')}</Option>
+              <Option value="csv">{t('export.formatCsv')}</Option>
+              <Option value="jsonl">{t('export.formatJsonl')}</Option>
+              <Option value="coco">{t('export.formatCoco')}</Option>
+              <Option value="pascal_voc">{t('export.formatPascalVoc')}</Option>
             </Select>
           </Form.Item>
 
-          <Divider>数据分割配置</Divider>
+          <Divider>{t('export.splitConfig')}</Divider>
 
           <Form.Item name="enableSplit" valuePropName="checked" initialValue={true}>
-            <Switch checkedChildren="启用分割" unCheckedChildren="不分割" />
+            <Switch checkedChildren={t('export.enableSplit')} unCheckedChildren={t('export.noSplit')} />
           </Form.Item>
 
           <Row gutter={16}>
             <Col span={8}>
-              <Form.Item label={`训练集 (${splitRatios.train}%)`}>
+              <Form.Item label={`${t('export.trainSet')} (${splitRatios.train}%)`}>
                 <Slider
                   value={splitRatios.train}
                   onChange={(v) => handleSplitChange('train', v)}
@@ -361,7 +361,7 @@ const ExportConfig: React.FC = () => {
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item label={`验证集 (${splitRatios.val}%)`}>
+              <Form.Item label={`${t('export.valSet')} (${splitRatios.val}%)`}>
                 <Slider
                   value={splitRatios.val}
                   onChange={(v) => handleSplitChange('val', v)}
@@ -370,7 +370,7 @@ const ExportConfig: React.FC = () => {
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item label={`测试集 (${splitRatios.test}%)`}>
+              <Form.Item label={`${t('export.testSet')} (${splitRatios.test}%)`}>
                 <Slider
                   value={splitRatios.test}
                   onChange={(v) => handleSplitChange('test', v)}
@@ -380,35 +380,35 @@ const ExportConfig: React.FC = () => {
             </Col>
           </Row>
 
-          <Divider>高级选项</Divider>
+          <Divider>{t('export.advancedOptions')}</Divider>
 
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item name="includeSemantics" valuePropName="checked" initialValue={true}>
-                <Switch checkedChildren="包含语义信息" unCheckedChildren="不包含" />
+                <Switch checkedChildren={t('export.includeSemantics')} unCheckedChildren={t('export.noSemantics')} />
               </Form.Item>
             </Col>
             <Col span={12}>
               <Form.Item name="desensitize" valuePropName="checked" initialValue={false}>
-                <Switch checkedChildren="启用脱敏" unCheckedChildren="不脱敏" />
+                <Switch checkedChildren={t('export.enableDesensitize')} unCheckedChildren={t('export.noDesensitize')} />
               </Form.Item>
             </Col>
           </Row>
 
           <Form.Item name="shuffle" valuePropName="checked" initialValue={true}>
-            <Switch checkedChildren="随机打乱" unCheckedChildren="保持顺序" />
+            <Switch checkedChildren={t('export.shuffle')} unCheckedChildren={t('export.keepOrder')} />
           </Form.Item>
 
-          <Form.Item name="seed" label="随机种子" initialValue={42}>
+          <Form.Item name="seed" label={t('export.randomSeed')} initialValue={42}>
             <InputNumber style={{ width: '100%' }} />
           </Form.Item>
 
           <Form.Item>
             <Space>
               <Button type="primary" htmlType="submit" icon={<ExportOutlined />}>
-                开始导出
+                {t('export.startExport')}
               </Button>
-              <Button onClick={() => setIsModalVisible(false)}>取消</Button>
+              <Button onClick={() => setIsModalVisible(false)}>{t('common:cancel')}</Button>
             </Space>
           </Form.Item>
         </Form>

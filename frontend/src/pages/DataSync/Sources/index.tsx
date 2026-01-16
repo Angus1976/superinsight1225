@@ -3,6 +3,7 @@ import { Card, Table, Button, Space, Tag, Modal, Form, Input, Select, Switch, me
 import { PlusOutlined, EditOutlined, DeleteOutlined, SyncOutlined, PlayCircleOutlined, PauseCircleOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { api } from '@/services/api';
 
 interface DataSource {
@@ -23,6 +24,7 @@ interface DataSource {
 }
 
 const DataSyncSources: React.FC = () => {
+  const { t } = useTranslation(['dataSync', 'common']);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingSource, setEditingSource] = useState<DataSource | null>(null);
   const [form] = Form.useForm();
@@ -39,10 +41,10 @@ const DataSyncSources: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['data-sources'] });
       setIsModalVisible(false);
       form.resetFields();
-      message.success('数据源创建成功');
+      message.success(t('dataSource.createSuccess'));
     },
     onError: () => {
-      message.error('数据源创建失败');
+      message.error(t('dataSource.createError'));
     },
   });
 
@@ -53,10 +55,10 @@ const DataSyncSources: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['data-sources'] });
       setIsModalVisible(false);
       form.resetFields();
-      message.success('数据源更新成功');
+      message.success(t('dataSource.updateSuccess'));
     },
     onError: () => {
-      message.error('数据源更新失败');
+      message.error(t('dataSource.updateError'));
     },
   });
 
@@ -64,10 +66,10 @@ const DataSyncSources: React.FC = () => {
     mutationFn: (id: string) => api.delete(`/api/v1/data-sync/sources/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['data-sources'] });
-      message.success('数据源删除成功');
+      message.success(t('dataSource.deleteSuccess'));
     },
     onError: () => {
-      message.error('数据源删除失败');
+      message.error(t('dataSource.deleteError'));
     },
   });
 
@@ -75,10 +77,10 @@ const DataSyncSources: React.FC = () => {
     mutationFn: (id: string) => api.post(`/api/v1/data-sync/sources/${id}/sync`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['data-sources'] });
-      message.success('同步任务已启动');
+      message.success(t('dataSource.syncStarted'));
     },
     onError: () => {
-      message.error('同步任务启动失败');
+      message.error(t('dataSource.syncError'));
     },
   });
 
@@ -87,16 +89,16 @@ const DataSyncSources: React.FC = () => {
       api.patch(`/api/v1/data-sync/sources/${id}/toggle`, { enabled }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['data-sources'] });
-      message.success('数据源状态更新成功');
+      message.success(t('dataSource.statusUpdateSuccess'));
     },
     onError: () => {
-      message.error('数据源状态更新失败');
+      message.error(t('dataSource.statusUpdateError'));
     },
   });
 
   const columns: ColumnsType<DataSource> = [
     {
-      title: '数据源名称',
+      title: t('dataSource.name'),
       dataIndex: 'name',
       key: 'name',
       render: (text: string, record) => (
@@ -111,7 +113,7 @@ const DataSyncSources: React.FC = () => {
       ),
     },
     {
-      title: '类型',
+      title: t('dataSource.type'),
       dataIndex: 'type',
       key: 'type',
       render: (type: string) => {
@@ -121,17 +123,11 @@ const DataSyncSources: React.FC = () => {
           api: 'orange',
           stream: 'purple',
         };
-        const labels = {
-          database: '数据库',
-          file: '文件',
-          api: 'API',
-          stream: '流',
-        };
-        return <Tag color={colors[type as keyof typeof colors]}>{labels[type as keyof typeof labels]}</Tag>;
+        return <Tag color={colors[type as keyof typeof colors]}>{t(`sourceTypes.${type}`)}</Tag>;
       },
     },
     {
-      title: '状态',
+      title: t('dataSource.status'),
       dataIndex: 'status',
       key: 'status',
       render: (status: string) => {
@@ -141,17 +137,11 @@ const DataSyncSources: React.FC = () => {
           error: 'error',
           syncing: 'processing',
         };
-        const labels = {
-          active: '活跃',
-          inactive: '非活跃',
-          error: '错误',
-          syncing: '同步中',
-        };
-        return <Tag color={colors[status as keyof typeof colors]}>{labels[status as keyof typeof labels]}</Tag>;
+        return <Tag color={colors[status as keyof typeof colors]}>{t(`status.${status}`)}</Tag>;
       },
     },
     {
-      title: '同步进度',
+      title: t('dataSource.syncProgress'),
       key: 'progress',
       render: (_, record) => {
         const progress = record.totalRecords > 0 ? (record.syncedRecords / record.totalRecords) * 100 : 0;
@@ -163,49 +153,49 @@ const DataSyncSources: React.FC = () => {
               status={record.errorCount > 0 ? 'exception' : 'normal'}
             />
             <div style={{ fontSize: '12px', color: '#666' }}>
-              {record.syncedRecords}/{record.totalRecords} 条记录
+              {record.syncedRecords}/{record.totalRecords} {t('dataSource.records')}
             </div>
           </div>
         );
       },
     },
     {
-      title: '同步间隔',
+      title: t('dataSource.syncInterval'),
       dataIndex: 'syncInterval',
       key: 'syncInterval',
-      render: (interval: number) => `${interval} 分钟`,
+      render: (interval: number) => `${interval} ${t('dataSource.minutes')}`,
     },
     {
-      title: '最后同步',
+      title: t('dataSource.lastSync'),
       dataIndex: 'lastSyncTime',
       key: 'lastSyncTime',
-      render: (time: string) => time ? new Date(time).toLocaleString() : '从未同步',
+      render: (time: string) => time ? new Date(time).toLocaleString() : t('dataSource.neverSynced'),
     },
     {
-      title: '下次同步',
+      title: t('dataSource.nextSync'),
       dataIndex: 'nextSyncTime',
       key: 'nextSyncTime',
       render: (time: string) => time ? new Date(time).toLocaleString() : '-',
     },
     {
-      title: '启用状态',
+      title: t('form.enableStatus'),
       dataIndex: 'enabled',
       key: 'enabled',
       render: (enabled: boolean, record) => (
         <Switch
           checked={enabled}
           onChange={(checked) => toggleSourceMutation.mutate({ id: record.id, enabled: checked })}
-          checkedChildren="启用"
-          unCheckedChildren="禁用"
+          checkedChildren={t('schedule.enabled')}
+          unCheckedChildren={t('schedule.disabled')}
         />
       ),
     },
     {
-      title: '操作',
+      title: t('common:actions'),
       key: 'action',
       render: (_, record) => (
         <Space size="middle">
-          <Tooltip title="立即同步">
+          <Tooltip title={t('dataSource.syncNow')}>
             <Button
               type="link"
               icon={<SyncOutlined />}
@@ -213,7 +203,7 @@ const DataSyncSources: React.FC = () => {
               loading={syncSourceMutation.isPending}
             />
           </Tooltip>
-          <Tooltip title="编辑数据源">
+          <Tooltip title={t('dataSource.edit')}>
             <Button
               type="link"
               icon={<EditOutlined />}
@@ -224,15 +214,15 @@ const DataSyncSources: React.FC = () => {
               }}
             />
           </Tooltip>
-          <Tooltip title="删除数据源">
+          <Tooltip title={t('dataSource.delete')}>
             <Button
               type="link"
               danger
               icon={<DeleteOutlined />}
               onClick={() => {
                 Modal.confirm({
-                  title: '确认删除',
-                  content: `确定要删除数据源 "${record.name}" 吗？`,
+                  title: t('dataSource.deleteConfirm'),
+                  content: t('dataSource.deleteWarning', { name: record.name }),
                   onOk: () => deleteSourceMutation.mutate(record.id),
                 });
               }}
@@ -258,38 +248,38 @@ const DataSyncSources: React.FC = () => {
           <>
             <Form.Item
               name={['config', 'host']}
-              label="主机地址"
-              rules={[{ required: true, message: '请输入主机地址' }]}
+              label={t('form.hostAddress')}
+              rules={[{ required: true, message: t('common:validation.required') }]}
             >
-              <Input placeholder="localhost" />
+              <Input placeholder={t('form.hostPlaceholder')} />
             </Form.Item>
             <Form.Item
               name={['config', 'port']}
-              label="端口"
-              rules={[{ required: true, message: '请输入端口' }]}
+              label={t('form.port')}
+              rules={[{ required: true, message: t('common:validation.required') }]}
             >
-              <Input placeholder="5432" />
+              <Input placeholder={t('form.portPlaceholder')} />
             </Form.Item>
             <Form.Item
               name={['config', 'database']}
-              label="数据库名"
-              rules={[{ required: true, message: '请输入数据库名' }]}
+              label={t('form.databaseName')}
+              rules={[{ required: true, message: t('common:validation.required') }]}
             >
-              <Input placeholder="database_name" />
+              <Input placeholder={t('form.databasePlaceholder')} />
             </Form.Item>
             <Form.Item
               name={['config', 'username']}
-              label="用户名"
-              rules={[{ required: true, message: '请输入用户名' }]}
+              label={t('form.username')}
+              rules={[{ required: true, message: t('common:validation.required') }]}
             >
-              <Input placeholder="username" />
+              <Input placeholder={t('form.usernamePlaceholder')} />
             </Form.Item>
             <Form.Item
               name={['config', 'password']}
-              label="密码"
-              rules={[{ required: true, message: '请输入密码' }]}
+              label={t('form.password')}
+              rules={[{ required: true, message: t('common:validation.required') }]}
             >
-              <Input.Password placeholder="password" />
+              <Input.Password placeholder={t('form.passwordPlaceholder')} />
             </Form.Item>
           </>
         );
@@ -298,17 +288,17 @@ const DataSyncSources: React.FC = () => {
           <>
             <Form.Item
               name={['config', 'path']}
-              label="文件路径"
-              rules={[{ required: true, message: '请输入文件路径' }]}
+              label={t('form.filePath')}
+              rules={[{ required: true, message: t('common:validation.required') }]}
             >
-              <Input placeholder="/path/to/file" />
+              <Input placeholder={t('form.filePathPlaceholder')} />
             </Form.Item>
             <Form.Item
               name={['config', 'format']}
-              label="文件格式"
-              rules={[{ required: true, message: '请选择文件格式' }]}
+              label={t('form.fileFormat')}
+              rules={[{ required: true, message: t('common:validation.required') }]}
             >
-              <Select placeholder="请选择文件格式">
+              <Select placeholder={t('form.fileFormatPlaceholder')}>
                 <Select.Option value="csv">CSV</Select.Option>
                 <Select.Option value="json">JSON</Select.Option>
                 <Select.Option value="xml">XML</Select.Option>
@@ -322,24 +312,24 @@ const DataSyncSources: React.FC = () => {
           <>
             <Form.Item
               name={['config', 'url']}
-              label="API地址"
-              rules={[{ required: true, message: '请输入API地址' }]}
+              label={t('form.apiUrl')}
+              rules={[{ required: true, message: t('common:validation.required') }]}
             >
-              <Input placeholder="https://api.example.com/data" />
+              <Input placeholder={t('form.apiUrlPlaceholder')} />
             </Form.Item>
             <Form.Item
               name={['config', 'method']}
-              label="请求方法"
-              rules={[{ required: true, message: '请选择请求方法' }]}
+              label={t('form.requestMethod')}
+              rules={[{ required: true, message: t('common:validation.required') }]}
             >
-              <Select placeholder="请选择请求方法">
+              <Select placeholder={t('form.requestMethodPlaceholder')}>
                 <Select.Option value="GET">GET</Select.Option>
                 <Select.Option value="POST">POST</Select.Option>
               </Select>
             </Form.Item>
             <Form.Item
               name={['config', 'headers']}
-              label="请求头"
+              label={t('form.requestHeaders')}
             >
               <Input.TextArea rows={3} placeholder='{"Authorization": "Bearer token"}' />
             </Form.Item>
@@ -353,7 +343,7 @@ const DataSyncSources: React.FC = () => {
   return (
     <div className="data-sync-sources">
       <Card
-        title="数据源管理"
+        title={t('dataSource.title')}
         extra={
           <Button
             type="primary"
@@ -364,7 +354,7 @@ const DataSyncSources: React.FC = () => {
               setIsModalVisible(true);
             }}
           >
-            新建数据源
+            {t('dataSource.create')}
           </Button>
         }
       >
@@ -377,13 +367,13 @@ const DataSyncSources: React.FC = () => {
           pagination={{
             showSizeChanger: true,
             showQuickJumper: true,
-            showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
+            showTotal: (total, range) => t('common.totalRecords', { start: range[0], end: range[1], total }),
           }}
         />
       </Card>
 
       <Modal
-        title={editingSource ? '编辑数据源' : '新建数据源'}
+        title={editingSource ? t('dataSource.edit') : t('dataSource.create')}
         open={isModalVisible}
         onCancel={() => setIsModalVisible(false)}
         onOk={() => form.submit()}
@@ -397,29 +387,29 @@ const DataSyncSources: React.FC = () => {
         >
           <Form.Item
             name="name"
-            label="数据源名称"
-            rules={[{ required: true, message: '请输入数据源名称' }]}
+            label={t('dataSource.name')}
+            rules={[{ required: true, message: t('dataSource.namePlaceholder') }]}
           >
-            <Input placeholder="请输入数据源名称" />
+            <Input placeholder={t('dataSource.namePlaceholder')} />
           </Form.Item>
           
           <Form.Item
             name="type"
-            label="数据源类型"
-            rules={[{ required: true, message: '请选择数据源类型' }]}
+            label={t('dataSource.type')}
+            rules={[{ required: true, message: t('dataSource.typePlaceholder') }]}
           >
-            <Select placeholder="请选择数据源类型">
-              <Select.Option value="database">数据库</Select.Option>
-              <Select.Option value="file">文件</Select.Option>
-              <Select.Option value="api">API</Select.Option>
-              <Select.Option value="stream">数据流</Select.Option>
+            <Select placeholder={t('dataSource.typePlaceholder')}>
+              <Select.Option value="database">{t('sourceTypes.database')}</Select.Option>
+              <Select.Option value="file">{t('sourceTypes.file')}</Select.Option>
+              <Select.Option value="api">{t('sourceTypes.api')}</Select.Option>
+              <Select.Option value="stream">{t('sourceTypes.stream')}</Select.Option>
             </Select>
           </Form.Item>
 
           <Form.Item
             name="syncInterval"
-            label="同步间隔（分钟）"
-            rules={[{ required: true, message: '请输入同步间隔' }]}
+            label={t('form.syncIntervalLabel')}
+            rules={[{ required: true, message: t('common:validation.required') }]}
           >
             <Input type="number" min={1} placeholder="60" />
           </Form.Item>
@@ -433,11 +423,11 @@ const DataSyncSources: React.FC = () => {
 
           <Form.Item
             name="enabled"
-            label="启用状态"
+            label={t('form.enableStatus')}
             valuePropName="checked"
             initialValue={true}
           >
-            <Switch checkedChildren="启用" unCheckedChildren="禁用" />
+            <Switch checkedChildren={t('schedule.enabled')} unCheckedChildren={t('schedule.disabled')} />
           </Form.Item>
         </Form>
       </Modal>

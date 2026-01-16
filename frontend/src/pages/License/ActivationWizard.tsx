@@ -29,6 +29,7 @@ import {
   DownloadOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   activationApi,
   ActivationResult,
@@ -41,6 +42,7 @@ const { TextArea } = Input;
 type ActivationMode = 'online' | 'offline';
 
 const ActivationWizard: React.FC = () => {
+  const { t } = useTranslation(['license', 'common']);
   const navigate = useNavigate();
   const [form] = Form.useForm();
   const [currentStep, setCurrentStep] = useState(0);
@@ -80,12 +82,12 @@ const ActivationWizard: React.FC = () => {
       setActivationResult(result);
       if (result.success) {
         setCurrentStep(3);
-        message.success('许可证激活成功！');
+        message.success(t('activation.activationSuccess'));
       } else {
-        setError(result.error || '激活失败');
+        setError(result.error || t('activation.activationFailed'));
       }
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : '激活请求失败';
+      const errorMessage = err instanceof Error ? err.message : t('activation.activationRequestFailed');
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -103,7 +105,7 @@ const ActivationWizard: React.FC = () => {
       setOfflineRequest(request);
       setCurrentStep(2);
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : '生成离线请求失败';
+      const errorMessage = err instanceof Error ? err.message : t('activation.generateRequestFailed');
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -118,12 +120,12 @@ const ActivationWizard: React.FC = () => {
       setActivationResult(result);
       if (result.success) {
         setCurrentStep(3);
-        message.success('许可证激活成功！');
+        message.success(t('activation.activationSuccess'));
       } else {
-        setError(result.error || '激活失败');
+        setError(result.error || t('activation.activationFailed'));
       }
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : '激活请求失败';
+      const errorMessage = err instanceof Error ? err.message : t('activation.activationRequestFailed');
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -132,7 +134,7 @@ const ActivationWizard: React.FC = () => {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    message.success('已复制到剪贴板');
+    message.success(t('activation.copiedToClipboard'));
   };
 
   const downloadRequestCode = () => {
@@ -151,9 +153,9 @@ const ActivationWizard: React.FC = () => {
       case 0:
         return (
           <div style={{ textAlign: 'center', padding: '40px 0' }}>
-            <Title level={4}>选择激活方式</Title>
+            <Title level={4}>{t('activation.selectMode')}</Title>
             <Paragraph type="secondary">
-              请根据您的网络环境选择合适的激活方式
+              {t('activation.selectModeHint')}
             </Paragraph>
             <Space size="large" style={{ marginTop: 24 }}>
               <Card
@@ -162,9 +164,9 @@ const ActivationWizard: React.FC = () => {
                 onClick={() => handleModeSelect('online')}
               >
                 <CloudOutlined style={{ fontSize: 48, color: '#1890ff' }} />
-                <Title level={5}>在线激活</Title>
+                <Title level={5}>{t('activation.onlineActivation')}</Title>
                 <Text type="secondary">
-                  需要网络连接，自动完成激活
+                  {t('activation.onlineActivationDesc')}
                 </Text>
               </Card>
               <Card
@@ -173,9 +175,9 @@ const ActivationWizard: React.FC = () => {
                 onClick={() => handleModeSelect('offline')}
               >
                 <DesktopOutlined style={{ fontSize: 48, color: '#52c41a' }} />
-                <Title level={5}>离线激活</Title>
+                <Title level={5}>{t('activation.offlineActivation')}</Title>
                 <Text type="secondary">
-                  无需网络，手动输入激活码
+                  {t('activation.offlineActivationDesc')}
                 </Text>
               </Card>
             </Space>
@@ -186,12 +188,12 @@ const ActivationWizard: React.FC = () => {
         return (
           <div style={{ maxWidth: 500, margin: '0 auto', padding: '24px 0' }}>
             <Title level={4}>
-              {activationMode === 'online' ? '在线激活' : '离线激活 - 步骤 1'}
+              {activationMode === 'online' ? t('activation.onlineActivation') : t('activation.offlineStep1')}
             </Title>
             
             {error && (
               <Alert
-                message="激活错误"
+                message={t('activation.activationError')}
                 description={error}
                 type="error"
                 showIcon
@@ -208,10 +210,10 @@ const ActivationWizard: React.FC = () => {
             >
               <Form.Item
                 name="license_key"
-                label="许可证密钥"
+                label={t('activation.licenseKey')}
                 rules={[
-                  { required: true, message: '请输入许可证密钥' },
-                  { pattern: /^[A-Z0-9-]+$/, message: '许可证密钥格式不正确' },
+                  { required: true, message: t('activation.enterLicenseKey') },
+                  { pattern: /^[A-Z0-9-]+$/, message: t('activation.invalidKeyFormat') },
                 ]}
               >
                 <Input
@@ -221,7 +223,7 @@ const ActivationWizard: React.FC = () => {
                 />
               </Form.Item>
 
-              <Form.Item label="硬件指纹">
+              <Form.Item label={t('activation.hardwareFingerprint')}>
                 <Input.Group compact>
                   <Input
                     value={hardwareFingerprint}
@@ -232,21 +234,21 @@ const ActivationWizard: React.FC = () => {
                     icon={<CopyOutlined />}
                     onClick={() => copyToClipboard(hardwareFingerprint)}
                   >
-                    复制
+                    {t('activation.copy')}
                   </Button>
                 </Input.Group>
                 <Text type="secondary" style={{ fontSize: 12 }}>
-                  硬件指纹用于绑定许可证到此设备
+                  {t('activation.hardwareFingerprintHint')}
                 </Text>
               </Form.Item>
 
               <Form.Item>
                 <Space>
                   <Button onClick={() => setCurrentStep(0)}>
-                    上一步
+                    {t('activation.previousStep')}
                   </Button>
                   <Button type="primary" htmlType="submit" loading={loading}>
-                    {activationMode === 'online' ? '激活' : '生成请求码'}
+                    {activationMode === 'online' ? t('activation.activate') : t('activation.generateRequestCode')}
                   </Button>
                 </Space>
               </Form.Item>
@@ -258,13 +260,13 @@ const ActivationWizard: React.FC = () => {
         if (activationMode === 'offline' && offlineRequest) {
           return (
             <div style={{ maxWidth: 600, margin: '0 auto', padding: '24px 0' }}>
-              <Title level={4}>离线激活 - 步骤 2</Title>
+              <Title level={4}>{t('activation.offlineStep2')}</Title>
               <Paragraph>
-                请将以下请求码发送给许可证管理员，获取激活码后继续。
+                {t('activation.requestCodeHint')}
               </Paragraph>
 
               <Card style={{ marginBottom: 16 }}>
-                <Form.Item label="请求码">
+                <Form.Item label={t('activation.requestCode')}>
                   <TextArea
                     value={offlineRequest.request_code}
                     readOnly
@@ -275,26 +277,26 @@ const ActivationWizard: React.FC = () => {
                       icon={<CopyOutlined />}
                       onClick={() => copyToClipboard(offlineRequest.request_code)}
                     >
-                      复制
+                      {t('activation.copy')}
                     </Button>
                     <Button
                       icon={<DownloadOutlined />}
                       onClick={downloadRequestCode}
                     >
-                      下载
+                      {t('activation.download')}
                     </Button>
                   </Space>
                 </Form.Item>
                 <Text type="secondary">
-                  请求码有效期至: {new Date(offlineRequest.expires_at).toLocaleString()}
+                  {t('activation.requestCodeExpiry')}: {new Date(offlineRequest.expires_at).toLocaleString()}
                 </Text>
               </Card>
 
-              <Divider>输入激活码</Divider>
+              <Divider>{t('activation.enterActivationCode')}</Divider>
 
               {error && (
                 <Alert
-                  message="激活错误"
+                  message={t('activation.activationError')}
                   description={error}
                   type="error"
                   showIcon
@@ -310,11 +312,11 @@ const ActivationWizard: React.FC = () => {
               >
                 <Form.Item
                   name="activation_code"
-                  label="激活码"
-                  rules={[{ required: true, message: '请输入激活码' }]}
+                  label={t('activation.activationCode')}
+                  rules={[{ required: true, message: t('activation.enterLicenseKey') }]}
                 >
                   <TextArea
-                    placeholder="请粘贴从许可证管理员获取的激活码"
+                    placeholder={t('activation.enterActivationCodePlaceholder')}
                     rows={4}
                   />
                 </Form.Item>
@@ -322,10 +324,10 @@ const ActivationWizard: React.FC = () => {
                 <Form.Item>
                   <Space>
                     <Button onClick={() => setCurrentStep(1)}>
-                      上一步
+                      {t('activation.previousStep')}
                     </Button>
                     <Button type="primary" htmlType="submit" loading={loading}>
-                      激活
+                      {t('activation.activate')}
                     </Button>
                   </Space>
                 </Form.Item>
@@ -340,21 +342,21 @@ const ActivationWizard: React.FC = () => {
           <Result
             status="success"
             icon={<CheckCircleOutlined style={{ color: '#52c41a' }} />}
-            title="许可证激活成功！"
+            title={t('activation.activationSuccess')}
             subTitle={
               activationResult?.license && (
                 <div>
-                  <p>许可证类型: {activationResult.license.license_type}</p>
-                  <p>有效期至: {new Date(activationResult.license.validity_end).toLocaleDateString()}</p>
+                  <p>{t('dashboard.licenseType')}: {activationResult.license.license_type}</p>
+                  <p>{t('dashboard.validityStatus')}: {new Date(activationResult.license.validity_end).toLocaleDateString()}</p>
                 </div>
               )
             }
             extra={[
               <Button type="primary" key="dashboard" onClick={() => navigate('/license')}>
-                查看许可证详情
+                {t('activation.viewLicenseDetails')}
               </Button>,
               <Button key="home" onClick={() => navigate('/')}>
-                返回首页
+                {t('activation.backToHome')}
               </Button>,
             ]}
           />
@@ -369,17 +371,17 @@ const ActivationWizard: React.FC = () => {
     <div style={{ padding: '24px' }}>
       <Card>
         <Title level={2} style={{ textAlign: 'center', marginBottom: 32 }}>
-          <KeyOutlined /> 许可证激活向导
+          <KeyOutlined /> {t('activation.title')}
         </Title>
 
         <Steps
           current={currentStep}
           style={{ marginBottom: 32 }}
           items={[
-            { title: '选择方式' },
-            { title: '输入密钥' },
-            ...(activationMode === 'offline' ? [{ title: '获取激活码' }] : []),
-            { title: '完成' },
+            { title: t('activation.steps.selectMode') },
+            { title: t('activation.steps.enterKey') },
+            ...(activationMode === 'offline' ? [{ title: t('activation.steps.getActivationCode') }] : []),
+            { title: t('activation.steps.complete') },
           ]}
         />
 

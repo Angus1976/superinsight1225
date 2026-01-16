@@ -32,6 +32,7 @@ import {
   GlobalOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
+import { useTranslation } from 'react-i18next';
 import {
   usageApi,
   ConcurrentUsageInfo,
@@ -42,6 +43,7 @@ import {
 const { Title, Text } = Typography;
 
 const UsageMonitor: React.FC = () => {
+  const { t } = useTranslation(['license', 'common']);
   const [loading, setLoading] = useState(true);
   const [concurrentUsage, setConcurrentUsage] = useState<ConcurrentUsageInfo | null>(null);
   const [resourceUsage, setResourceUsage] = useState<ResourceUsageInfo | null>(null);
@@ -63,11 +65,11 @@ const UsageMonitor: React.FC = () => {
       setSessions(sessionList);
     } catch (err) {
       console.error('Failed to fetch usage data:', err);
-      message.error('获取使用数据失败');
+      message.error(t('usage.fetchFailed'));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     fetchData();
@@ -88,19 +90,19 @@ const UsageMonitor: React.FC = () => {
     
     try {
       await usageApi.terminateSession(selectedSession.session_id, terminateReason);
-      message.success('会话已终止');
+      message.success(t('usage.sessionTerminated'));
       setTerminateModalVisible(false);
       setSelectedSession(null);
       setTerminateReason('');
       fetchData();
     } catch (err) {
-      message.error('终止会话失败');
+      message.error(t('usage.terminateFailed'));
     }
   };
 
   const sessionColumns: ColumnsType<UserSession> = [
     {
-      title: '用户',
+      title: t('usage.columns.user'),
       dataIndex: 'user_id',
       key: 'user_id',
       render: (userId: string) => (
@@ -111,7 +113,7 @@ const UsageMonitor: React.FC = () => {
       ),
     },
     {
-      title: '会话ID',
+      title: t('usage.columns.sessionId'),
       dataIndex: 'session_id',
       key: 'session_id',
       render: (sessionId: string) => (
@@ -121,7 +123,7 @@ const UsageMonitor: React.FC = () => {
       ),
     },
     {
-      title: '优先级',
+      title: t('usage.columns.priority'),
       dataIndex: 'priority',
       key: 'priority',
       render: (priority: number) => (
@@ -131,7 +133,7 @@ const UsageMonitor: React.FC = () => {
       ),
     },
     {
-      title: '登录时间',
+      title: t('usage.columns.loginTime'),
       dataIndex: 'login_time',
       key: 'login_time',
       render: (time: string) => (
@@ -142,7 +144,7 @@ const UsageMonitor: React.FC = () => {
       ),
     },
     {
-      title: '最后活动',
+      title: t('usage.columns.lastActivity'),
       dataIndex: 'last_activity',
       key: 'last_activity',
       render: (time: string) => {
@@ -150,13 +152,13 @@ const UsageMonitor: React.FC = () => {
         const minutes = Math.floor(diff / 60000);
         return (
           <Text type={minutes > 30 ? 'warning' : 'secondary'}>
-            {minutes < 1 ? '刚刚' : `${minutes} 分钟前`}
+            {minutes < 1 ? t('usage.justNow') : t('usage.minutesAgo', { minutes })}
           </Text>
         );
       },
     },
     {
-      title: 'IP 地址',
+      title: t('usage.columns.ipAddress'),
       dataIndex: 'ip_address',
       key: 'ip_address',
       render: (ip: string) => (
@@ -169,15 +171,15 @@ const UsageMonitor: React.FC = () => {
       ),
     },
     {
-      title: '状态',
+      title: t('usage.columns.status'),
       dataIndex: 'is_active',
       key: 'is_active',
       render: (active: boolean) => (
-        <Badge status={active ? 'success' : 'default'} text={active ? '活跃' : '离线'} />
+        <Badge status={active ? 'success' : 'default'} text={active ? t('usage.sessionStatus.active') : t('usage.sessionStatus.offline')} />
       ),
     },
     {
-      title: '操作',
+      title: t('usage.columns.action'),
       key: 'action',
       render: (_, record) => (
         <Button
@@ -189,7 +191,7 @@ const UsageMonitor: React.FC = () => {
             setTerminateModalVisible(true);
           }}
         >
-          终止
+          {t('usage.terminate')}
         </Button>
       ),
     },
@@ -200,7 +202,7 @@ const UsageMonitor: React.FC = () => {
       <Row gutter={[16, 16]} align="middle" style={{ marginBottom: 24 }}>
         <Col flex="auto">
           <Title level={2} style={{ margin: 0 }}>
-            使用监控
+            {t('usage.title')}
           </Title>
         </Col>
         <Col>
@@ -209,10 +211,10 @@ const UsageMonitor: React.FC = () => {
               type={autoRefresh ? 'primary' : 'default'}
               onClick={() => setAutoRefresh(!autoRefresh)}
             >
-              {autoRefresh ? '停止自动刷新' : '自动刷新'}
+              {autoRefresh ? t('usage.stopAutoRefresh') : t('usage.autoRefresh')}
             </Button>
             <Button icon={<ReloadOutlined />} onClick={fetchData} loading={loading}>
-              刷新
+              {t('usage.refresh')}
             </Button>
           </Space>
         </Col>
@@ -225,7 +227,7 @@ const UsageMonitor: React.FC = () => {
             title={
               <Space>
                 <TeamOutlined />
-                并发用户
+                {t('usage.concurrentUsers')}
               </Space>
             }
             loading={loading}
@@ -235,20 +237,20 @@ const UsageMonitor: React.FC = () => {
                 <Row gutter={16}>
                   <Col span={8}>
                     <Statistic
-                      title="当前在线"
+                      title={t('usage.currentOnline')}
                       value={concurrentUsage.current_users}
                       valueStyle={{ color: '#1890ff' }}
                     />
                   </Col>
                   <Col span={8}>
                     <Statistic
-                      title="最大限制"
+                      title={t('usage.maxLimit')}
                       value={concurrentUsage.max_users}
                     />
                   </Col>
                   <Col span={8}>
                     <Statistic
-                      title="使用率"
+                      title={t('usage.utilizationRate')}
                       value={concurrentUsage.utilization_percent}
                       suffix="%"
                       valueStyle={{
@@ -280,7 +282,7 @@ const UsageMonitor: React.FC = () => {
             title={
               <Space>
                 <CloudServerOutlined />
-                资源使用
+                {t('usage.resourceUsage')}
               </Space>
             }
             loading={loading}
@@ -289,7 +291,7 @@ const UsageMonitor: React.FC = () => {
               <Row gutter={[16, 16]}>
                 <Col span={12}>
                   <Statistic
-                    title="CPU 核心"
+                    title={t('usage.cpuCores')}
                     value={resourceUsage.cpu_cores}
                     suffix={`/ ${resourceUsage.max_cpu_cores}`}
                   />
@@ -301,7 +303,7 @@ const UsageMonitor: React.FC = () => {
                 </Col>
                 <Col span={12}>
                   <Statistic
-                    title="存储空间 (GB)"
+                    title={t('usage.storageSpace')}
                     value={resourceUsage.storage_gb.toFixed(1)}
                     suffix={`/ ${resourceUsage.max_storage_gb}`}
                   />
@@ -322,7 +324,7 @@ const UsageMonitor: React.FC = () => {
         title={
           <Space>
             <TeamOutlined />
-            活跃会话
+            {t('usage.activeSessions')}
             <Tag color="blue">{sessions.length}</Tag>
           </Space>
         }
@@ -335,14 +337,14 @@ const UsageMonitor: React.FC = () => {
           pagination={{
             pageSize: 10,
             showSizeChanger: true,
-            showTotal: (total) => `共 ${total} 个会话`,
+            showTotal: (total) => t('usage.totalSessions', { total }),
           }}
         />
       </Card>
 
       {/* Terminate Session Modal */}
       <Modal
-        title="终止会话"
+        title={t('usage.terminateSession')}
         open={terminateModalVisible}
         onOk={handleTerminateSession}
         onCancel={() => {
@@ -350,14 +352,14 @@ const UsageMonitor: React.FC = () => {
           setSelectedSession(null);
           setTerminateReason('');
         }}
-        okText="确认终止"
+        okText={t('usage.confirmTerminateBtn')}
         okButtonProps={{ danger: true }}
       >
         <p>
-          确定要终止用户 <Text strong>{selectedSession?.user_id}</Text> 的会话吗？
+          {t('usage.confirmTerminate', { user: selectedSession?.user_id })}
         </p>
         <Input.TextArea
-          placeholder="请输入终止原因（可选）"
+          placeholder={t('usage.terminateReason')}
           value={terminateReason}
           onChange={(e) => setTerminateReason(e.target.value)}
           rows={3}

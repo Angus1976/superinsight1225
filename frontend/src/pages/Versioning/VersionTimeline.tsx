@@ -53,7 +53,7 @@ const VersionTimeline: React.FC<VersionTimelineProps> = ({
   onVersionSelect,
   onCompare,
 }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation(['versioning', 'common']);
   const [versions, setVersions] = useState<Version[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedVersions, setSelectedVersions] = useState<Version[]>([]);
@@ -76,7 +76,7 @@ const VersionTimeline: React.FC<VersionTimelineProps> = ({
       );
       setVersions(result.versions);
     } catch (error) {
-      message.error(t('versioning.loadError', 'Failed to load version history'));
+      message.error(t('loadError', 'Failed to load version history'));
     } finally {
       setLoading(false);
     }
@@ -89,10 +89,10 @@ const VersionTimeline: React.FC<VersionTimelineProps> = ({
         entityId,
         version.version
       );
-      message.success(t('versioning.rollbackSuccess', 'Rolled back successfully'));
+      message.success(t('rollbackSuccess', 'Rolled back successfully'));
       loadVersions();
     } catch (error) {
-      message.error(t('versioning.rollbackError', 'Rollback failed'));
+      message.error(t('rollbackError', 'Rollback failed'));
     }
   };
 
@@ -101,13 +101,13 @@ const VersionTimeline: React.FC<VersionTimelineProps> = ({
     
     try {
       await versioningApi.addTag(tagVersionId, tagInput.trim());
-      message.success(t('versioning.tagAdded', 'Tag added successfully'));
+      message.success(t('tagAdded', 'Tag added successfully'));
       setTagModalVisible(false);
       setTagInput('');
       setTagVersionId(null);
       loadVersions();
     } catch (error) {
-      message.error(t('versioning.tagError', 'Failed to add tag'));
+      message.error(t('tagError', 'Failed to add tag'));
     }
   };
 
@@ -150,7 +150,7 @@ const VersionTimeline: React.FC<VersionTimelineProps> = ({
   if (versions.length === 0) {
     return (
       <Card>
-        <Empty description={t('versioning.noVersions', 'No versions found')} />
+        <Empty description={t('noVersions', 'No versions found')} />
       </Card>
     );
   }
@@ -160,7 +160,7 @@ const VersionTimeline: React.FC<VersionTimelineProps> = ({
       title={
         <Space>
           <HistoryOutlined />
-          <span>{t('versioning.timeline', 'Version Timeline')}</span>
+          <span>{t('timeline', 'Version Timeline')}</span>
         </Space>
       }
       extra={
@@ -171,11 +171,11 @@ const VersionTimeline: React.FC<VersionTimelineProps> = ({
               icon={<DiffOutlined />}
               onClick={handleCompare}
             >
-              {t('versioning.compare', 'Compare')}
+              {t('compare', 'Compare')}
             </Button>
           )}
           <Button onClick={() => setSelectedVersions([])}>
-            {t('versioning.clearSelection', 'Clear Selection')}
+            {t('clearSelection', 'Clear Selection')}
           </Button>
         </Space>
       }
@@ -228,7 +228,7 @@ const VersionTimeline: React.FC<VersionTimelineProps> = ({
                 </Space>
                 
                 <Space>
-                  <Tooltip title={t('versioning.addTag', 'Add Tag')}>
+                  <Tooltip title={t('addTag', 'Add Tag')}>
                     <Button
                       size="small"
                       icon={<TagOutlined />}
@@ -242,12 +242,12 @@ const VersionTimeline: React.FC<VersionTimelineProps> = ({
                   
                   {index > 0 && (
                     <Popconfirm
-                      title={t('versioning.rollbackConfirm', 'Rollback to this version?')}
+                      title={t('rollbackConfirm', 'Rollback to this version?')}
                       onConfirm={() => handleRollback(version)}
-                      okText={t('common.yes', 'Yes')}
-                      cancelText={t('common.no', 'No')}
+                      okText={t('common:actions.yes', 'Yes')}
+                      cancelText={t('common:actions.no', 'No')}
                     >
-                      <Tooltip title={t('versioning.rollback', 'Rollback')}>
+                      <Tooltip title={t('rollback', 'Rollback')}>
                         <Button
                           size="small"
                           icon={<RollbackOutlined />}
@@ -264,7 +264,7 @@ const VersionTimeline: React.FC<VersionTimelineProps> = ({
       </Timeline>
 
       <Modal
-        title={t('versioning.addTag', 'Add Tag')}
+        title={t('addTag', 'Add Tag')}
         open={tagModalVisible}
         onOk={handleAddTag}
         onCancel={() => {
@@ -274,7 +274,7 @@ const VersionTimeline: React.FC<VersionTimelineProps> = ({
         }}
       >
         <Input
-          placeholder={t('versioning.tagPlaceholder', 'Enter tag name')}
+          placeholder={t('tagPlaceholder', 'Enter tag name')}
           value={tagInput}
           onChange={(e) => setTagInput(e.target.value)}
           onPressEnter={handleAddTag}

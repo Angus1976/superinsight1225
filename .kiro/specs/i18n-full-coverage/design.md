@@ -203,6 +203,154 @@ interface AuthTranslations {
 }
 ```
 
+#### tasks.json 扩展 - 任务模块翻译
+
+```typescript
+// 新增翻译键结构
+interface TasksTranslations {
+  // 现有键...
+  
+  // AI 预标注相关
+  ai: {
+    preAnnotationResults: string;     // "AI 预标注结果"
+    refresh: string;                  // "刷新"
+    totalPredictions: string;         // "总预测数"
+    highConfidence: string;           // "高置信度"
+    needsReview: string;              // "需审核"
+    avgConfidence: string;            // "平均置信度"
+    confidenceDistribution: string;   // "置信度分布"
+    high: string;                     // "高"
+    medium: string;                   // "中"
+    low: string;                      // "低"
+    noResults: string;                // "暂无 AI 预标注结果"
+    getPreAnnotation: string;         // "获取预标注"
+    fetchingResults: string;          // "正在获取 AI 预标注结果..."
+    accept: string;                   // "接受"
+    reject: string;                   // "拒绝"
+    acceptAnnotation: string;         // "接受此标注"
+    rejectAnnotation: string;         // "拒绝此标注"
+    aiExplanation: string;            // "AI 解释"
+    alternativeLabels: string;        // "备选标签"
+    modifyHistory: string;            // "修改历史"
+    noHistory: string;                // "暂无修改历史"
+    llmModel: string;                 // "LLM 模型"
+    mlBackend: string;                // "ML 后端"
+    patternMatch: string;             // "模式匹配"
+    confidence: string;               // "置信度"
+  };
+  
+  // 标注界面相关
+  annotate: {
+    loadingTask: string;              // "加载标注任务中..."
+    noTasksAvailable: string;         // "没有可标注的任务"
+    allTasksCompleted: string;        // "所有任务都已完成或没有找到相关任务。"
+    backToDetail: string;             // "返回任务详情"
+    insufficientPermission: string;   // "权限不足"
+    currentRole: string;              // "您当前的角色是"
+    annotationRolesOnly: string;      // "标注功能仅对以下角色开放："
+    systemAdmin: string;              // "系统管理员"
+    businessExpert: string;           // "业务专家"
+    dataAnnotator: string;            // "数据标注员"
+    contactAdmin: string;             // "请联系管理员获取相应权限。"
+    backToTaskList: string;           // "返回任务列表"
+    backToTask: string;               // "返回任务"
+    task: string;                     // "任务"
+    syncing: string;                  // "同步中"
+    syncProgress: string;             // "同步进度"
+    exitFullscreen: string;           // "退出全屏"
+    fullscreenMode: string;           // "全屏模式"
+    jumpToTask: string;               // "跳转任务"
+    lastSync: string;                 // "最后同步"
+    currentTask: string;              // "当前任务"
+    textToAnnotate: string;           // "待标注文本"
+    annotationStatus: string;         // "标注状态"
+    annotated: string;                // "已标注"
+    toAnnotate: string;               // "待标注"
+    operations: string;               // "操作"
+    nextTask: string;                 // "下一个任务"
+    skipTask: string;                 // "跳过此任务"
+    manualSync: string;               // "手动同步"
+    annotationProgress: string;       // "标注进度"
+    totalTasks: string;               // "总任务"
+    completed: string;                // "已完成"
+    remaining: string;                // "剩余"
+    current: string;                  // "当前"
+    taskList: string;                 // "任务列表"
+    moreTasks: string;                // "还有 {{count}} 个任务"
+    taskComplete: string;             // "任务完成"
+    allTasksCompletedModal: string;   // "所有标注任务都已完成！"
+    loadDataFailed: string;           // "加载数据失败"
+    annotationSaved: string;          // "标注已保存"
+    annotationUpdated: string;        // "标注已更新"
+    saveAnnotationFailed: string;     // "保存标注失败"
+    updateAnnotationFailed: string;   // "更新标注失败"
+    noCreatePermission: string;       // "您没有创建标注的权限"
+    noEditPermission: string;         // "您没有编辑标注的权限"
+    syncComplete: string;             // "同步完成"
+    syncFailed: string;               // "同步失败"
+  };
+  
+  // 审核功能相关
+  review: {
+    title: string;                    // "任务审核"
+    totalItems: string;               // "总条目"
+    pendingReview: string;            // "待审核"
+    approved: string;                 // "已批准"
+    rejected: string;                 // "已拒绝"
+    needsRevision: string;            // "需修订"
+    revisionRequested: string;        // "已请求修订"
+    pending: string;                  // "待审核"
+    reviewItems: string;              // "审核条目"
+    annotation: string;               // "标注"
+    originalText: string;             // "原文"
+    annotationResult: string;         // "标注结果"
+    comments: string;                 // "评论"
+    qualityScore: string;             // "质量评分"
+    approve: string;                  // "批准"
+    reject: string;                   // "拒绝"
+    requestRevision: string;          // "请求修订"
+    batchApprove: string;             // "批量批准"
+    batchReject: string;              // "批量拒绝"
+    batchRevision: string;            // "批量请求修订"
+    selectedItems: string;            // "已选择 {{count}} 项"
+    selectItems: string;              // "请选择要审核的条目"
+    batchConfirm: string;             // "确定要对 {{count}} 个条目执行 {{action}} 操作吗？"
+    comment: string;                  // "评论"
+    commentPlaceholder: string;       // "添加评论（可选）"
+    approveSuccess: string;           // "批准成功"
+    rejectSuccess: string;            // "拒绝成功"
+    revisionSuccess: string;          // "已请求修订"
+    batchSuccess: string;             // "批量操作成功，已处理 {{count}} 项"
+  };
+  
+  // 操作按钮 - 注意 annotateAction 避免与 annotate 对象冲突
+  annotateAction: string;             // "标注" (用于操作按钮)
+}
+```
+
+### 翻译键命名规范 - 避免冲突
+
+在 tasks.json 中，`annotate` 既是一个对象（包含标注界面相关翻译），又需要作为操作按钮的文本。为避免冲突：
+
+```json
+{
+  "annotate": {
+    "loadingTask": "加载标注任务中...",
+    // ... 其他标注界面翻译
+  },
+  "annotateAction": "标注"  // 用于操作按钮，避免与 annotate 对象冲突
+}
+```
+
+使用时：
+```typescript
+// 标注界面文本
+t('annotate.loadingTask')
+
+// 操作按钮文本
+t('annotateAction')
+```
+
 ### 2. 组件更新接口
 
 #### Login 页面更新
@@ -401,6 +549,34 @@ Based on the prework analysis, the following consolidated properties have been i
 - **Behavior**: Return the translation key itself as fallback text
 - **Logging**: Log a warning in development mode for missing keys
 - **User Impact**: User sees the key name instead of translated text (graceful degradation)
+
+### Translation Key Generation Bug Prevention
+
+**问题**: 使用字符串操作生成翻译键容易产生错误。
+
+```typescript
+// ❌ 错误示例 - 字符串操作导致键名错误
+t(`status${status.charAt(0).toUpperCase() + status.slice(1).replace('_', 'P')}`)
+// 对于 'in_progress': 'I' + 'n_progress'.replace('_', 'P') = 'InPprogress' (错误!)
+```
+
+**解决方案**: 使用显式映射对象。
+
+```typescript
+// ✅ 正确示例 - 使用映射对象
+const statusKeyMap: Record<TaskStatus, string> = {
+  pending: 'statusPending',
+  in_progress: 'statusInProgress',
+  completed: 'statusCompleted',
+  cancelled: 'statusCancelled',
+};
+t(statusKeyMap[record.status])
+```
+
+**最佳实践**:
+1. 永远不要使用字符串操作生成翻译键
+2. 使用 TypeScript Record 类型确保映射完整性
+3. 将映射对象定义在组件外部或使用 useMemo 缓存
 
 ### Invalid Language Code
 
@@ -607,6 +783,15 @@ const columns: ColumnsType = [
 4. **frontend/src/locales/en/billing.json** - Add WorkHoursReport translations
 5. **frontend/src/locales/zh/auth.json** - Add login page translations
 6. **frontend/src/locales/en/auth.json** - Add login page translations
+7. **frontend/src/locales/zh/tasks.json** - Add Tasks module translations (ai.*, annotate.*, review.*)
+8. **frontend/src/locales/en/tasks.json** - Add Tasks module translations (ai.*, annotate.*, review.*)
+
+### Files Modified (Tasks Module)
+
+1. **frontend/src/pages/Tasks/index.tsx** - Fixed status/type key generation, use mapping objects
+2. **frontend/src/pages/Tasks/TaskDetail.tsx** - Fixed status/priority key generation
+3. **frontend/src/pages/Tasks/AIAnnotationPanel.tsx** - Changed namespace to 'tasks', replaced hardcoded Chinese
+4. **frontend/src/pages/Tasks/TaskAnnotate.tsx** - Added useTranslation, replaced hardcoded Chinese
 
 ### New Files to Create
 

@@ -1,6 +1,7 @@
 {
   "appName": "问视间",
   "appNameEn": "SuperInsight",
+  "appNameZh": "问视间",
   "search": "搜索",
   "reset": "重置",
   "refresh": "刷新",
@@ -79,9 +80,16 @@
     "previous": "上一步",
     "enabled": "已启用",
     "disabled": "已禁用",
+    "required": "必需",
+    "optional": "可选",
+    "strict": "严格",
+    "loose": "宽松",
     "allowed": "允许",
     "denied": "拒绝",
-    "create": "创建"
+    "create": "创建",
+    "yes": "是",
+    "no": "否",
+    "clear": "清除"
   },
   "status": {
     "loading": "加载中...",
@@ -94,6 +102,9 @@
     "invalidEmail": "请输入有效的邮箱地址",
     "minLength": "最少需要 {{min}} 个字符",
     "maxLength": "最多允许 {{max}} 个字符"
+  },
+  "pagination": {
+    "total": "共 {{total}} 项"
   },
   "time": {
     "today": "今天",
@@ -206,6 +217,12 @@
         "title": "403",
         "subtitle": "抱歉，您没有权限访问此页面。",
         "backHome": "返回首页"
+      },
+      "serverError": {
+        "title": "500",
+        "subtitle": "抱歉，服务器发生错误。",
+        "backHome": "返回首页",
+        "refresh": "刷新页面"
       }
     }
   },
@@ -273,6 +290,20 @@
     "recommendation": "建议",
     "focusOnTopIssues": "专注于解决前3类问题以最大化质量改进效果",
     "exportSuccess": "导出成功"
+  },
+  "emptyState": {
+    "noData": "暂无数据",
+    "noContent": "当前没有可显示的内容",
+    "noResults": "未找到结果",
+    "adjustSearch": "尝试调整搜索条件或筛选器",
+    "emptyFolder": "文件夹为空",
+    "noFolderContent": "此文件夹中没有任何内容",
+    "startAdding": "开始添加数据以查看内容"
+  },
+  "confirmModal": {
+    "confirm": "确认",
+    "cancel": "取消",
+    "delete": "删除"
   },
   "labelStudio": {
     "title": "Label Studio 标注界面",

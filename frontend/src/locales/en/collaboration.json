@@ -1,0 +1,59 @@
+{
+  "title": "Collaboration & Review",
+  "stats": {
+    "inProgressTasks": "In Progress Tasks",
+    "pendingReview": "Pending Review",
+    "onlineMembers": "Online Members",
+    "avgAccuracy": "Average Accuracy"
+  },
+  "tabs": {
+    "tasks": "Task List",
+    "team": "Team Status",
+    "review": "Review Queue",
+    "quality": "Quality Ranking"
+  },
+  "tasks": {
+    "name": "Task Name",
+    "assignee": "Assignee",
+    "status": "Status",
+    "priority": "Priority",
+    "progress": "Progress",
+    "deadline": "Deadline"
+  },
+  "status": {
+    "pending": "Pending",
+    "inProgress": "In Progress",
+    "review": "In Review",
+    "completed": "Completed"
+  },
+  "team": {
+    "processing": "Processing",
+    "idle": "Idle",
+    "completedTasks": "Completed Tasks",
+    "accuracy": "Accuracy"
+  },
+  "review": {
+    "annotationId": "Annotation ID",
+    "task": "Task",
+    "annotator": "Annotator",
+    "submittedAt": "Submitted At",
+    "reviewLevel": "Review Level",
+    "status": "Status",
+    "actions": "Actions",
+    "reviewAction": "Review",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "pending": "Pending",
+    "modalTitle": "Review Annotation",
+    "approve": "Approve",
+    "reject": "Reject",
+    "approveSuccess": "Approved annotation {{id}}",
+    "rejectSuccess": "Rejected annotation {{id}}"
+  },
+  "ranking": {
+    "rank": "Rank",
+    "annotator": "Annotator",
+    "accuracy": "Accuracy",
+    "completedTasks": "Completed Tasks"
+  }
+}

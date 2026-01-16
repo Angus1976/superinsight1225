@@ -214,7 +214,7 @@ const TaskReviewPage: React.FC = () => {
       <Card style={{ marginBottom: 16 }}>
         <Space style={{ marginBottom: 16 }}>
           <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(`/tasks/${id}`)}>
-            {t('tasks.backToTask')}
+            {t('backToTask')}
           </Button>
         </Space>
         <h2>{t('review.title') || 'Task Review'}: {task?.name || 'Customer Review Classification'}</h2>
@@ -295,7 +295,7 @@ const TaskReviewPage: React.FC = () => {
                 {t('review.batchRevision') || 'Request Revision'}
               </Button>
               <Button size="small" onClick={() => setSelectedItems([])}>
-                {t('common.clear') || 'Clear'}
+                {t('clear') || 'Clear'}
               </Button>
             </Space>
           }
@@ -439,8 +439,8 @@ const TaskReviewPage: React.FC = () => {
         open={batchModalVisible}
         onCancel={() => setBatchModalVisible(false)}
         onOk={handleBatchReview}
-        okText={t('common.confirm') || 'Confirm'}
-        cancelText={t('common.cancel') || 'Cancel'}
+        okText={t('confirm') || 'Confirm'}
+        cancelText={t('cancel') || 'Cancel'}
       >
         <p>{t('review.batchConfirm', { count: selectedItems.length, action: batchAction }) || `Are you sure you want to ${batchAction} ${selectedItems.length} items?`}</p>
         <Form.Item label={t('review.comment') || 'Comment'}>

@@ -103,7 +103,7 @@ const WorkOrderManager: React.FC<WorkOrderManagerProps> = ({
   users,
   loading = false,
 }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation(['quality', 'common']);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [dispatchModalOpen, setDispatchModalOpen] = useState(false);
@@ -126,11 +126,11 @@ const WorkOrderManager: React.FC<WorkOrderManagerProps> = ({
       };
 
       await onCreateWorkOrder(workOrderData);
-      message.success(t('quality.messages.workOrderCreated'));
+      message.success(t('messages.workOrderCreated'));
       setCreateModalOpen(false);
       createForm.resetFields();
     } catch (error) {
-      message.error(t('common.operationFailed'));
+      message.error(t('operationFailed'));
     }
   };
 
@@ -139,11 +139,11 @@ const WorkOrderManager: React.FC<WorkOrderManagerProps> = ({
 
     try {
       await onDispatchWorkOrder(selectedWorkOrder.id, values.assigneeId as string);
-      message.success(t('quality.messages.workOrderDispatched'));
+      message.success(t('messages.workOrderDispatched'));
       setDispatchModalOpen(false);
       dispatchForm.resetFields();
     } catch (error) {
-      message.error(t('common.operationFailed'));
+      message.error(t('operationFailed'));
     }
   };
 
@@ -152,10 +152,10 @@ const WorkOrderManager: React.FC<WorkOrderManagerProps> = ({
 
     try {
       await onAddComment(selectedWorkOrder.id, values.comment as string);
-      message.success(t('common.success'));
+      message.success(t('success'));
       commentForm.resetFields();
     } catch (error) {
-      message.error(t('common.operationFailed'));
+      message.error(t('operationFailed'));
     }
   };
 
@@ -196,7 +196,7 @@ const WorkOrderManager: React.FC<WorkOrderManagerProps> = ({
 
   const columns: ColumnsType<WorkOrder> = [
     {
-      title: t('quality.workOrders.title'),
+      title: t('workOrders.title'),
       dataIndex: 'title',
       key: 'title',
       render: (title, record) => (
@@ -209,7 +209,7 @@ const WorkOrderManager: React.FC<WorkOrderManagerProps> = ({
       ),
     },
     {
-      title: t('quality.workOrders.priority'),
+      title: t('workOrders.priority'),
       dataIndex: 'priority',
       key: 'priority',
       width: 100,
@@ -220,7 +220,7 @@ const WorkOrderManager: React.FC<WorkOrderManagerProps> = ({
       ),
     },
     {
-      title: t('quality.workOrders.status'),
+      title: t('workOrders.status'),
       dataIndex: 'status',
       key: 'status',
       width: 120,
@@ -231,7 +231,7 @@ const WorkOrderManager: React.FC<WorkOrderManagerProps> = ({
       ),
     },
     {
-      title: t('quality.workOrders.assignee'),
+      title: t('workOrders.assignee'),
       dataIndex: 'assigneeName',
       key: 'assignee',
       width: 150,
@@ -242,12 +242,12 @@ const WorkOrderManager: React.FC<WorkOrderManagerProps> = ({
             <Text>{name}</Text>
           </Space>
         ) : (
-          <Text type="secondary">{t('common.unassigned')}</Text>
+          <Text type="secondary">{t('unassigned')}</Text>
         )
       ),
     },
     {
-      title: t('quality.workOrders.progress'),
+      title: t('workOrders.progress'),
       dataIndex: 'progress',
       key: 'progress',
       width: 120,
@@ -260,7 +260,7 @@ const WorkOrderManager: React.FC<WorkOrderManagerProps> = ({
       ),
     },
     {
-      title: t('quality.workOrders.dueDate'),
+      title: t('workOrders.dueDate'),
       dataIndex: 'dueDate',
       key: 'dueDate',
       width: 120,
@@ -269,12 +269,12 @@ const WorkOrderManager: React.FC<WorkOrderManagerProps> = ({
       ),
     },
     {
-      title: t('common.actions'),
+      title: t('actions'),
       key: 'actions',
       width: 150,
       render: (_, record) => (
         <Space>
-          <Tooltip title={t('common.view')}>
+          <Tooltip title={t('view')}>
             <Button
               type="text"
               size="small"
@@ -283,7 +283,7 @@ const WorkOrderManager: React.FC<WorkOrderManagerProps> = ({
             />
           </Tooltip>
           {record.status === 'pending' && (
-            <Tooltip title={t('quality.workOrders.dispatch')}>
+            <Tooltip title={t('workOrders.dispatch')}>
               <Button
                 type="text"
                 size="small"
@@ -292,7 +292,7 @@ const WorkOrderManager: React.FC<WorkOrderManagerProps> = ({
               />
             </Tooltip>
           )}
-          <Tooltip title={t('common.edit')}>
+          <Tooltip title={t('edit')}>
             <Button
               type="text"
               size="small"
@@ -319,7 +319,7 @@ const WorkOrderManager: React.FC<WorkOrderManagerProps> = ({
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title={t('common.total')}
+              title={t('total')}
               value={stats.total}
               prefix={<FileTextOutlined />}
             />
@@ -328,7 +328,7 @@ const WorkOrderManager: React.FC<WorkOrderManagerProps> = ({
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title={t('quality.workOrders.statuses.pending')}
+              title={t('workOrders.statuses.pending')}
               value={stats.pending}
               prefix={<ClockCircleOutlined />}
               valueStyle={{ color: '#faad14' }}
@@ -338,7 +338,7 @@ const WorkOrderManager: React.FC<WorkOrderManagerProps> = ({
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title={t('quality.workOrders.statuses.inProgress')}
+              title={t('workOrders.statuses.inProgress')}
               value={stats.inProgress}
               prefix={<ClockCircleOutlined />}
               valueStyle={{ color: '#1890ff' }}
@@ -348,7 +348,7 @@ const WorkOrderManager: React.FC<WorkOrderManagerProps> = ({
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title={t('quality.workOrders.statuses.completed')}
+              title={t('workOrders.statuses.completed')}
               value={stats.completed}
               prefix={<CheckCircleOutlined />}
               valueStyle={{ color: '#52c41a' }}
@@ -359,14 +359,14 @@ const WorkOrderManager: React.FC<WorkOrderManagerProps> = ({
 
       {/* Work Orders Table */}
       <Card
-        title={t('quality.workOrders.title')}
+        title={t('workOrders.title')}
         extra={
           <Button
             type="primary"
             icon={<PlusOutlined />}
             onClick={() => setCreateModalOpen(true)}
           >
-            {t('quality.workOrders.create')}
+            {t('workOrders.create')}
           </Button>
         }
       >
@@ -380,14 +380,14 @@ const WorkOrderManager: React.FC<WorkOrderManagerProps> = ({
             showSizeChanger: true,
             showQuickJumper: true,
             showTotal: (total, range) =>
-              `${range[0]}-${range[1]} ${t('common.of')} ${total} ${t('common.items')}`,
+              `${range[0]}-${range[1]} ${t('of')} ${total} ${t('items')}`,
           }}
         />
       </Card>
 
       {/* Create Work Order Modal */}
       <Modal
-        title={t('quality.workOrders.create')}
+        title={t('workOrders.create')}
         open={createModalOpen}
         onCancel={() => {
           setCreateModalOpen(false);
@@ -403,40 +403,40 @@ const WorkOrderManager: React.FC<WorkOrderManagerProps> = ({
         >
           <Form.Item
             name="title"
-            label={t('quality.workOrders.title')}
-            rules={[{ required: true, message: t('common.required') }]}
+            label={t('workOrders.title')}
+            rules={[{ required: true, message: t('required') }]}
           >
-            <Input placeholder={t('quality.workOrders.title')} />
+            <Input placeholder={t('workOrders.title')} />
           </Form.Item>
 
           <Form.Item
             name="description"
-            label={t('quality.rules.description')}
-            rules={[{ required: true, message: t('common.required') }]}
+            label={t('rules.description')}
+            rules={[{ required: true, message: t('required') }]}
           >
-            <TextArea rows={4} placeholder={t('quality.rules.description')} />
+            <TextArea rows={4} placeholder={t('rules.description')} />
           </Form.Item>
 
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
                 name="priority"
-                label={t('quality.workOrders.priority')}
-                rules={[{ required: true, message: t('common.required') }]}
+                label={t('workOrders.priority')}
+                rules={[{ required: true, message: t('required') }]}
                 initialValue="medium"
               >
                 <Select>
-                  <Select.Option value="low">{t('quality.workOrders.priorities.low')}</Select.Option>
-                  <Select.Option value="medium">{t('quality.workOrders.priorities.medium')}</Select.Option>
-                  <Select.Option value="high">{t('quality.workOrders.priorities.high')}</Select.Option>
-                  <Select.Option value="urgent">{t('quality.workOrders.priorities.urgent')}</Select.Option>
+                  <Select.Option value="low">{t('workOrders.priorities.low')}</Select.Option>
+                  <Select.Option value="medium">{t('workOrders.priorities.medium')}</Select.Option>
+                  <Select.Option value="high">{t('workOrders.priorities.high')}</Select.Option>
+                  <Select.Option value="urgent">{t('workOrders.priorities.urgent')}</Select.Option>
                 </Select>
               </Form.Item>
             </Col>
             <Col span={12}>
               <Form.Item
                 name="dueDate"
-                label={t('quality.workOrders.dueDate')}
+                label={t('workOrders.dueDate')}
               >
                 <DatePicker style={{ width: '100%' }} />
               </Form.Item>
@@ -445,11 +445,11 @@ const WorkOrderManager: React.FC<WorkOrderManagerProps> = ({
 
           <Form.Item
             name="issueIds"
-            label={t('quality.issues.title')}
+            label={t('issues.title')}
           >
             <Select
               mode="multiple"
-              placeholder={t('common.selectIssues')}
+              placeholder={t('selectIssues')}
               style={{ width: '100%' }}
             >
               {/* Mock issue options */}
@@ -460,11 +460,11 @@ const WorkOrderManager: React.FC<WorkOrderManagerProps> = ({
 
           <Form.Item
             name="tags"
-            label={t('common.tags')}
+            label={t('tags')}
           >
             <Select
               mode="tags"
-              placeholder={t('common.enterTags')}
+              placeholder={t('enterTags')}
               style={{ width: '100%' }}
             />
           </Form.Item>
@@ -473,7 +473,7 @@ const WorkOrderManager: React.FC<WorkOrderManagerProps> = ({
 
       {/* Dispatch Work Order Modal */}
       <Modal
-        title={t('quality.workOrders.dispatch')}
+        title={t('workOrders.dispatch')}
         open={dispatchModalOpen}
         onCancel={() => {
           setDispatchModalOpen(false);
@@ -488,10 +488,10 @@ const WorkOrderManager: React.FC<WorkOrderManagerProps> = ({
         >
           <Form.Item
             name="assigneeId"
-            label={t('quality.workOrders.assignee')}
-            rules={[{ required: true, message: t('common.required') }]}
+            label={t('workOrders.assignee')}
+            rules={[{ required: true, message: t('required') }]}
           >
-            <Select placeholder={t('common.selectUser')}>
+            <Select placeholder={t('selectUser')}>
               {users.map(user => (
                 <Select.Option key={user.id} value={user.id}>
                   <Space>
@@ -507,7 +507,7 @@ const WorkOrderManager: React.FC<WorkOrderManagerProps> = ({
 
       {/* Work Order Detail Modal */}
       <Modal
-        title={`${t('quality.workOrders.title')} - ${selectedWorkOrder?.title}`}
+        title={`${t('workOrders.title')} - ${selectedWorkOrder?.title}`}
         open={detailModalOpen}
         onCancel={() => {
           setDetailModalOpen(false);
@@ -519,36 +519,36 @@ const WorkOrderManager: React.FC<WorkOrderManagerProps> = ({
         {selectedWorkOrder && (
           <div>
             <Descriptions bordered column={2}>
-              <Descriptions.Item label={t('quality.workOrders.title')}>
+              <Descriptions.Item label={t('workOrders.title')}>
                 {selectedWorkOrder.title}
               </Descriptions.Item>
-              <Descriptions.Item label={t('quality.workOrders.priority')}>
+              <Descriptions.Item label={t('workOrders.priority')}>
                 <Tag color={priorityColors[selectedWorkOrder.priority]}>
                   {t(`quality.workOrders.priorities.${selectedWorkOrder.priority}`)}
                 </Tag>
               </Descriptions.Item>
-              <Descriptions.Item label={t('quality.workOrders.status')}>
+              <Descriptions.Item label={t('workOrders.status')}>
                 <Tag color={statusColors[selectedWorkOrder.status]}>
                   {t(`quality.workOrders.statuses.${selectedWorkOrder.status}`)}
                 </Tag>
               </Descriptions.Item>
-              <Descriptions.Item label={t('quality.workOrders.progress')}>
+              <Descriptions.Item label={t('workOrders.progress')}>
                 <Progress percent={selectedWorkOrder.progress} size="small" />
               </Descriptions.Item>
-              <Descriptions.Item label={t('quality.workOrders.assignee')}>
+              <Descriptions.Item label={t('workOrders.assignee')}>
                 {selectedWorkOrder.assigneeName ? (
                   <Space>
                     <Avatar size="small" src={selectedWorkOrder.assigneeAvatar} icon={<UserOutlined />} />
                     {selectedWorkOrder.assigneeName}
                   </Space>
                 ) : (
-                  <Text type="secondary">{t('common.unassigned')}</Text>
+                  <Text type="secondary">{t('unassigned')}</Text>
                 )}
               </Descriptions.Item>
-              <Descriptions.Item label={t('quality.workOrders.dueDate')}>
+              <Descriptions.Item label={t('workOrders.dueDate')}>
                 {selectedWorkOrder.dueDate ? new Date(selectedWorkOrder.dueDate).toLocaleString() : '-'}
               </Descriptions.Item>
-              <Descriptions.Item label={t('quality.rules.description')} span={2}>
+              <Descriptions.Item label={t('rules.description')} span={2}>
                 {selectedWorkOrder.description}
               </Descriptions.Item>
             </Descriptions>
@@ -557,7 +557,7 @@ const WorkOrderManager: React.FC<WorkOrderManagerProps> = ({
 
             {/* Comments Section */}
             <div style={{ marginBottom: 24 }}>
-              <h4>{t('quality.workOrders.comments')}</h4>
+              <h4>{t('workOrders.comments')}</h4>
               <Timeline
                 items={selectedWorkOrder.comments.map(comment => ({
                   children: (
@@ -585,12 +585,12 @@ const WorkOrderManager: React.FC<WorkOrderManagerProps> = ({
                 <Form.Item name="comment">
                   <TextArea
                     rows={3}
-                    placeholder={t('quality.workOrders.comments')}
+                    placeholder={t('workOrders.comments')}
                   />
                 </Form.Item>
                 <Form.Item>
                   <Button type="primary" htmlType="submit">
-                    {t('common.addComment')}
+                    {t('addComment')}
                   </Button>
                 </Form.Item>
               </Form>
@@ -598,10 +598,10 @@ const WorkOrderManager: React.FC<WorkOrderManagerProps> = ({
 
             {/* Attachments Section */}
             <div>
-              <h4>{t('quality.workOrders.attachments')}</h4>
+              <h4>{t('workOrders.attachments')}</h4>
               <Upload {...uploadProps}>
                 <Button icon={<UploadOutlined />}>
-                  {t('common.upload')}
+                  {t('upload')}
                 </Button>
               </Upload>
               

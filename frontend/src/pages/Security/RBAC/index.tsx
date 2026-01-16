@@ -5,6 +5,7 @@
 import React from 'react';
 import { Tabs, Typography } from 'antd';
 import { TeamOutlined, KeyOutlined, UserSwitchOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import RoleList from './RoleList';
 import PermissionMatrix from './PermissionMatrix';
 import UserRoleAssignment from './UserRoleAssignment';
@@ -12,10 +13,12 @@ import UserRoleAssignment from './UserRoleAssignment';
 const { Title } = Typography;
 
 const RBACConfig: React.FC = () => {
+  const { t } = useTranslation(['security', 'common']);
+
   return (
     <div>
       <Title level={3} style={{ marginBottom: 24 }}>
-        <KeyOutlined /> Role-Based Access Control
+        <KeyOutlined /> {t('rbac.title')}
       </Title>
 
       <Tabs
@@ -26,7 +29,7 @@ const RBACConfig: React.FC = () => {
             label: (
               <span>
                 <TeamOutlined />
-                Roles
+                {t('rbac.roles')}
               </span>
             ),
             children: <RoleList />,
@@ -36,7 +39,7 @@ const RBACConfig: React.FC = () => {
             label: (
               <span>
                 <KeyOutlined />
-                Permission Matrix
+                {t('rbac.permissionMatrix')}
               </span>
             ),
             children: <PermissionMatrix />,
@@ -46,7 +49,7 @@ const RBACConfig: React.FC = () => {
             label: (
               <span>
                 <UserSwitchOutlined />
-                User Assignments
+                {t('rbac.userAssignments')}
               </span>
             ),
             children: <UserRoleAssignment />,

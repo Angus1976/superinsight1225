@@ -1,0 +1,85 @@
+{
+  "title": "Settings",
+  "profile": {
+    "tab": "Profile",
+    "title": "Profile Settings",
+    "avatar": "Avatar",
+    "changeAvatar": "Change Avatar",
+    "username": "Username",
+    "usernamePlaceholder": "Username",
+    "usernameRequired": "Please enter username",
+    "email": "Email",
+    "emailPlaceholder": "Email address",
+    "emailRequired": "Please enter email",
+    "emailInvalid": "Please enter a valid email",
+    "displayName": "Display Name",
+    "displayNamePlaceholder": "Display name",
+    "saveChanges": "Save Changes",
+    "updateSuccess": "Profile updated successfully",
+    "updateFailed": "Failed to update profile"
+  },
+  "security": {
+    "tab": "Security",
+    "title": "Change Password",
+    "currentPassword": "Current Password",
+    "currentPasswordPlaceholder": "Current password",
+    "currentPasswordRequired": "Please enter current password",
+    "newPassword": "New Password",
+    "newPasswordPlaceholder": "New password",
+    "newPasswordRequired": "Please enter new password",
+    "newPasswordLength": "Password must be at least 8 characters",
+    "confirmPassword": "Confirm Password",
+    "confirmPasswordPlaceholder": "Confirm new password",
+    "confirmPasswordRequired": "Please confirm password",
+    "passwordMismatch": "Passwords do not match",
+    "changePassword": "Change Password",
+    "changeSuccess": "Password changed successfully",
+    "changeFailed": "Failed to change password"
+  },
+  "notifications": {
+    "tab": "Notifications",
+    "title": "Notification Preferences",
+    "email": {
+      "title": "Email Notifications",
+      "description": "Receive email notifications for important updates"
+    },
+    "taskAssignments": {
+      "title": "Task Assignments",
+      "description": "Get notified when tasks are assigned to you"
+    },
+    "taskCompletions": {
+      "title": "Task Completions",
+      "description": "Get notified when your tasks are reviewed"
+    },
+    "billingAlerts": {
+      "title": "Billing Alerts",
+      "description": "Receive alerts about billing and payments"
+    },
+    "systemAnnouncements": {
+      "title": "System Announcements",
+      "description": "Receive system maintenance and update notices"
+    }
+  },
+  "appearance": {
+    "tab": "Appearance",
+    "title": "Appearance Settings",
+    "language": {
+      "title": "Language",
+      "description": "Select your preferred language",
+      "english": "English",
+      "chinese": "中文",
+      "changeSuccess": "Language changed to {{language}}"
+    },
+    "darkMode": {
+      "title": "Dark Mode",
+      "description": "Switch between light and dark themes",
+      "dark": "Dark",
+      "light": "Light",
+      "changeSuccess": "Theme changed to {{theme}} mode"
+    },
+    "compactMode": {
+      "title": "Compact Mode",
+      "description": "Use a more compact UI layout"
+    }
+  }
+}

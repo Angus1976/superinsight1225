@@ -20,12 +20,14 @@ import {
   ReloadOutlined, TeamOutlined, CrownOutlined, SafetyOutlined
 } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { 
   memberApi, workspaceApi,
   WorkspaceMember, MemberRole, MemberAddRequest, InvitationConfig, CustomRoleConfig
 } from '@/services/multiTenantApi';
 
 const MemberManagement: React.FC = () => {
+  const { t } = useTranslation(['workspace', 'common']);
   const [isInviteModalVisible, setIsInviteModalVisible] = useState(false);
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
   const [isRoleModalVisible, setIsRoleModalVisible] = useState(false);
@@ -56,10 +58,10 @@ const MemberManagement: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['workspace-members'] });
       setIsInviteModalVisible(false);
       inviteForm.resetFields();
-      message.success('邀请已发送');
+      message.success(t('member.inviteSent'));
     },
     onError: (error: any) => {
-      message.error(error.response?.data?.detail || '邀请发送失败');
+      message.error(error.response?.data?.detail || t('member.inviteError'));
     },
   });
 
@@ -69,10 +71,10 @@ const MemberManagement: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['workspace-members'] });
       setIsAddModalVisible(false);
       addForm.resetFields();
-      message.success('成员添加成功');
+      message.success(t('member.addSuccess'));
     },
     onError: (error: any) => {
-      message.error(error.response?.data?.detail || '成员添加失败');
+      message.error(error.response?.data?.detail || t('member.addError'));
     },
   });
 
@@ -80,10 +82,10 @@ const MemberManagement: React.FC = () => {
     mutationFn: (userId: string) => memberApi.remove(selectedWorkspaceId!, userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workspace-members'] });
-      message.success('成员已移除');
+      message.success(t('member.removeSuccess'));
     },
     onError: (error: any) => {
-      message.error(error.response?.data?.detail || '移除失败');
+      message.error(error.response?.data?.detail || t('member.removeError'));
     },
   });
 
@@ -92,10 +94,10 @@ const MemberManagement: React.FC = () => {
       memberApi.updateRole(selectedWorkspaceId!, userId, role),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workspace-members'] });
-      message.success('角色已更新');
+      message.success(t('member.roleUpdated'));
     },
     onError: (error: any) => {
-      message.error(error.response?.data?.detail || '角色更新失败');
+      message.error(error.response?.data?.detail || t('member.roleUpdateError'));
     },
   });
 
@@ -104,56 +106,56 @@ const MemberManagement: React.FC = () => {
     onSuccess: () => {
       setIsRoleModalVisible(false);
       roleForm.resetFields();
-      message.success('自定义角色创建成功');
+      message.success(t('member.customRoleCreated'));
     },
     onError: (error: any) => {
-      message.error(error.response?.data?.detail || '角色创建失败');
+      message.error(error.response?.data?.detail || t('member.customRoleError'));
     },
   });
 
 
   const getRoleTag = (role: MemberRole) => {
-    const config: Record<MemberRole, { color: string; icon: React.ReactNode; text: string }> = {
-      owner: { color: 'gold', icon: <CrownOutlined />, text: '所有者' },
-      admin: { color: 'purple', icon: <SafetyOutlined />, text: '管理员' },
-      member: { color: 'blue', icon: <UserOutlined />, text: '成员' },
-      guest: { color: 'default', icon: <UserOutlined />, text: '访客' },
+    const config: Record<MemberRole, { color: string; icon: React.ReactNode; textKey: string }> = {
+      owner: { color: 'gold', icon: <CrownOutlined />, textKey: 'member.roles.owner' },
+      admin: { color: 'purple', icon: <SafetyOutlined />, textKey: 'member.roles.admin' },
+      member: { color: 'blue', icon: <UserOutlined />, textKey: 'member.roles.member' },
+      guest: { color: 'default', icon: <UserOutlined />, textKey: 'member.roles.guest' },
     };
-    const { color, icon, text } = config[role] || config.member;
-    return <Tag icon={icon} color={color}>{text}</Tag>;
+    const { color, icon, textKey } = config[role] || config.member;
+    return <Tag icon={icon} color={color}>{t(textKey)}</Tag>;
   };
 
   const columns: ColumnsType<WorkspaceMember> = [
     {
-      title: '成员',
+      title: t('member.columns.member'),
       key: 'user',
       render: (_, record) => (
         <Space>
           <Avatar icon={<UserOutlined />} />
           <div>
-            <div>用户 ID: {record.user_id.slice(0, 8)}...</div>
+            <div>{t('member.columns.userId')}: {record.user_id.slice(0, 8)}...</div>
             <div style={{ fontSize: 12, color: '#666' }}>
-              加入时间: {new Date(record.joined_at).toLocaleDateString()}
+              {t('member.columns.joinedAt')}: {new Date(record.joined_at).toLocaleDateString()}
             </div>
           </div>
         </Space>
       ),
     },
     {
-      title: '角色',
+      title: t('member.columns.role'),
       dataIndex: 'role',
       key: 'role',
       render: (role: MemberRole) => getRoleTag(role),
       filters: [
-        { text: '所有者', value: 'owner' },
-        { text: '管理员', value: 'admin' },
-        { text: '成员', value: 'member' },
-        { text: '访客', value: 'guest' },
+        { text: t('member.roles.owner'), value: 'owner' },
+        { text: t('member.roles.admin'), value: 'admin' },
+        { text: t('member.roles.member'), value: 'member' },
+        { text: t('member.roles.guest'), value: 'guest' },
       ],
       onFilter: (value, record) => record.role === value,
     },
     {
-      title: '最后活跃',
+      title: t('member.columns.lastActive'),
       dataIndex: 'last_active_at',
       key: 'last_active_at',
       render: (date: string) => date ? new Date(date).toLocaleString() : '-',
@@ -164,7 +166,7 @@ const MemberManagement: React.FC = () => {
       },
     },
     {
-      title: '操作',
+      title: t('member.columns.action'),
       key: 'action',
       render: (_, record) => (
         <Space size="small">
@@ -175,11 +177,11 @@ const MemberManagement: React.FC = () => {
             disabled={record.role === 'owner'}
             onChange={(role) => updateRoleMutation.mutate({ userId: record.user_id, role })}
           >
-            <Select.Option value="admin">管理员</Select.Option>
-            <Select.Option value="member">成员</Select.Option>
-            <Select.Option value="guest">访客</Select.Option>
+            <Select.Option value="admin">{t('member.roles.admin')}</Select.Option>
+            <Select.Option value="member">{t('member.roles.member')}</Select.Option>
+            <Select.Option value="guest">{t('member.roles.guest')}</Select.Option>
           </Select>
-          <Tooltip title={record.role === 'owner' ? '无法移除所有者' : '移除成员'}>
+          <Tooltip title={record.role === 'owner' ? t('member.cannotRemoveOwner') : t('member.removeMember')}>
             <Button
               type="link"
               size="small"
@@ -188,8 +190,8 @@ const MemberManagement: React.FC = () => {
               disabled={record.role === 'owner'}
               onClick={() => {
                 Modal.confirm({
-                  title: '确认移除',
-                  content: '确定要移除该成员吗？移除后将撤销其所有权限。',
+                  title: t('member.confirmRemove'),
+                  content: t('member.confirmRemoveContent'),
                   onOk: () => removeMutation.mutate(record.user_id),
                 });
               }}
@@ -210,23 +212,23 @@ const MemberManagement: React.FC = () => {
       <Row gutter={16} style={{ marginBottom: 16 }}>
         <Col span={6}>
           <Card>
-            <Statistic title="总成员数" value={totalMembers} prefix={<TeamOutlined />} />
+            <Statistic title={t('member.totalMembers')} value={totalMembers} prefix={<TeamOutlined />} />
           </Card>
         </Col>
         <Col span={6}>
           <Card>
-            <Statistic title="管理员" value={adminCount} prefix={<SafetyOutlined />} />
+            <Statistic title={t('member.admins')} value={adminCount} prefix={<SafetyOutlined />} />
           </Card>
         </Col>
         <Col span={6}>
           <Card>
-            <Statistic title="普通成员" value={totalMembers - adminCount} prefix={<UserOutlined />} />
+            <Statistic title={t('member.regularMembers')} value={totalMembers - adminCount} prefix={<UserOutlined />} />
           </Card>
         </Col>
         <Col span={6}>
           <Card>
             <Statistic 
-              title="管理员占比" 
+              title={t('member.adminRatio')} 
               value={totalMembers ? Math.round((adminCount / totalMembers) * 100) : 0} 
               suffix="%" 
             />
@@ -236,11 +238,11 @@ const MemberManagement: React.FC = () => {
 
       {/* Member List */}
       <Card
-        title="成员管理"
+        title={t('member.title')}
         extra={
           <Space>
             <Select
-              placeholder="选择工作空间"
+              placeholder={t('member.selectWorkspace')}
               style={{ width: 200 }}
               onChange={setSelectedWorkspaceId}
               value={selectedWorkspaceId}
@@ -255,7 +257,7 @@ const MemberManagement: React.FC = () => {
               disabled={!selectedWorkspaceId}
               onClick={() => setIsInviteModalVisible(true)}
             >
-              邀请
+              {t('member.invite')}
             </Button>
             <Button
               type="primary"
@@ -263,7 +265,7 @@ const MemberManagement: React.FC = () => {
               disabled={!selectedWorkspaceId}
               onClick={() => setIsAddModalVisible(true)}
             >
-              添加成员
+              {t('member.addMember')}
             </Button>
           </Space>
         }
@@ -275,15 +277,15 @@ const MemberManagement: React.FC = () => {
           rowKey="id"
           pagination={{
             showSizeChanger: true,
-            showTotal: (total) => `共 ${total} 名成员`,
+            showTotal: (total) => t('member.totalMembersCount', { total }),
           }}
-          locale={{ emptyText: selectedWorkspaceId ? '暂无成员' : '请先选择工作空间' }}
+          locale={{ emptyText: selectedWorkspaceId ? t('member.noMembers') : t('member.selectWorkspaceFirst') }}
         />
       </Card>
 
       {/* Invite Modal */}
       <Modal
-        title="邀请成员"
+        title={t('member.inviteMember')}
         open={isInviteModalVisible}
         onCancel={() => setIsInviteModalVisible(false)}
         onOk={() => inviteForm.submit()}
@@ -292,29 +294,29 @@ const MemberManagement: React.FC = () => {
         <Form form={inviteForm} layout="vertical" onFinish={(values) => inviteMutation.mutate(values)}>
           <Form.Item
             name="email"
-            label="邮箱地址"
+            label={t('member.inviteForm.email')}
             rules={[
-              { required: true, message: '请输入邮箱地址' },
-              { type: 'email', message: '请输入有效的邮箱地址' },
+              { required: true, message: t('member.inviteForm.emailRequired') },
+              { type: 'email', message: t('member.inviteForm.emailInvalid') },
             ]}
           >
-            <Input prefix={<MailOutlined />} placeholder="user@example.com" />
+            <Input prefix={<MailOutlined />} placeholder={t('member.inviteForm.emailPlaceholder')} />
           </Form.Item>
-          <Form.Item name="role" label="角色" initialValue="member">
+          <Form.Item name="role" label={t('member.inviteForm.role')} initialValue="member">
             <Select>
-              <Select.Option value="admin">管理员</Select.Option>
-              <Select.Option value="member">成员</Select.Option>
-              <Select.Option value="guest">访客</Select.Option>
+              <Select.Option value="admin">{t('member.roles.admin')}</Select.Option>
+              <Select.Option value="member">{t('member.roles.member')}</Select.Option>
+              <Select.Option value="guest">{t('member.roles.guest')}</Select.Option>
             </Select>
           </Form.Item>
-          <Form.Item name="message" label="邀请消息">
-            <Input.TextArea rows={3} placeholder="可选：添加邀请消息" />
+          <Form.Item name="message" label={t('member.inviteForm.message')}>
+            <Input.TextArea rows={3} placeholder={t('member.inviteForm.messagePlaceholder')} />
           </Form.Item>
-          <Form.Item name="expires_in_days" label="有效期（天）" initialValue={7}>
+          <Form.Item name="expires_in_days" label={t('member.inviteForm.expiresIn')} initialValue={7}>
             <Select>
-              <Select.Option value={1}>1 天</Select.Option>
-              <Select.Option value={7}>7 天</Select.Option>
-              <Select.Option value={30}>30 天</Select.Option>
+              <Select.Option value={1}>{t('member.inviteForm.expires1Day')}</Select.Option>
+              <Select.Option value={7}>{t('member.inviteForm.expires7Days')}</Select.Option>
+              <Select.Option value={30}>{t('member.inviteForm.expires30Days')}</Select.Option>
             </Select>
           </Form.Item>
         </Form>
@@ -322,7 +324,7 @@ const MemberManagement: React.FC = () => {
 
       {/* Add Member Modal */}
       <Modal
-        title="添加成员"
+        title={t('member.addMember')}
         open={isAddModalVisible}
         onCancel={() => setIsAddModalVisible(false)}
         onOk={() => addForm.submit()}
@@ -331,16 +333,16 @@ const MemberManagement: React.FC = () => {
         <Form form={addForm} layout="vertical" onFinish={(values) => addMutation.mutate(values)}>
           <Form.Item
             name="user_id"
-            label="用户 ID"
-            rules={[{ required: true, message: '请输入用户 ID' }]}
+            label={t('member.addForm.userId')}
+            rules={[{ required: true, message: t('member.addForm.userIdRequired') }]}
           >
-            <Input placeholder="请输入用户 ID" />
+            <Input placeholder={t('member.addForm.userIdPlaceholder')} />
           </Form.Item>
-          <Form.Item name="role" label="角色" initialValue="member">
+          <Form.Item name="role" label={t('member.addForm.role')} initialValue="member">
             <Select>
-              <Select.Option value="admin">管理员</Select.Option>
-              <Select.Option value="member">成员</Select.Option>
-              <Select.Option value="guest">访客</Select.Option>
+              <Select.Option value="admin">{t('member.roles.admin')}</Select.Option>
+              <Select.Option value="member">{t('member.roles.member')}</Select.Option>
+              <Select.Option value="guest">{t('member.roles.guest')}</Select.Option>
             </Select>
           </Form.Item>
         </Form>
@@ -348,7 +350,7 @@ const MemberManagement: React.FC = () => {
 
       {/* Create Custom Role Modal */}
       <Modal
-        title="创建自定义角色"
+        title={t('member.customRole.title')}
         open={isRoleModalVisible}
         onCancel={() => setIsRoleModalVisible(false)}
         onOk={() => roleForm.submit()}
@@ -357,25 +359,25 @@ const MemberManagement: React.FC = () => {
         <Form form={roleForm} layout="vertical" onFinish={(values) => createRoleMutation.mutate(values)}>
           <Form.Item
             name="name"
-            label="角色名称"
-            rules={[{ required: true, message: '请输入角色名称' }]}
+            label={t('member.customRole.name')}
+            rules={[{ required: true, message: t('member.customRole.nameRequired') }]}
           >
-            <Input placeholder="请输入角色名称" />
+            <Input placeholder={t('member.customRole.namePlaceholder')} />
           </Form.Item>
-          <Form.Item name="description" label="描述">
-            <Input.TextArea rows={2} placeholder="角色描述" />
+          <Form.Item name="description" label={t('member.customRole.description')}>
+            <Input.TextArea rows={2} placeholder={t('member.customRole.descriptionPlaceholder')} />
           </Form.Item>
           <Form.Item
             name="permissions"
-            label="权限"
-            rules={[{ required: true, message: '请选择权限' }]}
+            label={t('member.customRole.permissions')}
+            rules={[{ required: true, message: t('member.customRole.permissionsRequired') }]}
           >
-            <Select mode="multiple" placeholder="选择权限">
-              <Select.Option value="read">读取</Select.Option>
-              <Select.Option value="write">写入</Select.Option>
-              <Select.Option value="delete">删除</Select.Option>
-              <Select.Option value="manage_members">管理成员</Select.Option>
-              <Select.Option value="manage_settings">管理设置</Select.Option>
+            <Select mode="multiple" placeholder={t('member.customRole.permissionsPlaceholder')}>
+              <Select.Option value="read">{t('member.customRole.permissionRead')}</Select.Option>
+              <Select.Option value="write">{t('member.customRole.permissionWrite')}</Select.Option>
+              <Select.Option value="delete">{t('member.customRole.permissionDelete')}</Select.Option>
+              <Select.Option value="manage_members">{t('member.customRole.permissionManageMembers')}</Select.Option>
+              <Select.Option value="manage_settings">{t('member.customRole.permissionManageSettings')}</Select.Option>
             </Select>
           </Form.Item>
         </Form>

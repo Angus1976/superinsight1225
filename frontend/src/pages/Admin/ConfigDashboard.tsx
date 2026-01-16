@@ -39,6 +39,7 @@ import {
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { adminApi, DashboardData } from '@/services/adminApi';
 
 const { Title, Text } = Typography;
@@ -76,6 +77,7 @@ const HealthItem: React.FC<HealthItemProps> = ({ name, status }) => {
 
 const ConfigDashboard: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation(['admin', 'common']);
   
   const { data: dashboard, isLoading, error, refetch } = useQuery({
     queryKey: ['admin-dashboard'],
@@ -84,19 +86,19 @@ const ConfigDashboard: React.FC = () => {
   });
 
   const quickActions = [
-    { name: '配置 LLM', path: '/admin/config/llm', icon: <ApiOutlined /> },
-    { name: '添加数据库', path: '/admin/config/databases', icon: <DatabaseOutlined /> },
-    { name: '同步策略', path: '/admin/config/sync', icon: <SyncOutlined /> },
-    { name: 'SQL 构建器', path: '/admin/config/sql-builder', icon: <CloudServerOutlined /> },
-    { name: '配置历史', path: '/admin/config/history', icon: <HistoryOutlined /> },
-    { name: '第三方工具', path: '/admin/config/third-party', icon: <SettingOutlined /> },
+    { name: t('configDashboard.actions.configureLLM'), path: '/admin/config/llm', icon: <ApiOutlined /> },
+    { name: t('configDashboard.actions.addDatabase'), path: '/admin/config/databases', icon: <DatabaseOutlined /> },
+    { name: t('configDashboard.actions.syncStrategy'), path: '/admin/config/sync', icon: <SyncOutlined /> },
+    { name: t('configDashboard.actions.sqlBuilder'), path: '/admin/config/sql-builder', icon: <CloudServerOutlined /> },
+    { name: t('configDashboard.actions.configHistory'), path: '/admin/config/history', icon: <HistoryOutlined /> },
+    { name: t('configDashboard.actions.thirdPartyTools'), path: '/admin/config/third-party', icon: <SettingOutlined /> },
   ];
 
   if (isLoading) {
     return (
       <div style={{ textAlign: 'center', padding: 50 }}>
         <Spin size="large" />
-        <div style={{ marginTop: 16 }}>加载仪表盘数据...</div>
+        <div style={{ marginTop: 16 }}>{t('configDashboard.loadingData')}</div>
       </div>
     );
   }
@@ -105,11 +107,11 @@ const ConfigDashboard: React.FC = () => {
     return (
       <Alert
         type="error"
-        message="加载失败"
-        description="无法加载仪表盘数据，请稍后重试。"
+        message={t('configDashboard.loadFailed')}
+        description={t('configDashboard.loadFailedDescription')}
         action={
           <Button size="small" onClick={() => refetch()}>
-            重试
+            {t('configDashboard.retry')}
           </Button>
         }
       />
@@ -130,17 +132,17 @@ const ConfigDashboard: React.FC = () => {
     <div style={{ padding: 24 }}>
       <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Title level={3} style={{ margin: 0 }}>
-          <SettingOutlined /> 管理员配置中心
+          <SettingOutlined /> {t('configDashboard.title')}
         </Title>
         <Button icon={<ReloadOutlined />} onClick={() => refetch()}>
-          刷新
+          {t('configDashboard.refresh')}
         </Button>
       </div>
 
       {/* System Health Overview */}
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={8}>
-          <Card title="系统健康状态" extra={<Progress type="circle" percent={healthPercent} size={50} />}>
+          <Card title={t('configDashboard.systemHealth')} extra={<Progress type="circle" percent={healthPercent} size={50} />}>
             {Object.entries(systemHealth).map(([key, value]) => (
               <HealthItem key={key} name={key} status={value as string} />
             ))}
@@ -149,32 +151,32 @@ const ConfigDashboard: React.FC = () => {
 
         {/* Key Metrics */}
         <Col xs={24} lg={16}>
-          <Card title="关键指标">
+          <Card title={t('configDashboard.keyMetrics')}>
             <Row gutter={[16, 16]}>
               <Col xs={12} sm={6}>
                 <Statistic
-                  title="总标注数"
+                  title={t('configDashboard.totalAnnotations')}
                   value={keyMetrics.total_annotations || 0}
                   prefix={<CheckCircleOutlined />}
                 />
               </Col>
               <Col xs={12} sm={6}>
                 <Statistic
-                  title="活跃用户"
+                  title={t('configDashboard.activeUsers')}
                   value={keyMetrics.active_users || 0}
                   valueStyle={{ color: '#3f8600' }}
                 />
               </Col>
               <Col xs={12} sm={6}>
                 <Statistic
-                  title="待处理任务"
+                  title={t('configDashboard.pendingTasks')}
                   value={keyMetrics.pending_tasks || 0}
                   valueStyle={{ color: keyMetrics.pending_tasks > 0 ? '#cf1322' : undefined }}
                 />
               </Col>
               <Col xs={12} sm={6}>
                 <Statistic
-                  title="今日同步"
+                  title={t('configDashboard.todaySync')}
                   value={keyMetrics.sync_jobs_today || 0}
                   prefix={<SyncOutlined />}
                 />
@@ -187,45 +189,45 @@ const ConfigDashboard: React.FC = () => {
       {/* Configuration Summary & Quick Actions */}
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col xs={24} lg={12}>
-          <Card title="配置概览">
+          <Card title={t('configDashboard.configOverview')}>
             <Row gutter={[16, 16]}>
               <Col span={12}>
                 <Card size="small" hoverable onClick={() => navigate('/admin/config/llm')}>
                   <Statistic
-                    title="LLM 配置"
+                    title={t('configDashboard.llmConfig')}
                     value={configSummary.llm_configs || 0}
                     prefix={<ApiOutlined />}
-                    suffix="个"
+                    suffix={t('configDashboard.unit')}
                   />
                 </Card>
               </Col>
               <Col span={12}>
                 <Card size="small" hoverable onClick={() => navigate('/admin/config/databases')}>
                   <Statistic
-                    title="数据库连接"
+                    title={t('configDashboard.dbConnections')}
                     value={configSummary.db_connections || 0}
                     prefix={<DatabaseOutlined />}
-                    suffix="个"
+                    suffix={t('configDashboard.unit')}
                   />
                 </Card>
               </Col>
               <Col span={12}>
                 <Card size="small" hoverable onClick={() => navigate('/admin/config/sync')}>
                   <Statistic
-                    title="同步策略"
+                    title={t('configDashboard.syncStrategies')}
                     value={configSummary.sync_strategies || 0}
                     prefix={<SyncOutlined />}
-                    suffix="个"
+                    suffix={t('configDashboard.unit')}
                   />
                 </Card>
               </Col>
               <Col span={12}>
                 <Card size="small" hoverable onClick={() => navigate('/admin/config/third-party')}>
                   <Statistic
-                    title="第三方工具"
+                    title={t('configDashboard.thirdPartyTools')}
                     value={configSummary.third_party_tools || 0}
                     prefix={<SettingOutlined />}
-                    suffix="个"
+                    suffix={t('configDashboard.unit')}
                   />
                 </Card>
               </Col>
@@ -234,7 +236,7 @@ const ConfigDashboard: React.FC = () => {
         </Col>
 
         <Col xs={24} lg={12}>
-          <Card title="快捷操作">
+          <Card title={t('configDashboard.quickActions')}>
             <List
               grid={{ gutter: 16, xs: 1, sm: 2, md: 2, lg: 2, xl: 3 }}
               dataSource={quickActions}
@@ -258,7 +260,7 @@ const ConfigDashboard: React.FC = () => {
 
       {/* Recent Alerts */}
       {recentAlerts.length > 0 && (
-        <Card title="最近告警" style={{ marginTop: 16 }}>
+        <Card title={t('configDashboard.recentAlerts')} style={{ marginTop: 16 }}>
           <List
             dataSource={recentAlerts}
             renderItem={(alert: Record<string, unknown>) => (

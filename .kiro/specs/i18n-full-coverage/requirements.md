@@ -135,3 +135,111 @@ SuperInsight 平台已有基础的 i18n 支持，但存在多处硬编码的中�
 3. WHEN text is longer in one language, THE UI SHALL handle overflow gracefully (truncation with tooltip, or responsive sizing)
 4. THE Translation_File SHALL provide concise translations that fit within typical UI constraints
 5. WHEN language is switched, THE UI layout SHALL remain visually consistent and aesthetically pleasing
+
+### Requirement 11: Tasks 模块国际化
+
+**User Story:** 作为系统用户，我希望任务管理模块（任务列表、任务详情、标注界面、AI预标注、审核功能）支持中英文切换，以便我能使用熟悉的语言进行任务管理和数据标注。
+
+#### Acceptance Criteria
+
+1. WHEN the Tasks list page renders, THE I18n_System SHALL display all status tags using translation keys (statusPending, statusInProgress, statusCompleted, statusCancelled)
+2. WHEN the Tasks list page renders, THE I18n_System SHALL display all priority tags using translation keys (priorityLow, priorityMedium, priorityHigh, priorityUrgent)
+3. WHEN the Tasks list page renders, THE I18n_System SHALL display all annotation type tags using translation keys (typeTextClassification, typeNER, typeSentiment, typeQA, typeCustom)
+4. THE Tasks module SHALL use translation keys for all action buttons (view, annotateAction, edit, start, complete, pause, delete)
+5. THE TaskDetail page SHALL use translation keys for all labels, buttons, and status indicators
+6. THE AIAnnotationPanel component SHALL use translation keys for all AI pre-annotation related text
+7. THE TaskAnnotate component SHALL use translation keys for all annotation interface text
+8. THE TaskReview component SHALL use translation keys for all review-related text
+9. WHEN language is switched, THE Tasks module SHALL update all text content immediately
+10. THE Translation_Key generation SHALL use explicit mapping objects instead of string manipulation to avoid key generation bugs
+
+### Requirement 12: Admin 模块国际化
+
+**User Story:** 作为系统管理员，我希望管理控制台（系统监控、租户管理、用户管理、配置管理）支持中英文切换，以便我能使用熟悉的语言进行系统管理。
+
+#### Acceptance Criteria
+
+1. THE Admin Console page SHALL use translation keys for all statistics titles (系统状态、数据库、缓存、存储)
+2. THE Admin Console page SHALL use translation keys for all status values (健康/异常、正常/异常、运行中/降级/停止)
+3. THE Admin Console page SHALL use translation keys for all section titles (租户统计、工作空间统计、用户统计、服务状态)
+4. THE Admin Console page SHALL use translation keys for all table column headers
+5. THE LLM Config page SHALL use translation keys for all provider names (通义千问、智谱 GLM、文心一言、腾讯混元)
+6. ALL Admin sub-modules SHALL use translation keys for all user-visible text
+7. WHEN language is switched, THE Admin module SHALL update all text content immediately
+
+### Requirement 13: Quality 模块国际化
+
+**User Story:** 作为质量管理员，我希望质量管理模块（改进任务、质量报告、告警列表、规则配置）支持中英文切换，以便我能使用熟悉的语言进行质量管理。
+
+#### Acceptance Criteria
+
+1. THE ImprovementTaskList page SHALL use translation keys for all status values (待处理、进行中、待审核、已通过、已拒绝)
+2. THE ImprovementTaskList page SHALL use translation keys for all table column headers
+3. THE ImprovementTaskList page SHALL use translation keys for all statistics titles
+4. THE Quality Reports page SHALL use translation keys for all report types (日报、周报、月报、自定义)
+5. ALL Quality sub-modules SHALL use translation keys for all user-visible text
+6. WHEN language is switched, THE Quality module SHALL update all text content immediately
+
+### Requirement 14: Security 模块国际化
+
+**User Story:** 作为安全管理员，我希望安全管理模块（权限管理、角色管理、审计日志、会话管理）支持中英文切换，以便我能使用熟悉的语言进行安全管理。
+
+#### Acceptance Criteria
+
+1. THE Permissions page SHALL use translation keys for all table column headers (权限名称、权限代码、资源、操作、状态)
+2. THE Permissions page SHALL use translation keys for all status values (启用、禁用)
+3. THE Permissions page SHALL use translation keys for all success/error messages
+4. THE Roles page SHALL use translation keys for all table column headers
+5. THE User Permissions page SHALL use translation keys for all table column headers
+6. ALL Security sub-modules SHALL use translation keys for all user-visible text
+7. WHEN language is switched, THE Security module SHALL update all text content immediately
+
+### Requirement 15: Workspace 模块国际化
+
+**User Story:** 作为工作空间管理员，我希望工作空间管理模块支持中英文切换，以便我能使用熟悉的语言进行工作空间管理。
+
+#### Acceptance Criteria
+
+1. THE WorkspaceManagement page SHALL use translation keys for all success/error messages
+2. THE WorkspaceManagement page SHALL use translation keys for all menu items (添加子工作空间、编辑、复制为模板、归档、恢复、删除)
+3. THE WorkspaceManagement page SHALL use translation keys for all status values (已归档、活跃)
+4. THE WorkspaceManagement page SHALL use translation keys for all field labels (ID、名称、状态、父级、创建时间、描述)
+5. THE WorkspaceManagement page SHALL use translation keys for all confirmation dialogs
+6. WHEN language is switched, THE Workspace module SHALL update all text content immediately
+
+### Requirement 16: Billing 模块国际化补充
+
+**User Story:** 作为账单管理员，我希望计费规则配置等组件支持中英文切换，以便我能使用熟悉的语言进行计费管理。
+
+#### Acceptance Criteria
+
+1. THE BillingRuleConfig component SHALL use translation keys for all billing modes (按条数计费、按工时计费、按项目计费、混合计费)
+2. THE BillingRuleConfig component SHALL use translation keys for all status values (当前生效、已审批、待审批)
+3. THE BillingRuleConfig component SHALL use translation keys for all table column headers
+4. THE BillingRuleConfig component SHALL use translation keys for all success/error messages
+5. WHEN language is switched, THE Billing module SHALL update all text content immediately
+
+### Requirement 17: 其他模块国际化
+
+**User Story:** 作为系统用户，我希望所有其他模块（Dashboard、Settings、Collaboration、Crowdsource、Augmentation、License、DataSync）都支持中英文切换。
+
+#### Acceptance Criteria
+
+1. ALL remaining modules SHALL use translation keys for all user-visible text
+2. ALL remaining modules SHALL have corresponding translation files in both zh and en directories
+3. WHEN language is switched, ALL modules SHALL update all text content immediately
+4. THE Register, ForgotPassword, ResetPassword pages SHALL use translation keys for all form labels and messages
+
+### Requirement 18: Label Studio 语言同步
+
+**User Story:** 作为系统用户，我希望当我在 SuperInsight 中切换语言时，嵌入的 Label Studio 标注界面也能同步切换到相应的语言，以获得一致的用户体验。
+
+#### Acceptance Criteria
+
+1. WHEN language is switched in SuperInsight, THE Label Studio iframe SHALL reload with the corresponding language setting
+2. THE Label Studio integration SHALL use Label Studio's built-in Chinese language module for Chinese localization
+3. THE language synchronization SHALL work via postMessage communication between SuperInsight and Label Studio iframe
+4. THE LabelStudioEmbed component SHALL display a language indicator showing the current language
+5. WHEN Label Studio is ready, THE system SHALL automatically sync the current language setting
+6. THE language change SHALL show a loading indicator while Label Studio reloads with the new language
+7. THE language synchronization SHALL persist across page refreshes using localStorage

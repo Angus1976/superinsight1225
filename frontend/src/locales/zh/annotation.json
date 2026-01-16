@@ -1,0 +1,54 @@
+{
+  "interface": {
+    "loading": "加载标注界面中...",
+    "toolbar": {
+      "undo": "撤销",
+      "redo": "重做",
+      "history": "历史记录"
+    },
+    "status": {
+      "labeled": "已标注",
+      "unlabeled": "待标注",
+      "readOnly": "只读权限"
+    },
+    "content": {
+      "title": "待标注内容"
+    },
+    "tools": {
+      "title": "标注工具",
+      "saveAnnotation": "保存标注"
+    },
+    "sentiment": {
+      "title": "情感分类",
+      "required": "请选择情感分类",
+      "positive": "积极",
+      "negative": "消极",
+      "neutral": "中性",
+      "positiveLabel": "积极 (Positive)",
+      "negativeLabel": "消极 (Negative)",
+      "neutralLabel": "中性 (Neutral)"
+    },
+    "quickAnnotation": {
+      "title": "快速标注"
+    },
+    "rating": {
+      "title": "情感强度评分 (1-5分)"
+    },
+    "comment": {
+      "title": "标注备注",
+      "placeholder": "请输入标注备注或说明..."
+    },
+    "currentResult": {
+      "title": "当前标注结果",
+      "sentiment": "情感",
+      "rating": "评分",
+      "comment": "备注"
+    },
+    "messages": {
+      "noCreatePermission": "您没有创建标注的权限",
+      "noEditPermission": "您没有编辑标注的权限",
+      "saveSuccess": "标注已保存",
+      "saveError": "保存标注失败"
+    }
+  }
+}

@@ -1,0 +1,215 @@
+{
+  "dashboard": {
+    "title": "业务逻辑仪表板",
+    "project": "项目",
+    "loading": "加载业务逻辑仪表板...",
+    "loadError": "加载仪表板数据失败",
+    "runAnalysis": "运行分析",
+    "extractRules": "提取规则",
+    "exportData": "导出数据",
+    "unacknowledgedInsights": "您有 {{count}} 个未确认的业务洞察",
+    "viewInsights": "查看洞察",
+    "clickToViewInsights": "点击查看详情并确认这些洞察"
+  },
+  "stats": {
+    "totalRules": "业务规则总数",
+    "activeRules": "个激活",
+    "patternsIdentified": "识别模式数",
+    "businessInsights": "业务洞察数",
+    "avgConfidence": "平均置信度"
+  },
+  "tabs": {
+    "overview": "概览",
+    "ruleManagement": "规则管理",
+    "patternAnalysis": "模式分析",
+    "visualization": "可视化",
+    "businessInsights": "业务洞察"
+  },
+  "rules": {
+    "title": "业务规则",
+    "listTitle": "业务规则列表",
+    "viewAll": "查看全部",
+    "createRule": "创建规则",
+    "editRule": "编辑业务规则",
+    "createBusinessRule": "创建业务规则",
+    "ruleDetail": "规则详情",
+    "batchOperation": "批量操作",
+    "columns": {
+      "ruleName": "规则名称",
+      "type": "类型",
+      "confidence": "置信度",
+      "frequency": "频率",
+      "status": "状态",
+      "createdAt": "创建时间",
+      "updatedAt": "更新时间",
+      "actions": "操作"
+    },
+    "types": {
+      "sentimentRule": "情感规则",
+      "keywordRule": "关键词规则",
+      "temporalRule": "时间规则",
+      "behavioralRule": "行为规则"
+    },
+    "status": {
+      "active": "激活",
+      "inactive": "停用",
+      "disabled": "已停用"
+    },
+    "form": {
+      "ruleName": "规则名称",
+      "ruleNamePlaceholder": "请输入规则名称",
+      "ruleNameRequired": "请输入规则名称",
+      "ruleType": "规则类型",
+      "ruleTypePlaceholder": "请选择规则类型",
+      "ruleTypeRequired": "请选择规则类型",
+      "rulePattern": "规则模式",
+      "rulePatternPlaceholder": "请输入规则模式，例如：IF text CONTAINS ['excellent', 'great'] THEN sentiment = 'positive'",
+      "rulePatternRequired": "请输入规则模式",
+      "ruleDescription": "规则描述",
+      "ruleDescriptionPlaceholder": "请输入规则描述",
+      "initialConfidence": "初始置信度",
+      "activeStatus": "激活状态"
+    },
+    "actions": {
+      "viewDetail": "查看详情",
+      "editRule": "编辑规则",
+      "copyRule": "复制规则",
+      "activateRule": "激活规则",
+      "deactivateRule": "停用规则",
+      "deleteRule": "删除规则"
+    },
+    "messages": {
+      "createSuccess": "规则创建成功",
+      "createError": "创建规则失败",
+      "updateSuccess": "规则更新成功",
+      "updateError": "更新规则失败",
+      "deleteSuccess": "规则删除成功",
+      "deleteError": "删除规则失败",
+      "copySuccess": "规则复制成功",
+      "toggleSuccess": "规则已{{status}}",
+      "toggleError": "切换规则状态失败",
+      "deleteConfirm": "确定要删除这个规则吗？"
+    },
+    "detail": {
+      "basicInfo": "基本信息",
+      "ruleId": "规则ID",
+      "rulePattern": "规则模式",
+      "ruleDescription": "规则描述"
+    },
+    "pagination": {
+      "total": "第 {{start}}-{{end}} 条，共 {{total}} 条"
+    },
+    "copy": "副本"
+  },
+  "patterns": {
+    "title": "业务模式",
+    "listTitle": "业务模式列表",
+    "viewAll": "查看全部",
+    "total": "共 {{count}} 个模式",
+    "strongPatternsFound": "发现 {{count}} 个强模式",
+    "strongPatternsHint": "这些模式具有较高的强度，建议重点关注和分析",
+    "columns": {
+      "patternType": "模式类型",
+      "description": "描述",
+      "strength": "强度",
+      "detectedAt": "检测时间",
+      "lastSeen": "最后出现",
+      "actions": "操作"
+    },
+    "types": {
+      "sentimentCorrelation": "情感关联",
+      "keywordAssociation": "关键词关联",
+      "temporalTrend": "时间趋势",
+      "userBehavior": "用户行为"
+    },
+    "stats": {
+      "totalPatterns": "模式总数",
+      "avgStrength": "平均强度",
+      "strongPatterns": "强模式数",
+      "typeCount": "类型数量"
+    },
+    "lastSeen": {
+      "justNow": "刚刚",
+      "hoursAgo": "{{hours}}小时前"
+    },
+    "detail": {
+      "title": "模式详情",
+      "basicInfo": "基本信息",
+      "patternId": "模式ID",
+      "patternType": "模式类型",
+      "strength": "强度",
+      "description": "描述",
+      "detectedAt": "检测时间",
+      "lastSeen": "最后出现",
+      "analysisResult": "分析结果",
+      "recommendations": "优化建议"
+    },
+    "analysis": {
+      "sentimentAnalysis": "情感关联分析",
+      "keywordAnalysis": "关键词关联分析",
+      "temporalAnalysis": "时间趋势分析",
+      "behaviorAnalysis": "用户行为分析",
+      "generalAnalysis": "通用分析",
+      "positiveRatio": "正面情感比例",
+      "negativeRatio": "负面情感比例",
+      "keywords": "关键词"
+    },
+    "recommendations": {
+      "sentiment": {
+        "maintainQuality": "继续保持正面情感标注的高质量",
+        "balanceDataset": "增加负面情感样本以平衡数据集",
+        "neutralConsistency": "关注中性情感的标注一致性",
+        "qualityCheck": "建立情感标注质量检查机制"
+      },
+      "keyword": {
+        "standardize": "建立关键词标准化词典",
+        "optimizeExtraction": "优化关键词提取算法",
+        "synonyms": "增加同义词和近义词处理",
+        "updateRegularly": "定期更新关键词库"
+      },
+      "temporal": {
+        "scheduleWisely": "合理安排标注任务时间",
+        "increasePeakStaff": "在高峰时段增加标注人员",
+        "trendAlert": "建立时间趋势预警机制",
+        "optimizeWorkflow": "优化工作流程提高效率"
+      },
+      "behavior": {
+        "incentivize": "激励高频用户持续参与",
+        "improveEngagement": "提升中低频用户的参与度",
+        "training": "建立用户培训和指导机制",
+        "optimizeUX": "优化用户体验和界面设计"
+      },
+      "general": {
+        "monitor": "持续监控模式变化",
+        "analyze": "定期分析和优化"
+      }
+    }
+  },
+  "insights": {
+    "title": "业务洞察",
+    "acknowledged": "洞察已确认",
+    "acknowledgeError": "确认洞察失败"
+  },
+  "analysis": {
+    "title": "运行业务逻辑分析",
+    "confidenceThreshold": "置信度阈值",
+    "confidenceThresholdTooltip": "只有置信度高于此值的模式才会被识别",
+    "minFrequency": "最小频率",
+    "minFrequencyTooltip": "模式至少出现多少次才被认为是有效的",
+    "timeRangeDays": "时间范围（天）",
+    "timeRangeDaysTooltip": "分析最近多少天的数据，留空表示分析全部数据",
+    "success": "模式分析完成，识别出 {{count}} 个模式",
+    "error": "模式分析失败",
+    "extractSuccess": "规则提取完成，提取出 {{count}} 个规则",
+    "extractError": "规则提取失败"
+  },
+  "export": {
+    "title": "导出业务逻辑数据",
+    "format": "导出格式",
+    "includeRules": "包含业务规则",
+    "includePatterns": "包含业务模式",
+    "includeInsights": "包含业务洞察",
+    "success": "导出任务已创建，请稍后下载",
+    "error": "导出失败"
+  }
+}

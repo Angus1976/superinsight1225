@@ -4,6 +4,7 @@ import { DownloadOutlined, ReloadOutlined, BarChartOutlined, LineChartOutlined }
 import { Line, Bar, Pie } from '@ant-design/plots';
 import type { ColumnsType } from 'antd/es/table';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { api } from '@/services/api';
 import dayjs from 'dayjs';
 
@@ -47,6 +48,7 @@ interface QualityMetrics {
 }
 
 const QualityReports: React.FC = () => {
+  const { t } = useTranslation(['quality', 'common']);
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs]>([
     dayjs().subtract(30, 'day'),
     dayjs(),
@@ -115,26 +117,26 @@ const QualityReports: React.FC = () => {
 
   const columns: ColumnsType<QualityReport> = [
     {
-      title: '报告名称',
+      title: t('reports.columns.name'),
       dataIndex: 'name',
       key: 'name',
     },
     {
-      title: '类型',
+      title: t('reports.columns.type'),
       dataIndex: 'type',
       key: 'type',
       render: (type: string) => {
-        const labels = {
-          daily: '日报',
-          weekly: '周报',
-          monthly: '月报',
-          custom: '自定义',
+        const typeKeyMap: Record<string, string> = {
+          daily: 'daily',
+          weekly: 'weekly',
+          monthly: 'monthly',
+          custom: 'custom',
         };
-        return <Tag>{labels[type as keyof typeof labels]}</Tag>;
+        return <Tag>{t(`reports.types.${typeKeyMap[type] || type}`)}</Tag>;
       },
     },
     {
-      title: '总体评分',
+      title: t('reports.columns.overallScore'),
       dataIndex: 'overallScore',
       key: 'overallScore',
       render: (score: number) => (
@@ -146,24 +148,24 @@ const QualityReports: React.FC = () => {
       ),
     },
     {
-      title: '样本统计',
+      title: t('reports.columns.samples'),
       key: 'samples',
       render: (_, record) => (
         <div>
-          <div>总数: {record.totalSamples}</div>
-          <div style={{ color: '#52c41a' }}>通过: {record.passedSamples}</div>
-          <div style={{ color: '#f5222d' }}>失败: {record.failedSamples}</div>
+          <div>{t('reports.stats.total')}: {record.totalSamples}</div>
+          <div style={{ color: '#52c41a' }}>{t('reports.stats.passed')}: {record.passedSamples}</div>
+          <div style={{ color: '#f5222d' }}>{t('reports.stats.failed')}: {record.failedSamples}</div>
         </div>
       ),
     },
     {
-      title: '创建时间',
+      title: t('reports.columns.createdAt'),
       dataIndex: 'createdAt',
       key: 'createdAt',
       render: (date: string) => new Date(date).toLocaleString(),
     },
     {
-      title: '操作',
+      title: t('reports.columns.action'),
       key: 'action',
       render: (_, record) => (
         <Space size="middle">
@@ -175,7 +177,7 @@ const QualityReports: React.FC = () => {
               console.log('查看报告:', record.id);
             }}
           >
-            查看
+            {t('reports.actions.view')}
           </Button>
           <Button
             type="link"
@@ -185,7 +187,7 @@ const QualityReports: React.FC = () => {
               console.log('下载报告:', record.id);
             }}
           >
-            下载
+            {t('reports.actions.download')}
           </Button>
         </Space>
       ),
@@ -199,7 +201,7 @@ const QualityReports: React.FC = () => {
         <Row gutter={16} align="middle">
           <Col>
             <Space>
-              <span>时间范围:</span>
+              <span>{t('reports.dateRange')}:</span>
               <RangePicker
                 value={dateRange}
                 onChange={(dates) => dates && setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs])}
@@ -208,25 +210,25 @@ const QualityReports: React.FC = () => {
           </Col>
           <Col>
             <Space>
-              <span>报告类型:</span>
+              <span>{t('reports.reportType')}:</span>
               <Select
                 value={reportType}
                 onChange={setReportType}
                 style={{ width: 120 }}
               >
-                <Select.Option value="all">全部</Select.Option>
-                <Select.Option value="daily">日报</Select.Option>
-                <Select.Option value="weekly">周报</Select.Option>
-                <Select.Option value="monthly">月报</Select.Option>
+                <Select.Option value="all">{t('reports.types.all')}</Select.Option>
+                <Select.Option value="daily">{t('reports.types.daily')}</Select.Option>
+                <Select.Option value="weekly">{t('reports.types.weekly')}</Select.Option>
+                <Select.Option value="monthly">{t('reports.types.monthly')}</Select.Option>
               </Select>
             </Space>
           </Col>
           <Col>
-            <Button icon={<ReloadOutlined />}>刷新</Button>
+            <Button icon={<ReloadOutlined />}>{t('reports.actions.refresh')}</Button>
           </Col>
           <Col>
             <Button type="primary" icon={<DownloadOutlined />}>
-              导出报告
+              {t('reports.actions.exportReport')}
             </Button>
           </Col>
         </Row>
@@ -237,7 +239,7 @@ const QualityReports: React.FC = () => {
         <Col span={6}>
           <Card>
             <Statistic
-              title="总体质量评分"
+              title={t('reports.stats.overallScore')}
               value={metrics?.overallScore * 100 || 0}
               precision={1}
               suffix="%"
@@ -251,7 +253,7 @@ const QualityReports: React.FC = () => {
         <Col span={6}>
           <Card>
             <Statistic
-              title="总样本数"
+              title={t('reports.stats.totalSamples')}
               value={metrics?.totalSamples || 0}
             />
           </Card>
@@ -259,7 +261,7 @@ const QualityReports: React.FC = () => {
         <Col span={6}>
           <Card>
             <Statistic
-              title="通过样本"
+              title={t('reports.stats.passedSamples')}
               value={metrics?.passedSamples || 0}
               valueStyle={{ color: '#3f8600' }}
             />
@@ -268,7 +270,7 @@ const QualityReports: React.FC = () => {
         <Col span={6}>
           <Card>
             <Statistic
-              title="失败样本"
+              title={t('reports.stats.failedSamples')}
               value={metrics?.failedSamples || 0}
               valueStyle={{ color: '#cf1322' }}
             />
@@ -279,12 +281,12 @@ const QualityReports: React.FC = () => {
       {/* 图表展示 */}
       <Row gutter={16} style={{ marginBottom: 16 }}>
         <Col span={12}>
-          <Card title="质量趋势" loading={metricsLoading}>
+          <Card title={t('reports.charts.qualityTrend')} loading={metricsLoading}>
             <Line {...trendConfig} height={300} />
           </Card>
         </Col>
         <Col span={12}>
-          <Card title="评分分布" loading={metricsLoading}>
+          <Card title={t('reports.charts.scoreDistribution')} loading={metricsLoading}>
             <Bar {...distributionConfig} height={300} />
           </Card>
         </Col>
@@ -292,16 +294,16 @@ const QualityReports: React.FC = () => {
 
       <Row gutter={16} style={{ marginBottom: 16 }}>
         <Col span={12}>
-          <Card title="规则违规统计" loading={metricsLoading}>
+          <Card title={t('reports.charts.ruleViolations')} loading={metricsLoading}>
             <Pie {...violationConfig} height={300} />
           </Card>
         </Col>
         <Col span={12}>
-          <Card title="质量指标详情" loading={metricsLoading}>
+          <Card title={t('reports.charts.metricsDetail')} loading={metricsLoading}>
             <Row gutter={16}>
               <Col span={12}>
                 <Statistic
-                  title="语义质量"
+                  title={t('reports.metricsLabels.semanticQuality')}
                   value={metrics?.scoreDistribution?.find(item => item.type === 'semantic')?.score * 100 || 0}
                   precision={1}
                   suffix="%"
@@ -309,7 +311,7 @@ const QualityReports: React.FC = () => {
               </Col>
               <Col span={12}>
                 <Statistic
-                  title="语法质量"
+                  title={t('reports.metricsLabels.syntacticQuality')}
                   value={metrics?.scoreDistribution?.find(item => item.type === 'syntactic')?.score * 100 || 0}
                   precision={1}
                   suffix="%"
@@ -317,7 +319,7 @@ const QualityReports: React.FC = () => {
               </Col>
               <Col span={12}>
                 <Statistic
-                  title="完整性"
+                  title={t('reports.metricsLabels.completeness')}
                   value={metrics?.scoreDistribution?.find(item => item.type === 'completeness')?.score * 100 || 0}
                   precision={1}
                   suffix="%"
@@ -325,7 +327,7 @@ const QualityReports: React.FC = () => {
               </Col>
               <Col span={12}>
                 <Statistic
-                  title="一致性"
+                  title={t('reports.metricsLabels.consistency')}
                   value={metrics?.scoreDistribution?.find(item => item.type === 'consistency')?.score * 100 || 0}
                   precision={1}
                   suffix="%"
@@ -337,7 +339,7 @@ const QualityReports: React.FC = () => {
       </Row>
 
       {/* 报告列表 */}
-      <Card title="历史报告">
+      <Card title={t('reports.historyReports')}>
         <Table
           columns={columns}
           dataSource={reports}
@@ -346,7 +348,7 @@ const QualityReports: React.FC = () => {
           pagination={{
             showSizeChanger: true,
             showQuickJumper: true,
-            showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
+            showTotal: (total, range) => t('reports.pagination', { start: range[0], end: range[1], total }),
           }}
         />
       </Card>

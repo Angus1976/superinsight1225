@@ -161,7 +161,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
       onSuccess();
     } catch (error) {
       if (error instanceof Error && error.message !== 'Validation failed') {
-        message.error(t('tasks.createTaskError'));
+        message.error(t('createTaskError'));
       }
     }
   };
@@ -205,34 +205,34 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
     switch (currentStep) {
       case 0:
         return (
-          <Card title={t('tasks.basicInfo')} bordered={false}>
+          <Card title={t('basicInfo')} bordered={false}>
             <Form.Item
               name="name"
-              label={t('tasks.taskName')}
+              label={t('taskName')}
               rules={[
-                { required: true, message: t('tasks.taskNameRequired') },
-                { max: 100, message: t('tasks.taskNameMaxLength') },
+                { required: true, message: t('taskNameRequired') },
+                { max: 100, message: t('taskNameMaxLength') },
               ]}
             >
-              <Input placeholder={t('tasks.taskNamePlaceholder')} />
+              <Input placeholder={t('taskNamePlaceholder')} />
             </Form.Item>
 
             <Form.Item
               name="description"
-              label={t('tasks.description')}
-              rules={[{ max: 500, message: t('tasks.descriptionMaxLength') }]}
+              label={t('description')}
+              rules={[{ max: 500, message: t('descriptionMaxLength') }]}
             >
-              <TextArea rows={3} placeholder={t('tasks.descriptionPlaceholder')} />
+              <TextArea rows={3} placeholder={t('descriptionPlaceholder')} />
             </Form.Item>
 
             <Row gutter={16}>
               <Col span={12}>
                 <Form.Item
                   name="priority"
-                  label={t('tasks.priority')}
-                  rules={[{ required: true, message: t('tasks.priorityRequired') }]}
+                  label={t('priority')}
+                  rules={[{ required: true, message: t('priorityRequired') }]}
                 >
-                  <Select placeholder={t('tasks.priorityPlaceholder')}>
+                  <Select placeholder={t('priorityPlaceholder')}>
                     {priorityOptions.map(option => (
                       <Select.Option key={option.value} value={option.value}>
                         <Space>
@@ -244,7 +244,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
                               backgroundColor: option.color 
                             }} 
                           />
-                          {t(`tasks.${option.label}`)}
+                          {t(option.label)}
                         </Space>
                       </Select.Option>
                     ))}
@@ -252,16 +252,16 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
                 </Form.Item>
               </Col>
               <Col span={12}>
-                <Form.Item name="due_date" label={t('tasks.dueDate')}>
-                  <DatePicker style={{ width: '100%' }} placeholder={t('tasks.dueDatePlaceholder')} />
+                <Form.Item name="due_date" label={t('dueDate')}>
+                  <DatePicker style={{ width: '100%' }} placeholder={t('dueDatePlaceholder')} />
                 </Form.Item>
               </Col>
             </Row>
 
-            <Form.Item name="tags" label={t('tasks.tags')}>
+            <Form.Item name="tags" label={t('tags')}>
               <Select
                 mode="tags"
-                placeholder={t('tasks.tagsPlaceholder')}
+                placeholder={t('tagsPlaceholder')}
                 tokenSeparators={[',']}
               />
             </Form.Item>
@@ -270,30 +270,30 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
 
       case 1:
         return (
-          <Card title={t('tasks.dataSource')} bordered={false}>
+          <Card title={t('dataSource')} bordered={false}>
             <Form.Item
               name="data_source_type"
-              label={t('tasks.dataSourceType')}
-              rules={[{ required: true, message: t('tasks.dataSourceTypeRequired') }]}
+              label={t('dataSourceType')}
+              rules={[{ required: true, message: t('dataSourceTypeRequired') }]}
             >
               <Radio.Group>
                 <Space direction="vertical">
                   <Radio value="file">
                     <Space>
                       <FileTextOutlined />
-                      {t('tasks.fileUpload')}
+                      {t('fileUpload')}
                     </Space>
                   </Radio>
                   <Radio value="api">
                     <Space>
                       <DatabaseOutlined />
-                      {t('tasks.apiEndpoint')}
+                      {t('apiEndpoint')}
                     </Space>
                   </Radio>
                   <Radio value="database">
                     <Space>
                       <DatabaseOutlined />
-                      {t('tasks.database')}
+                      {t('database')}
                     </Space>
                   </Radio>
                 </Space>
@@ -302,10 +302,10 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
 
             <Form.Item
               name="data_source_id"
-              label={t('tasks.selectDataSource')}
-              rules={[{ required: true, message: t('tasks.dataSourceRequired') }]}
+              label={t('selectDataSource')}
+              rules={[{ required: true, message: t('dataSourceRequired') }]}
             >
-              <Select placeholder={t('tasks.dataSourcePlaceholder')}>
+              <Select placeholder={t('dataSourcePlaceholder')}>
                 {mockDataSources.map(source => (
                   <Select.Option key={source.id} value={source.id}>
                     <Space direction="vertical" size={0}>
@@ -321,7 +321,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
 
             <Divider />
 
-            <Form.Item name="file_upload" label={t('tasks.uploadFile')}>
+            <Form.Item name="file_upload" label={t('uploadFile')}>
               <Dragger
                 name="file"
                 multiple={false}
@@ -331,8 +331,8 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
                 <p className="ant-upload-drag-icon">
                   <InboxOutlined />
                 </p>
-                <p className="ant-upload-text">{t('tasks.uploadText')}</p>
-                <p className="ant-upload-hint">{t('tasks.uploadHint')}</p>
+                <p className="ant-upload-text">{t('uploadText')}</p>
+                <p className="ant-upload-hint">{t('uploadHint')}</p>
               </Dragger>
             </Form.Item>
           </Card>
@@ -340,11 +340,11 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
 
       case 2:
         return (
-          <Card title={t('tasks.annotationConfig')} bordered={false}>
+          <Card title={t('annotationConfig')} bordered={false}>
             <Form.Item
               name="annotation_type"
-              label={t('tasks.annotationType')}
-              rules={[{ required: true, message: t('tasks.annotationTypeRequired') }]}
+              label={t('annotationType')}
+              rules={[{ required: true, message: t('annotationTypeRequired') }]}
             >
               <Radio.Group 
                 onChange={(e) => handleAnnotationTypeChange(e.target.value)}
@@ -354,9 +354,9 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
                   {annotationTypeOptions.map(option => (
                     <Radio key={option.value} value={option.value} style={{ width: '100%' }}>
                       <Space direction="vertical" size={0}>
-                        <span style={{ fontWeight: 500 }}>{t(`tasks.${option.label}`)}</span>
+                        <span style={{ fontWeight: 500 }}>{t(option.label)}</span>
                         <span style={{ fontSize: 12, color: '#666' }}>
-                          {t(`tasks.${option.description}`)}
+                          {t(option.description)}
                         </span>
                       </Space>
                     </Radio>
@@ -366,42 +366,42 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
             </Form.Item>
 
             {selectedAnnotationType === 'text_classification' && (
-              <Card size="small" title={t('tasks.classificationConfig')}>
-                <Form.Item name="categories" label={t('tasks.categories')}>
+              <Card size="small" title={t('classificationConfig')}>
+                <Form.Item name="categories" label={t('categories')}>
                   <Select
                     mode="tags"
-                    placeholder={t('tasks.categoriesPlaceholder')}
+                    placeholder={t('categoriesPlaceholder')}
                     tokenSeparators={[',']}
                   />
                 </Form.Item>
                 <Form.Item name="multi_label" valuePropName="checked">
-                  <Switch /> {t('tasks.multiLabel')}
+                  <Switch /> {t('multiLabel')}
                 </Form.Item>
               </Card>
             )}
 
             {selectedAnnotationType === 'ner' && (
-              <Card size="small" title={t('tasks.nerConfig')}>
-                <Form.Item name="entities" label={t('tasks.entityTypes')}>
+              <Card size="small" title={t('nerConfig')}>
+                <Form.Item name="entities" label={t('entityTypes')}>
                   <Select
                     mode="tags"
-                    placeholder={t('tasks.entityTypesPlaceholder')}
+                    placeholder={t('entityTypesPlaceholder')}
                     tokenSeparators={[',']}
                   />
                 </Form.Item>
                 <Form.Item name="nested_entities" valuePropName="checked">
-                  <Switch /> {t('tasks.nestedEntities')}
+                  <Switch /> {t('nestedEntities')}
                 </Form.Item>
               </Card>
             )}
 
             {selectedAnnotationType === 'sentiment' && (
-              <Card size="small" title={t('tasks.sentimentConfig')}>
-                <Form.Item name="sentiment_scale" label={t('tasks.sentimentScale')}>
+              <Card size="small" title={t('sentimentConfig')}>
+                <Form.Item name="sentiment_scale" label={t('sentimentScale')}>
                   <Radio.Group>
-                    <Radio value="binary">{t('tasks.binaryScale')}</Radio>
-                    <Radio value="ternary">{t('tasks.ternaryScale')}</Radio>
-                    <Radio value="five_point">{t('tasks.fivePointScale')}</Radio>
+                    <Radio value="binary">{t('binaryScale')}</Radio>
+                    <Radio value="ternary">{t('ternaryScale')}</Radio>
+                    <Radio value="five_point">{t('fivePointScale')}</Radio>
                   </Radio.Group>
                 </Form.Item>
               </Card>
@@ -411,13 +411,13 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
 
       case 3:
         return (
-          <Card title={t('tasks.assignmentConfig')} bordered={false}>
+          <Card title={t('assignmentConfig')} bordered={false}>
             <Form.Item
               name="assignee_id"
-              label={t('tasks.assignTo')}
-              rules={[{ required: true, message: t('tasks.assigneeRequired') }]}
+              label={t('assignTo')}
+              rules={[{ required: true, message: t('assigneeRequired') }]}
             >
-              <Select placeholder={t('tasks.assigneePlaceholder')}>
+              <Select placeholder={t('assigneePlaceholder')}>
                 {mockUsers.map(user => (
                   <Select.Option key={user.id} value={user.id}>
                     <Space>
@@ -437,15 +437,15 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
             <Divider />
 
             <Form.Item name="auto_assignment" valuePropName="checked">
-              <Switch /> {t('tasks.autoAssignment')}
+              <Switch /> {t('autoAssignment')}
             </Form.Item>
 
             <Form.Item name="notification_enabled" valuePropName="checked">
-              <Switch /> {t('tasks.notifyAssignee')}
+              <Switch /> {t('notifyAssignee')}
             </Form.Item>
 
             <Form.Item name="deadline_reminder" valuePropName="checked">
-              <Switch /> {t('tasks.deadlineReminder')}
+              <Switch /> {t('deadlineReminder')}
             </Form.Item>
           </Card>
         );
@@ -457,42 +457,42 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
 
   const steps = [
     {
-      title: t('tasks.basicInfo'),
+      title: t('basicInfo'),
       icon: <SettingOutlined />,
     },
     {
-      title: t('tasks.dataSource'),
+      title: t('dataSource'),
       icon: <DatabaseOutlined />,
     },
     {
-      title: t('tasks.annotationConfig'),
+      title: t('annotationConfig'),
       icon: <FileTextOutlined />,
     },
     {
-      title: t('tasks.assignment'),
+      title: t('assignment'),
       icon: <UserOutlined />,
     },
   ];
 
   return (
     <Modal
-      title={t('tasks.createNewTask')}
+      title={t('createNewTask')}
       open={open}
       onCancel={onCancel}
       width={800}
       destroyOnClose
       footer={[
         <Button key="cancel" onClick={onCancel}>
-          {t('common.cancel')}
+          {t('cancel')}
         </Button>,
         currentStep > 0 && (
           <Button key="prev" onClick={handlePrev}>
-            {t('tasks.previous')}
+            {t('previous')}
           </Button>
         ),
         currentStep < steps.length - 1 ? (
           <Button key="next" type="primary" onClick={handleNext}>
-            {t('tasks.next')}
+            {t('next')}
           </Button>
         ) : (
           <Button
@@ -501,7 +501,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
             loading={createTask.isPending}
             onClick={handleSubmit}
           >
-            {t('tasks.createTask')}
+            {t('createTask')}
           </Button>
         ),
       ]}

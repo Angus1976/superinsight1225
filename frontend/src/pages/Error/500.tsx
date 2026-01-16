@@ -1,10 +1,12 @@
 // 500 Server Error page
 import { Button, Result } from 'antd';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ROUTES } from '@/constants';
 
 const ServerErrorPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation('common');
 
   return (
     <div
@@ -18,13 +20,13 @@ const ServerErrorPage: React.FC = () => {
       <Result
         status="500"
         title="500"
-        subTitle="抱歉，服务器发生错误。"
+        subTitle={t('error.pages.serverError.subtitle')}
         extra={[
           <Button type="primary" key="home" onClick={() => navigate(ROUTES.HOME)}>
-            返回首页
+            {t('error.pages.serverError.backHome')}
           </Button>,
           <Button key="retry" onClick={() => window.location.reload()}>
-            刷新页面
+            {t('error.pages.serverError.refresh')}
           </Button>,
         ]}
       />

@@ -1,0 +1,17 @@
+{
+  "name": "Enforce Documentation-First Workflow",
+  "version": "1.0.0",
+  "description": "Blocks direct code modifications and reminds developers to update documentation first",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.py",
+      "frontend/src/**/*.tsx",
+      "frontend/src/**/*.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "⚠️ DOCUMENTATION-FIRST WORKFLOW REMINDER:\n\nBefore modifying code, ensure you have:\n\n1. ✅ Updated requirements.md with user stories and acceptance criteria\n2. ✅ Updated design.md with architecture decisions and diagrams\n3. ✅ Updated tasks.md with task breakdown and estimates\n4. ✅ Updated CHANGELOG.md with the change description\n5. ✅ Run alignment check: python scripts/check_doc_alignment.py .kiro/specs/{feature}\n\nHave you completed all documentation updates? If not, please update docs first before proceeding with code changes.\n\nSee .kiro/steering/doc-first-workflow.md for complete guidelines."
+  }
+}

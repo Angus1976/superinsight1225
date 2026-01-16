@@ -34,6 +34,7 @@ import {
   CloudServerOutlined,
 } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import type { ColumnsType } from 'antd/es/table';
 import {
   ssoApi,
@@ -61,6 +62,7 @@ const protocolColors: Record<SSOProtocol, string> = {
 };
 
 const SSOConfig: React.FC = () => {
+  const { t } = useTranslation(['security', 'common']);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingProvider, setEditingProvider] = useState<SSOProvider | null>(null);
   const [selectedProtocol, setSelectedProtocol] = useState<SSOProtocol>('oidc');
@@ -78,12 +80,12 @@ const SSOConfig: React.FC = () => {
   const createMutation = useMutation({
     mutationFn: (data: CreateSSOProviderRequest) => ssoApi.createProvider(data),
     onSuccess: () => {
-      message.success('SSO provider created successfully');
+      message.success(t('sso.createSuccess'));
       queryClient.invalidateQueries({ queryKey: ['ssoProviders'] });
       handleCloseModal();
     },
     onError: () => {
-      message.error('Failed to create SSO provider');
+      message.error(t('sso.createFailed'));
     },
   });
 
@@ -92,12 +94,12 @@ const SSOConfig: React.FC = () => {
     mutationFn: ({ name, data }: { name: string; data: Partial<CreateSSOProviderRequest> }) =>
       ssoApi.updateProvider(name, data),
     onSuccess: () => {
-      message.success('SSO provider updated successfully');
+      message.success(t('sso.updateSuccess'));
       queryClient.invalidateQueries({ queryKey: ['ssoProviders'] });
       handleCloseModal();
     },
     onError: () => {
-      message.error('Failed to update SSO provider');
+      message.error(t('sso.updateFailed'));
     },
   });
 
@@ -105,11 +107,11 @@ const SSOConfig: React.FC = () => {
   const deleteMutation = useMutation({
     mutationFn: (name: string) => ssoApi.deleteProvider(name),
     onSuccess: () => {
-      message.success('SSO provider deleted successfully');
+      message.success(t('sso.deleteSuccess'));
       queryClient.invalidateQueries({ queryKey: ['ssoProviders'] });
     },
     onError: () => {
-      message.error('Failed to delete SSO provider');
+      message.error(t('sso.deleteFailed'));
     },
   });
 
@@ -118,11 +120,11 @@ const SSOConfig: React.FC = () => {
     mutationFn: ({ name, enable }: { name: string; enable: boolean }) =>
       enable ? ssoApi.enableProvider(name) : ssoApi.disableProvider(name),
     onSuccess: () => {
-      message.success('Provider status updated');
+      message.success(t('sso.statusUpdated'));
       queryClient.invalidateQueries({ queryKey: ['ssoProviders'] });
     },
     onError: () => {
-      message.error('Failed to update provider status');
+      message.error(t('sso.statusUpdateFailed'));
     },
   });
 
@@ -132,13 +134,13 @@ const SSOConfig: React.FC = () => {
     onSuccess: (result) => {
       setTestResult(result);
       if (result.success) {
-        message.success('Provider test passed');
+        message.success(t('sso.testPassed'));
       } else {
-        message.error(`Provider test failed: ${result.error}`);
+        message.error(`${t('sso.testFailed')}: ${result.error}`);
       }
     },
     onError: () => {
-      message.error('Failed to test provider');
+      message.error(t('sso.testFailed'));
     },
   });
 
@@ -213,7 +215,7 @@ const SSOConfig: React.FC = () => {
 
   const columns: ColumnsType<SSOProvider> = [
     {
-      title: 'Provider Name',
+      title: t('sso.providerName'),
       dataIndex: 'name',
       key: 'name',
       render: (name) => (
@@ -224,15 +226,15 @@ const SSOConfig: React.FC = () => {
       ),
     },
     {
-      title: 'Protocol',
+      title: t('sso.protocol'),
       dataIndex: 'protocol',
       key: 'protocol',
       render: (protocol: SSOProtocol) => (
-        <Tag color={protocolColors[protocol]}>{protocolLabels[protocol]}</Tag>
+        <Tag color={protocolColors[protocol]}>{t(`sso.protocols.${protocol}`)}</Tag>
       ),
     },
     {
-      title: 'Status',
+      title: t('sso.status'),
       dataIndex: 'enabled',
       key: 'enabled',
       render: (enabled, record) => (
@@ -247,18 +249,18 @@ const SSOConfig: React.FC = () => {
       ),
     },
     {
-      title: 'Created',
+      title: t('common:createdAt'),
       dataIndex: 'created_at',
       key: 'created_at',
       render: (date) => new Date(date).toLocaleDateString(),
     },
     {
-      title: 'Actions',
+      title: t('common:actions'),
       key: 'actions',
       width: 180,
       render: (_, record) => (
         <Space>
-          <Tooltip title="Test Connection">
+          <Tooltip title={t('sso.testConnection')}>
             <Button
               type="link"
               size="small"
@@ -274,10 +276,10 @@ const SSOConfig: React.FC = () => {
             onClick={() => handleOpenModal(record)}
           />
           <Popconfirm
-            title="Delete this provider?"
+            title={t('sso.deleteConfirm')}
             onConfirm={() => deleteMutation.mutate(record.name)}
-            okText="Delete"
-            cancelText="Cancel"
+            okText={t('common:delete')}
+            cancelText={t('common:cancel')}
           >
             <Button type="link" size="small" danger icon={<DeleteOutlined />} />
           </Popconfirm>
@@ -291,16 +293,16 @@ const SSOConfig: React.FC = () => {
       case 'saml':
         return (
           <>
-            <Form.Item name="entity_id" label="Entity ID" rules={[{ required: true }]}>
+            <Form.Item name="entity_id" label={t('sso.form.entityId')} rules={[{ required: true }]}>
               <Input placeholder="https://your-app.com/saml/metadata" />
             </Form.Item>
-            <Form.Item name="idp_metadata_url" label="IdP Metadata URL">
+            <Form.Item name="idp_metadata_url" label={t('sso.form.idpMetadataUrl')}>
               <Input placeholder="https://idp.example.com/metadata" />
             </Form.Item>
-            <Form.Item name="idp_sso_url" label="IdP SSO URL" rules={[{ required: true }]}>
+            <Form.Item name="idp_sso_url" label={t('sso.form.idpSsoUrl')} rules={[{ required: true }]}>
               <Input placeholder="https://idp.example.com/sso" />
             </Form.Item>
-            <Form.Item name="idp_certificate" label="IdP Certificate">
+            <Form.Item name="idp_certificate" label={t('sso.form.idpCertificate')}>
               <TextArea rows={4} placeholder="-----BEGIN CERTIFICATE-----..." />
             </Form.Item>
           </>
@@ -309,22 +311,22 @@ const SSOConfig: React.FC = () => {
       case 'oidc':
         return (
           <>
-            <Form.Item name="client_id" label="Client ID" rules={[{ required: true }]}>
+            <Form.Item name="client_id" label={t('sso.form.clientId')} rules={[{ required: true }]}>
               <Input placeholder="your-client-id" />
             </Form.Item>
-            <Form.Item name="client_secret" label="Client Secret" rules={[{ required: true }]}>
+            <Form.Item name="client_secret" label={t('sso.form.clientSecret')} rules={[{ required: true }]}>
               <Input.Password placeholder="your-client-secret" />
             </Form.Item>
-            <Form.Item name="authorization_url" label="Authorization URL" rules={[{ required: true }]}>
+            <Form.Item name="authorization_url" label={t('sso.form.authorizationUrl')} rules={[{ required: true }]}>
               <Input placeholder="https://provider.com/oauth/authorize" />
             </Form.Item>
-            <Form.Item name="token_url" label="Token URL" rules={[{ required: true }]}>
+            <Form.Item name="token_url" label={t('sso.form.tokenUrl')} rules={[{ required: true }]}>
               <Input placeholder="https://provider.com/oauth/token" />
             </Form.Item>
-            <Form.Item name="userinfo_url" label="User Info URL">
+            <Form.Item name="userinfo_url" label={t('sso.form.userinfoUrl')}>
               <Input placeholder="https://provider.com/oauth/userinfo" />
             </Form.Item>
-            <Form.Item name="scopes" label="Scopes">
+            <Form.Item name="scopes" label={t('sso.form.scopes')}>
               <Input placeholder="openid, profile, email" />
             </Form.Item>
           </>
@@ -332,19 +334,19 @@ const SSOConfig: React.FC = () => {
       case 'ldap':
         return (
           <>
-            <Form.Item name="server_url" label="Server URL" rules={[{ required: true }]}>
+            <Form.Item name="server_url" label={t('sso.form.serverUrl')} rules={[{ required: true }]}>
               <Input placeholder="ldap://ldap.example.com:389" />
             </Form.Item>
-            <Form.Item name="bind_dn" label="Bind DN" rules={[{ required: true }]}>
+            <Form.Item name="bind_dn" label={t('sso.form.bindDn')} rules={[{ required: true }]}>
               <Input placeholder="cn=admin,dc=example,dc=com" />
             </Form.Item>
-            <Form.Item name="bind_password" label="Bind Password" rules={[{ required: true }]}>
+            <Form.Item name="bind_password" label={t('sso.form.bindPassword')} rules={[{ required: true }]}>
               <Input.Password placeholder="password" />
             </Form.Item>
-            <Form.Item name="base_dn" label="Base DN" rules={[{ required: true }]}>
+            <Form.Item name="base_dn" label={t('sso.form.baseDn')} rules={[{ required: true }]}>
               <Input placeholder="dc=example,dc=com" />
             </Form.Item>
-            <Form.Item name="user_search_filter" label="User Search Filter">
+            <Form.Item name="user_search_filter" label={t('sso.form.userSearchFilter')}>
               <Input placeholder="(uid={username})" />
             </Form.Item>
           </>
@@ -357,12 +359,12 @@ const SSOConfig: React.FC = () => {
   return (
     <div>
       <Title level={3} style={{ marginBottom: 24 }}>
-        <SafetyCertificateOutlined /> Single Sign-On Configuration
+        <SafetyCertificateOutlined /> {t('sso.title')}
       </Title>
 
       <Alert
-        message="SSO Integration"
-        description="Configure Single Sign-On providers to allow users to authenticate using their existing identity providers. Supports SAML 2.0, OAuth 2.0, OpenID Connect, and LDAP/Active Directory."
+        message={t('sso.title')}
+        description={t('sso.description')}
         type="info"
         showIcon
         style={{ marginBottom: 24 }}
@@ -371,7 +373,7 @@ const SSOConfig: React.FC = () => {
       <Card
         extra={
           <Button type="primary" icon={<PlusOutlined />} onClick={() => handleOpenModal()}>
-            Add Provider
+            {t('sso.addProvider')}
           </Button>
         }
       >
@@ -382,13 +384,13 @@ const SSOConfig: React.FC = () => {
           loading={isLoading}
           pagination={{
             pageSize: 10,
-            showTotal: (total) => `Total ${total} providers`,
+            showTotal: (total) => t('common.totalProviders', { total }),
           }}
         />
       </Card>
 
       <Modal
-        title={editingProvider ? 'Edit SSO Provider' : 'Add SSO Provider'}
+        title={editingProvider ? t('sso.editProvider') : t('sso.addProvider')}
         open={modalOpen}
         onOk={handleSubmit}
         onCancel={handleCloseModal}
@@ -398,27 +400,27 @@ const SSOConfig: React.FC = () => {
         <Form form={form} layout="vertical">
           <Form.Item
             name="name"
-            label="Provider Name"
-            rules={[{ required: true, message: 'Please enter provider name' }]}
+            label={t('sso.providerName')}
+            rules={[{ required: true, message: t('common:pleaseInput', { field: t('sso.providerName') }) }]}
           >
-            <Input placeholder="e.g., corporate-okta" disabled={!!editingProvider} />
+            <Input placeholder={t('sso.form.namePlaceholder')} disabled={!!editingProvider} />
           </Form.Item>
 
-          <Form.Item name="protocol" label="Protocol" initialValue="oidc">
+          <Form.Item name="protocol" label={t('sso.protocol')} initialValue="oidc">
             <Select
               value={selectedProtocol}
               onChange={setSelectedProtocol}
               disabled={!!editingProvider}
               options={[
-                { label: 'OpenID Connect (Recommended)', value: 'oidc' },
-                { label: 'OAuth 2.0', value: 'oauth2' },
-                { label: 'SAML 2.0', value: 'saml' },
-                { label: 'LDAP/Active Directory', value: 'ldap' },
+                { label: `${t('sso.protocols.oidc')} (Recommended)`, value: 'oidc' },
+                { label: t('sso.protocols.oauth2'), value: 'oauth2' },
+                { label: t('sso.protocols.saml'), value: 'saml' },
+                { label: t('sso.protocols.ldap'), value: 'ldap' },
               ]}
             />
           </Form.Item>
 
-          <Form.Item name="enabled" label="Enabled" valuePropName="checked" initialValue={true}>
+          <Form.Item name="enabled" label={t('permissions.enabled')} valuePropName="checked" initialValue={true}>
             <Switch />
           </Form.Item>
 
@@ -426,7 +428,7 @@ const SSOConfig: React.FC = () => {
 
           {testResult && (
             <Alert
-              message={testResult.success ? 'Test Passed' : 'Test Failed'}
+              message={testResult.success ? t('sso.testPassed') : t('sso.testFailed')}
               description={testResult.message}
               type={testResult.success ? 'success' : 'error'}
               showIcon

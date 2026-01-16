@@ -31,6 +31,7 @@ const ResetPasswordPage = lazyWithPreload(() => import('@/pages/ResetPassword'))
 const DashboardPage = lazyWithPreload(() => import('@/pages/Dashboard'));
 const TasksPage = lazyWithPreload(() => import('@/pages/Tasks'));
 const TaskDetailPage = lazyWithPreload(() => import('@/pages/Tasks/TaskDetail'));
+const TaskEditPage = lazyWithPreload(() => import('@/pages/Tasks/TaskEdit'));
 const TaskAnnotatePage = lazyWithPreload(() => import('@/pages/Tasks/TaskAnnotate'));
 const BillingPage = lazyWithPreload(() => import('@/pages/Billing'));
 const SettingsPage = lazyWithPreload(() => import('@/pages/Settings'));
@@ -45,6 +46,15 @@ const AugmentationConfigPage = lazyWithPreload(() => import('@/pages/Augmentatio
 const QualityPage = lazyWithPreload(() => import('@/pages/Quality'));
 const QualityRulesPage = lazyWithPreload(() => import('@/pages/Quality/Rules'));
 const QualityReportsPage = lazyWithPreload(() => import('@/pages/Quality/Reports'));
+const QualityImprovementTaskListPage = lazyWithPreload(() => import('@/pages/Quality/ImprovementTaskList'));
+const QualityImprovementTaskDetailPage = lazyWithPreload(() => import('@/pages/Quality/ImprovementTaskDetail'));
+
+// License pages
+const LicensePage = lazyWithPreload(() => import('@/pages/License'));
+const LicenseActivatePage = lazyWithPreload(() => import('@/pages/License/ActivationWizard'));
+const LicenseUsagePage = lazyWithPreload(() => import('@/pages/License/UsageMonitor'));
+const LicenseReportPage = lazyWithPreload(() => import('@/pages/License/LicenseReport'));
+const LicenseAlertsPage = lazyWithPreload(() => import('@/pages/License/AlertConfig'));
 
 // Security pages
 const SecurityPage = lazyWithPreload(() => import('@/pages/Security'));
@@ -182,6 +192,10 @@ export const routes: RouteObject[] = [
         element: withSuspense(TaskDetailPage, 'page'),
       },
       {
+        path: 'tasks/:id/edit',
+        element: withSuspense(TaskEditPage, 'form'),
+      },
+      {
         path: 'tasks/:id/annotate',
         element: withSuspense(TaskAnnotatePage, 'page'),
       },
@@ -298,7 +312,35 @@ export const routes: RouteObject[] = [
             path: 'reports',
             element: withSuspense(QualityReportsPage, 'dashboard'),
           },
+          {
+            path: 'workflow/tasks',
+            element: withSuspense(QualityImprovementTaskListPage, 'table'),
+          },
+          {
+            path: 'workflow/tasks/:taskId',
+            element: withSuspense(QualityImprovementTaskDetailPage, 'page'),
+          },
         ],
+      },
+      {
+        path: 'license',
+        element: withSuspense(LicensePage, 'dashboard'),
+      },
+      {
+        path: 'license/activate',
+        element: withSuspense(LicenseActivatePage, 'form'),
+      },
+      {
+        path: 'license/usage',
+        element: withSuspense(LicenseUsagePage, 'dashboard'),
+      },
+      {
+        path: 'license/report',
+        element: withSuspense(LicenseReportPage, 'table'),
+      },
+      {
+        path: 'license/alerts',
+        element: withSuspense(LicenseAlertsPage, 'form'),
       },
       {
         path: 'security',

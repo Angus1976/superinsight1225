@@ -1,0 +1,84 @@
+{
+  "title": "众包管理",
+  "stats": {
+    "availableTasks": "可领取任务",
+    "activeAnnotators": "活跃标注员",
+    "monthlyEarnings": "本月收益",
+    "connectedPlatforms": "已连接平台"
+  },
+  "tabs": {
+    "tasks": "可领取任务",
+    "earnings": "收益统计",
+    "annotators": "标注员管理",
+    "platforms": "第三方平台"
+  },
+  "tasks": {
+    "projectName": "项目名称",
+    "description": "描述",
+    "price": "单价",
+    "sensitivityLevel": "敏感级别",
+    "deadline": "截止日期",
+    "claimed": "已领取",
+    "actions": "操作",
+    "claim": "领取"
+  },
+  "sensitivity": {
+    "public": "公开",
+    "internal": "内部",
+    "sensitive": "敏感"
+  },
+  "earnings": {
+    "totalEarnings": "累计收益",
+    "totalTasks": "累计任务",
+    "avgPrice": "平均单价",
+    "period": "周期",
+    "baseAmount": "基础金额",
+    "qualityBonus": "质量奖励",
+    "starBonus": "星级奖励",
+    "totalAmount": "总金额",
+    "taskCount": "任务数"
+  },
+  "annotators": {
+    "annotator": "标注员",
+    "status": "状态",
+    "starRating": "星级",
+    "accuracy": "准确率",
+    "completedTasks": "完成任务",
+    "totalEarnings": "总收益",
+    "abilityTags": "能力标签"
+  },
+  "annotatorStatus": {
+    "active": "活跃",
+    "pendingVerification": "待认证",
+    "pendingTest": "待测试",
+    "suspended": "已暂停"
+  },
+  "platforms": {
+    "platformName": "平台名称",
+    "status": "状态",
+    "pendingTasks": "待处理任务",
+    "completedTasks": "已完成任务",
+    "actions": "操作",
+    "configure": "配置",
+    "connect": "连接",
+    "disconnect": "断开",
+    "connected": "已连接",
+    "disconnected": "未连接",
+    "addPlatform": "添加平台"
+  },
+  "modal": {
+    "claimTask": "领取任务",
+    "confirmClaim": "确认领取",
+    "addPlatform": "添加第三方平台",
+    "platformName": "平台名称",
+    "platformNamePlaceholder": "输入平台名称",
+    "platformType": "平台类型",
+    "platformTypePlaceholder": "选择平台类型",
+    "apiKey": "API Key",
+    "apiKeyPlaceholder": "输入 API Key",
+    "apiEndpoint": "API Endpoint",
+    "apiEndpointPlaceholder": "输入 API Endpoint (自定义平台)",
+    "claimSuccess": "已领取任务: {{name}}",
+    "addPlatformSuccess": "已添加平台: {{name}}"
+  }
+}

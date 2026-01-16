@@ -37,6 +37,7 @@ import {
   EyeOutlined,
 } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import type { ColumnsType } from 'antd/es/table';
 import {
   securityMonitorApi,
@@ -58,6 +59,7 @@ const severityColors: Record<SecuritySeverity, string> = {
 };
 
 const SecurityDashboard: React.FC = () => {
+  const { t } = useTranslation(['security', 'common']);
   const [resolveModalOpen, setResolveModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<SecurityEvent | null>(null);
   const [form] = Form.useForm();
@@ -93,14 +95,14 @@ const SecurityDashboard: React.FC = () => {
     mutationFn: ({ eventId, data }: { eventId: string; data: { resolution_notes: string; resolved_by: string } }) =>
       securityMonitorApi.resolveEvent(eventId, data),
     onSuccess: () => {
-      message.success('Event resolved successfully');
+      message.success(t('dashboard.eventResolved'));
       queryClient.invalidateQueries({ queryKey: ['securityEvents'] });
       queryClient.invalidateQueries({ queryKey: ['securitySummary'] });
       setResolveModalOpen(false);
       form.resetFields();
     },
     onError: () => {
-      message.error('Failed to resolve event');
+      message.error(t('dashboard.resolveFailed'));
     },
   });
 
@@ -108,11 +110,11 @@ const SecurityDashboard: React.FC = () => {
   const forceLogoutMutation = useMutation({
     mutationFn: (userId: string) => sessionApi.forceLogout(userId, 'admin'),
     onSuccess: () => {
-      message.success('User logged out successfully');
+      message.success(t('sessions.logoutSuccess', { count: 1 }));
       queryClient.invalidateQueries({ queryKey: ['activeSessions'] });
     },
     onError: () => {
-      message.error('Failed to logout user');
+      message.error(t('sessions.logoutFailed'));
     },
   });
 
@@ -240,21 +242,21 @@ const SecurityDashboard: React.FC = () => {
   return (
     <div>
       <Title level={3} style={{ marginBottom: 24 }}>
-        <SecurityScanOutlined /> Security Dashboard
+        <SecurityScanOutlined /> {t('dashboard.title')}
       </Title>
 
       {/* Alert Banner */}
       {summary && summary.critical_events_24h > 0 && (
         <Alert
-          message="Critical Security Alert"
-          description={`There are ${summary.critical_events_24h} critical security events in the last 24 hours that require immediate attention.`}
+          message={t('dashboard.criticalAlert')}
+          description={t('dashboard.criticalAlertDesc', { count: summary.critical_events_24h })}
           type="error"
           showIcon
           icon={<ExclamationCircleOutlined />}
           style={{ marginBottom: 24 }}
           action={
             <Button size="small" danger>
-              View Events
+              {t('dashboard.viewEvents')}
             </Button>
           }
         />
@@ -265,7 +267,7 @@ const SecurityDashboard: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Risk Score"
+              title={t('dashboard.stats.riskScore')}
               value={summary?.risk_score || 0}
               suffix="/ 100"
               valueStyle={{ color: getRiskLevelColor(summary?.risk_level || 'low') }}
@@ -282,7 +284,7 @@ const SecurityDashboard: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Open Events"
+              title={t('dashboard.stats.openEvents')}
               value={summary?.open_events || 0}
               valueStyle={{ color: summary?.open_events ? '#faad14' : '#52c41a' }}
               prefix={<WarningOutlined />}
@@ -292,7 +294,7 @@ const SecurityDashboard: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Critical (24h)"
+              title={t('dashboard.stats.critical24h')}
               value={summary?.critical_events_24h || 0}
               valueStyle={{ color: summary?.critical_events_24h ? '#ff4d4f' : '#52c41a' }}
               prefix={<ExclamationCircleOutlined />}
@@ -302,7 +304,7 @@ const SecurityDashboard: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Events (7 days)"
+              title={t('dashboard.stats.events7days')}
               value={summary?.events_last_7_days || 0}
               prefix={<ClockCircleOutlined />}
             />
@@ -314,13 +316,13 @@ const SecurityDashboard: React.FC = () => {
         {/* Security Events */}
         <Col xs={24} lg={14}>
           <Card
-            title="Open Security Events"
+            title={t('dashboard.openSecurityEvents')}
             extra={
               <Button
                 icon={<ReloadOutlined />}
                 onClick={() => queryClient.invalidateQueries({ queryKey: ['securityEvents'] })}
               >
-                Refresh
+                {t('common:refresh')}
               </Button>
             }
           >
@@ -331,14 +333,14 @@ const SecurityDashboard: React.FC = () => {
               loading={eventsLoading}
               pagination={false}
               size="small"
-              locale={{ emptyText: 'No open security events' }}
+              locale={{ emptyText: t('dashboard.noOpenEvents') }}
             />
           </Card>
         </Col>
 
         {/* Recommendations */}
         <Col xs={24} lg={10}>
-          <Card title="Security Recommendations">
+          <Card title={t('dashboard.securityRecommendations')}>
             {posture?.recommendations && posture.recommendations.length > 0 ? (
               <Timeline
                 items={posture.recommendations.map((rec, index) => ({
@@ -349,7 +351,7 @@ const SecurityDashboard: React.FC = () => {
             ) : (
               <div style={{ textAlign: 'center', padding: 20, color: '#999' }}>
                 <CheckCircleOutlined style={{ fontSize: 32, marginBottom: 8 }} />
-                <div>Security posture is good</div>
+                <div>{t('dashboard.securityPostureGood')}</div>
               </div>
             )}
           </Card>
@@ -357,7 +359,7 @@ const SecurityDashboard: React.FC = () => {
       </Row>
 
       {/* Active Sessions */}
-      <Card title="Active Sessions" style={{ marginTop: 16 }}>
+      <Card title={t('sessions.activeSessions')} style={{ marginTop: 16 }}>
         <Table
           columns={sessionColumns}
           dataSource={sessionsResponse?.sessions || []}
@@ -369,7 +371,7 @@ const SecurityDashboard: React.FC = () => {
 
       {/* Resolve Event Modal */}
       <Modal
-        title="Resolve Security Event"
+        title={t('dashboard.resolveEvent')}
         open={resolveModalOpen}
         onOk={handleSubmitResolve}
         onCancel={() => {
@@ -397,12 +399,12 @@ const SecurityDashboard: React.FC = () => {
         <Form form={form} layout="vertical">
           <Form.Item
             name="resolution_notes"
-            label="Resolution Notes"
-            rules={[{ required: true, message: 'Please enter resolution notes' }]}
+            label={t('dashboard.resolutionNotes')}
+            rules={[{ required: true, message: t('common:pleaseInput', { field: t('dashboard.resolutionNotes') }) }]}
           >
             <TextArea
               rows={4}
-              placeholder="Describe how this security event was resolved..."
+              placeholder={t('dashboard.resolutionPlaceholder')}
             />
           </Form.Item>
         </Form>

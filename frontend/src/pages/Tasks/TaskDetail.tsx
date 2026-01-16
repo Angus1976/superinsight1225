@@ -358,10 +358,20 @@ const TaskDetailPage: React.FC = () => {
             <h2 style={{ marginBottom: 8 }}>{currentTask.name}</h2>
             <Space>
               <Tag color={statusColorMap[currentTask.status]}>
-                {t(`tasks.status${currentTask.status.charAt(0).toUpperCase() + currentTask.status.slice(1).replace('_', '')}`)}
+                {t({
+                  pending: 'statusPending',
+                  in_progress: 'statusInProgress',
+                  completed: 'statusCompleted',
+                  cancelled: 'statusCancelled',
+                }[currentTask.status])}
               </Tag>
               <Tag color={priorityColorMap[currentTask.priority]}>
-                {t(`tasks.priority${currentTask.priority.charAt(0).toUpperCase() + currentTask.priority.slice(1)}`)}
+                {t({
+                  low: 'priorityLow',
+                  medium: 'priorityMedium',
+                  high: 'priorityHigh',
+                  urgent: 'priorityUrgent',
+                }[currentTask.priority])}
               </Tag>
               {currentTask.tags?.map((tag) => (
                 <Tag key={tag}>{tag}</Tag>

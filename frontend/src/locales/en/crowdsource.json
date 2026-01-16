@@ -1,0 +1,84 @@
+{
+  "title": "Crowdsource Management",
+  "stats": {
+    "availableTasks": "Available Tasks",
+    "activeAnnotators": "Active Annotators",
+    "monthlyEarnings": "Monthly Earnings",
+    "connectedPlatforms": "Connected Platforms"
+  },
+  "tabs": {
+    "tasks": "Available Tasks",
+    "earnings": "Earnings Statistics",
+    "annotators": "Annotator Management",
+    "platforms": "Third-party Platforms"
+  },
+  "tasks": {
+    "projectName": "Project Name",
+    "description": "Description",
+    "price": "Price",
+    "sensitivityLevel": "Sensitivity Level",
+    "deadline": "Deadline",
+    "claimed": "Claimed",
+    "actions": "Actions",
+    "claim": "Claim"
+  },
+  "sensitivity": {
+    "public": "Public",
+    "internal": "Internal",
+    "sensitive": "Sensitive"
+  },
+  "earnings": {
+    "totalEarnings": "Total Earnings",
+    "totalTasks": "Total Tasks",
+    "avgPrice": "Average Price",
+    "period": "Period",
+    "baseAmount": "Base Amount",
+    "qualityBonus": "Quality Bonus",
+    "starBonus": "Star Bonus",
+    "totalAmount": "Total Amount",
+    "taskCount": "Task Count"
+  },
+  "annotators": {
+    "annotator": "Annotator",
+    "status": "Status",
+    "starRating": "Star Rating",
+    "accuracy": "Accuracy",
+    "completedTasks": "Completed Tasks",
+    "totalEarnings": "Total Earnings",
+    "abilityTags": "Ability Tags"
+  },
+  "annotatorStatus": {
+    "active": "Active",
+    "pendingVerification": "Pending Verification",
+    "pendingTest": "Pending Test",
+    "suspended": "Suspended"
+  },
+  "platforms": {
+    "platformName": "Platform Name",
+    "status": "Status",
+    "pendingTasks": "Pending Tasks",
+    "completedTasks": "Completed Tasks",
+    "actions": "Actions",
+    "configure": "Configure",
+    "connect": "Connect",
+    "disconnect": "Disconnect",
+    "connected": "Connected",
+    "disconnected": "Disconnected",
+    "addPlatform": "Add Platform"
+  },
+  "modal": {
+    "claimTask": "Claim Task",
+    "confirmClaim": "Confirm Claim",
+    "addPlatform": "Add Third-party Platform",
+    "platformName": "Platform Name",
+    "platformNamePlaceholder": "Enter platform name",
+    "platformType": "Platform Type",
+    "platformTypePlaceholder": "Select platform type",
+    "apiKey": "API Key",
+    "apiKeyPlaceholder": "Enter API Key",
+    "apiEndpoint": "API Endpoint",
+    "apiEndpointPlaceholder": "Enter API Endpoint (for custom platform)",
+    "claimSuccess": "Claimed task: {{name}}",
+    "addPlatformSuccess": "Added platform: {{name}}"
+  }
+}

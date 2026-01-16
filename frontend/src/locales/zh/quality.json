@@ -1,9 +1,121 @@
 {
   "title": "质量管理",
+  "dashboard": {
+    "title": "质量仪表板",
+    "averageScore": "平均质量分",
+    "passRate": "通过率",
+    "pendingIssues": "待处理问题",
+    "activeAlerts": "活跃预警",
+    "qualityTrend": "质量趋势",
+    "annotatorRanking": "标注员排名",
+    "viewAll": "查看全部",
+    "thisWeek": "本周",
+    "thisMonth": "本月",
+    "refresh": "刷新",
+    "exportReport": "导出报告",
+    "dataRefreshed": "数据已刷新",
+    "overview": "概览",
+    "ruleConfig": "规则配置",
+    "alertList": "预警列表",
+    "reports": "报告",
+    "projectReport": "项目质量报告",
+    "annotatorRankingReport": "标注员排名报告",
+    "trendReport": "质量趋势报告",
+    "generate": "生成",
+    "selectReportType": "选择报告类型和时间范围，生成质量分析报告"
+  },
+  "improvementTask": {
+    "title": "改进任务列表",
+    "loadError": "加载任务列表失败",
+    "loadDetailError": "加载任务详情失败",
+    "status": {
+      "pending": "待处理",
+      "inProgress": "进行中",
+      "submitted": "待审核",
+      "approved": "已通过",
+      "rejected": "已拒绝"
+    },
+    "columns": {
+      "taskId": "任务ID",
+      "priority": "优先级",
+      "issueCount": "问题数",
+      "assignee": "负责人",
+      "status": "状态",
+      "createdAt": "创建时间",
+      "submittedAt": "提交时间",
+      "actions": "操作"
+    },
+    "unassigned": "未分配",
+    "viewDetail": "查看详情",
+    "stats": {
+      "total": "总任务数",
+      "pending": "待处理",
+      "submitted": "待审核",
+      "completionRate": "完成率"
+    },
+    "searchPlaceholder": "搜索任务",
+    "filters": {
+      "status": "状态筛选",
+      "priority": "优先级"
+    },
+    "priority": {
+      "high": "高优先级",
+      "medium": "中优先级",
+      "low": "低优先级",
+      "highShort": "高",
+      "mediumShort": "中",
+      "lowShort": "低"
+    },
+    "total": "共 {{total}} 条"
+  },
+  "improvementTaskDetail": {
+    "backToList": "返回列表",
+    "taskDetail": "任务详情",
+    "taskId": "任务ID",
+    "annotationId": "标注ID",
+    "assignee": "负责人",
+    "reviewer": "审核人",
+    "createdAt": "创建时间",
+    "submittedAt": "提交时间",
+    "reviewedAt": "审核时间",
+    "reviewComments": "审核意见",
+    "qualityIssues": "质量问题",
+    "field": "字段",
+    "improvedData": "改进数据",
+    "edit": "编辑",
+    "cancelEdit": "取消编辑",
+    "improvedDataLabel": "改进后的数据 (JSON 格式)",
+    "improvedDataPlaceholder": "{\"field\": \"value\"}",
+    "submitImprovement": "提交改进",
+    "cancel": "取消",
+    "noImprovedData": "暂无改进数据",
+    "pendingReview": "此任务待审核，请审核改进内容",
+    "approve": "批准",
+    "reject": "拒绝",
+    "operationHistory": "操作历史",
+    "noHistory": "暂无操作记录",
+    "reviewImprovement": "审核改进",
+    "reviewCommentsLabel": "审核意见",
+    "reviewCommentsPlaceholder": "请输入审核意见（可选）",
+    "taskNotExist": "任务不存在",
+    "improvementSubmitted": "改进已提交",
+    "jsonFormatError": "JSON 格式错误",
+    "submitFailed": "提交失败",
+    "approved": "已批准",
+    "rejected": "已拒绝",
+    "reviewFailed": "审核失败",
+    "inputImprovedData": "请输入改进数据"
+  },
   "rules": {
     "title": "质量规则",
+    "management": "质量规则管理",
+    "config": "质量规则配置",
     "create": "创建规则",
+    "createFromTemplate": "从模板创建",
+    "addRule": "添加规则",
+    "newRule": "新建规则",
     "edit": "编辑规则",
+    "editRule": "编辑规则",
     "delete": "删除规则",
     "run": "运行规则",
     "runAll": "运行所有规则",
@@ -22,23 +134,56 @@
     "rollback": "回滚",
     "test": "测试规则",
     "validate": "验证",
-    "config": "配置",
     "parameters": "参数",
     "threshold": "阈值",
+    "qualityThreshold": "质量阈值",
     "pattern": "模式",
     "regex": "正则表达式",
     "customLogic": "自定义逻辑",
+    "customScript": "自定义脚本",
+    "inputPythonScript": "输入 Python 脚本",
+    "priority": "优先级",
+    "executionCount": "执行次数",
+    "lastExecuted": "最后执行",
+    "notExecuted": "未执行",
+    "executeRule": "立即执行",
+    "executeInDev": "规则执行功能开发中",
+    "copy": "复制",
+    "copyName": "{{name}} (副本)",
+    "versionHistory": "版本历史",
+    "confirmDelete": "确定删除此规则？",
+    "confirmDeleteContent": "确定要删除规则 \"{{name}}\" 吗？",
+    "enabledStatus": "启用状态",
+    "inputRuleName": "请输入规则名称",
+    "inputRuleDesc": "请输入规则描述",
+    "selectRuleType": "请选择规则类型",
+    "selectPriority": "请选择优先级",
+    "inputThreshold": "请输入质量阈值",
+    "thresholdRange": "0.0 - 1.0",
     "types": {
       "format": "格式",
       "content": "内容",
       "consistency": "一致性",
-      "custom": "自定义"
+      "custom": "自定义",
+      "builtin": "内置规则",
+      "semantic": "语义质量",
+      "syntactic": "语法质量",
+      "completeness": "完整性",
+      "accuracy": "准确性"
     },
     "severities": {
       "warning": "警告",
-      "error": "错误"
+      "error": "错误",
+      "critical": "严重",
+      "high": "高",
+      "medium": "中",
+      "low": "低"
     },
     "templates": {
+      "title": "规则模板",
+      "selectHint": "选择模板快速创建规则",
+      "useTemplate": "使用此模板",
+      "noTemplates": "暂无可用模板",
       "labelConsistency": "标签一致性检查",
       "textLength": "文本长度验证",
       "emptyLabel": "空标签检测",
@@ -104,7 +249,233 @@
     "metrics": "质量指标",
     "period": "时间段",
     "export": "导出报表",
-    "schedule": "定时报表"
+    "schedule": "定时报表",
+    "historyReports": "历史报告",
+    "columns": {
+      "name": "报告名称",
+      "type": "类型",
+      "overallScore": "总体评分",
+      "samples": "样本统计",
+      "createdAt": "创建时间",
+      "action": "操作"
+    },
+    "types": {
+      "all": "全部",
+      "daily": "日报",
+      "weekly": "周报",
+      "monthly": "月报",
+      "custom": "自定义"
+    },
+    "stats": {
+      "total": "总数",
+      "passed": "通过",
+      "failed": "失败",
+      "overallScore": "总体质量评分",
+      "totalSamples": "总样本数",
+      "passedSamples": "通过样本",
+      "failedSamples": "失败样本"
+    },
+    "actions": {
+      "view": "查看",
+      "download": "下载",
+      "refresh": "刷新",
+      "exportReport": "导出报告"
+    },
+    "charts": {
+      "qualityTrend": "质量趋势",
+      "scoreDistribution": "评分分布",
+      "ruleViolations": "规则违规统计",
+      "metricsDetail": "质量指标详情"
+    },
+    "metricsLabels": {
+      "semanticQuality": "语义质量",
+      "syntacticQuality": "语法质量",
+      "completeness": "完整性",
+      "consistency": "一致性"
+    },
+    "dateRange": "时间范围",
+    "reportType": "报告类型",
+    "pagination": "第 {{start}}-{{end}} 条，共 {{total}} 条",
+    "projectReport": {
+      "title": "项目质量报告",
+      "scheduleReport": "定时报告",
+      "exportPdf": "导出 PDF",
+      "exportExcel": "导出 Excel",
+      "exportHtml": "导出 HTML",
+      "exportJson": "导出 JSON",
+      "selectDateRange": "选择日期范围生成报告",
+      "totalAnnotations": "总标注数",
+      "avgAccuracy": "平均准确率",
+      "avgCompleteness": "平均完整性",
+      "avgTimeliness": "平均时效性",
+      "issueDistribution": "问题分布",
+      "qualityTrend": "质量趋势",
+      "trendChart": "趋势图表 (需要集成图表库)"
+    },
+    "annotatorRanking": {
+      "title": "标注员质量排名",
+      "columns": {
+        "rank": "排名",
+        "annotator": "标注员",
+        "annotations": "标注数",
+        "avgScore": "平均分",
+        "accuracy": "准确率",
+        "passRate": "通过率"
+      },
+      "period": {
+        "week": "本周",
+        "month": "本月",
+        "quarter": "本季度",
+        "year": "本年"
+      },
+      "selectPeriod": "选择时间范围生成排名"
+    },
+    "trendAnalysis": {
+      "title": "趋势分析",
+      "chart": "趋势分析图表 (需要集成图表库)"
+    },
+    "scheduleModal": {
+      "title": "创建定时报告",
+      "reportType": "报告类型",
+      "selectReportType": "选择报告类型",
+      "projectReport": "项目质量报告",
+      "rankingReport": "标注员排名报告",
+      "trendReport": "趋势分析报告",
+      "schedule": "执行周期",
+      "selectSchedule": "选择执行周期",
+      "weeklyMonday": "每周一 9:00",
+      "monthlyFirst": "每月1日 9:00",
+      "daily": "每天 9:00",
+      "recipients": "接收人邮箱",
+      "recipientsPlaceholder": "多个邮箱用逗号分隔"
+    }
+  },
+  "alerts": {
+    "title": "质量预警",
+    "loadError": "加载预警列表失败",
+    "criticalAlert": "有 {{count}} 个严重预警需要立即处理",
+    "view": "查看",
+    "stats": {
+      "pending": "待处理预警",
+      "critical": "严重预警",
+      "acknowledged": "已确认",
+      "resolved": "已解决"
+    },
+    "columns": {
+      "severity": "严重程度",
+      "triggeredDimensions": "触发维度",
+      "scores": "分数",
+      "escalationLevel": "升级级别",
+      "status": "状态",
+      "createdAt": "创建时间",
+      "actions": "操作"
+    },
+    "severity": {
+      "critical": "严重",
+      "high": "高",
+      "medium": "中",
+      "low": "低"
+    },
+    "status": {
+      "open": "待处理",
+      "acknowledged": "已确认",
+      "resolved": "已解决"
+    },
+    "actions": {
+      "viewDetail": "查看详情",
+      "acknowledge": "确认",
+      "resolve": "解决"
+    },
+    "filter": {
+      "status": "状态筛选"
+    },
+    "silencePeriod": "设置静默期",
+    "configThreshold": "配置阈值",
+    "thresholdModal": {
+      "title": "配置预警阈值",
+      "accuracyThreshold": "准确性阈值",
+      "completenessThreshold": "完整性阈值",
+      "timelinessThreshold": "时效性阈值",
+      "thresholdHelp": "低于此值将触发预警",
+      "notificationChannels": "通知渠道",
+      "selectChannels": "选择通知渠道",
+      "inApp": "站内通知",
+      "email": "邮件",
+      "webhook": "Webhook"
+    },
+    "silenceModal": {
+      "title": "设置静默期",
+      "duration": "静默时长（分钟）",
+      "selectDuration": "选择静默时长",
+      "30min": "30 分钟",
+      "1hour": "1 小时",
+      "2hours": "2 小时",
+      "4hours": "4 小时",
+      "8hours": "8 小时",
+      "24hours": "24 小时"
+    },
+    "detailDrawer": {
+      "title": "预警详情",
+      "alertId": "预警ID",
+      "severity": "严重程度",
+      "status": "状态",
+      "triggeredDimensions": "触发维度",
+      "escalationLevel": "升级级别",
+      "createdAt": "创建时间",
+      "resolvedAt": "解决时间",
+      "scoreDetail": "分数详情"
+    },
+    "messages": {
+      "acknowledged": "预警已确认",
+      "resolved": "预警已解决",
+      "operationFailed": "操作失败",
+      "thresholdSaved": "阈值配置已保存",
+      "saveFailed": "保存失败",
+      "silenceSet": "静默期已设置: {{duration}} 分钟",
+      "setFailed": "设置失败"
+    }
+  },
+  "workflow": {
+    "title": "工作流配置",
+    "reset": "重置",
+    "saveConfig": "保存配置",
+    "stages": "工作流阶段",
+    "stagesHelp": "定义质量改进的流程阶段",
+    "selectStages": "选择工作流阶段",
+    "flowPreview": "流程预览",
+    "automationSettings": "自动化设置",
+    "autoCreateTask": "自动创建改进任务",
+    "autoCreateTaskHelp": "开启后，当质量检查发现问题时，系统将自动创建改进任务并分配给原标注员",
+    "escalationRules": "升级规则",
+    "escalationHours": "升级时间（小时）",
+    "escalationHoursHelp": "任务超过此时间未处理将自动升级",
+    "maxEscalationLevel": "最大升级级别",
+    "maxEscalationLevelHelp": "任务最多可升级的级别数",
+    "effectStats": "改进效果统计",
+    "totalTasks": "总任务数",
+    "completedTasks": "完成任务",
+    "avgImprovementScore": "平均改进分数",
+    "improvementByDimension": "各维度改进",
+    "noStats": "暂无统计数据",
+    "workflowGuide": "工作流说明",
+    "stageLabels": {
+      "identify": "问题识别",
+      "assign": "任务分配",
+      "improve": "改进执行",
+      "review": "审核验证",
+      "verify": "效果评估"
+    },
+    "stageDescriptions": {
+      "identify": "系统自动检测质量问题",
+      "assign": "将改进任务分配给负责人",
+      "improve": "负责人修正问题并提交",
+      "review": "审核人员验证改进结果",
+      "verify": "评估改进对质量的影响"
+    },
+    "messages": {
+      "configSaved": "配置已保存",
+      "saveFailed": "保存失败"
+    }
   },
   "stats": {
     "activeRules": "活跃规则",
@@ -134,6 +505,21 @@
     "validationFailed": "验证失败",
     "testPassed": "规则测试通过",
     "testFailed": "规则测试失败",
-    "reportScheduled": "报表定时任务创建成功"
+    "reportScheduled": "报表定时任务创建成功",
+    "reportGenerated": "报告生成成功",
+    "reportGenerateFailed": "生成报告失败",
+    "rankingGenerated": "排名报告生成成功",
+    "exportSuccess": "导出成功",
+    "exportFailed": "导出失败",
+    "generateReportFirst": "请先生成报告",
+    "scheduleCreated": "定时报告已创建",
+    "createFailed": "创建失败",
+    "ruleStatusUpdated": "规则状态更新成功",
+    "ruleStatusUpdateFailed": "规则状态更新失败",
+    "ruleCreateFailed": "质量规则创建失败",
+    "ruleUpdateFailed": "质量规则更新失败",
+    "ruleDeleteFailed": "质量规则删除失败",
+    "loadRulesFailed": "加载规则失败",
+    "templateCreateSuccess": "从模板创建规则成功"
   }
 }

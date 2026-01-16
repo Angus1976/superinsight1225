@@ -1,9 +1,121 @@
 {
   "title": "Quality Management",
+  "dashboard": {
+    "title": "Quality Dashboard",
+    "averageScore": "Average Quality Score",
+    "passRate": "Pass Rate",
+    "pendingIssues": "Pending Issues",
+    "activeAlerts": "Active Alerts",
+    "qualityTrend": "Quality Trend",
+    "annotatorRanking": "Annotator Ranking",
+    "viewAll": "View All",
+    "thisWeek": "This Week",
+    "thisMonth": "This Month",
+    "refresh": "Refresh",
+    "exportReport": "Export Report",
+    "dataRefreshed": "Data refreshed",
+    "overview": "Overview",
+    "ruleConfig": "Rule Config",
+    "alertList": "Alert List",
+    "reports": "Reports",
+    "projectReport": "Project Quality Report",
+    "annotatorRankingReport": "Annotator Ranking Report",
+    "trendReport": "Quality Trend Report",
+    "generate": "Generate",
+    "selectReportType": "Select report type and time range to generate quality analysis report"
+  },
+  "improvementTask": {
+    "title": "Improvement Task List",
+    "loadError": "Failed to load task list",
+    "loadDetailError": "Failed to load task details",
+    "status": {
+      "pending": "Pending",
+      "inProgress": "In Progress",
+      "submitted": "Under Review",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "columns": {
+      "taskId": "Task ID",
+      "priority": "Priority",
+      "issueCount": "Issues",
+      "assignee": "Assignee",
+      "status": "Status",
+      "createdAt": "Created At",
+      "submittedAt": "Submitted At",
+      "actions": "Actions"
+    },
+    "unassigned": "Unassigned",
+    "viewDetail": "View Details",
+    "stats": {
+      "total": "Total Tasks",
+      "pending": "Pending",
+      "submitted": "Under Review",
+      "completionRate": "Completion Rate"
+    },
+    "searchPlaceholder": "Search tasks",
+    "filters": {
+      "status": "Filter by Status",
+      "priority": "Priority"
+    },
+    "priority": {
+      "high": "High Priority",
+      "medium": "Medium Priority",
+      "low": "Low Priority",
+      "highShort": "High",
+      "mediumShort": "Medium",
+      "lowShort": "Low"
+    },
+    "total": "Total {{total}} items"
+  },
+  "improvementTaskDetail": {
+    "backToList": "Back to List",
+    "taskDetail": "Task Details",
+    "taskId": "Task ID",
+    "annotationId": "Annotation ID",
+    "assignee": "Assignee",
+    "reviewer": "Reviewer",
+    "createdAt": "Created At",
+    "submittedAt": "Submitted At",
+    "reviewedAt": "Reviewed At",
+    "reviewComments": "Review Comments",
+    "qualityIssues": "Quality Issues",
+    "field": "Field",
+    "improvedData": "Improved Data",
+    "edit": "Edit",
+    "cancelEdit": "Cancel Edit",
+    "improvedDataLabel": "Improved Data (JSON format)",
+    "improvedDataPlaceholder": "{\"field\": \"value\"}",
+    "submitImprovement": "Submit Improvement",
+    "cancel": "Cancel",
+    "noImprovedData": "No improved data yet",
+    "pendingReview": "This task is pending review, please review the improvement",
+    "approve": "Approve",
+    "reject": "Reject",
+    "operationHistory": "Operation History",
+    "noHistory": "No operation history",
+    "reviewImprovement": "Review Improvement",
+    "reviewCommentsLabel": "Review Comments",
+    "reviewCommentsPlaceholder": "Enter review comments (optional)",
+    "taskNotExist": "Task does not exist",
+    "improvementSubmitted": "Improvement submitted",
+    "jsonFormatError": "JSON format error",
+    "submitFailed": "Submit failed",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "reviewFailed": "Review failed",
+    "inputImprovedData": "Please enter improved data"
+  },
   "rules": {
     "title": "Quality Rules",
+    "management": "Quality Rule Management",
+    "config": "Quality Rule Configuration",
     "create": "Create Rule",
+    "createFromTemplate": "Create from Template",
+    "addRule": "Add Rule",
+    "newRule": "New Rule",
     "edit": "Edit Rule",
+    "editRule": "Edit Rule",
     "delete": "Delete Rule",
     "run": "Run Rule",
     "runAll": "Run All Rules",
@@ -22,23 +134,56 @@
     "rollback": "Rollback",
     "test": "Test Rule",
     "validate": "Validate",
-    "config": "Configuration",
     "parameters": "Parameters",
     "threshold": "Threshold",
+    "qualityThreshold": "Quality Threshold",
     "pattern": "Pattern",
     "regex": "Regular Expression",
     "customLogic": "Custom Logic",
+    "customScript": "Custom Script",
+    "inputPythonScript": "Enter Python script",
+    "priority": "Priority",
+    "executionCount": "Execution Count",
+    "lastExecuted": "Last Executed",
+    "notExecuted": "Not Executed",
+    "executeRule": "Execute Now",
+    "executeInDev": "Rule execution feature in development",
+    "copy": "Copy",
+    "copyName": "{{name}} (Copy)",
+    "versionHistory": "Version History",
+    "confirmDelete": "Confirm delete this rule?",
+    "confirmDeleteContent": "Are you sure you want to delete rule \"{{name}}\"?",
+    "enabledStatus": "Enabled Status",
+    "inputRuleName": "Please enter rule name",
+    "inputRuleDesc": "Please enter rule description",
+    "selectRuleType": "Please select rule type",
+    "selectPriority": "Please select priority",
+    "inputThreshold": "Please enter quality threshold",
+    "thresholdRange": "0.0 - 1.0",
     "types": {
       "format": "Format",
-      "content": "Content", 
+      "content": "Content",
       "consistency": "Consistency",
-      "custom": "Custom"
+      "custom": "Custom",
+      "builtin": "Built-in Rule",
+      "semantic": "Semantic Quality",
+      "syntactic": "Syntactic Quality",
+      "completeness": "Completeness",
+      "accuracy": "Accuracy"
     },
     "severities": {
       "warning": "Warning",
-      "error": "Error"
+      "error": "Error",
+      "critical": "Critical",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
     },
     "templates": {
+      "title": "Rule Templates",
+      "selectHint": "Select a template to quickly create a rule",
+      "useTemplate": "Use This Template",
+      "noTemplates": "No templates available",
       "labelConsistency": "Label Consistency Check",
       "textLength": "Text Length Validation",
       "emptyLabel": "Empty Label Detection",
@@ -50,7 +195,7 @@
   "issues": {
     "title": "Quality Issues",
     "open": "Open",
-    "fixed": "Fixed", 
+    "fixed": "Fixed",
     "ignored": "Ignored",
     "assign": "Assign",
     "unassign": "Unassign",
@@ -81,7 +226,7 @@
     "history": "History",
     "priorities": {
       "low": "Low",
-      "medium": "Medium", 
+      "medium": "Medium",
       "high": "High",
       "urgent": "Urgent"
     },
@@ -104,7 +249,233 @@
     "metrics": "Quality Metrics",
     "period": "Period",
     "export": "Export Report",
-    "schedule": "Schedule Report"
+    "schedule": "Schedule Report",
+    "historyReports": "History Reports",
+    "columns": {
+      "name": "Report Name",
+      "type": "Type",
+      "overallScore": "Overall Score",
+      "samples": "Sample Statistics",
+      "createdAt": "Created At",
+      "action": "Action"
+    },
+    "types": {
+      "all": "All",
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "monthly": "Monthly",
+      "custom": "Custom"
+    },
+    "stats": {
+      "total": "Total",
+      "passed": "Passed",
+      "failed": "Failed",
+      "overallScore": "Overall Quality Score",
+      "totalSamples": "Total Samples",
+      "passedSamples": "Passed Samples",
+      "failedSamples": "Failed Samples"
+    },
+    "actions": {
+      "view": "View",
+      "download": "Download",
+      "refresh": "Refresh",
+      "exportReport": "Export Report"
+    },
+    "charts": {
+      "qualityTrend": "Quality Trend",
+      "scoreDistribution": "Score Distribution",
+      "ruleViolations": "Rule Violation Statistics",
+      "metricsDetail": "Quality Metrics Details"
+    },
+    "metricsLabels": {
+      "semanticQuality": "Semantic Quality",
+      "syntacticQuality": "Syntactic Quality",
+      "completeness": "Completeness",
+      "consistency": "Consistency"
+    },
+    "dateRange": "Date Range",
+    "reportType": "Report Type",
+    "pagination": "{{start}}-{{end}} of {{total}} items",
+    "projectReport": {
+      "title": "Project Quality Report",
+      "scheduleReport": "Schedule Report",
+      "exportPdf": "Export PDF",
+      "exportExcel": "Export Excel",
+      "exportHtml": "Export HTML",
+      "exportJson": "Export JSON",
+      "selectDateRange": "Select date range to generate report",
+      "totalAnnotations": "Total Annotations",
+      "avgAccuracy": "Average Accuracy",
+      "avgCompleteness": "Average Completeness",
+      "avgTimeliness": "Average Timeliness",
+      "issueDistribution": "Issue Distribution",
+      "qualityTrend": "Quality Trend",
+      "trendChart": "Trend chart (requires chart library integration)"
+    },
+    "annotatorRanking": {
+      "title": "Annotator Quality Ranking",
+      "columns": {
+        "rank": "Rank",
+        "annotator": "Annotator",
+        "annotations": "Annotations",
+        "avgScore": "Avg Score",
+        "accuracy": "Accuracy",
+        "passRate": "Pass Rate"
+      },
+      "period": {
+        "week": "This Week",
+        "month": "This Month",
+        "quarter": "This Quarter",
+        "year": "This Year"
+      },
+      "selectPeriod": "Select time range to generate ranking"
+    },
+    "trendAnalysis": {
+      "title": "Trend Analysis",
+      "chart": "Trend analysis chart (requires chart library integration)"
+    },
+    "scheduleModal": {
+      "title": "Create Scheduled Report",
+      "reportType": "Report Type",
+      "selectReportType": "Select report type",
+      "projectReport": "Project Quality Report",
+      "rankingReport": "Annotator Ranking Report",
+      "trendReport": "Trend Analysis Report",
+      "schedule": "Schedule",
+      "selectSchedule": "Select schedule",
+      "weeklyMonday": "Every Monday 9:00",
+      "monthlyFirst": "1st of every month 9:00",
+      "daily": "Daily 9:00",
+      "recipients": "Recipients",
+      "recipientsPlaceholder": "Multiple emails separated by commas"
+    }
+  },
+  "alerts": {
+    "title": "Quality Alerts",
+    "loadError": "Failed to load alert list",
+    "criticalAlert": "{{count}} critical alerts require immediate attention",
+    "view": "View",
+    "stats": {
+      "pending": "Pending Alerts",
+      "critical": "Critical Alerts",
+      "acknowledged": "Acknowledged",
+      "resolved": "Resolved"
+    },
+    "columns": {
+      "severity": "Severity",
+      "triggeredDimensions": "Triggered Dimensions",
+      "scores": "Scores",
+      "escalationLevel": "Escalation Level",
+      "status": "Status",
+      "createdAt": "Created At",
+      "actions": "Actions"
+    },
+    "severity": {
+      "critical": "Critical",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "status": {
+      "open": "Open",
+      "acknowledged": "Acknowledged",
+      "resolved": "Resolved"
+    },
+    "actions": {
+      "viewDetail": "View Details",
+      "acknowledge": "Acknowledge",
+      "resolve": "Resolve"
+    },
+    "filter": {
+      "status": "Filter by Status"
+    },
+    "silencePeriod": "Set Silence Period",
+    "configThreshold": "Configure Thresholds",
+    "thresholdModal": {
+      "title": "Configure Alert Thresholds",
+      "accuracyThreshold": "Accuracy Threshold",
+      "completenessThreshold": "Completeness Threshold",
+      "timelinessThreshold": "Timeliness Threshold",
+      "thresholdHelp": "Alert will be triggered when below this value",
+      "notificationChannels": "Notification Channels",
+      "selectChannels": "Select notification channels",
+      "inApp": "In-App Notification",
+      "email": "Email",
+      "webhook": "Webhook"
+    },
+    "silenceModal": {
+      "title": "Set Silence Period",
+      "duration": "Silence Duration (minutes)",
+      "selectDuration": "Select silence duration",
+      "30min": "30 minutes",
+      "1hour": "1 hour",
+      "2hours": "2 hours",
+      "4hours": "4 hours",
+      "8hours": "8 hours",
+      "24hours": "24 hours"
+    },
+    "detailDrawer": {
+      "title": "Alert Details",
+      "alertId": "Alert ID",
+      "severity": "Severity",
+      "status": "Status",
+      "triggeredDimensions": "Triggered Dimensions",
+      "escalationLevel": "Escalation Level",
+      "createdAt": "Created At",
+      "resolvedAt": "Resolved At",
+      "scoreDetail": "Score Details"
+    },
+    "messages": {
+      "acknowledged": "Alert acknowledged",
+      "resolved": "Alert resolved",
+      "operationFailed": "Operation failed",
+      "thresholdSaved": "Threshold configuration saved",
+      "saveFailed": "Save failed",
+      "silenceSet": "Silence period set: {{duration}} minutes",
+      "setFailed": "Set failed"
+    }
+  },
+  "workflow": {
+    "title": "Workflow Configuration",
+    "reset": "Reset",
+    "saveConfig": "Save Configuration",
+    "stages": "Workflow Stages",
+    "stagesHelp": "Define the stages of quality improvement process",
+    "selectStages": "Select workflow stages",
+    "flowPreview": "Flow Preview",
+    "automationSettings": "Automation Settings",
+    "autoCreateTask": "Auto Create Improvement Task",
+    "autoCreateTaskHelp": "When enabled, the system will automatically create improvement tasks and assign them to the original annotator when quality issues are detected",
+    "escalationRules": "Escalation Rules",
+    "escalationHours": "Escalation Time (hours)",
+    "escalationHoursHelp": "Task will be automatically escalated if not processed within this time",
+    "maxEscalationLevel": "Max Escalation Level",
+    "maxEscalationLevelHelp": "Maximum number of escalation levels for a task",
+    "effectStats": "Improvement Effect Statistics",
+    "totalTasks": "Total Tasks",
+    "completedTasks": "Completed Tasks",
+    "avgImprovementScore": "Avg Improvement Score",
+    "improvementByDimension": "Improvement by Dimension",
+    "noStats": "No statistics available",
+    "workflowGuide": "Workflow Guide",
+    "stageLabels": {
+      "identify": "Issue Identification",
+      "assign": "Task Assignment",
+      "improve": "Improvement Execution",
+      "review": "Review & Verification",
+      "verify": "Effect Evaluation"
+    },
+    "stageDescriptions": {
+      "identify": "System automatically detects quality issues",
+      "assign": "Assign improvement tasks to responsible person",
+      "improve": "Responsible person fixes issues and submits",
+      "review": "Reviewer verifies improvement results",
+      "verify": "Evaluate the impact of improvements on quality"
+    },
+    "messages": {
+      "configSaved": "Configuration saved",
+      "saveFailed": "Save failed"
+    }
   },
   "stats": {
     "activeRules": "Active Rules",
@@ -134,6 +505,21 @@
     "validationFailed": "Validation failed",
     "testPassed": "Rule test passed",
     "testFailed": "Rule test failed",
-    "reportScheduled": "Report scheduled successfully"
+    "reportScheduled": "Report scheduled successfully",
+    "reportGenerated": "Report generated successfully",
+    "reportGenerateFailed": "Failed to generate report",
+    "rankingGenerated": "Ranking report generated successfully",
+    "exportSuccess": "Export successful",
+    "exportFailed": "Export failed",
+    "generateReportFirst": "Please generate a report first",
+    "scheduleCreated": "Scheduled report created",
+    "createFailed": "Create failed",
+    "ruleStatusUpdated": "Rule status updated successfully",
+    "ruleStatusUpdateFailed": "Failed to update rule status",
+    "ruleCreateFailed": "Failed to create quality rule",
+    "ruleUpdateFailed": "Failed to update quality rule",
+    "ruleDeleteFailed": "Failed to delete quality rule",
+    "loadRulesFailed": "Failed to load rules",
+    "templateCreateSuccess": "Rule created from template successfully"
   }
 }

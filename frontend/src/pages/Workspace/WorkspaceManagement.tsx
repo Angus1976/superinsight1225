@@ -21,12 +21,14 @@ import {
   UndoOutlined, DragOutlined, CopyOutlined
 } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { 
   workspaceApi, tenantApi,
   Workspace, WorkspaceNode, WorkspaceCreateRequest, WorkspaceUpdateRequest
 } from '@/services/multiTenantApi';
 
 const WorkspaceManagement: React.FC = () => {
+  const { t } = useTranslation(['workspace', 'common']);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isDetailVisible, setIsDetailVisible] = useState(false);
   const [editingWorkspace, setEditingWorkspace] = useState<Workspace | null>(null);
@@ -56,10 +58,10 @@ const WorkspaceManagement: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['workspace-hierarchy'] });
       setIsModalVisible(false);
       form.resetFields();
-      message.success('工作空间创建成功');
+      message.success(t('createSuccess'));
     },
     onError: (error: any) => {
-      message.error(error.response?.data?.detail || '工作空间创建失败');
+      message.error(error.response?.data?.detail || t('createError'));
     },
   });
 
@@ -70,10 +72,10 @@ const WorkspaceManagement: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['workspace-hierarchy'] });
       setIsModalVisible(false);
       form.resetFields();
-      message.success('工作空间更新成功');
+      message.success(t('updateSuccess'));
     },
     onError: (error: any) => {
-      message.error(error.response?.data?.detail || '工作空间更新失败');
+      message.error(error.response?.data?.detail || t('updateError'));
     },
   });
 
@@ -81,10 +83,10 @@ const WorkspaceManagement: React.FC = () => {
     mutationFn: (id: string) => workspaceApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workspace-hierarchy'] });
-      message.success('工作空间删除成功');
+      message.success(t('deleteSuccess'));
     },
     onError: (error: any) => {
-      message.error(error.response?.data?.detail || '工作空间删除失败');
+      message.error(error.response?.data?.detail || t('deleteError'));
     },
   });
 
@@ -92,7 +94,7 @@ const WorkspaceManagement: React.FC = () => {
     mutationFn: (id: string) => workspaceApi.archive(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workspace-hierarchy'] });
-      message.success('工作空间已归档');
+      message.success(t('archived'));
     },
   });
 
@@ -100,7 +102,7 @@ const WorkspaceManagement: React.FC = () => {
     mutationFn: (id: string) => workspaceApi.restore(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workspace-hierarchy'] });
-      message.success('工作空间已恢复');
+      message.success(t('restored'));
     },
   });
 
@@ -109,10 +111,10 @@ const WorkspaceManagement: React.FC = () => {
       workspaceApi.move(id, newParentId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['workspace-hierarchy'] });
-      message.success('工作空间已移动');
+      message.success(t('moved'));
     },
     onError: (error: any) => {
-      message.error(error.response?.data?.detail || '移动失败');
+      message.error(error.response?.data?.detail || t('moveError'));
     },
   });
 
@@ -124,7 +126,7 @@ const WorkspaceManagement: React.FC = () => {
       title: (
         <Space>
           <span>{node.name}</span>
-          {node.status === 'archived' && <Tag color="default">已归档</Tag>}
+          {node.status === 'archived' && <Tag color="default">{t('statusArchived')}</Tag>}
         </Space>
       ),
       icon: node.children?.length ? <FolderOpenOutlined /> : <FolderOutlined />,
@@ -184,7 +186,7 @@ const WorkspaceManagement: React.FC = () => {
       {
         key: 'add-child',
         icon: <PlusOutlined />,
-        label: '添加子工作空间',
+        label: t('actions.addChild'),
         onClick: () => {
           setParentId(workspace.id);
           setEditingWorkspace(null);
@@ -195,7 +197,7 @@ const WorkspaceManagement: React.FC = () => {
       {
         key: 'edit',
         icon: <EditOutlined />,
-        label: '编辑',
+        label: t('actions.edit'),
         onClick: () => {
           setEditingWorkspace(workspace);
           form.setFieldsValue({
@@ -208,38 +210,38 @@ const WorkspaceManagement: React.FC = () => {
       {
         key: 'duplicate',
         icon: <CopyOutlined />,
-        label: '复制为模板',
+        label: t('actions.duplicate'),
         onClick: () => {
-          message.info('模板功能开发中');
+          message.info(t('templateInDev'));
         },
       },
       { type: 'divider' as const },
       workspace.status === 'active' ? {
         key: 'archive',
         icon: <InboxOutlined />,
-        label: '归档',
+        label: t('actions.archive'),
         onClick: () => {
           Modal.confirm({
-            title: '确认归档',
-            content: `确定要归档工作空间 "${workspace.name}" 吗？`,
+            title: t('confirmArchive'),
+            content: t('confirmArchiveContent', { name: workspace.name }),
             onOk: () => archiveMutation.mutate(workspace.id),
           });
         },
       } : {
         key: 'restore',
         icon: <UndoOutlined />,
-        label: '恢复',
+        label: t('actions.restore'),
         onClick: () => restoreMutation.mutate(workspace.id),
       },
       {
         key: 'delete',
         icon: <DeleteOutlined />,
-        label: '删除',
+        label: t('actions.delete'),
         danger: true,
         onClick: () => {
           Modal.confirm({
-            title: '确认删除',
-            content: `确定要删除工作空间 "${workspace.name}" 吗？此操作不可恢复！`,
+            title: t('confirmDelete'),
+            content: t('confirmDeleteContent', { name: workspace.name }),
             onOk: () => deleteMutation.mutate(workspace.id),
           });
         },
@@ -256,13 +258,13 @@ const WorkspaceManagement: React.FC = () => {
             title={
               <Space>
                 <FolderOutlined />
-                工作空间层级
+                {t('hierarchy')}
               </Space>
             }
             extra={
               <Space>
                 <Select
-                  placeholder="选择租户"
+                  placeholder={t('selectTenant')}
                   style={{ width: 200 }}
                   onChange={setSelectedTenantId}
                   value={selectedTenantId}
@@ -283,17 +285,17 @@ const WorkspaceManagement: React.FC = () => {
                     setIsModalVisible(true);
                   }}
                 >
-                  新建
+                  {t('create')}
                 </Button>
               </Space>
             }
           >
             {!selectedTenantId ? (
-              <Empty description="请先选择租户" />
+              <Empty description={t('selectTenantFirst')} />
             ) : isLoading ? (
               <div style={{ textAlign: 'center', padding: 40 }}><Spin /></div>
             ) : treeData.length === 0 ? (
-              <Empty description="暂无工作空间" />
+              <Empty description={t('noWorkspaces')} />
             ) : (
               <Tree
                 showIcon
@@ -312,31 +314,31 @@ const WorkspaceManagement: React.FC = () => {
               />
             )}
             <div style={{ marginTop: 16, color: '#666', fontSize: 12 }}>
-              <DragOutlined /> 拖拽可调整层级结构，右键查看更多操作
+              <DragOutlined /> {t('dragHint')}
             </div>
           </Card>
         </Col>
 
         {/* Right: Detail Panel */}
         <Col span={14}>
-          <Card title="工作空间详情">
+          <Card title={t('details')}>
             {selectedWorkspace ? (
               <div>
                 <Descriptions bordered column={2}>
-                  <Descriptions.Item label="ID">{selectedWorkspace.id}</Descriptions.Item>
-                  <Descriptions.Item label="名称">{selectedWorkspace.name}</Descriptions.Item>
-                  <Descriptions.Item label="状态">
+                  <Descriptions.Item label={t('fields.id')}>{selectedWorkspace.id}</Descriptions.Item>
+                  <Descriptions.Item label={t('fields.name')}>{selectedWorkspace.name}</Descriptions.Item>
+                  <Descriptions.Item label={t('fields.status')}>
                     <Tag color={selectedWorkspace.status === 'active' ? 'success' : 'default'}>
-                      {selectedWorkspace.status === 'active' ? '活跃' : '已归档'}
+                      {selectedWorkspace.status === 'active' ? t('status.active') : t('status.archived')}
                     </Tag>
                   </Descriptions.Item>
-                  <Descriptions.Item label="父级">
-                    {selectedWorkspace.parent_id || '根级'}
+                  <Descriptions.Item label={t('fields.parent')}>
+                    {selectedWorkspace.parent_id || t('status.root')}
                   </Descriptions.Item>
-                  <Descriptions.Item label="创建时间" span={2}>
+                  <Descriptions.Item label={t('fields.createdAt')} span={2}>
                     {new Date(selectedWorkspace.created_at).toLocaleString()}
                   </Descriptions.Item>
-                  <Descriptions.Item label="描述" span={2}>
+                  <Descriptions.Item label={t('fields.description')} span={2}>
                     {selectedWorkspace.description || '-'}
                   </Descriptions.Item>
                 </Descriptions>
@@ -353,21 +355,21 @@ const WorkspaceManagement: React.FC = () => {
                         setIsModalVisible(true);
                       }}
                     >
-                      编辑
+                      {t('actions.edit')}
                     </Button>
                     {selectedWorkspace.status === 'active' ? (
                       <Button
                         icon={<InboxOutlined />}
                         onClick={() => archiveMutation.mutate(selectedWorkspace.id)}
                       >
-                        归档
+                        {t('actions.archive')}
                       </Button>
                     ) : (
                       <Button
                         icon={<UndoOutlined />}
                         onClick={() => restoreMutation.mutate(selectedWorkspace.id)}
                       >
-                        恢复
+                        {t('actions.restore')}
                       </Button>
                     )}
                     <Button
@@ -375,19 +377,19 @@ const WorkspaceManagement: React.FC = () => {
                       icon={<DeleteOutlined />}
                       onClick={() => {
                         Modal.confirm({
-                          title: '确认删除',
-                          content: `确定要删除工作空间 "${selectedWorkspace.name}" 吗？`,
+                          title: t('confirmDelete'),
+                          content: t('confirmDeleteContent', { name: selectedWorkspace.name }),
                           onOk: () => deleteMutation.mutate(selectedWorkspace.id),
                         });
                       }}
                     >
-                      删除
+                      {t('actions.delete')}
                     </Button>
                   </Space>
                 </div>
               </div>
             ) : (
-              <Empty description="请在左侧选择工作空间" />
+              <Empty description={t('selectWorkspace')} />
             )}
           </Card>
         </Col>
@@ -395,7 +397,7 @@ const WorkspaceManagement: React.FC = () => {
 
       {/* Create/Edit Modal */}
       <Modal
-        title={editingWorkspace ? '编辑工作空间' : '新建工作空间'}
+        title={editingWorkspace ? t('editWorkspace') : t('createWorkspace')}
         open={isModalVisible}
         onCancel={() => setIsModalVisible(false)}
         onOk={() => form.submit()}
@@ -404,16 +406,16 @@ const WorkspaceManagement: React.FC = () => {
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Form.Item
             name="name"
-            label="工作空间名称"
-            rules={[{ required: true, message: '请输入工作空间名称' }]}
+            label={t('form.name')}
+            rules={[{ required: true, message: t('form.nameRequired') }]}
           >
-            <Input placeholder="请输入工作空间名称" />
+            <Input placeholder={t('form.namePlaceholder')} />
           </Form.Item>
-          <Form.Item name="description" label="描述">
-            <Input.TextArea rows={3} placeholder="请输入描述" />
+          <Form.Item name="description" label={t('form.description')}>
+            <Input.TextArea rows={3} placeholder={t('form.descriptionPlaceholder')} />
           </Form.Item>
           {parentId && (
-            <Form.Item label="父级工作空间">
+            <Form.Item label={t('form.parentWorkspace')}>
               <Input value={parentId} disabled />
             </Form.Item>
           )}

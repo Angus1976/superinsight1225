@@ -45,6 +45,7 @@ import {
   LoadingOutlined,
 } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/authStore';
 import {
   adminApi,
@@ -64,6 +65,7 @@ const { TextArea } = Input;
 const SYNC_MODES: SyncMode[] = ['full', 'incremental', 'realtime'];
 
 const ConfigSync: React.FC = () => {
+  const { t } = useTranslation(['admin', 'common']);
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
   const [modalVisible, setModalVisible] = useState(false);
@@ -96,13 +98,13 @@ const ConfigSync: React.FC = () => {
     mutationFn: (strategy: SyncStrategyCreate) =>
       adminApi.createSyncStrategy(strategy, user?.id || '', user?.username || ''),
     onSuccess: () => {
-      message.success('同步策略创建成功');
+      message.success(t('configSync.createSuccess'));
       queryClient.invalidateQueries({ queryKey: ['admin-sync-strategies'] });
       setModalVisible(false);
       form.resetFields();
     },
     onError: (error: Error) => {
-      message.error(`创建失败: ${error.message}`);
+      message.error(t('configSync.createFailed', { error: error.message }));
     },
   });
 
@@ -111,14 +113,14 @@ const ConfigSync: React.FC = () => {
     mutationFn: ({ id, strategy }: { id: string; strategy: SyncStrategyUpdate }) =>
       adminApi.updateSyncStrategy(id, strategy, user?.id || '', user?.username || ''),
     onSuccess: () => {
-      message.success('同步策略更新成功');
+      message.success(t('configSync.updateSuccess'));
       queryClient.invalidateQueries({ queryKey: ['admin-sync-strategies'] });
       setModalVisible(false);
       setEditingStrategy(null);
       form.resetFields();
     },
     onError: (error: Error) => {
-      message.error(`更新失败: ${error.message}`);
+      message.error(t('configSync.updateFailed', { error: error.message }));
     },
   });
 
@@ -126,11 +128,11 @@ const ConfigSync: React.FC = () => {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => adminApi.deleteSyncStrategy(id, user?.id || '', user?.username || ''),
     onSuccess: () => {
-      message.success('同步策略删除成功');
+      message.success(t('configSync.deleteSuccess'));
       queryClient.invalidateQueries({ queryKey: ['admin-sync-strategies'] });
     },
     onError: (error: Error) => {
-      message.error(`删除失败: ${error.message}`);
+      message.error(t('configSync.deleteFailed', { error: error.message }));
     },
   });
 
@@ -138,11 +140,11 @@ const ConfigSync: React.FC = () => {
   const triggerMutation = useMutation({
     mutationFn: (strategyId: string) => adminApi.triggerSync(strategyId, user?.id || ''),
     onSuccess: (result) => {
-      message.success(`同步任务已启动: ${result.job_id}`);
+      message.success(t('configSync.triggerSuccess', { jobId: result.job_id }));
       queryClient.invalidateQueries({ queryKey: ['admin-sync-strategies'] });
     },
     onError: (error: Error) => {
-      message.error(`触发同步失败: ${error.message}`);
+      message.error(t('configSync.triggerFailed', { error: error.message }));
     },
   });
 
@@ -202,21 +204,21 @@ const ConfigSync: React.FC = () => {
 
   const columns = [
     {
-      title: '名称',
+      title: t('configSync.columns.name'),
       dataIndex: 'name',
       key: 'name',
       render: (text: string, record: SyncStrategyResponse) => (
-        <Text strong>{text || `策略 ${record.id.slice(0, 8)}`}</Text>
+        <Text strong>{text || `${t('configSync.strategyPrefix')} ${record.id.slice(0, 8)}`}</Text>
       ),
     },
     {
-      title: '数据库',
+      title: t('configSync.columns.database'),
       dataIndex: 'db_config_id',
       key: 'db_config_id',
       render: (id: string) => <Tag>{getDbConfigName(id)}</Tag>,
     },
     {
-      title: '同步模式',
+      title: t('configSync.columns.syncMode'),
       dataIndex: 'mode',
       key: 'mode',
       render: (mode: SyncMode) => {
@@ -229,15 +231,15 @@ const ConfigSync: React.FC = () => {
       },
     },
     {
-      title: '调度',
+      title: t('configSync.columns.schedule'),
       dataIndex: 'schedule',
       key: 'schedule',
       render: (schedule: string) => (
-        schedule ? <Text code>{schedule}</Text> : <Text type="secondary">手动触发</Text>
+        schedule ? <Text code>{schedule}</Text> : <Text type="secondary">{t('configSync.manualTrigger')}</Text>
       ),
     },
     {
-      title: '最后同步',
+      title: t('configSync.columns.lastSync'),
       key: 'last_sync',
       render: (_: unknown, record: SyncStrategyResponse) => (
         <Space>
@@ -245,28 +247,28 @@ const ConfigSync: React.FC = () => {
           {record.last_sync_at ? (
             <Text>{new Date(record.last_sync_at).toLocaleString()}</Text>
           ) : (
-            <Text type="secondary">从未同步</Text>
+            <Text type="secondary">{t('configSync.neverSynced')}</Text>
           )}
         </Space>
       ),
     },
     {
-      title: '状态',
+      title: t('configSync.columns.status'),
       key: 'enabled',
       render: (_: unknown, record: SyncStrategyResponse) => (
         record.enabled ? (
-          <Badge status="success" text="已启用" />
+          <Badge status="success" text={t('configSync.enabled')} />
         ) : (
-          <Badge status="default" text="已禁用" />
+          <Badge status="default" text={t('configSync.disabled')} />
         )
       ),
     },
     {
-      title: '操作',
+      title: t('configSync.columns.actions'),
       key: 'actions',
       render: (_: unknown, record: SyncStrategyResponse) => (
         <Space>
-          <Tooltip title="立即同步">
+          <Tooltip title={t('configSync.actions.syncNow')}>
             <Button
               type="text"
               icon={<PlayCircleOutlined />}
@@ -275,14 +277,14 @@ const ConfigSync: React.FC = () => {
               disabled={!record.enabled}
             />
           </Tooltip>
-          <Tooltip title="同步历史">
+          <Tooltip title={t('configSync.actions.syncHistory')}>
             <Button
               type="text"
               icon={<HistoryOutlined />}
               onClick={() => handleViewHistory(record.id)}
             />
           </Tooltip>
-          <Tooltip title="编辑">
+          <Tooltip title={t('configSync.actions.edit')}>
             <Button
               type="text"
               icon={<EditOutlined />}
@@ -290,12 +292,12 @@ const ConfigSync: React.FC = () => {
             />
           </Tooltip>
           <Popconfirm
-            title="确定删除此同步策略？"
+            title={t('configSync.confirmDelete')}
             onConfirm={() => deleteMutation.mutate(record.id)}
-            okText="确定"
-            cancelText="取消"
+            okText={t('common:confirm')}
+            cancelText={t('common:cancel')}
           >
-            <Tooltip title="删除">
+            <Tooltip title={t('configSync.actions.delete')}>
               <Button type="text" danger icon={<DeleteOutlined />} />
             </Tooltip>
           </Popconfirm>
@@ -310,23 +312,23 @@ const ConfigSync: React.FC = () => {
         title={
           <Space>
             <SyncOutlined />
-            <span>同步策略管理</span>
+            <span>{t('configSync.title')}</span>
           </Space>
         }
         extra={
           <Space>
             <Button icon={<ReloadOutlined />} onClick={() => refetch()}>
-              刷新
+              {t('common:refresh')}
             </Button>
             <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-              添加策略
+              {t('configSync.addStrategy')}
             </Button>
           </Space>
         }
       >
         <Alert
-          message="同步说明"
-          description="配置数据同步策略，支持全量同步、增量同步和实时同步三种模式。可设置 Cron 表达式进行定时同步。"
+          message={t('configSync.syncDescription')}
+          description={t('configSync.syncDescriptionText')}
           type="info"
           showIcon
           style={{ marginBottom: 16 }}
@@ -343,7 +345,7 @@ const ConfigSync: React.FC = () => {
 
       {/* Create/Edit Modal */}
       <Modal
-        title={editingStrategy ? '编辑同步策略' : '添加同步策略'}
+        title={editingStrategy ? t('configSync.editStrategy') : t('configSync.addStrategyTitle')}
         open={modalVisible}
         onOk={handleSubmit}
         onCancel={() => {
@@ -355,16 +357,16 @@ const ConfigSync: React.FC = () => {
         width={600}
       >
         <Form form={form} layout="vertical">
-          <Form.Item name="name" label="策略名称">
-            <Input placeholder="例如：每日全量同步" />
+          <Form.Item name="name" label={t('configSync.form.strategyName')}>
+            <Input placeholder={t('configSync.form.strategyNamePlaceholder')} />
           </Form.Item>
 
           <Form.Item
             name="db_config_id"
-            label="数据库连接"
-            rules={[{ required: true, message: '请选择数据库连接' }]}
+            label={t('configSync.form.dbConnection')}
+            rules={[{ required: true, message: t('configSync.form.dbConnectionRequired') }]}
           >
-            <Select placeholder="选择数据库连接" disabled={!!editingStrategy}>
+            <Select placeholder={t('configSync.form.dbConnectionPlaceholder')} disabled={!!editingStrategy}>
               {dbConfigs.map((config: DBConfigResponse) => (
                 <Option key={config.id} value={config.id}>
                   {config.name} ({config.db_type})
@@ -375,10 +377,10 @@ const ConfigSync: React.FC = () => {
 
           <Form.Item
             name="mode"
-            label="同步模式"
-            rules={[{ required: true, message: '请选择同步模式' }]}
+            label={t('configSync.form.syncMode')}
+            rules={[{ required: true, message: t('configSync.form.syncModeRequired') }]}
           >
-            <Select placeholder="选择同步模式">
+            <Select placeholder={t('configSync.form.syncModePlaceholder')}>
               {SYNC_MODES.map(mode => (
                 <Option key={mode} value={mode}>
                   {getSyncModeName(mode)}
@@ -395,10 +397,10 @@ const ConfigSync: React.FC = () => {
               getFieldValue('mode') === 'incremental' && (
                 <Form.Item
                   name="incremental_field"
-                  label="增量字段"
-                  rules={[{ required: true, message: '增量同步需要指定增量字段' }]}
+                  label={t('configSync.form.incrementalField')}
+                  rules={[{ required: true, message: t('configSync.form.incrementalFieldRequired') }]}
                 >
-                  <Input placeholder="例如：updated_at, id" />
+                  <Input placeholder={t('configSync.form.incrementalFieldPlaceholder')} />
                 </Form.Item>
               )
             }
@@ -406,17 +408,17 @@ const ConfigSync: React.FC = () => {
 
           <Form.Item
             name="schedule"
-            label="调度表达式"
-            extra="Cron 表达式，留空则手动触发。例如：0 2 * * * (每天凌晨2点)"
+            label={t('configSync.form.schedule')}
+            extra={t('configSync.form.scheduleExtra')}
           >
-            <Input placeholder="例如：0 2 * * *" />
+            <Input placeholder={t('configSync.form.schedulePlaceholder')} />
           </Form.Item>
 
-          <Form.Item name="batch_size" label="批次大小">
+          <Form.Item name="batch_size" label={t('configSync.form.batchSize')}>
             <InputNumber min={1} max={100000} style={{ width: '100%' }} />
           </Form.Item>
 
-          <Form.Item name="enabled" valuePropName="checked" label="启用策略">
+          <Form.Item name="enabled" valuePropName="checked" label={t('configSync.form.enableStrategy')}>
             <Switch />
           </Form.Item>
         </Form>
@@ -424,7 +426,7 @@ const ConfigSync: React.FC = () => {
 
       {/* History Drawer */}
       <Drawer
-        title="同步历史"
+        title={t('configSync.history.title')}
         placement="right"
         width={500}
         open={historyDrawerVisible}
@@ -438,7 +440,7 @@ const ConfigSync: React.FC = () => {
             <LoadingOutlined style={{ fontSize: 24 }} />
           </div>
         ) : syncHistory.length === 0 ? (
-          <Empty description="暂无同步记录" />
+          <Empty description={t('configSync.noHistory')} />
         ) : (
           <Timeline>
             {syncHistory.map((item: SyncHistoryResponse) => (
@@ -447,24 +449,24 @@ const ConfigSync: React.FC = () => {
                 dot={getSyncStatusIcon(item.status)}
               >
                 <Descriptions column={1} size="small">
-                  <Descriptions.Item label="状态">
+                  <Descriptions.Item label={t('configSync.history.status')}>
                     <Tag color={item.status === 'success' ? 'green' : item.status === 'failed' ? 'red' : 'blue'}>
                       {item.status}
                     </Tag>
                   </Descriptions.Item>
-                  <Descriptions.Item label="开始时间">
+                  <Descriptions.Item label={t('configSync.history.startTime')}>
                     {new Date(item.started_at).toLocaleString()}
                   </Descriptions.Item>
                   {item.completed_at && (
-                    <Descriptions.Item label="完成时间">
+                    <Descriptions.Item label={t('configSync.history.endTime')}>
                       {new Date(item.completed_at).toLocaleString()}
                     </Descriptions.Item>
                   )}
-                  <Descriptions.Item label="同步记录数">
+                  <Descriptions.Item label={t('configSync.history.recordsSynced')}>
                     {item.records_synced}
                   </Descriptions.Item>
                   {item.error_message && (
-                    <Descriptions.Item label="错误信息">
+                    <Descriptions.Item label={t('configSync.history.errorMessage')}>
                       <Text type="danger">{item.error_message}</Text>
                     </Descriptions.Item>
                   )}

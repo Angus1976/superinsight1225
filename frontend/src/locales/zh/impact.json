@@ -1,0 +1,21 @@
+{
+  "analysis": "影响分析",
+  "analyzeError": "分析影响失败",
+  "analyzing": "正在分析影响...",
+  "clickToAnalyze": "点击分析按钮评估影响",
+  "analyze": "分析",
+  "update": "更新",
+  "delete": "删除",
+  "create": "创建",
+  "riskLevel": "风险等级",
+  "affectedEntities": "受影响实体",
+  "estimatedRecords": "预估记录数",
+  "criticalPaths": "关键路径",
+  "riskFactors": "风险因素",
+  "severityBreakdown": "严重程度分布",
+  "recommendations": "建议",
+  "affectedEntitiesList": "受影响实体列表",
+  "type": "类型",
+  "distance": "距离",
+  "impactType": "影响类型"
+}

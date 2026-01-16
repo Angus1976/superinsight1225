@@ -20,7 +20,6 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   SyncOutlined,
-  FilterOutlined,
   ReloadOutlined,
   InfoCircleOutlined,
 } from '@ant-design/icons';
@@ -142,7 +141,7 @@ const SyncHistory: React.FC = () => {
 
   const columns: ColumnsType<SyncHistoryRecord> = [
     {
-      title: '任务名称',
+      title: t('history.taskName'),
       dataIndex: 'jobName',
       key: 'jobName',
       render: (text, record) => (
@@ -153,7 +152,7 @@ const SyncHistory: React.FC = () => {
       ),
     },
     {
-      title: '开始时间',
+      title: t('history.startTime'),
       dataIndex: 'startedAt',
       key: 'startedAt',
       render: (text) => new Date(text).toLocaleString(),
@@ -161,7 +160,7 @@ const SyncHistory: React.FC = () => {
       defaultSortOrder: 'descend',
     },
     {
-      title: '状态',
+      title: t('history.status'),
       dataIndex: 'status',
       key: 'status',
       render: (status) => (
@@ -170,34 +169,34 @@ const SyncHistory: React.FC = () => {
         </Tag>
       ),
       filters: [
-        { text: 'Completed', value: 'completed' },
-        { text: 'Failed', value: 'failed' },
-        { text: 'Running', value: 'running' },
+        { text: t('history.success'), value: 'completed' },
+        { text: t('history.failed'), value: 'failed' },
+        { text: t('history.running'), value: 'running' },
       ],
       onFilter: (value, record) => record.status === value,
     },
     {
-      title: '同步行数',
+      title: t('history.rowsSynced'),
       dataIndex: 'rowsSynced',
       key: 'rowsSynced',
       render: (count) => count.toLocaleString(),
       sorter: (a, b) => a.rowsSynced - b.rowsSynced,
     },
     {
-      title: '数据量',
+      title: t('history.dataSize'),
       dataIndex: 'bytesProcessed',
       key: 'bytesProcessed',
       render: formatSize,
     },
     {
-      title: '耗时',
+      title: t('history.duration'),
       dataIndex: 'durationMs',
       key: 'durationMs',
       render: formatDuration,
       sorter: (a, b) => a.durationMs - b.durationMs,
     },
     {
-      title: '操作',
+      title: t('history.actions'),
       key: 'actions',
       render: (_, record) => (
         <Button
@@ -208,7 +207,7 @@ const SyncHistory: React.FC = () => {
             setDrawerVisible(true);
           }}
         >
-          详情
+          {t('history.details')}
         </Button>
       ),
     },
@@ -227,19 +226,19 @@ const SyncHistory: React.FC = () => {
     <div style={{ padding: 24 }}>
       <Title level={3}>
         <HistoryOutlined style={{ marginRight: 8 }} />
-        同步历史记录
+        {t('history.title')}
       </Title>
 
       <Row gutter={16} style={{ marginBottom: 24 }}>
         <Col span={6}>
           <Card>
-            <Statistic title="总同步次数" value={totalSyncs} />
+            <Statistic title={t('history.totalSyncs')} value={totalSyncs} />
           </Card>
         </Col>
         <Col span={6}>
           <Card>
             <Statistic
-              title="成功次数"
+              title={t('history.successCount')}
               value={successfulSyncs}
               valueStyle={{ color: '#3f8600' }}
               suffix={<CheckCircleOutlined />}
@@ -249,7 +248,7 @@ const SyncHistory: React.FC = () => {
         <Col span={6}>
           <Card>
             <Statistic
-              title="失败次数"
+              title={t('history.failedCount')}
               value={failedSyncs}
               valueStyle={{ color: '#cf1322' }}
               suffix={<CloseCircleOutlined />}
@@ -258,27 +257,27 @@ const SyncHistory: React.FC = () => {
         </Col>
         <Col span={6}>
           <Card>
-            <Statistic title="总同步行数" value={totalRows} />
+            <Statistic title={t('history.totalRowsSynced')} value={totalRows} />
           </Card>
         </Col>
       </Row>
 
       <Card
-        title="历史记录"
+        title={t('history.records')}
         extra={
           <Space>
             <RangePicker />
             <Select
-              placeholder="状态筛选"
+              placeholder={t('history.statusFilter')}
               allowClear
               style={{ width: 120 }}
               onChange={setStatusFilter}
             >
-              <Option value="completed">成功</Option>
-              <Option value="failed">失败</Option>
-              <Option value="running">运行中</Option>
+              <Option value="completed">{t('history.success')}</Option>
+              <Option value="failed">{t('history.failed')}</Option>
+              <Option value="running">{t('history.running')}</Option>
             </Select>
-            <Button icon={<ReloadOutlined />}>刷新</Button>
+            <Button icon={<ReloadOutlined />}>{t('common:refresh')}</Button>
           </Space>
         }
       >
@@ -291,7 +290,7 @@ const SyncHistory: React.FC = () => {
       </Card>
 
       <Drawer
-        title="同步详情"
+        title={t('history.detailTitle')}
         placement="right"
         width={500}
         onClose={() => setDrawerVisible(false)}
@@ -300,61 +299,61 @@ const SyncHistory: React.FC = () => {
         {selectedRecord && (
           <Space direction="vertical" style={{ width: '100%' }} size="large">
             <Descriptions column={1} bordered size="small">
-              <Descriptions.Item label="任务名称">{selectedRecord.jobName}</Descriptions.Item>
-              <Descriptions.Item label="数据源">{selectedRecord.sourceName}</Descriptions.Item>
-              <Descriptions.Item label="状态">
+              <Descriptions.Item label={t('history.taskName')}>{selectedRecord.jobName}</Descriptions.Item>
+              <Descriptions.Item label={t('history.sourceName')}>{selectedRecord.sourceName}</Descriptions.Item>
+              <Descriptions.Item label={t('history.status')}>
                 <Tag icon={statusIcons[selectedRecord.status]} color={statusColors[selectedRecord.status]}>
                   {selectedRecord.status.toUpperCase()}
                 </Tag>
               </Descriptions.Item>
-              <Descriptions.Item label="开始时间">
+              <Descriptions.Item label={t('history.startTime')}>
                 {new Date(selectedRecord.startedAt).toLocaleString()}
               </Descriptions.Item>
-              <Descriptions.Item label="完成时间">
+              <Descriptions.Item label={t('history.completedAt')}>
                 {selectedRecord.completedAt
                   ? new Date(selectedRecord.completedAt).toLocaleString()
                   : '-'}
               </Descriptions.Item>
-              <Descriptions.Item label="耗时">
+              <Descriptions.Item label={t('history.duration')}>
                 {formatDuration(selectedRecord.durationMs)}
               </Descriptions.Item>
-              <Descriptions.Item label="同步行数">
+              <Descriptions.Item label={t('history.rowsSynced')}>
                 {selectedRecord.rowsSynced.toLocaleString()}
               </Descriptions.Item>
-              <Descriptions.Item label="数据量">
+              <Descriptions.Item label={t('history.dataSize')}>
                 {formatSize(selectedRecord.bytesProcessed)}
               </Descriptions.Item>
-              <Descriptions.Item label="检查点">
+              <Descriptions.Item label={t('history.checkpoint')}>
                 <code>{selectedRecord.checkpointValue || '-'}</code>
               </Descriptions.Item>
             </Descriptions>
 
             {selectedRecord.errorMessage && (
-              <Card title="错误信息" size="small" type="inner">
+              <Card title={t('history.errorInfo')} size="small" type="inner">
                 <Text type="danger">{selectedRecord.errorMessage}</Text>
               </Card>
             )}
 
-            <Card title="执行时间线" size="small" type="inner">
+            <Card title={t('history.timeline')} size="small" type="inner">
               <Timeline
                 items={[
                   {
                     color: 'blue',
-                    children: `开始执行 - ${new Date(selectedRecord.startedAt).toLocaleTimeString()}`,
+                    children: `${t('history.timelineStart')} - ${new Date(selectedRecord.startedAt).toLocaleTimeString()}`,
                   },
                   {
                     color: 'blue',
-                    children: `连接数据源`,
+                    children: t('history.timelineConnect'),
                   },
                   {
                     color: 'blue',
-                    children: `读取数据 - ${selectedRecord.rowsSynced.toLocaleString()} 行`,
+                    children: `${t('history.timelineRead')} - ${selectedRecord.rowsSynced.toLocaleString()} rows`,
                   },
                   {
                     color: selectedRecord.status === 'completed' ? 'green' : 'red',
                     children: selectedRecord.status === 'completed'
-                      ? `完成 - ${selectedRecord.completedAt ? new Date(selectedRecord.completedAt).toLocaleTimeString() : ''}`
-                      : `失败 - ${selectedRecord.errorMessage}`,
+                      ? `${t('history.timelineComplete')} - ${selectedRecord.completedAt ? new Date(selectedRecord.completedAt).toLocaleTimeString() : ''}`
+                      : `${t('history.timelineFailed')} - ${selectedRecord.errorMessage}`,
                   },
                 ]}
               />

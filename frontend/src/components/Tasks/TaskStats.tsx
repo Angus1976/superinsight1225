@@ -99,10 +99,10 @@ export const TaskStats: React.FC<TaskStatsProps> = ({
   }));
 
   const statusDistribution = [
-    { name: t('tasks.statusCompleted'), value: statsData.completedTasks, color: '#52c41a' },
-    { name: t('tasks.statusInProgress'), value: statsData.inProgressTasks, color: '#1890ff' },
-    { name: t('tasks.statusPending'), value: statsData.pendingTasks, color: '#faad14' },
-    { name: t('tasks.overdue'), value: statsData.overdueTasks, color: '#ff4d4f' },
+    { name: t('statusCompleted'), value: statsData.completedTasks, color: '#52c41a' },
+    { name: t('statusInProgress'), value: statsData.inProgressTasks, color: '#1890ff' },
+    { name: t('statusPending'), value: statsData.pendingTasks, color: '#faad14' },
+    { name: t('overdue'), value: statsData.overdueTasks, color: '#ff4d4f' },
   ];
 
   // Export functions
@@ -146,8 +146,8 @@ export const TaskStats: React.FC<TaskStatsProps> = ({
   }, [statsData, userPerformance, taskTrends, timeRange, t]);
 
   const userColumns = [
-    { title: t('tasks.user'), dataIndex: 'userName', key: 'userName' },
-    { title: t('tasks.completed'), dataIndex: 'tasksCompleted', key: 'tasksCompleted', sorter: (a: UserPerformance, b: UserPerformance) => a.tasksCompleted - b.tasksCompleted },
+    { title: t('user'), dataIndex: 'userName', key: 'userName' },
+    { title: t('completed'), dataIndex: 'tasksCompleted', key: 'tasksCompleted', sorter: (a: UserPerformance, b: UserPerformance) => a.tasksCompleted - b.tasksCompleted },
     { 
       title: t('dashboard:metrics.qualityScore'), 
       dataIndex: 'avgQualityScore', 
@@ -156,14 +156,14 @@ export const TaskStats: React.FC<TaskStatsProps> = ({
       sorter: (a: UserPerformance, b: UserPerformance) => a.avgQualityScore - b.avgQualityScore,
     },
     { 
-      title: t('tasks.avgTimePerItem'), 
+      title: t('avgTimePerItem'), 
       dataIndex: 'avgCompletionTime', 
       key: 'avgCompletionTime',
-      render: (val: number) => `${val.toFixed(1)} ${t('tasks.days') || 'days'}`,
+      render: (val: number) => `${val.toFixed(1)} ${t('days') || 'days'}`,
       sorter: (a: UserPerformance, b: UserPerformance) => a.avgCompletionTime - b.avgCompletionTime,
     },
     { 
-      title: t('tasks.efficiency'), 
+      title: t('efficiency'), 
       dataIndex: 'efficiency', 
       key: 'efficiency',
       render: (val: number) => <Progress percent={val * 100} size="small" strokeColor={val >= 0.85 ? '#52c41a' : val >= 0.7 ? '#faad14' : '#ff4d4f'} />,
@@ -187,7 +187,7 @@ export const TaskStats: React.FC<TaskStatsProps> = ({
               onChange={setSelectedUser}
               style={{ width: 150 }}
               options={[
-                { value: 'all', label: t('tasks.allUsers') || 'All Users' },
+                { value: 'all', label: t('allUsers') || 'All Users' },
                 ...userPerformance.map(u => ({ value: u.userId, label: u.userName })),
               ]}
             />
@@ -210,7 +210,7 @@ export const TaskStats: React.FC<TaskStatsProps> = ({
         <Col xs={24} sm={12} lg={6}>
           <Card>
             <Statistic
-              title={t('tasks.totalTasks')}
+              title={t('totalTasks')}
               value={statsData.totalTasks}
               prefix={<ClockCircleOutlined />}
               valueStyle={{ color: '#1890ff' }}
@@ -220,7 +220,7 @@ export const TaskStats: React.FC<TaskStatsProps> = ({
         <Col xs={24} sm={12} lg={6}>
           <Card>
             <Statistic
-              title={t('tasks.completed')}
+              title={t('completed')}
               value={statsData.completedTasks}
               prefix={<CheckCircleOutlined />}
               valueStyle={{ color: '#52c41a' }}
@@ -242,7 +242,7 @@ export const TaskStats: React.FC<TaskStatsProps> = ({
         <Col xs={24} sm={12} lg={6}>
           <Card>
             <Statistic
-              title={t('tasks.totalAnnotations') || 'Total Annotations'}
+              title={t('totalAnnotations') || 'Total Annotations'}
               value={statsData.totalAnnotations}
               prefix={<UserOutlined />}
               valueStyle={{ color: '#722ed1' }}
@@ -254,7 +254,7 @@ export const TaskStats: React.FC<TaskStatsProps> = ({
       {/* Charts */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col xs={24} lg={16}>
-          <Card title={t('tasks.taskTrends') || 'Task Trends'}>
+          <Card title={t('taskTrends') || 'Task Trends'}>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={taskTrends}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -262,15 +262,15 @@ export const TaskStats: React.FC<TaskStatsProps> = ({
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Line type="monotone" dataKey="completed" stroke="#52c41a" name={t('tasks.completed')} />
-                <Line type="monotone" dataKey="created" stroke="#1890ff" name={t('tasks.created') || 'Created'} />
-                <Line type="monotone" dataKey="inProgress" stroke="#faad14" name={t('tasks.inProgress')} />
+                <Line type="monotone" dataKey="completed" stroke="#52c41a" name={t('completed')} />
+                <Line type="monotone" dataKey="created" stroke="#1890ff" name={t('created') || 'Created'} />
+                <Line type="monotone" dataKey="inProgress" stroke="#faad14" name={t('inProgress')} />
               </LineChart>
             </ResponsiveContainer>
           </Card>
         </Col>
         <Col xs={24} lg={8}>
-          <Card title={t('tasks.statusDistribution') || 'Status Distribution'}>
+          <Card title={t('statusDistribution') || 'Status Distribution'}>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
@@ -294,7 +294,7 @@ export const TaskStats: React.FC<TaskStatsProps> = ({
       </Row>
 
       {/* User Performance Table */}
-      <Card title={t('tasks.userPerformance') || 'User Performance'}>
+      <Card title={t('userPerformance') || 'User Performance'}>
         <Table
           dataSource={userPerformance}
           columns={userColumns}

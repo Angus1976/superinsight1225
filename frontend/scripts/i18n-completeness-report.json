@@ -1,0 +1,209 @@
+{
+  "timestamp": "2026-01-16T11:04:13.846Z",
+  "summary": {
+    "totalNamespaces": 22,
+    "totalMissingInEn": 0,
+    "totalMissingInZh": 0,
+    "isComplete": true
+  },
+  "results": [
+    {
+      "namespace": "admin",
+      "zhExists": true,
+      "enExists": true,
+      "missingInEn": [],
+      "missingInZh": [],
+      "zhKeyCount": 514,
+      "enKeyCount": 514
+    },
+    {
+      "namespace": "annotation",
+      "zhExists": true,
+      "enExists": true,
+      "missingInEn": [],
+      "missingInZh": [],
+      "zhKeyCount": 30,
+      "enKeyCount": 30
+    },
+    {
+      "namespace": "augmentation",
+      "zhExists": true,
+      "enExists": true,
+      "missingInEn": [],
+      "missingInZh": [],
+      "zhKeyCount": 120,
+      "enKeyCount": 120
+    },
+    {
+      "namespace": "auth",
+      "zhExists": true,
+      "enExists": true,
+      "missingInEn": [],
+      "missingInZh": [],
+      "zhKeyCount": 158,
+      "enKeyCount": 158
+    },
+    {
+      "namespace": "billing",
+      "zhExists": true,
+      "enExists": true,
+      "missingInEn": [],
+      "missingInZh": [],
+      "zhKeyCount": 228,
+      "enKeyCount": 228
+    },
+    {
+      "namespace": "businessLogic",
+      "zhExists": true,
+      "enExists": true,
+      "missingInEn": [],
+      "missingInZh": [],
+      "zhKeyCount": 157,
+      "enKeyCount": 157
+    },
+    {
+      "namespace": "collaboration",
+      "zhExists": true,
+      "enExists": true,
+      "missingInEn": [],
+      "missingInZh": [],
+      "zhKeyCount": 43,
+      "enKeyCount": 43
+    },
+    {
+      "namespace": "common",
+      "zhExists": true,
+      "enExists": true,
+      "missingInEn": [],
+      "missingInZh": [],
+      "zhKeyCount": 273,
+      "enKeyCount": 273
+    },
+    {
+      "namespace": "crowdsource",
+      "zhExists": true,
+      "enExists": true,
+      "missingInEn": [],
+      "missingInZh": [],
+      "zhKeyCount": 64,
+      "enKeyCount": 64
+    },
+    {
+      "namespace": "dashboard",
+      "zhExists": true,
+      "enExists": true,
+      "missingInEn": [],
+      "missingInZh": [],
+      "zhKeyCount": 120,
+      "enKeyCount": 120
+    },
+    {
+      "namespace": "dataSync",
+      "zhExists": true,
+      "enExists": true,
+      "missingInEn": [],
+      "missingInZh": [],
+      "zhKeyCount": 340,
+      "enKeyCount": 340
+    },
+    {
+      "namespace": "impact",
+      "zhExists": true,
+      "enExists": true,
+      "missingInEn": [],
+      "missingInZh": [],
+      "zhKeyCount": 19,
+      "enKeyCount": 19
+    },
+    {
+      "namespace": "license",
+      "zhExists": true,
+      "enExists": true,
+      "missingInEn": [],
+      "missingInZh": [],
+      "zhKeyCount": 201,
+      "enKeyCount": 201
+    },
+    {
+      "namespace": "lineage",
+      "zhExists": true,
+      "enExists": true,
+      "missingInEn": [],
+      "missingInZh": [],
+      "zhKeyCount": 16,
+      "enKeyCount": 16
+    },
+    {
+      "namespace": "quality",
+      "zhExists": true,
+      "enExists": true,
+      "missingInEn": [],
+      "missingInZh": [],
+      "zhKeyCount": 431,
+      "enKeyCount": 431
+    },
+    {
+      "namespace": "security",
+      "zhExists": true,
+      "enExists": true,
+      "missingInEn": [],
+      "missingInZh": [],
+      "zhKeyCount": 607,
+      "enKeyCount": 607
+    },
+    {
+      "namespace": "settings",
+      "zhExists": true,
+      "enExists": true,
+      "missingInEn": [],
+      "missingInZh": [],
+      "zhKeyCount": 59,
+      "enKeyCount": 59
+    },
+    {
+      "namespace": "snapshot",
+      "zhExists": true,
+      "enExists": true,
+      "missingInEn": [],
+      "missingInZh": [],
+      "zhKeyCount": 42,
+      "enKeyCount": 42
+    },
+    {
+      "namespace": "system",
+      "zhExists": true,
+      "enExists": true,
+      "missingInEn": [],
+      "missingInZh": [],
+      "zhKeyCount": 118,
+      "enKeyCount": 118
+    },
+    {
+      "namespace": "tasks",
+      "zhExists": true,
+      "enExists": true,
+      "missingInEn": [],
+      "missingInZh": [],
+      "zhKeyCount": 293,
+      "enKeyCount": 293
+    },
+    {
+      "namespace": "versioning",
+      "zhExists": true,
+      "enExists": true,
+      "missingInEn": [],
+      "missingInZh": [],
+      "zhKeyCount": 41,
+      "enKeyCount": 41
+    },
+    {
+      "namespace": "workspace",
+      "zhExists": true,
+      "enExists": true,
+      "missingInEn": [],
+      "missingInZh": [],
+      "zhKeyCount": 113,
+      "enKeyCount": 113
+    }
+  ]
+}

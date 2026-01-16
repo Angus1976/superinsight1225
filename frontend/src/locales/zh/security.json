@@ -1,4 +1,695 @@
 {
+  "title": "安全管理",
+  "overview": "安全概览",
+  "rbacConfig": "RBAC 配置",
+  "ssoConfig": "SSO 配置",
+  "auditLogs": "审计日志",
+  "securityDashboard": "安全仪表板",
+  "sessionManagement": "会话管理",
+  "permissionManagement": "权限管理",
+  
+  "permissions": {
+    "title": "权限管理",
+    "createPermission": "新建权限",
+    "editPermission": "编辑权限",
+    "createSuccess": "权限创建成功",
+    "createError": "权限创建失败",
+    "updateSuccess": "权限更新成功",
+    "updateError": "权限更新失败",
+    "deleteSuccess": "权限删除成功",
+    "deleteError": "权限删除失败",
+    "confirmDelete": "确定要删除权限 \"{{name}}\" 吗？",
+    "columns": {
+      "name": "权限名称",
+      "code": "权限代码",
+      "resource": "资源",
+      "action": "操作",
+      "status": "状态",
+      "createdAt": "创建时间",
+      "description": "描述"
+    },
+    "enabled": "启用",
+    "disabled": "禁用",
+    "table": "表",
+    "field": "字段",
+    "dataType": "数据类型",
+    "viewDetails": "查看详情",
+    "details": "权限详情",
+    "basicInfo": "基本信息",
+    "rolePermissions": "角色权限",
+    "role": "角色",
+    "read": "读取",
+    "write": "写入",
+    "export": "导出",
+    "sensitivity": "敏感级别"
+  },
+
+  "roles": {
+    "title": "角色管理",
+    "createRole": "新建角色",
+    "editRole": "编辑角色",
+    "createSuccess": "角色创建成功",
+    "createError": "角色创建失败",
+    "updateSuccess": "角色更新成功",
+    "updateError": "角色更新失败",
+    "deleteSuccess": "角色删除成功",
+    "deleteError": "角色删除失败",
+    "confirmDelete": "确定要删除角色 \"{{name}}\" 吗？",
+    "deleteWarning": "此操作将同时移除所有用户分配。",
+    "columns": {
+      "name": "角色名称",
+      "code": "角色代码",
+      "description": "描述",
+      "permissionCount": "权限数量",
+      "userCount": "用户数量",
+      "parentRole": "父级角色",
+      "createdAt": "创建时间"
+    },
+    "form": {
+      "namePlaceholder": "例如: project_manager",
+      "descriptionPlaceholder": "角色描述",
+      "selectPermissions": "选择权限",
+      "selectParentRole": "选择父级角色"
+    }
+  },
+
+  "userPermissions": {
+    "title": "用户权限管理",
+    "columns": {
+      "user": "用户",
+      "roles": "角色",
+      "directPermissions": "直接权限",
+      "effectivePermissions": "有效权限",
+      "lastLogin": "最后登录"
+    },
+    "neverLoggedIn": "从未登录",
+    "viewDetail": "查看详情",
+    "editPermissions": "编辑权限",
+    "noRolesAssigned": "未分配角色",
+    "addRole": "添加角色"
+  },
+
+  "audit": {
+    "title": "审计与合规",
+    "logs": "审计日志",
+    "complianceReports": "合规报告",
+    "timestamp": "时间戳",
+    "user": "用户",
+    "action": "操作",
+    "resource": "资源",
+    "riskLevel": "风险级别",
+    "ipAddress": "IP地址",
+    "userAgent": "用户代理",
+    "sessionId": "会话ID",
+    "details": "详情",
+    "hash": "哈希值",
+    "result": "结果",
+    "eventType": "事件类型",
+    "columns": {
+      "timestamp": "时间戳",
+      "eventType": "事件类型",
+      "user": "用户",
+      "resource": "资源",
+      "action": "操作",
+      "result": "结果",
+      "ipAddress": "IP地址"
+    },
+    "stats": {
+      "totalLogs": "日志总数",
+      "eventTypes": "事件类型",
+      "successRate": "成功率",
+      "failedOperations": "失败操作"
+    },
+    "filters": {
+      "startTime": "开始时间",
+      "endTime": "结束时间",
+      "eventType": "事件类型",
+      "result": "结果",
+      "userId": "用户ID",
+      "ipAddress": "IP地址"
+    },
+    "eventTypes": {
+      "loginAttempt": "登录尝试",
+      "dataAccess": "数据访问",
+      "permissionChange": "权限变更",
+      "sessionCreated": "会话创建",
+      "securityEvent": "安全事件"
+    },
+    "results": {
+      "success": "成功",
+      "failed": "失败"
+    },
+    "verifyIntegrity": "验证完整性",
+    "exportCsv": "导出 CSV",
+    "logDetails": "审计日志详情"
+  },
+
+  "compliance": {
+    "title": "合规报告",
+    "generateReport": "生成报告",
+    "reportType": "报告类型",
+    "reportPeriod": "报告周期",
+    "complianceScore": "合规分数",
+    "generated": "生成时间",
+    "period": "周期",
+    "summary": "摘要",
+    "findings": "发现",
+    "recommendations": "建议",
+    "noFindings": "无发现",
+    "noRecommendations": "无建议",
+    "types": {
+      "gdpr": "GDPR 合规报告",
+      "soc2": "SOC 2 合规报告",
+      "access": "数据访问报告",
+      "permissionChanges": "权限变更报告"
+    },
+    "generateInfo": "这将为所选周期生成 {{type}}。报告将包含详细的发现和建议。"
+  },
+
+  "sessions": {
+    "title": "会话管理",
+    "activeSessions": "活跃会话",
+    "usersWithSessions": "有会话的用户",
+    "defaultTimeout": "默认超时",
+    "maxConcurrent": "最大并发",
+    "perUser": "/ 用户",
+    "minutes": "分钟",
+    "cleanupExpired": "清理过期会话",
+    "configure": "配置",
+    "searchPlaceholder": "搜索用户或IP...",
+    "columns": {
+      "user": "用户",
+      "ipAddress": "IP地址",
+      "userAgent": "用户代理",
+      "created": "创建时间",
+      "lastActivity": "最后活动",
+      "expires": "过期时间"
+    },
+    "terminateSession": "终止此会话？",
+    "sessionTerminated": "会话已终止",
+    "terminateFailed": "终止会话失败",
+    "forceLogout": "强制登出用户",
+    "forceLogoutConfirm": "强制登出此用户？",
+    "forceLogoutDesc": "这将终止该用户的所有会话。",
+    "logoutSuccess": "用户已登出：{{count}} 个会话已终止",
+    "logoutFailed": "登出用户失败",
+    "cleanupSuccess": "已清理 {{count}} 个过期会话",
+    "cleanupFailed": "清理会话失败",
+    "sessionDetails": "会话详情",
+    "config": {
+      "title": "会话配置",
+      "defaultTimeout": "默认会话超时（秒）",
+      "maxConcurrent": "每用户最大并发会话数",
+      "updateSuccess": "配置已更新",
+      "updateFailed": "更新配置失败"
+    },
+    "metadata": "元数据"
+  },
+
+  "dashboard": {
+    "title": "安全仪表板",
+    "criticalAlert": "严重安全警报",
+    "criticalAlertDesc": "过去24小时内有 {{count}} 个严重安全事件需要立即处理。",
+    "viewEvents": "查看事件",
+    "stats": {
+      "riskScore": "风险评分",
+      "openEvents": "待处理事件",
+      "critical24h": "严重事件（24小时）",
+      "events7days": "事件（7天）"
+    },
+    "openSecurityEvents": "待处理安全事件",
+    "securityRecommendations": "安全建议",
+    "securityPostureGood": "安全态势良好",
+    "noOpenEvents": "无待处理安全事件",
+    "resolveEvent": "解决安全事件",
+    "resolutionNotes": "解决说明",
+    "resolutionPlaceholder": "描述此安全事件是如何解决的...",
+    "eventResolved": "事件已解决",
+    "resolveFailed": "解决事件失败"
+  },
+
+  "sso": {
+    "title": "单点登录配置",
+    "description": "配置单点登录提供商，允许用户使用现有身份提供商进行身份验证。支持 SAML 2.0、OAuth 2.0、OpenID Connect 和 LDAP/Active Directory。",
+    "addProvider": "添加提供商",
+    "editProvider": "编辑 SSO 提供商",
+    "providerName": "提供商名称",
+    "protocol": "协议",
+    "status": "状态",
+    "testConnection": "测试连接",
+    "testPassed": "测试通过",
+    "testFailed": "测试失败",
+    "createSuccess": "SSO 提供商创建成功",
+    "createFailed": "创建 SSO 提供商失败",
+    "updateSuccess": "SSO 提供商更新成功",
+    "updateFailed": "更新 SSO 提供商失败",
+    "deleteSuccess": "SSO 提供商删除成功",
+    "deleteFailed": "删除 SSO 提供商失败",
+    "deleteConfirm": "删除此提供商？",
+    "statusUpdated": "提供商状态已更新",
+    "statusUpdateFailed": "更新提供商状态失败",
+    "protocols": {
+      "saml": "SAML 2.0",
+      "oauth2": "OAuth 2.0",
+      "oidc": "OpenID Connect",
+      "ldap": "LDAP/AD"
+    },
+    "form": {
+      "namePlaceholder": "例如: corporate-okta",
+      "entityId": "实体 ID",
+      "idpMetadataUrl": "IdP 元数据 URL",
+      "idpSsoUrl": "IdP SSO URL",
+      "idpCertificate": "IdP 证书",
+      "clientId": "客户端 ID",
+      "clientSecret": "客户端密钥",
+      "authorizationUrl": "授权 URL",
+      "tokenUrl": "令牌 URL",
+      "userinfoUrl": "用户信息 URL",
+      "scopes": "作用域",
+      "serverUrl": "服务器 URL",
+      "bindDn": "绑定 DN",
+      "bindPassword": "绑定密码",
+      "baseDn": "基础 DN",
+      "userSearchFilter": "用户搜索过滤器"
+    }
+  },
+
+  "rbac": {
+    "title": "基于角色的访问控制",
+    "roles": "角色",
+    "permissionMatrix": "权限矩阵",
+    "userAssignments": "用户分配",
+    "roleManagement": "角色管理",
+    "createRole": "创建角色",
+    "selectRole": "选择角色",
+    "selectRoleHint": "选择一个角色以查看和编辑其权限",
+    "saveChanges": "保存更改",
+    "permissionsUpdated": "权限更新成功",
+    "permissionsUpdateFailed": "更新权限失败",
+    "directPermission": "直接权限",
+    "wildcard": "通配符",
+    "noPermission": "无权限",
+    "grantedViaWildcard": "通过通配符授予",
+    "inheritedFromParent": "从父级角色继承",
+    "resources": {
+      "projects": "项目",
+      "tasks": "任务",
+      "annotations": "标注",
+      "users": "用户",
+      "billing": "计费",
+      "reports": "报告",
+      "settings": "设置",
+      "admin": "管理"
+    },
+    "actions": {
+      "read": "读取",
+      "write": "写入",
+      "delete": "删除",
+      "all": "全部"
+    },
+    "assignment": {
+      "title": "用户角色分配",
+      "assignRole": "分配角色",
+      "searchUsers": "搜索用户...",
+      "selectUser": "选择用户",
+      "selectRoleToAssign": "选择角色",
+      "expiration": "过期时间（可选）",
+      "assignSuccess": "角色分配成功",
+      "assignFailed": "分配角色失败",
+      "revokeSuccess": "角色已撤销",
+      "revokeFailed": "撤销角色失败",
+      "expires": "过期"
+    }
+  },
+
+  "dataPermissions": {
+    "title": "数据权限控制",
+    "permissions": "权限",
+    "policyImport": "策略导入",
+    "approvals": "审批",
+    "accessLogs": "访问日志",
+    "classification": "分类",
+    "dataMasking": "数据脱敏",
+    
+    "accessLog": {
+      "title": "访问日志",
+      "stats": {
+        "totalAccesses": "总访问数",
+        "readOperations": "读取操作",
+        "modifyOperations": "修改操作",
+        "exportOperations": "导出操作"
+      },
+      "columns": {
+        "timestamp": "时间戳",
+        "operation": "操作",
+        "user": "用户",
+        "resource": "资源",
+        "sensitivity": "敏感级别",
+        "records": "记录数",
+        "ipAddress": "IP地址"
+      },
+      "operations": {
+        "read": "读取",
+        "modify": "修改",
+        "export": "导出",
+        "apiCall": "API调用"
+      },
+      "exportCsv": "导出 CSV",
+      "exportJson": "导出 JSON",
+      "exportSuccess": "导出完成",
+      "exportFailed": "导出失败",
+      "logDetails": "访问日志详情",
+      "fieldsAccessed": "访问的字段"
+    },
+
+    "approval": {
+      "title": "审批工作流",
+      "pendingApprovals": "待审批",
+      "myRequests": "我的请求",
+      "delegateApprovals": "委托审批",
+      "stats": {
+        "pending": "待审批",
+        "myRequests": "我的请求",
+        "approvedToday": "今日批准",
+        "rejectedToday": "今日拒绝"
+      },
+      "columns": {
+        "resource": "资源",
+        "action": "操作",
+        "requester": "请求者",
+        "sensitivity": "敏感级别",
+        "level": "级别",
+        "created": "创建时间",
+        "expires": "过期时间",
+        "status": "状态",
+        "resolved": "解决时间"
+      },
+      "status": {
+        "pending": "待处理",
+        "approved": "已批准",
+        "rejected": "已拒绝",
+        "expired": "已过期",
+        "cancelled": "已取消"
+      },
+      "approve": "批准",
+      "reject": "拒绝",
+      "viewDetails": "查看详情",
+      "requestDetails": "审批请求详情",
+      "approvalHistory": "审批历史",
+      "decisionSubmitted": "决定已提交",
+      "decisionFailed": "提交决定失败",
+      "comments": "评论",
+      "commentsPlaceholder": "添加评论（可选）",
+      "delegation": {
+        "title": "委托审批",
+        "delegateTo": "委托给",
+        "delegateToPlaceholder": "要委托审批的用户ID",
+        "startDate": "开始日期",
+        "endDate": "结束日期",
+        "createSuccess": "委托创建成功",
+        "createFailed": "创建委托失败"
+      }
+    },
+
+    "classification": {
+      "title": "数据分类",
+      "stats": {
+        "totalFields": "总字段数",
+        "classified": "已分类",
+        "confidentialPlus": "机密及以上",
+        "unclassified": "未分类"
+      },
+      "viewReport": "查看报告",
+      "addRule": "添加规则",
+      "autoClassify": "自动分类",
+      "classificationRules": "分类规则",
+      "columns": {
+        "dataset": "数据集",
+        "field": "字段",
+        "category": "类别",
+        "sensitivity": "敏感级别",
+        "method": "方法",
+        "confidence": "置信度",
+        "verified": "已验证",
+        "updated": "更新时间"
+      },
+      "methods": {
+        "manual": "手动",
+        "ruleBased": "基于规则",
+        "aiBased": "基于AI"
+      },
+      "allFields": "所有字段",
+      "editClassification": "编辑分类",
+      "autoClassifyDataset": "自动分类数据集",
+      "datasetId": "数据集ID",
+      "classificationMethod": "分类方法",
+      "ruleBasedClassification": "基于规则的分类",
+      "aiBasedClassification": "基于AI的分类",
+      "aiClassificationInfo": "基于AI的分类使用机器学习来检测敏感数据模式。可能需要更长时间，但对复杂数据提供更高的准确性。",
+      "classificationComplete": "分类完成：{{classified}}/{{total}} 个字段已分类",
+      "classificationFailed": "分类失败",
+      "addRuleTitle": "添加分类规则",
+      "ruleName": "规则名称",
+      "regexPattern": "正则表达式模式",
+      "category": "类别",
+      "priority": "优先级",
+      "ruleCreated": "规则创建成功",
+      "ruleCreateFailed": "创建规则失败",
+      "updateSuccess": "已更新 {{count}} 个分类",
+      "updateFailed": "更新失败",
+      "report": {
+        "title": "分类报告",
+        "totalDatasets": "总数据集",
+        "totalFields": "总字段数",
+        "unclassified": "未分类",
+        "generatedAt": "生成时间",
+        "bySensitivity": "按敏感级别",
+        "byMethod": "按分类方法"
+      }
+    },
+
+    "masking": {
+      "title": "脱敏规则",
+      "stats": {
+        "totalRules": "规则总数",
+        "activeRules": "活跃规则",
+        "encryptionRules": "加密规则",
+        "hashRules": "哈希规则"
+      },
+      "previewMasking": "预览脱敏",
+      "addRule": "添加规则",
+      "editRule": "编辑脱敏规则",
+      "algorithmReference": "脱敏算法参考",
+      "columns": {
+        "name": "名称",
+        "fieldPattern": "字段模式",
+        "algorithm": "算法",
+        "applicableRoles": "适用角色",
+        "priority": "优先级",
+        "status": "状态",
+        "created": "创建时间"
+      },
+      "allRoles": "所有角色",
+      "active": "活跃",
+      "inactive": "非活跃",
+      "algorithms": {
+        "replacement": "替换",
+        "partial": "部分掩码",
+        "encryption": "加密",
+        "hash": "哈希",
+        "nullify": "置空"
+      },
+      "algorithmDescriptions": {
+        "replacement": "用星号替换整个值 (***)",
+        "partial": "显示首尾字符，掩码中间 (Jo***hn)",
+        "encryption": "使用可逆加密加密值",
+        "hash": "值的单向哈希 (SHA-256)",
+        "nullify": "替换为 NULL/空值"
+      },
+      "form": {
+        "ruleName": "规则名称",
+        "ruleNamePlaceholder": "例如: 邮箱脱敏",
+        "description": "描述",
+        "descriptionPlaceholder": "规则描述",
+        "fieldPattern": "字段模式（正则表达式）",
+        "fieldPatternPlaceholder": "例如: ^email$|.*_email$|.*email.*",
+        "algorithm": "脱敏算法",
+        "selectAlgorithm": "选择算法",
+        "applicableRoles": "适用角色",
+        "applicableRolesPlaceholder": "留空表示所有角色",
+        "priority": "优先级",
+        "priorityHint": "优先级高的规则先应用",
+        "active": "活跃"
+      },
+      "preview": {
+        "title": "预览脱敏",
+        "testValue": "测试值",
+        "testValuePlaceholder": "例如: john.doe@example.com",
+        "algorithm": "算法",
+        "selectAlgorithm": "选择算法",
+        "original": "原始值",
+        "masked": "脱敏后"
+      },
+      "createSuccess": "规则创建成功",
+      "createFailed": "创建规则失败",
+      "updateSuccess": "规则更新成功",
+      "updateFailed": "更新规则失败",
+      "deleteSuccess": "规则删除成功",
+      "deleteFailed": "删除规则失败",
+      "deleteConfirm": "删除此规则？",
+      "previewFailed": "预览失败"
+    },
+
+    "permissionConfig": {
+      "title": "数据权限",
+      "stats": {
+        "totalPermissions": "权限总数",
+        "active": "活跃",
+        "temporary": "临时",
+        "expiringSoon": "即将过期"
+      },
+      "testPermission": "测试权限",
+      "grantPermission": "授予权限",
+      "columns": {
+        "resourceLevel": "资源级别",
+        "resource": "资源",
+        "userRole": "用户/角色",
+        "action": "操作",
+        "status": "状态",
+        "expires": "过期时间",
+        "granted": "授予时间"
+      },
+      "resourceLevels": {
+        "dataset": "数据集",
+        "record": "记录",
+        "field": "字段"
+      },
+      "actions": {
+        "read": "读取",
+        "write": "写入",
+        "delete": "删除",
+        "export": "导出",
+        "annotate": "标注",
+        "review": "审核"
+      },
+      "never": "永不",
+      "revokePermission": "撤销此权限？",
+      "revokeSuccess": "权限已撤销",
+      "revokeFailed": "撤销权限失败",
+      "grantSuccess": "权限授予成功",
+      "grantFailed": "授予权限失败",
+      "form": {
+        "resourceLevel": "资源级别",
+        "resourceType": "资源类型",
+        "resourceTypePlaceholder": "例如: dataset, project, task",
+        "resourceId": "资源ID",
+        "resourceIdPlaceholder": "资源标识符",
+        "fieldName": "字段名称（字段级别）",
+        "fieldNamePlaceholder": "字段名称（可选）",
+        "userId": "用户ID",
+        "userIdPlaceholder": "用户UUID（留空表示基于角色）",
+        "roleId": "角色ID",
+        "roleIdPlaceholder": "角色UUID（留空表示基于用户）",
+        "action": "操作",
+        "selectAction": "选择操作",
+        "expiresAt": "过期时间",
+        "isTemporary": "临时权限",
+        "tags": "标签",
+        "addTags": "添加标签"
+      },
+      "test": {
+        "title": "测试权限",
+        "userId": "用户ID",
+        "userIdPlaceholder": "要测试的用户UUID",
+        "resourceType": "资源类型",
+        "resourceId": "资源ID",
+        "action": "操作",
+        "fieldName": "字段名称（可选）",
+        "fieldNamePlaceholder": "用于字段级别检查",
+        "result": "结果",
+        "allowed": "允许",
+        "denied": "拒绝",
+        "reason": "原因",
+        "requiresApproval": "需要审批",
+        "maskedFields": "脱敏字段",
+        "testFailed": "权限测试失败"
+      },
+      "details": {
+        "title": "权限详情",
+        "id": "ID",
+        "resourceLevel": "资源级别",
+        "resourceType": "资源类型",
+        "resourceId": "资源ID",
+        "fieldName": "字段名称",
+        "userId": "用户ID",
+        "roleId": "角色ID",
+        "action": "操作",
+        "status": "状态",
+        "temporary": "临时",
+        "tags": "标签",
+        "grantedBy": "授予者",
+        "grantedAt": "授予时间",
+        "expiresAt": "过期时间",
+        "conditions": "条件"
+      }
+    },
+
+    "policyImport": {
+      "title": "导入新策略源",
+      "existingSources": "现有策略源",
+      "steps": {
+        "selectType": "选择类型",
+        "configure": "配置",
+        "preview": "预览",
+        "result": "结果"
+      },
+      "types": {
+        "ldap": "LDAP / Active Directory",
+        "ldapDesc": "从 LDAP 或 Active Directory 导入用户和组",
+        "oauth": "OAuth / OIDC",
+        "oauthDesc": "从 OAuth 或 OpenID Connect 提供商导入权限",
+        "custom": "自定义策略",
+        "customDesc": "从 JSON 或 YAML 策略文件导入"
+      },
+      "ldapConfig": {
+        "url": "LDAP URL",
+        "baseDn": "基础 DN",
+        "bindDn": "绑定 DN",
+        "bindPassword": "绑定密码",
+        "userFilter": "用户过滤器",
+        "groupFilter": "组过滤器",
+        "useSsl": "使用 SSL",
+        "timeout": "超时（秒）"
+      },
+      "oauthConfig": {
+        "providerUrl": "提供商 URL",
+        "clientId": "客户端 ID",
+        "clientSecret": "客户端密钥",
+        "scopes": "作用域",
+        "usePkce": "使用 PKCE"
+      },
+      "customConfig": {
+        "format": "格式",
+        "content": "策略内容"
+      },
+      "reviewConfig": "审查配置",
+      "reviewConfigDesc": "请在导入前审查您的配置。",
+      "configSummary": "配置摘要",
+      "importSuccess": "导入成功",
+      "importWithIssues": "导入完成但有问题",
+      "importStats": "已导入: {{imported}}, 已更新: {{updated}}, 已跳过: {{skipped}}",
+      "importAnother": "导入另一个",
+      "conflicts": "冲突",
+      "errors": "错误",
+      "sync": "同步",
+      "syncSuccess": "同步完成",
+      "syncFailed": "同步失败",
+      "ldapImportFailed": "LDAP 导入失败",
+      "oauthImportFailed": "OAuth 导入失败",
+      "customImportFailed": "自定义策略导入失败"
+    }
+  },
+
   "desensitization": {
     "name": "规则名称",
     "description": "描述",
@@ -15,7 +706,7 @@
     "createRule": "创建规则",
     "editRule": "编辑规则",
     "deleteConfirm": "删除脱敏规则",
-    "deleteWarning": "确定要删除规则 '{name}' 吗？此操作无法撤销。",
+    "deleteWarning": "确定要删除规则 '{{name}}' 吗？此操作无法撤销。",
     "namePlaceholder": "请输入规则名称",
     "descriptionPlaceholder": "请输入规则描述",
     "dataTypePlaceholder": "请选择数据类型",
@@ -23,56 +714,21 @@
     "appliedTablesPlaceholder": "请选择应用此规则的表",
     "appliedFieldsPlaceholder": "请选择应用此规则的字段"
   },
-  "permissions": {
-    "table": "表",
-    "field": "字段",
-    "dataType": "数据类型",
-    "roles": "角色",
-    "audit": "审计",
-    "viewDetails": "查看详情",
-    "details": "权限详情",
-    "basicInfo": "基本信息",
-    "rolePermissions": "角色权限",
-    "role": "角色",
-    "read": "读取",
-    "write": "写入",
-    "export": "导出",
-    "sensitivity": "敏感级别"
-  },
-  "audit": {
-    "timestamp": "时间戳",
-    "user": "用户",
-    "action": "操作",
-    "resource": "资源",
-    "riskLevel": "风险级别",
-    "ipAddress": "IP地址"
-  },
-  "compliance": {
-    "gdpr": "GDPR合规报告",
-    "ccpa": "CCPA合规报告",
-    "pipl": "PIPL合规报告",
-    "custom": "自定义合规报告",
-    "period": "报告周期",
-    "totalRecords": "总记录数",
-    "sensitiveRecords": "敏感记录数",
-    "accessCount": "访问次数",
-    "violations": "违规次数",
-    "score": "合规分数",
-    "occurrences": "次",
-    "recommendations": "建议"
-  },
+
   "stats": {
     "totalRules": "规则总数",
     "activeRules": "活跃规则",
     "protectedFields": "受保护字段",
     "auditLogs": "审计日志"
   },
+
   "tabs": {
     "rules": "脱敏规则",
     "permissions": "字段权限",
     "audit": "审计日志",
     "compliance": "合规报告"
   },
+
   "dataTypes": {
     "email": "邮箱",
     "phone": "电话号码",
@@ -82,6 +738,7 @@
     "address": "地址",
     "custom": "自定义"
   },
+
   "methods": {
     "mask": "掩码",
     "hash": "哈希",
@@ -89,21 +746,35 @@
     "replace": "替换",
     "remove": "移除"
   },
+
   "sensitivity": {
     "public": "公开",
     "internal": "内部",
     "confidential": "机密",
-    "secret": "绝密"
+    "topSecret": "绝密"
   },
+
   "actions": {
     "read": "读取",
     "write": "写入",
     "export": "导出",
     "delete": "删除"
   },
+
   "risk": {
     "low": "低",
     "medium": "中",
     "high": "高"
+  },
+
+  "common": {
+    "totalLogs": "共 {{total}} 条日志",
+    "totalRoles": "共 {{total}} 个角色",
+    "totalPermissions": "共 {{total}} 条权限",
+    "totalSessions": "共 {{total}} 个会话",
+    "totalProviders": "共 {{total}} 个提供商",
+    "totalUsers": "共 {{total}} 个用户",
+    "totalReports": "共 {{total}} 份报告",
+    "range": "第 {{start}}-{{end}} 条，共 {{total}} 条"
   }
 }

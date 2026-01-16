@@ -1,0 +1,154 @@
+{
+  "title": "Data Augmentation",
+  "stats": {
+    "totalSamples": "Total Samples",
+    "augmentedSamples": "Augmented Samples",
+    "augmentationRatio": "Augmentation Ratio"
+  },
+  "tabs": {
+    "jobs": "Augmentation Jobs",
+    "samples": "Sample Data"
+  },
+  "jobs": {
+    "name": "Name",
+    "strategy": "Strategy",
+    "status": "Status",
+    "progress": "Progress",
+    "sourceOutput": "Source / Output",
+    "created": "Created",
+    "actions": "Actions",
+    "createJob": "Create Job",
+    "uploadSamples": "Upload Samples",
+    "start": "Start",
+    "pause": "Pause",
+    "view": "View",
+    "delete": "Delete"
+  },
+  "status": {
+    "pending": "Pending",
+    "running": "Running",
+    "completed": "Completed",
+    "failed": "Failed"
+  },
+  "strategy": {
+    "backTranslation": "Back Translation",
+    "paraphrase": "Paraphrase",
+    "synonymReplace": "Synonym Replacement",
+    "noiseInjection": "Noise Injection",
+    "eda": "Easy Data Augmentation"
+  },
+  "samples": {
+    "content": "Content",
+    "label": "Label",
+    "source": "Source",
+    "quality": "Quality",
+    "original": "Original",
+    "augmented": "Augmented",
+    "preview": "Sample Preview",
+    "previewDescription": "This shows a comparison between original and augmented samples."
+  },
+  "modal": {
+    "createJob": "Create Augmentation Job",
+    "uploadSamples": "Upload Sample Data",
+    "jobName": "Job Name",
+    "jobNamePlaceholder": "Enter job name",
+    "jobNameRequired": "Please enter job name",
+    "strategy": "Augmentation Strategy",
+    "strategyPlaceholder": "Select strategy",
+    "multiplier": "Augmentation Multiplier",
+    "description": "Description",
+    "descriptionPlaceholder": "Optional description",
+    "uploadHint": "Click or drag file to upload",
+    "uploadDescription": "Support CSV, JSON, or JSONL format. Max file size: 100MB.",
+    "createSuccess": "Augmentation job created successfully"
+  },
+  "config": {
+    "title": "Data Augmentation Configuration",
+    "resetDefault": "Reset Default",
+    "saveConfig": "Save Configuration",
+    "saveSuccess": "Configuration saved successfully",
+    "saveFailed": "Failed to save configuration",
+    "resetSuccess": "Configuration reset successfully",
+    "resetFailed": "Failed to reset configuration",
+    "textAugmentation": {
+      "title": "Text Augmentation Configuration",
+      "enabled": "Enable Text Augmentation",
+      "synonymReplacement": "Synonym Replacement",
+      "randomInsertion": "Random Insertion",
+      "randomSwap": "Random Swap",
+      "randomDeletion": "Random Deletion",
+      "augmentationRatio": "Augmentation Ratio"
+    },
+    "imageAugmentation": {
+      "title": "Image Augmentation Configuration",
+      "enabled": "Enable Image Augmentation",
+      "rotation": "Rotation",
+      "flip": "Flip",
+      "brightness": "Brightness Adjustment",
+      "contrast": "Contrast Adjustment",
+      "noise": "Add Noise",
+      "augmentationRatio": "Augmentation Ratio"
+    },
+    "audioAugmentation": {
+      "title": "Audio Augmentation Configuration",
+      "enabled": "Enable Audio Augmentation",
+      "speedChange": "Speed Change",
+      "pitchShift": "Pitch Shift",
+      "addNoise": "Add Noise",
+      "timeStretch": "Time Stretch",
+      "augmentationRatio": "Augmentation Ratio"
+    },
+    "general": {
+      "title": "General Configuration",
+      "maxAugmentationsPerSample": "Max Augmentations Per Sample",
+      "preserveOriginal": "Preserve Original Sample",
+      "qualityThreshold": "Quality Threshold",
+      "qualityThresholdHelp": "Augmented samples below this threshold will be discarded"
+    },
+    "switch": {
+      "enabled": "Enabled",
+      "disabled": "Disabled"
+    }
+  },
+  "sampleManagement": {
+    "title": "Data Augmentation Sample Management",
+    "batchUpload": "Batch Upload",
+    "createSample": "Create Sample",
+    "sampleName": "Sample Name",
+    "sampleNamePlaceholder": "Enter sample name",
+    "sampleNameRequired": "Please enter sample name",
+    "sampleType": "Sample Type",
+    "sampleTypePlaceholder": "Select sample type",
+    "sampleTypeRequired": "Please select sample type",
+    "sampleDescription": "Description",
+    "sampleDescriptionPlaceholder": "Enter sample description",
+    "type": {
+      "text": "Text",
+      "image": "Image",
+      "audio": "Audio",
+      "video": "Video"
+    },
+    "originalCount": "Original Count",
+    "augmentedCount": "Augmented Count",
+    "createdAt": "Created At",
+    "actions": "Actions",
+    "edit": "Edit",
+    "download": "Download",
+    "downloadInDev": "Download feature in development",
+    "confirmDelete": "Confirm Delete",
+    "confirmDeleteMessage": "Are you sure you want to delete sample \"{{name}}\"?",
+    "createSuccess": "Sample created successfully",
+    "createFailed": "Failed to create sample",
+    "deleteSuccess": "Sample deleted successfully",
+    "deleteFailed": "Failed to delete sample",
+    "uploadSuccess": "{{name}} uploaded successfully",
+    "uploadFailed": "{{name}} upload failed",
+    "editSample": "Edit Sample",
+    "pagination": "{{start}}-{{end}} of {{total}} items"
+  },
+  "nav": {
+    "overview": "Overview",
+    "samples": "Sample Management",
+    "config": "Configuration"
+  }
+}

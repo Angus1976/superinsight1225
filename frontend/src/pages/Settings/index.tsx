@@ -32,7 +32,7 @@ const { TabPane } = Tabs;
 const { Option } = Select;
 
 const SettingsPage: React.FC = () => {
-  const { i18n } = useTranslation('common');
+  const { t, i18n } = useTranslation('settings');
   const { user } = useAuthStore();
   const { theme, setTheme } = useUIStore();
   const [profileForm] = Form.useForm();
@@ -44,10 +44,10 @@ const SettingsPage: React.FC = () => {
     try {
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      message.success('Profile updated successfully');
+      message.success(t('profile.updateSuccess'));
       console.log('Profile values:', values);
     } catch {
-      message.error('Failed to update profile');
+      message.error(t('profile.updateFailed'));
     } finally {
       setLoading(false);
     }
@@ -58,11 +58,11 @@ const SettingsPage: React.FC = () => {
     try {
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      message.success('Password changed successfully');
+      message.success(t('security.changeSuccess'));
       passwordForm.resetFields();
       console.log('Password values:', values);
     } catch {
-      message.error('Failed to change password');
+      message.error(t('security.changeFailed'));
     } finally {
       setLoading(false);
     }
@@ -70,17 +70,19 @@ const SettingsPage: React.FC = () => {
 
   const handleLanguageChange = (lang: string) => {
     i18n.changeLanguage(lang);
-    message.success(`Language changed to ${lang === 'zh' ? 'Chinese' : 'English'}`);
+    const languageName = lang === 'zh' ? t('appearance.language.chinese') : t('appearance.language.english');
+    message.success(t('appearance.language.changeSuccess', { language: languageName }));
   };
 
   const handleThemeChange = (isDark: boolean) => {
     setTheme(isDark ? 'dark' : 'light');
-    message.success(`Theme changed to ${isDark ? 'dark' : 'light'} mode`);
+    const themeName = isDark ? t('appearance.darkMode.dark') : t('appearance.darkMode.light');
+    message.success(t('appearance.darkMode.changeSuccess', { theme: themeName }));
   };
 
   return (
     <div>
-      <h2 style={{ marginBottom: 24 }}>Settings</h2>
+      <h2 style={{ marginBottom: 24 }}>{t('title')}</h2>
 
       <Card>
         <Tabs defaultActiveKey="profile" tabPosition="left">
@@ -89,12 +91,12 @@ const SettingsPage: React.FC = () => {
             tab={
               <span>
                 <UserOutlined />
-                Profile
+                {t('profile.tab')}
               </span>
             }
             key="profile"
           >
-            <h3>Profile Settings</h3>
+            <h3>{t('profile.title')}</h3>
             <Divider />
 
             <Row gutter={24}>
@@ -102,7 +104,7 @@ const SettingsPage: React.FC = () => {
                 <Avatar size={120} icon={<UserOutlined />} />
                 <div style={{ marginTop: 16 }}>
                   <Upload showUploadList={false}>
-                    <Button icon={<UploadOutlined />}>Change Avatar</Button>
+                    <Button icon={<UploadOutlined />}>{t('profile.changeAvatar')}</Button>
                   </Upload>
                 </div>
               </Col>
@@ -120,25 +122,25 @@ const SettingsPage: React.FC = () => {
                 >
                   <Form.Item
                     name="username"
-                    label="Username"
-                    rules={[{ required: true, message: 'Please enter username' }]}
+                    label={t('profile.username')}
+                    rules={[{ required: true, message: t('profile.usernameRequired') }]}
                   >
-                    <Input disabled placeholder="Username" />
+                    <Input disabled placeholder={t('profile.usernamePlaceholder')} />
                   </Form.Item>
 
                   <Form.Item
                     name="email"
-                    label="Email"
+                    label={t('profile.email')}
                     rules={[
-                      { required: true, message: 'Please enter email' },
-                      { type: 'email', message: 'Please enter a valid email' },
+                      { required: true, message: t('profile.emailRequired') },
+                      { type: 'email', message: t('profile.emailInvalid') },
                     ]}
                   >
-                    <Input placeholder="Email address" />
+                    <Input placeholder={t('profile.emailPlaceholder')} />
                   </Form.Item>
 
-                  <Form.Item name="display_name" label="Display Name">
-                    <Input placeholder="Display name" />
+                  <Form.Item name="display_name" label={t('profile.displayName')}>
+                    <Input placeholder={t('profile.displayNamePlaceholder')} />
                   </Form.Item>
 
                   <Form.Item>
@@ -148,7 +150,7 @@ const SettingsPage: React.FC = () => {
                       loading={loading}
                       icon={<SaveOutlined />}
                     >
-                      Save Changes
+                      {t('profile.saveChanges')}
                     </Button>
                   </Form.Item>
                 </Form>
@@ -161,12 +163,12 @@ const SettingsPage: React.FC = () => {
             tab={
               <span>
                 <LockOutlined />
-                Security
+                {t('security.tab')}
               </span>
             }
             key="security"
           >
-            <h3>Change Password</h3>
+            <h3>{t('security.title')}</h3>
             <Divider />
 
             <Form
@@ -177,45 +179,45 @@ const SettingsPage: React.FC = () => {
             >
               <Form.Item
                 name="current_password"
-                label="Current Password"
-                rules={[{ required: true, message: 'Please enter current password' }]}
+                label={t('security.currentPassword')}
+                rules={[{ required: true, message: t('security.currentPasswordRequired') }]}
               >
-                <Input.Password placeholder="Current password" />
+                <Input.Password placeholder={t('security.currentPasswordPlaceholder')} />
               </Form.Item>
 
               <Form.Item
                 name="new_password"
-                label="New Password"
+                label={t('security.newPassword')}
                 rules={[
-                  { required: true, message: 'Please enter new password' },
-                  { min: 8, message: 'Password must be at least 8 characters' },
+                  { required: true, message: t('security.newPasswordRequired') },
+                  { min: 8, message: t('security.newPasswordLength') },
                 ]}
               >
-                <Input.Password placeholder="New password" />
+                <Input.Password placeholder={t('security.newPasswordPlaceholder')} />
               </Form.Item>
 
               <Form.Item
                 name="confirm_password"
-                label="Confirm Password"
+                label={t('security.confirmPassword')}
                 dependencies={['new_password']}
                 rules={[
-                  { required: true, message: 'Please confirm password' },
+                  { required: true, message: t('security.confirmPasswordRequired') },
                   ({ getFieldValue }) => ({
                     validator(_, value) {
                       if (!value || getFieldValue('new_password') === value) {
                         return Promise.resolve();
                       }
-                      return Promise.reject(new Error('Passwords do not match'));
+                      return Promise.reject(new Error(t('security.passwordMismatch')));
                     },
                   }),
                 ]}
               >
-                <Input.Password placeholder="Confirm new password" />
+                <Input.Password placeholder={t('security.confirmPasswordPlaceholder')} />
               </Form.Item>
 
               <Form.Item>
                 <Button type="primary" htmlType="submit" loading={loading}>
-                  Change Password
+                  {t('security.changePassword')}
                 </Button>
               </Form.Item>
             </Form>
@@ -226,21 +228,21 @@ const SettingsPage: React.FC = () => {
             tab={
               <span>
                 <BellOutlined />
-                Notifications
+                {t('notifications.tab')}
               </span>
             }
             key="notifications"
           >
-            <h3>Notification Preferences</h3>
+            <h3>{t('notifications.title')}</h3>
             <Divider />
 
             <Space direction="vertical" size="large" style={{ width: '100%' }}>
               <Row justify="space-between" align="middle">
                 <Col>
                   <div>
-                    <strong>Email Notifications</strong>
+                    <strong>{t('notifications.email.title')}</strong>
                     <p style={{ margin: 0, color: '#999' }}>
-                      Receive email notifications for important updates
+                      {t('notifications.email.description')}
                     </p>
                   </div>
                 </Col>
@@ -252,9 +254,9 @@ const SettingsPage: React.FC = () => {
               <Row justify="space-between" align="middle">
                 <Col>
                   <div>
-                    <strong>Task Assignments</strong>
+                    <strong>{t('notifications.taskAssignments.title')}</strong>
                     <p style={{ margin: 0, color: '#999' }}>
-                      Get notified when tasks are assigned to you
+                      {t('notifications.taskAssignments.description')}
                     </p>
                   </div>
                 </Col>
@@ -266,9 +268,9 @@ const SettingsPage: React.FC = () => {
               <Row justify="space-between" align="middle">
                 <Col>
                   <div>
-                    <strong>Task Completions</strong>
+                    <strong>{t('notifications.taskCompletions.title')}</strong>
                     <p style={{ margin: 0, color: '#999' }}>
-                      Get notified when your tasks are reviewed
+                      {t('notifications.taskCompletions.description')}
                     </p>
                   </div>
                 </Col>
@@ -280,9 +282,9 @@ const SettingsPage: React.FC = () => {
               <Row justify="space-between" align="middle">
                 <Col>
                   <div>
-                    <strong>Billing Alerts</strong>
+                    <strong>{t('notifications.billingAlerts.title')}</strong>
                     <p style={{ margin: 0, color: '#999' }}>
-                      Receive alerts about billing and payments
+                      {t('notifications.billingAlerts.description')}
                     </p>
                   </div>
                 </Col>
@@ -294,9 +296,9 @@ const SettingsPage: React.FC = () => {
               <Row justify="space-between" align="middle">
                 <Col>
                   <div>
-                    <strong>System Announcements</strong>
+                    <strong>{t('notifications.systemAnnouncements.title')}</strong>
                     <p style={{ margin: 0, color: '#999' }}>
-                      Receive system maintenance and update notices
+                      {t('notifications.systemAnnouncements.description')}
                     </p>
                   </div>
                 </Col>
@@ -312,21 +314,21 @@ const SettingsPage: React.FC = () => {
             tab={
               <span>
                 <GlobalOutlined />
-                Appearance
+                {t('appearance.tab')}
               </span>
             }
             key="appearance"
           >
-            <h3>Appearance Settings</h3>
+            <h3>{t('appearance.title')}</h3>
             <Divider />
 
             <Space direction="vertical" size="large" style={{ width: '100%' }}>
               <Row justify="space-between" align="middle">
                 <Col>
                   <div>
-                    <strong>Language</strong>
+                    <strong>{t('appearance.language.title')}</strong>
                     <p style={{ margin: 0, color: '#999' }}>
-                      Select your preferred language
+                      {t('appearance.language.description')}
                     </p>
                   </div>
                 </Col>
@@ -336,8 +338,8 @@ const SettingsPage: React.FC = () => {
                     onChange={handleLanguageChange}
                     style={{ width: 150 }}
                   >
-                    <Option value="en">English</Option>
-                    <Option value="zh">中文</Option>
+                    <Option value="en">{t('appearance.language.english')}</Option>
+                    <Option value="zh">{t('appearance.language.chinese')}</Option>
                   </Select>
                 </Col>
               </Row>
@@ -345,9 +347,9 @@ const SettingsPage: React.FC = () => {
               <Row justify="space-between" align="middle">
                 <Col>
                   <div>
-                    <strong>Dark Mode</strong>
+                    <strong>{t('appearance.darkMode.title')}</strong>
                     <p style={{ margin: 0, color: '#999' }}>
-                      Switch between light and dark themes
+                      {t('appearance.darkMode.description')}
                     </p>
                   </div>
                 </Col>
@@ -355,8 +357,8 @@ const SettingsPage: React.FC = () => {
                   <Switch
                     checked={theme === 'dark'}
                     onChange={handleThemeChange}
-                    checkedChildren="Dark"
-                    unCheckedChildren="Light"
+                    checkedChildren={t('appearance.darkMode.dark')}
+                    unCheckedChildren={t('appearance.darkMode.light')}
                   />
                 </Col>
               </Row>
@@ -364,9 +366,9 @@ const SettingsPage: React.FC = () => {
               <Row justify="space-between" align="middle">
                 <Col>
                   <div>
-                    <strong>Compact Mode</strong>
+                    <strong>{t('appearance.compactMode.title')}</strong>
                     <p style={{ margin: 0, color: '#999' }}>
-                      Use a more compact UI layout
+                      {t('appearance.compactMode.description')}
                     </p>
                   </div>
                 </Col>

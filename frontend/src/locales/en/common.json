@@ -1,6 +1,7 @@
 {
   "appName": "SuperInsight",
   "appNameZh": "问视间",
+  "appNameEn": "SuperInsight",
   "search": "Search",
   "reset": "Reset",
   "refresh": "Refresh",
@@ -79,9 +80,16 @@
     "previous": "Previous",
     "enabled": "Enabled",
     "disabled": "Disabled",
+    "required": "Required",
+    "optional": "Optional",
+    "strict": "Strict",
+    "loose": "Loose",
     "allowed": "Allowed",
     "denied": "Denied",
-    "create": "Create"
+    "create": "Create",
+    "yes": "Yes",
+    "no": "No",
+    "clear": "Clear"
   },
   "status": {
     "loading": "Loading...",
@@ -209,6 +217,12 @@
         "title": "403",
         "subtitle": "Sorry, you don't have access to this page.",
         "backHome": "Home"
+      },
+      "serverError": {
+        "title": "500",
+        "subtitle": "Sorry, the server encountered an error.",
+        "backHome": "Home",
+        "refresh": "Refresh Page"
       }
     }
   },
@@ -276,6 +290,20 @@
     "recommendation": "Recommendation",
     "focusOnTopIssues": "Focus on addressing the top 3 issue categories to maximize quality improvement impact",
     "exportSuccess": "Export successful"
+  },
+  "emptyState": {
+    "noData": "No Data",
+    "noContent": "No content to display",
+    "noResults": "No Results Found",
+    "adjustSearch": "Try adjusting your search criteria or filters",
+    "emptyFolder": "Empty Folder",
+    "noFolderContent": "This folder has no content",
+    "startAdding": "Start adding data to see content"
+  },
+  "confirmModal": {
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "delete": "Delete"
   },
   "labelStudio": {
     "title": "Label Studio Annotation Interface",

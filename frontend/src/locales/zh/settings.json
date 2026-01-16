@@ -1,0 +1,85 @@
+{
+  "title": "设置",
+  "profile": {
+    "tab": "个人资料",
+    "title": "个人资料设置",
+    "avatar": "头像",
+    "changeAvatar": "更换头像",
+    "username": "用户名",
+    "usernamePlaceholder": "用户名",
+    "usernameRequired": "请输入用户名",
+    "email": "邮箱",
+    "emailPlaceholder": "邮箱地址",
+    "emailRequired": "请输入邮箱",
+    "emailInvalid": "请输入有效的邮箱地址",
+    "displayName": "显示名称",
+    "displayNamePlaceholder": "显示名称",
+    "saveChanges": "保存更改",
+    "updateSuccess": "个人资料更新成功",
+    "updateFailed": "更新个人资料失败"
+  },
+  "security": {
+    "tab": "安全",
+    "title": "修改密码",
+    "currentPassword": "当前密码",
+    "currentPasswordPlaceholder": "当前密码",
+    "currentPasswordRequired": "请输入当前密码",
+    "newPassword": "新密码",
+    "newPasswordPlaceholder": "新密码",
+    "newPasswordRequired": "请输入新密码",
+    "newPasswordLength": "密码长度至少8个字符",
+    "confirmPassword": "确认密码",
+    "confirmPasswordPlaceholder": "确认新密码",
+    "confirmPasswordRequired": "请确认密码",
+    "passwordMismatch": "两次输入的密码不一致",
+    "changePassword": "修改密码",
+    "changeSuccess": "密码修改成功",
+    "changeFailed": "修改密码失败"
+  },
+  "notifications": {
+    "tab": "通知",
+    "title": "通知偏好设置",
+    "email": {
+      "title": "邮件通知",
+      "description": "接收重要更新的邮件通知"
+    },
+    "taskAssignments": {
+      "title": "任务分配",
+      "description": "当有任务分配给您时收到通知"
+    },
+    "taskCompletions": {
+      "title": "任务完成",
+      "description": "当您的任务被审核时收到通知"
+    },
+    "billingAlerts": {
+      "title": "账单提醒",
+      "description": "接收账单和付款相关提醒"
+    },
+    "systemAnnouncements": {
+      "title": "系统公告",
+      "description": "接收系统维护和更新通知"
+    }
+  },
+  "appearance": {
+    "tab": "外观",
+    "title": "外观设置",
+    "language": {
+      "title": "语言",
+      "description": "选择您偏好的语言",
+      "english": "English",
+      "chinese": "中文",
+      "changeSuccess": "语言已切换为{{language}}"
+    },
+    "darkMode": {
+      "title": "深色模式",
+      "description": "在浅色和深色主题之间切换",
+      "dark": "深色",
+      "light": "浅色",
+      "changeSuccess": "主题已切换为{{theme}}模式"
+    },
+    "compactMode": {
+      "title": "紧凑模式",
+      "description": "使用更紧凑的界面布局"
+    }
+  }
+}

@@ -34,11 +34,13 @@ import {
   ExclamationCircleOutlined,
 } from '@ant-design/icons';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { workflowApi, type ImprovementTask, type ImprovementHistory, type QualityIssue } from '@/services/workflowApi';
 
 const { TextArea } = Input;
 
 const ImprovementTaskDetail: React.FC = () => {
+  const { t } = useTranslation(['quality', 'common']);
   const { taskId } = useParams<{ taskId: string }>();
   const navigate = useNavigate();
   const [task, setTask] = useState<ImprovementTask | null>(null);
@@ -66,7 +68,7 @@ const ImprovementTaskDetail: React.FC = () => {
         form.setFieldsValue({ improved_data: JSON.stringify(data.improved_data, null, 2) });
       }
     } catch {
-      message.error('加载任务详情失败');
+      message.error(t('improvementTask.loadDetailError'));
     } finally {
       setLoading(false);
     }
@@ -87,15 +89,15 @@ const ImprovementTaskDetail: React.FC = () => {
       setSubmitting(true);
       const improvedData = JSON.parse(values.improved_data);
       await workflowApi.submitImprovement(taskId!, { improved_data: improvedData });
-      message.success('改进已提交');
+      message.success(t('improvementTaskDetail.improvementSubmitted'));
       setEditMode(false);
       loadTask();
       loadHistory();
     } catch (error) {
       if (error instanceof SyntaxError) {
-        message.error('JSON 格式错误');
+        message.error(t('improvementTaskDetail.jsonFormatError'));
       } else {
-        message.error('提交失败');
+        message.error(t('improvementTaskDetail.submitFailed'));
       }
     } finally {
       setSubmitting(false);
@@ -110,12 +112,12 @@ const ImprovementTaskDetail: React.FC = () => {
         approved,
         comments: values.comments,
       });
-      message.success(approved ? '已批准' : '已拒绝');
+      message.success(approved ? t('improvementTaskDetail.approved') : t('improvementTaskDetail.rejected'));
       setReviewModalVisible(false);
       loadTask();
       loadHistory();
     } catch {
-      message.error('审核失败');
+      message.error(t('improvementTaskDetail.reviewFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -123,11 +125,11 @@ const ImprovementTaskDetail: React.FC = () => {
 
   const getStatusConfig = (status: string) => {
     const configs: Record<string, { color: string; text: string }> = {
-      pending: { color: 'default', text: '待处理' },
-      in_progress: { color: 'processing', text: '进行中' },
-      submitted: { color: 'warning', text: '待审核' },
-      approved: { color: 'success', text: '已通过' },
-      rejected: { color: 'error', text: '已拒绝' },
+      pending: { color: 'default', text: t('improvementTask.status.pending') },
+      in_progress: { color: 'processing', text: t('improvementTask.status.inProgress') },
+      submitted: { color: 'warning', text: t('improvementTask.status.submitted') },
+      approved: { color: 'success', text: t('improvementTask.status.approved') },
+      rejected: { color: 'error', text: t('improvementTask.status.rejected') },
     };
     return configs[status] || { color: 'default', text: status };
   };
@@ -143,9 +145,9 @@ const ImprovementTaskDetail: React.FC = () => {
   };
 
   const getPriorityText = (priority: number) => {
-    if (priority >= 3) return { color: 'red', text: '高优先级' };
-    if (priority >= 2) return { color: 'orange', text: '中优先级' };
-    return { color: 'blue', text: '低优先级' };
+    if (priority >= 3) return { color: 'red', text: t('improvementTask.priority.high') };
+    if (priority >= 2) return { color: 'orange', text: t('improvementTask.priority.medium') };
+    return { color: 'blue', text: t('improvementTask.priority.low') };
   };
 
   if (loading) {
@@ -157,7 +159,7 @@ const ImprovementTaskDetail: React.FC = () => {
   }
 
   if (!task) {
-    return <Alert message="任务不存在" type="error" />;
+    return <Alert message={t('improvementTaskDetail.taskNotExist')} type="error" />;
   }
 
   const statusConfig = getStatusConfig(task.status);
@@ -168,14 +170,14 @@ const ImprovementTaskDetail: React.FC = () => {
   return (
     <div>
       <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)} style={{ marginBottom: 16 }}>
-        返回列表
+        {t('improvementTaskDetail.backToList')}
       </Button>
 
       <Row gutter={16}>
         <Col span={16}>
           {/* 基本信息 */}
           <Card
-            title="任务详情"
+            title={t('improvementTaskDetail.taskDetail')}
             extra={
               <Space>
                 <Tag color={statusConfig.color}>{statusConfig.text}</Tag>
@@ -184,15 +186,15 @@ const ImprovementTaskDetail: React.FC = () => {
             }
           >
             <Descriptions column={2} bordered size="small">
-              <Descriptions.Item label="任务ID">{task.id}</Descriptions.Item>
-              <Descriptions.Item label="标注ID">{task.annotation_id}</Descriptions.Item>
-              <Descriptions.Item label="负责人">
+              <Descriptions.Item label={t('improvementTaskDetail.taskId')}>{task.id}</Descriptions.Item>
+              <Descriptions.Item label={t('improvementTaskDetail.annotationId')}>{task.annotation_id}</Descriptions.Item>
+              <Descriptions.Item label={t('improvementTaskDetail.assignee')}>
                 <Space>
                   <Avatar size="small" icon={<UserOutlined />} />
-                  {task.assignee_name || '未分配'}
+                  {task.assignee_name || t('improvementTask.unassigned')}
                 </Space>
               </Descriptions.Item>
-              <Descriptions.Item label="审核人">
+              <Descriptions.Item label={t('improvementTaskDetail.reviewer')}>
                 {task.reviewer_name ? (
                   <Space>
                     <Avatar size="small" icon={<UserOutlined />} />
@@ -202,13 +204,13 @@ const ImprovementTaskDetail: React.FC = () => {
                   '-'
                 )}
               </Descriptions.Item>
-              <Descriptions.Item label="创建时间">{new Date(task.created_at).toLocaleString()}</Descriptions.Item>
-              <Descriptions.Item label="提交时间">{task.submitted_at ? new Date(task.submitted_at).toLocaleString() : '-'}</Descriptions.Item>
-              <Descriptions.Item label="审核时间" span={2}>
+              <Descriptions.Item label={t('improvementTaskDetail.createdAt')}>{new Date(task.created_at).toLocaleString()}</Descriptions.Item>
+              <Descriptions.Item label={t('improvementTaskDetail.submittedAt')}>{task.submitted_at ? new Date(task.submitted_at).toLocaleString() : '-'}</Descriptions.Item>
+              <Descriptions.Item label={t('improvementTaskDetail.reviewedAt')} span={2}>
                 {task.reviewed_at ? new Date(task.reviewed_at).toLocaleString() : '-'}
               </Descriptions.Item>
               {task.review_comments && (
-                <Descriptions.Item label="审核意见" span={2}>
+                <Descriptions.Item label={t('improvementTaskDetail.reviewComments')} span={2}>
                   {task.review_comments}
                 </Descriptions.Item>
               )}
@@ -216,7 +218,7 @@ const ImprovementTaskDetail: React.FC = () => {
           </Card>
 
           {/* 问题列表 */}
-          <Card title="质量问题" style={{ marginTop: 16 }}>
+          <Card title={t('improvementTaskDetail.qualityIssues')} style={{ marginTop: 16 }}>
             <List
               dataSource={task.issues}
               renderItem={(issue: QualityIssue) => (
@@ -226,13 +228,13 @@ const ImprovementTaskDetail: React.FC = () => {
                     title={
                       <Space>
                         <span>{issue.rule_name}</span>
-                        <Tag color={getSeverityColor(issue.severity)}>{issue.severity}</Tag>
+                        <Tag color={getSeverityColor(issue.severity)}>{t(`rules.severities.${issue.severity}`)}</Tag>
                       </Space>
                     }
                     description={
                       <>
                         <div>{issue.message}</div>
-                        {issue.field && <Tag style={{ marginTop: 4 }}>字段: {issue.field}</Tag>}
+                        {issue.field && <Tag style={{ marginTop: 4 }}>{t('improvementTaskDetail.field')}: {issue.field}</Tag>}
                       </>
                     }
                   />
@@ -243,33 +245,33 @@ const ImprovementTaskDetail: React.FC = () => {
 
           {/* 改进数据 */}
           <Card
-            title="改进数据"
+            title={t('improvementTaskDetail.improvedData')}
             style={{ marginTop: 16 }}
             extra={
               canEdit && (
                 <Button icon={<EditOutlined />} onClick={() => setEditMode(!editMode)}>
-                  {editMode ? '取消编辑' : '编辑'}
+                  {editMode ? t('improvementTaskDetail.cancelEdit') : t('improvementTaskDetail.edit')}
                 </Button>
               )
             }
           >
             {editMode ? (
               <Form form={form} layout="vertical">
-                <Form.Item name="improved_data" label="改进后的数据 (JSON 格式)" rules={[{ required: true, message: '请输入改进数据' }]}>
-                  <TextArea rows={10} style={{ fontFamily: 'monospace' }} placeholder='{"field": "value"}' />
+                <Form.Item name="improved_data" label={t('improvementTaskDetail.improvedDataLabel')} rules={[{ required: true, message: t('improvementTaskDetail.inputImprovedData') }]}>
+                  <TextArea rows={10} style={{ fontFamily: 'monospace' }} placeholder={t('improvementTaskDetail.improvedDataPlaceholder')} />
                 </Form.Item>
                 <Form.Item>
                   <Space>
                     <Button type="primary" icon={<SendOutlined />} onClick={handleSubmitImprovement} loading={submitting}>
-                      提交改进
+                      {t('improvementTaskDetail.submitImprovement')}
                     </Button>
-                    <Button onClick={() => setEditMode(false)}>取消</Button>
+                    <Button onClick={() => setEditMode(false)}>{t('improvementTaskDetail.cancel')}</Button>
                   </Space>
                 </Form.Item>
               </Form>
             ) : (
               <pre style={{ background: '#f5f5f5', padding: 16, borderRadius: 4, overflow: 'auto' }}>
-                {task.improved_data ? JSON.stringify(task.improved_data, null, 2) : '暂无改进数据'}
+                {task.improved_data ? JSON.stringify(task.improved_data, null, 2) : t('improvementTaskDetail.noImprovedData')}
               </pre>
             )}
           </Card>
@@ -277,7 +279,7 @@ const ImprovementTaskDetail: React.FC = () => {
           {/* 审核操作 */}
           {canReview && (
             <Card style={{ marginTop: 16 }}>
-              <Alert message="此任务待审核，请审核改进内容" type="info" showIcon style={{ marginBottom: 16 }} />
+              <Alert message={t('improvementTaskDetail.pendingReview')} type="info" showIcon style={{ marginBottom: 16 }} />
               <Space>
                 <Button
                   type="primary"
@@ -287,7 +289,7 @@ const ImprovementTaskDetail: React.FC = () => {
                     setReviewModalVisible(true);
                   }}
                 >
-                  批准
+                  {t('improvementTaskDetail.approve')}
                 </Button>
                 <Button
                   danger
@@ -297,7 +299,7 @@ const ImprovementTaskDetail: React.FC = () => {
                     setReviewModalVisible(true);
                   }}
                 >
-                  拒绝
+                  {t('improvementTaskDetail.reject')}
                 </Button>
               </Space>
             </Card>
@@ -306,7 +308,7 @@ const ImprovementTaskDetail: React.FC = () => {
 
         <Col span={8}>
           {/* 操作历史 */}
-          <Card title="操作历史">
+          <Card title={t('improvementTaskDetail.operationHistory')}>
             <Timeline
               items={history.map((h) => ({
                 color: h.action === 'approved' ? 'green' : h.action === 'rejected' ? 'red' : 'blue',
@@ -320,31 +322,31 @@ const ImprovementTaskDetail: React.FC = () => {
                 ),
               }))}
             />
-            {history.length === 0 && <div style={{ color: '#999', textAlign: 'center' }}>暂无操作记录</div>}
+            {history.length === 0 && <div style={{ color: '#999', textAlign: 'center' }}>{t('improvementTaskDetail.noHistory')}</div>}
           </Card>
         </Col>
       </Row>
 
       {/* 审核弹窗 */}
       <Modal
-        title="审核改进"
+        title={t('improvementTaskDetail.reviewImprovement')}
         open={reviewModalVisible}
         onCancel={() => setReviewModalVisible(false)}
         footer={
           <Space>
-            <Button onClick={() => setReviewModalVisible(false)}>取消</Button>
+            <Button onClick={() => setReviewModalVisible(false)}>{t('improvementTaskDetail.cancel')}</Button>
             <Button danger onClick={() => handleReview(false)} loading={submitting}>
-              拒绝
+              {t('improvementTaskDetail.reject')}
             </Button>
             <Button type="primary" onClick={() => handleReview(true)} loading={submitting}>
-              批准
+              {t('improvementTaskDetail.approve')}
             </Button>
           </Space>
         }
       >
         <Form form={reviewForm} layout="vertical">
-          <Form.Item name="comments" label="审核意见">
-            <TextArea rows={4} placeholder="请输入审核意见（可选）" />
+          <Form.Item name="comments" label={t('improvementTaskDetail.reviewCommentsLabel')}>
+            <TextArea rows={4} placeholder={t('improvementTaskDetail.reviewCommentsPlaceholder')} />
           </Form.Item>
         </Form>
       </Modal>

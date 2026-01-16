@@ -3,6 +3,7 @@ import { Card, Form, Input, Select, Switch, Button, Space, message, Divider, Ale
 import { SaveOutlined, ReloadOutlined, ShieldOutlined, KeyOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { api } from '@/services/api';
 
 interface SecurityConfig {
@@ -48,6 +49,7 @@ interface SecurityRule {
 const DataSyncSecurity: React.FC = () => {
   const [form] = Form.useForm();
   const queryClient = useQueryClient();
+  const { t } = useTranslation(['dataSync', 'common']);
 
   const { data: config, isLoading } = useQuery({
     queryKey: ['data-sync-security-config'],
@@ -63,10 +65,10 @@ const DataSyncSecurity: React.FC = () => {
     mutationFn: (data: SecurityConfig) => api.put('/api/v1/data-sync/security/config', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['data-sync-security-config'] });
-      message.success('安全配置保存成功');
+      message.success(t('security.saveSuccess'));
     },
     onError: () => {
-      message.error('安全配置保存失败');
+      message.error(t('security.saveError'));
     },
   });
 
@@ -74,13 +76,13 @@ const DataSyncSecurity: React.FC = () => {
     mutationFn: () => api.post('/api/v1/data-sync/security/test'),
     onSuccess: (data) => {
       if (data.data.success) {
-        message.success('安全连接测试成功');
+        message.success(t('security.testSuccess'));
       } else {
-        message.error(`安全连接测试失败: ${data.data.error}`);
+        message.error(`${t('security.testFailed')}: ${data.data.error}`);
       }
     },
     onError: () => {
-      message.error('安全连接测试失败');
+      message.error(t('security.testFailed'));
     },
   });
 
@@ -94,12 +96,12 @@ const DataSyncSecurity: React.FC = () => {
 
   const ruleColumns: ColumnsType<SecurityRule> = [
     {
-      title: '规则名称',
+      title: t('security.rules.name'),
       dataIndex: 'name',
       key: 'name',
     },
     {
-      title: '类型',
+      title: t('security.rules.type'),
       dataIndex: 'type',
       key: 'type',
       render: (type: string) => {
@@ -109,27 +111,27 @@ const DataSyncSecurity: React.FC = () => {
           audit: 'orange',
           compliance: 'purple',
         };
-        const labels = {
-          encryption: '加密',
-          access: '访问控制',
-          audit: '审计',
-          compliance: '合规',
+        const labelKeys: Record<string, string> = {
+          encryption: 'security.rules.encryption',
+          access: 'security.rules.access',
+          audit: 'security.rules.audit',
+          compliance: 'security.rules.compliance',
         };
-        return <Tag color={colors[type as keyof typeof colors]}>{labels[type as keyof typeof labels]}</Tag>;
+        return <Tag color={colors[type as keyof typeof colors]}>{t(labelKeys[type])}</Tag>;
       },
     },
     {
-      title: '状态',
+      title: t('security.rules.status'),
       dataIndex: 'enabled',
       key: 'enabled',
       render: (enabled: boolean) => (
         <Tag color={enabled ? 'success' : 'default'}>
-          {enabled ? '启用' : '禁用'}
+          {enabled ? t('common:actions.enabled') : t('common:actions.disabled')}
         </Tag>
       ),
     },
     {
-      title: '优先级',
+      title: t('security.rules.priority'),
       dataIndex: 'priority',
       key: 'priority',
       render: (priority: number) => (
@@ -139,13 +141,13 @@ const DataSyncSecurity: React.FC = () => {
       ),
     },
     {
-      title: '描述',
+      title: t('security.rules.description'),
       dataIndex: 'description',
       key: 'description',
       ellipsis: true,
     },
     {
-      title: '创建时间',
+      title: t('security.rules.createdAt'),
       dataIndex: 'createdAt',
       key: 'createdAt',
       render: (date: string) => new Date(date).toLocaleString(),
@@ -161,15 +163,15 @@ const DataSyncSecurity: React.FC = () => {
   return (
     <div className="data-sync-security">
       <Alert
-        message="数据同步安全配置"
-        description="配置数据同步过程中的安全策略，包括加密、认证、授权和审计等功能。"
+        message={t('security.configTitle')}
+        description={t('security.configDesc')}
         type="info"
         showIcon
         style={{ marginBottom: 16 }}
       />
 
       <Card
-        title="安全配置"
+        title={t('security.title')}
         extra={
           <Space>
             <Button
@@ -177,7 +179,7 @@ const DataSyncSecurity: React.FC = () => {
               onClick={handleTest}
               loading={testConnectionMutation.isPending}
             >
-              测试安全连接
+              {t('security.testConnection')}
             </Button>
             <Button
               icon={<ReloadOutlined />}
@@ -185,7 +187,7 @@ const DataSyncSecurity: React.FC = () => {
                 queryClient.invalidateQueries({ queryKey: ['data-sync-security-config'] });
               }}
             >
-              重新加载
+              {t('security.reload')}
             </Button>
             <Button
               type="primary"
@@ -193,7 +195,7 @@ const DataSyncSecurity: React.FC = () => {
               onClick={() => form.submit()}
               loading={updateConfigMutation.isPending}
             >
-              保存配置
+              {t('security.saveConfig')}
             </Button>
           </Space>
         }
@@ -205,17 +207,17 @@ const DataSyncSecurity: React.FC = () => {
           loading={isLoading}
         >
           {/* 加密配置 */}
-          <Card type="inner" title="数据加密" style={{ marginBottom: 16 }}>
+          <Card type="inner" title={t('security.encryption.title')} style={{ marginBottom: 16 }}>
             <Form.Item name={['encryption', 'enabled']} valuePropName="checked">
-              <Switch checkedChildren="启用" unCheckedChildren="禁用" />
-              <span style={{ marginLeft: 8 }}>启用数据传输加密</span>
+              <Switch checkedChildren={t('common:actions.enabled')} unCheckedChildren={t('common:actions.disabled')} />
+              <span style={{ marginLeft: 8 }}>{t('security.encryption.enabled')}</span>
             </Form.Item>
             
             <Form.Item
               name={['encryption', 'algorithm']}
-              label="加密算法"
+              label={t('security.encryption.algorithm')}
             >
-              <Select placeholder="请选择加密算法">
+              <Select placeholder={t('security.encryption.algorithmPlaceholder')}>
                 <Select.Option value="AES-256-GCM">AES-256-GCM</Select.Option>
                 <Select.Option value="AES-128-GCM">AES-128-GCM</Select.Option>
                 <Select.Option value="ChaCha20-Poly1305">ChaCha20-Poly1305</Select.Option>
@@ -224,24 +226,24 @@ const DataSyncSecurity: React.FC = () => {
             
             <Form.Item
               name={['encryption', 'keyRotationInterval']}
-              label="密钥轮换间隔（天）"
+              label={t('security.encryption.keyRotation')}
             >
               <Input type="number" min={1} max={365} placeholder="30" />
             </Form.Item>
           </Card>
 
           {/* 认证配置 */}
-          <Card type="inner" title="身份认证" style={{ marginBottom: 16 }}>
+          <Card type="inner" title={t('security.authentication.title')} style={{ marginBottom: 16 }}>
             <Form.Item name={['authentication', 'required']} valuePropName="checked">
-              <Switch checkedChildren="必需" unCheckedChildren="可选" />
-              <span style={{ marginLeft: 8 }}>要求身份认证</span>
+              <Switch checkedChildren={t('common:actions.required')} unCheckedChildren={t('common:actions.optional')} />
+              <span style={{ marginLeft: 8 }}>{t('security.authentication.required')}</span>
             </Form.Item>
             
             <Form.Item
               name={['authentication', 'method']}
-              label="认证方式"
+              label={t('security.authentication.method')}
             >
-              <Select placeholder="请选择认证方式">
+              <Select placeholder={t('security.authentication.methodPlaceholder')}>
                 <Select.Option value="jwt">JWT Token</Select.Option>
                 <Select.Option value="oauth2">OAuth 2.0</Select.Option>
                 <Select.Option value="basic">Basic Auth</Select.Option>
@@ -251,84 +253,84 @@ const DataSyncSecurity: React.FC = () => {
             
             <Form.Item
               name={['authentication', 'tokenExpiration']}
-              label="Token过期时间（小时）"
+              label={t('security.authentication.tokenExpiration')}
             >
               <Input type="number" min={1} max={168} placeholder="24" />
             </Form.Item>
           </Card>
 
           {/* 授权配置 */}
-          <Card type="inner" title="访问授权" style={{ marginBottom: 16 }}>
+          <Card type="inner" title={t('security.authorization.title')} style={{ marginBottom: 16 }}>
             <Form.Item name={['authorization', 'enabled']} valuePropName="checked">
-              <Switch checkedChildren="启用" unCheckedChildren="禁用" />
-              <span style={{ marginLeft: 8 }}>启用访问控制</span>
+              <Switch checkedChildren={t('common:actions.enabled')} unCheckedChildren={t('common:actions.disabled')} />
+              <span style={{ marginLeft: 8 }}>{t('security.authorization.enabled')}</span>
             </Form.Item>
             
             <Form.Item
               name={['authorization', 'defaultRole']}
-              label="默认角色"
+              label={t('security.authorization.defaultRole')}
             >
-              <Select placeholder="请选择默认角色">
-                <Select.Option value="viewer">查看者</Select.Option>
-                <Select.Option value="editor">编辑者</Select.Option>
-                <Select.Option value="admin">管理员</Select.Option>
+              <Select placeholder={t('security.authorization.defaultRolePlaceholder')}>
+                <Select.Option value="viewer">{t('security.authorization.viewer')}</Select.Option>
+                <Select.Option value="editor">{t('security.authorization.editor')}</Select.Option>
+                <Select.Option value="admin">{t('security.authorization.admin')}</Select.Option>
               </Select>
             </Form.Item>
             
             <Form.Item name={['authorization', 'strictMode']} valuePropName="checked">
-              <Switch checkedChildren="严格" unCheckedChildren="宽松" />
-              <span style={{ marginLeft: 8 }}>严格模式（拒绝未明确授权的访问）</span>
+              <Switch checkedChildren={t('common:actions.strict')} unCheckedChildren={t('common:actions.loose')} />
+              <span style={{ marginLeft: 8 }}>{t('security.authorization.strictMode')}</span>
             </Form.Item>
           </Card>
 
           {/* 审计配置 */}
-          <Card type="inner" title="安全审计" style={{ marginBottom: 16 }}>
+          <Card type="inner" title={t('security.audit.title')} style={{ marginBottom: 16 }}>
             <Form.Item name={['audit', 'enabled']} valuePropName="checked">
-              <Switch checkedChildren="启用" unCheckedChildren="禁用" />
-              <span style={{ marginLeft: 8 }}>启用安全审计</span>
+              <Switch checkedChildren={t('common:actions.enabled')} unCheckedChildren={t('common:actions.disabled')} />
+              <span style={{ marginLeft: 8 }}>{t('security.audit.enabled')}</span>
             </Form.Item>
             
             <Form.Item
               name={['audit', 'logLevel']}
-              label="日志级别"
+              label={t('security.audit.logLevel')}
             >
-              <Select placeholder="请选择日志级别">
-                <Select.Option value="debug">调试</Select.Option>
-                <Select.Option value="info">信息</Select.Option>
-                <Select.Option value="warning">警告</Select.Option>
-                <Select.Option value="error">错误</Select.Option>
+              <Select placeholder={t('security.audit.logLevelPlaceholder')}>
+                <Select.Option value="debug">{t('security.audit.debug')}</Select.Option>
+                <Select.Option value="info">{t('security.audit.info')}</Select.Option>
+                <Select.Option value="warning">{t('security.audit.warning')}</Select.Option>
+                <Select.Option value="error">{t('security.audit.error')}</Select.Option>
               </Select>
             </Form.Item>
             
             <Form.Item
               name={['audit', 'retentionDays']}
-              label="日志保留天数"
+              label={t('security.audit.retentionDays')}
             >
               <Input type="number" min={1} max={3650} placeholder="90" />
             </Form.Item>
           </Card>
 
           {/* 数据保护配置 */}
-          <Card type="inner" title="数据保护">
+          <Card type="inner" title={t('security.dataProtection.title')}>
             <Form.Item name={['dataProtection', 'piiDetection']} valuePropName="checked">
-              <Switch checkedChildren="启用" unCheckedChildren="禁用" />
-              <span style={{ marginLeft: 8 }}>PII敏感信息检测</span>
+              <Switch checkedChildren={t('common:actions.enabled')} unCheckedChildren={t('common:actions.disabled')} />
+              <span style={{ marginLeft: 8 }}>{t('security.dataProtection.piiDetection')}</span>
             </Form.Item>
             
             <Form.Item name={['dataProtection', 'autoDesensitization']} valuePropName="checked">
-              <Switch checkedChildren="启用" unCheckedChildren="禁用" />
-              <span style={{ marginLeft: 8 }}>自动脱敏处理</span>
+              <Switch checkedChildren={t('common:actions.enabled')} unCheckedChildren={t('common:actions.disabled')} />
+              <span style={{ marginLeft: 8 }}>{t('security.dataProtection.autoDesensitization')}</span>
             </Form.Item>
             
             <Form.Item
               name={['dataProtection', 'complianceMode']}
-              label="合规模式"
+              label={t('security.dataProtection.complianceMode')}
             >
-              <Select placeholder="请选择合规模式">
-                <Select.Option value="gdpr">GDPR</Select.Option>
-                <Select.Option value="ccpa">CCPA</Select.Option>
-                <Select.Option value="pipl">个人信息保护法</Select.Option>
-                <Select.Option value="custom">自定义</Select.Option>
+              <Select placeholder={t('security.dataProtection.compliancePlaceholder')}>
+                <Select.Option value="gdpr">{t('security.dataProtection.gdpr')}</Select.Option>
+                <Select.Option value="ccpa">{t('security.dataProtection.ccpa')}</Select.Option>
+                <Select.Option value="pipl">{t('security.dataProtection.pipl')}</Select.Option>
+                <Select.Option value="custom">{t('security.dataProtection.custom')}</Select.Option>
               </Select>
             </Form.Item>
           </Card>
@@ -336,7 +338,7 @@ const DataSyncSecurity: React.FC = () => {
       </Card>
 
       {/* 安全规则 */}
-      <Card title="安全规则" style={{ marginTop: 16 }}>
+      <Card title={t('security.rules.title')} style={{ marginTop: 16 }}>
         <Table
           columns={ruleColumns}
           dataSource={rules}
@@ -345,7 +347,7 @@ const DataSyncSecurity: React.FC = () => {
           pagination={{
             showSizeChanger: true,
             showQuickJumper: true,
-            showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
+            showTotal: (total, range) => t('common.totalRecords', { start: range[0], end: range[1], total }),
           }}
         />
       </Card>

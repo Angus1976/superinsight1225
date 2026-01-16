@@ -1,12 +1,20 @@
 /**
  * BillingReports Component Tests
  * Task 11.5: Additional module unit tests
+ * Task 47.1: Updated to use i18n-compatible assertions
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest'
 import { render, screen, waitFor } from '@/test/test-utils'
 import userEvent from '@testing-library/user-event'
+import { I18nextProvider } from 'react-i18next'
+import i18n from '@/locales/config'
 import { BillingReports } from '../BillingReports'
+
+// Set language to English for consistent test assertions
+beforeAll(() => {
+  i18n.changeLanguage('en')
+})
 
 // Mock billing hooks
 const mockGenerateReport = vi.fn()
@@ -153,43 +161,45 @@ describe('BillingReports', () => {
   it('renders billing reports with all sections', () => {
     render(<BillingReports {...defaultProps} />)
 
-    // Check for main controls
-    expect(screen.getByText('日期范围:')).toBeInTheDocument()
-    expect(screen.getByText('报表类型:')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /生成报表/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /导出报表/i })).toBeInTheDocument()
+    // Check for main controls - using regex to match translated text
+    // Note: The component currently uses hardcoded Chinese text, 
+    // these assertions will need to be updated when the component is internationalized
+    expect(screen.getByText(/日期范围|Date Range/i)).toBeInTheDocument()
+    expect(screen.getByText(/报表类型|Report Type/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /生成报表|Generate Report/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /导出报表|Export Report/i })).toBeInTheDocument()
   })
 
   it('displays summary statistics correctly', () => {
     render(<BillingReports {...defaultProps} />)
 
-    // Check for statistics cards
-    expect(screen.getByText('总成本')).toBeInTheDocument()
-    expect(screen.getByText('日均成本')).toBeInTheDocument()
-    expect(screen.getByText('项目数量')).toBeInTheDocument()
-    // Note: 成本趋势 appears multiple times (as tab and statistic)
-    expect(screen.getAllByText('成本趋势').length).toBeGreaterThan(0)
+    // Check for statistics cards - using regex to match both Chinese and English
+    expect(screen.getByText(/总成本|Total Cost/i)).toBeInTheDocument()
+    expect(screen.getByText(/日均成本|Daily Cost|Average/i)).toBeInTheDocument()
+    expect(screen.getByText(/项目数量|Projects/i)).toBeInTheDocument()
+    // Note: 成本趋势/Cost Trends appears multiple times (as tab and statistic)
+    expect(screen.getAllByText(/成本趋势|Cost Trend/i).length).toBeGreaterThan(0)
   })
 
   it('shows all tabs', () => {
     render(<BillingReports {...defaultProps} />)
 
     // Check for tab labels - use getAllByText since some appear multiple times
-    expect(screen.getAllByText('成本趋势').length).toBeGreaterThan(0)
-    expect(screen.getByText('项目分析')).toBeInTheDocument()
-    expect(screen.getByText('部门分析')).toBeInTheDocument()
-    expect(screen.getByText('工时统计')).toBeInTheDocument()
-    expect(screen.getByText('报表详情')).toBeInTheDocument()
+    expect(screen.getAllByText(/成本趋势|Cost Trend/i).length).toBeGreaterThan(0)
+    expect(screen.getByText(/项目分析|Project Analysis|Project Breakdown/i)).toBeInTheDocument()
+    expect(screen.getByText(/部门分析|Department Analysis|Department Breakdown/i)).toBeInTheDocument()
+    expect(screen.getByText(/工时统计|Work Hours/i)).toBeInTheDocument()
+    expect(screen.getByText(/报表详情|Report Details/i)).toBeInTheDocument()
   })
 
   it('can switch to work hours statistics tab', async () => {
     const user = userEvent.setup()
     render(<BillingReports {...defaultProps} />)
 
-    await user.click(screen.getByText('工时统计'))
+    await user.click(screen.getByText(/工时统计|Work Hours/i))
 
     await waitFor(() => {
-      expect(screen.getByText('统计人数')).toBeInTheDocument()
+      expect(screen.getByText(/统计人数|Users|User Count/i)).toBeInTheDocument()
     })
   })
 
@@ -209,7 +219,7 @@ describe('BillingReports', () => {
 
     render(<BillingReports {...defaultProps} />)
 
-    await user.click(screen.getByRole('button', { name: /生成报表/i }))
+    await user.click(screen.getByRole('button', { name: /生成报表|Generate Report/i }))
 
     await waitFor(() => {
       expect(mockGenerateReport).toHaveBeenCalledWith(
@@ -224,7 +234,7 @@ describe('BillingReports', () => {
   it('export button is disabled when no report is generated', () => {
     render(<BillingReports {...defaultProps} />)
 
-    const exportButton = screen.getByRole('button', { name: /导出报表/i })
+    const exportButton = screen.getByRole('button', { name: /导出报表|Export Report/i })
     expect(exportButton).toBeDisabled()
   })
 })

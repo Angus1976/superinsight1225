@@ -33,6 +33,7 @@ import {
   SettingOutlined,
   InfoCircleOutlined,
 } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import { LabelStudioEmbed } from '@/components/LabelStudio';
 import { PermissionGuard } from '@/components/Auth/PermissionGuard';
 import { useAuthStore } from '@/stores/authStore';
@@ -85,6 +86,7 @@ const TaskAnnotatePage: React.FC = () => {
   const navigate = useNavigate();
   const { token, user } = useAuthStore();
   const { annotation: annotationPerms, roleDisplayName } = usePermissions();
+  const { t } = useTranslation(['tasks', 'common']);
   
   const [loading, setLoading] = useState(true);
   const [project, setProject] = useState<LabelStudioProject | null>(null);
@@ -129,11 +131,11 @@ const TaskAnnotatePage: React.FC = () => {
       
     } catch (error) {
       console.error('Failed to fetch data:', error);
-      message.error('加载数据失败');
+      message.error(t('annotate.loadDataFailed'));
     } finally {
       setLoading(false);
     }
-  }, [id, token]);
+  }, [id, token, t]);
 
   useEffect(() => {
     fetchData();
@@ -145,7 +147,7 @@ const TaskAnnotatePage: React.FC = () => {
   // 处理标注创建
   const handleAnnotationCreate = useCallback(async (annotation: AnnotationResult) => {
     if (!annotationPerms.canCreate) {
-      message.error('您没有创建标注的权限');
+      message.error(t('annotate.noCreatePermission'));
       return;
     }
 
@@ -157,7 +159,7 @@ const TaskAnnotatePage: React.FC = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
-      message.success('标注已保存');
+      message.success(t('annotate.annotationSaved'));
       
       // 更新任务状态
       const updatedTasks = [...tasks];
@@ -186,16 +188,16 @@ const TaskAnnotatePage: React.FC = () => {
       
     } catch (error) {
       console.error('Failed to save annotation:', error);
-      message.error('保存标注失败');
+      message.error(t('annotate.saveAnnotationFailed'));
     } finally {
       setSyncInProgress(false);
     }
-  }, [annotationPerms.canCreate, id, currentTask, token, tasks, currentTaskIndex, annotationCount, taskDetail, updateTask]);
+  }, [annotationPerms.canCreate, id, currentTask, token, tasks, currentTaskIndex, annotationCount, taskDetail, updateTask, t]);
 
   // 处理标注更新
   const handleAnnotationUpdate = useCallback(async (annotation: AnnotationResult) => {
     if (!annotationPerms.canEdit) {
-      message.error('您没有编辑标注的权限');
+      message.error(t('annotate.noEditPermission'));
       return;
     }
 
@@ -207,7 +209,7 @@ const TaskAnnotatePage: React.FC = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
-      message.success('标注已更新');
+      message.success(t('annotate.annotationUpdated'));
       
       // 更新本地任务状态
       const updatedTasks = [...tasks];
@@ -220,11 +222,11 @@ const TaskAnnotatePage: React.FC = () => {
       
     } catch (error) {
       console.error('Failed to update annotation:', error);
-      message.error('更新标注失败');
+      message.error(t('annotate.updateAnnotationFailed'));
     } finally {
       setSyncInProgress(false);
     }
-  }, [annotationPerms.canEdit, currentTask, token, tasks, currentTaskIndex]);
+  }, [annotationPerms.canEdit, currentTask, token, tasks, currentTaskIndex, t]);
 
   // 跳转到下一个任务
   const handleNextTask = useCallback(() => {
@@ -237,12 +239,12 @@ const TaskAnnotatePage: React.FC = () => {
     } else {
       // 所有任务都已完成
       Modal.success({
-        title: '任务完成',
-        content: '所有标注任务都已完成！',
+        title: t('annotate.taskComplete'),
+        content: t('annotate.allTasksCompletedModal'),
         onOk: () => navigate(`/tasks/${id}`),
       });
     }
-  }, [tasks, currentTaskIndex, navigate, id]);
+  }, [tasks, currentTaskIndex, navigate, id, t]);
 
   // 跳过当前任务
   const handleSkipTask = useCallback(() => {
@@ -265,13 +267,13 @@ const TaskAnnotatePage: React.FC = () => {
       setSyncInProgress(true);
       await fetchData();
       setLastSyncTime(new Date());
-      message.success('同步完成');
+      message.success(t('annotate.syncComplete'));
     } catch (error) {
-      message.error('同步失败');
+      message.error(t('annotate.syncFailed'));
     } finally {
       setSyncInProgress(false);
     }
-  }, [fetchData]);
+  }, [fetchData, t]);
 
   // 跳转到指定任务
   const handleJumpToTask = useCallback((taskIndex: number) => {
@@ -284,7 +286,7 @@ const TaskAnnotatePage: React.FC = () => {
     return (
       <div style={{ textAlign: 'center', padding: '50px' }}>
         <Spin size="large" />
-        <p style={{ marginTop: 16 }}>加载标注任务中...</p>
+        <p style={{ marginTop: 16 }}>{t('annotate.loadingTask')}</p>
       </div>
     );
   }
@@ -293,12 +295,12 @@ const TaskAnnotatePage: React.FC = () => {
     return (
       <Alert
         type="warning"
-        message="没有可标注的任务"
-        description="所有任务都已完成或没有找到相关任务。"
+        message={t('annotate.noTasksAvailable')}
+        description={t('annotate.allTasksCompleted')}
         showIcon
         action={
           <Button onClick={handleBackToTask}>
-            返回任务详情
+            {t('annotate.backToDetail')}
           </Button>
         }
       />
@@ -313,22 +315,22 @@ const TaskAnnotatePage: React.FC = () => {
           type="warning"
           showIcon
           icon={<LockOutlined />}
-          message="权限不足"
+          message={t('annotate.insufficientPermission')}
           description={
             <div>
-              <p>您当前的角色是：<strong>{roleDisplayName}</strong></p>
-              <p>标注功能仅对以下角色开放：</p>
+              <p>{t('annotate.currentRole')}: <strong>{roleDisplayName}</strong></p>
+              <p>{t('annotate.annotationRolesOnly')}</p>
               <ul>
-                <li>系统管理员</li>
-                <li>业务专家</li>
-                <li>数据标注员</li>
+                <li>{t('annotate.systemAdmin')}</li>
+                <li>{t('annotate.businessExpert')}</li>
+                <li>{t('annotate.dataAnnotator')}</li>
               </ul>
-              <p>请联系管理员获取相应权限。</p>
+              <p>{t('annotate.contactAdmin')}</p>
             </div>
           }
           action={
             <Button type="primary" onClick={() => navigate('/tasks')}>
-              返回任务列表
+              {t('annotate.backToTaskList')}
             </Button>
           }
           style={{ margin: '20px' }}
@@ -357,21 +359,21 @@ const TaskAnnotatePage: React.FC = () => {
                   onClick={handleBackToTask}
                   disabled={fullscreen}
                 >
-                  返回任务
+                  {t('annotate.backToTask')}
                 </Button>
                 <Divider type="vertical" />
                 <Title level={4} style={{ margin: 0 }}>
                   {project.title}
                 </Title>
                 <Tag color="blue">
-                  任务 {currentTaskIndex + 1} / {tasks.length}
+                  {t('annotate.task')} {currentTaskIndex + 1} / {tasks.length}
                 </Tag>
                 <Tag color="green">
                   {roleDisplayName}
                 </Tag>
                 {syncInProgress && (
                   <Tag icon={<SyncOutlined spin />} color="processing">
-                    同步中
+                    {t('annotate.syncing')}
                   </Tag>
                 )}
               </Space>
@@ -379,14 +381,14 @@ const TaskAnnotatePage: React.FC = () => {
             
             <Col>
               <Space>
-                <Tooltip title="同步进度">
+                <Tooltip title={t('annotate.syncProgress')}>
                   <Button
                     icon={<ReloadOutlined />}
                     loading={syncInProgress}
                     onClick={handleSyncProgress}
                   />
                 </Tooltip>
-                <Tooltip title={fullscreen ? "退出全屏" : "全屏模式"}>
+                <Tooltip title={fullscreen ? t('annotate.exitFullscreen') : t('annotate.fullscreenMode')}>
                   <Button
                     icon={fullscreen ? <FullscreenExitOutlined /> : <FullscreenOutlined />}
                     onClick={handleToggleFullscreen}
@@ -398,7 +400,7 @@ const TaskAnnotatePage: React.FC = () => {
                       key: index,
                       label: (
                         <Space>
-                          <span>任务 {index + 1}</span>
+                          <span>{t('annotate.task')} {index + 1}</span>
                           {task.is_labeled && <CheckCircleOutlined style={{ color: '#52c41a' }} />}
                         </Space>
                       ),
@@ -407,11 +409,11 @@ const TaskAnnotatePage: React.FC = () => {
                   }}
                 >
                   <Button icon={<SettingOutlined />}>
-                    跳转任务
+                    {t('annotate.jumpToTask')}
                   </Button>
                 </Dropdown>
                 <Statistic
-                  title="已完成"
+                  title={t('annotate.completed')}
                   value={annotationCount}
                   suffix={`/ ${tasks.length}`}
                   valueStyle={{ fontSize: '16px' }}
@@ -429,7 +431,7 @@ const TaskAnnotatePage: React.FC = () => {
           {lastSyncTime && (
             <div style={{ marginTop: 8 }}>
               <Text type="secondary" style={{ fontSize: 12 }}>
-                <InfoCircleOutlined /> 最后同步: {lastSyncTime.toLocaleTimeString()}
+                <InfoCircleOutlined /> {t('annotate.lastSync')}: {lastSyncTime.toLocaleTimeString()}
               </Text>
             </div>
           )}
@@ -448,7 +450,7 @@ const TaskAnnotatePage: React.FC = () => {
                   onAnnotationCreate={handleAnnotationCreate}
                   onAnnotationUpdate={handleAnnotationUpdate}
                   onTaskComplete={() => {
-                    message.success('任务完成');
+                    message.success(t('annotate.taskComplete'));
                     handleNextTask();
                   }}
                   height="100%"
@@ -461,9 +463,9 @@ const TaskAnnotatePage: React.FC = () => {
               <Col span={6} style={{ height: '100%' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
                   {/* 当前任务信息 */}
-                  <Card title="当前任务" style={{ marginBottom: 16 }}>
+                  <Card title={t('annotate.currentTask')} style={{ marginBottom: 16 }}>
                     <div style={{ marginBottom: 16 }}>
-                      <Text strong>待标注文本：</Text>
+                      <Text strong>{t('annotate.textToAnnotate')}:</Text>
                       <div style={{ 
                         padding: '12px', 
                         background: '#f5f5f5', 
@@ -477,15 +479,15 @@ const TaskAnnotatePage: React.FC = () => {
                     </div>
                     
                     <Space>
-                      <Text strong>标注状态：</Text>
+                      <Text strong>{t('annotate.annotationStatus')}:</Text>
                       <Tag color={currentTask.is_labeled ? 'green' : 'orange'}>
-                        {currentTask.is_labeled ? '已标注' : '待标注'}
+                        {currentTask.is_labeled ? t('annotate.annotated') : t('annotate.toAnnotate')}
                       </Tag>
                     </Space>
                   </Card>
 
                   {/* 操作按钮 */}
-                  <Card title="操作" style={{ marginBottom: 16 }}>
+                  <Card title={t('annotate.operations')} style={{ marginBottom: 16 }}>
                     <Space direction="vertical" style={{ width: '100%' }}>
                       <Button
                         type="primary"
@@ -494,7 +496,7 @@ const TaskAnnotatePage: React.FC = () => {
                         disabled={!currentTask.is_labeled}
                         onClick={handleNextTask}
                       >
-                        下一个任务
+                        {t('annotate.nextTask')}
                       </Button>
                       
                       <Button
@@ -502,7 +504,7 @@ const TaskAnnotatePage: React.FC = () => {
                         block
                         onClick={handleSkipTask}
                       >
-                        跳过此任务
+                        {t('annotate.skipTask')}
                       </Button>
                       
                       <Button
@@ -511,13 +513,13 @@ const TaskAnnotatePage: React.FC = () => {
                         loading={syncInProgress}
                         onClick={handleSyncProgress}
                       >
-                        手动同步
+                        {t('annotate.manualSync')}
                       </Button>
                     </Space>
                   </Card>
 
                   {/* 进度统计 */}
-                  <Card title="标注进度" style={{ flex: 1 }}>
+                  <Card title={t('annotate.annotationProgress')} style={{ flex: 1 }}>
                     <div style={{ marginBottom: 16 }}>
                       <Progress
                         percent={progress}
@@ -529,14 +531,14 @@ const TaskAnnotatePage: React.FC = () => {
                     <Row gutter={16}>
                       <Col span={12}>
                         <Statistic
-                          title="总任务"
+                          title={t('annotate.totalTasks')}
                           value={tasks.length}
                           valueStyle={{ fontSize: '18px' }}
                         />
                       </Col>
                       <Col span={12}>
                         <Statistic
-                          title="已完成"
+                          title={t('annotate.completed')}
                           value={annotationCount}
                           valueStyle={{ fontSize: '18px', color: '#52c41a' }}
                         />
@@ -548,14 +550,14 @@ const TaskAnnotatePage: React.FC = () => {
                     <Row gutter={16}>
                       <Col span={12}>
                         <Statistic
-                          title="剩余"
+                          title={t('annotate.remaining')}
                           value={tasks.length - annotationCount}
                           valueStyle={{ fontSize: '18px', color: '#faad14' }}
                         />
                       </Col>
                       <Col span={12}>
                         <Statistic
-                          title="当前"
+                          title={t('annotate.current')}
                           value={currentTaskIndex + 1}
                           valueStyle={{ fontSize: '18px', color: '#1890ff' }}
                         />
@@ -566,7 +568,7 @@ const TaskAnnotatePage: React.FC = () => {
                     <Divider />
                     <div style={{ maxHeight: '200px', overflow: 'auto' }}>
                       <Text strong style={{ marginBottom: 8, display: 'block' }}>
-                        任务列表:
+                        {t('annotate.taskList')}:
                       </Text>
                       {tasks.slice(0, 10).map((task, index) => (
                         <div 
@@ -587,7 +589,7 @@ const TaskAnnotatePage: React.FC = () => {
                               size="small"
                             />
                             <Text style={{ fontSize: 12 }}>
-                              任务 {index + 1}
+                              {t('annotate.task')} {index + 1}
                             </Text>
                             {task.is_labeled && (
                               <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 12 }} />
@@ -597,7 +599,7 @@ const TaskAnnotatePage: React.FC = () => {
                       ))}
                       {tasks.length > 10 && (
                         <Text type="secondary" style={{ fontSize: 12 }}>
-                          ... 还有 {tasks.length - 10} 个任务
+                          ... {t('annotate.moreTasks', { count: tasks.length - 10 })}
                         </Text>
                       )}
                     </div>

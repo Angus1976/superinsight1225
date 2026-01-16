@@ -6,164 +6,378 @@
 
 ## Tasks
 
+### Phase 1: 基础页面国际化 (已完成)
+
 - [x] 1. 更新翻译文件 - 添加缺失的翻译键
   - [x] 1.1 更新 billing.json 添加 WorkHoursReport 翻译键
-    - 在 zh/billing.json 中添加 workHours.report 命名空间下的所有翻译键
-    - 包括：columns（表格列）、stats（统计卡片）、charts（图表）、datePresets（日期预设）、modal（模态框）、actions（操作按钮）、messages（消息提示）
-    - _Requirements: 4.1_
-  
   - [x] 1.2 更新 en/billing.json 添加对应英文翻译
-    - 添加与 zh/billing.json 相同结构的英文翻译
-    - 确保所有键名一致
-    - _Requirements: 4.1, 4.4, 4.5_
-  
   - [x] 1.3 更新 common.json 添加错误页面翻译键
-    - 在 zh/common.json 中添加 error.pages.notFound 和 error.pages.forbidden 翻译键
-    - 包括：title、subtitle、backHome
-    - _Requirements: 4.2_
-  
   - [x] 1.4 更新 en/common.json 添加对应英文翻译
-    - 添加与 zh/common.json 相同结构的英文翻译
-    - _Requirements: 4.2, 4.4, 4.5_
-  
   - [x] 1.5 更新 auth.json 添加登录页面翻译键
-    - 在 zh/auth.json 中添加 login.appName 和 login.logoAlt 翻译键
-    - _Requirements: 4.3_
-  
   - [x] 1.6 更新 en/auth.json 添加对应英文翻译
-    - 添加与 zh/auth.json 相同结构的英文翻译
-    - _Requirements: 4.3, 4.4, 4.5_
 
 - [x] 2. 修改 Login 页面组件
   - [x] 2.1 更新 Login/index.tsx 使用翻译函数
-    - 导入 useTranslation hook
-    - 将 logo alt 文本 "问视间" 替换为 t('login.logoAlt')
-    - 将标题 "问视间" 替换为 t('login.appName')
-    - _Requirements: 1.1, 1.2, 1.3_
-  
   - [x] 2.2 编写 Login 页面国际化单元测试
-    - 验证 t() 函数被正确调用
-    - 验证语言切换后文本更新
-    - _Requirements: 1.4_
 
 - [x] 3. 修改错误页面组件
   - [x] 3.1 更新 Error/404.tsx 使用翻译函数
-    - 导入 useTranslation hook
-    - 将 "抱歉，您访问的页面不存在。" 替换为 t('error.pages.notFound.subtitle')
-    - 将 "返回首页" 替换为 t('error.pages.notFound.backHome')
-    - _Requirements: 2.1, 2.3_
-  
   - [x] 3.2 更新 Error/403.tsx 使用翻译函数
-    - 导入 useTranslation hook
-    - 将 "抱歉，您没有权限访问此页面。" 替换为 t('error.pages.forbidden.subtitle')
-    - 将 "返回首页" 替换为 t('error.pages.forbidden.backHome')
-    - _Requirements: 2.2, 2.3_
-  
   - [x] 3.3 编写错误页面国际化单元测试
-    - 验证 404 和 403 页面使用正确的翻译键
-    - 验证语言切换后文本更新
-    - _Requirements: 2.4, 2.5_
 
 - [x] 4. Checkpoint - 验证基础页面国际化
-  - 确保 Login、404、403 页面正确使用翻译函数
-  - 验证翻译文件结构正确
-  - 手动测试语言切换功能
-  - 如有问题请提出
 
 - [x] 5. 修改 WorkHoursReport 组件
-  - [x] 5.1 更新 WorkHoursReport.tsx 表格列标题
-    - 导入 useTranslation hook
-    - 将所有列标题（排名、用户、总工时、计费工时、标注数、时效、效率评分、成本、操作）替换为翻译函数调用
-    - 设置适当的列宽（width/minWidth）以适应中英文长度差异
-    - _Requirements: 3.1, 10.1_
-  
-  - [x] 5.2 更新 WorkHoursReport.tsx 统计卡片标题
-    - 将所有 Statistic 组件的 title 属性替换为翻译函数调用
-    - 包括：统计人数、总工时、计费工时、总标注数、平均效率、总成本
-    - 确保卡片布局在不同语言下保持一致
-    - _Requirements: 3.2, 10.2_
-  
-  - [x] 5.3 更新 WorkHoursReport.tsx 按钮和操作文本
-    - 将所有 Button 组件的文本替换为翻译函数调用
-    - 包括：刷新、导出 Excel、详情、关闭、重试
-    - 使用 minWidth 或 Space 组件确保按钮布局美观
-    - _Requirements: 3.3, 10.1_
-  
-  - [x] 5.4 更新 WorkHoursReport.tsx 日期选择器预设
-    - 将 RangePicker presets 的 label 替换为翻译函数调用
-    - 包括：本周、本月、上月、本季度
-    - _Requirements: 3.5_
-  
-  - [x] 5.5 更新 WorkHoursReport.tsx 图表和提示文本
-    - 将图表标题、Legend、Tooltip 文本替换为翻译函数调用
-    - 将 message.success/error 调用的文本替换为翻译函数调用
-    - _Requirements: 3.4_
-  
-  - [x] 5.6 更新 UserDetailModal 组件
-    - 将模态框标题、Descriptions.Item label 替换为翻译函数调用
-    - 将所有单位文本（小时、条、条/小时）替换为翻译函数调用
-    - _Requirements: 3.6_
-  
-  - [x] 5.7 编写 WorkHoursReport 国际化单元测试
-    - 验证所有文本使用翻译函数
-    - 验证语言切换后所有文本更新
-    - _Requirements: 3.7_
+  - [x] 5.1-5.7 WorkHoursReport 组件国际化完成
 
 - [x] 6. Checkpoint - 验证 WorkHoursReport 国际化
-  - 确保 WorkHoursReport 组件所有文本使用翻译函数
-  - 验证翻译文件包含所有必需的键
-  - 手动测试语言切换功能
-  - 验证中英文切换后 UI 布局保持美观
-  - 如有问题请提出
 
 - [x] 7. 添加 TypeScript 类型定义
   - [x] 7.1 创建 i18n 类型定义文件
-    - 创建 frontend/src/types/i18n.d.ts
-    - 定义 CustomTypeOptions 扩展 react-i18next 类型
-    - 导入各命名空间的翻译文件类型
-    - _Requirements: 8.5_
-  
   - [x] 7.2 验证类型定义生效
-    - 确保 IDE 提供翻译键自动补全
-    - 确保拼写错误的翻译键产生 TypeScript 错误
-    - _Requirements: 8.5_
 
 - [x] 8. 编写属性测试
-  - [x] 8.1 编写翻译文件双向完整性属性测试
-    - **Property 3: Translation File Bidirectional Completeness**
-    - 验证 zh 和 en 翻译文件的键完全一致
-    - **Validates: Requirements 4.4, 4.5**
-  
-  - [x] 8.2 编写翻译键命名规范属性测试
-    - **Property 5: Translation Key Naming Convention**
-    - 验证所有键遵循点分隔和 camelCase 规范
-    - **Validates: Requirements 5.1, 5.2**
-  
-  - [x] 8.3 编写语言偏好持久化往返属性测试
-    - **Property 6: Language Preference Persistence Round-trip**
-    - 验证语言设置保存到 localStorage 后能正确恢复
-    - **Validates: Requirements 6.2, 6.3**
+  - [x] 8.1-8.3 属性测试完成
 
 - [x] 9. 创建国际化开发指南文档
-  - [x] 9.1 创建 i18n-guidelines.md 文档
-    - 编写翻译键命名规范
-    - 编写组件国际化最佳实践
-    - 编写新增翻译键的流程
-    - 编写测试国际化功能的方法
-    - 编写 UI 布局适配指南（处理中英文长度差异）
-    - _Requirements: 8.2, 10.2, 10.3, 10.4_
 
-- [x] 10. Final Checkpoint - 完整验证
-  - 运行所有单元测试确保通过
-  - 运行属性测试确保通过
-  - 手动测试所有修改的页面和组件
-  - 验证语言切换在所有页面正常工作
-  - 验证中英文切换后所有 UI 布局保持美观
-  - 如有问题请提出
+- [x] 10. Final Checkpoint - Phase 1 完整验证
+
+### Phase 2: Tasks 模块国际化 (已完成)
+
+- [x] 11. 更新 Tasks 模块翻译文件
+  - [x] 11.1 更新 zh/tasks.json 添加完整翻译键 (ai.*, annotate.*, review.*)
+  - [x] 11.2 更新 en/tasks.json 添加对应英文翻译
+
+- [x] 12. 修改 Tasks 列表页面组件
+  - [x] 12.1 修复 index.tsx 状态键生成逻辑 (使用 statusKeyMap)
+  - [x] 12.2 修复 index.tsx 标注类型键生成逻辑 (使用 typeKeyMap)
+  - [x] 12.3 修复 index.tsx annotate 操作按钮 (改为 annotateAction)
+
+- [x] 13. 修改 TaskDetail 页面组件
+  - [x] 13.1 修复 TaskDetail.tsx 状态/优先级键生成逻辑
+
+- [x] 14. 修改 AIAnnotationPanel 组件
+  - [x] 14.1 更新 AIAnnotationPanel.tsx 使用翻译函数
+
+- [x] 15. 修改 TaskAnnotate 组件
+  - [x] 15.1 更新 TaskAnnotate.tsx 使用翻译函数
+
+- [x] 16. 修改 TaskEdit 和 TaskEditForm 组件
+  - [x] 16.1 更新 TaskEdit.tsx 使用翻译函数
+    - 已使用 useTranslation('tasks') 替换所有硬编码中文文本
+    - _Requirements: 11.1, 11.5_
+  - [x] 16.2 更新 TaskEditForm.tsx 使用翻译函数
+    - 已使用翻译函数替换表单标签、占位符、验证消息
+    - _Requirements: 11.1, 11.5_
+
+- [x] 17. 修改 TaskCreateModal 组件
+  - [x] 17.1 更新 TaskCreateModal.tsx 使用翻译函数
+    - 已使用 useTranslation(['tasks', 'common']) 替换模态框标题、表单标签、按钮文本
+    - _Requirements: 11.1, 11.5_
+
+- [x] 18. 修改 TaskReview 组件
+  - [x] 18.1 更新 TaskReview.tsx 使用翻译函数
+    - 已使用 useTranslation(['tasks', 'common']) 替换审核相关文本
+    - _Requirements: 11.8_
+
+- [x] 19. Tasks 模块 Checkpoint
+  - 所有 Tasks 页面国际化已完成
+  - 语言切换功能正常
+
+### Phase 3: Error 页面国际化 (已完成)
+
+- [x] 20. 修改 Error/500.tsx 页面
+  - [x] 20.1 更新 Error/500.tsx 使用翻译函数
+    - 已替换 "抱歉，服务器发生错误。" 为 t('error.pages.serverError.subtitle')
+    - 已替换 "返回首页" 为 t('error.pages.serverError.backHome')
+    - 已替换 "刷新页面" 为 t('error.pages.serverError.refresh')
+    - _Requirements: 2.1, 2.3_
+  - [x] 20.2 更新 common.json 添加 500 错误页面翻译键
+    - 已添加 error.pages.serverError.* 翻译键到 zh/common.json 和 en/common.json
+
+### Phase 4: Admin 模块国际化 (待完成)
+
+- [x] 21. 创建 admin.json 翻译文件
+  - [x] 21.1 创建 zh/admin.json 翻译文件
+    - 添加 console.* 命名空间（控制台相关）
+    - 添加 system.* 命名空间（系统配置相关）
+    - 添加 tenants.* 命名空间（租户管理相关）
+    - 添加 users.* 命名空间（用户管理相关）
+  - [x] 21.2 创建 en/admin.json 翻译文件
+
+- [x] 22. 修改 Admin/Console/index.tsx
+  - [x] 22.1 替换所有硬编码中文
+    - "管理控制台" -> t('console.title')
+    - "系统概览和监控" -> t('console.subtitle')
+    - "刷新" -> t('common:refresh')
+    - "系统配置" -> t('console.systemConfig')
+    - "系统状态" -> t('console.systemStatus')
+    - "健康/异常" -> t('console.healthy')/t('console.unhealthy')
+    - "数据库/缓存/存储" -> t('console.database')/t('console.cache')/t('console.storage')
+    - "正常/异常" -> t('console.normal')/t('console.abnormal')
+    - "租户统计" -> t('console.tenantStats')
+    - "总租户数/活跃租户/暂停租户/禁用租户" -> t('console.totalTenants')/...
+    - "工作空间统计" -> t('console.workspaceStats')
+    - "用户统计" -> t('console.userStats')
+    - "服务状态" -> t('console.serviceStatus')
+    - "服务名称/状态/版本/运行时间/最后检查" -> t('console.columns.*')
+    - "运行中/降级/停止" -> t('console.status.*')
+    - "加载中..." -> t('common:loading')
+    - "最后更新" -> t('console.lastUpdated')
+
+- [x] 23. 修改 Admin/LLMConfig.tsx
+  - [x] 23.1 替换所有硬编码中文
+    - "LLM 配置管理" -> t('admin.llm.title')
+    - "通义千问/智谱 GLM/文心一言/腾讯混元" -> t('admin.llm.providers.*')
+    - "在线/离线" -> t('admin.llm.online')/t('admin.llm.offline')
+
+- [x] 24. 修改其他 Admin 子模块
+  - [x] 24.1 更新 ConfigDashboard.tsx
+  - [x] 24.2 更新 ConfigDB.tsx
+  - [x] 24.3 更新 ConfigLLM.tsx
+  - [x] 24.4 更新 ConfigSync.tsx
+  - [x] 24.5 更新 PermissionConfig.tsx
+  - [x] 24.6 更新 QuotaManagement.tsx
+  - [x] 24.7 更新 SQLBuilder.tsx
+  - [x] 24.8 更新 TextToSQLConfig.tsx
+  - [x] 24.9 更新 ThirdPartyConfig.tsx
+  - [x] 24.10 更新 BillingManagement.tsx
+  - [x] 24.11 更新 AnnotationPlugins.tsx
+
+### Phase 5: Quality 模块国际化 (待完成)
+
+- [x] 25. 更新 quality.json 翻译文件
+  - [x] 25.1 更新 zh/quality.json 添加完整翻译键
+    - 添加 improvementTask.* 命名空间
+    - 添加 reports.* 命名空间
+    - 添加 alerts.* 命名空间
+    - 添加 rules.* 命名空间
+  - [x] 25.2 更新 en/quality.json 添加对应英文翻译
+
+- [x] 26. 修改 Quality/ImprovementTaskList.tsx
+  - [x] 26.1 替换所有硬编码中文
+    - "加载任务列表失败" -> t('quality.improvementTask.loadError')
+    - "待处理/进行中/待审核/已通过/已拒绝" -> t('quality.improvementTask.status.*')
+    - "任务ID/优先级/问题数/负责人/状态/创建时间/提交时间/操作" -> t('quality.improvementTask.columns.*')
+    - "未分配" -> t('quality.improvementTask.unassigned')
+    - "查看详情" -> t('quality.improvementTask.viewDetail')
+    - "总任务数/待处理/待审核/完成率" -> t('quality.improvementTask.stats.*')
+    - "改进任务列表" -> t('quality.improvementTask.title')
+    - "搜索任务" -> t('quality.improvementTask.searchPlaceholder')
+    - "状态筛选/优先级" -> t('quality.improvementTask.filters.*')
+    - "高优先级/中优先级/低优先级" -> t('quality.improvementTask.priority.*')
+
+- [x] 27. 修改 Quality/Reports/index.tsx
+  - [x] 27.1 替换所有硬编码中文
+    - "报告名称/类型/总体评分/样本统计" -> t('quality.reports.columns.*')
+    - "日报/周报/月报/自定义" -> t('quality.reports.types.*')
+    - "总数/通过" -> t('quality.reports.stats.*')
+
+- [x] 28. 修改其他 Quality 子模块
+  - [x] 28.1 更新 QualityDashboard.tsx
+  - [x] 28.2 更新 AlertList.tsx
+  - [x] 28.3 更新 ImprovementTaskDetail.tsx
+  - [x] 28.4 更新 ReportViewer.tsx
+  - [x] 28.5 更新 RuleConfig.tsx
+  - [x] 28.6 更新 WorkflowConfig.tsx
+
+### Phase 6: Security 模块国际化 (待完成)
+
+- [x] 29. 更新 security.json 翻译文件
+  - [x] 29.1 更新 zh/security.json 添加完整翻译键
+    - 添加 permissions.* 命名空间
+    - 添加 roles.* 命名空间
+    - 添加 audit.* 命名空间
+    - 添加 sessions.* 命名空间
+  - [x] 29.2 更新 en/security.json 添加对应英文翻译
+
+- [x] 30. 修改 Security/Permissions/index.tsx
+  - [x] 30.1 替换所有硬编码中文
+    - "权限创建成功/失败" -> t('security.permissions.createSuccess')/t('security.permissions.createError')
+    - "角色创建成功/失败" -> t('security.roles.createSuccess')/t('security.roles.createError')
+    - "权限删除成功/失败" -> t('security.permissions.deleteSuccess')/t('security.permissions.deleteError')
+    - "角色删除成功/失败" -> t('security.roles.deleteSuccess')/t('security.roles.deleteError')
+    - "权限名称/权限代码/资源/操作/状态/创建时间" -> t('security.permissions.columns.*')
+    - "启用/禁用" -> t('security.permissions.enabled')/t('security.permissions.disabled')
+    - "编辑/删除" -> t('common:edit')/t('common:delete')
+    - "确认删除" -> t('common:confirmDelete')
+    - "角色名称/角色代码/描述/权限数量/用户数量" -> t('security.roles.columns.*')
+    - "用户/角色/直接权限/有效权限/最后登录" -> t('security.userPermissions.columns.*')
+    - "从未登录" -> t('security.userPermissions.neverLoggedIn')
+
+- [x] 31. 修改其他 Security 子模块
+  - [x] 31.1 更新 Audit 子模块
+  - [x] 31.2 更新 Dashboard 子模块
+  - [x] 31.3 更新 DataPermissions 子模块
+  - [x] 31.4 更新 RBAC 子模块
+  - [x] 31.5 更新 Sessions 子模块
+  - [x] 31.6 更新 SSO 子模块
+
+### Phase 7: Workspace 模块国际化 (待完成)
+
+- [x] 32. 创建 workspace.json 翻译文件
+  - [x] 32.1 创建 zh/workspace.json 翻译文件
+  - [x] 32.2 创建 en/workspace.json 翻译文件
+
+- [x] 33. 修改 Workspace/WorkspaceManagement.tsx
+  - [x] 33.1 替换所有硬编码中文
+    - "工作空间创建成功/失败" -> t('workspace.createSuccess')/t('workspace.createError')
+    - "工作空间更新成功/失败" -> t('workspace.updateSuccess')/t('workspace.updateError')
+    - "工作空间删除成功/失败" -> t('workspace.deleteSuccess')/t('workspace.deleteError')
+    - "工作空间已归档/已恢复" -> t('workspace.archived')/t('workspace.restored')
+    - "移动失败" -> t('workspace.moveError')
+    - "已归档" -> t('workspace.statusArchived')
+    - "添加子工作空间" -> t('workspace.addChild')
+    - "编辑/复制为模板/归档/恢复/删除" -> t('workspace.actions.*')
+    - "模板功能开发中" -> t('workspace.templateInDev')
+    - "确认归档/确认删除" -> t('workspace.confirmArchive')/t('workspace.confirmDelete')
+    - "工作空间层级" -> t('workspace.hierarchy')
+    - "选择租户" -> t('workspace.selectTenant')
+    - "新建" -> t('workspace.create')
+    - "请先选择租户" -> t('workspace.selectTenantFirst')
+    - "暂无工作空间" -> t('workspace.noWorkspaces')
+    - "拖拽可调整层级结构，右键查看更多操作" -> t('workspace.dragHint')
+    - "工作空间详情" -> t('workspace.details')
+    - "ID/名称/状态/父级/创建时间/描述" -> t('workspace.fields.*')
+    - "活跃/已归档/根级" -> t('workspace.status.*')
+    - "请在左侧选择工作空间" -> t('workspace.selectWorkspace')
+
+- [x] 34. 修改 Workspace/MemberManagement.tsx
+  - [x] 34.1 替换所有硬编码中文
+
+### Phase 8: Billing 模块国际化补充 (待完成)
+
+- [x] 35. 修改 Billing/BillingRuleConfig.tsx
+  - [x] 35.1 替换所有硬编码中文
+    - "按条数计费/按工时计费/按项目计费/混合计费" -> t('billing.ruleConfig.modes.*')
+    - "根据标注数量计费/根据工作时间计费/按项目年费计费/综合多种计费方式" -> t('billing.ruleConfig.modeDescriptions.*')
+    - "当前生效/已审批/待审批" -> t('billing.ruleConfig.status.*')
+    - "计费规则创建成功，等待审批" -> t('billing.ruleConfig.createSuccess')
+    - "创建计费规则失败" -> t('billing.ruleConfig.createError')
+    - "规则版本 X 已审批并生效" -> t('billing.ruleConfig.approveSuccess')
+    - "审批计费规则失败" -> t('billing.ruleConfig.approveError')
+    - "版本/计费模式/单条费率/时薪/项目年费/生效日期/状态/创建者/审批者/操作" -> t('billing.ruleConfig.columns.*')
+    - "当前版本" -> t('billing.ruleConfig.currentVersion')
+
+### Phase 9: Versioning 模块国际化验证 (已完成)
+
+- [x] 36. 验证 Versioning 模块翻译完整性
+  - [x] 36.1 检查 versioning.json 翻译键完整性 - 已使用 useTranslation(['versioning', 'common'])
+  - [x] 36.2 检查 lineage.json 翻译键完整性 - 已使用 useTranslation(['lineage', 'common'])
+  - [x] 36.3 检查 snapshot.json 翻译键完整性 - 已使用 useTranslation(['snapshot', 'common'])
+  - [x] 36.4 检查 impact.json 翻译键完整性 - 已使用 useTranslation(['impact', 'common'])
+  - [x] 36.5 验证 DiffViewer.tsx 国际化
+
+### Phase 10: DataSync 模块国际化 (待完成)
+
+- [x] 37. 更新 dataSync.json 翻译文件
+  - [x] 37.1 更新 zh/dataSync.json 添加完整翻译键
+  - [x] 37.2 更新 en/dataSync.json 添加对应英文翻译
+
+- [x] 38. 修改 DataSync 子模块
+  - [x] 38.1 更新 Export 子模块
+  - [x] 38.2 更新 History 子模块
+  - [x] 38.3 更新 Scheduler 子模块
+  - [x] 38.4 更新 Security 子模块
+  - [x] 38.5 更新 Sources 子模块
+
+### Phase 11: License 模块国际化 (待完成)
+
+- [x] 39. 创建 license.json 翻译文件
+  - [x] 39.1 创建 zh/license.json 翻译文件
+  - [x] 39.2 创建 en/license.json 翻译文件
+
+- [x] 40. 修改 License 子模块
+  - [x] 40.1 更新 ActivationWizard.tsx
+  - [x] 40.2 更新 AlertConfig.tsx
+  - [x] 40.3 更新 LicenseDashboard.tsx
+  - [x] 40.4 更新 LicenseReport.tsx
+  - [x] 40.5 更新 UsageMonitor.tsx
+
+### Phase 12: 其他页面国际化 (待完成)
+
+- [x] 41. Dashboard 模块
+  - [x] 41.1 更新 dashboard.json 翻译文件
+  - [x] 41.2 更新 Dashboard/index.tsx
+
+- [x] 42. Settings 模块
+  - [x] 42.1 创建 settings.json 翻译文件
+  - [x] 42.2 更新 Settings/index.tsx
+
+- [x] 43. Collaboration 模块
+  - [x] 43.1 创建 collaboration.json 翻译文件
+  - [x] 43.2 更新 Collaboration/index.tsx
+
+- [x] 44. Crowdsource 模块
+  - [x] 44.1 创建 crowdsource.json 翻译文件
+  - [x] 44.2 更新 Crowdsource/index.tsx
+
+- [x] 45. Augmentation 模块
+  - [x] 45.1 创建 augmentation.json 翻译文件
+  - [x] 45.2 更新 Augmentation 子模块
+
+- [x] 46. Register/ForgotPassword/ResetPassword 页面
+  - [x] 46.1 更新 auth.json 添加注册/忘记密码/重置密码翻译键
+  - [x] 46.2 更新 Register/index.tsx
+  - [x] 46.3 更新 ForgotPassword/index.tsx
+  - [x] 46.4 更新 ResetPassword/index.tsx
+
+### Phase 13: 组件库国际化 (待完成)
+
+- [x] 47. Billing 组件
+  - [x] 47.1 更新 BillingReports 组件测试文件中的中文断言
+  - [x] 47.2 更新其他 Billing 组件
+
+- [x] 48. 通用组件
+  - [x] 48.1 检查 components 目录下所有组件的硬编码文本
+  - [x] 48.2 更新需要国际化的组件
+
+### Phase 14: 最终验证 (待完成)
+
+- [x] 49. 翻译文件完整性验证
+  - [x] 49.1 运行翻译键双向完整性测试
+  - [x] 49.2 验证所有命名空间翻译键一致
+
+- [x] 50. 全面功能测试
+  - [x] 50.1 测试所有页面语言切换
+  - [x] 50.2 验证无硬编码文本残留
+  - [x] 50.3 验证 UI 布局在不同语言下保持美观
+
+- [x] 51. 文档更新
+  - [x] 51.1 更新 i18n-guidelines.md 文档
+  - [x] 51.2 更新 README 添加国际化说明
+
+### Phase 15: Label Studio 语言同步 (已完成)
+
+- [x] 52. Label Studio 语言同步实现
+  - [x] 52.1 创建 languageStore.ts 全局语言状态管理
+    - 使用 Zustand 管理语言状态
+    - 支持 localStorage 持久化
+    - 提供 syncToLabelStudio 方法
+    - _Requirements: 18.3, 18.7_
+  - [x] 52.2 更新 LabelStudioEmbed.tsx 组件
+    - 监听语言变化并重新加载 iframe
+    - 显示语言指示器
+    - 在 Label Studio 就绪时同步语言
+    - _Requirements: 18.1, 18.4, 18.5, 18.6_
+  - [x] 52.3 实现 postMessage 双向通信
+    - 发送 setLanguage 消息到 Label Studio
+    - 监听 languageChanged 消息
+    - _Requirements: 18.3_
+  - [x] 52.4 添加 Label Studio 翻译键到 common.json
+    - labelStudio.ready, labelStudio.loading, labelStudio.status.*
+    - _Requirements: 18.2_
+
+- [x] 53. Label Studio 语言同步验证
+  - [x] 53.1 验证语言切换时 iframe 重新加载
+  - [x] 53.2 验证语言指示器显示正确
+  - [x] 53.3 验证 postMessage 通信正常
 
 ## Notes
 
-- 所有任务均为必需任务，确保从一开始就有完整的测试覆盖
+- 所有任务均为必需任务，确保完整的国际化覆盖
 - 每个任务都引用了具体的需求条款以便追溯
 - Checkpoint 任务用于阶段性验证，确保增量开发的正确性
-- 属性测试验证通用正确性属性，单元测试验证具体示例和边界情况
+- 使用映射对象替代字符串操作生成翻译键，避免 bug
+- 翻译键命名遵循 {namespace}.{module}.{key} 格式

@@ -175,7 +175,7 @@ const statusColors = {
 } as const;
 
 const QualityPage: React.FC = () => {
-  const { t } = useTranslation();
+  const { t } = useTranslation(['quality', 'common']);
   const [ruleModalOpen, setRuleModalOpen] = useState(false);
   const [configDrawerOpen, setConfigDrawerOpen] = useState(false);
   const [versionDrawerOpen, setVersionDrawerOpen] = useState(false);
@@ -402,17 +402,17 @@ const QualityPage: React.FC = () => {
   ];
 
   const handleCreateRule = async (_values: Record<string, unknown>) => {
-    message.success(t('quality.messages.ruleCreated'));
+    message.success(t('messages.ruleCreated'));
     setRuleModalOpen(false);
     ruleForm.resetFields();
   };
 
   const handleToggleRule = (_id: string, enabled: boolean) => {
-    message.success(enabled ? t('quality.messages.ruleEnabled') : t('quality.messages.ruleDisabled'));
+    message.success(enabled ? t('messages.ruleEnabled') : t('messages.ruleDisabled'));
   };
 
   const handleRunAllRules = () => {
-    message.info(t('quality.messages.ruleRunning'));
+    message.info(t('messages.ruleRunning'));
   };
 
   const handleEditRule = (rule: QualityRule) => {
@@ -428,20 +428,20 @@ const QualityPage: React.FC = () => {
   const handleSaveRuleConfig = async (ruleData: Partial<QualityRule>) => {
     // Implementation for saving rule configuration
     console.log('Saving rule config:', ruleData);
-    message.success(t('quality.messages.ruleUpdated'));
+    message.success(t('messages.ruleUpdated'));
     setConfigDrawerOpen(false);
   };
 
   const handleTestRule = async (ruleData: Partial<QualityRule>) => {
     // Implementation for testing rule
     console.log('Testing rule:', ruleData);
-    return { success: true, message: t('quality.messages.testPassed') };
+    return { success: true, message: t('messages.testPassed') };
   };
 
   const handleCreateFromTemplate = (template: RuleTemplate) => {
     // Implementation for creating rule from template
     console.log('Creating rule from template:', template);
-    message.success(t('quality.messages.ruleCreated'));
+    message.success(t('messages.ruleCreated'));
   };
 
   const handleCreateTemplate = async (template: Omit<RuleTemplate, 'id' | 'usageCount'>) => {
@@ -578,10 +578,10 @@ const QualityPage: React.FC = () => {
       width: 200,
       render: (_, record) => (
         <Space>
-          <Tooltip title={t('quality.rules.run')}>
+          <Tooltip title={t('rules.run')}>
             <Button type="link" size="small" icon={<PlayCircleOutlined />} />
           </Tooltip>
-          <Tooltip title={t('quality.rules.config')}>
+          <Tooltip title={t('rules.config')}>
             <Button 
               type="link" 
               size="small" 
@@ -589,7 +589,7 @@ const QualityPage: React.FC = () => {
               onClick={() => handleEditRule(record)}
             />
           </Tooltip>
-          <Tooltip title={t('quality.rules.version')}>
+          <Tooltip title={t('rules.version')}>
             <Button 
               type="link" 
               size="small" 
@@ -597,10 +597,10 @@ const QualityPage: React.FC = () => {
               onClick={() => handleViewVersions(record)}
             />
           </Tooltip>
-          <Tooltip title={t('quality.rules.edit')}>
+          <Tooltip title={t('rules.edit')}>
             <Button type="link" size="small" icon={<EditOutlined />} />
           </Tooltip>
-          <Tooltip title={t('quality.rules.delete')}>
+          <Tooltip title={t('rules.delete')}>
             <Button type="link" danger size="small" icon={<DeleteOutlined />} />
           </Tooltip>
         </Space>
@@ -662,14 +662,14 @@ const QualityPage: React.FC = () => {
 
   return (
     <div>
-      <h2 style={{ marginBottom: 24 }}>{t('quality.title')}</h2>
+      <h2 style={{ marginBottom: 24 }}>{t('title')}</h2>
 
       {/* Stats */}
       <Row gutter={16} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title={t('quality.stats.activeRules')}
+              title={t('stats.activeRules')}
               value={mockRules.filter((r) => r.enabled).length}
               suffix={`/ ${mockRules.length}`}
               prefix={<SafetyCertificateOutlined />}
@@ -679,7 +679,7 @@ const QualityPage: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title={t('quality.stats.totalViolations')}
+              title={t('stats.totalViolations')}
               value={totalViolations}
               prefix={<WarningOutlined />}
               valueStyle={{ color: totalViolations > 0 ? '#faad14' : '#52c41a' }}
@@ -689,7 +689,7 @@ const QualityPage: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title={t('quality.stats.openIssues')}
+              title={t('stats.openIssues')}
               value={openIssues}
               prefix={<BugOutlined />}
               valueStyle={{ color: openIssues > 0 ? '#ff4d4f' : '#52c41a' }}
@@ -699,7 +699,7 @@ const QualityPage: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title={t('quality.stats.qualityScore')}
+              title={t('stats.qualityScore')}
               value={92}
               suffix="%"
               prefix={<CheckCircleOutlined />}
@@ -719,7 +719,7 @@ const QualityPage: React.FC = () => {
               label: (
                 <span>
                   <SafetyCertificateOutlined />
-                  {t('quality.rules.title')}
+                  {t('rules.title')}
                 </span>
               ),
               children: (
@@ -731,13 +731,13 @@ const QualityPage: React.FC = () => {
                         icon={<PlusOutlined />}
                         onClick={() => setRuleModalOpen(true)}
                       >
-                        {t('quality.rules.create')}
+                        {t('rules.create')}
                       </Button>
                       <Button
                         icon={<PlayCircleOutlined />}
                         onClick={handleRunAllRules}
                       >
-                        {t('quality.rules.runAll')}
+                        {t('rules.runAll')}
                       </Button>
                     </Space>
                   </div>
@@ -762,7 +762,7 @@ const QualityPage: React.FC = () => {
               label: (
                 <span>
                   <SettingOutlined />
-                  {t('quality.rules.template')}
+                  {t('rules.template')}
                 </span>
               ),
               children: (
@@ -780,7 +780,7 @@ const QualityPage: React.FC = () => {
               label: (
                 <span>
                   <BugOutlined />
-                  {t('quality.issues.title')}
+                  {t('issues.title')}
                   {openIssues > 0 && (
                     <Badge
                       count={openIssues}
@@ -804,7 +804,7 @@ const QualityPage: React.FC = () => {
               label: (
                 <span>
                   <SendOutlined />
-                  {t('quality.workOrders.title')}
+                  {t('workOrders.title')}
                 </span>
               ),
               children: (
@@ -824,7 +824,7 @@ const QualityPage: React.FC = () => {
               label: (
                 <span>
                   <BarChartOutlined />
-                  {t('quality.reports.title')}
+                  {t('reports.title')}
                 </span>
               ),
               children: (
@@ -844,7 +844,7 @@ const QualityPage: React.FC = () => {
 
       {/* Create Rule Modal */}
       <Modal
-        title={t('quality.rules.create')}
+        title={t('rules.create')}
         open={ruleModalOpen}
         onCancel={() => setRuleModalOpen(false)}
         onOk={() => ruleForm.submit()}
@@ -853,43 +853,43 @@ const QualityPage: React.FC = () => {
         <Form form={ruleForm} layout="vertical" onFinish={handleCreateRule}>
           <Form.Item
             name="name"
-            label={t('quality.rules.name')}
-            rules={[{ required: true, message: t('common.required') }]}
+            label={t('rules.name')}
+            rules={[{ required: true, message: t('required') }]}
           >
-            <Input placeholder={t('quality.rules.name')} />
+            <Input placeholder={t('rules.name')} />
           </Form.Item>
           <Form.Item
             name="type"
-            label={t('quality.rules.type')}
+            label={t('rules.type')}
             rules={[{ required: true }]}
           >
-            <Select placeholder={t('quality.rules.type')}>
-              <Select.Option value="format">{t('quality.rules.types.format')}</Select.Option>
-              <Select.Option value="content">{t('quality.rules.types.content')}</Select.Option>
-              <Select.Option value="consistency">{t('quality.rules.types.consistency')}</Select.Option>
-              <Select.Option value="custom">{t('quality.rules.types.custom')}</Select.Option>
+            <Select placeholder={t('rules.type')}>
+              <Select.Option value="format">{t('rules.types.format')}</Select.Option>
+              <Select.Option value="content">{t('rules.types.content')}</Select.Option>
+              <Select.Option value="consistency">{t('rules.types.consistency')}</Select.Option>
+              <Select.Option value="custom">{t('rules.types.custom')}</Select.Option>
             </Select>
           </Form.Item>
           <Form.Item
             name="severity"
-            label={t('quality.rules.severity')}
+            label={t('rules.severity')}
             rules={[{ required: true }]}
             initialValue="warning"
           >
             <Select>
-              <Select.Option value="warning">{t('quality.rules.severities.warning')}</Select.Option>
-              <Select.Option value="error">{t('quality.rules.severities.error')}</Select.Option>
+              <Select.Option value="warning">{t('rules.severities.warning')}</Select.Option>
+              <Select.Option value="error">{t('rules.severities.error')}</Select.Option>
             </Select>
           </Form.Item>
-          <Form.Item name="description" label={t('quality.rules.description')}>
-            <Input.TextArea rows={3} placeholder={t('quality.rules.description')} />
+          <Form.Item name="description" label={t('rules.description')}>
+            <Input.TextArea rows={3} placeholder={t('rules.description')} />
           </Form.Item>
         </Form>
       </Modal>
 
       {/* Rule Configuration Drawer */}
       <Drawer
-        title={`${t('quality.rules.config')} - ${selectedRule?.name}`}
+        title={`${t('rules.config')} - ${selectedRule?.name}`}
         open={configDrawerOpen}
         onClose={() => setConfigDrawerOpen(false)}
         width={800}
@@ -906,7 +906,7 @@ const QualityPage: React.FC = () => {
 
       {/* Version Management Drawer */}
       <Drawer
-        title={`${t('quality.rules.version')} - ${selectedRule?.name}`}
+        title={`${t('rules.version')} - ${selectedRule?.name}`}
         open={versionDrawerOpen}
         onClose={() => setVersionDrawerOpen(false)}
         width={1000}

@@ -119,29 +119,29 @@ const SyncScheduler: React.FC = () => {
 
   const columns: ColumnsType<ScheduledJob> = [
     {
-      title: '任务名称',
+      title: t('scheduler.taskName'),
       dataIndex: 'name',
       key: 'name',
       render: (text, record) => (
         <Space>
           <Text strong>{text}</Text>
-          {record.priority >= 7 && <Tag color="red">高优先级</Tag>}
+          {record.priority >= 7 && <Tag color="red">{t('scheduler.highPriority')}</Tag>}
         </Space>
       ),
     },
     {
-      title: '数据源',
+      title: t('scheduler.dataSource'),
       dataIndex: 'sourceName',
       key: 'sourceName',
     },
     {
-      title: 'Cron 表达式',
+      title: t('scheduler.cronExpression'),
       dataIndex: 'cronExpression',
       key: 'cronExpression',
       render: (text) => <code>{text}</code>,
     },
     {
-      title: '状态',
+      title: t('scheduler.status'),
       dataIndex: 'status',
       key: 'status',
       render: (status) => (
@@ -151,7 +151,7 @@ const SyncScheduler: React.FC = () => {
       ),
     },
     {
-      title: '启用',
+      title: t('scheduler.enabled'),
       dataIndex: 'enabled',
       key: 'enabled',
       render: (enabled, record) => (
@@ -162,19 +162,19 @@ const SyncScheduler: React.FC = () => {
       ),
     },
     {
-      title: '上次运行',
+      title: t('scheduler.lastRun'),
       dataIndex: 'lastRunAt',
       key: 'lastRunAt',
       render: (text) => text ? new Date(text).toLocaleString() : '-',
     },
     {
-      title: '下次运行',
+      title: t('scheduler.nextRun'),
       dataIndex: 'nextRunAt',
       key: 'nextRunAt',
       render: (text) => text ? new Date(text).toLocaleString() : '-',
     },
     {
-      title: '成功率',
+      title: t('scheduler.successRate'),
       key: 'successRate',
       render: (_, record) => {
         const rate = record.totalRuns > 0
@@ -188,11 +188,11 @@ const SyncScheduler: React.FC = () => {
       },
     },
     {
-      title: '操作',
+      title: t('scheduler.actions'),
       key: 'actions',
       render: (_, record) => (
         <Space>
-          <Tooltip title="立即执行">
+          <Tooltip title={t('scheduler.triggerNow')}>
             <Button
               type="text"
               icon={<PlayCircleOutlined />}
@@ -200,7 +200,7 @@ const SyncScheduler: React.FC = () => {
               disabled={record.status === 'running'}
             />
           </Tooltip>
-          <Tooltip title="查看历史">
+          <Tooltip title={t('scheduler.viewHistory')}>
             <Button
               type="text"
               icon={<HistoryOutlined />}
@@ -208,7 +208,7 @@ const SyncScheduler: React.FC = () => {
             />
           </Tooltip>
           <Popconfirm
-            title="确定删除此任务？"
+            title={t('scheduler.deleteConfirm')}
             onConfirm={() => handleDelete(record.id)}
           >
             <Button type="text" danger icon={<DeleteOutlined />} />
@@ -220,19 +220,19 @@ const SyncScheduler: React.FC = () => {
 
   const historyColumns: ColumnsType<SyncHistory> = [
     {
-      title: '开始时间',
+      title: t('scheduler.startTime'),
       dataIndex: 'startedAt',
       key: 'startedAt',
       render: (text) => new Date(text).toLocaleString(),
     },
     {
-      title: '完成时间',
+      title: t('scheduler.completedTime'),
       dataIndex: 'completedAt',
       key: 'completedAt',
       render: (text) => text ? new Date(text).toLocaleString() : '-',
     },
     {
-      title: '状态',
+      title: t('scheduler.status'),
       dataIndex: 'status',
       key: 'status',
       render: (status) => (
@@ -240,13 +240,13 @@ const SyncScheduler: React.FC = () => {
       ),
     },
     {
-      title: '同步行数',
+      title: t('scheduler.rowsSynced'),
       dataIndex: 'rowsSynced',
       key: 'rowsSynced',
       render: (count) => count.toLocaleString(),
     },
     {
-      title: '错误信息',
+      title: t('scheduler.errorMessage'),
       dataIndex: 'errorMessage',
       key: 'errorMessage',
       render: (text) => text || '-',
@@ -257,13 +257,13 @@ const SyncScheduler: React.FC = () => {
     setJobs(jobs.map(job =>
       job.id === jobId ? { ...job, enabled } : job
     ));
-    message.success(enabled ? '任务已启用' : '任务已禁用');
+    message.success(enabled ? t('scheduler.taskEnabled') : t('scheduler.taskDisabled'));
   };
 
   const handleTrigger = (jobId: string) => {
-    message.loading('正在触发同步任务...');
+    message.loading(t('scheduler.triggerStarted'));
     setTimeout(() => {
-      message.success('同步任务已触发');
+      message.success(t('scheduler.triggerSuccess'));
     }, 1000);
   };
 
@@ -294,7 +294,7 @@ const SyncScheduler: React.FC = () => {
 
   const handleDelete = (jobId: string) => {
     setJobs(jobs.filter(job => job.id !== jobId));
-    message.success('任务已删除');
+    message.success(t('scheduler.taskDeleted'));
   };
 
   const handleCreateJob = (values: any) => {
@@ -316,7 +316,7 @@ const SyncScheduler: React.FC = () => {
     setJobs([...jobs, newJob]);
     setIsModalVisible(false);
     form.resetFields();
-    message.success('任务创建成功');
+    message.success(t('scheduler.taskCreated'));
   };
 
   const totalJobs = jobs.length;
@@ -328,39 +328,39 @@ const SyncScheduler: React.FC = () => {
     <div style={{ padding: 24 }}>
       <Title level={3}>
         <ClockCircleOutlined style={{ marginRight: 8 }} />
-        同步调度管理
+        {t('scheduler.title')}
       </Title>
 
       <Row gutter={16} style={{ marginBottom: 24 }}>
         <Col span={6}>
           <Card>
-            <Statistic title="总任务数" value={totalJobs} />
+            <Statistic title={t('scheduler.totalJobs')} value={totalJobs} />
           </Card>
         </Col>
         <Col span={6}>
           <Card>
-            <Statistic title="活跃任务" value={activeJobs} valueStyle={{ color: '#3f8600' }} />
+            <Statistic title={t('scheduler.activeJobs')} value={activeJobs} valueStyle={{ color: '#3f8600' }} />
           </Card>
         </Col>
         <Col span={6}>
           <Card>
-            <Statistic title="运行中" value={runningJobs} valueStyle={{ color: '#1890ff' }} />
+            <Statistic title={t('scheduler.runningJobs')} value={runningJobs} valueStyle={{ color: '#1890ff' }} />
           </Card>
         </Col>
         <Col span={6}>
           <Card>
-            <Statistic title="总同步次数" value={totalSynced} />
+            <Statistic title={t('scheduler.totalSynced')} value={totalSynced} />
           </Card>
         </Col>
       </Row>
 
       <Card
-        title="调度任务列表"
+        title={t('scheduler.jobList')}
         extra={
           <Space>
-            <Button icon={<ReloadOutlined />}>刷新</Button>
+            <Button icon={<ReloadOutlined />}>{t('common:refresh')}</Button>
             <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalVisible(true)}>
-              创建任务
+              {t('scheduler.createJob')}
             </Button>
           </Space>
         }
@@ -369,42 +369,42 @@ const SyncScheduler: React.FC = () => {
       </Card>
 
       <Modal
-        title="创建同步任务"
+        title={t('scheduler.createTitle')}
         open={isModalVisible}
         onCancel={() => setIsModalVisible(false)}
         footer={null}
         width={600}
       >
         <Form form={form} layout="vertical" onFinish={handleCreateJob}>
-          <Form.Item name="name" label="任务名称" rules={[{ required: true }]}>
-            <Input placeholder="输入任务名称" />
+          <Form.Item name="name" label={t('scheduler.taskName')} rules={[{ required: true }]}>
+            <Input placeholder={t('scheduler.inputTaskName')} />
           </Form.Item>
-          <Form.Item name="sourceId" label="数据源" rules={[{ required: true }]}>
-            <Select placeholder="选择数据源">
+          <Form.Item name="sourceId" label={t('scheduler.dataSource')} rules={[{ required: true }]}>
+            <Select placeholder={t('scheduler.selectDataSource')}>
               <Option value="ds_1">Production DB</Option>
               <Option value="ds_2">Orders DB</Option>
             </Select>
           </Form.Item>
-          <Form.Item name="cronExpression" label="Cron 表达式" rules={[{ required: true }]}>
-            <Input placeholder="例如: 0 2 * * * (每天凌晨2点)" />
+          <Form.Item name="cronExpression" label={t('scheduler.cronExpression')} rules={[{ required: true }]}>
+            <Input placeholder={t('scheduler.cronPlaceholder')} />
           </Form.Item>
-          <Form.Item name="priority" label="优先级" initialValue={5}>
+          <Form.Item name="priority" label={t('scheduler.priority')} initialValue={5}>
             <InputNumber min={0} max={10} style={{ width: '100%' }} />
           </Form.Item>
-          <Form.Item name="enabled" label="立即启用" valuePropName="checked" initialValue={true}>
+          <Form.Item name="enabled" label={t('scheduler.enableNow')} valuePropName="checked" initialValue={true}>
             <Switch />
           </Form.Item>
           <Form.Item>
             <Space>
-              <Button type="primary" htmlType="submit">创建</Button>
-              <Button onClick={() => setIsModalVisible(false)}>取消</Button>
+              <Button type="primary" htmlType="submit">{t('common:actions.create')}</Button>
+              <Button onClick={() => setIsModalVisible(false)}>{t('common:cancel')}</Button>
             </Space>
           </Form.Item>
         </Form>
       </Modal>
 
       <Modal
-        title={`同步历史 - ${selectedJob?.name}`}
+        title={`${t('scheduler.historyTitle')} - ${selectedJob?.name}`}
         open={isHistoryVisible}
         onCancel={() => setIsHistoryVisible(false)}
         footer={null}

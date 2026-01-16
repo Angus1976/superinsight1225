@@ -1,5 +1,6 @@
 // 权限保护组件 - 包含租户隔离
 import React, { useEffect, useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Alert, Button, Space, Tag, Skeleton, Spin } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { LockOutlined, TeamOutlined, AppstoreOutlined, LoadingOutlined } from '@ant-design/icons';
@@ -53,6 +54,7 @@ export const PermissionGuard: React.FC<PermissionGuardProps> = ({
     tenantContext
   } = usePermissions();
   const navigate = useNavigate();
+  const { t } = useTranslation(['auth', 'common']);
   
   // 加载状态（用于异步权限检查场景）
   const [isChecking, setIsChecking] = useState(showLoading);
@@ -138,7 +140,7 @@ export const PermissionGuard: React.FC<PermissionGuardProps> = ({
   if (isChecking) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
-        <Spin indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} tip="验证权限中..." />
+        <Spin indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} tip={t('permission.verifying')} />
       </div>
     );
   }
@@ -169,21 +171,21 @@ export const PermissionGuard: React.FC<PermissionGuardProps> = ({
   const getDenialReason = () => {
     if (!passesTenantIsolation) {
       return {
-        title: '租户访问受限',
-        description: '您没有权限访问此租户的资源。请确保您正在访问自己租户的数据。',
+        title: t('permission.tenantAccessDenied'),
+        description: t('permission.tenantAccessDeniedDesc'),
         icon: <TeamOutlined />
       };
     }
     if (!passesWorkspaceIsolation) {
       return {
-        title: '工作空间访问受限',
-        description: '您没有权限访问此工作空间的资源。请切换到正确的工作空间或联系管理员获取访问权限。',
+        title: t('permission.workspaceAccessDenied'),
+        description: t('permission.workspaceAccessDeniedDesc'),
         icon: <AppstoreOutlined />
       };
     }
     return {
-      title: '权限不足',
-      description: '访问此功能需要更高的权限。请联系管理员获取相应权限。',
+      title: t('permission.insufficientPermission'),
+      description: t('permission.insufficientPermissionDesc'),
       icon: <LockOutlined />
     };
   };
@@ -202,18 +204,18 @@ export const PermissionGuard: React.FC<PermissionGuardProps> = ({
           <p>{denialReason.description}</p>
           <Space direction="vertical" size="small" style={{ marginTop: 8 }}>
             <div>
-              <span>当前角色：</span>
+              <span>{t('permission.currentRole')}：</span>
               <Tag color="blue">{roleDisplayName}</Tag>
             </div>
             {tenantContext.tenantId && (
               <div>
-                <span>租户角色：</span>
+                <span>{t('permission.tenantRole')}：</span>
                 <Tag color="green">{tenantRoleDisplayName}</Tag>
               </div>
             )}
             {tenantContext.workspaceId && (
               <div>
-                <span>工作空间角色：</span>
+                <span>{t('permission.workspaceRole')}：</span>
                 <Tag color="orange">{workspaceRoleDisplayName}</Tag>
               </div>
             )}
@@ -222,7 +224,7 @@ export const PermissionGuard: React.FC<PermissionGuardProps> = ({
       }
       action={
         <Button type="primary" onClick={() => navigate(-1)}>
-          返回上一页
+          {t('permission.goBack')}
         </Button>
       }
       style={{ margin: '20px' }}

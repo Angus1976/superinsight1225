@@ -1,0 +1,154 @@
+{
+  "title": "数据增强",
+  "stats": {
+    "totalSamples": "样本总数",
+    "augmentedSamples": "增强样本",
+    "augmentationRatio": "增强比例"
+  },
+  "tabs": {
+    "jobs": "增强任务",
+    "samples": "样本数据"
+  },
+  "jobs": {
+    "name": "名称",
+    "strategy": "策略",
+    "status": "状态",
+    "progress": "进度",
+    "sourceOutput": "源 / 输出",
+    "created": "创建时间",
+    "actions": "操作",
+    "createJob": "创建任务",
+    "uploadSamples": "上传样本",
+    "start": "开始",
+    "pause": "暂停",
+    "view": "查看",
+    "delete": "删除"
+  },
+  "status": {
+    "pending": "待处理",
+    "running": "运行中",
+    "completed": "已完成",
+    "failed": "失败"
+  },
+  "strategy": {
+    "backTranslation": "回译",
+    "paraphrase": "改写",
+    "synonymReplace": "同义词替换",
+    "noiseInjection": "噪声注入",
+    "eda": "简易数据增强"
+  },
+  "samples": {
+    "content": "内容",
+    "label": "标签",
+    "source": "来源",
+    "quality": "质量",
+    "original": "原始",
+    "augmented": "增强",
+    "preview": "样本预览",
+    "previewDescription": "展示原始样本和增强样本的对比"
+  },
+  "modal": {
+    "createJob": "创建增强任务",
+    "uploadSamples": "上传样本数据",
+    "jobName": "任务名称",
+    "jobNamePlaceholder": "输入任务名称",
+    "jobNameRequired": "请输入任务名称",
+    "strategy": "增强策略",
+    "strategyPlaceholder": "选择策略",
+    "multiplier": "增强倍数",
+    "description": "描述",
+    "descriptionPlaceholder": "可选描述",
+    "uploadHint": "点击或拖拽文件上传",
+    "uploadDescription": "支持 CSV、JSON 或 JSONL 格式，最大文件大小：100MB",
+    "createSuccess": "增强任务创建成功"
+  },
+  "config": {
+    "title": "数据增强配置",
+    "resetDefault": "重置默认",
+    "saveConfig": "保存配置",
+    "saveSuccess": "配置保存成功",
+    "saveFailed": "配置保存失败",
+    "resetSuccess": "配置重置成功",
+    "resetFailed": "配置重置失败",
+    "textAugmentation": {
+      "title": "文本增强配置",
+      "enabled": "启用文本增强",
+      "synonymReplacement": "同义词替换",
+      "randomInsertion": "随机插入",
+      "randomSwap": "随机交换",
+      "randomDeletion": "随机删除",
+      "augmentationRatio": "增强比例"
+    },
+    "imageAugmentation": {
+      "title": "图像增强配置",
+      "enabled": "启用图像增强",
+      "rotation": "旋转",
+      "flip": "翻转",
+      "brightness": "亮度调整",
+      "contrast": "对比度调整",
+      "noise": "添加噪声",
+      "augmentationRatio": "增强比例"
+    },
+    "audioAugmentation": {
+      "title": "音频增强配置",
+      "enabled": "启用音频增强",
+      "speedChange": "速度变化",
+      "pitchShift": "音调变化",
+      "addNoise": "添加噪声",
+      "timeStretch": "时间拉伸",
+      "augmentationRatio": "增强比例"
+    },
+    "general": {
+      "title": "通用配置",
+      "maxAugmentationsPerSample": "每个样本最大增强数量",
+      "preserveOriginal": "保留原始样本",
+      "qualityThreshold": "质量阈值",
+      "qualityThresholdHelp": "低于此阈值的增强样本将被丢弃"
+    },
+    "switch": {
+      "enabled": "启用",
+      "disabled": "禁用"
+    }
+  },
+  "sampleManagement": {
+    "title": "数据增强样本管理",
+    "batchUpload": "批量上传",
+    "createSample": "新建样本",
+    "sampleName": "样本名称",
+    "sampleNamePlaceholder": "请输入样本名称",
+    "sampleNameRequired": "请输入样本名称",
+    "sampleType": "样本类型",
+    "sampleTypePlaceholder": "请选择样本类型",
+    "sampleTypeRequired": "请选择样本类型",
+    "sampleDescription": "描述",
+    "sampleDescriptionPlaceholder": "请输入样本描述",
+    "type": {
+      "text": "文本",
+      "image": "图像",
+      "audio": "音频",
+      "video": "视频"
+    },
+    "originalCount": "原始数量",
+    "augmentedCount": "增强数量",
+    "createdAt": "创建时间",
+    "actions": "操作",
+    "edit": "编辑",
+    "download": "下载",
+    "downloadInDev": "下载功能开发中",
+    "confirmDelete": "确认删除",
+    "confirmDeleteMessage": "确定要删除样本 \"{{name}}\" 吗？",
+    "createSuccess": "样本创建成功",
+    "createFailed": "样本创建失败",
+    "deleteSuccess": "样本删除成功",
+    "deleteFailed": "样本删除失败",
+    "uploadSuccess": "{{name}} 文件上传成功",
+    "uploadFailed": "{{name}} 文件上传失败",
+    "editSample": "编辑样本",
+    "pagination": "第 {{start}}-{{end}} 条，共 {{total}} 条"
+  },
+  "nav": {
+    "overview": "概览",
+    "samples": "样本管理",
+    "config": "配置管理"
+  }
+}

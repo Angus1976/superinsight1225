@@ -35,6 +35,7 @@ import {
   AuditOutlined,
   TrophyOutlined,
 } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import type { ColumnsType } from 'antd/es/table';
 
 // Types
@@ -111,13 +112,6 @@ const statusColors = {
   completed: 'success',
 } as const;
 
-const statusLabels = {
-  pending: '待处理',
-  in_progress: '进行中',
-  review: '审核中',
-  completed: '已完成',
-};
-
 const memberStatusColors = {
   online: '#52c41a',
   busy: '#faad14',
@@ -125,28 +119,42 @@ const memberStatusColors = {
 };
 
 const CollaborationPage: React.FC = () => {
+  const { t } = useTranslation('collaboration');
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [selectedReview, setSelectedReview] = useState<ReviewItem | null>(null);
 
+  const statusKeyMap: Record<string, string> = {
+    pending: 'status.pending',
+    in_progress: 'status.inProgress',
+    review: 'status.review',
+    completed: 'status.completed',
+  };
+
+  const reviewStatusKeyMap: Record<string, string> = {
+    pending: 'review.pending',
+    approved: 'review.approved',
+    rejected: 'review.rejected',
+  };
+
   const handleApprove = (review: ReviewItem) => {
-    message.success(`已通过标注 ${review.annotationId}`);
+    message.success(t('review.approveSuccess', { id: review.annotationId }));
     setReviewModalOpen(false);
   };
 
   const handleReject = (review: ReviewItem) => {
-    message.warning(`已驳回标注 ${review.annotationId}`);
+    message.warning(t('review.rejectSuccess', { id: review.annotationId }));
     setReviewModalOpen(false);
   };
 
   const taskColumns: ColumnsType<TaskItem> = [
     {
-      title: '任务名称',
+      title: t('tasks.name'),
       dataIndex: 'name',
       key: 'name',
       render: (name) => <a>{name}</a>,
     },
     {
-      title: '负责人',
+      title: t('tasks.assignee'),
       dataIndex: 'assignee',
       key: 'assignee',
       render: (name) => (
@@ -157,15 +165,15 @@ const CollaborationPage: React.FC = () => {
       ),
     },
     {
-      title: '状态',
+      title: t('tasks.status'),
       dataIndex: 'status',
       key: 'status',
       render: (status: keyof typeof statusColors) => (
-        <Badge status={statusColors[status]} text={statusLabels[status]} />
+        <Badge status={statusColors[status]} text={t(statusKeyMap[status])} />
       ),
     },
     {
-      title: '优先级',
+      title: t('tasks.priority'),
       dataIndex: 'priority',
       key: 'priority',
       render: (priority) => (
@@ -175,13 +183,13 @@ const CollaborationPage: React.FC = () => {
       ),
     },
     {
-      title: '进度',
+      title: t('tasks.progress'),
       dataIndex: 'progress',
       key: 'progress',
       render: (progress) => <Progress percent={progress} size="small" style={{ width: 100 }} />,
     },
     {
-      title: '截止日期',
+      title: t('tasks.deadline'),
       dataIndex: 'deadline',
       key: 'deadline',
       render: (date) => date || '-',
@@ -190,49 +198,49 @@ const CollaborationPage: React.FC = () => {
 
   const reviewColumns: ColumnsType<ReviewItem> = [
     {
-      title: '标注ID',
+      title: t('review.annotationId'),
       dataIndex: 'annotationId',
       key: 'annotationId',
     },
     {
-      title: '任务',
+      title: t('review.task'),
       dataIndex: 'taskName',
       key: 'taskName',
     },
     {
-      title: '标注员',
+      title: t('review.annotator'),
       dataIndex: 'annotator',
       key: 'annotator',
     },
     {
-      title: '提交时间',
+      title: t('review.submittedAt'),
       dataIndex: 'submittedAt',
       key: 'submittedAt',
     },
     {
-      title: '审核级别',
+      title: t('review.reviewLevel'),
       dataIndex: 'level',
       key: 'level',
       render: (level) => <Tag>L{level}</Tag>,
     },
     {
-      title: '状态',
+      title: t('review.status'),
       dataIndex: 'status',
       key: 'status',
       render: (status) => (
         <Tag color={status === 'approved' ? 'success' : status === 'rejected' ? 'error' : 'default'}>
-          {status === 'approved' ? '已通过' : status === 'rejected' ? '已驳回' : '待审核'}
+          {t(reviewStatusKeyMap[status])}
         </Tag>
       ),
     },
     {
-      title: '操作',
+      title: t('review.actions'),
       key: 'actions',
       render: (_, record) => (
         record.status === 'pending' && (
           <Space>
             <Button type="link" size="small" onClick={() => { setSelectedReview(record); setReviewModalOpen(true); }}>
-              审核
+              {t('review.reviewAction')}
             </Button>
           </Space>
         )
@@ -245,14 +253,14 @@ const CollaborationPage: React.FC = () => {
 
   return (
     <div>
-      <h2 style={{ marginBottom: 24 }}>协作与审核</h2>
+      <h2 style={{ marginBottom: 24 }}>{t('title')}</h2>
 
       {/* Stats */}
       <Row gutter={16} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="进行中任务"
+              title={t('stats.inProgressTasks')}
               value={mockTasks.filter(t => t.status === 'in_progress').length}
               prefix={<SyncOutlined spin />}
             />
@@ -261,7 +269,7 @@ const CollaborationPage: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="待审核"
+              title={t('stats.pendingReview')}
               value={pendingReviews}
               prefix={<ClockCircleOutlined />}
               valueStyle={{ color: pendingReviews > 0 ? '#faad14' : '#52c41a' }}
@@ -271,7 +279,7 @@ const CollaborationPage: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="在线成员"
+              title={t('stats.onlineMembers')}
               value={onlineMembers}
               suffix={`/ ${mockTeam.length}`}
               prefix={<TeamOutlined />}
@@ -281,7 +289,7 @@ const CollaborationPage: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="平均准确率"
+              title={t('stats.avgAccuracy')}
               value={92.5}
               suffix="%"
               prefix={<CheckCircleOutlined />}
@@ -298,7 +306,7 @@ const CollaborationPage: React.FC = () => {
           items={[
             {
               key: 'tasks',
-              label: <span><FileTextOutlined /> 任务列表</span>,
+              label: <span><FileTextOutlined /> {t('tabs.tasks')}</span>,
               children: (
                 <Table
                   columns={taskColumns}
@@ -310,7 +318,7 @@ const CollaborationPage: React.FC = () => {
             },
             {
               key: 'team',
-              label: <span><TeamOutlined /> 团队状态</span>,
+              label: <span><TeamOutlined /> {t('tabs.team')}</span>,
               children: (
                 <List
                   dataSource={mockTeam}
@@ -323,11 +331,11 @@ const CollaborationPage: React.FC = () => {
                           </Badge>
                         }
                         title={member.name}
-                        description={member.currentTask ? `正在处理: ${member.currentTask}` : '空闲'}
+                        description={member.currentTask ? `${t('team.processing')}: ${member.currentTask}` : t('team.idle')}
                       />
                       <Space size="large">
-                        <Statistic title="完成任务" value={member.tasksCompleted} />
-                        <Statistic title="准确率" value={(member.accuracy * 100).toFixed(1)} suffix="%" />
+                        <Statistic title={t('team.completedTasks')} value={member.tasksCompleted} />
+                        <Statistic title={t('team.accuracy')} value={(member.accuracy * 100).toFixed(1)} suffix="%" />
                       </Space>
                     </List.Item>
                   )}
@@ -338,7 +346,7 @@ const CollaborationPage: React.FC = () => {
               key: 'review',
               label: (
                 <span>
-                  <AuditOutlined /> 审核队列
+                  <AuditOutlined /> {t('tabs.review')}
                   {pendingReviews > 0 && <Badge count={pendingReviews} size="small" style={{ marginLeft: 8 }} />}
                 </span>
               ),
@@ -353,7 +361,7 @@ const CollaborationPage: React.FC = () => {
             },
             {
               key: 'quality',
-              label: <span><TrophyOutlined /> 质量排名</span>,
+              label: <span><TrophyOutlined /> {t('tabs.quality')}</span>,
               children: (
                 <Table
                   dataSource={mockRanking}
@@ -361,7 +369,7 @@ const CollaborationPage: React.FC = () => {
                   pagination={false}
                   columns={[
                     {
-                      title: '排名',
+                      title: t('ranking.rank'),
                       dataIndex: 'rank',
                       render: (rank) => (
                         <span style={{ fontWeight: rank <= 3 ? 'bold' : 'normal', color: rank === 1 ? '#faad14' : undefined }}>
@@ -369,13 +377,13 @@ const CollaborationPage: React.FC = () => {
                         </span>
                       ),
                     },
-                    { title: '标注员', dataIndex: 'name' },
+                    { title: t('ranking.annotator'), dataIndex: 'name' },
                     {
-                      title: '准确率',
+                      title: t('ranking.accuracy'),
                       dataIndex: 'accuracy',
                       render: (acc) => <Progress percent={acc * 100} size="small" style={{ width: 120 }} />,
                     },
-                    { title: '完成任务', dataIndex: 'tasksCompleted' },
+                    { title: t('ranking.completedTasks'), dataIndex: 'tasksCompleted' },
                   ]}
                 />
               ),
@@ -386,24 +394,24 @@ const CollaborationPage: React.FC = () => {
 
       {/* Review Modal */}
       <Modal
-        title="审核标注"
+        title={t('review.modalTitle')}
         open={reviewModalOpen}
         onCancel={() => setReviewModalOpen(false)}
         footer={[
           <Button key="reject" danger onClick={() => selectedReview && handleReject(selectedReview)}>
-            驳回
+            {t('review.reject')}
           </Button>,
           <Button key="approve" type="primary" onClick={() => selectedReview && handleApprove(selectedReview)}>
-            通过
+            {t('review.approve')}
           </Button>,
         ]}
       >
         {selectedReview && (
           <div>
-            <p><strong>标注ID:</strong> {selectedReview.annotationId}</p>
-            <p><strong>任务:</strong> {selectedReview.taskName}</p>
-            <p><strong>标注员:</strong> {selectedReview.annotator}</p>
-            <p><strong>提交时间:</strong> {selectedReview.submittedAt}</p>
+            <p><strong>{t('review.annotationId')}:</strong> {selectedReview.annotationId}</p>
+            <p><strong>{t('review.task')}:</strong> {selectedReview.taskName}</p>
+            <p><strong>{t('review.annotator')}:</strong> {selectedReview.annotator}</p>
+            <p><strong>{t('review.submittedAt')}:</strong> {selectedReview.submittedAt}</p>
           </div>
         )}
       </Modal>

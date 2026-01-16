@@ -1,5 +1,6 @@
 // 完整的标注界面组件
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Card,
   Button,
@@ -76,6 +77,7 @@ export const AnnotationInterface: React.FC<AnnotationInterfaceProps> = ({
   onAnnotationUpdate,
   loading = false,
 }) => {
+  const { t } = useTranslation(['annotation', 'common']);
   const [form] = Form.useForm();
   const { annotation: annotationPerms, roleDisplayName } = usePermissions();
   const [currentAnnotation, setCurrentAnnotation] = useState<AnnotationData | null>(null);
@@ -148,12 +150,12 @@ export const AnnotationInterface: React.FC<AnnotationInterfaceProps> = ({
   // 处理表单提交
   const handleSubmit = async (values: any) => {
     if (!annotationPerms.canCreate && !currentAnnotation?.id) {
-      message.error('您没有创建标注的权限');
+      message.error(t('interface.messages.noCreatePermission'));
       return;
     }
 
     if (!annotationPerms.canEdit && currentAnnotation?.id) {
-      message.error('您没有编辑标注的权限');
+      message.error(t('interface.messages.noEditPermission'));
       return;
     }
 
@@ -213,10 +215,10 @@ export const AnnotationInterface: React.FC<AnnotationInterfaceProps> = ({
         onAnnotationSave(annotationResult);
       }
 
-      message.success('标注已保存');
+      message.success(t('interface.messages.saveSuccess'));
     } catch (error) {
       console.error('保存标注失败:', error);
-      message.error('保存标注失败');
+      message.error(t('interface.messages.saveError'));
     } finally {
       setSaving(false);
     }
@@ -225,12 +227,12 @@ export const AnnotationInterface: React.FC<AnnotationInterfaceProps> = ({
   // 快速标注按钮
   const handleQuickAnnotation = (sentiment: string) => {
     if (!annotationPerms.canCreate && !currentAnnotation?.id) {
-      message.error('您没有创建标注的权限');
+      message.error(t('interface.messages.noCreatePermission'));
       return;
     }
 
     if (!annotationPerms.canEdit && currentAnnotation?.id) {
-      message.error('您没有编辑标注的权限');
+      message.error(t('interface.messages.noEditPermission'));
       return;
     }
 
@@ -242,7 +244,7 @@ export const AnnotationInterface: React.FC<AnnotationInterfaceProps> = ({
     return (
       <div style={{ textAlign: 'center', padding: '50px' }}>
         <Spin size="large" />
-        <p style={{ marginTop: 16 }}>加载标注界面中...</p>
+        <p style={{ marginTop: 16 }}>{t('interface.loading')}</p>
       </div>
     );
   }
@@ -258,31 +260,31 @@ export const AnnotationInterface: React.FC<AnnotationInterfaceProps> = ({
                 icon={<UndoOutlined />}
                 disabled={historyIndex <= 0}
                 onClick={handleUndo}
-                title="撤销"
+                title={t('interface.toolbar.undo')}
               />
               <Button
                 icon={<RedoOutlined />}
                 disabled={historyIndex >= annotationHistory.length - 1}
                 onClick={handleRedo}
-                title="重做"
+                title={t('interface.toolbar.redo')}
               />
               <Divider type="vertical" />
               <Text type="secondary">
-                历史记录: {historyIndex + 1} / {annotationHistory.length}
+                {t('interface.toolbar.history')}: {historyIndex + 1} / {annotationHistory.length}
               </Text>
             </Space>
           </Col>
           <Col>
             <Space>
               <Tag color={task.is_labeled ? 'green' : 'orange'}>
-                {task.is_labeled ? '已标注' : '待标注'}
+                {task.is_labeled ? t('interface.status.labeled') : t('interface.status.unlabeled')}
               </Tag>
               <Tag color="blue">
                 {roleDisplayName}
               </Tag>
               {!annotationPerms.canCreate && !annotationPerms.canEdit && (
                 <Tag color="red" icon={<LockOutlined />}>
-                  只读权限
+                  {t('interface.status.readOnly')}
                 </Tag>
               )}
             </Space>
@@ -294,7 +296,7 @@ export const AnnotationInterface: React.FC<AnnotationInterfaceProps> = ({
       <div style={{ flex: 1, display: 'flex', gap: '16px' }}>
         {/* 左侧：文本内容 */}
         <Card 
-          title="待标注内容" 
+          title={t('interface.content.title')} 
           style={{ flex: 2, height: 'fit-content' }}
         >
           <div style={{
@@ -317,7 +319,7 @@ export const AnnotationInterface: React.FC<AnnotationInterfaceProps> = ({
 
         {/* 右侧：标注控制面板 */}
         <Card 
-          title="标注工具" 
+          title={t('interface.tools.title')} 
           style={{ flex: 1, height: 'fit-content' }}
           extra={
             annotationPerms.canCreate || annotationPerms.canEdit ? (
@@ -327,16 +329,16 @@ export const AnnotationInterface: React.FC<AnnotationInterfaceProps> = ({
                 loading={saving}
                 onClick={() => form.submit()}
               >
-                保存标注
+                {t('interface.tools.saveAnnotation')}
               </Button>
             ) : (
-              <Tooltip title="您没有标注权限">
+              <Tooltip title={t('interface.messages.noCreatePermission')}>
                 <Button
                   type="primary"
                   icon={<LockOutlined />}
                   disabled
                 >
-                  保存标注
+                  {t('interface.tools.saveAnnotation')}
                 </Button>
               </Tooltip>
             )
@@ -349,27 +351,27 @@ export const AnnotationInterface: React.FC<AnnotationInterfaceProps> = ({
           >
             {/* 情感分类 */}
             <Form.Item
-              label="情感分类"
+              label={t('interface.sentiment.title')}
               name="sentiment"
-              rules={[{ required: true, message: '请选择情感分类' }]}
+              rules={[{ required: true, message: t('interface.sentiment.required') }]}
             >
               <Radio.Group style={{ width: '100%' }}>
                 <Space direction="vertical" style={{ width: '100%' }}>
                   <Radio value="Positive" style={{ width: '100%' }}>
                     <Space>
                       <CheckOutlined style={{ color: '#52c41a' }} />
-                      积极 (Positive)
+                      {t('interface.sentiment.positiveLabel')}
                     </Space>
                   </Radio>
                   <Radio value="Negative" style={{ width: '100%' }}>
                     <Space>
                       <CloseOutlined style={{ color: '#ff4d4f' }} />
-                      消极 (Negative)
+                      {t('interface.sentiment.negativeLabel')}
                     </Space>
                   </Radio>
                   <Radio value="Neutral" style={{ width: '100%' }}>
                     <Space>
-                      中性 (Neutral)
+                      {t('interface.sentiment.neutralLabel')}
                     </Space>
                   </Radio>
                 </Space>
@@ -379,7 +381,7 @@ export const AnnotationInterface: React.FC<AnnotationInterfaceProps> = ({
             {/* 快速标注按钮 */}
             <div style={{ marginBottom: 24 }}>
               <Text strong style={{ marginBottom: 8, display: 'block' }}>
-                快速标注:
+                {t('interface.quickAnnotation.title')}:
               </Text>
               <Space wrap>
                 <Button
@@ -390,7 +392,7 @@ export const AnnotationInterface: React.FC<AnnotationInterfaceProps> = ({
                   style={{ borderColor: '#52c41a', color: '#52c41a' }}
                   disabled={!annotationPerms.canCreate && !annotationPerms.canEdit}
                 >
-                  积极
+                  {t('interface.sentiment.positive')}
                 </Button>
                 <Button
                   type="primary"
@@ -400,7 +402,7 @@ export const AnnotationInterface: React.FC<AnnotationInterfaceProps> = ({
                   style={{ borderColor: '#ff4d4f', color: '#ff4d4f' }}
                   disabled={!annotationPerms.canCreate && !annotationPerms.canEdit}
                 >
-                  消极
+                  {t('interface.sentiment.negative')}
                 </Button>
                 <Button
                   type="default"
@@ -408,14 +410,14 @@ export const AnnotationInterface: React.FC<AnnotationInterfaceProps> = ({
                   onClick={() => handleQuickAnnotation('Neutral')}
                   disabled={!annotationPerms.canCreate && !annotationPerms.canEdit}
                 >
-                  中性
+                  {t('interface.sentiment.neutral')}
                 </Button>
               </Space>
             </div>
 
             {/* 评分 */}
             <Form.Item
-              label="情感强度评分 (1-5分)"
+              label={t('interface.rating.title')}
               name="rating"
             >
               <Radio.Group>
@@ -431,12 +433,12 @@ export const AnnotationInterface: React.FC<AnnotationInterfaceProps> = ({
 
             {/* 备注 */}
             <Form.Item
-              label="标注备注"
+              label={t('interface.comment.title')}
               name="comment"
             >
               <TextArea
                 rows={3}
-                placeholder="请输入标注备注或说明..."
+                placeholder={t('interface.comment.placeholder')}
                 maxLength={500}
                 showCount
               />
@@ -447,7 +449,7 @@ export const AnnotationInterface: React.FC<AnnotationInterfaceProps> = ({
           {currentAnnotation && (
             <div style={{ marginTop: 24 }}>
               <Divider />
-              <Title level={5}>当前标注结果</Title>
+              <Title level={5}>{t('interface.currentResult.title')}</Title>
               <div style={{ 
                 background: '#f6ffed', 
                 border: '1px solid #b7eb8f',
@@ -458,7 +460,7 @@ export const AnnotationInterface: React.FC<AnnotationInterfaceProps> = ({
                   <div key={index} style={{ marginBottom: 8 }}>
                     {result.type === 'choices' && result.value.choices && (
                       <Text>
-                        <strong>情感:</strong> 
+                        <strong>{t('interface.currentResult.sentiment')}:</strong> 
                         <Tag color={
                           result.value.choices[0] === 'Positive' ? 'green' :
                           result.value.choices[0] === 'Negative' ? 'red' : 'default'
@@ -469,12 +471,12 @@ export const AnnotationInterface: React.FC<AnnotationInterfaceProps> = ({
                     )}
                     {result.type === 'rating' && result.value.rating && (
                       <Text>
-                        <strong>评分:</strong> {result.value.rating}/5
+                        <strong>{t('interface.currentResult.rating')}:</strong> {result.value.rating}/5
                       </Text>
                     )}
                     {result.type === 'textarea' && result.value.text && (
                       <div>
-                        <Text strong>备注:</Text>
+                        <Text strong>{t('interface.currentResult.comment')}:</Text>
                         <div style={{ marginTop: 4 }}>
                           <Text type="secondary">{result.value.text}</Text>
                         </div>

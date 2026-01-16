@@ -1,0 +1,54 @@
+{
+  "interface": {
+    "loading": "Loading annotation interface...",
+    "toolbar": {
+      "undo": "Undo",
+      "redo": "Redo",
+      "history": "History"
+    },
+    "status": {
+      "labeled": "Labeled",
+      "unlabeled": "Unlabeled",
+      "readOnly": "Read Only"
+    },
+    "content": {
+      "title": "Content to Annotate"
+    },
+    "tools": {
+      "title": "Annotation Tools",
+      "saveAnnotation": "Save Annotation"
+    },
+    "sentiment": {
+      "title": "Sentiment Classification",
+      "required": "Please select sentiment classification",
+      "positive": "Positive",
+      "negative": "Negative",
+      "neutral": "Neutral",
+      "positiveLabel": "Positive",
+      "negativeLabel": "Negative",
+      "neutralLabel": "Neutral"
+    },
+    "quickAnnotation": {
+      "title": "Quick Annotation"
+    },
+    "rating": {
+      "title": "Sentiment Intensity Rating (1-5)"
+    },
+    "comment": {
+      "title": "Annotation Notes",
+      "placeholder": "Enter annotation notes or comments..."
+    },
+    "currentResult": {
+      "title": "Current Annotation Result",
+      "sentiment": "Sentiment",
+      "rating": "Rating",
+      "comment": "Notes"
+    },
+    "messages": {
+      "noCreatePermission": "You don't have permission to create annotations",
+      "noEditPermission": "You don't have permission to edit annotations",
+      "saveSuccess": "Annotation saved",
+      "saveError": "Failed to save annotation"
+    }
+  }
+}

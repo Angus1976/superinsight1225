@@ -14,6 +14,7 @@ import {
   EyeInvisibleOutlined,
   CheckCircleOutlined,
 } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import PermissionConfigPage from './PermissionConfigPage';
 import PolicyImportWizard from './PolicyImportWizard';
 import ApprovalWorkflowPage from './ApprovalWorkflowPage';
@@ -24,10 +25,12 @@ import MaskingConfigPage from './MaskingConfigPage';
 const { Title } = Typography;
 
 const DataPermissionsPage: React.FC = () => {
+  const { t } = useTranslation(['security', 'common']);
+
   return (
     <div>
       <Title level={3} style={{ marginBottom: 24 }}>
-        <SafetyOutlined /> Data Permission Control
+        <SafetyOutlined /> {t('dataPermissions.title')}
       </Title>
 
       <Tabs
@@ -38,7 +41,7 @@ const DataPermissionsPage: React.FC = () => {
             label: (
               <span>
                 <SafetyOutlined />
-                Permissions
+                {t('dataPermissions.permissions')}
               </span>
             ),
             children: <PermissionConfigPage />,
@@ -48,7 +51,7 @@ const DataPermissionsPage: React.FC = () => {
             label: (
               <span>
                 <ImportOutlined />
-                Policy Import
+                {t('dataPermissions.policyImport')}
               </span>
             ),
             children: <PolicyImportWizard />,
@@ -58,7 +61,7 @@ const DataPermissionsPage: React.FC = () => {
             label: (
               <span>
                 <CheckCircleOutlined />
-                Approvals
+                {t('dataPermissions.approvals')}
               </span>
             ),
             children: <ApprovalWorkflowPage />,
@@ -68,7 +71,7 @@ const DataPermissionsPage: React.FC = () => {
             label: (
               <span>
                 <AuditOutlined />
-                Access Logs
+                {t('dataPermissions.accessLogs')}
               </span>
             ),
             children: <AccessLogPage />,
@@ -78,7 +81,7 @@ const DataPermissionsPage: React.FC = () => {
             label: (
               <span>
                 <FileSearchOutlined />
-                Classification
+                {t('dataPermissions.classification')}
               </span>
             ),
             children: <DataClassificationPage />,
@@ -88,7 +91,7 @@ const DataPermissionsPage: React.FC = () => {
             label: (
               <span>
                 <EyeInvisibleOutlined />
-                Data Masking
+                {t('dataPermissions.dataMasking')}
               </span>
             ),
             children: <MaskingConfigPage />,

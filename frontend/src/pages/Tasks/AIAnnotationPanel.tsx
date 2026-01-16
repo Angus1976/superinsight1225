@@ -75,24 +75,24 @@ interface AIAnnotationPanelProps {
   onRefresh: () => void;
 }
 
-// Confidence level helper
-const getConfidenceLevel = (confidence: number): { color: string; text: string } => {
-  if (confidence >= 0.9) return { color: 'success', text: '高置信度' };
-  if (confidence >= 0.7) return { color: 'warning', text: '中置信度' };
-  return { color: 'error', text: '低置信度' };
+// Confidence level helper - returns keys for translation
+const getConfidenceLevel = (confidence: number): { color: string; textKey: string } => {
+  if (confidence >= 0.9) return { color: 'success', textKey: 'high' };
+  if (confidence >= 0.7) return { color: 'warning', textKey: 'medium' };
+  return { color: 'error', textKey: 'low' };
 };
 
-// Source label helper
-const getSourceLabel = (source: AIAnnotationResult['source']): { icon: React.ReactNode; text: string } => {
+// Source label helper - returns keys for translation
+const getSourceLabel = (source: AIAnnotationResult['source']): { icon: React.ReactNode; textKey: string } => {
   switch (source) {
     case 'llm':
-      return { icon: <RobotOutlined />, text: 'LLM 模型' };
+      return { icon: <RobotOutlined />, textKey: 'llmModel' };
     case 'ml_backend':
-      return { icon: <ThunderboltOutlined />, text: 'ML 后端' };
+      return { icon: <ThunderboltOutlined />, textKey: 'mlBackend' };
     case 'pattern_match':
-      return { icon: <BulbOutlined />, text: '模式匹配' };
+      return { icon: <BulbOutlined />, textKey: 'patternMatch' };
     default:
-      return { icon: <RobotOutlined />, text: 'AI' };
+      return { icon: <RobotOutlined />, textKey: 'ai' };
   }
 };
 
@@ -106,7 +106,7 @@ const AIAnnotationPanel: React.FC<AIAnnotationPanelProps> = ({
   onModify,
   onRefresh,
 }) => {
-  const { t } = useTranslation(['annotation', 'common']);
+  const { t } = useTranslation(['tasks', 'common']);
   const [expandedResult, setExpandedResult] = useState<string | null>(null);
 
   // Calculate stats
@@ -137,7 +137,7 @@ const AIAnnotationPanel: React.FC<AIAnnotationPanelProps> = ({
       <Card>
         <div style={{ textAlign: 'center', padding: '40px 0' }}>
           <Spin size="large" />
-          <p style={{ marginTop: 16 }}>正在获取 AI 预标注结果...</p>
+          <p style={{ marginTop: 16 }}>{t('ai.fetchingResults')}</p>
         </div>
       </Card>
     );
@@ -150,7 +150,7 @@ const AIAnnotationPanel: React.FC<AIAnnotationPanelProps> = ({
         title={
           <Space>
             <RobotOutlined />
-            <span>AI 预标注结果</span>
+            <span>{t('ai.preAnnotationResults')}</span>
             <Badge count={aiResults.length} style={{ backgroundColor: '#1890ff' }} />
           </Space>
         }
@@ -160,7 +160,7 @@ const AIAnnotationPanel: React.FC<AIAnnotationPanelProps> = ({
             onClick={onRefresh}
             size="small"
           >
-            刷新
+            {t('ai.refresh')}
           </Button>
         }
         style={{ marginBottom: 16 }}
@@ -169,28 +169,28 @@ const AIAnnotationPanel: React.FC<AIAnnotationPanelProps> = ({
         <Row gutter={16} style={{ marginBottom: 16 }}>
           <Col span={6}>
             <Statistic
-              title="总预测数"
+              title={t('ai.totalPredictions')}
               value={stats.total}
               valueStyle={{ fontSize: 20 }}
             />
           </Col>
           <Col span={6}>
             <Statistic
-              title="高置信度"
+              title={t('ai.highConfidence')}
               value={stats.highConfidence}
               valueStyle={{ fontSize: 20, color: '#52c41a' }}
             />
           </Col>
           <Col span={6}>
             <Statistic
-              title="需审核"
+              title={t('ai.needsReview')}
               value={stats.lowConfidence}
               valueStyle={{ fontSize: 20, color: '#faad14' }}
             />
           </Col>
           <Col span={6}>
             <Statistic
-              title="平均置信度"
+              title={t('ai.avgConfidence')}
               value={Math.round(stats.avgConfidence * 100)}
               suffix="%"
               valueStyle={{ fontSize: 20 }}
@@ -200,7 +200,7 @@ const AIAnnotationPanel: React.FC<AIAnnotationPanelProps> = ({
 
         {/* Confidence Distribution */}
         <div style={{ marginBottom: 16 }}>
-          <Text type="secondary">置信度分布</Text>
+          <Text type="secondary">{t('ai.confidenceDistribution')}</Text>
           <Progress
             percent={100}
             success={{ percent: (stats.highConfidence / Math.max(stats.total, 1)) * 100 }}
@@ -212,9 +212,9 @@ const AIAnnotationPanel: React.FC<AIAnnotationPanelProps> = ({
             showInfo={false}
           />
           <Space style={{ marginTop: 4 }}>
-            <Tag color="success">高: {stats.highConfidence}</Tag>
-            <Tag color="warning">中: {stats.mediumConfidence}</Tag>
-            <Tag color="error">低: {stats.lowConfidence}</Tag>
+            <Tag color="success">{t('ai.high')}: {stats.highConfidence}</Tag>
+            <Tag color="warning">{t('ai.medium')}: {stats.mediumConfidence}</Tag>
+            <Tag color="error">{t('ai.low')}: {stats.lowConfidence}</Tag>
           </Space>
         </div>
       </Card>
@@ -224,10 +224,10 @@ const AIAnnotationPanel: React.FC<AIAnnotationPanelProps> = ({
         <Card>
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description="暂无 AI 预标注结果"
+            description={t('ai.noResults')}
           >
             <Button type="primary" onClick={onRefresh}>
-              获取预标注
+              {t('ai.getPreAnnotation')}
             </Button>
           </Empty>
         </Card>
@@ -251,7 +251,7 @@ const AIAnnotationPanel: React.FC<AIAnnotationPanelProps> = ({
                     <Tag color="blue" style={{ fontSize: 14, padding: '4px 12px' }}>
                       {result.label}
                     </Tag>
-                    <Tooltip title={`置信度: ${Math.round(result.confidence * 100)}%`}>
+                    <Tooltip title={`${t('ai.confidence')}: ${Math.round(result.confidence * 100)}%`}>
                       <Progress
                         type="circle"
                         percent={Math.round(result.confidence * 100)}
@@ -262,14 +262,14 @@ const AIAnnotationPanel: React.FC<AIAnnotationPanelProps> = ({
                         }
                       />
                     </Tooltip>
-                    <Tag color={confidenceLevel.color}>{confidenceLevel.text}</Tag>
-                    <Tooltip title={sourceInfo.text}>
-                      <Tag icon={sourceInfo.icon}>{sourceInfo.text}</Tag>
+                    <Tag color={confidenceLevel.color}>{t(`ai.${confidenceLevel.textKey}`)}</Tag>
+                    <Tooltip title={t(`ai.${sourceInfo.textKey}`)}>
+                      <Tag icon={sourceInfo.icon}>{t(`ai.${sourceInfo.textKey}`)}</Tag>
                     </Tooltip>
                   </Space>
 
                   <Space>
-                    <Tooltip title="接受此标注">
+                    <Tooltip title={t('ai.acceptAnnotation')}>
                       <Button
                         type="primary"
                         size="small"
@@ -279,10 +279,10 @@ const AIAnnotationPanel: React.FC<AIAnnotationPanelProps> = ({
                           handleAccept(result);
                         }}
                       >
-                        接受
+                        {t('ai.accept')}
                       </Button>
                     </Tooltip>
-                    <Tooltip title="拒绝此标注">
+                    <Tooltip title={t('ai.rejectAnnotation')}>
                       <Button
                         danger
                         size="small"
@@ -292,7 +292,7 @@ const AIAnnotationPanel: React.FC<AIAnnotationPanelProps> = ({
                           handleReject(result);
                         }}
                       >
-                        拒绝
+                        {t('ai.reject')}
                       </Button>
                     </Tooltip>
                   </Space>
@@ -304,7 +304,7 @@ const AIAnnotationPanel: React.FC<AIAnnotationPanelProps> = ({
                     {/* Explanation */}
                     {result.explanation && (
                       <Alert
-                        message="AI 解释"
+                        message={t('ai.aiExplanation')}
                         description={result.explanation}
                         type="info"
                         showIcon
@@ -316,7 +316,7 @@ const AIAnnotationPanel: React.FC<AIAnnotationPanelProps> = ({
                     {/* Alternatives */}
                     {result.alternatives && result.alternatives.length > 0 && (
                       <div>
-                        <Text type="secondary">备选标签:</Text>
+                        <Text type="secondary">{t('ai.alternativeLabels')}:</Text>
                         <div style={{ marginTop: 8 }}>
                           {result.alternatives.map((alt, idx) => (
                             <Tag
@@ -347,7 +347,7 @@ const AIAnnotationPanel: React.FC<AIAnnotationPanelProps> = ({
           header={
             <Space>
               <HistoryOutlined />
-              <span>修改历史</span>
+              <span>{t('ai.modifyHistory')}</span>
               <Badge count={history.length} style={{ backgroundColor: '#999' }} />
             </Space>
           }
@@ -356,7 +356,7 @@ const AIAnnotationPanel: React.FC<AIAnnotationPanelProps> = ({
           {history.length === 0 ? (
             <Empty
               image={Empty.PRESENTED_IMAGE_SIMPLE}
-              description="暂无修改历史"
+              description={t('ai.noHistory')}
             />
           ) : (
             <List

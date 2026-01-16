@@ -38,6 +38,7 @@ import {
   SafetyCertificateOutlined,
   TeamOutlined,
 } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import type { ColumnsType } from 'antd/es/table';
 
 const { RangePicker } = DatePicker;
@@ -165,6 +166,7 @@ const severityColors = {
 } as const;
 
 const SecurityPage: React.FC = () => {
+  const { t } = useTranslation(['security', 'common']);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
   const location = useLocation();
@@ -180,37 +182,37 @@ const SecurityPage: React.FC = () => {
           <Menu mode="horizontal" selectedKeys={[location.pathname.split('/').pop() || '']}>
             <Menu.Item key="security">
               <Link to="/security">
-                <DashboardOutlined /> 安全概览
+                <DashboardOutlined /> {t('overview')}
               </Link>
             </Menu.Item>
             <Menu.Item key="rbac">
               <Link to="/security/rbac">
-                <TeamOutlined /> RBAC 配置
+                <TeamOutlined /> {t('rbacConfig')}
               </Link>
             </Menu.Item>
             <Menu.Item key="sso">
               <Link to="/security/sso">
-                <SafetyCertificateOutlined /> SSO 配置
+                <SafetyCertificateOutlined /> {t('ssoConfig')}
               </Link>
             </Menu.Item>
             <Menu.Item key="audit">
               <Link to="/security/audit">
-                <AuditOutlined /> 审计日志
+                <AuditOutlined /> {t('auditLogs')}
               </Link>
             </Menu.Item>
             <Menu.Item key="dashboard">
               <Link to="/security/dashboard">
-                <SecurityScanOutlined /> 安全仪表板
+                <SecurityScanOutlined /> {t('securityDashboard')}
               </Link>
             </Menu.Item>
             <Menu.Item key="sessions">
               <Link to="/security/sessions">
-                <ClockCircleOutlined /> 会话管理
+                <ClockCircleOutlined /> {t('sessionManagement')}
               </Link>
             </Menu.Item>
             <Menu.Item key="permissions">
               <Link to="/security/permissions">
-                <KeyOutlined /> 权限管理
+                <KeyOutlined /> {t('permissionManagement')}
               </Link>
             </Menu.Item>
           </Menu>

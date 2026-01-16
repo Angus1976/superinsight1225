@@ -66,7 +66,7 @@ const SnapshotManager: React.FC<SnapshotManagerProps> = ({
   tenantId,
   data,
 }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation(['snapshot', 'common']);
   const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
   const [statistics, setStatistics] = useState<SnapshotStatistics | null>(null);
   const [loading, setLoading] = useState(false);
@@ -93,7 +93,7 @@ const SnapshotManager: React.FC<SnapshotManagerProps> = ({
       });
       setSnapshots(result.snapshots);
     } catch (error) {
-      message.error(t('snapshot.loadError', 'Failed to load snapshots'));
+      message.error(t('loadError', 'Failed to load snapshots'));
     } finally {
       setLoading(false);
     }
@@ -113,7 +113,7 @@ const SnapshotManager: React.FC<SnapshotManagerProps> = ({
     expires_at?: string;
   }) => {
     if (!entityType || !entityId || !data) {
-      message.error(t('snapshot.missingData', 'Entity type, ID, and data are required'));
+      message.error(t('missingData', 'Entity type, ID, and data are required'));
       return;
     }
 
@@ -128,13 +128,13 @@ const SnapshotManager: React.FC<SnapshotManagerProps> = ({
         undefined,
         tenantId
       );
-      message.success(t('snapshot.created', 'Snapshot created successfully'));
+      message.success(t('created', 'Snapshot created successfully'));
       setCreateModalVisible(false);
       form.resetFields();
       loadSnapshots();
       loadStatistics();
     } catch (error) {
-      message.error(t('snapshot.createError', 'Failed to create snapshot'));
+      message.error(t('createError', 'Failed to create snapshot'));
     }
   };
 
@@ -145,21 +145,21 @@ const SnapshotManager: React.FC<SnapshotManagerProps> = ({
         undefined,
         tenantId
       );
-      message.success(t('snapshot.restored', 'Snapshot restored successfully'));
+      message.success(t('restored', 'Snapshot restored successfully'));
       console.log('Restored data:', result.data);
     } catch (error) {
-      message.error(t('snapshot.restoreError', 'Failed to restore snapshot'));
+      message.error(t('restoreError', 'Failed to restore snapshot'));
     }
   };
 
   const handleDelete = async (snapshotId: string) => {
     try {
       await snapshotApi.deleteSnapshot(snapshotId, tenantId);
-      message.success(t('snapshot.deleted', 'Snapshot deleted'));
+      message.success(t('deleted', 'Snapshot deleted'));
       loadSnapshots();
       loadStatistics();
     } catch (error) {
-      message.error(t('snapshot.deleteError', 'Failed to delete snapshot'));
+      message.error(t('deleteError', 'Failed to delete snapshot'));
     }
   };
 
@@ -170,7 +170,7 @@ const SnapshotManager: React.FC<SnapshotManagerProps> = ({
     max_snapshots: number;
   }) => {
     if (!entityType || !entityId) {
-      message.error(t('snapshot.missingEntity', 'Entity type and ID are required'));
+      message.error(t('missingEntity', 'Entity type and ID are required'));
       return;
     }
 
@@ -185,11 +185,11 @@ const SnapshotManager: React.FC<SnapshotManagerProps> = ({
         undefined,
         tenantId
       );
-      message.success(t('snapshot.scheduleCreated', 'Schedule created successfully'));
+      message.success(t('scheduleCreated', 'Schedule created successfully'));
       setScheduleModalVisible(false);
       scheduleForm.resetFields();
     } catch (error) {
-      message.error(t('snapshot.scheduleError', 'Failed to create schedule'));
+      message.error(t('scheduleError', 'Failed to create schedule'));
     }
   };
 
@@ -199,7 +199,7 @@ const SnapshotManager: React.FC<SnapshotManagerProps> = ({
     keep_tagged: boolean;
   }) => {
     if (!entityType || !entityId) {
-      message.error(t('snapshot.missingEntity', 'Entity type and ID are required'));
+      message.error(t('missingEntity', 'Entity type and ID are required'));
       return;
     }
 
@@ -211,14 +211,14 @@ const SnapshotManager: React.FC<SnapshotManagerProps> = ({
         tenantId
       );
       message.success(
-        t('snapshot.retentionApplied', `Deleted ${result.deleted_count} snapshots`)
+        t('retentionApplied', `Deleted ${result.deleted_count} snapshots`)
       );
       setRetentionModalVisible(false);
       retentionForm.resetFields();
       loadSnapshots();
       loadStatistics();
     } catch (error) {
-      message.error(t('snapshot.retentionError', 'Failed to apply retention policy'));
+      message.error(t('retentionError', 'Failed to apply retention policy'));
     }
   };
 
@@ -236,7 +236,7 @@ const SnapshotManager: React.FC<SnapshotManagerProps> = ({
 
   const columns = [
     {
-      title: t('snapshot.id', 'ID'),
+      title: t('id', 'ID'),
       dataIndex: 'id',
       key: 'id',
       width: 100,
@@ -247,7 +247,7 @@ const SnapshotManager: React.FC<SnapshotManagerProps> = ({
       ),
     },
     {
-      title: t('snapshot.type', 'Type'),
+      title: t('type', 'Type'),
       dataIndex: 'snapshot_type',
       key: 'snapshot_type',
       width: 100,
@@ -256,7 +256,7 @@ const SnapshotManager: React.FC<SnapshotManagerProps> = ({
       ),
     },
     {
-      title: t('snapshot.entity', 'Entity'),
+      title: t('entity', 'Entity'),
       key: 'entity',
       width: 200,
       render: (_: unknown, record: Snapshot) => (
@@ -264,21 +264,21 @@ const SnapshotManager: React.FC<SnapshotManagerProps> = ({
       ),
     },
     {
-      title: t('snapshot.size', 'Size'),
+      title: t('size', 'Size'),
       dataIndex: 'size_bytes',
       key: 'size_bytes',
       width: 100,
       render: (size: number) => formatBytes(size),
     },
     {
-      title: t('snapshot.createdAt', 'Created'),
+      title: t('createdAt', 'Created'),
       dataIndex: 'created_at',
       key: 'created_at',
       width: 180,
       render: (date: string) => formatDate(date),
     },
     {
-      title: t('snapshot.expiresAt', 'Expires'),
+      title: t('expiresAt', 'Expires'),
       dataIndex: 'expires_at',
       key: 'expires_at',
       width: 180,
@@ -292,22 +292,22 @@ const SnapshotManager: React.FC<SnapshotManagerProps> = ({
         ),
     },
     {
-      title: t('snapshot.actions', 'Actions'),
+      title: t('actions', 'Actions'),
       key: 'actions',
       width: 150,
       render: (_: unknown, record: Snapshot) => (
         <Space>
-          <Tooltip title={t('snapshot.restore', 'Restore')}>
+          <Tooltip title={t('restore', 'Restore')}>
             <Popconfirm
-              title={t('snapshot.restoreConfirm', 'Restore this snapshot?')}
+              title={t('restoreConfirm', 'Restore this snapshot?')}
               onConfirm={() => handleRestore(record)}
             >
               <Button size="small" icon={<CloudDownloadOutlined />} />
             </Popconfirm>
           </Tooltip>
-          <Tooltip title={t('snapshot.delete', 'Delete')}>
+          <Tooltip title={t('delete', 'Delete')}>
             <Popconfirm
-              title={t('snapshot.deleteConfirm', 'Delete this snapshot?')}
+              title={t('deleteConfirm', 'Delete this snapshot?')}
               onConfirm={() => handleDelete(record.id)}
             >
               <Button size="small" danger icon={<DeleteOutlined />} />
@@ -323,7 +323,7 @@ const SnapshotManager: React.FC<SnapshotManagerProps> = ({
       title={
         <Space>
           <CameraOutlined />
-          <span>{t('snapshot.manager', 'Snapshot Manager')}</span>
+          <span>{t('manager', 'Snapshot Manager')}</span>
         </Space>
       }
       extra={
@@ -333,24 +333,24 @@ const SnapshotManager: React.FC<SnapshotManagerProps> = ({
             onClick={() => setCreateModalVisible(true)}
             disabled={!entityType || !entityId || !data}
           >
-            {t('snapshot.create', 'Create')}
+            {t('create', 'Create')}
           </Button>
           <Button
             icon={<ClockCircleOutlined />}
             onClick={() => setScheduleModalVisible(true)}
             disabled={!entityType || !entityId}
           >
-            {t('snapshot.schedule', 'Schedule')}
+            {t('schedule', 'Schedule')}
           </Button>
           <Button
             icon={<SettingOutlined />}
             onClick={() => setRetentionModalVisible(true)}
             disabled={!entityType || !entityId}
           >
-            {t('snapshot.retention', 'Retention')}
+            {t('retention', 'Retention')}
           </Button>
           <Button icon={<ReloadOutlined />} onClick={loadSnapshots}>
-            {t('common.refresh', 'Refresh')}
+            {t('common:refresh', 'Refresh')}
           </Button>
         </Space>
       }
@@ -361,7 +361,7 @@ const SnapshotManager: React.FC<SnapshotManagerProps> = ({
           <Col span={8}>
             <Card size="small">
               <Statistic
-                title={t('snapshot.totalSnapshots', 'Total Snapshots')}
+                title={t('totalSnapshots', 'Total Snapshots')}
                 value={statistics.total_snapshots}
                 prefix={<DatabaseOutlined />}
               />
@@ -370,7 +370,7 @@ const SnapshotManager: React.FC<SnapshotManagerProps> = ({
           <Col span={8}>
             <Card size="small">
               <Statistic
-                title={t('snapshot.totalSize', 'Total Size')}
+                title={t('totalSize', 'Total Size')}
                 value={formatBytes(statistics.total_size_bytes)}
               />
             </Card>
@@ -401,7 +401,7 @@ const SnapshotManager: React.FC<SnapshotManagerProps> = ({
 
       {/* Create Snapshot Modal */}
       <Modal
-        title={t('snapshot.createSnapshot', 'Create Snapshot')}
+        title={t('createSnapshot', 'Create Snapshot')}
         open={createModalVisible}
         onCancel={() => setCreateModalVisible(false)}
         footer={null}
@@ -409,20 +409,20 @@ const SnapshotManager: React.FC<SnapshotManagerProps> = ({
         <Form form={form} onFinish={handleCreateSnapshot} layout="vertical">
           <Form.Item
             name="snapshot_type"
-            label={t('snapshot.type', 'Type')}
+            label={t('type', 'Type')}
             initialValue="full"
           >
             <Select>
-              <Option value="full">{t('snapshot.full', 'Full')}</Option>
-              <Option value="incremental">{t('snapshot.incremental', 'Incremental')}</Option>
+              <Option value="full">{t('full', 'Full')}</Option>
+              <Option value="incremental">{t('incremental', 'Incremental')}</Option>
             </Select>
           </Form.Item>
-          <Form.Item name="expires_at" label={t('snapshot.expiresAt', 'Expires At')}>
+          <Form.Item name="expires_at" label={t('expiresAt', 'Expires At')}>
             <DatePicker showTime style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item>
             <Button type="primary" htmlType="submit" block>
-              {t('snapshot.create', 'Create')}
+              {t('create', 'Create')}
             </Button>
           </Form.Item>
         </Form>
@@ -430,7 +430,7 @@ const SnapshotManager: React.FC<SnapshotManagerProps> = ({
 
       {/* Schedule Modal */}
       <Modal
-        title={t('snapshot.createSchedule', 'Create Schedule')}
+        title={t('createSchedule', 'Create Schedule')}
         open={scheduleModalVisible}
         onCancel={() => setScheduleModalVisible(false)}
         footer={null}
@@ -438,39 +438,39 @@ const SnapshotManager: React.FC<SnapshotManagerProps> = ({
         <Form form={scheduleForm} onFinish={handleCreateSchedule} layout="vertical">
           <Form.Item
             name="schedule"
-            label={t('snapshot.cronExpression', 'Cron Expression')}
+            label={t('cronExpression', 'Cron Expression')}
             rules={[{ required: true }]}
-            extra={t('snapshot.cronHelp', 'e.g., 0 0 * * * (daily at midnight)')}
+            extra={t('cronHelp', 'e.g., 0 0 * * * (daily at midnight)')}
           >
             <Input placeholder="0 0 * * *" />
           </Form.Item>
           <Form.Item
             name="snapshot_type"
-            label={t('snapshot.type', 'Type')}
+            label={t('type', 'Type')}
             initialValue="full"
           >
             <Select>
-              <Option value="full">{t('snapshot.full', 'Full')}</Option>
-              <Option value="incremental">{t('snapshot.incremental', 'Incremental')}</Option>
+              <Option value="full">{t('full', 'Full')}</Option>
+              <Option value="incremental">{t('incremental', 'Incremental')}</Option>
             </Select>
           </Form.Item>
           <Form.Item
             name="retention_days"
-            label={t('snapshot.retentionDays', 'Retention Days')}
+            label={t('retentionDays', 'Retention Days')}
             initialValue={90}
           >
             <InputNumber min={1} max={365} style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item
             name="max_snapshots"
-            label={t('snapshot.maxSnapshots', 'Max Snapshots')}
+            label={t('maxSnapshots', 'Max Snapshots')}
             initialValue={100}
           >
             <InputNumber min={1} max={1000} style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item>
             <Button type="primary" htmlType="submit" block>
-              {t('snapshot.createSchedule', 'Create Schedule')}
+              {t('createSchedule', 'Create Schedule')}
             </Button>
           </Form.Item>
         </Form>
@@ -478,7 +478,7 @@ const SnapshotManager: React.FC<SnapshotManagerProps> = ({
 
       {/* Retention Policy Modal */}
       <Modal
-        title={t('snapshot.applyRetention', 'Apply Retention Policy')}
+        title={t('applyRetention', 'Apply Retention Policy')}
         open={retentionModalVisible}
         onCancel={() => setRetentionModalVisible(false)}
         footer={null}
@@ -486,21 +486,21 @@ const SnapshotManager: React.FC<SnapshotManagerProps> = ({
         <Form form={retentionForm} onFinish={handleApplyRetention} layout="vertical">
           <Form.Item
             name="max_age_days"
-            label={t('snapshot.maxAgeDays', 'Max Age (Days)')}
+            label={t('maxAgeDays', 'Max Age (Days)')}
             initialValue={90}
           >
             <InputNumber min={1} max={365} style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item
             name="max_count"
-            label={t('snapshot.maxCount', 'Max Count')}
+            label={t('maxCount', 'Max Count')}
             initialValue={100}
           >
             <InputNumber min={1} max={1000} style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item
             name="keep_tagged"
-            label={t('snapshot.keepTagged', 'Keep Tagged')}
+            label={t('keepTagged', 'Keep Tagged')}
             valuePropName="checked"
             initialValue={true}
           >
@@ -508,7 +508,7 @@ const SnapshotManager: React.FC<SnapshotManagerProps> = ({
           </Form.Item>
           <Form.Item>
             <Button type="primary" htmlType="submit" block danger>
-              {t('snapshot.applyRetention', 'Apply Retention Policy')}
+              {t('applyRetention', 'Apply Retention Policy')}
             </Button>
           </Form.Item>
         </Form>

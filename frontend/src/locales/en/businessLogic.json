@@ -1,0 +1,215 @@
+{
+  "dashboard": {
+    "title": "Business Logic Dashboard",
+    "project": "Project",
+    "loading": "Loading business logic dashboard...",
+    "loadError": "Failed to load dashboard data",
+    "runAnalysis": "Run Analysis",
+    "extractRules": "Extract Rules",
+    "exportData": "Export Data",
+    "unacknowledgedInsights": "You have {{count}} unacknowledged business insights",
+    "viewInsights": "View Insights",
+    "clickToViewInsights": "Click to view details and acknowledge these insights"
+  },
+  "stats": {
+    "totalRules": "Total Business Rules",
+    "activeRules": "active",
+    "patternsIdentified": "Patterns Identified",
+    "businessInsights": "Business Insights",
+    "avgConfidence": "Average Confidence"
+  },
+  "tabs": {
+    "overview": "Overview",
+    "ruleManagement": "Rule Management",
+    "patternAnalysis": "Pattern Analysis",
+    "visualization": "Visualization",
+    "businessInsights": "Business Insights"
+  },
+  "rules": {
+    "title": "Business Rules",
+    "listTitle": "Business Rules List",
+    "viewAll": "View All",
+    "createRule": "Create Rule",
+    "editRule": "Edit Business Rule",
+    "createBusinessRule": "Create Business Rule",
+    "ruleDetail": "Rule Details",
+    "batchOperation": "Batch Operation",
+    "columns": {
+      "ruleName": "Rule Name",
+      "type": "Type",
+      "confidence": "Confidence",
+      "frequency": "Frequency",
+      "status": "Status",
+      "createdAt": "Created At",
+      "updatedAt": "Updated At",
+      "actions": "Actions"
+    },
+    "types": {
+      "sentimentRule": "Sentiment Rule",
+      "keywordRule": "Keyword Rule",
+      "temporalRule": "Temporal Rule",
+      "behavioralRule": "Behavioral Rule"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "disabled": "Disabled"
+    },
+    "form": {
+      "ruleName": "Rule Name",
+      "ruleNamePlaceholder": "Enter rule name",
+      "ruleNameRequired": "Please enter rule name",
+      "ruleType": "Rule Type",
+      "ruleTypePlaceholder": "Select rule type",
+      "ruleTypeRequired": "Please select rule type",
+      "rulePattern": "Rule Pattern",
+      "rulePatternPlaceholder": "Enter rule pattern, e.g.: IF text CONTAINS ['excellent', 'great'] THEN sentiment = 'positive'",
+      "rulePatternRequired": "Please enter rule pattern",
+      "ruleDescription": "Rule Description",
+      "ruleDescriptionPlaceholder": "Enter rule description",
+      "initialConfidence": "Initial Confidence",
+      "activeStatus": "Active Status"
+    },
+    "actions": {
+      "viewDetail": "View Details",
+      "editRule": "Edit Rule",
+      "copyRule": "Copy Rule",
+      "activateRule": "Activate Rule",
+      "deactivateRule": "Deactivate Rule",
+      "deleteRule": "Delete Rule"
+    },
+    "messages": {
+      "createSuccess": "Rule created successfully",
+      "createError": "Failed to create rule",
+      "updateSuccess": "Rule updated successfully",
+      "updateError": "Failed to update rule",
+      "deleteSuccess": "Rule deleted successfully",
+      "deleteError": "Failed to delete rule",
+      "copySuccess": "Rule copied successfully",
+      "toggleSuccess": "Rule has been {{status}}",
+      "toggleError": "Failed to toggle rule status",
+      "deleteConfirm": "Are you sure you want to delete this rule?"
+    },
+    "detail": {
+      "basicInfo": "Basic Information",
+      "ruleId": "Rule ID",
+      "rulePattern": "Rule Pattern",
+      "ruleDescription": "Rule Description"
+    },
+    "pagination": {
+      "total": "{{start}}-{{end}} of {{total}} items"
+    },
+    "copy": "Copy"
+  },
+  "patterns": {
+    "title": "Business Patterns",
+    "listTitle": "Business Patterns List",
+    "viewAll": "View All",
+    "total": "{{count}} patterns total",
+    "strongPatternsFound": "Found {{count}} strong patterns",
+    "strongPatternsHint": "These patterns have high strength and deserve focused attention and analysis",
+    "columns": {
+      "patternType": "Pattern Type",
+      "description": "Description",
+      "strength": "Strength",
+      "detectedAt": "Detected At",
+      "lastSeen": "Last Seen",
+      "actions": "Actions"
+    },
+    "types": {
+      "sentimentCorrelation": "Sentiment Correlation",
+      "keywordAssociation": "Keyword Association",
+      "temporalTrend": "Temporal Trend",
+      "userBehavior": "User Behavior"
+    },
+    "stats": {
+      "totalPatterns": "Total Patterns",
+      "avgStrength": "Average Strength",
+      "strongPatterns": "Strong Patterns",
+      "typeCount": "Type Count"
+    },
+    "lastSeen": {
+      "justNow": "Just now",
+      "hoursAgo": "{{hours}} hours ago"
+    },
+    "detail": {
+      "title": "Pattern Details",
+      "basicInfo": "Basic Information",
+      "patternId": "Pattern ID",
+      "patternType": "Pattern Type",
+      "strength": "Strength",
+      "description": "Description",
+      "detectedAt": "Detected At",
+      "lastSeen": "Last Seen",
+      "analysisResult": "Analysis Result",
+      "recommendations": "Recommendations"
+    },
+    "analysis": {
+      "sentimentAnalysis": "Sentiment Correlation Analysis",
+      "keywordAnalysis": "Keyword Association Analysis",
+      "temporalAnalysis": "Temporal Trend Analysis",
+      "behaviorAnalysis": "User Behavior Analysis",
+      "generalAnalysis": "General Analysis",
+      "positiveRatio": "Positive Sentiment Ratio",
+      "negativeRatio": "Negative Sentiment Ratio",
+      "keywords": "Keywords"
+    },
+    "recommendations": {
+      "sentiment": {
+        "maintainQuality": "Continue maintaining high quality positive sentiment annotations",
+        "balanceDataset": "Add more negative sentiment samples to balance the dataset",
+        "neutralConsistency": "Focus on annotation consistency for neutral sentiment",
+        "qualityCheck": "Establish sentiment annotation quality check mechanism"
+      },
+      "keyword": {
+        "standardize": "Establish keyword standardization dictionary",
+        "optimizeExtraction": "Optimize keyword extraction algorithm",
+        "synonyms": "Add synonym and near-synonym processing",
+        "updateRegularly": "Update keyword library regularly"
+      },
+      "temporal": {
+        "scheduleWisely": "Schedule annotation tasks wisely",
+        "increasePeakStaff": "Increase annotators during peak hours",
+        "trendAlert": "Establish temporal trend alert mechanism",
+        "optimizeWorkflow": "Optimize workflow to improve efficiency"
+      },
+      "behavior": {
+        "incentivize": "Incentivize high-frequency users to continue participating",
+        "improveEngagement": "Improve engagement of medium and low-frequency users",
+        "training": "Establish user training and guidance mechanism",
+        "optimizeUX": "Optimize user experience and interface design"
+      },
+      "general": {
+        "monitor": "Continuously monitor pattern changes",
+        "analyze": "Analyze and optimize regularly"
+      }
+    }
+  },
+  "insights": {
+    "title": "Business Insights",
+    "acknowledged": "Insight acknowledged",
+    "acknowledgeError": "Failed to acknowledge insight"
+  },
+  "analysis": {
+    "title": "Run Business Logic Analysis",
+    "confidenceThreshold": "Confidence Threshold",
+    "confidenceThresholdTooltip": "Only patterns with confidence above this value will be identified",
+    "minFrequency": "Minimum Frequency",
+    "minFrequencyTooltip": "Minimum occurrences for a pattern to be considered valid",
+    "timeRangeDays": "Time Range (Days)",
+    "timeRangeDaysTooltip": "Analyze data from the last N days, leave empty to analyze all data",
+    "success": "Pattern analysis completed, identified {{count}} patterns",
+    "error": "Pattern analysis failed",
+    "extractSuccess": "Rule extraction completed, extracted {{count}} rules",
+    "extractError": "Rule extraction failed"
+  },
+  "export": {
+    "title": "Export Business Logic Data",
+    "format": "Export Format",
+    "includeRules": "Include Business Rules",
+    "includePatterns": "Include Business Patterns",
+    "includeInsights": "Include Business Insights",
+    "success": "Export task created, please download later",
+    "error": "Export failed"
+  }
+}

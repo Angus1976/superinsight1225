@@ -4,6 +4,7 @@ import { PlusOutlined, EditOutlined, DeleteOutlined, KeyOutlined, TeamOutlined }
 import type { ColumnsType } from 'antd/es/table';
 import type { DataNode } from 'antd/es/tree';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { api } from '@/services/api';
 
 const { TabPane } = Tabs;
@@ -41,6 +42,7 @@ interface UserPermission {
 }
 
 const SecurityPermissions: React.FC = () => {
+  const { t } = useTranslation(['security', 'common']);
   const [activeTab, setActiveTab] = useState('permissions');
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [modalType, setModalType] = useState<'permission' | 'role'>('permission');
@@ -78,10 +80,10 @@ const SecurityPermissions: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['permissions'] });
       setIsModalVisible(false);
       form.resetFields();
-      message.success('权限创建成功');
+      message.success(t('permissions.createSuccess'));
     },
     onError: () => {
-      message.error('权限创建失败');
+      message.error(t('permissions.createError'));
     },
   });
 
@@ -91,10 +93,10 @@ const SecurityPermissions: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['roles'] });
       setIsModalVisible(false);
       form.resetFields();
-      message.success('角色创建成功');
+      message.success(t('roles.createSuccess'));
     },
     onError: () => {
-      message.error('角色创建失败');
+      message.error(t('roles.createError'));
     },
   });
 
@@ -102,10 +104,10 @@ const SecurityPermissions: React.FC = () => {
     mutationFn: (id: string) => api.delete(`/api/v1/security/permissions/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['permissions'] });
-      message.success('权限删除成功');
+      message.success(t('permissions.deleteSuccess'));
     },
     onError: () => {
-      message.error('权限删除失败');
+      message.error(t('permissions.deleteError'));
     },
   });
 
@@ -113,54 +115,54 @@ const SecurityPermissions: React.FC = () => {
     mutationFn: (id: string) => api.delete(`/api/v1/security/roles/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['roles'] });
-      message.success('角色删除成功');
+      message.success(t('roles.deleteSuccess'));
     },
     onError: () => {
-      message.error('角色删除失败');
+      message.error(t('roles.deleteError'));
     },
   });
 
   // 权限表格列
   const permissionColumns: ColumnsType<Permission> = [
     {
-      title: '权限名称',
+      title: t('permissions.columns.name'),
       dataIndex: 'name',
       key: 'name',
     },
     {
-      title: '权限代码',
+      title: t('permissions.columns.code'),
       dataIndex: 'code',
       key: 'code',
       render: (code: string) => <code>{code}</code>,
     },
     {
-      title: '资源',
+      title: t('permissions.columns.resource'),
       dataIndex: 'resource',
       key: 'resource',
     },
     {
-      title: '操作',
+      title: t('permissions.columns.action'),
       dataIndex: 'action',
       key: 'action',
     },
     {
-      title: '状态',
+      title: t('permissions.columns.status'),
       dataIndex: 'enabled',
       key: 'enabled',
       render: (enabled: boolean) => (
         <Tag color={enabled ? 'success' : 'default'}>
-          {enabled ? '启用' : '禁用'}
+          {enabled ? t('permissions.enabled') : t('permissions.disabled')}
         </Tag>
       ),
     },
     {
-      title: '创建时间',
+      title: t('permissions.columns.createdAt'),
       dataIndex: 'createdAt',
       key: 'createdAt',
       render: (date: string) => new Date(date).toLocaleString(),
     },
     {
-      title: '操作',
+      title: t('common:actions'),
       key: 'action',
       render: (_, record) => (
         <Space size="middle">
@@ -174,7 +176,7 @@ const SecurityPermissions: React.FC = () => {
               setIsModalVisible(true);
             }}
           >
-            编辑
+            {t('common:edit')}
           </Button>
           <Button
             type="link"
@@ -182,13 +184,13 @@ const SecurityPermissions: React.FC = () => {
             icon={<DeleteOutlined />}
             onClick={() => {
               Modal.confirm({
-                title: '确认删除',
-                content: `确定要删除权限 "${record.name}" 吗？`,
+                title: t('common:confirmDelete'),
+                content: t('permissions.confirmDelete', { name: record.name }),
                 onOk: () => deletePermissionMutation.mutate(record.id),
               });
             }}
           >
-            删除
+            {t('common:delete')}
           </Button>
         </Space>
       ),
@@ -198,50 +200,50 @@ const SecurityPermissions: React.FC = () => {
   // 角色表格列
   const roleColumns: ColumnsType<Role> = [
     {
-      title: '角色名称',
+      title: t('roles.columns.name'),
       dataIndex: 'name',
       key: 'name',
     },
     {
-      title: '角色代码',
+      title: t('roles.columns.code'),
       dataIndex: 'code',
       key: 'code',
       render: (code: string) => <code>{code}</code>,
     },
     {
-      title: '描述',
+      title: t('roles.columns.description'),
       dataIndex: 'description',
       key: 'description',
     },
     {
-      title: '权限数量',
+      title: t('roles.columns.permissionCount'),
       dataIndex: 'permissions',
       key: 'permissions',
       render: (permissions: string[]) => permissions.length,
     },
     {
-      title: '用户数量',
+      title: t('roles.columns.userCount'),
       dataIndex: 'userCount',
       key: 'userCount',
     },
     {
-      title: '状态',
+      title: t('permissions.columns.status'),
       dataIndex: 'enabled',
       key: 'enabled',
       render: (enabled: boolean) => (
         <Tag color={enabled ? 'success' : 'default'}>
-          {enabled ? '启用' : '禁用'}
+          {enabled ? t('permissions.enabled') : t('permissions.disabled')}
         </Tag>
       ),
     },
     {
-      title: '创建时间',
+      title: t('roles.columns.createdAt'),
       dataIndex: 'createdAt',
       key: 'createdAt',
       render: (date: string) => new Date(date).toLocaleString(),
     },
     {
-      title: '操作',
+      title: t('common:actions'),
       key: 'action',
       render: (_, record) => (
         <Space size="middle">
@@ -255,7 +257,7 @@ const SecurityPermissions: React.FC = () => {
               setIsModalVisible(true);
             }}
           >
-            编辑
+            {t('common:edit')}
           </Button>
           <Button
             type="link"
@@ -263,13 +265,13 @@ const SecurityPermissions: React.FC = () => {
             icon={<DeleteOutlined />}
             onClick={() => {
               Modal.confirm({
-                title: '确认删除',
-                content: `确定要删除角色 "${record.name}" 吗？`,
+                title: t('common:confirmDelete'),
+                content: t('roles.confirmDelete', { name: record.name }),
                 onOk: () => deleteRoleMutation.mutate(record.id),
               });
             }}
           >
-            删除
+            {t('common:delete')}
           </Button>
         </Space>
       ),
@@ -279,7 +281,7 @@ const SecurityPermissions: React.FC = () => {
   // 用户权限表格列
   const userPermissionColumns: ColumnsType<UserPermission> = [
     {
-      title: '用户',
+      title: t('userPermissions.columns.user'),
       dataIndex: 'userName',
       key: 'userName',
       render: (userName: string, record) => (
@@ -290,7 +292,7 @@ const SecurityPermissions: React.FC = () => {
       ),
     },
     {
-      title: '角色',
+      title: t('userPermissions.columns.roles'),
       dataIndex: 'roles',
       key: 'roles',
       render: (roles: string[]) => (
@@ -302,25 +304,25 @@ const SecurityPermissions: React.FC = () => {
       ),
     },
     {
-      title: '直接权限',
+      title: t('userPermissions.columns.directPermissions'),
       dataIndex: 'directPermissions',
       key: 'directPermissions',
       render: (permissions: string[]) => permissions.length,
     },
     {
-      title: '有效权限',
+      title: t('userPermissions.columns.effectivePermissions'),
       dataIndex: 'effectivePermissions',
       key: 'effectivePermissions',
       render: (permissions: string[]) => permissions.length,
     },
     {
-      title: '最后登录',
+      title: t('userPermissions.columns.lastLogin'),
       dataIndex: 'lastLogin',
       key: 'lastLogin',
-      render: (date: string) => date ? new Date(date).toLocaleString() : '从未登录',
+      render: (date: string) => date ? new Date(date).toLocaleString() : t('userPermissions.neverLoggedIn'),
     },
     {
-      title: '操作',
+      title: t('common:actions'),
       key: 'action',
       render: (_, record) => (
         <Space size="middle">
@@ -331,7 +333,7 @@ const SecurityPermissions: React.FC = () => {
               console.log('查看用户权限:', record.userId);
             }}
           >
-            查看详情
+            {t('userPermissions.viewDetail')}
           </Button>
           <Button
             type="link"
@@ -340,7 +342,7 @@ const SecurityPermissions: React.FC = () => {
               console.log('编辑用户权限:', record.userId);
             }}
           >
-            编辑权限
+            {t('userPermissions.editPermissions')}
           </Button>
         </Space>
       ),
@@ -368,9 +370,9 @@ const SecurityPermissions: React.FC = () => {
   return (
     <div className="security-permissions">
       <Tabs activeKey={activeTab} onChange={setActiveTab}>
-        <TabPane tab="权限管理" key="permissions">
+        <TabPane tab={t('permissions.title')} key="permissions">
           <Card
-            title="权限管理"
+            title={t('permissions.title')}
             extra={
               <Button
                 type="primary"
@@ -382,7 +384,7 @@ const SecurityPermissions: React.FC = () => {
                   setIsModalVisible(true);
                 }}
               >
-                新建权限
+                {t('permissions.createPermission')}
               </Button>
             }
           >
@@ -394,15 +396,15 @@ const SecurityPermissions: React.FC = () => {
               pagination={{
                 showSizeChanger: true,
                 showQuickJumper: true,
-                showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
+                showTotal: (total, range) => t('common.range', { start: range[0], end: range[1], total }),
               }}
             />
           </Card>
         </TabPane>
 
-        <TabPane tab="角色管理" key="roles">
+        <TabPane tab={t('roles.title')} key="roles">
           <Card
-            title="角色管理"
+            title={t('roles.title')}
             extra={
               <Button
                 type="primary"
@@ -414,7 +416,7 @@ const SecurityPermissions: React.FC = () => {
                   setIsModalVisible(true);
                 }}
               >
-                新建角色
+                {t('roles.createRole')}
               </Button>
             }
           >
@@ -426,14 +428,14 @@ const SecurityPermissions: React.FC = () => {
               pagination={{
                 showSizeChanger: true,
                 showQuickJumper: true,
-                showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
+                showTotal: (total, range) => t('common.range', { start: range[0], end: range[1], total }),
               }}
             />
           </Card>
         </TabPane>
 
-        <TabPane tab="用户权限" key="user-permissions">
-          <Card title="用户权限管理">
+        <TabPane tab={t('userPermissions.title')} key="user-permissions">
+          <Card title={t('userPermissions.title')}>
             <Table
               columns={userPermissionColumns}
               dataSource={userPermissions}
@@ -442,7 +444,7 @@ const SecurityPermissions: React.FC = () => {
               pagination={{
                 showSizeChanger: true,
                 showQuickJumper: true,
-                showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
+                showTotal: (total, range) => t('common.range', { start: range[0], end: range[1], total }),
               }}
             />
           </Card>
@@ -453,8 +455,8 @@ const SecurityPermissions: React.FC = () => {
       <Modal
         title={
           modalType === 'permission' 
-            ? (editingItem ? '编辑权限' : '新建权限')
-            : (editingItem ? '编辑角色' : '新建角色')
+            ? (editingItem ? t('permissions.editPermission') : t('permissions.createPermission'))
+            : (editingItem ? t('roles.editRole') : t('roles.createRole'))
         }
         open={isModalVisible}
         onCancel={() => setIsModalVisible(false)}
@@ -471,78 +473,78 @@ const SecurityPermissions: React.FC = () => {
             <>
               <Form.Item
                 name="name"
-                label="权限名称"
-                rules={[{ required: true, message: '请输入权限名称' }]}
+                label={t('permissions.columns.name')}
+                rules={[{ required: true, message: t('common:pleaseInput', { field: t('permissions.columns.name') }) }]}
               >
-                <Input placeholder="请输入权限名称" />
+                <Input placeholder={t('common:pleaseInput', { field: t('permissions.columns.name') })} />
               </Form.Item>
               <Form.Item
                 name="code"
-                label="权限代码"
-                rules={[{ required: true, message: '请输入权限代码' }]}
+                label={t('permissions.columns.code')}
+                rules={[{ required: true, message: t('common:pleaseInput', { field: t('permissions.columns.code') }) }]}
               >
-                <Input placeholder="例如: user:create" />
+                <Input placeholder="user:create" />
               </Form.Item>
               <Form.Item
                 name="resource"
-                label="资源"
-                rules={[{ required: true, message: '请输入资源' }]}
+                label={t('permissions.columns.resource')}
+                rules={[{ required: true, message: t('common:pleaseInput', { field: t('permissions.columns.resource') }) }]}
               >
-                <Input placeholder="例如: user" />
+                <Input placeholder="user" />
               </Form.Item>
               <Form.Item
                 name="action"
-                label="操作"
-                rules={[{ required: true, message: '请输入操作' }]}
+                label={t('permissions.columns.action')}
+                rules={[{ required: true, message: t('common:pleaseSelect', { field: t('permissions.columns.action') }) }]}
               >
-                <Select placeholder="请选择操作">
-                  <Select.Option value="create">创建</Select.Option>
-                  <Select.Option value="read">读取</Select.Option>
-                  <Select.Option value="update">更新</Select.Option>
-                  <Select.Option value="delete">删除</Select.Option>
-                  <Select.Option value="export">导出</Select.Option>
+                <Select placeholder={t('common:pleaseSelect', { field: t('permissions.columns.action') })}>
+                  <Select.Option value="create">{t('common:create')}</Select.Option>
+                  <Select.Option value="read">{t('permissions.read')}</Select.Option>
+                  <Select.Option value="update">{t('common:update')}</Select.Option>
+                  <Select.Option value="delete">{t('common:delete')}</Select.Option>
+                  <Select.Option value="export">{t('permissions.export')}</Select.Option>
                 </Select>
               </Form.Item>
               <Form.Item
                 name="description"
-                label="描述"
+                label={t('permissions.columns.description')}
               >
-                <Input.TextArea rows={3} placeholder="请输入权限描述" />
+                <Input.TextArea rows={3} placeholder={t('common:pleaseInput', { field: t('permissions.columns.description') })} />
               </Form.Item>
               <Form.Item
                 name="enabled"
-                label="启用状态"
+                label={t('permissions.columns.status')}
                 valuePropName="checked"
                 initialValue={true}
               >
-                <Switch checkedChildren="启用" unCheckedChildren="禁用" />
+                <Switch checkedChildren={t('permissions.enabled')} unCheckedChildren={t('permissions.disabled')} />
               </Form.Item>
             </>
           ) : (
             <>
               <Form.Item
                 name="name"
-                label="角色名称"
-                rules={[{ required: true, message: '请输入角色名称' }]}
+                label={t('roles.columns.name')}
+                rules={[{ required: true, message: t('common:pleaseInput', { field: t('roles.columns.name') }) }]}
               >
-                <Input placeholder="请输入角色名称" />
+                <Input placeholder={t('roles.form.namePlaceholder')} />
               </Form.Item>
               <Form.Item
                 name="code"
-                label="角色代码"
-                rules={[{ required: true, message: '请输入角色代码' }]}
+                label={t('roles.columns.code')}
+                rules={[{ required: true, message: t('common:pleaseInput', { field: t('roles.columns.code') }) }]}
               >
-                <Input placeholder="例如: admin" />
+                <Input placeholder="admin" />
               </Form.Item>
               <Form.Item
                 name="description"
-                label="描述"
+                label={t('roles.columns.description')}
               >
-                <Input.TextArea rows={3} placeholder="请输入角色描述" />
+                <Input.TextArea rows={3} placeholder={t('roles.form.descriptionPlaceholder')} />
               </Form.Item>
               <Form.Item
                 name="permissions"
-                label="权限配置"
+                label={t('rbac.permissionMatrix')}
               >
                 <Tree
                   checkable
@@ -552,11 +554,11 @@ const SecurityPermissions: React.FC = () => {
               </Form.Item>
               <Form.Item
                 name="enabled"
-                label="启用状态"
+                label={t('permissions.columns.status')}
                 valuePropName="checked"
                 initialValue={true}
               >
-                <Switch checkedChildren="启用" unCheckedChildren="禁用" />
+                <Switch checkedChildren={t('permissions.enabled')} unCheckedChildren={t('permissions.disabled')} />
               </Form.Item>
             </>
           )}

@@ -1,0 +1,59 @@
+{
+  "title": "协作与审核",
+  "stats": {
+    "inProgressTasks": "进行中任务",
+    "pendingReview": "待审核",
+    "onlineMembers": "在线成员",
+    "avgAccuracy": "平均准确率"
+  },
+  "tabs": {
+    "tasks": "任务列表",
+    "team": "团队状态",
+    "review": "审核队列",
+    "quality": "质量排名"
+  },
+  "tasks": {
+    "name": "任务名称",
+    "assignee": "负责人",
+    "status": "状态",
+    "priority": "优先级",
+    "progress": "进度",
+    "deadline": "截止日期"
+  },
+  "status": {
+    "pending": "待处理",
+    "inProgress": "进行中",
+    "review": "审核中",
+    "completed": "已完成"
+  },
+  "team": {
+    "processing": "正在处理",
+    "idle": "空闲",
+    "completedTasks": "完成任务",
+    "accuracy": "准确率"
+  },
+  "review": {
+    "annotationId": "标注ID",
+    "task": "任务",
+    "annotator": "标注员",
+    "submittedAt": "提交时间",
+    "reviewLevel": "审核级别",
+    "status": "状态",
+    "actions": "操作",
+    "reviewAction": "审核",
+    "approved": "已通过",
+    "rejected": "已驳回",
+    "pending": "待审核",
+    "modalTitle": "审核标注",
+    "approve": "通过",
+    "reject": "驳回",
+    "approveSuccess": "已通过标注 {{id}}",
+    "rejectSuccess": "已驳回标注 {{id}}"
+  },
+  "ranking": {
+    "rank": "排名",
+    "annotator": "标注员",
+    "accuracy": "准确率",
+    "completedTasks": "完成任务"
+  }
+}

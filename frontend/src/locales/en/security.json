@@ -1,4 +1,695 @@
 {
+  "title": "Security Management",
+  "overview": "Security Overview",
+  "rbacConfig": "RBAC Configuration",
+  "ssoConfig": "SSO Configuration",
+  "auditLogs": "Audit Logs",
+  "securityDashboard": "Security Dashboard",
+  "sessionManagement": "Session Management",
+  "permissionManagement": "Permission Management",
+  
+  "permissions": {
+    "title": "Permission Management",
+    "createPermission": "Create Permission",
+    "editPermission": "Edit Permission",
+    "createSuccess": "Permission created successfully",
+    "createError": "Failed to create permission",
+    "updateSuccess": "Permission updated successfully",
+    "updateError": "Failed to update permission",
+    "deleteSuccess": "Permission deleted successfully",
+    "deleteError": "Failed to delete permission",
+    "confirmDelete": "Are you sure you want to delete permission \"{{name}}\"?",
+    "columns": {
+      "name": "Permission Name",
+      "code": "Permission Code",
+      "resource": "Resource",
+      "action": "Action",
+      "status": "Status",
+      "createdAt": "Created At",
+      "description": "Description"
+    },
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "table": "Table",
+    "field": "Field",
+    "dataType": "Data Type",
+    "viewDetails": "View Details",
+    "details": "Permission Details",
+    "basicInfo": "Basic Information",
+    "rolePermissions": "Role Permissions",
+    "role": "Role",
+    "read": "Read",
+    "write": "Write",
+    "export": "Export",
+    "sensitivity": "Sensitivity Level"
+  },
+
+  "roles": {
+    "title": "Role Management",
+    "createRole": "Create Role",
+    "editRole": "Edit Role",
+    "createSuccess": "Role created successfully",
+    "createError": "Failed to create role",
+    "updateSuccess": "Role updated successfully",
+    "updateError": "Failed to update role",
+    "deleteSuccess": "Role deleted successfully",
+    "deleteError": "Failed to delete role",
+    "confirmDelete": "Are you sure you want to delete role \"{{name}}\"?",
+    "deleteWarning": "This will also remove all user assignments.",
+    "columns": {
+      "name": "Role Name",
+      "code": "Role Code",
+      "description": "Description",
+      "permissionCount": "Permission Count",
+      "userCount": "User Count",
+      "parentRole": "Parent Role",
+      "createdAt": "Created At"
+    },
+    "form": {
+      "namePlaceholder": "e.g., project_manager",
+      "descriptionPlaceholder": "Role description",
+      "selectPermissions": "Select permissions",
+      "selectParentRole": "Select parent role"
+    }
+  },
+
+  "userPermissions": {
+    "title": "User Permission Management",
+    "columns": {
+      "user": "User",
+      "roles": "Roles",
+      "directPermissions": "Direct Permissions",
+      "effectivePermissions": "Effective Permissions",
+      "lastLogin": "Last Login"
+    },
+    "neverLoggedIn": "Never logged in",
+    "viewDetail": "View Details",
+    "editPermissions": "Edit Permissions",
+    "noRolesAssigned": "No roles assigned",
+    "addRole": "Add Role"
+  },
+
+  "audit": {
+    "title": "Audit & Compliance",
+    "logs": "Audit Logs",
+    "complianceReports": "Compliance Reports",
+    "timestamp": "Timestamp",
+    "user": "User",
+    "action": "Action",
+    "resource": "Resource",
+    "riskLevel": "Risk Level",
+    "ipAddress": "IP Address",
+    "userAgent": "User Agent",
+    "sessionId": "Session ID",
+    "details": "Details",
+    "hash": "Hash",
+    "result": "Result",
+    "eventType": "Event Type",
+    "columns": {
+      "timestamp": "Timestamp",
+      "eventType": "Event Type",
+      "user": "User",
+      "resource": "Resource",
+      "action": "Action",
+      "result": "Result",
+      "ipAddress": "IP Address"
+    },
+    "stats": {
+      "totalLogs": "Total Logs",
+      "eventTypes": "Event Types",
+      "successRate": "Success Rate",
+      "failedOperations": "Failed Operations"
+    },
+    "filters": {
+      "startTime": "Start Time",
+      "endTime": "End Time",
+      "eventType": "Event Type",
+      "result": "Result",
+      "userId": "User ID",
+      "ipAddress": "IP Address"
+    },
+    "eventTypes": {
+      "loginAttempt": "Login Attempt",
+      "dataAccess": "Data Access",
+      "permissionChange": "Permission Change",
+      "sessionCreated": "Session Created",
+      "securityEvent": "Security Event"
+    },
+    "results": {
+      "success": "Success",
+      "failed": "Failed"
+    },
+    "verifyIntegrity": "Verify Integrity",
+    "exportCsv": "Export CSV",
+    "logDetails": "Audit Log Details"
+  },
+
+  "compliance": {
+    "title": "Compliance Reports",
+    "generateReport": "Generate Report",
+    "reportType": "Report Type",
+    "reportPeriod": "Report Period",
+    "complianceScore": "Compliance Score",
+    "generated": "Generated",
+    "period": "Period",
+    "summary": "Summary",
+    "findings": "Findings",
+    "recommendations": "Recommendations",
+    "noFindings": "No findings",
+    "noRecommendations": "No recommendations",
+    "types": {
+      "gdpr": "GDPR Compliance Report",
+      "soc2": "SOC 2 Compliance Report",
+      "access": "Data Access Report",
+      "permissionChanges": "Permission Changes Report"
+    },
+    "generateInfo": "This will generate a {{type}} for the selected period. The report will include detailed findings and recommendations."
+  },
+
+  "sessions": {
+    "title": "Session Management",
+    "activeSessions": "Active Sessions",
+    "usersWithSessions": "Users with Sessions",
+    "defaultTimeout": "Default Timeout",
+    "maxConcurrent": "Max Concurrent",
+    "perUser": "/ user",
+    "minutes": "min",
+    "cleanupExpired": "Cleanup Expired",
+    "configure": "Configure",
+    "searchPlaceholder": "Search user or IP...",
+    "columns": {
+      "user": "User",
+      "ipAddress": "IP Address",
+      "userAgent": "User Agent",
+      "created": "Created",
+      "lastActivity": "Last Activity",
+      "expires": "Expires"
+    },
+    "terminateSession": "Terminate this session?",
+    "sessionTerminated": "Session terminated",
+    "terminateFailed": "Failed to terminate session",
+    "forceLogout": "Force Logout User",
+    "forceLogoutConfirm": "Force logout this user?",
+    "forceLogoutDesc": "This will terminate all sessions for this user.",
+    "logoutSuccess": "User logged out: {{count}} sessions terminated",
+    "logoutFailed": "Failed to logout user",
+    "cleanupSuccess": "Cleaned up {{count}} expired sessions",
+    "cleanupFailed": "Failed to cleanup sessions",
+    "sessionDetails": "Session Details",
+    "config": {
+      "title": "Session Configuration",
+      "defaultTimeout": "Default Session Timeout (seconds)",
+      "maxConcurrent": "Max Concurrent Sessions per User",
+      "updateSuccess": "Configuration updated",
+      "updateFailed": "Failed to update configuration"
+    },
+    "metadata": "Metadata"
+  },
+
+  "dashboard": {
+    "title": "Security Dashboard",
+    "criticalAlert": "Critical Security Alert",
+    "criticalAlertDesc": "There are {{count}} critical security events in the last 24 hours that require immediate attention.",
+    "viewEvents": "View Events",
+    "stats": {
+      "riskScore": "Risk Score",
+      "openEvents": "Open Events",
+      "critical24h": "Critical (24h)",
+      "events7days": "Events (7 days)"
+    },
+    "openSecurityEvents": "Open Security Events",
+    "securityRecommendations": "Security Recommendations",
+    "securityPostureGood": "Security posture is good",
+    "noOpenEvents": "No open security events",
+    "resolveEvent": "Resolve Security Event",
+    "resolutionNotes": "Resolution Notes",
+    "resolutionPlaceholder": "Describe how this security event was resolved...",
+    "eventResolved": "Event resolved successfully",
+    "resolveFailed": "Failed to resolve event"
+  },
+
+  "sso": {
+    "title": "Single Sign-On Configuration",
+    "description": "Configure Single Sign-On providers to allow users to authenticate using their existing identity providers. Supports SAML 2.0, OAuth 2.0, OpenID Connect, and LDAP/Active Directory.",
+    "addProvider": "Add Provider",
+    "editProvider": "Edit SSO Provider",
+    "providerName": "Provider Name",
+    "protocol": "Protocol",
+    "status": "Status",
+    "testConnection": "Test Connection",
+    "testPassed": "Test Passed",
+    "testFailed": "Test Failed",
+    "createSuccess": "SSO provider created successfully",
+    "createFailed": "Failed to create SSO provider",
+    "updateSuccess": "SSO provider updated successfully",
+    "updateFailed": "Failed to update SSO provider",
+    "deleteSuccess": "SSO provider deleted successfully",
+    "deleteFailed": "Failed to delete SSO provider",
+    "deleteConfirm": "Delete this provider?",
+    "statusUpdated": "Provider status updated",
+    "statusUpdateFailed": "Failed to update provider status",
+    "protocols": {
+      "saml": "SAML 2.0",
+      "oauth2": "OAuth 2.0",
+      "oidc": "OpenID Connect",
+      "ldap": "LDAP/AD"
+    },
+    "form": {
+      "namePlaceholder": "e.g., corporate-okta",
+      "entityId": "Entity ID",
+      "idpMetadataUrl": "IdP Metadata URL",
+      "idpSsoUrl": "IdP SSO URL",
+      "idpCertificate": "IdP Certificate",
+      "clientId": "Client ID",
+      "clientSecret": "Client Secret",
+      "authorizationUrl": "Authorization URL",
+      "tokenUrl": "Token URL",
+      "userinfoUrl": "User Info URL",
+      "scopes": "Scopes",
+      "serverUrl": "Server URL",
+      "bindDn": "Bind DN",
+      "bindPassword": "Bind Password",
+      "baseDn": "Base DN",
+      "userSearchFilter": "User Search Filter"
+    }
+  },
+
+  "rbac": {
+    "title": "Role-Based Access Control",
+    "roles": "Roles",
+    "permissionMatrix": "Permission Matrix",
+    "userAssignments": "User Assignments",
+    "roleManagement": "Role Management",
+    "createRole": "Create Role",
+    "selectRole": "Select a role",
+    "selectRoleHint": "Select a role to view and edit its permissions",
+    "saveChanges": "Save Changes",
+    "permissionsUpdated": "Permissions updated successfully",
+    "permissionsUpdateFailed": "Failed to update permissions",
+    "directPermission": "Direct Permission",
+    "wildcard": "Wildcard",
+    "noPermission": "No Permission",
+    "grantedViaWildcard": "Granted via wildcard",
+    "inheritedFromParent": "Inherited from parent role",
+    "resources": {
+      "projects": "Projects",
+      "tasks": "Tasks",
+      "annotations": "Annotations",
+      "users": "Users",
+      "billing": "Billing",
+      "reports": "Reports",
+      "settings": "Settings",
+      "admin": "Admin"
+    },
+    "actions": {
+      "read": "Read",
+      "write": "Write",
+      "delete": "Delete",
+      "all": "All"
+    },
+    "assignment": {
+      "title": "User Role Assignments",
+      "assignRole": "Assign Role",
+      "searchUsers": "Search users...",
+      "selectUser": "Select user",
+      "selectRoleToAssign": "Select role",
+      "expiration": "Expiration (Optional)",
+      "assignSuccess": "Role assigned successfully",
+      "assignFailed": "Failed to assign role",
+      "revokeSuccess": "Role revoked successfully",
+      "revokeFailed": "Failed to revoke role",
+      "expires": "expires"
+    }
+  },
+
+  "dataPermissions": {
+    "title": "Data Permission Control",
+    "permissions": "Permissions",
+    "policyImport": "Policy Import",
+    "approvals": "Approvals",
+    "accessLogs": "Access Logs",
+    "classification": "Classification",
+    "dataMasking": "Data Masking",
+    
+    "accessLog": {
+      "title": "Access Logs",
+      "stats": {
+        "totalAccesses": "Total Accesses",
+        "readOperations": "Read Operations",
+        "modifyOperations": "Modify Operations",
+        "exportOperations": "Export Operations"
+      },
+      "columns": {
+        "timestamp": "Timestamp",
+        "operation": "Operation",
+        "user": "User",
+        "resource": "Resource",
+        "sensitivity": "Sensitivity",
+        "records": "Records",
+        "ipAddress": "IP Address"
+      },
+      "operations": {
+        "read": "Read",
+        "modify": "Modify",
+        "export": "Export",
+        "apiCall": "API Call"
+      },
+      "exportCsv": "Export CSV",
+      "exportJson": "Export JSON",
+      "exportSuccess": "Export completed",
+      "exportFailed": "Export failed",
+      "logDetails": "Access Log Details",
+      "fieldsAccessed": "Fields Accessed"
+    },
+
+    "approval": {
+      "title": "Approval Workflow",
+      "pendingApprovals": "Pending Approvals",
+      "myRequests": "My Requests",
+      "delegateApprovals": "Delegate Approvals",
+      "stats": {
+        "pending": "Pending Approvals",
+        "myRequests": "My Requests",
+        "approvedToday": "Approved Today",
+        "rejectedToday": "Rejected Today"
+      },
+      "columns": {
+        "resource": "Resource",
+        "action": "Action",
+        "requester": "Requester",
+        "sensitivity": "Sensitivity",
+        "level": "Level",
+        "created": "Created",
+        "expires": "Expires",
+        "status": "Status",
+        "resolved": "Resolved"
+      },
+      "status": {
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "expired": "Expired",
+        "cancelled": "Cancelled"
+      },
+      "approve": "Approve",
+      "reject": "Reject",
+      "viewDetails": "View Details",
+      "requestDetails": "Approval Request Details",
+      "approvalHistory": "Approval History",
+      "decisionSubmitted": "Decision submitted successfully",
+      "decisionFailed": "Failed to submit decision",
+      "comments": "Comments",
+      "commentsPlaceholder": "Add comments (optional)",
+      "delegation": {
+        "title": "Delegate Approvals",
+        "delegateTo": "Delegate To",
+        "delegateToPlaceholder": "User ID to delegate approvals to",
+        "startDate": "Start Date",
+        "endDate": "End Date",
+        "createSuccess": "Delegation created successfully",
+        "createFailed": "Failed to create delegation"
+      }
+    },
+
+    "classification": {
+      "title": "Data Classifications",
+      "stats": {
+        "totalFields": "Total Fields",
+        "classified": "Classified",
+        "confidentialPlus": "Confidential+",
+        "unclassified": "Unclassified"
+      },
+      "viewReport": "View Report",
+      "addRule": "Add Rule",
+      "autoClassify": "Auto Classify",
+      "classificationRules": "Classification Rules",
+      "columns": {
+        "dataset": "Dataset",
+        "field": "Field",
+        "category": "Category",
+        "sensitivity": "Sensitivity",
+        "method": "Method",
+        "confidence": "Confidence",
+        "verified": "Verified",
+        "updated": "Updated"
+      },
+      "methods": {
+        "manual": "Manual",
+        "ruleBased": "Rule-based",
+        "aiBased": "AI-based"
+      },
+      "allFields": "All Fields",
+      "editClassification": "Edit Classification",
+      "autoClassifyDataset": "Auto Classify Dataset",
+      "datasetId": "Dataset ID",
+      "classificationMethod": "Classification Method",
+      "ruleBasedClassification": "Rule-based Classification",
+      "aiBasedClassification": "AI-based Classification",
+      "aiClassificationInfo": "AI-based classification uses machine learning to detect sensitive data patterns. It may take longer but provides higher accuracy for complex data.",
+      "classificationComplete": "Classification completed: {{classified}}/{{total}} fields classified",
+      "classificationFailed": "Classification failed",
+      "addRuleTitle": "Add Classification Rule",
+      "ruleName": "Rule Name",
+      "regexPattern": "Regex Pattern",
+      "category": "Category",
+      "priority": "Priority",
+      "ruleCreated": "Rule created successfully",
+      "ruleCreateFailed": "Failed to create rule",
+      "updateSuccess": "Updated {{count}} classifications",
+      "updateFailed": "Update failed",
+      "report": {
+        "title": "Classification Report",
+        "totalDatasets": "Total Datasets",
+        "totalFields": "Total Fields",
+        "unclassified": "Unclassified",
+        "generatedAt": "Generated At",
+        "bySensitivity": "By Sensitivity Level",
+        "byMethod": "By Classification Method"
+      }
+    },
+
+    "masking": {
+      "title": "Masking Rules",
+      "stats": {
+        "totalRules": "Total Rules",
+        "activeRules": "Active Rules",
+        "encryptionRules": "Encryption Rules",
+        "hashRules": "Hash Rules"
+      },
+      "previewMasking": "Preview Masking",
+      "addRule": "Add Rule",
+      "editRule": "Edit Masking Rule",
+      "algorithmReference": "Masking Algorithms Reference",
+      "columns": {
+        "name": "Name",
+        "fieldPattern": "Field Pattern",
+        "algorithm": "Algorithm",
+        "applicableRoles": "Applicable Roles",
+        "priority": "Priority",
+        "status": "Status",
+        "created": "Created"
+      },
+      "allRoles": "All Roles",
+      "active": "Active",
+      "inactive": "Inactive",
+      "algorithms": {
+        "replacement": "Replacement",
+        "partial": "Partial",
+        "encryption": "Encryption",
+        "hash": "Hash",
+        "nullify": "Nullify"
+      },
+      "algorithmDescriptions": {
+        "replacement": "Replace entire value with asterisks (***)",
+        "partial": "Show first and last characters, mask middle (Jo***hn)",
+        "encryption": "Encrypt value with reversible encryption",
+        "hash": "One-way hash of the value (SHA-256)",
+        "nullify": "Replace with NULL/empty value"
+      },
+      "form": {
+        "ruleName": "Rule Name",
+        "ruleNamePlaceholder": "e.g., Email Masking",
+        "description": "Description",
+        "descriptionPlaceholder": "Rule description",
+        "fieldPattern": "Field Pattern (Regex)",
+        "fieldPatternPlaceholder": "e.g., ^email$|.*_email$|.*email.*",
+        "algorithm": "Masking Algorithm",
+        "selectAlgorithm": "Select algorithm",
+        "applicableRoles": "Applicable Roles",
+        "applicableRolesPlaceholder": "Leave empty for all roles",
+        "priority": "Priority",
+        "priorityHint": "Higher priority rules are applied first",
+        "active": "Active"
+      },
+      "preview": {
+        "title": "Preview Masking",
+        "testValue": "Test Value",
+        "testValuePlaceholder": "e.g., john.doe@example.com",
+        "algorithm": "Algorithm",
+        "selectAlgorithm": "Select algorithm",
+        "original": "Original",
+        "masked": "Masked"
+      },
+      "createSuccess": "Rule created successfully",
+      "createFailed": "Failed to create rule",
+      "updateSuccess": "Rule updated successfully",
+      "updateFailed": "Failed to update rule",
+      "deleteSuccess": "Rule deleted successfully",
+      "deleteFailed": "Failed to delete rule",
+      "deleteConfirm": "Delete this rule?",
+      "previewFailed": "Preview failed"
+    },
+
+    "permissionConfig": {
+      "title": "Data Permissions",
+      "stats": {
+        "totalPermissions": "Total Permissions",
+        "active": "Active",
+        "temporary": "Temporary",
+        "expiringSoon": "Expiring Soon"
+      },
+      "testPermission": "Test Permission",
+      "grantPermission": "Grant Permission",
+      "columns": {
+        "resourceLevel": "Resource Level",
+        "resource": "Resource",
+        "userRole": "User/Role",
+        "action": "Action",
+        "status": "Status",
+        "expires": "Expires",
+        "granted": "Granted"
+      },
+      "resourceLevels": {
+        "dataset": "Dataset",
+        "record": "Record",
+        "field": "Field"
+      },
+      "actions": {
+        "read": "Read",
+        "write": "Write",
+        "delete": "Delete",
+        "export": "Export",
+        "annotate": "Annotate",
+        "review": "Review"
+      },
+      "never": "Never",
+      "revokePermission": "Revoke this permission?",
+      "revokeSuccess": "Permission revoked successfully",
+      "revokeFailed": "Failed to revoke permission",
+      "grantSuccess": "Permission granted successfully",
+      "grantFailed": "Failed to grant permission",
+      "form": {
+        "resourceLevel": "Resource Level",
+        "resourceType": "Resource Type",
+        "resourceTypePlaceholder": "e.g., dataset, project, task",
+        "resourceId": "Resource ID",
+        "resourceIdPlaceholder": "Resource identifier",
+        "fieldName": "Field Name (for field-level)",
+        "fieldNamePlaceholder": "Field name (optional)",
+        "userId": "User ID",
+        "userIdPlaceholder": "User UUID (leave empty for role-based)",
+        "roleId": "Role ID",
+        "roleIdPlaceholder": "Role UUID (leave empty for user-based)",
+        "action": "Action",
+        "selectAction": "Select action",
+        "expiresAt": "Expires At",
+        "isTemporary": "Temporary Permission",
+        "tags": "Tags",
+        "addTags": "Add tags"
+      },
+      "test": {
+        "title": "Test Permission",
+        "userId": "User ID",
+        "userIdPlaceholder": "User UUID to test",
+        "resourceType": "Resource Type",
+        "resourceId": "Resource ID",
+        "action": "Action",
+        "fieldName": "Field Name (optional)",
+        "fieldNamePlaceholder": "For field-level check",
+        "result": "Result",
+        "allowed": "ALLOWED",
+        "denied": "DENIED",
+        "reason": "Reason",
+        "requiresApproval": "Requires Approval",
+        "maskedFields": "Masked Fields",
+        "testFailed": "Permission test failed"
+      },
+      "details": {
+        "title": "Permission Details",
+        "id": "ID",
+        "resourceLevel": "Resource Level",
+        "resourceType": "Resource Type",
+        "resourceId": "Resource ID",
+        "fieldName": "Field Name",
+        "userId": "User ID",
+        "roleId": "Role ID",
+        "action": "Action",
+        "status": "Status",
+        "temporary": "Temporary",
+        "tags": "Tags",
+        "grantedBy": "Granted By",
+        "grantedAt": "Granted At",
+        "expiresAt": "Expires At",
+        "conditions": "Conditions"
+      }
+    },
+
+    "policyImport": {
+      "title": "Import New Policy Source",
+      "existingSources": "Existing Policy Sources",
+      "steps": {
+        "selectType": "Select Type",
+        "configure": "Configure",
+        "preview": "Preview",
+        "result": "Result"
+      },
+      "types": {
+        "ldap": "LDAP / Active Directory",
+        "ldapDesc": "Import users and groups from LDAP or Active Directory",
+        "oauth": "OAuth / OIDC",
+        "oauthDesc": "Import permissions from OAuth or OpenID Connect provider",
+        "custom": "Custom Policy",
+        "customDesc": "Import from JSON or YAML policy files"
+      },
+      "ldapConfig": {
+        "url": "LDAP URL",
+        "baseDn": "Base DN",
+        "bindDn": "Bind DN",
+        "bindPassword": "Bind Password",
+        "userFilter": "User Filter",
+        "groupFilter": "Group Filter",
+        "useSsl": "Use SSL",
+        "timeout": "Timeout (seconds)"
+      },
+      "oauthConfig": {
+        "providerUrl": "Provider URL",
+        "clientId": "Client ID",
+        "clientSecret": "Client Secret",
+        "scopes": "Scopes",
+        "usePkce": "Use PKCE"
+      },
+      "customConfig": {
+        "format": "Format",
+        "content": "Policy Content"
+      },
+      "reviewConfig": "Review Configuration",
+      "reviewConfigDesc": "Please review your configuration before importing.",
+      "configSummary": "Configuration Summary",
+      "importSuccess": "Import Successful",
+      "importWithIssues": "Import Completed with Issues",
+      "importStats": "Imported: {{imported}}, Updated: {{updated}}, Skipped: {{skipped}}",
+      "importAnother": "Import Another",
+      "conflicts": "Conflicts",
+      "errors": "Errors",
+      "sync": "Sync",
+      "syncSuccess": "Sync completed",
+      "syncFailed": "Sync failed",
+      "ldapImportFailed": "LDAP import failed",
+      "oauthImportFailed": "OAuth import failed",
+      "customImportFailed": "Custom policy import failed"
+    }
+  },
+
   "desensitization": {
     "name": "Rule Name",
     "description": "Description",
@@ -15,7 +706,7 @@
     "createRule": "Create Rule",
     "editRule": "Edit Rule",
     "deleteConfirm": "Delete Desensitization Rule",
-    "deleteWarning": "Are you sure you want to delete rule '{name}'? This action cannot be undone.",
+    "deleteWarning": "Are you sure you want to delete rule '{{name}}'? This action cannot be undone.",
     "namePlaceholder": "Enter rule name",
     "descriptionPlaceholder": "Enter rule description",
     "dataTypePlaceholder": "Select data type",
@@ -23,56 +714,21 @@
     "appliedTablesPlaceholder": "Select tables to apply this rule",
     "appliedFieldsPlaceholder": "Select fields to apply this rule"
   },
-  "permissions": {
-    "table": "Table",
-    "field": "Field",
-    "dataType": "Data Type",
-    "roles": "Roles",
-    "audit": "Audit",
-    "viewDetails": "View Details",
-    "details": "Permission Details",
-    "basicInfo": "Basic Information",
-    "rolePermissions": "Role Permissions",
-    "role": "Role",
-    "read": "Read",
-    "write": "Write",
-    "export": "Export",
-    "sensitivity": "Sensitivity Level"
-  },
-  "audit": {
-    "timestamp": "Timestamp",
-    "user": "User",
-    "action": "Action",
-    "resource": "Resource",
-    "riskLevel": "Risk Level",
-    "ipAddress": "IP Address"
-  },
-  "compliance": {
-    "gdpr": "GDPR Compliance Report",
-    "ccpa": "CCPA Compliance Report",
-    "pipl": "PIPL Compliance Report",
-    "custom": "Custom Compliance Report",
-    "period": "Report Period",
-    "totalRecords": "Total Records",
-    "sensitiveRecords": "Sensitive Records",
-    "accessCount": "Access Count",
-    "violations": "Violations",
-    "score": "Compliance Score",
-    "occurrences": "occurrences",
-    "recommendations": "Recommendations"
-  },
+
   "stats": {
     "totalRules": "Total Rules",
     "activeRules": "Active Rules",
     "protectedFields": "Protected Fields",
     "auditLogs": "Audit Logs"
   },
+
   "tabs": {
     "rules": "Desensitization Rules",
     "permissions": "Field Permissions",
     "audit": "Audit Logs",
     "compliance": "Compliance Reports"
   },
+
   "dataTypes": {
     "email": "Email",
     "phone": "Phone Number",
@@ -82,6 +738,7 @@
     "address": "Address",
     "custom": "Custom"
   },
+
   "methods": {
     "mask": "Mask",
     "hash": "Hash",
@@ -89,21 +746,35 @@
     "replace": "Replace",
     "remove": "Remove"
   },
+
   "sensitivity": {
     "public": "Public",
     "internal": "Internal",
     "confidential": "Confidential",
-    "secret": "Secret"
+    "topSecret": "Top Secret"
   },
+
   "actions": {
     "read": "Read",
     "write": "Write",
     "export": "Export",
     "delete": "Delete"
   },
+
   "risk": {
     "low": "Low",
     "medium": "Medium",
     "high": "High"
+  },
+
+  "common": {
+    "totalLogs": "Total {{total}} logs",
+    "totalRoles": "Total {{total}} roles",
+    "totalPermissions": "Total {{total}} permissions",
+    "totalSessions": "Total {{total}} sessions",
+    "totalProviders": "Total {{total}} providers",
+    "totalUsers": "Total {{total}} users",
+    "totalReports": "Total {{total}} reports",
+    "range": "{{start}}-{{end}} of {{total}} items"
   }
 }

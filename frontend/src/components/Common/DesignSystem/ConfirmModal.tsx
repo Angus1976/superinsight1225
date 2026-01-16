@@ -6,6 +6,7 @@
  */
 
 import { memo, ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal, Typography, Space, Button } from 'antd';
 import {
   ExclamationCircleOutlined,
@@ -79,8 +80,8 @@ export const ConfirmModal = memo<ConfirmModalProps>(({
   type = 'confirm',
   title,
   content,
-  confirmText = '确认',
-  cancelText = '取消',
+  confirmText,
+  cancelText,
   confirmLoading = false,
   onConfirm,
   onCancel,
@@ -89,8 +90,11 @@ export const ConfirmModal = memo<ConfirmModalProps>(({
   centered = true,
   closable = true,
 }) => {
+  const { t } = useTranslation('common');
   const config = modalConfig[type];
   const displayIcon = icon || config.icon;
+  const displayConfirmText = confirmText || t('confirmModal.confirm');
+  const displayCancelText = cancelText || t('confirmModal.cancel');
   
   return (
     <Modal
@@ -133,7 +137,7 @@ export const ConfirmModal = memo<ConfirmModalProps>(({
               onClick={onCancel}
               disabled={confirmLoading}
             >
-              {cancelText}
+              {displayCancelText}
             </Button>
             <Button
               type={config.confirmType}
@@ -141,7 +145,7 @@ export const ConfirmModal = memo<ConfirmModalProps>(({
               loading={confirmLoading}
               onClick={onConfirm}
             >
-              {confirmText}
+              {displayConfirmText}
             </Button>
           </Space>
         </div>
@@ -157,8 +161,8 @@ export const showConfirm = (props: Omit<ConfirmModalProps, 'open'>) => {
   Modal.confirm({
     title: props.title,
     content: props.content,
-    okText: props.confirmText || '确认',
-    cancelText: props.cancelText || '取消',
+    okText: props.confirmText,
+    cancelText: props.cancelText,
     onOk: props.onConfirm,
     onCancel: props.onCancel,
     centered: props.centered !== false,
@@ -172,8 +176,8 @@ export const showDangerConfirm = (props: Omit<ConfirmModalProps, 'open' | 'type'
   Modal.confirm({
     title: props.title,
     content: props.content,
-    okText: props.confirmText || '删除',
-    cancelText: props.cancelText || '取消',
+    okText: props.confirmText,
+    cancelText: props.cancelText,
     okButtonProps: { danger: true },
     onOk: props.onConfirm,
     onCancel: props.onCancel,

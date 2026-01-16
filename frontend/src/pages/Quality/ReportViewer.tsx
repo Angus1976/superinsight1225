@@ -33,6 +33,7 @@ import {
   ScheduleOutlined,
   ReloadOutlined,
 } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import type { ColumnsType } from 'antd/es/table';
 import {
   qualityApi,
@@ -50,6 +51,7 @@ interface ReportViewerProps {
 }
 
 const ReportViewer: React.FC<ReportViewerProps> = ({ projectId }) => {
+  const { t } = useTranslation(['quality', 'common']);
   const [loading, setLoading] = useState(false);
   const [projectReport, setProjectReport] = useState<ProjectQualityReport | null>(null);
   const [rankingReport, setRankingReport] = useState<AnnotatorRankingReport | null>(null);
@@ -65,9 +67,9 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ projectId }) => {
         end_date: dates[1],
       });
       setProjectReport(report);
-      message.success('报告生成成功');
+      message.success(t('messages.reportGenerated'));
     } catch {
-      message.error('生成报告失败');
+      message.error(t('messages.reportGenerateFailed'));
     } finally {
       setLoading(false);
     }
@@ -81,9 +83,9 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ projectId }) => {
         period,
       });
       setRankingReport(report);
-      message.success('排名报告生成成功');
+      message.success(t('messages.rankingGenerated'));
     } catch {
-      message.error('生成报告失败');
+      message.error(t('messages.reportGenerateFailed'));
     } finally {
       setLoading(false);
     }
@@ -91,7 +93,7 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ projectId }) => {
 
   const handleExport = async (format: 'pdf' | 'excel' | 'html' | 'json') => {
     if (!projectReport && !rankingReport) {
-      message.warning('请先生成报告');
+      message.warning(t('messages.generateReportFirst'));
       return;
     }
     try {
@@ -106,9 +108,9 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ projectId }) => {
       a.download = `quality_report.${format}`;
       a.click();
       window.URL.revokeObjectURL(url);
-      message.success('导出成功');
+      message.success(t('messages.exportSuccess'));
     } catch {
-      message.error('导出失败');
+      message.error(t('messages.exportFailed'));
     }
   };
 
@@ -121,17 +123,17 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ projectId }) => {
         schedule: values.schedule,
         recipients: values.recipients.split(',').map((e: string) => e.trim()),
       });
-      message.success('定时报告已创建');
+      message.success(t('messages.scheduleCreated'));
       setScheduleModalVisible(false);
       form.resetFields();
     } catch {
-      message.error('创建失败');
+      message.error(t('messages.createFailed'));
     }
   };
 
   const rankingColumns: ColumnsType<AnnotatorRanking> = [
     {
-      title: '排名',
+      title: t('reports.annotatorRanking.columns.rank'),
       dataIndex: 'rank',
       key: 'rank',
       width: 70,
@@ -142,22 +144,22 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ projectId }) => {
         </span>
       ),
     },
-    { title: '标注员', dataIndex: 'annotator_name', key: 'annotator_name' },
-    { title: '标注数', dataIndex: 'total_annotations', key: 'total_annotations' },
+    { title: t('reports.annotatorRanking.columns.annotator'), dataIndex: 'annotator_name', key: 'annotator_name' },
+    { title: t('reports.annotatorRanking.columns.annotations'), dataIndex: 'total_annotations', key: 'total_annotations' },
     {
-      title: '平均分',
+      title: t('reports.annotatorRanking.columns.avgScore'),
       dataIndex: 'average_score',
       key: 'average_score',
       render: (score: number) => <Progress percent={score * 100} size="small" format={(p) => `${p?.toFixed(0)}%`} />,
     },
     {
-      title: '准确率',
+      title: t('reports.annotatorRanking.columns.accuracy'),
       dataIndex: 'accuracy',
       key: 'accuracy',
       render: (v: number) => `${(v * 100).toFixed(1)}%`,
     },
     {
-      title: '通过率',
+      title: t('reports.annotatorRanking.columns.passRate'),
       dataIndex: 'pass_rate',
       key: 'pass_rate',
       render: (v: number) => <Tag color={v >= 0.9 ? 'green' : v >= 0.7 ? 'gold' : 'red'}>{(v * 100).toFixed(1)}%</Tag>,
@@ -172,12 +174,12 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ projectId }) => {
             key: 'project',
             label: (
               <span>
-                <FileTextOutlined /> 项目报告
+                <FileTextOutlined /> {t('reports.projectReport.title')}
               </span>
             ),
             children: (
               <Card
-                title="项目质量报告"
+                title={t('reports.projectReport.title')}
                 extra={
                   <Space>
                     <RangePicker
@@ -188,13 +190,13 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ projectId }) => {
                       }}
                     />
                     <Button icon={<ScheduleOutlined />} onClick={() => setScheduleModalVisible(true)}>
-                      定时报告
+                      {t('reports.projectReport.scheduleReport')}
                     </Button>
-                    <Select defaultValue="pdf" style={{ width: 100 }} onChange={(v) => handleExport(v)}>
-                      <Option value="pdf">导出 PDF</Option>
-                      <Option value="excel">导出 Excel</Option>
-                      <Option value="html">导出 HTML</Option>
-                      <Option value="json">导出 JSON</Option>
+                    <Select defaultValue="pdf" style={{ width: 120 }} onChange={(v) => handleExport(v)}>
+                      <Option value="pdf">{t('reports.projectReport.exportPdf')}</Option>
+                      <Option value="excel">{t('reports.projectReport.exportExcel')}</Option>
+                      <Option value="html">{t('reports.projectReport.exportHtml')}</Option>
+                      <Option value="json">{t('reports.projectReport.exportJson')}</Option>
                     </Select>
                   </Space>
                 }
@@ -204,11 +206,11 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ projectId }) => {
                     <>
                       <Row gutter={16} style={{ marginBottom: 24 }}>
                         <Col span={6}>
-                          <Statistic title="总标注数" value={projectReport.total_annotations} />
+                          <Statistic title={t('reports.projectReport.totalAnnotations')} value={projectReport.total_annotations} />
                         </Col>
                         <Col span={6}>
                           <Statistic
-                            title="平均准确率"
+                            title={t('reports.projectReport.avgAccuracy')}
                             value={(projectReport.average_scores.accuracy || 0) * 100}
                             precision={1}
                             suffix="%"
@@ -216,7 +218,7 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ projectId }) => {
                         </Col>
                         <Col span={6}>
                           <Statistic
-                            title="平均完整性"
+                            title={t('reports.projectReport.avgCompleteness')}
                             value={(projectReport.average_scores.completeness || 0) * 100}
                             precision={1}
                             suffix="%"
@@ -224,14 +226,14 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ projectId }) => {
                         </Col>
                         <Col span={6}>
                           <Statistic
-                            title="平均时效性"
+                            title={t('reports.projectReport.avgTimeliness')}
                             value={(projectReport.average_scores.timeliness || 0) * 100}
                             precision={1}
                             suffix="%"
                           />
                         </Col>
                       </Row>
-                      <Card title="问题分布" size="small">
+                      <Card title={t('reports.projectReport.issueDistribution')} size="small">
                         <Row gutter={16}>
                           {Object.entries(projectReport.issue_distribution).map(([type, count]) => (
                             <Col span={6} key={type}>
@@ -240,14 +242,14 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ projectId }) => {
                           ))}
                         </Row>
                       </Card>
-                      <Card title="质量趋势" size="small" style={{ marginTop: 16 }}>
+                      <Card title={t('reports.projectReport.qualityTrend')} size="small" style={{ marginTop: 16 }}>
                         <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fafafa' }}>
-                          <span style={{ color: '#999' }}>趋势图表 (需要集成图表库)</span>
+                          <span style={{ color: '#999' }}>{t('reports.projectReport.trendChart')}</span>
                         </div>
                       </Card>
                     </>
                   ) : (
-                    <Empty description="选择日期范围生成报告" />
+                    <Empty description={t('reports.projectReport.selectDateRange')} />
                   )}
                 </Spin>
               </Card>
@@ -257,22 +259,22 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ projectId }) => {
             key: 'ranking',
             label: (
               <span>
-                <TrophyOutlined /> 标注员排名
+                <TrophyOutlined /> {t('reports.annotatorRanking.title')}
               </span>
             ),
             children: (
               <Card
-                title="标注员质量排名"
+                title={t('reports.annotatorRanking.title')}
                 extra={
                   <Space>
                     <Select defaultValue="month" style={{ width: 120 }} onChange={handleGenerateRankingReport}>
-                      <Option value="week">本周</Option>
-                      <Option value="month">本月</Option>
-                      <Option value="quarter">本季度</Option>
-                      <Option value="year">本年</Option>
+                      <Option value="week">{t('reports.annotatorRanking.period.week')}</Option>
+                      <Option value="month">{t('reports.annotatorRanking.period.month')}</Option>
+                      <Option value="quarter">{t('reports.annotatorRanking.period.quarter')}</Option>
+                      <Option value="year">{t('reports.annotatorRanking.period.year')}</Option>
                     </Select>
                     <Button icon={<ReloadOutlined />} onClick={() => handleGenerateRankingReport('month')}>
-                      刷新
+                      {t('reports.actions.refresh')}
                     </Button>
                   </Space>
                 }
@@ -281,7 +283,7 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ projectId }) => {
                   {rankingReport ? (
                     <Table dataSource={rankingReport.rankings} columns={rankingColumns} rowKey="annotator_id" pagination={false} />
                   ) : (
-                    <Empty description="选择时间范围生成排名" />
+                    <Empty description={t('reports.annotatorRanking.selectPeriod')} />
                   )}
                 </Spin>
               </Card>
@@ -291,13 +293,13 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ projectId }) => {
             key: 'trend',
             label: (
               <span>
-                <LineChartOutlined /> 趋势分析
+                <LineChartOutlined /> {t('reports.trendAnalysis.title')}
               </span>
             ),
             children: (
-              <Card title="质量趋势分析">
+              <Card title={t('reports.trendAnalysis.title')}>
                 <div style={{ height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fafafa' }}>
-                  <span style={{ color: '#999' }}>趋势分析图表 (需要集成图表库)</span>
+                  <span style={{ color: '#999' }}>{t('reports.trendAnalysis.chart')}</span>
                 </div>
               </Card>
             ),
@@ -307,28 +309,28 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ projectId }) => {
 
       {/* 定时报告弹窗 */}
       <Modal
-        title="创建定时报告"
+        title={t('reports.scheduleModal.title')}
         open={scheduleModalVisible}
         onOk={handleScheduleReport}
         onCancel={() => setScheduleModalVisible(false)}
       >
         <Form form={form} layout="vertical">
-          <Form.Item name="report_type" label="报告类型" rules={[{ required: true }]}>
-            <Select placeholder="选择报告类型">
-              <Option value="project">项目质量报告</Option>
-              <Option value="ranking">标注员排名报告</Option>
-              <Option value="trend">趋势分析报告</Option>
+          <Form.Item name="report_type" label={t('reports.scheduleModal.reportType')} rules={[{ required: true }]}>
+            <Select placeholder={t('reports.scheduleModal.selectReportType')}>
+              <Option value="project">{t('reports.scheduleModal.projectReport')}</Option>
+              <Option value="ranking">{t('reports.scheduleModal.rankingReport')}</Option>
+              <Option value="trend">{t('reports.scheduleModal.trendReport')}</Option>
             </Select>
           </Form.Item>
-          <Form.Item name="schedule" label="执行周期" rules={[{ required: true }]}>
-            <Select placeholder="选择执行周期">
-              <Option value="0 9 * * 1">每周一 9:00</Option>
-              <Option value="0 9 1 * *">每月1日 9:00</Option>
-              <Option value="0 9 * * *">每天 9:00</Option>
+          <Form.Item name="schedule" label={t('reports.scheduleModal.schedule')} rules={[{ required: true }]}>
+            <Select placeholder={t('reports.scheduleModal.selectSchedule')}>
+              <Option value="0 9 * * 1">{t('reports.scheduleModal.weeklyMonday')}</Option>
+              <Option value="0 9 1 * *">{t('reports.scheduleModal.monthlyFirst')}</Option>
+              <Option value="0 9 * * *">{t('reports.scheduleModal.daily')}</Option>
             </Select>
           </Form.Item>
-          <Form.Item name="recipients" label="接收人邮箱" rules={[{ required: true }]}>
-            <Input placeholder="多个邮箱用逗号分隔" />
+          <Form.Item name="recipients" label={t('reports.scheduleModal.recipients')} rules={[{ required: true }]}>
+            <Input placeholder={t('reports.scheduleModal.recipientsPlaceholder')} />
           </Form.Item>
         </Form>
       </Modal>

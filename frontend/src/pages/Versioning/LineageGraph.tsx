@@ -52,7 +52,7 @@ const LineageGraph: React.FC<LineageGraphProps> = ({
   tenantId,
   onNodeClick,
 }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation(['lineage', 'common']);
   const containerRef = useRef<HTMLDivElement>(null);
   const [lineageData, setLineageData] = useState<LineageGraphType | null>(null);
   const [loading, setLoading] = useState(false);
@@ -81,7 +81,7 @@ const LineageGraph: React.FC<LineageGraphProps> = ({
       }
       setLineageData(result.lineage);
     } catch (error) {
-      message.error(t('lineage.loadError', 'Failed to load lineage data'));
+      message.error(t('loadError', 'Failed to load lineage data'));
     } finally {
       setLoading(false);
     }
@@ -104,7 +104,7 @@ const LineageGraph: React.FC<LineageGraphProps> = ({
     link.download = `lineage_${entityType}_${entityId}.json`;
     link.click();
     URL.revokeObjectURL(url);
-    message.success(t('lineage.exported', 'Lineage data exported'));
+    message.success(t('exported', 'Lineage data exported'));
   };
 
   const getNodeColor = (node: LineageNode) => {
@@ -118,14 +118,14 @@ const LineageGraph: React.FC<LineageGraphProps> = ({
 
   const renderSimpleGraph = () => {
     if (!lineageData || lineageData.nodes.length === 0) {
-      return <Empty description={t('lineage.noData', 'No lineage data')} />;
+      return <Empty description={t('noData', 'No lineage data')} />;
     }
 
     // Simple list-based visualization (can be replaced with G6 or other graph library)
     return (
       <div style={{ padding: 16 }}>
         <Title level={5}>
-          {t('lineage.nodes', 'Nodes')} ({lineageData.node_count})
+          {t('nodes', 'Nodes')} ({lineageData.node_count})
         </Title>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
           {lineageData.nodes.map((node, index) => {
@@ -150,7 +150,7 @@ const LineageGraph: React.FC<LineageGraphProps> = ({
         </div>
 
         <Title level={5}>
-          {t('lineage.edges', 'Relationships')} ({lineageData.edge_count})
+          {t('edges', 'Relationships')} ({lineageData.edge_count})
         </Title>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {lineageData.edges.map((edge, index) => (
@@ -197,7 +197,7 @@ const LineageGraph: React.FC<LineageGraphProps> = ({
         title={
           <Space>
             <ApartmentOutlined />
-            <span>{t('lineage.graph', 'Lineage Graph')}</span>
+            <span>{t('graph', 'Lineage Graph')}</span>
           </Space>
         }
         extra={
@@ -210,19 +210,19 @@ const LineageGraph: React.FC<LineageGraphProps> = ({
               <Option value="full">
                 <Space>
                   <ApartmentOutlined />
-                  {t('lineage.full', 'Full')}
+                  {t('full', 'Full')}
                 </Space>
               </Option>
               <Option value="upstream">
                 <Space>
                   <ArrowUpOutlined />
-                  {t('lineage.upstream', 'Upstream')}
+                  {t('upstream', 'Upstream')}
                 </Space>
               </Option>
               <Option value="downstream">
                 <Space>
                   <ArrowDownOutlined />
-                  {t('lineage.downstream', 'Downstream')}
+                  {t('downstream', 'Downstream')}
                 </Space>
               </Option>
             </Select>
@@ -232,11 +232,11 @@ const LineageGraph: React.FC<LineageGraphProps> = ({
               max={10}
               value={depth}
               onChange={(v) => setDepth(v || 3)}
-              addonBefore={t('lineage.depth', 'Depth')}
+              addonBefore={t('depth', 'Depth')}
               style={{ width: 120 }}
             />
             
-            <Tooltip title={t('lineage.export', 'Export')}>
+            <Tooltip title={t('export', 'Export')}>
               <Button icon={<DownloadOutlined />} onClick={handleExport} />
             </Tooltip>
           </Space>
@@ -251,24 +251,24 @@ const LineageGraph: React.FC<LineageGraphProps> = ({
       </Card>
 
       <Drawer
-        title={t('lineage.nodeDetails', 'Node Details')}
+        title={t('nodeDetails', 'Node Details')}
         open={drawerVisible}
         onClose={() => setDrawerVisible(false)}
         width={400}
       >
         {selectedNode && (
           <Descriptions column={1} bordered size="small">
-            <Descriptions.Item label={t('lineage.entityType', 'Entity Type')}>
+            <Descriptions.Item label={t('entityType', 'Entity Type')}>
               <Tag>{selectedNode.entity_type}</Tag>
             </Descriptions.Item>
-            <Descriptions.Item label={t('lineage.entityId', 'Entity ID')}>
+            <Descriptions.Item label={t('entityId', 'Entity ID')}>
               <Text copyable>{selectedNode.entity_id}</Text>
             </Descriptions.Item>
-            <Descriptions.Item label={t('lineage.name', 'Name')}>
+            <Descriptions.Item label={t('name', 'Name')}>
               {selectedNode.name || '-'}
             </Descriptions.Item>
             {selectedNode.metadata && Object.keys(selectedNode.metadata).length > 0 && (
-              <Descriptions.Item label={t('lineage.metadata', 'Metadata')}>
+              <Descriptions.Item label={t('metadata', 'Metadata')}>
                 <pre style={{ margin: 0, fontSize: 12 }}>
                   {JSON.stringify(selectedNode.metadata, null, 2)}
                 </pre>

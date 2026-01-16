@@ -25,8 +25,11 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { adminApi, ServiceStatus } from '@/services/multiTenantApi';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const AdminConsole: React.FC = () => {
+  const { t } = useTranslation(['admin', 'common']);
+  
   const { data: dashboard, isLoading: dashboardLoading, refetch: refetchDashboard } = useQuery({
     queryKey: ['admin-dashboard'],
     queryFn: () => adminApi.getDashboard().then(res => res.data),
@@ -71,7 +74,7 @@ const AdminConsole: React.FC = () => {
 
   const serviceColumns = [
     {
-      title: '服务名称',
+      title: t('console.columns.serviceName'),
       dataIndex: 'name',
       key: 'name',
       render: (name: string) => (
@@ -82,29 +85,29 @@ const AdminConsole: React.FC = () => {
       ),
     },
     {
-      title: '状态',
+      title: t('console.columns.status'),
       dataIndex: 'status',
       key: 'status',
       render: (status: string) => (
         <Tag icon={getHealthIcon(status)} color={status === 'running' ? 'success' : status === 'degraded' ? 'warning' : 'error'}>
-          {status === 'running' ? '运行中' : status === 'degraded' ? '降级' : '停止'}
+          {status === 'running' ? t('console.status.running') : status === 'degraded' ? t('console.status.degraded') : t('console.status.stopped')}
         </Tag>
       ),
     },
     {
-      title: '版本',
+      title: t('console.columns.version'),
       dataIndex: 'version',
       key: 'version',
       render: (version: string) => version || '-',
     },
     {
-      title: '运行时间',
+      title: t('console.columns.uptime'),
       dataIndex: 'uptime',
       key: 'uptime',
       render: (uptime: string) => uptime || '-',
     },
     {
-      title: '最后检查',
+      title: t('console.columns.lastCheck'),
       dataIndex: 'last_check',
       key: 'last_check',
       render: (date: string) => date ? new Date(date).toLocaleString() : '-',
@@ -115,7 +118,7 @@ const AdminConsole: React.FC = () => {
     return (
       <div style={{ textAlign: 'center', padding: 50 }}>
         <Spin size="large" />
-        <p>加载中...</p>
+        <p>{t('common:status.loading')}</p>
       </div>
     );
   }
@@ -127,10 +130,10 @@ const AdminConsole: React.FC = () => {
         <Row justify="space-between" align="middle">
           <Col>
             <h2 style={{ margin: 0 }}>
-              <SettingOutlined /> 管理控制台
+              <SettingOutlined /> {t('console.title')}
             </h2>
             <p style={{ margin: 0, color: '#666' }}>
-              系统概览和监控
+              {t('console.subtitle')}
             </p>
           </Col>
           <Col>
@@ -142,11 +145,11 @@ const AdminConsole: React.FC = () => {
                   refetchServices();
                 }}
               >
-                刷新
+                {t('common:refresh')}
               </Button>
               <Link to="/admin/system">
                 <Button type="primary" icon={<SettingOutlined />}>
-                  系统配置
+                  {t('console.systemConfig')}
                 </Button>
               </Link>
             </Space>
@@ -159,8 +162,8 @@ const AdminConsole: React.FC = () => {
         <Col span={6}>
           <Card>
             <Statistic
-              title="系统状态"
-              value={dashboard?.system_health?.overall === 'healthy' ? '健康' : '异常'}
+              title={t('console.systemStatus')}
+              value={dashboard?.system_health?.overall === 'healthy' ? t('console.healthy') : t('console.unhealthy')}
               valueStyle={{ color: getHealthColor(dashboard?.system_health?.overall || '') }}
               prefix={getHealthIcon(dashboard?.system_health?.overall || '')}
             />
@@ -169,8 +172,8 @@ const AdminConsole: React.FC = () => {
         <Col span={6}>
           <Card>
             <Statistic
-              title="数据库"
-              value={dashboard?.system_health?.database === 'healthy' ? '正常' : '异常'}
+              title={t('console.database')}
+              value={dashboard?.system_health?.database === 'healthy' ? t('console.normal') : t('console.abnormal')}
               valueStyle={{ color: getHealthColor(dashboard?.system_health?.database || '') }}
               prefix={<DatabaseOutlined />}
             />
@@ -179,8 +182,8 @@ const AdminConsole: React.FC = () => {
         <Col span={6}>
           <Card>
             <Statistic
-              title="缓存"
-              value={dashboard?.system_health?.cache === 'healthy' ? '正常' : '异常'}
+              title={t('console.cache')}
+              value={dashboard?.system_health?.cache === 'healthy' ? t('console.normal') : t('console.abnormal')}
               valueStyle={{ color: getHealthColor(dashboard?.system_health?.cache || '') }}
               prefix={<CloudServerOutlined />}
             />
@@ -189,8 +192,8 @@ const AdminConsole: React.FC = () => {
         <Col span={6}>
           <Card>
             <Statistic
-              title="存储"
-              value={dashboard?.system_health?.storage === 'healthy' ? '正常' : '异常'}
+              title={t('console.storage')}
+              value={dashboard?.system_health?.storage === 'healthy' ? t('console.normal') : t('console.abnormal')}
               valueStyle={{ color: getHealthColor(dashboard?.system_health?.storage || '') }}
               prefix={<DatabaseOutlined />}
             />
@@ -199,32 +202,32 @@ const AdminConsole: React.FC = () => {
       </Row>
 
       {/* Tenant Statistics */}
-      <Card title="租户统计" style={{ marginBottom: 16 }}>
+      <Card title={t('console.tenantStats')} style={{ marginBottom: 16 }}>
         <Row gutter={16}>
           <Col span={6}>
             <Statistic
-              title="总租户数"
+              title={t('console.totalTenants')}
               value={dashboard?.tenant_stats?.total_tenants || 0}
               prefix={<TeamOutlined />}
             />
           </Col>
           <Col span={6}>
             <Statistic
-              title="活跃租户"
+              title={t('console.activeTenants')}
               value={dashboard?.tenant_stats?.active_tenants || 0}
               valueStyle={{ color: '#3f8600' }}
             />
           </Col>
           <Col span={6}>
             <Statistic
-              title="暂停租户"
+              title={t('console.suspendedTenants')}
               value={dashboard?.tenant_stats?.suspended_tenants || 0}
               valueStyle={{ color: '#faad14' }}
             />
           </Col>
           <Col span={6}>
             <Statistic
-              title="禁用租户"
+              title={t('console.disabledTenants')}
               value={dashboard?.tenant_stats?.disabled_tenants || 0}
               valueStyle={{ color: '#ff4d4f' }}
             />
@@ -235,31 +238,31 @@ const AdminConsole: React.FC = () => {
             percent={dashboard?.tenant_stats?.total_tenants ? 
               Math.round((dashboard.tenant_stats.active_tenants / dashboard.tenant_stats.total_tenants) * 100) : 0}
             status="active"
-            format={() => `${dashboard?.tenant_stats?.active_tenants || 0} 活跃`}
+            format={() => `${dashboard?.tenant_stats?.active_tenants || 0} ${t('console.active')}`}
           />
         </div>
       </Card>
 
       {/* Workspace Statistics */}
-      <Card title="工作空间统计" style={{ marginBottom: 16 }}>
+      <Card title={t('console.workspaceStats')} style={{ marginBottom: 16 }}>
         <Row gutter={16}>
           <Col span={8}>
             <Statistic
-              title="总工作空间"
+              title={t('console.totalWorkspaces')}
               value={dashboard?.workspace_stats?.total_workspaces || 0}
               prefix={<DatabaseOutlined />}
             />
           </Col>
           <Col span={8}>
             <Statistic
-              title="活跃工作空间"
+              title={t('console.activeWorkspaces')}
               value={dashboard?.workspace_stats?.active_workspaces || 0}
               valueStyle={{ color: '#3f8600' }}
             />
           </Col>
           <Col span={8}>
             <Statistic
-              title="已归档"
+              title={t('console.archivedWorkspaces')}
               value={dashboard?.workspace_stats?.archived_workspaces || 0}
               valueStyle={{ color: '#666' }}
             />
@@ -268,25 +271,25 @@ const AdminConsole: React.FC = () => {
       </Card>
 
       {/* User Statistics */}
-      <Card title="用户统计" style={{ marginBottom: 16 }}>
+      <Card title={t('console.userStats')} style={{ marginBottom: 16 }}>
         <Row gutter={16}>
           <Col span={8}>
             <Statistic
-              title="总用户数"
+              title={t('console.totalUsers')}
               value={dashboard?.user_stats?.total_users || 0}
               prefix={<UserOutlined />}
             />
           </Col>
           <Col span={8}>
             <Statistic
-              title="今日活跃"
+              title={t('console.activeToday')}
               value={dashboard?.user_stats?.active_users_today || 0}
               valueStyle={{ color: '#3f8600' }}
             />
           </Col>
           <Col span={8}>
             <Statistic
-              title="本周活跃"
+              title={t('console.activeThisWeek')}
               value={dashboard?.user_stats?.active_users_week || 0}
               valueStyle={{ color: '#1890ff' }}
             />
@@ -296,7 +299,7 @@ const AdminConsole: React.FC = () => {
 
       {/* Service Status */}
       <Card 
-        title="服务状态" 
+        title={t('console.serviceStatus')} 
         extra={
           <Button 
             size="small" 
@@ -304,7 +307,7 @@ const AdminConsole: React.FC = () => {
             onClick={() => refetchServices()}
             loading={servicesLoading}
           >
-            刷新
+            {t('common:refresh')}
           </Button>
         }
       >
@@ -321,7 +324,7 @@ const AdminConsole: React.FC = () => {
       {/* Last Updated */}
       {dashboard?.last_updated && (
         <div style={{ textAlign: 'right', marginTop: 16, color: '#666' }}>
-          最后更新: {new Date(dashboard.last_updated).toLocaleString()}
+          {t('console.lastUpdated')}: {new Date(dashboard.last_updated).toLocaleString()}
         </div>
       )}
     </div>

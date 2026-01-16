@@ -52,6 +52,7 @@ import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import quarterOfYear from 'dayjs/plugin/quarterOfYear';
 import type { Dayjs } from 'dayjs';
+import { useTranslation } from 'react-i18next';
 
 dayjs.extend(quarterOfYear);
 import {
@@ -80,16 +81,6 @@ interface BillingReportsProps {
 
 const COLORS = ['#1890ff', '#52c41a', '#faad14', '#f5222d', '#722ed1', '#13c2c2', '#eb2f96', '#fa8c16'];
 
-const REPORT_TYPE_OPTIONS: { value: ReportType; label: string }[] = [
-  { value: 'summary', label: '概览报表' },
-  { value: 'detailed', label: '详细报表' },
-  { value: 'user_breakdown', label: '用户分析' },
-  { value: 'project_breakdown', label: '项目分析' },
-  { value: 'department_breakdown', label: '部门分析' },
-  { value: 'work_hours', label: '工时报表' },
-  { value: 'trend_analysis', label: '趋势分析' },
-];
-
 interface TrendDataItem {
   date: string;
   cost: number;
@@ -104,6 +95,17 @@ interface TrendSummary {
 }
 
 export function BillingReports({ tenantId }: BillingReportsProps) {
+  const { t } = useTranslation(['billing', 'common']);
+  
+  const REPORT_TYPE_OPTIONS: { value: ReportType; label: string }[] = [
+    { value: 'summary', label: t('reports.summary') },
+    { value: 'detailed', label: t('reports.detailed') },
+    { value: 'user_breakdown', label: t('reports.userBreakdown') },
+    { value: 'project_breakdown', label: t('reports.projectBreakdown') },
+    { value: 'department_breakdown', label: t('reports.departmentBreakdown') },
+    { value: 'work_hours', label: t('reports.workHours') },
+    { value: 'trend_analysis', label: t('reports.trendAnalysis') },
+  ];
   const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([
     dayjs().startOf('month'),
     dayjs().endOf('month'),
@@ -143,15 +145,15 @@ export function BillingReports({ tenantId }: BillingReportsProps) {
         report_type: reportType,
       });
       setGeneratedReport(result);
-      message.success('报表生成成功');
+      message.success(t('reports.generateSuccess'));
     } catch {
-      message.error('报表生成失败');
+      message.error(t('reports.generateFailed'));
     }
   };
 
   const handleExportReport = () => {
     if (!generatedReport) {
-      message.warning('请先生成报表');
+      message.warning(t('reports.pleaseGenerateFirst'));
       return;
     }
     const dataStr = JSON.stringify(generatedReport, null, 2);
@@ -164,7 +166,7 @@ export function BillingReports({ tenantId }: BillingReportsProps) {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    message.success('报表导出成功');
+    message.success(t('reports.exportSuccess'));
   };
 
   // Transform trends data for chart
@@ -203,7 +205,7 @@ export function BillingReports({ tenantId }: BillingReportsProps) {
 
   const projectColumns: ColumnsType<ProjectCostBreakdown> = [
     {
-      title: '项目名称',
+      title: t('reports.columns.projectName'),
       dataIndex: 'project_name',
       key: 'project_name',
       render: (name: string) => (
@@ -214,32 +216,32 @@ export function BillingReports({ tenantId }: BillingReportsProps) {
       ),
     },
     {
-      title: '总成本',
+      title: t('reports.columns.totalCost'),
       dataIndex: 'total_cost',
       key: 'total_cost',
       sorter: (a, b) => a.total_cost - b.total_cost,
       render: (cost: number) => <Text>¥{cost.toLocaleString()}</Text>,
     },
     {
-      title: '标注数量',
+      title: t('reports.columns.annotations'),
       dataIndex: 'total_annotations',
       key: 'total_annotations',
       sorter: (a, b) => a.total_annotations - b.total_annotations,
     },
     {
-      title: '工时 (小时)',
+      title: t('reports.columns.timeSpent'),
       dataIndex: 'total_time_spent',
       key: 'total_time_spent',
       render: (time: number) => time.toFixed(1),
     },
     {
-      title: '单条成本',
+      title: t('reports.columns.avgCostPerAnnotation'),
       dataIndex: 'avg_cost_per_annotation',
       key: 'avg_cost_per_annotation',
       render: (cost: number) => <Text type="secondary">¥{cost.toFixed(2)}</Text>,
     },
     {
-      title: '占比',
+      title: t('reports.columns.percentage'),
       dataIndex: 'percentage_of_total',
       key: 'percentage_of_total',
       render: (pct: number) => (
@@ -250,7 +252,7 @@ export function BillingReports({ tenantId }: BillingReportsProps) {
 
   const departmentColumns: ColumnsType<DepartmentCostAllocation> = [
     {
-      title: '部门名称',
+      title: t('reports.columns.departmentName'),
       dataIndex: 'department_name',
       key: 'department_name',
       render: (name: string) => (
@@ -261,19 +263,19 @@ export function BillingReports({ tenantId }: BillingReportsProps) {
       ),
     },
     {
-      title: '总成本',
+      title: t('reports.columns.totalCost'),
       dataIndex: 'total_cost',
       key: 'total_cost',
       sorter: (a, b) => a.total_cost - b.total_cost,
       render: (cost: number) => <Text>¥{cost.toLocaleString()}</Text>,
     },
     {
-      title: '人数',
+      title: t('reports.columns.userCount'),
       dataIndex: 'user_count',
       key: 'user_count',
     },
     {
-      title: '关联项目',
+      title: t('reports.columns.projects'),
       dataIndex: 'projects',
       key: 'projects',
       render: (projects: string[]) => (
@@ -286,7 +288,7 @@ export function BillingReports({ tenantId }: BillingReportsProps) {
       ),
     },
     {
-      title: '占比',
+      title: t('reports.columns.percentage'),
       dataIndex: 'percentage_of_total',
       key: 'percentage_of_total',
       render: (pct: number) => (
@@ -297,7 +299,7 @@ export function BillingReports({ tenantId }: BillingReportsProps) {
 
   const workHoursColumns: ColumnsType<WorkHoursStatistics> = [
     {
-      title: '用户',
+      title: t('reports.columns.user'),
       dataIndex: 'user_name',
       key: 'user_name',
       render: (name: string, record) => (
@@ -305,7 +307,7 @@ export function BillingReports({ tenantId }: BillingReportsProps) {
       ),
     },
     {
-      title: '总工时',
+      title: t('reports.columns.totalHours'),
       dataIndex: 'total_hours',
       key: 'total_hours',
       sorter: (a, b) => a.total_hours - b.total_hours,
@@ -317,32 +319,32 @@ export function BillingReports({ tenantId }: BillingReportsProps) {
       ),
     },
     {
-      title: '计费工时',
+      title: t('reports.columns.billableHours'),
       dataIndex: 'billable_hours',
       key: 'billable_hours',
       render: (hours: number) => `${hours.toFixed(1)}h`,
     },
     {
-      title: '标注数',
+      title: t('reports.columns.annotations'),
       dataIndex: 'total_annotations',
       key: 'total_annotations',
       sorter: (a, b) => a.total_annotations - b.total_annotations,
     },
     {
-      title: '时效',
+      title: t('reports.columns.rate'),
       dataIndex: 'annotations_per_hour',
       key: 'annotations_per_hour',
       render: (rate: number) => `${rate.toFixed(1)} / h`,
     },
     {
-      title: '成本',
+      title: t('reports.columns.cost'),
       dataIndex: 'total_cost',
       key: 'total_cost',
       sorter: (a, b) => a.total_cost - b.total_cost,
       render: (cost: number) => <Text>¥{cost.toLocaleString()}</Text>,
     },
     {
-      title: '效率评分',
+      title: t('reports.columns.efficiencyScore'),
       dataIndex: 'efficiency_score',
       key: 'efficiency_score',
       render: (score: number) => (
@@ -364,7 +366,7 @@ export function BillingReports({ tenantId }: BillingReportsProps) {
           <Col flex="auto">
             <Space size="large">
               <Space>
-                <Text>日期范围:</Text>
+                <Text>{t('reports.dateRange')}:</Text>
                 <RangePicker
                   value={dateRange}
                   onChange={(dates) => {
@@ -373,15 +375,15 @@ export function BillingReports({ tenantId }: BillingReportsProps) {
                     }
                   }}
                   presets={[
-                    { label: '本周', value: [dayjs().startOf('week'), dayjs().endOf('week')] },
-                    { label: '本月', value: [dayjs().startOf('month'), dayjs().endOf('month')] },
-                    { label: '上月', value: [dayjs().subtract(1, 'month').startOf('month'), dayjs().subtract(1, 'month').endOf('month')] },
-                    { label: '本季度', value: [dayjs().startOf('quarter'), dayjs().endOf('quarter')] },
+                    { label: t('workHours.report.datePresets.thisWeek'), value: [dayjs().startOf('week'), dayjs().endOf('week')] },
+                    { label: t('workHours.report.datePresets.thisMonth'), value: [dayjs().startOf('month'), dayjs().endOf('month')] },
+                    { label: t('workHours.report.datePresets.lastMonth'), value: [dayjs().subtract(1, 'month').startOf('month'), dayjs().subtract(1, 'month').endOf('month')] },
+                    { label: t('workHours.report.datePresets.thisQuarter'), value: [dayjs().startOf('quarter'), dayjs().endOf('quarter')] },
                   ]}
                 />
               </Space>
               <Space>
-                <Text>报表类型:</Text>
+                <Text>{t('reports.type')}:</Text>
                 <Select
                   value={reportType}
                   onChange={setReportType}
@@ -399,14 +401,14 @@ export function BillingReports({ tenantId }: BillingReportsProps) {
                 onClick={handleGenerateReport}
                 loading={generateReportMutation.isPending}
               >
-                生成报表
+                {t('reports.generate')}
               </Button>
               <Button
                 icon={<DownloadOutlined />}
                 onClick={handleExportReport}
                 disabled={!generatedReport}
               >
-                导出报表
+                {t('reports.export')}
               </Button>
             </Space>
           </Col>
@@ -418,29 +420,29 @@ export function BillingReports({ tenantId }: BillingReportsProps) {
         <Col span={6}>
           <Card>
             <Statistic
-              title="总成本"
+              title={t('reports.stats.totalCost')}
               value={trendSummary?.total_cost || 0}
               prefix={<DollarOutlined />}
               precision={2}
-              suffix="元"
+              suffix="¥"
             />
           </Card>
         </Col>
         <Col span={6}>
           <Card>
             <Statistic
-              title="日均成本"
+              title={t('reports.stats.dailyAvgCost')}
               value={trendSummary?.average_daily_cost || 0}
               prefix={<LineChartOutlined />}
               precision={2}
-              suffix="元"
+              suffix="¥"
             />
           </Card>
         </Col>
         <Col span={6}>
           <Card>
             <Statistic
-              title="项目数量"
+              title={t('reports.stats.projectCount')}
               value={projectData?.breakdowns?.length || 0}
               prefix={<ProjectOutlined />}
             />
@@ -449,7 +451,7 @@ export function BillingReports({ tenantId }: BillingReportsProps) {
         <Col span={6}>
           <Card>
             <Statistic
-              title="成本趋势"
+              title={t('reports.stats.costTrend')}
               value={Math.abs(trendSummary?.trend_percentage || 0)}
               precision={1}
               prefix={(trendSummary?.trend_percentage || 0) >= 0 ? <RiseOutlined /> : <FallOutlined />}
@@ -468,14 +470,14 @@ export function BillingReports({ tenantId }: BillingReportsProps) {
           tab={
             <span>
               <LineChartOutlined />
-              成本趋势
+              {t('reports.tabs.trends')}
             </span>
           }
           key="trends"
         >
           <Card loading={trendsLoading}>
             {trendChartData.length === 0 ? (
-              <Empty description="暂无趋势数据" />
+              <Empty description={t('reports.noTrendData')} />
             ) : (
               <ResponsiveContainer width="100%" height={400}>
                 <ComposedChart data={trendChartData}>
@@ -496,7 +498,7 @@ export function BillingReports({ tenantId }: BillingReportsProps) {
                       const v = value as number;
                       return [
                         name === 'cost' ? `¥${v.toFixed(2)}` : v,
-                        name === 'cost' ? '成本' : '标注数',
+                        name === 'cost' ? t('reports.charts.cost') : t('reports.charts.annotations'),
                       ];
                     }}
                   />
@@ -505,7 +507,7 @@ export function BillingReports({ tenantId }: BillingReportsProps) {
                     yAxisId="left"
                     type="monotone"
                     dataKey="cost"
-                    name="成本"
+                    name={t('reports.charts.cost')}
                     stroke="#1890ff"
                     fill="#1890ff"
                     fillOpacity={0.3}
@@ -514,7 +516,7 @@ export function BillingReports({ tenantId }: BillingReportsProps) {
                     yAxisId="right"
                     type="monotone"
                     dataKey="annotations"
-                    name="标注数"
+                    name={t('reports.charts.annotations')}
                     stroke="#52c41a"
                   />
                 </ComposedChart>
@@ -527,16 +529,16 @@ export function BillingReports({ tenantId }: BillingReportsProps) {
           tab={
             <span>
               <PieChartOutlined />
-              项目分析
+              {t('reports.tabs.projects')}
             </span>
           }
           key="projects"
         >
           <Row gutter={16}>
             <Col span={10}>
-              <Card title="项目成本分布" loading={projectLoading}>
+              <Card title={t('reports.charts.projectCostDist')} loading={projectLoading}>
                 {projectChartData.length === 0 ? (
-                  <Empty description="暂无项目数据" />
+                  <Empty description={t('reports.noProjectData')} />
                 ) : (
                   <ResponsiveContainer width="100%" height={350}>
                     <PieChart>
@@ -556,7 +558,7 @@ export function BillingReports({ tenantId }: BillingReportsProps) {
                       </Pie>
                       <Legend />
                       <RechartsTooltip
-                        formatter={(value) => [`¥${(value as number).toLocaleString()}`, '成本']}
+                        formatter={(value) => [`¥${(value as number).toLocaleString()}`, t('reports.charts.cost')]}
                       />
                     </PieChart>
                   </ResponsiveContainer>
@@ -564,7 +566,7 @@ export function BillingReports({ tenantId }: BillingReportsProps) {
               </Card>
             </Col>
             <Col span={14}>
-              <Card title="项目成本明细" loading={projectLoading}>
+              <Card title={t('reports.charts.projectCostDetail')} loading={projectLoading}>
                 <Table
                   columns={projectColumns}
                   dataSource={projectData?.breakdowns || []}
@@ -581,16 +583,16 @@ export function BillingReports({ tenantId }: BillingReportsProps) {
           tab={
             <span>
               <BarChartOutlined />
-              部门分析
+              {t('reports.tabs.departments')}
             </span>
           }
           key="departments"
         >
           <Row gutter={16}>
             <Col span={10}>
-              <Card title="部门成本分布" loading={deptLoading}>
+              <Card title={t('reports.charts.deptCostDist')} loading={deptLoading}>
                 {deptChartData.length === 0 ? (
-                  <Empty description="暂无部门数据" />
+                  <Empty description={t('reports.noDeptData')} />
                 ) : (
                   <ResponsiveContainer width="100%" height={350}>
                     <BarChart data={deptChartData} layout="vertical">
@@ -607,18 +609,18 @@ export function BillingReports({ tenantId }: BillingReportsProps) {
                           const v = value as number;
                           return [
                             name === 'cost' ? `¥${v.toLocaleString()}` : v,
-                            name === 'cost' ? '成本' : '人数',
+                            name === 'cost' ? t('reports.charts.cost') : t('reports.columns.userCount'),
                           ];
                         }}
                       />
-                      <Bar dataKey="cost" name="成本" fill="#52c41a" />
+                      <Bar dataKey="cost" name={t('reports.charts.cost')} fill="#52c41a" />
                     </BarChart>
                   </ResponsiveContainer>
                 )}
               </Card>
             </Col>
             <Col span={14}>
-              <Card title="部门成本明细" loading={deptLoading}>
+              <Card title={t('reports.charts.deptCostDetail')} loading={deptLoading}>
                 <Table
                   columns={departmentColumns}
                   dataSource={deptData?.allocations || []}
@@ -635,23 +637,23 @@ export function BillingReports({ tenantId }: BillingReportsProps) {
           tab={
             <span>
               <TeamOutlined />
-              工时统计
+              {t('reports.tabs.workhours')}
             </span>
           }
           key="workhours"
         >
           <Card loading={workHoursLoading}>
             <Descriptions bordered size="small" column={4} style={{ marginBottom: 16 }}>
-              <Descriptions.Item label="统计人数">
-                {workHoursData?.user_count || 0} 人
+              <Descriptions.Item label={t('reports.stats.userCount')}>
+                {workHoursData?.user_count || 0} {t('reports.persons')}
               </Descriptions.Item>
-              <Descriptions.Item label="总工时">
-                {(workHoursData?.statistics?.reduce((sum, s) => sum + s.total_hours, 0) || 0).toFixed(1)} 小时
+              <Descriptions.Item label={t('reports.stats.totalHours')}>
+                {(workHoursData?.statistics?.reduce((sum, s) => sum + s.total_hours, 0) || 0).toFixed(1)} {t('reports.hours')}
               </Descriptions.Item>
-              <Descriptions.Item label="总标注数">
+              <Descriptions.Item label={t('reports.stats.totalAnnotations')}>
                 {workHoursData?.statistics?.reduce((sum, s) => sum + s.total_annotations, 0) || 0}
               </Descriptions.Item>
-              <Descriptions.Item label="总成本">
+              <Descriptions.Item label={t('reports.stats.totalCostLabel')}>
                 ¥{(workHoursData?.statistics?.reduce((sum, s) => sum + s.total_cost, 0) || 0).toLocaleString()}
               </Descriptions.Item>
             </Descriptions>
@@ -668,7 +670,7 @@ export function BillingReports({ tenantId }: BillingReportsProps) {
           tab={
             <span>
               <FileTextOutlined />
-              报表详情
+              {t('reports.tabs.report')}
             </span>
           }
           key="report"
@@ -677,31 +679,31 @@ export function BillingReports({ tenantId }: BillingReportsProps) {
             {generatedReport ? (
               <>
                 <Descriptions bordered column={2} style={{ marginBottom: 16 }}>
-                  <Descriptions.Item label="报表ID">{generatedReport.id}</Descriptions.Item>
-                  <Descriptions.Item label="报表类型">
+                  <Descriptions.Item label={t('reports.reportId')}>{generatedReport.id}</Descriptions.Item>
+                  <Descriptions.Item label={t('reports.reportType')}>
                     <Tag>{generatedReport.report_type}</Tag>
                   </Descriptions.Item>
-                  <Descriptions.Item label="统计周期">
+                  <Descriptions.Item label={t('reports.statisticPeriod')}>
                     {generatedReport.start_date} ~ {generatedReport.end_date}
                   </Descriptions.Item>
-                  <Descriptions.Item label="生成时间">
+                  <Descriptions.Item label={t('reports.generatedAt')}>
                     {dayjs(generatedReport.generated_at).format('YYYY-MM-DD HH:mm:ss')}
                   </Descriptions.Item>
-                  <Descriptions.Item label="总成本">
+                  <Descriptions.Item label={t('reports.stats.totalCost')}>
                     <Text strong>¥{generatedReport.total_cost.toLocaleString()}</Text>
                   </Descriptions.Item>
-                  <Descriptions.Item label="总标注数">
+                  <Descriptions.Item label={t('reports.totalAnnotations')}>
                     {generatedReport.total_annotations.toLocaleString()}
                   </Descriptions.Item>
-                  <Descriptions.Item label="总工时">
-                    {generatedReport.total_time_spent.toFixed(1)} 小时
+                  <Descriptions.Item label={t('reports.totalTimeSpent')}>
+                    {generatedReport.total_time_spent.toFixed(1)} {t('reports.hours')}
                   </Descriptions.Item>
-                  <Descriptions.Item label="计费规则版本">
+                  <Descriptions.Item label={t('reports.billingRuleVersion')}>
                     {generatedReport.billing_rule_version || '-'}
                   </Descriptions.Item>
                 </Descriptions>
 
-                <Divider>用户明细</Divider>
+                <Divider>{t('reports.userBreakdownTitle')}</Divider>
                 <Table
                   dataSource={Object.entries(generatedReport.user_breakdown || {}).map(
                     ([userId, data]) => ({
@@ -710,16 +712,16 @@ export function BillingReports({ tenantId }: BillingReportsProps) {
                     })
                   )}
                   columns={[
-                    { title: '用户ID', dataIndex: 'user_id', key: 'user_id' },
-                    { title: '标注数', dataIndex: 'annotations', key: 'annotations' },
+                    { title: t('reports.userId'), dataIndex: 'user_id', key: 'user_id' },
+                    { title: t('reports.columns.annotations'), dataIndex: 'annotations', key: 'annotations' },
                     {
-                      title: '工时',
+                      title: t('reports.timeSpentHours'),
                       dataIndex: 'time_spent',
                       key: 'time_spent',
                       render: (v: number) => `${v.toFixed(1)}h`,
                     },
                     {
-                      title: '成本',
+                      title: t('reports.columns.cost'),
                       dataIndex: 'cost',
                       key: 'cost',
                       render: (v: number) => `¥${v.toLocaleString()}`,
@@ -731,7 +733,7 @@ export function BillingReports({ tenantId }: BillingReportsProps) {
                 />
               </>
             ) : (
-              <Empty description="请先生成报表查看详情" />
+              <Empty description={t('reports.pleaseGenerateReport')} />
             )}
           </Card>
         </TabPane>

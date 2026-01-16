@@ -34,6 +34,7 @@ import {
   PlayCircleOutlined,
   CodeOutlined,
 } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import type { ColumnsType } from 'antd/es/table';
 import { qualityApi, type QualityRule, type QualityRuleTemplate } from '@/services/qualityApi';
 
@@ -45,6 +46,7 @@ interface RuleConfigProps {
 }
 
 const RuleConfig: React.FC<RuleConfigProps> = ({ projectId }) => {
+  const { t } = useTranslation(['quality', 'common']);
   const [rules, setRules] = useState<QualityRule[]>([]);
   const [templates, setTemplates] = useState<QualityRuleTemplate[]>([]);
   const [loading, setLoading] = useState(false);
@@ -64,7 +66,7 @@ const RuleConfig: React.FC<RuleConfigProps> = ({ projectId }) => {
       const data = await qualityApi.listRules(projectId);
       setRules(data);
     } catch (error) {
-      message.error('加载规则失败');
+      message.error(t('messages.loadRulesFailed'));
     } finally {
       setLoading(false);
     }
@@ -95,20 +97,20 @@ const RuleConfig: React.FC<RuleConfigProps> = ({ projectId }) => {
   const handleDelete = async (ruleId: string) => {
     try {
       await qualityApi.deleteRule(ruleId);
-      message.success('规则已删除');
+      message.success(t('messages.ruleDeleted'));
       loadRules();
     } catch {
-      message.error('删除失败');
+      message.error(t('messages.ruleDeleteFailed'));
     }
   };
 
   const handleToggle = async (rule: QualityRule) => {
     try {
       await qualityApi.updateRule(rule.id, { enabled: !rule.enabled });
-      message.success(rule.enabled ? '规则已禁用' : '规则已启用');
+      message.success(rule.enabled ? t('messages.ruleDisabled') : t('messages.ruleEnabled'));
       loadRules();
     } catch {
-      message.error('操作失败');
+      message.error(t('messages.ruleStatusUpdateFailed'));
     }
   };
 
@@ -117,26 +119,26 @@ const RuleConfig: React.FC<RuleConfigProps> = ({ projectId }) => {
       const values = await form.validateFields();
       if (editingRule) {
         await qualityApi.updateRule(editingRule.id, values);
-        message.success('规则已更新');
+        message.success(t('messages.ruleUpdated'));
       } else {
         await qualityApi.createRule({ ...values, project_id: projectId });
-        message.success('规则已创建');
+        message.success(t('messages.ruleCreated'));
       }
       setModalVisible(false);
       loadRules();
     } catch {
-      message.error('保存失败');
+      message.error(editingRule ? t('messages.ruleUpdateFailed') : t('messages.ruleCreateFailed'));
     }
   };
 
   const handleCreateFromTemplate = async (template: QualityRuleTemplate) => {
     try {
       await qualityApi.createRuleFromTemplate(template.id, projectId);
-      message.success('从模板创建规则成功');
+      message.success(t('messages.templateCreateSuccess'));
       setTemplateDrawerVisible(false);
       loadRules();
     } catch {
-      message.error('创建失败');
+      message.error(t('messages.createFailed'));
     }
   };
 
@@ -152,47 +154,47 @@ const RuleConfig: React.FC<RuleConfigProps> = ({ projectId }) => {
 
   const columns: ColumnsType<QualityRule> = [
     {
-      title: '规则名称',
+      title: t('rules.name'),
       dataIndex: 'name',
       key: 'name',
       render: (name: string, record) => (
         <Space>
           <span style={{ fontWeight: 500 }}>{name}</span>
-          {record.rule_type === 'custom' && <Tag color="purple">自定义</Tag>}
+          {record.rule_type === 'custom' && <Tag color="purple">{t('rules.types.custom')}</Tag>}
         </Space>
       ),
     },
     {
-      title: '描述',
+      title: t('rules.description'),
       dataIndex: 'description',
       key: 'description',
       ellipsis: true,
     },
     {
-      title: '严重程度',
+      title: t('rules.severity'),
       dataIndex: 'severity',
       key: 'severity',
       width: 100,
       render: (severity: string) => (
-        <Tag color={getSeverityColor(severity)}>{severity}</Tag>
+        <Tag color={getSeverityColor(severity)}>{t(`rules.severities.${severity}`)}</Tag>
       ),
     },
     {
-      title: '优先级',
+      title: t('rules.priority'),
       dataIndex: 'priority',
       key: 'priority',
       width: 80,
       sorter: (a, b) => a.priority - b.priority,
     },
     {
-      title: '版本',
+      title: t('rules.version'),
       dataIndex: 'version',
       key: 'version',
       width: 70,
       render: (v: number) => `v${v}`,
     },
     {
-      title: '状态',
+      title: t('common:status'),
       dataIndex: 'enabled',
       key: 'enabled',
       width: 80,
@@ -201,30 +203,30 @@ const RuleConfig: React.FC<RuleConfigProps> = ({ projectId }) => {
       ),
     },
     {
-      title: '操作',
+      title: t('common:actions'),
       key: 'actions',
       width: 180,
       render: (_, record) => (
         <Space size="small">
-          <Tooltip title="编辑">
+          <Tooltip title={t('common:edit')}>
             <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)} />
           </Tooltip>
-          <Tooltip title="复制">
+          <Tooltip title={t('rules.copy')}>
             <Button
               type="link"
               size="small"
               icon={<CopyOutlined />}
               onClick={() => {
                 setEditingRule(null);
-                form.setFieldsValue({ ...record, id: undefined, name: `${record.name} (副本)` });
+                form.setFieldsValue({ ...record, id: undefined, name: t('rules.copyName', { name: record.name }) });
                 setModalVisible(true);
               }}
             />
           </Tooltip>
-          <Tooltip title="版本历史">
+          <Tooltip title={t('rules.versionHistory')}>
             <Button type="link" size="small" icon={<HistoryOutlined />} />
           </Tooltip>
-          <Popconfirm title="确定删除此规则？" onConfirm={() => handleDelete(record.id)}>
+          <Popconfirm title={t('rules.confirmDelete')} onConfirm={() => handleDelete(record.id)}>
             <Button type="link" danger size="small" icon={<DeleteOutlined />} />
           </Popconfirm>
         </Space>
@@ -235,14 +237,14 @@ const RuleConfig: React.FC<RuleConfigProps> = ({ projectId }) => {
   return (
     <div>
       <Card
-        title="质量规则配置"
+        title={t('rules.config')}
         extra={
           <Space>
             <Button icon={<CopyOutlined />} onClick={() => setTemplateDrawerVisible(true)}>
-              从模板创建
+              {t('rules.createFromTemplate')}
             </Button>
             <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-              添加规则
+              {t('rules.addRule')}
             </Button>
           </Space>
         }
@@ -258,7 +260,7 @@ const RuleConfig: React.FC<RuleConfigProps> = ({ projectId }) => {
 
       {/* 规则编辑弹窗 */}
       <Modal
-        title={editingRule ? '编辑规则' : '添加规则'}
+        title={editingRule ? t('rules.editRule') : t('rules.addRule')}
         open={modalVisible}
         onOk={handleSave}
         onCancel={() => setModalVisible(false)}
@@ -266,33 +268,33 @@ const RuleConfig: React.FC<RuleConfigProps> = ({ projectId }) => {
         destroyOnClose
       >
         <Form form={form} layout="vertical">
-          <Form.Item name="name" label="规则名称" rules={[{ required: true, message: '请输入规则名称' }]}>
-            <Input placeholder="请输入规则名称" />
+          <Form.Item name="name" label={t('rules.name')} rules={[{ required: true, message: t('rules.inputRuleName') }]}>
+            <Input placeholder={t('rules.inputRuleName')} />
           </Form.Item>
-          <Form.Item name="description" label="描述">
-            <TextArea rows={2} placeholder="请输入规则描述" />
+          <Form.Item name="description" label={t('rules.description')}>
+            <TextArea rows={2} placeholder={t('rules.inputRuleDesc')} />
           </Form.Item>
           <Row gutter={16}>
             <Col span={8}>
-              <Form.Item name="rule_type" label="规则类型" rules={[{ required: true }]}>
-                <Select placeholder="选择类型">
-                  <Option value="builtin">内置规则</Option>
-                  <Option value="custom">自定义规则</Option>
+              <Form.Item name="rule_type" label={t('rules.type')} rules={[{ required: true }]}>
+                <Select placeholder={t('rules.selectRuleType')}>
+                  <Option value="builtin">{t('rules.types.builtin')}</Option>
+                  <Option value="custom">{t('rules.types.custom')}</Option>
                 </Select>
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item name="severity" label="严重程度" rules={[{ required: true }]}>
-                <Select placeholder="选择严重程度">
-                  <Option value="critical">严重</Option>
-                  <Option value="high">高</Option>
-                  <Option value="medium">中</Option>
-                  <Option value="low">低</Option>
+              <Form.Item name="severity" label={t('rules.severity')} rules={[{ required: true }]}>
+                <Select placeholder={t('rules.selectPriority')}>
+                  <Option value="critical">{t('rules.severities.critical')}</Option>
+                  <Option value="high">{t('rules.severities.high')}</Option>
+                  <Option value="medium">{t('rules.severities.medium')}</Option>
+                  <Option value="low">{t('rules.severities.low')}</Option>
                 </Select>
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item name="priority" label="优先级">
+              <Form.Item name="priority" label={t('rules.priority')}>
                 <InputNumber min={0} max={100} style={{ width: '100%' }} />
               </Form.Item>
             </Col>
@@ -300,13 +302,13 @@ const RuleConfig: React.FC<RuleConfigProps> = ({ projectId }) => {
           <Form.Item noStyle shouldUpdate={(prev, curr) => prev.rule_type !== curr.rule_type}>
             {({ getFieldValue }) =>
               getFieldValue('rule_type') === 'custom' && (
-                <Form.Item name="script" label="自定义脚本">
-                  <TextArea rows={6} placeholder="输入 Python 脚本" style={{ fontFamily: 'monospace' }} />
+                <Form.Item name="script" label={t('rules.customScript')}>
+                  <TextArea rows={6} placeholder={t('rules.inputPythonScript')} style={{ fontFamily: 'monospace' }} />
                 </Form.Item>
               )
             }
           </Form.Item>
-          <Form.Item name="enabled" label="启用" valuePropName="checked" initialValue={true}>
+          <Form.Item name="enabled" label={t('rules.enabledStatus')} valuePropName="checked" initialValue={true}>
             <Switch />
           </Form.Item>
         </Form>
@@ -314,12 +316,12 @@ const RuleConfig: React.FC<RuleConfigProps> = ({ projectId }) => {
 
       {/* 模板抽屉 */}
       <Drawer
-        title="规则模板"
+        title={t('rules.templates.title')}
         open={templateDrawerVisible}
         onClose={() => setTemplateDrawerVisible(false)}
         width={500}
       >
-        <Alert message="选择模板快速创建规则" type="info" showIcon style={{ marginBottom: 16 }} />
+        <Alert message={t('rules.templates.selectHint')} type="info" showIcon style={{ marginBottom: 16 }} />
         {templates.map((template) => (
           <Card
             key={template.id}
@@ -332,7 +334,7 @@ const RuleConfig: React.FC<RuleConfigProps> = ({ projectId }) => {
                 icon={<PlayCircleOutlined />}
                 onClick={() => handleCreateFromTemplate(template)}
               >
-                使用此模板
+                {t('rules.templates.useTemplate')}
               </Button>,
             ]}
           >
@@ -340,7 +342,7 @@ const RuleConfig: React.FC<RuleConfigProps> = ({ projectId }) => {
               title={
                 <Space>
                   {template.name}
-                  <Tag color={getSeverityColor(template.severity)}>{template.severity}</Tag>
+                  <Tag color={getSeverityColor(template.severity)}>{t(`rules.severities.${template.severity}`)}</Tag>
                 </Space>
               }
               description={template.description}
@@ -348,7 +350,7 @@ const RuleConfig: React.FC<RuleConfigProps> = ({ projectId }) => {
           </Card>
         ))}
         {templates.length === 0 && (
-          <div style={{ textAlign: 'center', color: '#999', padding: 40 }}>暂无可用模板</div>
+          <div style={{ textAlign: 'center', color: '#999', padding: 40 }}>{t('rules.templates.noTemplates')}</div>
         )}
       </Drawer>
     </div>

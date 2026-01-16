@@ -56,25 +56,25 @@ const RuleVersionManager: React.FC<RuleVersionManagerProps> = ({
   onViewVersion,
   loading = false,
 }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation(['quality', 'common']);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedVersion, setSelectedVersion] = useState<RuleVersion | null>(null);
 
   const handleRollback = async (version: RuleVersion) => {
     try {
       await onRollback(version.id);
-      message.success(t('quality.messages.ruleUpdated'));
+      message.success(t('messages.ruleUpdated'));
     } catch (error) {
-      message.error(t('common.operationFailed'));
+      message.error(t('operationFailed'));
     }
   };
 
   const handleDeleteVersion = async (versionId: string) => {
     try {
       await onDeleteVersion(versionId);
-      message.success(t('quality.messages.ruleDeleted'));
+      message.success(t('messages.ruleDeleted'));
     } catch (error) {
-      message.error(t('common.operationFailed'));
+      message.error(t('operationFailed'));
     }
   };
 
@@ -86,25 +86,25 @@ const RuleVersionManager: React.FC<RuleVersionManagerProps> = ({
 
   const columns: ColumnsType<RuleVersion> = [
     {
-      title: t('quality.rules.version'),
+      title: t('rules.version'),
       dataIndex: 'version',
       key: 'version',
       width: 100,
       render: (version, record) => (
         <Space>
           <Text strong>{version}</Text>
-          {record.isActive && <Tag color="green">{t('common.active')}</Tag>}
+          {record.isActive && <Tag color="green">{t('active')}</Tag>}
         </Space>
       ),
     },
     {
-      title: t('quality.rules.name'),
+      title: t('rules.name'),
       dataIndex: 'name',
       key: 'name',
       ellipsis: true,
     },
     {
-      title: t('common.tags'),
+      title: t('tags'),
       dataIndex: 'tags',
       key: 'tags',
       width: 200,
@@ -119,25 +119,25 @@ const RuleVersionManager: React.FC<RuleVersionManagerProps> = ({
       ),
     },
     {
-      title: t('common.createdBy'),
+      title: t('createdBy'),
       dataIndex: 'createdBy',
       key: 'createdBy',
       width: 120,
     },
     {
-      title: t('common.createdAt'),
+      title: t('createdAt'),
       dataIndex: 'createdAt',
       key: 'createdAt',
       width: 150,
       render: (date) => new Date(date).toLocaleString(),
     },
     {
-      title: t('common.actions'),
+      title: t('actions'),
       key: 'actions',
       width: 200,
       render: (_, record) => (
         <Space>
-          <Tooltip title={t('common.view')}>
+          <Tooltip title={t('view')}>
             <Button
               type="text"
               size="small"
@@ -147,10 +147,10 @@ const RuleVersionManager: React.FC<RuleVersionManagerProps> = ({
           </Tooltip>
           
           {!record.isActive && (
-            <Tooltip title={t('quality.rules.rollback')}>
+            <Tooltip title={t('rules.rollback')}>
               <Popconfirm
-                title={t('common.confirmRollback')}
-                description={`${t('quality.rules.version')}: ${record.version}`}
+                title={t('confirmRollback')}
+                description={`${t('rules.version')}: ${record.version}`}
                 onConfirm={() => handleRollback(record)}
               >
                 <Button
@@ -163,10 +163,10 @@ const RuleVersionManager: React.FC<RuleVersionManagerProps> = ({
           )}
           
           {!record.isActive && (
-            <Tooltip title={t('common.delete')}>
+            <Tooltip title={t('delete')}>
               <Popconfirm
-                title={t('common.confirmDelete')}
-                description={`${t('quality.rules.version')}: ${record.version}`}
+                title={t('confirmDelete')}
+                description={`${t('rules.version')}: ${record.version}`}
                 onConfirm={() => handleDeleteVersion(record.id)}
               >
                 <Button
@@ -197,7 +197,7 @@ const RuleVersionManager: React.FC<RuleVersionManagerProps> = ({
             <div>
               <Space>
                 <Text strong>{version.version}</Text>
-                {version.isActive && <Tag color="green">{t('common.active')}</Tag>}
+                {version.isActive && <Tag color="green">{t('active')}</Tag>}
               </Space>
               <div>
                 <Text type="secondary">{version.name}</Text>
@@ -225,12 +225,12 @@ const RuleVersionManager: React.FC<RuleVersionManagerProps> = ({
         title={
           <Space>
             <HistoryOutlined />
-            {t('quality.rules.version')} {t('common.history')}
+            {t('rules.version')} {t('history')}
           </Space>
         }
         extra={
           <Text type="secondary">
-            {t('common.total')}: {versions.length}
+            {t('total')}: {versions.length}
           </Text>
         }
       >
@@ -244,22 +244,22 @@ const RuleVersionManager: React.FC<RuleVersionManagerProps> = ({
             showSizeChanger: true,
             showQuickJumper: true,
             showTotal: (total, range) =>
-              `${range[0]}-${range[1]} ${t('common.of')} ${total} ${t('common.items')}`,
+              `${range[0]}-${range[1]} ${t('of')} ${total} ${t('items')}`,
           }}
           expandable={{
             expandedRowRender: (record) => (
               <div style={{ padding: '16px 0' }}>
                 <Descriptions size="small" column={2}>
-                  <Descriptions.Item label={t('quality.rules.description')}>
+                  <Descriptions.Item label={t('rules.description')}>
                     {record.description || '-'}
                   </Descriptions.Item>
-                  <Descriptions.Item label={t('common.changeLog')}>
+                  <Descriptions.Item label={t('changeLog')}>
                     {record.changeLog || '-'}
                   </Descriptions.Item>
                 </Descriptions>
                 
                 <div style={{ marginTop: 16 }}>
-                  <Text strong>{t('quality.rules.config')}:</Text>
+                  <Text strong>{t('rules.config')}:</Text>
                   <pre style={{ 
                     background: '#f5f5f5', 
                     padding: 8, 
@@ -277,14 +277,14 @@ const RuleVersionManager: React.FC<RuleVersionManagerProps> = ({
       </Card>
 
       <Card
-        title={t('common.timeline')}
+        title={t('timeline')}
         style={{ marginTop: 16 }}
       >
         {renderTimeline()}
       </Card>
 
       <Modal
-        title={`${t('quality.rules.version')} ${selectedVersion?.version} - ${t('common.details')}`}
+        title={`${t('rules.version')} ${selectedVersion?.version} - ${t('details')}`}
         open={detailModalOpen}
         onCancel={() => {
           setDetailModalOpen(false);
@@ -292,7 +292,7 @@ const RuleVersionManager: React.FC<RuleVersionManagerProps> = ({
         }}
         footer={[
           <Button key="close" onClick={() => setDetailModalOpen(false)}>
-            {t('common.close')}
+            {t('close')}
           </Button>,
           selectedVersion && !selectedVersion.isActive && (
             <Button
@@ -304,7 +304,7 @@ const RuleVersionManager: React.FC<RuleVersionManagerProps> = ({
                 setDetailModalOpen(false);
               }}
             >
-              {t('quality.rules.rollback')}
+              {t('rules.rollback')}
             </Button>
           ),
         ]}
@@ -313,31 +313,31 @@ const RuleVersionManager: React.FC<RuleVersionManagerProps> = ({
         {selectedVersion && (
           <div>
             <Descriptions bordered column={2}>
-              <Descriptions.Item label={t('quality.rules.version')}>
+              <Descriptions.Item label={t('rules.version')}>
                 <Space>
                   {selectedVersion.version}
-                  {selectedVersion.isActive && <Tag color="green">{t('common.active')}</Tag>}
+                  {selectedVersion.isActive && <Tag color="green">{t('active')}</Tag>}
                 </Space>
               </Descriptions.Item>
-              <Descriptions.Item label={t('quality.rules.name')}>
+              <Descriptions.Item label={t('rules.name')}>
                 {selectedVersion.name}
               </Descriptions.Item>
-              <Descriptions.Item label={t('common.createdBy')}>
+              <Descriptions.Item label={t('createdBy')}>
                 {selectedVersion.createdBy}
               </Descriptions.Item>
-              <Descriptions.Item label={t('common.createdAt')}>
+              <Descriptions.Item label={t('createdAt')}>
                 {new Date(selectedVersion.createdAt).toLocaleString()}
               </Descriptions.Item>
-              <Descriptions.Item label={t('quality.rules.description')} span={2}>
+              <Descriptions.Item label={t('rules.description')} span={2}>
                 {selectedVersion.description || '-'}
               </Descriptions.Item>
-              <Descriptions.Item label={t('common.changeLog')} span={2}>
+              <Descriptions.Item label={t('changeLog')} span={2}>
                 {selectedVersion.changeLog || '-'}
               </Descriptions.Item>
             </Descriptions>
 
             <div style={{ marginTop: 16 }}>
-              <Text strong>{t('quality.rules.config')}:</Text>
+              <Text strong>{t('rules.config')}:</Text>
               <pre style={{ 
                 background: '#f5f5f5', 
                 padding: 16, 
@@ -352,7 +352,7 @@ const RuleVersionManager: React.FC<RuleVersionManagerProps> = ({
 
             {selectedVersion.tags && selectedVersion.tags.length > 0 && (
               <div style={{ marginTop: 16 }}>
-                <Text strong>{t('common.tags')}:</Text>
+                <Text strong>{t('tags')}:</Text>
                 <div style={{ marginTop: 8 }}>
                   <Space wrap>
                     {selectedVersion.tags.map((tag) => (

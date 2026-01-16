@@ -128,7 +128,70 @@
     "userBreakdown": "用户分析",
     "projectBreakdown": "项目分析",
     "departmentBreakdown": "部门分析",
-    "trendAnalysis": "趋势分析"
+    "workHours": "工时报表",
+    "trendAnalysis": "趋势分析",
+    "generateSuccess": "报表生成成功",
+    "generateFailed": "报表生成失败",
+    "exportSuccess": "报表导出成功",
+    "pleaseGenerateFirst": "请先生成报表",
+    "columns": {
+      "projectName": "项目名称",
+      "totalCost": "总成本",
+      "annotations": "标注数量",
+      "timeSpent": "工时 (小时)",
+      "avgCostPerAnnotation": "单条成本",
+      "percentage": "占比",
+      "departmentName": "部门名称",
+      "userCount": "人数",
+      "projects": "关联项目",
+      "user": "用户",
+      "totalHours": "总工时",
+      "billableHours": "计费工时",
+      "rate": "时效",
+      "cost": "成本",
+      "efficiencyScore": "效率评分"
+    },
+    "tabs": {
+      "trends": "成本趋势",
+      "projects": "项目分析",
+      "departments": "部门分析",
+      "workhours": "工时统计",
+      "report": "报表详情"
+    },
+    "stats": {
+      "totalCost": "总成本",
+      "dailyAvgCost": "日均成本",
+      "projectCount": "项目数量",
+      "costTrend": "成本趋势",
+      "userCount": "统计人数",
+      "totalHours": "总工时",
+      "totalAnnotations": "总标注数",
+      "totalCostLabel": "总成本"
+    },
+    "charts": {
+      "projectCostDist": "项目成本分布",
+      "projectCostDetail": "项目成本明细",
+      "deptCostDist": "部门成本分布",
+      "deptCostDetail": "部门成本明细",
+      "cost": "成本",
+      "annotations": "标注数"
+    },
+    "noTrendData": "暂无趋势数据",
+    "noProjectData": "暂无项目数据",
+    "noDeptData": "暂无部门数据",
+    "pleaseGenerateReport": "请先生成报表查看详情",
+    "reportId": "报表ID",
+    "reportType": "报表类型",
+    "statisticPeriod": "统计周期",
+    "generatedAt": "生成时间",
+    "totalAnnotations": "总标注数",
+    "totalTimeSpent": "总工时",
+    "billingRuleVersion": "计费规则版本",
+    "userBreakdownTitle": "用户明细",
+    "userId": "用户ID",
+    "timeSpentHours": "工时",
+    "hours": "小时",
+    "persons": "人"
   },
   "messages": {
     "exportStarted": "导出已开始，文件将很快下载。",
@@ -138,5 +201,85 @@
     "noData": "暂无数据",
     "loadingData": "加载数据中...",
     "retryLoad": "重试"
+  },
+  "ruleConfig": {
+    "title": "当前计费规则",
+    "createVersion": "创建新版本",
+    "createRuleVersion": "创建计费规则版本",
+    "ruleHistory": "规则版本历史",
+    "loadError": "加载计费规则失败",
+    "noActiveRule": "暂无生效的计费规则",
+    "noActiveRuleDesc": "请创建并审批计费规则以开始使用计费功能",
+    "pendingRulesAlert": "有 {{count}} 条待审批的计费规则",
+    "createSuccess": "计费规则创建成功，等待审批",
+    "createError": "创建计费规则失败",
+    "approveSuccess": "规则版本 {{version}} 已审批并生效",
+    "approveError": "审批计费规则失败",
+    "approveConfirmTitle": "审批确认",
+    "approveConfirmDesc": "确定要审批并启用此计费规则吗？",
+    "createAlert": "创建新版本后需要管理员审批才能生效",
+    "billingModeTooltip": "选择适合您业务的计费方式",
+    "modes": {
+      "byCount": "按条数计费",
+      "byTime": "按工时计费",
+      "byProject": "按项目计费",
+      "hybrid": "混合计费"
+    },
+    "modeLabels": {
+      "byCount": "按条数",
+      "byTime": "按工时",
+      "byProject": "按项目",
+      "hybrid": "混合"
+    },
+    "modeDescriptions": {
+      "byCount": "根据标注数量计费",
+      "byTime": "根据工作时间计费",
+      "byProject": "按项目年费计费",
+      "hybrid": "综合多种计费方式"
+    },
+    "ruleStatus": {
+      "active": "当前生效",
+      "approved": "已审批",
+      "pending": "待审批",
+      "inEffect": "生效中",
+      "currentVersion": "当前版本"
+    },
+    "columns": {
+      "version": "版本",
+      "billingMode": "计费模式",
+      "ratePerAnnotation": "单条费率",
+      "ratePerHour": "时薪",
+      "projectAnnualFee": "项目年费",
+      "effectiveFrom": "生效日期",
+      "status": "状态",
+      "createdBy": "创建者",
+      "approvedBy": "审批者",
+      "action": "操作"
+    },
+    "form": {
+      "billingMode": "计费模式",
+      "billingModeRequired": "请选择计费模式",
+      "ratePerAnnotation": "单条费率 (¥)",
+      "ratePerAnnotationRequired": "请输入单条费率",
+      "ratePerAnnotationMin": "费率不能为负数",
+      "ratePerHour": "时薪 (¥)",
+      "ratePerHourRequired": "请输入时薪",
+      "ratePerHourMin": "时薪不能为负数",
+      "projectAnnualFee": "项目年费 (¥)",
+      "projectAnnualFeeRequired": "请输入项目年费",
+      "projectAnnualFeeMin": "年费不能为负数",
+      "perItem": "/ 条",
+      "perHour": "/ 小时",
+      "perYear": "/ 年"
+    },
+    "actions": {
+      "approve": "审批",
+      "createRule": "创建规则",
+      "view": "查看"
+    },
+    "labels": {
+      "versionNumber": "版本号",
+      "effectiveDate": "生效日期"
+    }
   }
 }

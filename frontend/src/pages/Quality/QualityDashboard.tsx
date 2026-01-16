@@ -42,6 +42,7 @@ import {
   DeleteOutlined,
   ExportOutlined,
 } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import type { ColumnsType } from 'antd/es/table';
 
 const { RangePicker } = DatePicker;
@@ -142,6 +143,7 @@ const mockAlerts: QualityAlert[] = [
 
 // Components
 const QualityDashboard: React.FC<{ projectId?: string }> = ({ projectId = 'default' }) => {
+  const { t } = useTranslation(['quality', 'common']);
   const [overview, setOverview] = useState<QualityOverview>(mockOverview);
   const [rules, setRules] = useState<QualityRule[]>(mockRules);
   const [alerts, setAlerts] = useState<QualityAlert[]>(mockAlerts);
@@ -155,7 +157,7 @@ const QualityDashboard: React.FC<{ projectId?: string }> = ({ projectId = 'defau
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      message.success('数据已刷新');
+      message.success(t('dashboard.dataRefreshed'));
     }, 1000);
   };
 
@@ -173,18 +175,18 @@ const QualityDashboard: React.FC<{ projectId?: string }> = ({ projectId = 'defau
 
   const handleDeleteRule = (ruleId: string) => {
     Modal.confirm({
-      title: '确认删除',
-      content: '确定要删除这条规则吗？',
+      title: t('common:confirmDelete'),
+      content: t('messages.confirmDelete'),
       onOk: () => {
         setRules(rules.filter(r => r.id !== ruleId));
-        message.success('规则已删除');
+        message.success(t('messages.ruleDeleted'));
       },
     });
   };
 
   const handleToggleRule = (ruleId: string, enabled: boolean) => {
     setRules(rules.map(r => r.id === ruleId ? { ...r, enabled } : r));
-    message.success(enabled ? '规则已启用' : '规则已禁用');
+    message.success(enabled ? t('messages.ruleEnabled') : t('messages.ruleDisabled'));
   };
 
   const handleSaveRule = async () => {
@@ -192,7 +194,7 @@ const QualityDashboard: React.FC<{ projectId?: string }> = ({ projectId = 'defau
       const values = await form.validateFields();
       if (editingRule) {
         setRules(rules.map(r => r.id === editingRule.id ? { ...r, ...values } : r));
-        message.success('规则已更新');
+        message.success(t('messages.ruleUpdated'));
       } else {
         const newRule: QualityRule = {
           id: String(Date.now()),
@@ -200,7 +202,7 @@ const QualityDashboard: React.FC<{ projectId?: string }> = ({ projectId = 'defau
           version: 1,
         };
         setRules([...rules, newRule]);
-        message.success('规则已创建');
+        message.success(t('messages.ruleCreated'));
       }
       setRuleModalVisible(false);
     } catch (error) {
@@ -210,12 +212,12 @@ const QualityDashboard: React.FC<{ projectId?: string }> = ({ projectId = 'defau
 
   const handleAcknowledgeAlert = (alertId: string) => {
     setAlerts(alerts.map(a => a.id === alertId ? { ...a, status: 'acknowledged' } : a));
-    message.success('预警已确认');
+    message.success(t('alerts.messages.acknowledged'));
   };
 
   const handleResolveAlert = (alertId: string) => {
     setAlerts(alerts.map(a => a.id === alertId ? { ...a, status: 'resolved' } : a));
-    message.success('预警已解决');
+    message.success(t('alerts.messages.resolved'));
   };
 
   const getSeverityColor = (severity: string) => {
@@ -238,29 +240,29 @@ const QualityDashboard: React.FC<{ projectId?: string }> = ({ projectId = 'defau
   };
 
   const ruleColumns: ColumnsType<QualityRule> = [
-    { title: '规则名称', dataIndex: 'name', key: 'name' },
-    { title: '描述', dataIndex: 'description', key: 'description', ellipsis: true },
+    { title: t('rules.name'), dataIndex: 'name', key: 'name' },
+    { title: t('rules.description'), dataIndex: 'description', key: 'description', ellipsis: true },
     { 
-      title: '类型', 
+      title: t('rules.type'), 
       dataIndex: 'ruleType', 
       key: 'ruleType',
       render: (type: string) => (
         <Tag color={type === 'builtin' ? 'blue' : 'purple'}>
-          {type === 'builtin' ? '内置' : '自定义'}
+          {type === 'builtin' ? t('rules.types.builtin') : t('rules.types.custom')}
         </Tag>
       ),
     },
     { 
-      title: '严重程度', 
+      title: t('rules.severity'), 
       dataIndex: 'severity', 
       key: 'severity',
       render: (severity: string) => (
-        <Tag color={getSeverityColor(severity)}>{severity}</Tag>
+        <Tag color={getSeverityColor(severity)}>{t(`rules.severities.${severity}`)}</Tag>
       ),
     },
-    { title: '优先级', dataIndex: 'priority', key: 'priority' },
+    { title: t('rules.priority'), dataIndex: 'priority', key: 'priority' },
     { 
-      title: '状态', 
+      title: t('common:status'), 
       dataIndex: 'enabled', 
       key: 'enabled',
       render: (enabled: boolean, record: QualityRule) => (
@@ -268,12 +270,12 @@ const QualityDashboard: React.FC<{ projectId?: string }> = ({ projectId = 'defau
       ),
     },
     {
-      title: '操作',
+      title: t('common:actions'),
       key: 'actions',
       render: (_, record: QualityRule) => (
         <Space>
-          <Button type="link" icon={<EditOutlined />} onClick={() => handleEditRule(record)}>编辑</Button>
-          <Button type="link" danger icon={<DeleteOutlined />} onClick={() => handleDeleteRule(record.id)}>删除</Button>
+          <Button type="link" icon={<EditOutlined />} onClick={() => handleEditRule(record)}>{t('common:edit')}</Button>
+          <Button type="link" danger icon={<DeleteOutlined />} onClick={() => handleDeleteRule(record.id)}>{t('common:delete')}</Button>
         </Space>
       ),
     },
@@ -281,21 +283,21 @@ const QualityDashboard: React.FC<{ projectId?: string }> = ({ projectId = 'defau
 
   const alertColumns: ColumnsType<QualityAlert> = [
     { 
-      title: '严重程度', 
+      title: t('alerts.columns.severity'), 
       dataIndex: 'severity', 
       key: 'severity',
       render: (severity: string) => (
-        <Tag color={getSeverityColor(severity)}>{severity}</Tag>
+        <Tag color={getSeverityColor(severity)}>{t(`alerts.severity.${severity}`)}</Tag>
       ),
     },
     { 
-      title: '触发维度', 
+      title: t('alerts.columns.triggeredDimensions'), 
       dataIndex: 'triggeredDimensions', 
       key: 'triggeredDimensions',
       render: (dims: string[]) => dims.join(', '),
     },
     { 
-      title: '分数', 
+      title: t('alerts.columns.scores'), 
       dataIndex: 'scores', 
       key: 'scores',
       render: (scores: Record<string, number>) => (
@@ -307,29 +309,29 @@ const QualityDashboard: React.FC<{ projectId?: string }> = ({ projectId = 'defau
       ),
     },
     { 
-      title: '状态', 
+      title: t('alerts.columns.status'), 
       dataIndex: 'status', 
       key: 'status',
       render: (status: string) => (
-        <Badge status={getStatusColor(status) as any} text={status} />
+        <Badge status={getStatusColor(status) as any} text={t(`alerts.status.${status}`)} />
       ),
     },
     { 
-      title: '创建时间', 
+      title: t('alerts.columns.createdAt'), 
       dataIndex: 'createdAt', 
       key: 'createdAt',
       render: (time: string) => new Date(time).toLocaleString(),
     },
     {
-      title: '操作',
+      title: t('alerts.columns.actions'),
       key: 'actions',
       render: (_, record: QualityAlert) => (
         <Space>
           {record.status === 'open' && (
-            <Button type="link" onClick={() => handleAcknowledgeAlert(record.id)}>确认</Button>
+            <Button type="link" onClick={() => handleAcknowledgeAlert(record.id)}>{t('alerts.actions.acknowledge')}</Button>
           )}
           {record.status !== 'resolved' && (
-            <Button type="link" onClick={() => handleResolveAlert(record.id)}>解决</Button>
+            <Button type="link" onClick={() => handleResolveAlert(record.id)}>{t('alerts.actions.resolve')}</Button>
           )}
         </Space>
       ),
@@ -337,23 +339,23 @@ const QualityDashboard: React.FC<{ projectId?: string }> = ({ projectId = 'defau
   ];
 
   const annotatorColumns: ColumnsType<AnnotatorRanking> = [
-    { title: '排名', dataIndex: 'rank', key: 'rank', render: (rank: number) => <TrophyOutlined style={{ color: rank <= 3 ? '#faad14' : '#999' }} /> },
-    { title: '标注员', dataIndex: 'annotatorName', key: 'annotatorName' },
-    { title: '标注数', dataIndex: 'totalAnnotations', key: 'totalAnnotations' },
+    { title: t('reports.annotatorRanking.columns.rank'), dataIndex: 'rank', key: 'rank', render: (rank: number) => <TrophyOutlined style={{ color: rank <= 3 ? '#faad14' : '#999' }} /> },
+    { title: t('reports.annotatorRanking.columns.annotator'), dataIndex: 'annotatorName', key: 'annotatorName' },
+    { title: t('reports.annotatorRanking.columns.annotations'), dataIndex: 'totalAnnotations', key: 'totalAnnotations' },
     { 
-      title: '平均分', 
+      title: t('reports.annotatorRanking.columns.avgScore'), 
       dataIndex: 'averageScore', 
       key: 'averageScore',
       render: (score: number) => <Progress percent={score * 100} size="small" format={(p) => `${p?.toFixed(0)}%`} />,
     },
     { 
-      title: '准确率', 
+      title: t('reports.annotatorRanking.columns.accuracy'), 
       dataIndex: 'accuracy', 
       key: 'accuracy',
       render: (score: number) => `${(score * 100).toFixed(1)}%`,
     },
     { 
-      title: '通过率', 
+      title: t('reports.annotatorRanking.columns.passRate'), 
       dataIndex: 'passRate', 
       key: 'passRate',
       render: (score: number) => `${(score * 100).toFixed(1)}%`,
@@ -363,22 +365,22 @@ const QualityDashboard: React.FC<{ projectId?: string }> = ({ projectId = 'defau
   return (
     <div style={{ padding: 24 }}>
       <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2>质量仪表板</h2>
+        <h2>{t('dashboard.title')}</h2>
         <Space>
           <RangePicker />
-          <Button icon={<ReloadOutlined />} onClick={handleRefresh} loading={loading}>刷新</Button>
-          <Button type="primary" icon={<ExportOutlined />}>导出报告</Button>
+          <Button icon={<ReloadOutlined />} onClick={handleRefresh} loading={loading}>{t('dashboard.refresh')}</Button>
+          <Button type="primary" icon={<ExportOutlined />}>{t('dashboard.exportReport')}</Button>
         </Space>
       </div>
 
       <Tabs activeKey={activeTab} onChange={setActiveTab}>
-        <TabPane tab={<span><LineChartOutlined />概览</span>} key="overview">
+        <TabPane tab={<span><LineChartOutlined />{t('dashboard.overview')}</span>} key="overview">
           {/* 关键指标 */}
           <Row gutter={16} style={{ marginBottom: 24 }}>
             <Col span={6}>
               <Card>
                 <Statistic
-                  title="平均质量分"
+                  title={t('dashboard.averageScore')}
                   value={overview.averageScore * 100}
                   precision={1}
                   suffix="%"
@@ -390,7 +392,7 @@ const QualityDashboard: React.FC<{ projectId?: string }> = ({ projectId = 'defau
             <Col span={6}>
               <Card>
                 <Statistic
-                  title="通过率"
+                  title={t('dashboard.passRate')}
                   value={overview.passRate}
                   precision={1}
                   suffix="%"
@@ -401,7 +403,7 @@ const QualityDashboard: React.FC<{ projectId?: string }> = ({ projectId = 'defau
             <Col span={6}>
               <Card>
                 <Statistic
-                  title="待处理问题"
+                  title={t('dashboard.pendingIssues')}
                   value={overview.pendingIssues}
                   valueStyle={{ color: overview.pendingIssues > 20 ? '#cf1322' : '#3f8600' }}
                   prefix={<CloseCircleOutlined />}
@@ -411,7 +413,7 @@ const QualityDashboard: React.FC<{ projectId?: string }> = ({ projectId = 'defau
             <Col span={6}>
               <Card>
                 <Statistic
-                  title="活跃预警"
+                  title={t('dashboard.activeAlerts')}
                   value={overview.activeAlerts}
                   valueStyle={{ color: overview.activeAlerts > 0 ? '#faad14' : '#3f8600' }}
                   prefix={<BellOutlined />}
@@ -423,14 +425,14 @@ const QualityDashboard: React.FC<{ projectId?: string }> = ({ projectId = 'defau
           {/* 趋势和排名 */}
           <Row gutter={16}>
             <Col span={16}>
-              <Card title="质量趋势" extra={<Select defaultValue="week" style={{ width: 100 }}><Option value="week">本周</Option><Option value="month">本月</Option></Select>}>
+              <Card title={t('dashboard.qualityTrend')} extra={<Select defaultValue="week" style={{ width: 100 }}><Option value="week">{t('dashboard.thisWeek')}</Option><Option value="month">{t('dashboard.thisMonth')}</Option></Select>}>
                 <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fafafa' }}>
-                  <span style={{ color: '#999' }}>趋势图表 (需要集成图表库)</span>
+                  <span style={{ color: '#999' }}>{t('reports.projectReport.trendChart')}</span>
                 </div>
               </Card>
             </Col>
             <Col span={8}>
-              <Card title="标注员排名" extra={<Button type="link">查看全部</Button>}>
+              <Card title={t('dashboard.annotatorRanking')} extra={<Button type="link">{t('dashboard.viewAll')}</Button>}>
                 <Table
                   dataSource={overview.topAnnotators}
                   columns={annotatorColumns}
@@ -443,10 +445,10 @@ const QualityDashboard: React.FC<{ projectId?: string }> = ({ projectId = 'defau
           </Row>
         </TabPane>
 
-        <TabPane tab={<span><SettingOutlined />规则配置</span>} key="rules">
+        <TabPane tab={<span><SettingOutlined />{t('dashboard.ruleConfig')}</span>} key="rules">
           <Card
-            title="质量规则"
-            extra={<Button type="primary" icon={<PlusOutlined />} onClick={handleCreateRule}>添加规则</Button>}
+            title={t('rules.title')}
+            extra={<Button type="primary" icon={<PlusOutlined />} onClick={handleCreateRule}>{t('rules.addRule')}</Button>}
           >
             <Table
               dataSource={rules}
@@ -457,8 +459,8 @@ const QualityDashboard: React.FC<{ projectId?: string }> = ({ projectId = 'defau
           </Card>
         </TabPane>
 
-        <TabPane tab={<span><BellOutlined />预警列表</span>} key="alerts">
-          <Card title="质量预警">
+        <TabPane tab={<span><BellOutlined />{t('dashboard.alertList')}</span>} key="alerts">
+          <Card title={t('alerts.title')}>
             <Table
               dataSource={alerts}
               columns={alertColumns}
@@ -468,24 +470,24 @@ const QualityDashboard: React.FC<{ projectId?: string }> = ({ projectId = 'defau
           </Card>
         </TabPane>
 
-        <TabPane tab={<span><FileTextOutlined />报告</span>} key="reports">
-          <Card title="质量报告">
+        <TabPane tab={<span><FileTextOutlined />{t('dashboard.reports')}</span>} key="reports">
+          <Card title={t('reports.title')}>
             <Space direction="vertical" style={{ width: '100%' }}>
-              <Alert message="选择报告类型和时间范围，生成质量分析报告" type="info" showIcon />
+              <Alert message={t('dashboard.selectReportType')} type="info" showIcon />
               <Row gutter={16}>
                 <Col span={8}>
-                  <Card hoverable onClick={() => message.info('生成项目报告')}>
-                    <Statistic title="项目质量报告" value="生成" prefix={<FileTextOutlined />} />
+                  <Card hoverable onClick={() => message.info(t('messages.reportGenerated'))}>
+                    <Statistic title={t('dashboard.projectReport')} value={t('dashboard.generate')} prefix={<FileTextOutlined />} />
                   </Card>
                 </Col>
                 <Col span={8}>
-                  <Card hoverable onClick={() => message.info('生成排名报告')}>
-                    <Statistic title="标注员排名报告" value="生成" prefix={<TrophyOutlined />} />
+                  <Card hoverable onClick={() => message.info(t('messages.rankingGenerated'))}>
+                    <Statistic title={t('dashboard.annotatorRankingReport')} value={t('dashboard.generate')} prefix={<TrophyOutlined />} />
                   </Card>
                 </Col>
                 <Col span={8}>
-                  <Card hoverable onClick={() => message.info('生成趋势报告')}>
-                    <Statistic title="质量趋势报告" value="生成" prefix={<LineChartOutlined />} />
+                  <Card hoverable onClick={() => message.info(t('messages.reportGenerated'))}>
+                    <Statistic title={t('dashboard.trendReport')} value={t('dashboard.generate')} prefix={<LineChartOutlined />} />
                   </Card>
                 </Col>
               </Row>
@@ -496,43 +498,43 @@ const QualityDashboard: React.FC<{ projectId?: string }> = ({ projectId = 'defau
 
       {/* 规则编辑弹窗 */}
       <Modal
-        title={editingRule ? '编辑规则' : '添加规则'}
+        title={editingRule ? t('rules.editRule') : t('rules.addRule')}
         open={ruleModalVisible}
         onOk={handleSaveRule}
         onCancel={() => setRuleModalVisible(false)}
         width={600}
       >
         <Form form={form} layout="vertical">
-          <Form.Item name="name" label="规则名称" rules={[{ required: true, message: '请输入规则名称' }]}>
-            <Input placeholder="请输入规则名称" />
+          <Form.Item name="name" label={t('rules.name')} rules={[{ required: true, message: t('rules.inputRuleName') }]}>
+            <Input placeholder={t('rules.inputRuleName')} />
           </Form.Item>
-          <Form.Item name="description" label="描述">
-            <Input.TextArea placeholder="请输入规则描述" rows={3} />
+          <Form.Item name="description" label={t('rules.description')}>
+            <Input.TextArea placeholder={t('rules.inputRuleDesc')} rows={3} />
           </Form.Item>
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item name="ruleType" label="规则类型" rules={[{ required: true }]}>
-                <Select placeholder="选择规则类型">
-                  <Option value="builtin">内置规则</Option>
-                  <Option value="custom">自定义规则</Option>
+              <Form.Item name="ruleType" label={t('rules.type')} rules={[{ required: true }]}>
+                <Select placeholder={t('rules.selectRuleType')}>
+                  <Option value="builtin">{t('rules.types.builtin')}</Option>
+                  <Option value="custom">{t('rules.types.custom')}</Option>
                 </Select>
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="severity" label="严重程度" rules={[{ required: true }]}>
-                <Select placeholder="选择严重程度">
-                  <Option value="critical">严重</Option>
-                  <Option value="high">高</Option>
-                  <Option value="medium">中</Option>
-                  <Option value="low">低</Option>
+              <Form.Item name="severity" label={t('rules.severity')} rules={[{ required: true }]}>
+                <Select placeholder={t('rules.selectPriority')}>
+                  <Option value="critical">{t('rules.severities.critical')}</Option>
+                  <Option value="high">{t('rules.severities.high')}</Option>
+                  <Option value="medium">{t('rules.severities.medium')}</Option>
+                  <Option value="low">{t('rules.severities.low')}</Option>
                 </Select>
               </Form.Item>
             </Col>
           </Row>
-          <Form.Item name="priority" label="优先级">
+          <Form.Item name="priority" label={t('rules.priority')}>
             <InputNumber min={0} max={100} style={{ width: '100%' }} placeholder="0-100" />
           </Form.Item>
-          <Form.Item name="enabled" label="启用" valuePropName="checked" initialValue={true}>
+          <Form.Item name="enabled" label={t('rules.enabledStatus')} valuePropName="checked" initialValue={true}>
             <Switch />
           </Form.Item>
         </Form>

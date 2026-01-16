@@ -39,6 +39,7 @@ import {
   WalletOutlined,
   TeamOutlined,
 } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import type { ColumnsType } from 'antd/es/table';
 
 // Types
@@ -115,20 +116,25 @@ const statusColors = {
   suspended: 'error',
 } as const;
 
-const statusLabels = {
-  active: '活跃',
-  pending_verification: '待认证',
-  pending_test: '待测试',
-  suspended: '已暂停',
-};
-
-const sensitivityLabels = ['', '公开', '内部', '敏感'];
-
 const CrowdsourcePage: React.FC = () => {
+  const { t } = useTranslation('crowdsource');
   const [claimModalOpen, setClaimModalOpen] = useState(false);
   const [platformModalOpen, setPlatformModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<CrowdsourceTask | null>(null);
   const [platformForm] = Form.useForm();
+
+  const statusKeyMap: Record<string, string> = {
+    active: 'annotatorStatus.active',
+    pending_verification: 'annotatorStatus.pendingVerification',
+    pending_test: 'annotatorStatus.pendingTest',
+    suspended: 'annotatorStatus.suspended',
+  };
+
+  const sensitivityKeyMap: Record<number, string> = {
+    1: 'sensitivity.public',
+    2: 'sensitivity.internal',
+    3: 'sensitivity.sensitive',
+  };
 
   const handleClaimTask = (task: CrowdsourceTask) => {
     setSelectedTask(task);
@@ -136,13 +142,13 @@ const CrowdsourcePage: React.FC = () => {
   };
 
   const confirmClaim = () => {
-    message.success(`已领取任务: ${selectedTask?.projectName}`);
+    message.success(t('modal.claimSuccess', { name: selectedTask?.projectName }));
     setClaimModalOpen(false);
   };
 
   const handleAddPlatform = () => {
     platformForm.validateFields().then(values => {
-      message.success(`已添加平台: ${values.name}`);
+      message.success(t('modal.addPlatformSuccess', { name: values.name }));
       setPlatformModalOpen(false);
       platformForm.resetFields();
     });
@@ -150,45 +156,45 @@ const CrowdsourcePage: React.FC = () => {
 
   const taskColumns: ColumnsType<CrowdsourceTask> = [
     {
-      title: '项目名称',
+      title: t('tasks.projectName'),
       dataIndex: 'projectName',
       key: 'projectName',
       render: (name) => <a>{name}</a>,
     },
     {
-      title: '描述',
+      title: t('tasks.description'),
       dataIndex: 'description',
       key: 'description',
       ellipsis: true,
     },
     {
-      title: '单价',
+      title: t('tasks.price'),
       dataIndex: 'price',
       key: 'price',
       render: (price) => <span style={{ color: '#52c41a', fontWeight: 'bold' }}>¥{price.toFixed(2)}</span>,
     },
     {
-      title: '敏感级别',
+      title: t('tasks.sensitivityLevel'),
       dataIndex: 'sensitivityLevel',
       key: 'sensitivityLevel',
       render: (level) => (
         <Tag color={level === 1 ? 'green' : level === 2 ? 'orange' : 'red'}>
-          {sensitivityLabels[level]}
+          {t(sensitivityKeyMap[level])}
         </Tag>
       ),
     },
     {
-      title: '截止日期',
+      title: t('tasks.deadline'),
       dataIndex: 'deadline',
       key: 'deadline',
     },
     {
-      title: '已领取',
+      title: t('tasks.claimed'),
       key: 'claimed',
       render: (_, record) => `${record.claimed}/${record.maxAnnotators}`,
     },
     {
-      title: '操作',
+      title: t('tasks.actions'),
       key: 'actions',
       render: (_, record) => (
         <Button
@@ -197,7 +203,7 @@ const CrowdsourcePage: React.FC = () => {
           disabled={record.claimed >= record.maxAnnotators}
           onClick={() => handleClaimTask(record)}
         >
-          领取
+          {t('tasks.claim')}
         </Button>
       ),
     },
@@ -205,7 +211,7 @@ const CrowdsourcePage: React.FC = () => {
 
   const annotatorColumns: ColumnsType<Annotator> = [
     {
-      title: '标注员',
+      title: t('annotators.annotator'),
       key: 'name',
       render: (_, record) => (
         <Space>
@@ -218,38 +224,38 @@ const CrowdsourcePage: React.FC = () => {
       ),
     },
     {
-      title: '状态',
+      title: t('annotators.status'),
       dataIndex: 'status',
       key: 'status',
       render: (status: keyof typeof statusColors) => (
-        <Tag color={statusColors[status]}>{statusLabels[status]}</Tag>
+        <Tag color={statusColors[status]}>{t(statusKeyMap[status])}</Tag>
       ),
     },
     {
-      title: '星级',
+      title: t('annotators.starRating'),
       dataIndex: 'starRating',
       key: 'starRating',
       render: (rating) => <Rate disabled value={rating} />,
     },
     {
-      title: '准确率',
+      title: t('annotators.accuracy'),
       dataIndex: 'accuracy',
       key: 'accuracy',
       render: (acc) => acc > 0 ? <Progress percent={acc * 100} size="small" style={{ width: 80 }} /> : '-',
     },
     {
-      title: '完成任务',
+      title: t('annotators.completedTasks'),
       dataIndex: 'totalTasks',
       key: 'totalTasks',
     },
     {
-      title: '总收益',
+      title: t('annotators.totalEarnings'),
       dataIndex: 'totalEarnings',
       key: 'totalEarnings',
       render: (earnings) => <span style={{ color: '#52c41a' }}>¥{earnings.toFixed(2)}</span>,
     },
     {
-      title: '能力标签',
+      title: t('annotators.abilityTags'),
       dataIndex: 'abilityTags',
       key: 'abilityTags',
       render: (tags: string[]) => tags.map(tag => <Tag key={tag}>{tag}</Tag>),
@@ -258,7 +264,7 @@ const CrowdsourcePage: React.FC = () => {
 
   const platformColumns: ColumnsType<Platform> = [
     {
-      title: '平台名称',
+      title: t('platforms.platformName'),
       dataIndex: 'name',
       key: 'name',
       render: (name, record) => (
@@ -270,30 +276,35 @@ const CrowdsourcePage: React.FC = () => {
       ),
     },
     {
-      title: '状态',
+      title: t('platforms.status'),
       dataIndex: 'status',
       key: 'status',
       render: (status) => (
-        <Badge status={status === 'connected' ? 'success' : 'error'} text={status === 'connected' ? '已连接' : '未连接'} />
+        <Badge 
+          status={status === 'connected' ? 'success' : 'error'} 
+          text={status === 'connected' ? t('platforms.connected') : t('platforms.disconnected')} 
+        />
       ),
     },
     {
-      title: '待处理任务',
+      title: t('platforms.pendingTasks'),
       dataIndex: 'pendingTasks',
       key: 'pendingTasks',
     },
     {
-      title: '已完成任务',
+      title: t('platforms.completedTasks'),
       dataIndex: 'completedTasks',
       key: 'completedTasks',
     },
     {
-      title: '操作',
+      title: t('platforms.actions'),
       key: 'actions',
       render: (_, record) => (
         <Space>
-          <Button type="link" size="small">配置</Button>
-          <Button type="link" size="small">{record.status === 'connected' ? '断开' : '连接'}</Button>
+          <Button type="link" size="small">{t('platforms.configure')}</Button>
+          <Button type="link" size="small">
+            {record.status === 'connected' ? t('platforms.disconnect') : t('platforms.connect')}
+          </Button>
         </Space>
       ),
     },
@@ -304,14 +315,14 @@ const CrowdsourcePage: React.FC = () => {
 
   return (
     <div>
-      <h2 style={{ marginBottom: 24 }}>众包管理</h2>
+      <h2 style={{ marginBottom: 24 }}>{t('title')}</h2>
 
       {/* Stats */}
       <Row gutter={16} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="可领取任务"
+              title={t('stats.availableTasks')}
               value={mockTasks.filter(t => t.claimed < t.maxAnnotators).length}
               prefix={<FileTextOutlined />}
             />
@@ -320,7 +331,7 @@ const CrowdsourcePage: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="活跃标注员"
+              title={t('stats.activeAnnotators')}
               value={activeAnnotators}
               suffix={`/ ${mockAnnotators.length}`}
               prefix={<TeamOutlined />}
@@ -330,7 +341,7 @@ const CrowdsourcePage: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="本月收益"
+              title={t('stats.monthlyEarnings')}
               value={mockEarnings[0]?.totalAmount || 0}
               prefix={<DollarOutlined />}
               precision={2}
@@ -341,7 +352,7 @@ const CrowdsourcePage: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="已连接平台"
+              title={t('stats.connectedPlatforms')}
               value={mockPlatforms.filter(p => p.status === 'connected').length}
               suffix={`/ ${mockPlatforms.length}`}
               prefix={<CloudServerOutlined />}
@@ -357,7 +368,7 @@ const CrowdsourcePage: React.FC = () => {
           items={[
             {
               key: 'tasks',
-              label: <span><FileTextOutlined /> 可领取任务</span>,
+              label: <span><FileTextOutlined /> {t('tabs.tasks')}</span>,
               children: (
                 <Table
                   columns={taskColumns}
@@ -369,23 +380,23 @@ const CrowdsourcePage: React.FC = () => {
             },
             {
               key: 'earnings',
-              label: <span><WalletOutlined /> 收益统计</span>,
+              label: <span><WalletOutlined /> {t('tabs.earnings')}</span>,
               children: (
                 <div>
                   <Row gutter={16} style={{ marginBottom: 24 }}>
                     <Col span={8}>
                       <Card>
-                        <Statistic title="累计收益" value={totalEarnings} prefix="¥" precision={2} />
+                        <Statistic title={t('earnings.totalEarnings')} value={totalEarnings} prefix="¥" precision={2} />
                       </Card>
                     </Col>
                     <Col span={8}>
                       <Card>
-                        <Statistic title="累计任务" value={mockEarnings.reduce((sum, e) => sum + e.taskCount, 0)} />
+                        <Statistic title={t('earnings.totalTasks')} value={mockEarnings.reduce((sum, e) => sum + e.taskCount, 0)} />
                       </Card>
                     </Col>
                     <Col span={8}>
                       <Card>
-                        <Statistic title="平均单价" value={totalEarnings / mockEarnings.reduce((sum, e) => sum + e.taskCount, 0)} prefix="¥" precision={2} />
+                        <Statistic title={t('earnings.avgPrice')} value={totalEarnings / mockEarnings.reduce((sum, e) => sum + e.taskCount, 0)} prefix="¥" precision={2} />
                       </Card>
                     </Col>
                   </Row>
@@ -394,12 +405,12 @@ const CrowdsourcePage: React.FC = () => {
                     rowKey="period"
                     pagination={false}
                     columns={[
-                      { title: '周期', dataIndex: 'period' },
-                      { title: '基础金额', dataIndex: 'baseAmount', render: (v) => `¥${v.toFixed(2)}` },
-                      { title: '质量奖励', dataIndex: 'qualityBonus', render: (v) => `¥${v.toFixed(2)}` },
-                      { title: '星级奖励', dataIndex: 'starBonus', render: (v) => `¥${v.toFixed(2)}` },
-                      { title: '总金额', dataIndex: 'totalAmount', render: (v) => <span style={{ color: '#52c41a', fontWeight: 'bold' }}>¥{v.toFixed(2)}</span> },
-                      { title: '任务数', dataIndex: 'taskCount' },
+                      { title: t('earnings.period'), dataIndex: 'period' },
+                      { title: t('earnings.baseAmount'), dataIndex: 'baseAmount', render: (v) => `¥${v.toFixed(2)}` },
+                      { title: t('earnings.qualityBonus'), dataIndex: 'qualityBonus', render: (v) => `¥${v.toFixed(2)}` },
+                      { title: t('earnings.starBonus'), dataIndex: 'starBonus', render: (v) => `¥${v.toFixed(2)}` },
+                      { title: t('earnings.totalAmount'), dataIndex: 'totalAmount', render: (v) => <span style={{ color: '#52c41a', fontWeight: 'bold' }}>¥{v.toFixed(2)}</span> },
+                      { title: t('earnings.taskCount'), dataIndex: 'taskCount' },
                     ]}
                   />
                 </div>
@@ -407,7 +418,7 @@ const CrowdsourcePage: React.FC = () => {
             },
             {
               key: 'annotators',
-              label: <span><UserOutlined /> 标注员管理</span>,
+              label: <span><UserOutlined /> {t('tabs.annotators')}</span>,
               children: (
                 <Table
                   columns={annotatorColumns}
@@ -419,12 +430,12 @@ const CrowdsourcePage: React.FC = () => {
             },
             {
               key: 'platforms',
-              label: <span><CloudServerOutlined /> 第三方平台</span>,
+              label: <span><CloudServerOutlined /> {t('tabs.platforms')}</span>,
               children: (
                 <div>
                   <div style={{ marginBottom: 16 }}>
                     <Button type="primary" icon={<SettingOutlined />} onClick={() => setPlatformModalOpen(true)}>
-                      添加平台
+                      {t('platforms.addPlatform')}
                     </Button>
                   </div>
                   <Table
@@ -442,21 +453,21 @@ const CrowdsourcePage: React.FC = () => {
 
       {/* Claim Task Modal */}
       <Modal
-        title="领取任务"
+        title={t('modal.claimTask')}
         open={claimModalOpen}
         onCancel={() => setClaimModalOpen(false)}
         onOk={confirmClaim}
-        okText="确认领取"
+        okText={t('modal.confirmClaim')}
       >
         {selectedTask && (
           <Descriptions column={1}>
-            <Descriptions.Item label="项目名称">{selectedTask.projectName}</Descriptions.Item>
-            <Descriptions.Item label="描述">{selectedTask.description}</Descriptions.Item>
-            <Descriptions.Item label="单价">¥{selectedTask.price.toFixed(2)}</Descriptions.Item>
-            <Descriptions.Item label="截止日期">{selectedTask.deadline}</Descriptions.Item>
-            <Descriptions.Item label="敏感级别">
+            <Descriptions.Item label={t('tasks.projectName')}>{selectedTask.projectName}</Descriptions.Item>
+            <Descriptions.Item label={t('tasks.description')}>{selectedTask.description}</Descriptions.Item>
+            <Descriptions.Item label={t('tasks.price')}>¥{selectedTask.price.toFixed(2)}</Descriptions.Item>
+            <Descriptions.Item label={t('tasks.deadline')}>{selectedTask.deadline}</Descriptions.Item>
+            <Descriptions.Item label={t('tasks.sensitivityLevel')}>
               <Tag color={selectedTask.sensitivityLevel === 1 ? 'green' : selectedTask.sensitivityLevel === 2 ? 'orange' : 'red'}>
-                {sensitivityLabels[selectedTask.sensitivityLevel]}
+                {t(sensitivityKeyMap[selectedTask.sensitivityLevel])}
               </Tag>
             </Descriptions.Item>
           </Descriptions>
@@ -465,27 +476,27 @@ const CrowdsourcePage: React.FC = () => {
 
       {/* Add Platform Modal */}
       <Modal
-        title="添加第三方平台"
+        title={t('modal.addPlatform')}
         open={platformModalOpen}
         onCancel={() => setPlatformModalOpen(false)}
         onOk={handleAddPlatform}
       >
         <Form form={platformForm} layout="vertical">
-          <Form.Item name="name" label="平台名称" rules={[{ required: true }]}>
-            <Input placeholder="输入平台名称" />
+          <Form.Item name="name" label={t('modal.platformName')} rules={[{ required: true }]}>
+            <Input placeholder={t('modal.platformNamePlaceholder')} />
           </Form.Item>
-          <Form.Item name="type" label="平台类型" rules={[{ required: true }]}>
-            <Select placeholder="选择平台类型">
+          <Form.Item name="type" label={t('modal.platformType')} rules={[{ required: true }]}>
+            <Select placeholder={t('modal.platformTypePlaceholder')}>
               <Select.Option value="mturk">Amazon MTurk</Select.Option>
               <Select.Option value="scale_ai">Scale AI</Select.Option>
-              <Select.Option value="custom">自定义 REST API</Select.Option>
+              <Select.Option value="custom">Custom REST API</Select.Option>
             </Select>
           </Form.Item>
-          <Form.Item name="apiKey" label="API Key">
-            <Input.Password placeholder="输入 API Key" />
+          <Form.Item name="apiKey" label={t('modal.apiKey')}>
+            <Input.Password placeholder={t('modal.apiKeyPlaceholder')} />
           </Form.Item>
-          <Form.Item name="endpoint" label="API Endpoint">
-            <Input placeholder="输入 API Endpoint (自定义平台)" />
+          <Form.Item name="endpoint" label={t('modal.apiEndpoint')}>
+            <Input placeholder={t('modal.apiEndpointPlaceholder')} />
           </Form.Item>
         </Form>
       </Modal>

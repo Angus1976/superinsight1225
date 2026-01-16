@@ -53,7 +53,7 @@ const DiffViewer: React.FC<DiffViewerProps> = ({
   showMerge = false,
   onMergeComplete,
 }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation(['versioning', 'common']);
   const [diffResult, setDiffResult] = useState<DiffResult | null>(null);
   const [mergeResult, setMergeResult] = useState<MergeResult | null>(null);
   const [diffLevel, setDiffLevel] = useState<'field' | 'line'>('field');
@@ -79,7 +79,7 @@ const DiffViewer: React.FC<DiffViewerProps> = ({
       const result = await versioningApi.computeDiff(oldData, newData, diffLevel);
       setDiffResult(result.diff);
     } catch (error) {
-      message.error(t('versioning.diffError', 'Failed to compute diff'));
+      message.error(t('diffError', 'Failed to compute diff'));
     } finally {
       setLoading(false);
     }
@@ -93,7 +93,7 @@ const DiffViewer: React.FC<DiffViewerProps> = ({
       const result = await versioningApi.threeWayMerge(baseData, oldData, newData);
       setMergeResult(result.merge_result);
     } catch (error) {
-      message.error(t('versioning.mergeError', 'Failed to compute merge'));
+      message.error(t('mergeError', 'Failed to compute merge'));
     } finally {
       setLoading(false);
     }
@@ -113,9 +113,9 @@ const DiffViewer: React.FC<DiffViewerProps> = ({
         resolution
       );
       setMergeResult(result.merge_result);
-      message.success(t('versioning.conflictResolved', 'Conflict resolved'));
+      message.success(t('conflictResolved', 'Conflict resolved'));
     } catch (error) {
-      message.error(t('versioning.resolveError', 'Failed to resolve conflict'));
+      message.error(t('resolveError', 'Failed to resolve conflict'));
     }
   };
 
@@ -160,13 +160,13 @@ const DiffViewer: React.FC<DiffViewerProps> = ({
 
   const fieldDiffColumns = [
     {
-      title: t('versioning.field', 'Field'),
+      title: t('field', 'Field'),
       dataIndex: 'field',
       key: 'field',
       width: 200,
     },
     {
-      title: t('versioning.changeType', 'Change'),
+      title: t('changeType', 'Change'),
       dataIndex: 'change_type',
       key: 'change_type',
       width: 120,
@@ -177,7 +177,7 @@ const DiffViewer: React.FC<DiffViewerProps> = ({
       ),
     },
     {
-      title: t('versioning.oldValue', 'Old Value'),
+      title: t('oldValue', 'Old Value'),
       dataIndex: 'old_value',
       key: 'old_value',
       render: (value: unknown) => (
@@ -187,7 +187,7 @@ const DiffViewer: React.FC<DiffViewerProps> = ({
       ),
     },
     {
-      title: t('versioning.newValue', 'New Value'),
+      title: t('newValue', 'New Value'),
       dataIndex: 'new_value',
       key: 'new_value',
       render: (value: unknown) => (
@@ -200,13 +200,13 @@ const DiffViewer: React.FC<DiffViewerProps> = ({
 
   const conflictColumns = [
     {
-      title: t('versioning.field', 'Field'),
+      title: t('field', 'Field'),
       dataIndex: 'field',
       key: 'field',
       width: 150,
     },
     {
-      title: t('versioning.baseValue', 'Base'),
+      title: t('baseValue', 'Base'),
       dataIndex: 'base_value',
       key: 'base_value',
       render: (value: unknown) => (
@@ -214,7 +214,7 @@ const DiffViewer: React.FC<DiffViewerProps> = ({
       ),
     },
     {
-      title: t('versioning.oursValue', 'Ours'),
+      title: t('oursValue', 'Ours'),
       dataIndex: 'ours_value',
       key: 'ours_value',
       render: (value: unknown) => (
@@ -222,7 +222,7 @@ const DiffViewer: React.FC<DiffViewerProps> = ({
       ),
     },
     {
-      title: t('versioning.theirsValue', 'Theirs'),
+      title: t('theirsValue', 'Theirs'),
       dataIndex: 'theirs_value',
       key: 'theirs_value',
       render: (value: unknown) => (
@@ -230,7 +230,7 @@ const DiffViewer: React.FC<DiffViewerProps> = ({
       ),
     },
     {
-      title: t('versioning.resolution', 'Resolution'),
+      title: t('resolution', 'Resolution'),
       key: 'resolution',
       width: 200,
       render: (_: unknown, record: MergeResult['conflicts'][0]) => (
@@ -239,19 +239,19 @@ const DiffViewer: React.FC<DiffViewerProps> = ({
             size="small"
             onClick={() => handleResolveConflict(record.field, 'ours')}
           >
-            {t('versioning.useOurs', 'Ours')}
+            {t('useOurs', 'Ours')}
           </Button>
           <Button
             size="small"
             onClick={() => handleResolveConflict(record.field, 'theirs')}
           >
-            {t('versioning.useTheirs', 'Theirs')}
+            {t('useTheirs', 'Theirs')}
           </Button>
           <Button
             size="small"
             onClick={() => handleResolveConflict(record.field, 'base')}
           >
-            {t('versioning.useBase', 'Base')}
+            {t('useBase', 'Base')}
           </Button>
         </Space>
       ),
@@ -271,7 +271,7 @@ const DiffViewer: React.FC<DiffViewerProps> = ({
   if (!oldData || !newData) {
     return (
       <Card>
-        <Empty description={t('versioning.selectVersions', 'Select two versions to compare')} />
+        <Empty description={t('selectVersions', 'Select two versions to compare')} />
       </Card>
     );
   }
@@ -281,7 +281,7 @@ const DiffViewer: React.FC<DiffViewerProps> = ({
       title={
         <Space>
           <DiffOutlined />
-          <span>{t('versioning.diffViewer', 'Diff Viewer')}</span>
+          <span>{t('diffViewer', 'Diff Viewer')}</span>
         </Space>
       }
       extra={
@@ -292,10 +292,10 @@ const DiffViewer: React.FC<DiffViewerProps> = ({
           buttonStyle="solid"
         >
           <Radio.Button value="field">
-            {t('versioning.fieldLevel', 'Field')}
+            {t('fieldLevel', 'Field')}
           </Radio.Button>
           <Radio.Button value="line">
-            {t('versioning.lineLevel', 'Line')}
+            {t('lineLevel', 'Line')}
           </Radio.Button>
         </Radio.Group>
       }
@@ -305,7 +305,7 @@ const DiffViewer: React.FC<DiffViewerProps> = ({
           tab={
             <span>
               <DiffOutlined />
-              {t('versioning.differences', 'Differences')}
+              {t('differences', 'Differences')}
             </span>
           }
           key="diff"
@@ -314,13 +314,13 @@ const DiffViewer: React.FC<DiffViewerProps> = ({
             <>
               <Space style={{ marginBottom: 16 }}>
                 <Tag color="success">
-                  +{diffResult.summary.added} {t('versioning.added', 'added')}
+                  +{diffResult.summary.added} {t('added', 'added')}
                 </Tag>
                 <Tag color="error">
-                  -{diffResult.summary.removed} {t('versioning.removed', 'removed')}
+                  -{diffResult.summary.removed} {t('removed', 'removed')}
                 </Tag>
                 <Tag color="warning">
-                  ~{diffResult.summary.modified} {t('versioning.modified', 'modified')}
+                  ~{diffResult.summary.modified} {t('modified', 'modified')}
                 </Tag>
               </Space>
 
@@ -365,7 +365,7 @@ const DiffViewer: React.FC<DiffViewerProps> = ({
             tab={
               <span>
                 <MergeCellsOutlined />
-                {t('versioning.merge', 'Merge')}
+                {t('merge', 'Merge')}
                 {mergeResult.has_conflicts && (
                   <Tag color="error" style={{ marginLeft: 8 }}>
                     {mergeResult.conflicts.length}
@@ -380,7 +380,7 @@ const DiffViewer: React.FC<DiffViewerProps> = ({
                 <Alert
                   type="warning"
                   message={t(
-                    'versioning.conflictsFound',
+                    'conflictsFound',
                     `${mergeResult.conflicts.length} conflicts found`
                   )}
                   style={{ marginBottom: 16 }}
@@ -397,7 +397,7 @@ const DiffViewer: React.FC<DiffViewerProps> = ({
               <>
                 <Alert
                   type="success"
-                  message={t('versioning.noConflicts', 'No conflicts - ready to merge')}
+                  message={t('noConflicts', 'No conflicts - ready to merge')}
                   style={{ marginBottom: 16 }}
                 />
                 <Button
@@ -405,10 +405,10 @@ const DiffViewer: React.FC<DiffViewerProps> = ({
                   icon={<CheckOutlined />}
                   onClick={handleMergeComplete}
                 >
-                  {t('versioning.completeMerge', 'Complete Merge')}
+                  {t('completeMerge', 'Complete Merge')}
                 </Button>
                 <Divider />
-                <Title level={5}>{t('versioning.mergedResult', 'Merged Result')}</Title>
+                <Title level={5}>{t('mergedResult', 'Merged Result')}</Title>
                 <pre
                   style={{
                     background: '#f5f5f5',

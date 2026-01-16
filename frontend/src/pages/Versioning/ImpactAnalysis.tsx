@@ -58,7 +58,7 @@ const ImpactAnalysis: React.FC<ImpactAnalysisProps> = ({
   tenantId,
   onAnalysisComplete,
 }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation(['impact', 'common']);
   const [report, setReport] = useState<ImpactReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [changeType, setChangeType] = useState<string>('update');
@@ -77,7 +77,7 @@ const ImpactAnalysis: React.FC<ImpactAnalysisProps> = ({
       setReport(result.impact_report);
       onAnalysisComplete?.(result.impact_report);
     } catch (error) {
-      message.error(t('impact.analyzeError', 'Failed to analyze impact'));
+      message.error(t('analyzeError', 'Failed to analyze impact'));
     } finally {
       setLoading(false);
     }
@@ -159,7 +159,7 @@ const ImpactAnalysis: React.FC<ImpactAnalysisProps> = ({
         <div style={{ textAlign: 'center', padding: '40px' }}>
           <Spin size="large" />
           <div style={{ marginTop: 16 }}>
-            <Text type="secondary">{t('impact.analyzing', 'Analyzing impact...')}</Text>
+            <Text type="secondary">{t('analyzing', 'Analyzing impact...')}</Text>
           </div>
         </div>
       </Card>
@@ -171,7 +171,7 @@ const ImpactAnalysis: React.FC<ImpactAnalysisProps> = ({
       title={
         <Space>
           <ThunderboltOutlined />
-          <span>{t('impact.analysis', 'Impact Analysis')}</span>
+          <span>{t('analysis', 'Impact Analysis')}</span>
         </Space>
       }
       extra={
@@ -181,9 +181,9 @@ const ImpactAnalysis: React.FC<ImpactAnalysisProps> = ({
             onChange={setChangeType}
             style={{ width: 120 }}
           >
-            <Option value="update">{t('impact.update', 'Update')}</Option>
-            <Option value="delete">{t('impact.delete', 'Delete')}</Option>
-            <Option value="create">{t('impact.create', 'Create')}</Option>
+            <Option value="update">{t('update', 'Update')}</Option>
+            <Option value="delete">{t('delete', 'Delete')}</Option>
+            <Option value="create">{t('create', 'Create')}</Option>
           </Select>
           <Button
             type="primary"
@@ -191,14 +191,14 @@ const ImpactAnalysis: React.FC<ImpactAnalysisProps> = ({
             onClick={analyzeImpact}
             loading={loading}
           >
-            {t('impact.analyze', 'Analyze')}
+            {t('analyze', 'Analyze')}
           </Button>
         </Space>
       }
     >
       {!report ? (
         <Empty
-          description={t('impact.clickToAnalyze', 'Click Analyze to assess impact')}
+          description={t('clickToAnalyze', 'Click Analyze to assess impact')}
           image={Empty.PRESENTED_IMAGE_SIMPLE}
         />
       ) : (
@@ -216,7 +216,7 @@ const ImpactAnalysis: React.FC<ImpactAnalysisProps> = ({
             message={
               <Space>
                 <Text strong>
-                  {t('impact.riskLevel', 'Risk Level')}:
+                  {t('riskLevel', 'Risk Level')}:
                 </Text>
                 <Tag color={getRiskColor(report.risk_level)}>
                   {report.risk_level.toUpperCase()}
@@ -238,7 +238,7 @@ const ImpactAnalysis: React.FC<ImpactAnalysisProps> = ({
             <Col span={6}>
               <Card size="small">
                 <Statistic
-                  title={t('impact.affectedEntities', 'Affected Entities')}
+                  title={t('affectedEntities', 'Affected Entities')}
                   value={report.affected_count}
                   prefix={<ApartmentOutlined />}
                 />
@@ -247,7 +247,7 @@ const ImpactAnalysis: React.FC<ImpactAnalysisProps> = ({
             <Col span={6}>
               <Card size="small">
                 <Statistic
-                  title={t('impact.estimatedRecords', 'Est. Records')}
+                  title={t('estimatedRecords', 'Est. Records')}
                   value={report.estimated_records}
                   prefix={<NumberOutlined />}
                 />
@@ -256,7 +256,7 @@ const ImpactAnalysis: React.FC<ImpactAnalysisProps> = ({
             <Col span={6}>
               <Card size="small">
                 <Statistic
-                  title={t('impact.criticalPaths', 'Critical Paths')}
+                  title={t('criticalPaths', 'Critical Paths')}
                   value={report.critical_paths.length}
                   valueStyle={{ color: report.critical_paths.length > 0 ? '#ff4d4f' : '#52c41a' }}
                 />
@@ -265,7 +265,7 @@ const ImpactAnalysis: React.FC<ImpactAnalysisProps> = ({
             <Col span={6}>
               <Card size="small">
                 <Statistic
-                  title={t('impact.riskFactors', 'Risk Factors')}
+                  title={t('riskFactors', 'Risk Factors')}
                   value={report.risk_factors.length}
                   valueStyle={{ color: report.risk_factors.length > 0 ? '#faad14' : '#52c41a' }}
                 />
@@ -275,7 +275,7 @@ const ImpactAnalysis: React.FC<ImpactAnalysisProps> = ({
 
           {/* Severity Breakdown */}
           {report.affected_entities.length > 0 && (
-            <Card size="small" title={t('impact.severityBreakdown', 'Severity Breakdown')}>
+            <Card size="small" title={t('severityBreakdown', 'Severity Breakdown')}>
               <Space wrap>
                 {Object.entries(countBySeverity(report.affected_entities)).map(
                   ([severity, count]) => (
@@ -295,7 +295,7 @@ const ImpactAnalysis: React.FC<ImpactAnalysisProps> = ({
               title={
                 <Space>
                   <WarningOutlined style={{ color: '#faad14' }} />
-                  {t('impact.riskFactors', 'Risk Factors')}
+                  {t('riskFactors', 'Risk Factors')}
                 </Space>
               }
             >
@@ -318,7 +318,7 @@ const ImpactAnalysis: React.FC<ImpactAnalysisProps> = ({
               title={
                 <Space>
                   <BulbOutlined style={{ color: '#1890ff' }} />
-                  {t('impact.recommendations', 'Recommendations')}
+                  {t('recommendations', 'Recommendations')}
                 </Space>
               }
             >
@@ -343,7 +343,7 @@ const ImpactAnalysis: React.FC<ImpactAnalysisProps> = ({
               header={
                 <Space>
                   <ApartmentOutlined />
-                  {t('impact.affectedEntitiesList', 'Affected Entities')}
+                  {t('affectedEntitiesList', 'Affected Entities')}
                   <Tag>{report.affected_count}</Tag>
                 </Space>
               }
@@ -368,13 +368,13 @@ const ImpactAnalysis: React.FC<ImpactAnalysisProps> = ({
                       description={
                         <Space>
                           <Text type="secondary">
-                            {t('impact.type', 'Type')}: {entity.entity_type}
+                            {t('type', 'Type')}: {entity.entity_type}
                           </Text>
                           <Text type="secondary">
-                            {t('impact.distance', 'Distance')}: {entity.distance}
+                            {t('distance', 'Distance')}: {entity.distance}
                           </Text>
                           <Text type="secondary">
-                            {t('impact.impactType', 'Impact')}: {entity.impact_type}
+                            {t('impactType', 'Impact')}: {entity.impact_type}
                           </Text>
                         </Space>
                       }
@@ -391,7 +391,7 @@ const ImpactAnalysis: React.FC<ImpactAnalysisProps> = ({
                 header={
                   <Space>
                     <ExclamationCircleOutlined style={{ color: '#ff4d4f' }} />
-                    {t('impact.criticalPaths', 'Critical Paths')}
+                    {t('criticalPaths', 'Critical Paths')}
                     <Tag color="error">{report.critical_paths.length}</Tag>
                   </Space>
                 }

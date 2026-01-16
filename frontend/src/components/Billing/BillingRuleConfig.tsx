@@ -31,6 +31,7 @@ import {
   SyncOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
+import { useTranslation } from 'react-i18next';
 import { useRuleHistory, useCreateRuleVersion, useApproveRuleVersion } from '@/hooks/useBilling';
 import type { BillingRuleVersion, BillingMode, BillingRuleVersionRequest } from '@/types/billing';
 
@@ -51,39 +52,6 @@ interface RuleFormValues {
   project_annual_fee: number;
 }
 
-const BILLING_MODE_OPTIONS: { value: BillingMode; label: string; description: string }[] = [
-  { value: 'by_count', label: '按条数计费', description: '根据标注数量计费' },
-  { value: 'by_time', label: '按工时计费', description: '根据工作时间计费' },
-  { value: 'by_project', label: '按项目计费', description: '按项目年费计费' },
-  { value: 'hybrid', label: '混合计费', description: '综合多种计费方式' },
-];
-
-const getBillingModeTag = (mode: BillingMode) => {
-  const modeColors: Record<BillingMode, string> = {
-    by_count: 'blue',
-    by_time: 'green',
-    by_project: 'purple',
-    hybrid: 'orange',
-  };
-  const modeLabels: Record<BillingMode, string> = {
-    by_count: '按条数',
-    by_time: '按工时',
-    by_project: '按项目',
-    hybrid: '混合',
-  };
-  return <Tag color={modeColors[mode]}>{modeLabels[mode]}</Tag>;
-};
-
-const getStatusBadge = (rule: BillingRuleVersion) => {
-  if (rule.is_active) {
-    return <Badge status="success" text="当前生效" />;
-  }
-  if (rule.approved_by) {
-    return <Badge status="default" text="已审批" />;
-  }
-  return <Badge status="processing" text="待审批" />;
-};
-
 export function BillingRuleConfig({
   tenantId,
   currentUserId,
@@ -91,8 +59,42 @@ export function BillingRuleConfig({
   onRuleCreated,
   onRuleApproved,
 }: BillingRuleConfigProps) {
+  const { t } = useTranslation(['billing', 'common']);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm<RuleFormValues>();
+
+  const BILLING_MODE_OPTIONS: { value: BillingMode; label: string; description: string }[] = [
+    { value: 'by_count', label: t('ruleConfig.modes.byCount'), description: t('ruleConfig.modeDescriptions.byCount') },
+    { value: 'by_time', label: t('ruleConfig.modes.byTime'), description: t('ruleConfig.modeDescriptions.byTime') },
+    { value: 'by_project', label: t('ruleConfig.modes.byProject'), description: t('ruleConfig.modeDescriptions.byProject') },
+    { value: 'hybrid', label: t('ruleConfig.modes.hybrid'), description: t('ruleConfig.modeDescriptions.hybrid') },
+  ];
+
+  const getBillingModeTag = (mode: BillingMode) => {
+    const modeColors: Record<BillingMode, string> = {
+      by_count: 'blue',
+      by_time: 'green',
+      by_project: 'purple',
+      hybrid: 'orange',
+    };
+    const modeLabels: Record<BillingMode, string> = {
+      by_count: t('ruleConfig.modeLabels.byCount'),
+      by_time: t('ruleConfig.modeLabels.byTime'),
+      by_project: t('ruleConfig.modeLabels.byProject'),
+      hybrid: t('ruleConfig.modeLabels.hybrid'),
+    };
+    return <Tag color={modeColors[mode]}>{modeLabels[mode]}</Tag>;
+  };
+
+  const getStatusBadge = (rule: BillingRuleVersion) => {
+    if (rule.is_active) {
+      return <Badge status="success" text={t('ruleConfig.ruleStatus.active')} />;
+    }
+    if (rule.approved_by) {
+      return <Badge status="default" text={t('ruleConfig.ruleStatus.approved')} />;
+    }
+    return <Badge status="processing" text={t('ruleConfig.ruleStatus.pending')} />;
+  };
 
   const { data, isLoading, error, refetch } = useRuleHistory(tenantId);
   const createMutation = useCreateRuleVersion();
@@ -120,12 +122,12 @@ export function BillingRuleConfig({
       };
 
       const result = await createMutation.mutateAsync(request);
-      message.success('计费规则创建成功，等待审批');
+      message.success(t('ruleConfig.createSuccess'));
       setIsModalOpen(false);
       form.resetFields();
       onRuleCreated?.(result.rule);
     } catch (err) {
-      message.error('创建计费规则失败');
+      message.error(t('ruleConfig.createError'));
       console.error('Failed to create billing rule:', err);
     }
   };
@@ -137,65 +139,65 @@ export function BillingRuleConfig({
         version,
         approvedBy: currentUserId,
       });
-      message.success(`规则版本 ${version} 已审批并生效`);
+      message.success(t('ruleConfig.approveSuccess', { version }));
       onRuleApproved?.(result.rule);
     } catch (err) {
-      message.error('审批计费规则失败');
+      message.error(t('ruleConfig.approveError'));
       console.error('Failed to approve billing rule:', err);
     }
   };
 
   const columns: ColumnsType<BillingRuleVersion> = [
     {
-      title: '版本',
+      title: t('ruleConfig.columns.version'),
       dataIndex: 'version',
       key: 'version',
       width: 80,
       render: (version: number) => <Tag>v{version}</Tag>,
     },
     {
-      title: '计费模式',
+      title: t('ruleConfig.columns.billingMode'),
       dataIndex: 'billing_mode',
       key: 'billing_mode',
       render: (mode: BillingMode) => getBillingModeTag(mode),
     },
     {
-      title: '单条费率',
+      title: t('ruleConfig.columns.ratePerAnnotation'),
       dataIndex: 'rate_per_annotation',
       key: 'rate_per_annotation',
       render: (rate: number) => `¥${rate.toFixed(2)}`,
     },
     {
-      title: '时薪',
+      title: t('ruleConfig.columns.ratePerHour'),
       dataIndex: 'rate_per_hour',
       key: 'rate_per_hour',
       render: (rate: number) => `¥${rate.toFixed(2)}/h`,
     },
     {
-      title: '项目年费',
+      title: t('ruleConfig.columns.projectAnnualFee'),
       dataIndex: 'project_annual_fee',
       key: 'project_annual_fee',
       render: (fee: number) => `¥${fee.toLocaleString()}`,
     },
     {
-      title: '生效日期',
+      title: t('ruleConfig.columns.effectiveFrom'),
       dataIndex: 'effective_from',
       key: 'effective_from',
-      render: (date: string) => new Date(date).toLocaleDateString('zh-CN'),
+      render: (date: string) => new Date(date).toLocaleDateString(),
     },
     {
-      title: '状态',
+      title: t('ruleConfig.columns.status'),
       key: 'status',
       render: (_, record) => getStatusBadge(record),
     },
     {
-      title: '创建者',
+      title: t('ruleConfig.columns.createdBy'),
       dataIndex: 'created_by',
       key: 'created_by',
       ellipsis: true,
     },
     {
-      title: '审批者',
+      title: t('ruleConfig.columns.approvedBy'),
       dataIndex: 'approved_by',
       key: 'approved_by',
       render: (approver: string, record) => (
@@ -203,28 +205,28 @@ export function BillingRuleConfig({
           <Text>{approver || '-'}</Text>
           {record.approved_at && (
             <Text type="secondary" style={{ fontSize: 12 }}>
-              {new Date(record.approved_at).toLocaleDateString('zh-CN')}
+              {new Date(record.approved_at).toLocaleDateString()}
             </Text>
           )}
         </Space>
       ),
     },
     {
-      title: '操作',
+      title: t('ruleConfig.columns.action'),
       key: 'action',
       width: 100,
       render: (_, record) => {
         if (record.is_active) {
-          return <Tag color="green">当前版本</Tag>;
+          return <Tag color="green">{t('ruleConfig.ruleStatus.currentVersion')}</Tag>;
         }
         if (!record.approved_by && isAdmin) {
           return (
             <Popconfirm
-              title="审批确认"
-              description="确定要审批并启用此计费规则吗？"
+              title={t('ruleConfig.approveConfirmTitle')}
+              description={t('ruleConfig.approveConfirmDesc')}
               onConfirm={() => handleApproveRule(record.version)}
-              okText="确定"
-              cancelText="取消"
+              okText={t('common:confirm')}
+              cancelText={t('common:cancel')}
             >
               <Button
                 type="link"
@@ -232,7 +234,7 @@ export function BillingRuleConfig({
                 icon={<CheckOutlined />}
                 loading={approveMutation.isPending}
               >
-                审批
+                {t('ruleConfig.actions.approve')}
               </Button>
             </Popconfirm>
           );
@@ -246,11 +248,11 @@ export function BillingRuleConfig({
     return (
       <Card>
         <Empty
-          description="加载计费规则失败"
+          description={t('ruleConfig.loadError')}
           image={Empty.PRESENTED_IMAGE_SIMPLE}
         >
           <Button type="primary" onClick={() => refetch()}>
-            重试
+            {t('common:retry')}
           </Button>
         </Empty>
       </Card>
@@ -264,7 +266,7 @@ export function BillingRuleConfig({
         title={
           <Space>
             <SettingOutlined />
-            <span>当前计费规则</span>
+            <span>{t('ruleConfig.title')}</span>
           </Space>
         }
         extra={
@@ -274,14 +276,14 @@ export function BillingRuleConfig({
               onClick={() => refetch()}
               loading={isLoading}
             >
-              刷新
+              {t('common:refresh')}
             </Button>
             <Button
               type="primary"
               icon={<PlusOutlined />}
               onClick={() => setIsModalOpen(true)}
             >
-              创建新版本
+              {t('ruleConfig.createVersion')}
             </Button>
           </Space>
         }
@@ -289,37 +291,37 @@ export function BillingRuleConfig({
       >
         {isLoading ? (
           <div style={{ textAlign: 'center', padding: 40 }}>
-            <Spin tip="加载中..." />
+            <Spin tip={t('common:status.loading')} />
           </div>
         ) : activeRule ? (
           <Row gutter={16}>
             <Col span={24}>
               <Descriptions bordered size="small" column={4}>
-                <Descriptions.Item label="版本号">
+                <Descriptions.Item label={t('ruleConfig.labels.versionNumber')}>
                   <Tag color="blue">v{activeRule.version}</Tag>
                 </Descriptions.Item>
-                <Descriptions.Item label="计费模式">
+                <Descriptions.Item label={t('ruleConfig.columns.billingMode')}>
                   {getBillingModeTag(activeRule.billing_mode)}
                 </Descriptions.Item>
-                <Descriptions.Item label="生效日期">
-                  {new Date(activeRule.effective_from).toLocaleDateString('zh-CN')}
+                <Descriptions.Item label={t('ruleConfig.labels.effectiveDate')}>
+                  {new Date(activeRule.effective_from).toLocaleDateString()}
                 </Descriptions.Item>
-                <Descriptions.Item label="状态">
-                  <Badge status="success" text="生效中" />
+                <Descriptions.Item label={t('ruleConfig.columns.status')}>
+                  <Badge status="success" text={t('ruleConfig.ruleStatus.inEffect')} />
                 </Descriptions.Item>
-                <Descriptions.Item label="单条费率">
+                <Descriptions.Item label={t('ruleConfig.columns.ratePerAnnotation')}>
                   <Text strong>¥{activeRule.rate_per_annotation.toFixed(2)}</Text>
-                  <Text type="secondary"> / 条</Text>
+                  <Text type="secondary"> {t('ruleConfig.form.perItem')}</Text>
                 </Descriptions.Item>
-                <Descriptions.Item label="时薪">
+                <Descriptions.Item label={t('ruleConfig.columns.ratePerHour')}>
                   <Text strong>¥{activeRule.rate_per_hour.toFixed(2)}</Text>
-                  <Text type="secondary"> / 小时</Text>
+                  <Text type="secondary"> {t('ruleConfig.form.perHour')}</Text>
                 </Descriptions.Item>
-                <Descriptions.Item label="项目年费">
+                <Descriptions.Item label={t('ruleConfig.columns.projectAnnualFee')}>
                   <Text strong>¥{activeRule.project_annual_fee.toLocaleString()}</Text>
-                  <Text type="secondary"> / 年</Text>
+                  <Text type="secondary"> {t('ruleConfig.form.perYear')}</Text>
                 </Descriptions.Item>
-                <Descriptions.Item label="审批者">
+                <Descriptions.Item label={t('ruleConfig.columns.approvedBy')}>
                   {activeRule.approved_by || '-'}
                 </Descriptions.Item>
               </Descriptions>
@@ -327,8 +329,8 @@ export function BillingRuleConfig({
           </Row>
         ) : (
           <Alert
-            message="暂无生效的计费规则"
-            description="请创建并审批计费规则以开始使用计费功能"
+            message={t('ruleConfig.noActiveRule')}
+            description={t('ruleConfig.noActiveRuleDesc')}
             type="info"
             showIcon
           />
@@ -338,14 +340,14 @@ export function BillingRuleConfig({
       {/* Pending Rules Alert */}
       {pendingRules.length > 0 && (
         <Alert
-          message={`有 ${pendingRules.length} 条待审批的计费规则`}
+          message={t('ruleConfig.pendingRulesAlert', { count: pendingRules.length })}
           type="warning"
           showIcon
           style={{ marginBottom: 16 }}
           action={
             isAdmin && (
               <Button size="small" type="primary" onClick={() => refetch()}>
-                查看
+                {t('ruleConfig.actions.view')}
               </Button>
             )
           }
@@ -357,7 +359,7 @@ export function BillingRuleConfig({
         title={
           <Space>
             <HistoryOutlined />
-            <span>规则版本历史</span>
+            <span>{t('ruleConfig.ruleHistory')}</span>
           </Space>
         }
       >
@@ -369,7 +371,7 @@ export function BillingRuleConfig({
           pagination={{
             pageSize: 10,
             showSizeChanger: true,
-            showTotal: (total) => `共 ${total} 条记录`,
+            showTotal: (total) => t('workHours.report.messages.totalRecords', { total }),
           }}
           rowClassName={(record) => (record.is_active ? 'active-rule-row' : '')}
         />
@@ -380,7 +382,7 @@ export function BillingRuleConfig({
         title={
           <Space>
             <PlusOutlined />
-            <span>创建计费规则版本</span>
+            <span>{t('ruleConfig.createRuleVersion')}</span>
           </Space>
         }
         open={isModalOpen}
@@ -403,7 +405,7 @@ export function BillingRuleConfig({
           }}
         >
           <Alert
-            message="创建新版本后需要管理员审批才能生效"
+            message={t('ruleConfig.createAlert')}
             type="info"
             showIcon
             style={{ marginBottom: 24 }}
@@ -412,14 +414,14 @@ export function BillingRuleConfig({
           <Form.Item
             label={
               <Space>
-                <span>计费模式</span>
-                <Tooltip title="选择适合您业务的计费方式">
+                <span>{t('ruleConfig.form.billingMode')}</span>
+                <Tooltip title={t('ruleConfig.billingModeTooltip')}>
                   <InfoCircleOutlined />
                 </Tooltip>
               </Space>
             }
             name="billing_mode"
-            rules={[{ required: true, message: '请选择计费模式' }]}
+            rules={[{ required: true, message: t('ruleConfig.form.billingModeRequired') }]}
           >
             <Select
               options={BILLING_MODE_OPTIONS.map((opt) => ({
@@ -439,11 +441,11 @@ export function BillingRuleConfig({
           <Row gutter={16}>
             <Col span={8}>
               <Form.Item
-                label="单条费率 (¥)"
+                label={t('ruleConfig.form.ratePerAnnotation')}
                 name="rate_per_annotation"
                 rules={[
-                  { required: true, message: '请输入单条费率' },
-                  { type: 'number', min: 0, message: '费率不能为负数' },
+                  { required: true, message: t('ruleConfig.form.ratePerAnnotationRequired') },
+                  { type: 'number', min: 0, message: t('ruleConfig.form.ratePerAnnotationMin') },
                 ]}
               >
                 <InputNumber
@@ -451,17 +453,17 @@ export function BillingRuleConfig({
                   step={0.1}
                   precision={2}
                   style={{ width: '100%' }}
-                  addonAfter="/ 条"
+                  addonAfter={t('ruleConfig.form.perItem')}
                 />
               </Form.Item>
             </Col>
             <Col span={8}>
               <Form.Item
-                label="时薪 (¥)"
+                label={t('ruleConfig.form.ratePerHour')}
                 name="rate_per_hour"
                 rules={[
-                  { required: true, message: '请输入时薪' },
-                  { type: 'number', min: 0, message: '时薪不能为负数' },
+                  { required: true, message: t('ruleConfig.form.ratePerHourRequired') },
+                  { type: 'number', min: 0, message: t('ruleConfig.form.ratePerHourMin') },
                 ]}
               >
                 <InputNumber
@@ -469,17 +471,17 @@ export function BillingRuleConfig({
                   step={5}
                   precision={2}
                   style={{ width: '100%' }}
-                  addonAfter="/ 小时"
+                  addonAfter={t('ruleConfig.form.perHour')}
                 />
               </Form.Item>
             </Col>
             <Col span={8}>
               <Form.Item
-                label="项目年费 (¥)"
+                label={t('ruleConfig.form.projectAnnualFee')}
                 name="project_annual_fee"
                 rules={[
-                  { required: true, message: '请输入项目年费' },
-                  { type: 'number', min: 0, message: '年费不能为负数' },
+                  { required: true, message: t('ruleConfig.form.projectAnnualFeeRequired') },
+                  { type: 'number', min: 0, message: t('ruleConfig.form.projectAnnualFeeMin') },
                 ]}
               >
                 <InputNumber
@@ -487,7 +489,7 @@ export function BillingRuleConfig({
                   step={1000}
                   precision={0}
                   style={{ width: '100%' }}
-                  addonAfter="/ 年"
+                  addonAfter={t('ruleConfig.form.perYear')}
                 />
               </Form.Item>
             </Col>
@@ -501,14 +503,14 @@ export function BillingRuleConfig({
                   form.resetFields();
                 }}
               >
-                取消
+                {t('common:cancel')}
               </Button>
               <Button
                 type="primary"
                 htmlType="submit"
                 loading={createMutation.isPending}
               >
-                创建规则
+                {t('ruleConfig.actions.createRule')}
               </Button>
             </Space>
           </Form.Item>

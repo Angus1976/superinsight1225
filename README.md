@@ -2,6 +2,21 @@
 
 SuperInsight 是一款专为 AI 时代设计的企业级语料治理与智能标注平台，深度借鉴龙石数据成熟的"理采存管用"方法论，同时针对大模型（LLM）和生成式 AI（GenAI）应用场景进行全面升级。
 
+## 🚨 Documentation-First Development (文档优先开发)
+
+**本项目强制执行严格的文档优先开发工作流。**
+
+在修改任何代码之前，您必须：
+1. ✅ 更新文档 (requirements, design, tasks, CHANGELOG)
+2. ✅ 运行验证脚本
+3. ✅ 获得批准
+
+**快速开始**: 查看 [文档优先快速参考](.kiro/specs/DOC_FIRST_QUICK_REFERENCE.md)  
+**完整指南**: 查看 [文档优先工作流](.kiro/steering/doc-first-workflow.md)  
+**实例演示**: 查看 [实时演示](.kiro/specs/DOC_FIRST_DEMO.md)
+
+---
+
 ## 特性
 
 - 🔒 **安全数据提取**: 只读权限提取各种数据源

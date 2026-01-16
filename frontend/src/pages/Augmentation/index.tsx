@@ -35,6 +35,7 @@ import {
   SettingOutlined,
   ExperimentOutlined,
 } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import type { ColumnsType } from 'antd/es/table';
 import type { UploadProps } from 'antd';
 
@@ -128,19 +129,27 @@ const statusColors = {
   failed: 'error',
 } as const;
 
-const strategyLabels: Record<string, string> = {
-  back_translation: 'Back Translation',
-  paraphrase: 'Paraphrase',
-  synonym_replace: 'Synonym Replacement',
-  noise_injection: 'Noise Injection',
-  eda: 'Easy Data Augmentation',
-};
-
 const AugmentationPage: React.FC = () => {
+  const { t } = useTranslation('augmentation');
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [form] = Form.useForm();
   const location = useLocation();
+
+  const strategyKeyMap: Record<string, string> = {
+    back_translation: 'strategy.backTranslation',
+    paraphrase: 'strategy.paraphrase',
+    synonym_replace: 'strategy.synonymReplace',
+    noise_injection: 'strategy.noiseInjection',
+    eda: 'strategy.eda',
+  };
+
+  const statusKeyMap: Record<string, string> = {
+    pending: 'status.pending',
+    running: 'status.running',
+    completed: 'status.completed',
+    failed: 'status.failed',
+  };
 
   // Check if we're on a sub-route
   const isSubRoute = location.pathname !== '/augmentation';
@@ -153,17 +162,17 @@ const AugmentationPage: React.FC = () => {
           <Menu mode="horizontal" selectedKeys={[location.pathname.split('/').pop() || '']}>
             <Menu.Item key="augmentation">
               <Link to="/augmentation">
-                <ExperimentOutlined /> 概览
+                <ExperimentOutlined /> {t('nav.overview')}
               </Link>
             </Menu.Item>
             <Menu.Item key="samples">
               <Link to="/augmentation/samples">
-                <DatabaseOutlined /> 样本管理
+                <DatabaseOutlined /> {t('nav.samples')}
               </Link>
             </Menu.Item>
             <Menu.Item key="config">
               <Link to="/augmentation/config">
-                <SettingOutlined /> 配置管理
+                <SettingOutlined /> {t('nav.config')}
               </Link>
             </Menu.Item>
           </Menu>
@@ -174,7 +183,7 @@ const AugmentationPage: React.FC = () => {
   }
 
   const handleCreateJob = async (_values: Record<string, unknown>) => {
-    message.success('Augmentation job created successfully');
+    message.success(t('modal.createSuccess'));
     setCreateModalOpen(false);
     form.resetFields();
   };
@@ -190,29 +199,29 @@ const AugmentationPage: React.FC = () => {
 
   const jobColumns: ColumnsType<AugmentationJob> = [
     {
-      title: 'Name',
+      title: t('jobs.name'),
       dataIndex: 'name',
       key: 'name',
       render: (name) => <a>{name}</a>,
     },
     {
-      title: 'Strategy',
+      title: t('jobs.strategy'),
       dataIndex: 'strategy',
       key: 'strategy',
       render: (strategy) => (
-        <Tag color="blue">{strategyLabels[strategy] || strategy}</Tag>
+        <Tag color="blue">{t(strategyKeyMap[strategy]) || strategy}</Tag>
       ),
     },
     {
-      title: 'Status',
+      title: t('jobs.status'),
       dataIndex: 'status',
       key: 'status',
       render: (status: keyof typeof statusColors) => (
-        <Tag color={statusColors[status]}>{status.toUpperCase()}</Tag>
+        <Tag color={statusColors[status]}>{t(statusKeyMap[status])}</Tag>
       ),
     },
     {
-      title: 'Progress',
+      title: t('jobs.progress'),
       key: 'progress',
       width: 200,
       render: (_, record) => (
@@ -224,7 +233,7 @@ const AugmentationPage: React.FC = () => {
       ),
     },
     {
-      title: 'Source / Output',
+      title: t('jobs.sourceOutput'),
       key: 'counts',
       render: (_, record) => (
         <span>
@@ -233,31 +242,31 @@ const AugmentationPage: React.FC = () => {
       ),
     },
     {
-      title: 'Created',
+      title: t('jobs.created'),
       dataIndex: 'created_at',
       key: 'created_at',
       render: (date) => new Date(date).toLocaleString(),
     },
     {
-      title: 'Actions',
+      title: t('jobs.actions'),
       key: 'actions',
       render: (_, record) => (
         <Space>
           {record.status === 'pending' && (
             <Button type="link" size="small" icon={<PlayCircleOutlined />}>
-              Start
+              {t('jobs.start')}
             </Button>
           )}
           {record.status === 'running' && (
             <Button type="link" size="small" icon={<PauseCircleOutlined />}>
-              Pause
+              {t('jobs.pause')}
             </Button>
           )}
           <Button type="link" size="small" icon={<EyeOutlined />}>
-            View
+            {t('jobs.view')}
           </Button>
           <Button type="link" danger size="small" icon={<DeleteOutlined />}>
-            Delete
+            {t('jobs.delete')}
           </Button>
         </Space>
       ),
@@ -266,31 +275,31 @@ const AugmentationPage: React.FC = () => {
 
   const sampleColumns: ColumnsType<SampleData> = [
     {
-      title: 'Content',
+      title: t('samples.content'),
       dataIndex: 'content',
       key: 'content',
       ellipsis: true,
     },
     {
-      title: 'Label',
+      title: t('samples.label'),
       dataIndex: 'label',
       key: 'label',
       width: 100,
       render: (label) => <Tag>{label}</Tag>,
     },
     {
-      title: 'Source',
+      title: t('samples.source'),
       dataIndex: 'source',
       key: 'source',
       width: 120,
       render: (source) => (
         <Tag color={source === 'original' ? 'blue' : 'green'}>
-          {source.toUpperCase()}
+          {t(`samples.${source}`)}
         </Tag>
       ),
     },
     {
-      title: 'Quality',
+      title: t('samples.quality'),
       dataIndex: 'quality_score',
       key: 'quality_score',
       width: 100,
@@ -306,14 +315,14 @@ const AugmentationPage: React.FC = () => {
 
   return (
     <div>
-      <h2 style={{ marginBottom: 24 }}>Data Augmentation</h2>
+      <h2 style={{ marginBottom: 24 }}>{t('title')}</h2>
 
       {/* Stats */}
       <Row gutter={16} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={8}>
           <Card>
             <Statistic
-              title="Total Samples"
+              title={t('stats.totalSamples')}
               value={25680}
               prefix={<DatabaseOutlined />}
             />
@@ -322,7 +331,7 @@ const AugmentationPage: React.FC = () => {
         <Col xs={24} sm={8}>
           <Card>
             <Statistic
-              title="Augmented Samples"
+              title={t('stats.augmentedSamples')}
               value={18450}
               prefix={<ThunderboltOutlined />}
               valueStyle={{ color: '#52c41a' }}
@@ -332,7 +341,7 @@ const AugmentationPage: React.FC = () => {
         <Col xs={24} sm={8}>
           <Card>
             <Statistic
-              title="Augmentation Ratio"
+              title={t('stats.augmentationRatio')}
               value="3.2x"
               prefix={<FileTextOutlined />}
               valueStyle={{ color: '#1890ff' }}
@@ -348,7 +357,7 @@ const AugmentationPage: React.FC = () => {
           items={[
             {
               key: 'jobs',
-              label: 'Augmentation Jobs',
+              label: t('tabs.jobs'),
               children: (
                 <>
                   <div style={{ marginBottom: 16 }}>
@@ -358,13 +367,13 @@ const AugmentationPage: React.FC = () => {
                         icon={<PlusOutlined />}
                         onClick={() => setCreateModalOpen(true)}
                       >
-                        Create Job
+                        {t('jobs.createJob')}
                       </Button>
                       <Button
                         icon={<UploadOutlined />}
                         onClick={() => setUploadModalOpen(true)}
                       >
-                        Upload Samples
+                        {t('jobs.uploadSamples')}
                       </Button>
                     </Space>
                   </div>
@@ -379,12 +388,12 @@ const AugmentationPage: React.FC = () => {
             },
             {
               key: 'samples',
-              label: 'Sample Data',
+              label: t('tabs.samples'),
               children: (
                 <>
                   <Alert
-                    message="Sample Preview"
-                    description="This shows a comparison between original and augmented samples."
+                    message={t('samples.preview')}
+                    description={t('samples.previewDescription')}
                     type="info"
                     showIcon
                     style={{ marginBottom: 16 }}
@@ -404,7 +413,7 @@ const AugmentationPage: React.FC = () => {
 
       {/* Create Job Modal */}
       <Modal
-        title="Create Augmentation Job"
+        title={t('modal.createJob')}
         open={createModalOpen}
         onCancel={() => setCreateModalOpen(false)}
         onOk={() => form.submit()}
@@ -413,39 +422,39 @@ const AugmentationPage: React.FC = () => {
         <Form form={form} layout="vertical" onFinish={handleCreateJob}>
           <Form.Item
             name="name"
-            label="Job Name"
-            rules={[{ required: true, message: 'Please enter job name' }]}
+            label={t('modal.jobName')}
+            rules={[{ required: true, message: t('modal.jobNameRequired') }]}
           >
-            <Input placeholder="Enter job name" />
+            <Input placeholder={t('modal.jobNamePlaceholder')} />
           </Form.Item>
           <Form.Item
             name="strategy"
-            label="Augmentation Strategy"
+            label={t('modal.strategy')}
             rules={[{ required: true }]}
           >
-            <Select placeholder="Select strategy">
-              <Select.Option value="back_translation">Back Translation</Select.Option>
-              <Select.Option value="paraphrase">Paraphrase</Select.Option>
-              <Select.Option value="synonym_replace">Synonym Replacement</Select.Option>
-              <Select.Option value="eda">Easy Data Augmentation (EDA)</Select.Option>
+            <Select placeholder={t('modal.strategyPlaceholder')}>
+              <Select.Option value="back_translation">{t('strategy.backTranslation')}</Select.Option>
+              <Select.Option value="paraphrase">{t('strategy.paraphrase')}</Select.Option>
+              <Select.Option value="synonym_replace">{t('strategy.synonymReplace')}</Select.Option>
+              <Select.Option value="eda">{t('strategy.eda')}</Select.Option>
             </Select>
           </Form.Item>
           <Form.Item
             name="multiplier"
-            label="Augmentation Multiplier"
+            label={t('modal.multiplier')}
             initialValue={3}
           >
             <InputNumber min={1} max={10} style={{ width: '100%' }} />
           </Form.Item>
-          <Form.Item name="description" label="Description">
-            <Input.TextArea rows={3} placeholder="Optional description" />
+          <Form.Item name="description" label={t('modal.description')}>
+            <Input.TextArea rows={3} placeholder={t('modal.descriptionPlaceholder')} />
           </Form.Item>
         </Form>
       </Modal>
 
       {/* Upload Modal */}
       <Modal
-        title="Upload Sample Data"
+        title={t('modal.uploadSamples')}
         open={uploadModalOpen}
         onCancel={() => setUploadModalOpen(false)}
         footer={null}
@@ -459,9 +468,9 @@ const AugmentationPage: React.FC = () => {
           <p className="ant-upload-drag-icon">
             <UploadOutlined />
           </p>
-          <p className="ant-upload-text">Click or drag file to upload</p>
+          <p className="ant-upload-text">{t('modal.uploadHint')}</p>
           <p className="ant-upload-hint">
-            Support CSV, JSON, or JSONL format. Max file size: 100MB.
+            {t('modal.uploadDescription')}
           </p>
         </Upload.Dragger>
       </Modal>

@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Card,
   Form,
@@ -71,6 +72,7 @@ interface ConnectionTestResult {
 // ==================== Component ====================
 
 const LLMConfigPage: React.FC = () => {
+  const { t } = useTranslation(['admin', 'common']);
   const [form] = Form.useForm<ConfigFormData>();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -104,7 +106,7 @@ const LLMConfigPage: React.FC = () => {
       form.setFieldsValue(configData);
     } catch (error) {
       console.error('Failed to load LLM configuration:', error);
-      message.error('加载配置失败');
+      message.error(t('llm.loadConfigFailed'));
     } finally {
       setLoading(false);
     }
@@ -116,7 +118,7 @@ const LLMConfigPage: React.FC = () => {
       setHealthStatus(healthData);
     } catch (error) {
       console.error('Failed to refresh health status:', error);
-      message.error('刷新健康状态失败');
+      message.error(t('llm.refreshHealthFailed'));
     }
   };
 
@@ -132,20 +134,20 @@ const LLMConfigPage: React.FC = () => {
       setValidationResult(validation);
       
       if (!validation.valid) {
-        message.error('配置验证失败，请检查错误信息');
+        message.error(t('llm.configValidationFailed'));
         return;
       }
 
       // Save configuration
       const updatedConfig = await llmService.updateConfig(values);
       setConfig(updatedConfig);
-      message.success('配置保存成功');
+      message.success(t('llm.configSaveSuccess'));
 
       // Refresh health status
       await refreshHealth();
     } catch (error) {
       console.error('Failed to save configuration:', error);
-      message.error('保存配置失败');
+      message.error(t('llm.configSaveFailed'));
     } finally {
       setSaving(false);
     }
@@ -153,13 +155,13 @@ const LLMConfigPage: React.FC = () => {
 
   const handleReset = () => {
     Modal.confirm({
-      title: '重置配置',
-      content: '确定要重置所有配置吗？未保存的更改将丢失。',
+      title: t('llm.actions.confirmReset'),
+      content: t('llm.actions.confirmResetMessage'),
       onOk: () => {
         if (config) {
           form.setFieldsValue(config);
           setValidationResult(null);
-          message.info('配置已重置');
+          message.info(t('llm.configReset'));
         }
       },
     });
@@ -170,11 +172,11 @@ const LLMConfigPage: React.FC = () => {
       const reloadedConfig = await llmService.hotReload();
       setConfig(reloadedConfig);
       form.setFieldsValue(reloadedConfig);
-      message.success('配置热加载成功');
+      message.success(t('llm.hotReloadSuccess'));
       await refreshHealth();
     } catch (error) {
       console.error('Failed to hot reload configuration:', error);
-      message.error('热加载失败');
+      message.error(t('llm.hotReloadFailed'));
     }
   };
 
@@ -193,7 +195,7 @@ const LLMConfigPage: React.FC = () => {
         [method]: {
           method,
           status: result.available ? 'success' : 'error',
-          message: result.error || '连接成功',
+          message: result.error || t('llm.status.connectionSuccess'),
           latency: result.latency_ms,
         }
       }));
@@ -203,7 +205,7 @@ const LLMConfigPage: React.FC = () => {
         [method]: {
           method,
           status: 'error',
-          message: error instanceof Error ? error.message : '连接失败',
+          message: error instanceof Error ? error.message : t('llm.status.connectionFailed'),
         }
       }));
     }
@@ -227,7 +229,7 @@ const LLMConfigPage: React.FC = () => {
         rules={[{ required: false }]}
       >
         <Input.Password
-          placeholder={placeholder || `请输入${label}`}
+          placeholder={placeholder || label}
           visibilityToggle={{
             visible: isVisible,
             onVisibleChange: () => toggleApiKeyVisibility(field),
@@ -243,49 +245,49 @@ const LLMConfigPage: React.FC = () => {
     const test = testResults[method];
     
     if (test?.status === 'testing') {
-      return <Badge status="processing" text="测试中..." />;
+      return <Badge status="processing" text={t('llm.status.testing')} />;
     }
     
     if (test?.status === 'success') {
-      return <Badge status="success" text={`连接成功 (${test.latency}ms)`} />;
+      return <Badge status="success" text={`${t('llm.status.connectionSuccess')} (${test.latency}ms)`} />;
     }
     
     if (test?.status === 'error') {
-      return <Badge status="error" text={test.message || '连接失败'} />;
+      return <Badge status="error" text={test.message || t('llm.status.connectionFailed')} />;
     }
     
     if (health?.available) {
-      return <Badge status="success" text={`在线 (${health.latency_ms}ms)`} />;
+      return <Badge status="success" text={`${t('llm.status.online')} (${health.latency_ms}ms)`} />;
     }
     
     if (health?.error) {
       return <Badge status="error" text={health.error} />;
     }
     
-    return <Badge status="default" text="未知" />;
+    return <Badge status="default" text={t('llm.status.unknown')} />;
   };
 
   // ==================== Render Methods ====================
 
   const renderLocalConfig = () => (
-    <Card title="本地 Ollama 配置" extra={renderHealthBadge('local_ollama')}>
+    <Card title={t('llm.local.title')} extra={renderHealthBadge('local_ollama')}>
       <Row gutter={16}>
         <Col span={12}>
           <Form.Item
             name={['local_config', 'ollama_url']}
-            label="Ollama 服务地址"
-            rules={[{ required: true, message: '请输入 Ollama 服务地址' }]}
+            label={t('llm.local.ollamaUrl')}
+            rules={[{ required: true, message: t('llm.local.ollamaUrlRequired') }]}
           >
-            <Input placeholder="http://localhost:11434" />
+            <Input placeholder={t('llm.local.ollamaUrlPlaceholder')} />
           </Form.Item>
         </Col>
         <Col span={12}>
           <Form.Item
             name={['local_config', 'default_model']}
-            label="默认模型"
-            rules={[{ required: true, message: '请输入默认模型名称' }]}
+            label={t('llm.local.defaultModel')}
+            rules={[{ required: true, message: t('llm.local.defaultModelRequired') }]}
           >
-            <Input placeholder="llama2" />
+            <Input placeholder={t('llm.local.defaultModelPlaceholder')} />
           </Form.Item>
         </Col>
       </Row>
@@ -294,7 +296,7 @@ const LLMConfigPage: React.FC = () => {
         <Col span={12}>
           <Form.Item
             name={['local_config', 'timeout']}
-            label="超时时间 (秒)"
+            label={t('llm.local.timeout')}
             rules={[{ required: true, type: 'number', min: 1, max: 300 }]}
           >
             <InputNumber min={1} max={300} style={{ width: '100%' }} />
@@ -303,7 +305,7 @@ const LLMConfigPage: React.FC = () => {
         <Col span={12}>
           <Form.Item
             name={['local_config', 'max_retries']}
-            label="最大重试次数"
+            label={t('llm.local.maxRetries')}
             rules={[{ required: true, type: 'number', min: 0, max: 10 }]}
           >
             <InputNumber min={0} max={10} style={{ width: '100%' }} />
@@ -318,31 +320,31 @@ const LLMConfigPage: React.FC = () => {
           onClick={() => testConnection('local_ollama')}
           loading={testResults['local_ollama']?.status === 'testing'}
         >
-          测试连接
+          {t('llm.actions.testConnection')}
         </Button>
       </Space>
     </Card>
   );
 
   const renderCloudConfig = () => (
-    <Card title="云端 LLM 配置">
+    <Card title={t('llm.cloud.title')}>
       <Tabs defaultActiveKey="openai">
-        <TabPane tab={<span><CloudOutlined />OpenAI</span>} key="openai">
+        <TabPane tab={<span><CloudOutlined />{t('llm.cloud.openai.title')}</span>} key="openai">
           <div style={{ marginBottom: 16 }}>
             {renderHealthBadge('cloud_openai')}
           </div>
           
           <Row gutter={16}>
             <Col span={12}>
-              {renderApiKeyInput(['cloud_config', 'openai_api_key'], 'OpenAI API Key')}
+              {renderApiKeyInput(['cloud_config', 'openai_api_key'], t('llm.cloud.openai.apiKey'))}
             </Col>
             <Col span={12}>
               <Form.Item
                 name={['cloud_config', 'openai_base_url']}
-                label="API 基础地址"
-                rules={[{ required: true, message: '请输入 API 基础地址' }]}
+                label={t('llm.cloud.openai.baseUrl')}
+                rules={[{ required: true, message: t('llm.cloud.openai.baseUrlRequired') }]}
               >
-                <Input placeholder="https://api.openai.com/v1" />
+                <Input placeholder={t('llm.cloud.openai.baseUrlPlaceholder')} />
               </Form.Item>
             </Col>
           </Row>
@@ -351,10 +353,10 @@ const LLMConfigPage: React.FC = () => {
             <Col span={12}>
               <Form.Item
                 name={['cloud_config', 'openai_model']}
-                label="默认模型"
-                rules={[{ required: true, message: '请输入默认模型' }]}
+                label={t('llm.cloud.openai.model')}
+                rules={[{ required: true, message: t('llm.cloud.openai.modelRequired') }]}
               >
-                <Input placeholder="gpt-3.5-turbo" />
+                <Input placeholder={t('llm.cloud.openai.modelPlaceholder')} />
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -365,14 +367,14 @@ const LLMConfigPage: React.FC = () => {
                   onClick={() => testConnection('cloud_openai')}
                   loading={testResults['cloud_openai']?.status === 'testing'}
                 >
-                  测试连接
+                  {t('llm.actions.testConnection')}
                 </Button>
               </Space>
             </Col>
           </Row>
         </TabPane>
 
-        <TabPane tab={<span><CloudOutlined />Azure OpenAI</span>} key="azure">
+        <TabPane tab={<span><CloudOutlined />{t('llm.cloud.azure.title')}</span>} key="azure">
           <div style={{ marginBottom: 16 }}>
             {renderHealthBadge('cloud_azure')}
           </div>
@@ -381,13 +383,13 @@ const LLMConfigPage: React.FC = () => {
             <Col span={12}>
               <Form.Item
                 name={['cloud_config', 'azure_endpoint']}
-                label="Azure 端点"
+                label={t('llm.cloud.azure.endpoint')}
               >
-                <Input placeholder="https://your-resource.openai.azure.com/" />
+                <Input placeholder={t('llm.cloud.azure.endpointPlaceholder')} />
               </Form.Item>
             </Col>
             <Col span={12}>
-              {renderApiKeyInput(['cloud_config', 'azure_api_key'], 'Azure API Key')}
+              {renderApiKeyInput(['cloud_config', 'azure_api_key'], t('llm.cloud.azure.apiKey'))}
             </Col>
           </Row>
           
@@ -395,18 +397,18 @@ const LLMConfigPage: React.FC = () => {
             <Col span={8}>
               <Form.Item
                 name={['cloud_config', 'azure_deployment']}
-                label="部署名称"
+                label={t('llm.cloud.azure.deployment')}
               >
-                <Input placeholder="gpt-35-turbo" />
+                <Input placeholder={t('llm.cloud.azure.deploymentPlaceholder')} />
               </Form.Item>
             </Col>
             <Col span={8}>
               <Form.Item
                 name={['cloud_config', 'azure_api_version']}
-                label="API 版本"
-                rules={[{ required: true, message: '请输入 API 版本' }]}
+                label={t('llm.cloud.azure.apiVersion')}
+                rules={[{ required: true, message: t('llm.cloud.azure.apiVersionRequired') }]}
               >
-                <Input placeholder="2023-12-01-preview" />
+                <Input placeholder={t('llm.cloud.azure.apiVersionPlaceholder')} />
               </Form.Item>
             </Col>
             <Col span={8}>
@@ -417,7 +419,7 @@ const LLMConfigPage: React.FC = () => {
                   onClick={() => testConnection('cloud_azure')}
                   loading={testResults['cloud_azure']?.status === 'testing'}
                 >
-                  测试连接
+                  {t('llm.actions.testConnection')}
                 </Button>
               </Space>
             </Col>
@@ -431,7 +433,7 @@ const LLMConfigPage: React.FC = () => {
         <Col span={12}>
           <Form.Item
             name={['cloud_config', 'timeout']}
-            label="超时时间 (秒)"
+            label={t('llm.cloud.timeout')}
             rules={[{ required: true, type: 'number', min: 1, max: 300 }]}
           >
             <InputNumber min={1} max={300} style={{ width: '100%' }} />
@@ -440,7 +442,7 @@ const LLMConfigPage: React.FC = () => {
         <Col span={12}>
           <Form.Item
             name={['cloud_config', 'max_retries']}
-            label="最大重试次数"
+            label={t('llm.cloud.maxRetries')}
             rules={[{ required: true, type: 'number', min: 0, max: 10 }]}
           >
             <InputNumber min={0} max={10} style={{ width: '100%' }} />
@@ -451,24 +453,24 @@ const LLMConfigPage: React.FC = () => {
   );
 
   const renderChinaConfig = () => (
-    <Card title="中国 LLM 配置">
+    <Card title={t('llm.china.title')}>
       <Tabs defaultActiveKey="qwen">
-        <TabPane tab="通义千问" key="qwen">
+        <TabPane tab={t('llm.qwen.title')} key="qwen">
           <div style={{ marginBottom: 16 }}>
             {renderHealthBadge('china_qwen')}
           </div>
           
           <Row gutter={16}>
             <Col span={12}>
-              {renderApiKeyInput(['china_config', 'qwen_api_key'], '千问 API Key')}
+              {renderApiKeyInput(['china_config', 'qwen_api_key'], t('llm.qwen.apiKey'))}
             </Col>
             <Col span={12}>
               <Form.Item
                 name={['china_config', 'qwen_model']}
-                label="默认模型"
-                rules={[{ required: true, message: '请输入默认模型' }]}
+                label={t('llm.qwen.model')}
+                rules={[{ required: true, message: t('llm.qwen.modelRequired') }]}
               >
-                <Input placeholder="qwen-turbo" />
+                <Input placeholder={t('llm.qwen.modelPlaceholder')} />
               </Form.Item>
             </Col>
           </Row>
@@ -480,27 +482,27 @@ const LLMConfigPage: React.FC = () => {
               onClick={() => testConnection('china_qwen')}
               loading={testResults['china_qwen']?.status === 'testing'}
             >
-              测试连接
+              {t('llm.actions.testConnection')}
             </Button>
           </Space>
         </TabPane>
 
-        <TabPane tab="智谱 GLM" key="zhipu">
+        <TabPane tab={t('llm.zhipu.title')} key="zhipu">
           <div style={{ marginBottom: 16 }}>
             {renderHealthBadge('china_zhipu')}
           </div>
           
           <Row gutter={16}>
             <Col span={12}>
-              {renderApiKeyInput(['china_config', 'zhipu_api_key'], '智谱 API Key')}
+              {renderApiKeyInput(['china_config', 'zhipu_api_key'], t('llm.zhipu.apiKey'))}
             </Col>
             <Col span={12}>
               <Form.Item
                 name={['china_config', 'zhipu_model']}
-                label="默认模型"
-                rules={[{ required: true, message: '请输入默认模型' }]}
+                label={t('llm.zhipu.model')}
+                rules={[{ required: true, message: t('llm.zhipu.modelRequired') }]}
               >
-                <Input placeholder="glm-4" />
+                <Input placeholder={t('llm.zhipu.modelPlaceholder')} />
               </Form.Item>
             </Col>
           </Row>
@@ -512,30 +514,30 @@ const LLMConfigPage: React.FC = () => {
               onClick={() => testConnection('china_zhipu')}
               loading={testResults['china_zhipu']?.status === 'testing'}
             >
-              测试连接
+              {t('llm.actions.testConnection')}
             </Button>
           </Space>
         </TabPane>
 
-        <TabPane tab="文心一言" key="baidu">
+        <TabPane tab={t('llm.baidu.title')} key="baidu">
           <div style={{ marginBottom: 16 }}>
             {renderHealthBadge('china_baidu')}
           </div>
           
           <Row gutter={16}>
             <Col span={8}>
-              {renderApiKeyInput(['china_config', 'baidu_api_key'], '百度 API Key')}
+              {renderApiKeyInput(['china_config', 'baidu_api_key'], t('llm.baidu.apiKey'))}
             </Col>
             <Col span={8}>
-              {renderApiKeyInput(['china_config', 'baidu_secret_key'], '百度 Secret Key')}
+              {renderApiKeyInput(['china_config', 'baidu_secret_key'], t('llm.baidu.secretKey'))}
             </Col>
             <Col span={8}>
               <Form.Item
                 name={['china_config', 'baidu_model']}
-                label="默认模型"
-                rules={[{ required: true, message: '请输入默认模型' }]}
+                label={t('llm.baidu.model')}
+                rules={[{ required: true, message: t('llm.baidu.modelRequired') }]}
               >
-                <Input placeholder="ernie-bot-turbo" />
+                <Input placeholder={t('llm.baidu.modelPlaceholder')} />
               </Form.Item>
             </Col>
           </Row>
@@ -547,30 +549,30 @@ const LLMConfigPage: React.FC = () => {
               onClick={() => testConnection('china_baidu')}
               loading={testResults['china_baidu']?.status === 'testing'}
             >
-              测试连接
+              {t('llm.actions.testConnection')}
             </Button>
           </Space>
         </TabPane>
 
-        <TabPane tab="腾讯混元" key="hunyuan">
+        <TabPane tab={t('llm.hunyuan.title')} key="hunyuan">
           <div style={{ marginBottom: 16 }}>
             {renderHealthBadge('china_hunyuan')}
           </div>
           
           <Row gutter={16}>
             <Col span={8}>
-              {renderApiKeyInput(['china_config', 'hunyuan_secret_id'], '腾讯云 Secret ID')}
+              {renderApiKeyInput(['china_config', 'hunyuan_secret_id'], t('llm.hunyuan.secretId'))}
             </Col>
             <Col span={8}>
-              {renderApiKeyInput(['china_config', 'hunyuan_secret_key'], '腾讯云 Secret Key')}
+              {renderApiKeyInput(['china_config', 'hunyuan_secret_key'], t('llm.hunyuan.secretKey'))}
             </Col>
             <Col span={8}>
               <Form.Item
                 name={['china_config', 'hunyuan_model']}
-                label="默认模型"
-                rules={[{ required: true, message: '请输入默认模型' }]}
+                label={t('llm.hunyuan.model')}
+                rules={[{ required: true, message: t('llm.hunyuan.modelRequired') }]}
               >
-                <Input placeholder="hunyuan-lite" />
+                <Input placeholder={t('llm.hunyuan.modelPlaceholder')} />
               </Form.Item>
             </Col>
           </Row>
@@ -582,7 +584,7 @@ const LLMConfigPage: React.FC = () => {
               onClick={() => testConnection('china_hunyuan')}
               loading={testResults['china_hunyuan']?.status === 'testing'}
             >
-              测试连接
+              {t('llm.actions.testConnection')}
             </Button>
           </Space>
         </TabPane>
@@ -594,7 +596,7 @@ const LLMConfigPage: React.FC = () => {
         <Col span={12}>
           <Form.Item
             name={['china_config', 'timeout']}
-            label="超时时间 (秒)"
+            label={t('llm.china.timeout')}
             rules={[{ required: true, type: 'number', min: 1, max: 300 }]}
           >
             <InputNumber min={1} max={300} style={{ width: '100%' }} />
@@ -603,7 +605,7 @@ const LLMConfigPage: React.FC = () => {
         <Col span={12}>
           <Form.Item
             name={['china_config', 'max_retries']}
-            label="最大重试次数"
+            label={t('llm.china.maxRetries')}
             rules={[{ required: true, type: 'number', min: 0, max: 10 }]}
           >
             <InputNumber min={0} max={10} style={{ width: '100%' }} />
@@ -614,20 +616,20 @@ const LLMConfigPage: React.FC = () => {
   );
 
   const renderGeneralConfig = () => (
-    <Card title="通用配置">
+    <Card title={t('llm.general.title')}>
       <Row gutter={16}>
         <Col span={12}>
           <Form.Item
             name="default_method"
-            label="默认 LLM 方法"
-            rules={[{ required: true, message: '请选择默认 LLM 方法' }]}
+            label={t('llm.general.defaultMethod')}
+            rules={[{ required: true, message: t('llm.general.defaultMethodRequired') }]}
           >
-            <Select placeholder="选择默认方法">
+            <Select placeholder={t('llm.general.defaultMethodPlaceholder')}>
               {methods.map(method => (
                 <Option key={method.method} value={method.method} disabled={!method.enabled}>
                   {getMethodName(method.method)}
-                  {!method.configured && <Tag color="orange" style={{ marginLeft: 8 }}>未配置</Tag>}
-                  {!method.enabled && <Tag color="red" style={{ marginLeft: 8 }}>已禁用</Tag>}
+                  {!method.configured && <Tag color="orange" style={{ marginLeft: 8 }}>{t('llm.status.notConfigured')}</Tag>}
+                  {!method.enabled && <Tag color="red" style={{ marginLeft: 8 }}>{t('llm.status.disabled')}</Tag>}
                 </Option>
               ))}
             </Select>
@@ -636,12 +638,12 @@ const LLMConfigPage: React.FC = () => {
         <Col span={12}>
           <Form.Item
             name="enabled_methods"
-            label="启用的方法"
-            rules={[{ required: true, message: '请选择至少一个启用的方法' }]}
+            label={t('llm.general.enabledMethods')}
+            rules={[{ required: true, message: t('llm.general.enabledMethodsRequired') }]}
           >
             <Select
               mode="multiple"
-              placeholder="选择启用的方法"
+              placeholder={t('llm.general.enabledMethodsPlaceholder')}
               style={{ width: '100%' }}
             >
               {methods.map(method => (
@@ -662,7 +664,7 @@ const LLMConfigPage: React.FC = () => {
     return (
       <div style={{ textAlign: 'center', padding: '50px' }}>
         <Spin size="large" />
-        <div style={{ marginTop: 16 }}>加载配置中...</div>
+        <div style={{ marginTop: 16 }}>{t('llm.loadingConfig')}</div>
       </div>
     );
   }
@@ -671,17 +673,17 @@ const LLMConfigPage: React.FC = () => {
     <div style={{ padding: '24px' }}>
       <div style={{ marginBottom: 24 }}>
         <Title level={2}>
-          <SettingOutlined /> LLM 配置管理
+          <SettingOutlined /> {t('llm.title')}
         </Title>
         <Paragraph>
-          配置和管理各种 LLM 提供商，包括本地 Ollama、云端服务和中国 LLM 服务。
+          {t('llm.subtitle')}
         </Paragraph>
       </div>
 
       {validationResult && !validationResult.valid && (
         <Alert
           type="error"
-          message="配置验证失败"
+          message={t('llm.validationFailed')}
           description={
             <ul>
               {validationResult.errors.map((error, index) => (
@@ -697,7 +699,7 @@ const LLMConfigPage: React.FC = () => {
       {validationResult && validationResult.warnings.length > 0 && (
         <Alert
           type="warning"
-          message="配置警告"
+          message={t('llm.validationWarnings')}
           description={
             <ul>
               {validationResult.warnings.map((warning, index) => (
@@ -716,19 +718,19 @@ const LLMConfigPage: React.FC = () => {
         onFinish={handleSave}
       >
         <Tabs defaultActiveKey="general">
-          <TabPane tab={<span><SettingOutlined />通用配置</span>} key="general">
+          <TabPane tab={<span><SettingOutlined />{t('llm.tabs.general')}</span>} key="general">
             {renderGeneralConfig()}
           </TabPane>
           
-          <TabPane tab={<span><DatabaseOutlined />本地 LLM</span>} key="local">
+          <TabPane tab={<span><DatabaseOutlined />{t('llm.tabs.local')}</span>} key="local">
             {renderLocalConfig()}
           </TabPane>
           
-          <TabPane tab={<span><CloudOutlined />云端 LLM</span>} key="cloud">
+          <TabPane tab={<span><CloudOutlined />{t('llm.tabs.cloud')}</span>} key="cloud">
             {renderCloudConfig()}
           </TabPane>
           
-          <TabPane tab={<span><ApiOutlined />中国 LLM</span>} key="china">
+          <TabPane tab={<span><ApiOutlined />{t('llm.tabs.china')}</span>} key="china">
             {renderChinaConfig()}
           </TabPane>
         </Tabs>
@@ -742,7 +744,7 @@ const LLMConfigPage: React.FC = () => {
               loading={saving}
               size="large"
             >
-              保存配置
+              {t('llm.actions.saveConfig')}
             </Button>
             
             <Button
@@ -750,7 +752,7 @@ const LLMConfigPage: React.FC = () => {
               onClick={handleReset}
               size="large"
             >
-              重置
+              {t('llm.actions.reset')}
             </Button>
             
             <Button
@@ -758,7 +760,7 @@ const LLMConfigPage: React.FC = () => {
               onClick={handleHotReload}
               size="large"
             >
-              热加载
+              {t('llm.actions.hotReload')}
             </Button>
             
             <Button
@@ -766,7 +768,7 @@ const LLMConfigPage: React.FC = () => {
               onClick={refreshHealth}
               size="large"
             >
-              刷新状态
+              {t('llm.actions.refreshStatus')}
             </Button>
           </Space>
         </div>

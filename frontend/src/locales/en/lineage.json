@@ -1,0 +1,18 @@
+{
+  "graph": "Lineage Graph",
+  "loadError": "Failed to load lineage data",
+  "exported": "Lineage data exported",
+  "noData": "No lineage data",
+  "nodes": "Nodes",
+  "edges": "Relationships",
+  "full": "Full",
+  "upstream": "Upstream",
+  "downstream": "Downstream",
+  "depth": "Depth",
+  "export": "Export",
+  "nodeDetails": "Node Details",
+  "entityType": "Entity Type",
+  "entityId": "Entity ID",
+  "name": "Name",
+  "metadata": "Metadata"
+}

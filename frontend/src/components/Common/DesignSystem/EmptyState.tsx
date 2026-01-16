@@ -6,6 +6,7 @@
  */
 
 import { memo, ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Empty, Button, Typography, Space } from 'antd';
 import {
   InboxOutlined,
@@ -39,38 +40,6 @@ interface EmptyStateProps {
   className?: string;
 }
 
-const emptyConfig: Record<EmptyType, {
-  icon: ReactNode;
-  defaultTitle: string;
-  defaultDescription: string;
-}> = {
-  default: {
-    icon: <InboxOutlined />,
-    defaultTitle: '暂无数据',
-    defaultDescription: '当前没有可显示的内容',
-  },
-  search: {
-    icon: <SearchOutlined />,
-    defaultTitle: '未找到结果',
-    defaultDescription: '尝试调整搜索条件或筛选器',
-  },
-  folder: {
-    icon: <FolderOpenOutlined />,
-    defaultTitle: '文件夹为空',
-    defaultDescription: '此文件夹中没有任何内容',
-  },
-  data: {
-    icon: <FileSearchOutlined />,
-    defaultTitle: '暂无数据',
-    defaultDescription: '开始添加数据以查看内容',
-  },
-  custom: {
-    icon: <InboxOutlined />,
-    defaultTitle: '',
-    defaultDescription: '',
-  },
-};
-
 export const EmptyState = memo<EmptyStateProps>(({
   type = 'default',
   title,
@@ -82,6 +51,40 @@ export const EmptyState = memo<EmptyStateProps>(({
   size = 'default',
   className,
 }) => {
+  const { t } = useTranslation('common');
+  
+  const emptyConfig: Record<EmptyType, {
+    icon: ReactNode;
+    defaultTitle: string;
+    defaultDescription: string;
+  }> = {
+    default: {
+      icon: <InboxOutlined />,
+      defaultTitle: t('emptyState.noData'),
+      defaultDescription: t('emptyState.noContent'),
+    },
+    search: {
+      icon: <SearchOutlined />,
+      defaultTitle: t('emptyState.noResults'),
+      defaultDescription: t('emptyState.adjustSearch'),
+    },
+    folder: {
+      icon: <FolderOpenOutlined />,
+      defaultTitle: t('emptyState.emptyFolder'),
+      defaultDescription: t('emptyState.noFolderContent'),
+    },
+    data: {
+      icon: <FileSearchOutlined />,
+      defaultTitle: t('emptyState.noData'),
+      defaultDescription: t('emptyState.startAdding'),
+    },
+    custom: {
+      icon: <InboxOutlined />,
+      defaultTitle: '',
+      defaultDescription: '',
+    },
+  };
+  
   const config = emptyConfig[type];
   const displayTitle = title || config.defaultTitle;
   const displayDescription = description || config.defaultDescription;

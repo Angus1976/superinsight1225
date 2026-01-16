@@ -35,6 +35,7 @@ import {
   ClearOutlined,
 } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import type { ColumnsType } from 'antd/es/table';
 import { sessionApi, Session, SessionConfig, SessionStatistics } from '@/services/securityApi';
 import dayjs from 'dayjs';
@@ -42,6 +43,7 @@ import dayjs from 'dayjs';
 const { Title, Text } = Typography;
 
 const SessionManager: React.FC = () => {
+  const { t } = useTranslation(['security', 'common']);
   const [configModalOpen, setConfigModalOpen] = useState(false);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedSession, setSelectedSession] = useState<Session | null>(null);
@@ -71,12 +73,12 @@ const SessionManager: React.FC = () => {
   const destroyMutation = useMutation({
     mutationFn: (sessionId: string) => sessionApi.destroySession(sessionId),
     onSuccess: () => {
-      message.success('Session terminated');
+      message.success(t('sessions.sessionTerminated'));
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
       queryClient.invalidateQueries({ queryKey: ['sessionStats'] });
     },
     onError: () => {
-      message.error('Failed to terminate session');
+      message.error(t('sessions.terminateFailed'));
     },
   });
 
@@ -84,12 +86,12 @@ const SessionManager: React.FC = () => {
   const forceLogoutMutation = useMutation({
     mutationFn: (userId: string) => sessionApi.forceLogout(userId, 'admin'),
     onSuccess: (result) => {
-      message.success(`Logged out user: ${result.sessions_destroyed} sessions terminated`);
+      message.success(t('sessions.logoutSuccess', { count: result.sessions_destroyed }));
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
       queryClient.invalidateQueries({ queryKey: ['sessionStats'] });
     },
     onError: () => {
-      message.error('Failed to logout user');
+      message.error(t('sessions.logoutFailed'));
     },
   });
 
@@ -97,12 +99,12 @@ const SessionManager: React.FC = () => {
   const updateConfigMutation = useMutation({
     mutationFn: (data: Partial<SessionConfig>) => sessionApi.updateConfig(data, 'admin'),
     onSuccess: () => {
-      message.success('Configuration updated');
+      message.success(t('sessions.config.updateSuccess'));
       queryClient.invalidateQueries({ queryKey: ['sessionConfig'] });
       setConfigModalOpen(false);
     },
     onError: () => {
-      message.error('Failed to update configuration');
+      message.error(t('sessions.config.updateFailed'));
     },
   });
 
@@ -110,12 +112,12 @@ const SessionManager: React.FC = () => {
   const cleanupMutation = useMutation({
     mutationFn: () => sessionApi.cleanup('admin'),
     onSuccess: (result) => {
-      message.success(`Cleaned up ${result.cleaned_count} expired sessions`);
+      message.success(t('sessions.cleanupSuccess', { count: result.cleaned_count }));
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
       queryClient.invalidateQueries({ queryKey: ['sessionStats'] });
     },
     onError: () => {
-      message.error('Failed to cleanup sessions');
+      message.error(t('sessions.cleanupFailed'));
     },
   });
 
@@ -159,7 +161,7 @@ const SessionManager: React.FC = () => {
 
   const columns: ColumnsType<Session> = [
     {
-      title: 'User',
+      title: t('sessions.columns.user'),
       dataIndex: 'user_id',
       key: 'user_id',
       render: (userId) => (
@@ -170,7 +172,7 @@ const SessionManager: React.FC = () => {
       ),
     },
     {
-      title: 'IP Address',
+      title: t('sessions.columns.ipAddress'),
       dataIndex: 'ip_address',
       key: 'ip_address',
       render: (ip) => (
@@ -181,7 +183,7 @@ const SessionManager: React.FC = () => {
       ),
     },
     {
-      title: 'User Agent',
+      title: t('sessions.columns.userAgent'),
       dataIndex: 'user_agent',
       key: 'user_agent',
       ellipsis: true,
@@ -198,14 +200,14 @@ const SessionManager: React.FC = () => {
       ),
     },
     {
-      title: 'Created',
+      title: t('sessions.columns.created'),
       dataIndex: 'created_at',
       key: 'created_at',
       width: 150,
       render: (date) => dayjs(date).format('MM-DD HH:mm'),
     },
     {
-      title: 'Last Activity',
+      title: t('sessions.columns.lastActivity'),
       dataIndex: 'last_activity',
       key: 'last_activity',
       width: 120,
@@ -216,7 +218,7 @@ const SessionManager: React.FC = () => {
       ),
     },
     {
-      title: 'Expires',
+      title: t('sessions.columns.expires'),
       dataIndex: 'expires_at',
       key: 'expires_at',
       width: 120,
@@ -230,7 +232,7 @@ const SessionManager: React.FC = () => {
         ),
     },
     {
-      title: 'Actions',
+      title: t('common:actions'),
       key: 'actions',
       width: 120,
       render: (_, record) => (
@@ -240,13 +242,13 @@ const SessionManager: React.FC = () => {
             size="small"
             onClick={() => handleViewDetail(record)}
           >
-            View
+            {t('common:view')}
           </Button>
           <Popconfirm
-            title="Terminate this session?"
+            title={t('sessions.terminateSession')}
             onConfirm={() => destroyMutation.mutate(record.id)}
-            okText="Terminate"
-            cancelText="Cancel"
+            okText={t('common:confirm')}
+            cancelText={t('common:cancel')}
           >
             <Button type="link" size="small" danger icon={<DeleteOutlined />} />
           </Popconfirm>
@@ -258,7 +260,7 @@ const SessionManager: React.FC = () => {
   return (
     <div>
       <Title level={3} style={{ marginBottom: 24 }}>
-        <ClockCircleOutlined /> Session Management
+        <ClockCircleOutlined /> {t('sessions.title')}
       </Title>
 
       {/* Statistics */}
@@ -266,7 +268,7 @@ const SessionManager: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Active Sessions"
+              title={t('sessions.activeSessions')}
               value={stats?.total_active_sessions || 0}
               prefix={<ClockCircleOutlined />}
             />
@@ -275,7 +277,7 @@ const SessionManager: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Users with Sessions"
+              title={t('sessions.usersWithSessions')}
               value={stats?.total_users_with_sessions || 0}
               prefix={<UserOutlined />}
             />
@@ -284,18 +286,18 @@ const SessionManager: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Default Timeout"
+              title={t('sessions.defaultTimeout')}
               value={config?.default_timeout ? Math.floor(config.default_timeout / 60) : 0}
-              suffix="min"
+              suffix={t('sessions.minutes')}
             />
           </Card>
         </Col>
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Max Concurrent"
+              title={t('sessions.maxConcurrent')}
               value={config?.max_concurrent_sessions || 0}
-              suffix="/ user"
+              suffix={t('sessions.perUser')}
             />
           </Card>
         </Col>
@@ -303,11 +305,11 @@ const SessionManager: React.FC = () => {
 
       {/* Main Content */}
       <Card
-        title="Active Sessions"
+        title={t('sessions.activeSessions')}
         extra={
           <Space>
             <Input
-              placeholder="Search user or IP..."
+              placeholder={t('sessions.searchPlaceholder')}
               prefix={<SearchOutlined />}
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
@@ -319,16 +321,16 @@ const SessionManager: React.FC = () => {
               onClick={() => cleanupMutation.mutate()}
               loading={cleanupMutation.isPending}
             >
-              Cleanup Expired
+              {t('sessions.cleanupExpired')}
             </Button>
             <Button icon={<SettingOutlined />} onClick={handleOpenConfig}>
-              Configure
+              {t('sessions.configure')}
             </Button>
             <Button
               icon={<ReloadOutlined />}
               onClick={() => queryClient.invalidateQueries({ queryKey: ['sessions'] })}
             >
-              Refresh
+              {t('common:refresh')}
             </Button>
           </Space>
         }
@@ -341,14 +343,14 @@ const SessionManager: React.FC = () => {
           pagination={{
             pageSize: 20,
             showSizeChanger: true,
-            showTotal: (total) => `Total ${total} sessions`,
+            showTotal: (total) => t('common.totalSessions', { total }),
           }}
         />
       </Card>
 
       {/* Configuration Modal */}
       <Modal
-        title="Session Configuration"
+        title={t('sessions.config.title')}
         open={configModalOpen}
         onOk={handleSaveConfig}
         onCancel={() => setConfigModalOpen(false)}
@@ -357,7 +359,7 @@ const SessionManager: React.FC = () => {
         <Form form={form} layout="vertical">
           <Form.Item
             name="default_timeout"
-            label="Default Session Timeout (seconds)"
+            label={t('sessions.config.defaultTimeout')}
             rules={[{ required: true }]}
           >
             <InputNumber
@@ -366,7 +368,7 @@ const SessionManager: React.FC = () => {
               style={{ width: '100%' }}
               addonAfter={
                 <Text type="secondary">
-                  = {form.getFieldValue('default_timeout') ? Math.floor(form.getFieldValue('default_timeout') / 60) : 0} min
+                  = {form.getFieldValue('default_timeout') ? Math.floor(form.getFieldValue('default_timeout') / 60) : 0} {t('sessions.minutes')}
                 </Text>
               }
             />
@@ -374,7 +376,7 @@ const SessionManager: React.FC = () => {
 
           <Form.Item
             name="max_concurrent_sessions"
-            label="Max Concurrent Sessions per User"
+            label={t('sessions.config.maxConcurrent')}
             rules={[{ required: true }]}
           >
             <InputNumber min={1} max={100} style={{ width: '100%' }} />
@@ -384,14 +386,14 @@ const SessionManager: React.FC = () => {
 
       {/* Session Detail Modal */}
       <Modal
-        title="Session Details"
+        title={t('sessions.sessionDetails')}
         open={detailModalOpen}
         onCancel={() => setDetailModalOpen(false)}
         footer={[
           <Popconfirm
             key="logout"
-            title="Force logout this user?"
-            description="This will terminate all sessions for this user."
+            title={t('sessions.forceLogoutConfirm')}
+            description={t('sessions.forceLogoutDesc')}
             onConfirm={() => {
               if (selectedSession) {
                 forceLogoutMutation.mutate(selectedSession.user_id);
@@ -400,11 +402,11 @@ const SessionManager: React.FC = () => {
             }}
           >
             <Button danger icon={<LogoutOutlined />}>
-              Force Logout User
+              {t('sessions.forceLogout')}
             </Button>
           </Popconfirm>,
           <Button key="close" onClick={() => setDetailModalOpen(false)}>
-            Close
+            {t('common:close')}
           </Button>,
         ]}
         width={600}
@@ -414,24 +416,24 @@ const SessionManager: React.FC = () => {
             <Descriptions.Item label="Session ID">
               <Text code>{selectedSession.id}</Text>
             </Descriptions.Item>
-            <Descriptions.Item label="User ID">{selectedSession.user_id}</Descriptions.Item>
-            <Descriptions.Item label="IP Address">{selectedSession.ip_address}</Descriptions.Item>
-            <Descriptions.Item label="User Agent">
+            <Descriptions.Item label={t('sessions.columns.user')}>{selectedSession.user_id}</Descriptions.Item>
+            <Descriptions.Item label={t('sessions.columns.ipAddress')}>{selectedSession.ip_address}</Descriptions.Item>
+            <Descriptions.Item label={t('sessions.columns.userAgent')}>
               {selectedSession.user_agent || '-'}
             </Descriptions.Item>
-            <Descriptions.Item label="Created">
+            <Descriptions.Item label={t('sessions.columns.created')}>
               {dayjs(selectedSession.created_at).format('YYYY-MM-DD HH:mm:ss')}
             </Descriptions.Item>
-            <Descriptions.Item label="Last Activity">
+            <Descriptions.Item label={t('sessions.columns.lastActivity')}>
               {dayjs(selectedSession.last_activity).format('YYYY-MM-DD HH:mm:ss')}
             </Descriptions.Item>
-            <Descriptions.Item label="Expires">
+            <Descriptions.Item label={t('sessions.columns.expires')}>
               {selectedSession.expires_at
                 ? dayjs(selectedSession.expires_at).format('YYYY-MM-DD HH:mm:ss')
                 : '-'}
             </Descriptions.Item>
             {selectedSession.metadata && Object.keys(selectedSession.metadata).length > 0 && (
-              <Descriptions.Item label="Metadata">
+              <Descriptions.Item label={t('sessions.metadata')}>
                 <pre style={{ margin: 0, fontSize: 12 }}>
                   {JSON.stringify(selectedSession.metadata, null, 2)}
                 </pre>

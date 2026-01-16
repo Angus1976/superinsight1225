@@ -199,7 +199,7 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
       onProgressUpdate?.(mockProgressData);
     } catch (error) {
       console.error('Failed to fetch progress data:', error);
-      message.error(t('tasks.fetchProgressError'));
+      message.error(t('fetchProgressError'));
     } finally {
       setLoading(false);
     }
@@ -225,7 +225,7 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
     if (progressData.efficiency < 20) {
       anomalies.push({
         type: 'low_efficiency',
-        message: t('tasks.anomalyLowEfficiency', { efficiency: progressData.efficiency.toFixed(1) }),
+        message: t('anomalyLowEfficiency', { efficiency: progressData.efficiency.toFixed(1) }),
         severity: 'high' as const,
       });
     }
@@ -237,7 +237,7 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
     if (overdueMilestones.length > 0) {
       anomalies.push({
         type: 'overdue_milestones',
-        message: t('tasks.anomalyOverdueMilestones', { count: overdueMilestones.length }),
+        message: t('anomalyOverdueMilestones', { count: overdueMilestones.length }),
         severity: 'medium' as const,
       });
     }
@@ -249,7 +249,7 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
       if (hoursSinceActivity > 24 && progressData.status === 'in_progress') {
         anomalies.push({
           type: 'stalled_progress',
-          message: t('tasks.anomalyStalledProgress', { hours: hoursSinceActivity }),
+          message: t('anomalyStalledProgress', { hours: hoursSinceActivity }),
           severity: 'medium' as const,
         });
       }
@@ -286,7 +286,7 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
   // Time entries table columns
   const timeEntriesColumns: ColumnsType<TimeEntry> = [
     {
-      title: t('tasks.user'),
+      title: t('user'),
       dataIndex: 'userName',
       key: 'userName',
       render: (name) => (
@@ -297,13 +297,13 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
       ),
     },
     {
-      title: t('tasks.startTime'),
+      title: t('startTime'),
       dataIndex: 'startTime',
       key: 'startTime',
       render: (time) => dayjs(time).format('MM-DD HH:mm'),
     },
     {
-      title: t('tasks.duration'),
+      title: t('duration'),
       dataIndex: 'duration',
       key: 'duration',
       render: (duration) => {
@@ -313,13 +313,13 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
       },
     },
     {
-      title: t('tasks.activity'),
+      title: t('activity'),
       dataIndex: 'activity',
       key: 'activity',
       render: (activity) => <Tag color="blue">{activity}</Tag>,
     },
     {
-      title: t('tasks.itemsCompleted'),
+      title: t('itemsCompleted'),
       dataIndex: 'itemsCompleted',
       key: 'itemsCompleted',
       render: (items) => (
@@ -331,12 +331,12 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
       ),
     },
     {
-      title: t('tasks.efficiency'),
+      title: t('efficiency'),
       key: 'efficiency',
       render: (_, record) => {
         const efficiency = record.duration > 0 ? (record.itemsCompleted / record.duration) * 60 : 0;
         return (
-          <Tooltip title={t('tasks.itemsPerHour')}>
+          <Tooltip title={t('itemsPerHour')}>
             <Tag color={efficiency > 50 ? 'green' : efficiency > 20 ? 'orange' : 'red'}>
               {efficiency.toFixed(1)}/h
             </Tag>
@@ -358,8 +358,8 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
     return (
       <Alert
         type="warning"
-        message={t('tasks.noProgressData')}
-        description={t('tasks.noProgressDataDescription')}
+        message={t('noProgressData')}
+        description={t('noProgressDataDescription')}
         showIcon
       />
     );
@@ -372,7 +372,7 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
         title={
           <Space>
             <BarChartOutlined />
-            {t('tasks.progressOverview')}
+            {t('progressOverview')}
           </Space>
         }
         extra={
@@ -385,7 +385,7 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
               {t('common.refresh')}
             </Button>
             <Button icon={<ExportOutlined />}>
-              {t('tasks.exportReport')}
+              {t('exportReport')}
             </Button>
           </Space>
         }
@@ -414,7 +414,7 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
             <Row gutter={[16, 16]}>
               <Col span={12}>
                 <Statistic
-                  title={t('tasks.timeSpent')}
+                  title={t('timeSpent')}
                   value={Math.floor(progressData.timeSpent / 60)}
                   suffix="h"
                   prefix={<ClockCircleOutlined />}
@@ -423,7 +423,7 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
               </Col>
               <Col span={12}>
                 <Statistic
-                  title={t('tasks.efficiency')}
+                  title={t('efficiency')}
                   value={progressData.efficiency}
                   suffix="/h"
                   prefix={<TrophyOutlined />}
@@ -435,7 +435,7 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
               </Col>
               <Col span={12}>
                 <Statistic
-                  title={t('tasks.estimatedRemaining')}
+                  title={t('estimatedRemaining')}
                   value={statistics ? Math.floor(statistics.estimatedRemainingTime / 60) : 0}
                   suffix="h"
                   prefix={<CalendarOutlined />}
@@ -444,7 +444,7 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
               </Col>
               <Col span={12}>
                 <Statistic
-                  title={t('tasks.avgTimePerItem')}
+                  title={t('avgTimePerItem')}
                   value={statistics ? statistics.averageTimePerItem : 0}
                   suffix="min"
                   precision={1}
@@ -458,8 +458,8 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
         {statistics && (
           <Alert
             type="info"
-            message={t('tasks.estimatedCompletion')}
-            description={t('tasks.estimatedCompletionDate', {
+            message={t('estimatedCompletion')}
+            description={t('estimatedCompletionDate', {
               date: statistics.estimatedCompletionDate.format('YYYY-MM-DD HH:mm')
             })}
             showIcon
@@ -474,7 +474,7 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
           title={
             <Space>
               <CheckCircleOutlined />
-              {t('tasks.milestones')}
+              {t('milestones')}
             </Space>
           }
           style={{ marginBottom: 16 }}
@@ -512,10 +512,10 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
                         </Tag>
                       </Space>
                       <div style={{ fontSize: 12, color: '#666' }}>
-                        {t('tasks.targetDate')}: {dayjs(milestone.targetDate).format('YYYY-MM-DD')}
+                        {t('targetDate')}: {dayjs(milestone.targetDate).format('YYYY-MM-DD')}
                         {milestone.completedDate && (
                           <span style={{ marginLeft: 8 }}>
-                            | {t('tasks.completedDate')}: {dayjs(milestone.completedDate).format('YYYY-MM-DD')}
+                            | {t('completedDate')}: {dayjs(milestone.completedDate).format('YYYY-MM-DD')}
                           </span>
                         )}
                       </div>
@@ -541,7 +541,7 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
           title={
             <Space>
               <ClockCircleOutlined />
-              {t('tasks.timeEntries')}
+              {t('timeEntries')}
             </Space>
           }
           extra={
@@ -549,10 +549,10 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
               <DatePicker.RangePicker
                 value={selectedDateRange}
                 onChange={setSelectedDateRange}
-                placeholder={[t('tasks.startDate'), t('tasks.endDate')]}
+                placeholder={[t('startDate'), t('endDate')]}
               />
               <Select
-                placeholder={t('tasks.filterByUser')}
+                placeholder={t('filterByUser')}
                 style={{ width: 120 }}
                 allowClear
               >
@@ -580,7 +580,7 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
               return (
                 <Table.Summary.Row>
                   <Table.Summary.Cell index={0}>
-                    <strong>{t('tasks.total')}</strong>
+                    <strong>{t('total')}</strong>
                   </Table.Summary.Cell>
                   <Table.Summary.Cell index={1}>-</Table.Summary.Cell>
                   <Table.Summary.Cell index={2}>

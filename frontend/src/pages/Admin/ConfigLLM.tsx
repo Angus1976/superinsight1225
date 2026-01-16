@@ -40,6 +40,7 @@ import {
   StarFilled,
 } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/authStore';
 import {
   adminApi,
@@ -58,6 +59,7 @@ const { TextArea } = Input;
 const LLM_TYPES: LLMType[] = ['local_ollama', 'openai', 'qianwen', 'zhipu', 'hunyuan', 'custom'];
 
 const ConfigLLM: React.FC = () => {
+  const { t } = useTranslation(['admin', 'common']);
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
   const [modalVisible, setModalVisible] = useState(false);
@@ -76,13 +78,13 @@ const ConfigLLM: React.FC = () => {
     mutationFn: (config: LLMConfigCreate) => 
       adminApi.createLLMConfig(config, user?.id || '', user?.username || ''),
     onSuccess: () => {
-      message.success('LLM 配置创建成功');
+      message.success(t('llm.configSaveSuccess'));
       queryClient.invalidateQueries({ queryKey: ['admin-llm-configs'] });
       setModalVisible(false);
       form.resetFields();
     },
     onError: (error: Error) => {
-      message.error(`创建失败: ${error.message}`);
+      message.error(`${t('llm.configSaveFailed')}: ${error.message}`);
     },
   });
 
@@ -91,14 +93,14 @@ const ConfigLLM: React.FC = () => {
     mutationFn: ({ id, config }: { id: string; config: LLMConfigUpdate }) =>
       adminApi.updateLLMConfig(id, config, user?.id || '', user?.username || ''),
     onSuccess: () => {
-      message.success('LLM 配置更新成功');
+      message.success(t('llm.configSaveSuccess'));
       queryClient.invalidateQueries({ queryKey: ['admin-llm-configs'] });
       setModalVisible(false);
       setEditingConfig(null);
       form.resetFields();
     },
     onError: (error: Error) => {
-      message.error(`更新失败: ${error.message}`);
+      message.error(`${t('llm.configSaveFailed')}: ${error.message}`);
     },
   });
 
@@ -106,27 +108,27 @@ const ConfigLLM: React.FC = () => {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => adminApi.deleteLLMConfig(id, user?.id || '', user?.username || ''),
     onSuccess: () => {
-      message.success('LLM 配置删除成功');
+      message.success(t('common:deleteSuccess'));
       queryClient.invalidateQueries({ queryKey: ['admin-llm-configs'] });
     },
     onError: (error: Error) => {
-      message.error(`删除失败: ${error.message}`);
+      message.error(`${t('common:deleteFailed')}: ${error.message}`);
     },
   });
 
   // Test connection
   const handleTestConnection = async (configId: string) => {
-    setTestResults(prev => ({ ...prev, [configId]: { success: false, latency_ms: 0, error_message: '测试中...' } }));
+    setTestResults(prev => ({ ...prev, [configId]: { success: false, latency_ms: 0, error_message: t('llm.status.testing') } }));
     try {
       const result = await adminApi.testLLMConnection(configId);
       setTestResults(prev => ({ ...prev, [configId]: result }));
       if (result.success) {
-        message.success(`连接成功 (${result.latency_ms}ms)`);
+        message.success(t('llm.status.connectionSuccess') + ` (${result.latency_ms}ms)`);
       } else {
-        message.error(`连接失败: ${result.error_message}`);
+        message.error(`${t('llm.status.connectionFailed')}: ${result.error_message}`);
       }
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : '测试失败';
+      const errorMsg = error instanceof Error ? error.message : t('llm.status.connectionFailed');
       setTestResults(prev => ({ ...prev, [configId]: { success: false, latency_ms: 0, error_message: errorMsg } }));
       message.error(errorMsg);
     }
@@ -174,7 +176,7 @@ const ConfigLLM: React.FC = () => {
 
   const columns = [
     {
-      title: '名称',
+      title: t('common:name'),
       dataIndex: 'name',
       key: 'name',
       render: (text: string, record: LLMConfigResponse) => (
@@ -185,13 +187,13 @@ const ConfigLLM: React.FC = () => {
       ),
     },
     {
-      title: '类型',
+      title: t('common:type'),
       dataIndex: 'llm_type',
       key: 'llm_type',
       render: (type: LLMType) => <Tag color="blue">{getLLMTypeName(type)}</Tag>,
     },
     {
-      title: '模型',
+      title: t('llm.local.defaultModel'),
       dataIndex: 'model_name',
       key: 'model_name',
     },
@@ -200,46 +202,46 @@ const ConfigLLM: React.FC = () => {
       dataIndex: 'api_key_masked',
       key: 'api_key_masked',
       render: (masked: string) => (
-        <Tooltip title="API Key 已脱敏显示">
+        <Tooltip title={t('llm.form.apiKeyMasked')}>
           <Space>
             <EyeInvisibleOutlined />
-            <Text code>{masked || '未设置'}</Text>
+            <Text code>{masked || t('llm.form.notSet')}</Text>
           </Space>
         </Tooltip>
       ),
     },
     {
-      title: '状态',
+      title: t('common:status'),
       key: 'status',
       render: (_: unknown, record: LLMConfigResponse) => {
         const testResult = testResults[record.id];
         if (testResult) {
           return testResult.success ? (
-            <Badge status="success" text={`在线 (${testResult.latency_ms}ms)`} />
+            <Badge status="success" text={`${t('llm.status.online')} (${testResult.latency_ms}ms)`} />
           ) : (
-            <Badge status="error" text={testResult.error_message || '离线'} />
+            <Badge status="error" text={testResult.error_message || t('llm.status.offline')} />
           );
         }
         return record.is_active ? (
-          <Badge status="default" text="已启用" />
+          <Badge status="default" text={t('llm.form.enabled')} />
         ) : (
-          <Badge status="error" text="已禁用" />
+          <Badge status="error" text={t('llm.status.disabled')} />
         );
       },
     },
     {
-      title: '操作',
+      title: t('common:actions'),
       key: 'actions',
       render: (_: unknown, record: LLMConfigResponse) => (
         <Space>
-          <Tooltip title="测试连接">
+          <Tooltip title={t('llm.actions.testConnection')}>
             <Button
               type="text"
               icon={<ApiOutlined />}
               onClick={() => handleTestConnection(record.id)}
             />
           </Tooltip>
-          <Tooltip title="编辑">
+          <Tooltip title={t('common:edit')}>
             <Button
               type="text"
               icon={<EditOutlined />}
@@ -247,12 +249,12 @@ const ConfigLLM: React.FC = () => {
             />
           </Tooltip>
           <Popconfirm
-            title="确定删除此配置？"
+            title={t('llm.form.confirmDelete')}
             onConfirm={() => deleteMutation.mutate(record.id)}
-            okText="确定"
-            cancelText="取消"
+            okText={t('common:confirm')}
+            cancelText={t('common:cancel')}
           >
-            <Tooltip title="删除">
+            <Tooltip title={t('common:delete')}>
               <Button type="text" danger icon={<DeleteOutlined />} />
             </Tooltip>
           </Popconfirm>
@@ -267,23 +269,23 @@ const ConfigLLM: React.FC = () => {
         title={
           <Space>
             <ApiOutlined />
-            <span>LLM 配置管理</span>
+            <span>{t('llm.title')}</span>
           </Space>
         }
         extra={
           <Space>
             <Button icon={<ReloadOutlined />} onClick={() => refetch()}>
-              刷新
+              {t('common:refresh')}
             </Button>
             <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-              添加配置
+              {t('llm.form.addConfig')}
             </Button>
           </Space>
         }
       >
         <Alert
-          message="配置说明"
-          description="管理 LLM 提供商配置，包括本地 Ollama、OpenAI、通义千问等。API Key 将加密存储并脱敏显示。"
+          message={t('llm.form.configTip')}
+          description={t('llm.form.configTipDescription')}
           type="info"
           showIcon
           style={{ marginBottom: 16 }}
@@ -300,7 +302,7 @@ const ConfigLLM: React.FC = () => {
 
       {/* Create/Edit Modal */}
       <Modal
-        title={editingConfig ? '编辑 LLM 配置' : '添加 LLM 配置'}
+        title={editingConfig ? t('llm.form.editConfig') : t('llm.form.addConfig')}
         open={modalVisible}
         onOk={handleSubmit}
         onCancel={() => {
@@ -314,22 +316,22 @@ const ConfigLLM: React.FC = () => {
         <Form form={form} layout="vertical">
           <Form.Item
             name="name"
-            label="配置名称"
-            rules={[{ required: true, message: '请输入配置名称' }]}
+            label={t('llm.form.configName')}
+            rules={[{ required: true, message: t('llm.form.configNameRequired') }]}
           >
-            <Input placeholder="例如：生产环境 OpenAI" />
+            <Input placeholder={t('llm.form.configNamePlaceholder')} />
           </Form.Item>
 
-          <Form.Item name="description" label="描述">
-            <TextArea rows={2} placeholder="配置描述（可选）" />
+          <Form.Item name="description" label={t('common:description')}>
+            <TextArea rows={2} placeholder={t('llm.form.descriptionPlaceholder')} />
           </Form.Item>
 
           <Form.Item
             name="llm_type"
-            label="LLM 类型"
-            rules={[{ required: true, message: '请选择 LLM 类型' }]}
+            label={t('llm.form.llmType')}
+            rules={[{ required: true, message: t('llm.form.llmTypeRequired') }]}
           >
-            <Select placeholder="选择 LLM 提供商">
+            <Select placeholder={t('llm.form.llmTypePlaceholder')}>
               {LLM_TYPES.map(type => (
                 <Option key={type} value={type}>
                   {getLLMTypeName(type)}
@@ -340,37 +342,37 @@ const ConfigLLM: React.FC = () => {
 
           <Form.Item
             name="model_name"
-            label="模型名称"
-            rules={[{ required: true, message: '请输入模型名称' }]}
+            label={t('llm.form.modelName')}
+            rules={[{ required: true, message: t('llm.form.modelNameRequired') }]}
           >
-            <Input placeholder="例如：gpt-3.5-turbo, qwen-turbo" />
+            <Input placeholder={t('llm.form.modelNamePlaceholder')} />
           </Form.Item>
 
-          <Form.Item name="api_endpoint" label="API 端点">
-            <Input placeholder="例如：https://api.openai.com/v1" />
+          <Form.Item name="api_endpoint" label={t('llm.form.apiEndpoint')}>
+            <Input placeholder={t('llm.form.apiEndpointPlaceholder')} />
           </Form.Item>
 
           <Form.Item
             name="api_key"
             label="API Key"
-            extra={editingConfig ? '留空则保持原有 API Key 不变' : undefined}
+            extra={editingConfig ? t('llm.form.apiKeyKeepEmpty') : undefined}
           >
-            <Input.Password placeholder="输入 API Key（将加密存储）" />
+            <Input.Password placeholder={t('llm.form.apiKeyPlaceholder')} />
           </Form.Item>
 
           <Form.Item name="temperature" label="Temperature">
             <InputNumber min={0} max={2} step={0.1} style={{ width: '100%' }} />
           </Form.Item>
 
-          <Form.Item name="max_tokens" label="最大 Token 数">
+          <Form.Item name="max_tokens" label={t('llm.form.maxTokens')}>
             <InputNumber min={1} max={128000} style={{ width: '100%' }} />
           </Form.Item>
 
-          <Form.Item name="timeout_seconds" label="超时时间（秒）">
+          <Form.Item name="timeout_seconds" label={t('llm.form.timeout')}>
             <InputNumber min={1} max={600} style={{ width: '100%' }} />
           </Form.Item>
 
-          <Form.Item name="is_default" valuePropName="checked" label="设为默认">
+          <Form.Item name="is_default" valuePropName="checked" label={t('llm.form.setAsDefault')}>
             <Switch />
           </Form.Item>
         </Form>

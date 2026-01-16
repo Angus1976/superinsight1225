@@ -53,7 +53,7 @@ const RuleTemplateManager: React.FC<RuleTemplateManagerProps> = ({
   onUpdateTemplate,
   onDeleteTemplate,
 }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation(['quality', 'common']);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<RuleTemplate | null>(null);
   const [form] = Form.useForm();
@@ -71,17 +71,17 @@ const RuleTemplateManager: React.FC<RuleTemplateManagerProps> = ({
 
       if (editingTemplate) {
         await onUpdateTemplate(editingTemplate.id, templateData);
-        message.success(t('quality.messages.ruleUpdated'));
+        message.success(t('messages.ruleUpdated'));
       } else {
         await onCreateTemplate(templateData);
-        message.success(t('quality.messages.ruleCreated'));
+        message.success(t('messages.ruleCreated'));
       }
 
       setModalOpen(false);
       setEditingTemplate(null);
       form.resetFields();
     } catch (error) {
-      message.error(t('quality.messages.validationFailed'));
+      message.error(t('messages.validationFailed'));
     }
   };
 
@@ -99,11 +99,11 @@ const RuleTemplateManager: React.FC<RuleTemplateManagerProps> = ({
 
   const handleDeleteTemplate = (template: RuleTemplate) => {
     Modal.confirm({
-      title: t('quality.messages.confirmDelete'),
-      content: `${t('quality.rules.template')}: ${template.name}`,
+      title: t('messages.confirmDelete'),
+      content: `${t('rules.template')}: ${template.name}`,
       onOk: () => {
         onDeleteTemplate(template.id);
-        message.success(t('quality.messages.ruleDeleted'));
+        message.success(t('messages.ruleDeleted'));
       },
     });
   };
@@ -115,7 +115,7 @@ const RuleTemplateManager: React.FC<RuleTemplateManagerProps> = ({
       isBuiltIn: false,
     };
     onCreateTemplate(newTemplate);
-    message.success(t('quality.messages.ruleCreated'));
+    message.success(t('messages.ruleCreated'));
   };
 
   const typeColors = {
@@ -133,13 +133,13 @@ const RuleTemplateManager: React.FC<RuleTemplateManagerProps> = ({
   return (
     <div>
       <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h3>{t('quality.rules.template')}</h3>
+        <h3>{t('rules.template')}</h3>
         <Button
           type="primary"
           icon={<PlusOutlined />}
           onClick={() => setModalOpen(true)}
         >
-          {t('quality.rules.create')} {t('quality.rules.template')}
+          {t('rules.create')} {t('rules.template')}
         </Button>
       </div>
 
@@ -158,7 +158,7 @@ const RuleTemplateManager: React.FC<RuleTemplateManagerProps> = ({
               }
               extra={
                 <Space>
-                  <Tooltip title={t('quality.rules.run')}>
+                  <Tooltip title={t('rules.run')}>
                     <Button
                       type="text"
                       size="small"
@@ -166,7 +166,7 @@ const RuleTemplateManager: React.FC<RuleTemplateManagerProps> = ({
                       onClick={() => onCreateFromTemplate(template)}
                     />
                   </Tooltip>
-                  <Tooltip title={t('common.copy')}>
+                  <Tooltip title={t('copy')}>
                     <Button
                       type="text"
                       size="small"
@@ -176,7 +176,7 @@ const RuleTemplateManager: React.FC<RuleTemplateManagerProps> = ({
                   </Tooltip>
                   {!template.isBuiltIn && (
                     <>
-                      <Tooltip title={t('quality.rules.edit')}>
+                      <Tooltip title={t('rules.edit')}>
                         <Button
                           type="text"
                           size="small"
@@ -184,7 +184,7 @@ const RuleTemplateManager: React.FC<RuleTemplateManagerProps> = ({
                           onClick={() => handleEditTemplate(template)}
                         />
                       </Tooltip>
-                      <Tooltip title={t('quality.rules.delete')}>
+                      <Tooltip title={t('rules.delete')}>
                         <Button
                           type="text"
                           size="small"
@@ -207,7 +207,7 @@ const RuleTemplateManager: React.FC<RuleTemplateManagerProps> = ({
                   </Tag>
                 </Space>,
                 <Text key="usage" type="secondary">
-                  {t('common.used')}: {template.usageCount}
+                  {t('used')}: {template.usageCount}
                 </Text>,
               ]}
             >
@@ -223,7 +223,7 @@ const RuleTemplateManager: React.FC<RuleTemplateManagerProps> = ({
       />
 
       <Modal
-        title={editingTemplate ? t('quality.rules.edit') : t('quality.rules.create')}
+        title={editingTemplate ? t('rules.edit') : t('rules.create')}
         open={modalOpen}
         onCancel={() => {
           setModalOpen(false);
@@ -240,42 +240,42 @@ const RuleTemplateManager: React.FC<RuleTemplateManagerProps> = ({
         >
           <Form.Item
             name="name"
-            label={t('quality.rules.name')}
-            rules={[{ required: true, message: t('common.required') }]}
+            label={t('rules.name')}
+            rules={[{ required: true, message: t('required') }]}
           >
-            <Input placeholder={t('quality.rules.name')} />
+            <Input placeholder={t('rules.name')} />
           </Form.Item>
 
           <Form.Item
             name="type"
-            label={t('quality.rules.type')}
-            rules={[{ required: true, message: t('common.required') }]}
+            label={t('rules.type')}
+            rules={[{ required: true, message: t('required') }]}
           >
-            <Select placeholder={t('quality.rules.type')}>
-              <Select.Option value="format">{t('quality.rules.types.format')}</Select.Option>
-              <Select.Option value="content">{t('quality.rules.types.content')}</Select.Option>
-              <Select.Option value="consistency">{t('quality.rules.types.consistency')}</Select.Option>
-              <Select.Option value="custom">{t('quality.rules.types.custom')}</Select.Option>
+            <Select placeholder={t('rules.type')}>
+              <Select.Option value="format">{t('rules.types.format')}</Select.Option>
+              <Select.Option value="content">{t('rules.types.content')}</Select.Option>
+              <Select.Option value="consistency">{t('rules.types.consistency')}</Select.Option>
+              <Select.Option value="custom">{t('rules.types.custom')}</Select.Option>
             </Select>
           </Form.Item>
 
           <Form.Item
             name="severity"
-            label={t('quality.rules.severity')}
-            rules={[{ required: true, message: t('common.required') }]}
+            label={t('rules.severity')}
+            rules={[{ required: true, message: t('required') }]}
             initialValue="warning"
           >
             <Select>
-              <Select.Option value="warning">{t('quality.rules.severities.warning')}</Select.Option>
-              <Select.Option value="error">{t('quality.rules.severities.error')}</Select.Option>
+              <Select.Option value="warning">{t('rules.severities.warning')}</Select.Option>
+              <Select.Option value="error">{t('rules.severities.error')}</Select.Option>
             </Select>
           </Form.Item>
 
           <Form.Item
             name="description"
-            label={t('quality.rules.description')}
+            label={t('rules.description')}
           >
-            <TextArea rows={3} placeholder={t('quality.rules.description')} />
+            <TextArea rows={3} placeholder={t('rules.description')} />
           </Form.Item>
 
           <Divider />
@@ -285,10 +285,10 @@ const RuleTemplateManager: React.FC<RuleTemplateManagerProps> = ({
             label={
               <Space>
                 <SettingOutlined />
-                {t('quality.rules.config')}
+                {t('rules.config')}
               </Space>
             }
-            help={t('common.jsonFormat')}
+            help={t('jsonFormat')}
           >
             <TextArea
               rows={6}

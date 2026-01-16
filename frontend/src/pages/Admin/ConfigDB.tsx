@@ -41,6 +41,7 @@ import {
   LinkOutlined,
 } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/authStore';
 import {
   adminApi,
@@ -67,6 +68,7 @@ const DEFAULT_PORTS: Record<DatabaseType, number> = {
 };
 
 const ConfigDB: React.FC = () => {
+  const { t } = useTranslation(['admin', 'common']);
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
   const [modalVisible, setModalVisible] = useState(false);
@@ -87,13 +89,13 @@ const ConfigDB: React.FC = () => {
     mutationFn: (config: DBConfigCreate) =>
       adminApi.createDBConfig(config, user?.id || '', user?.username || ''),
     onSuccess: () => {
-      message.success('数据库配置创建成功');
+      message.success(t('admin:configDB.createSuccess'));
       queryClient.invalidateQueries({ queryKey: ['admin-db-configs'] });
       setModalVisible(false);
       form.resetFields();
     },
     onError: (error: Error) => {
-      message.error(`创建失败: ${error.message}`);
+      message.error(t('admin:configDB.createFailed', { error: error.message }));
     },
   });
 
@@ -102,14 +104,14 @@ const ConfigDB: React.FC = () => {
     mutationFn: ({ id, config }: { id: string; config: DBConfigUpdate }) =>
       adminApi.updateDBConfig(id, config, user?.id || '', user?.username || ''),
     onSuccess: () => {
-      message.success('数据库配置更新成功');
+      message.success(t('admin:configDB.updateSuccess'));
       queryClient.invalidateQueries({ queryKey: ['admin-db-configs'] });
       setModalVisible(false);
       setEditingConfig(null);
       form.resetFields();
     },
     onError: (error: Error) => {
-      message.error(`更新失败: ${error.message}`);
+      message.error(t('admin:configDB.updateFailed', { error: error.message }));
     },
   });
 
@@ -117,27 +119,27 @@ const ConfigDB: React.FC = () => {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => adminApi.deleteDBConfig(id, user?.id || '', user?.username || ''),
     onSuccess: () => {
-      message.success('数据库配置删除成功');
+      message.success(t('admin:configDB.deleteSuccess'));
       queryClient.invalidateQueries({ queryKey: ['admin-db-configs'] });
     },
     onError: (error: Error) => {
-      message.error(`删除失败: ${error.message}`);
+      message.error(t('admin:configDB.deleteFailed', { error: error.message }));
     },
   });
 
   // Test connection
   const handleTestConnection = async (configId: string) => {
-    setTestResults(prev => ({ ...prev, [configId]: { success: false, latency_ms: 0, error_message: '测试中...' } }));
+    setTestResults(prev => ({ ...prev, [configId]: { success: false, latency_ms: 0, error_message: t('admin:configDB.testing') } }));
     try {
       const result = await adminApi.testDBConnection(configId);
       setTestResults(prev => ({ ...prev, [configId]: result }));
       if (result.success) {
-        message.success(`连接成功 (${result.latency_ms}ms)`);
+        message.success(t('admin:configDB.connectionSuccess', { latency: result.latency_ms }));
       } else {
-        message.error(`连接失败: ${result.error_message}`);
+        message.error(t('admin:configDB.connectionFailed', { error: result.error_message }));
       }
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : '测试失败';
+      const errorMsg = error instanceof Error ? error.message : t('admin:configDB.testFailed');
       setTestResults(prev => ({ ...prev, [configId]: { success: false, latency_ms: 0, error_message: errorMsg } }));
       message.error(errorMsg);
     }
@@ -194,7 +196,7 @@ const ConfigDB: React.FC = () => {
 
   const columns = [
     {
-      title: '名称',
+      title: t('admin:configDB.columns.name'),
       dataIndex: 'name',
       key: 'name',
       render: (text: string, record: DBConfigResponse) => (
@@ -204,69 +206,69 @@ const ConfigDB: React.FC = () => {
       ),
     },
     {
-      title: '类型',
+      title: t('admin:configDB.columns.type'),
       dataIndex: 'db_type',
       key: 'db_type',
       render: (type: DatabaseType) => <Tag color="geekblue">{getDBTypeName(type)}</Tag>,
     },
     {
-      title: '主机',
+      title: t('admin:configDB.columns.host'),
       key: 'host',
       render: (_: unknown, record: DBConfigResponse) => (
         <Text code>{`${record.host}:${record.port}`}</Text>
       ),
     },
     {
-      title: '数据库',
+      title: t('admin:configDB.columns.database'),
       dataIndex: 'database',
       key: 'database',
     },
     {
-      title: '权限',
+      title: t('admin:configDB.columns.permission'),
       key: 'permission',
       render: (_: unknown, record: DBConfigResponse) => (
         <Space>
           {record.is_readonly ? (
-            <Tag icon={<SafetyOutlined />} color="green">只读</Tag>
+            <Tag icon={<SafetyOutlined />} color="green">{t('admin:configDB.readonly')}</Tag>
           ) : (
-            <Tag icon={<SafetyOutlined />} color="orange">读写</Tag>
+            <Tag icon={<SafetyOutlined />} color="orange">{t('admin:configDB.readwrite')}</Tag>
           )}
           {record.ssl_enabled && <Tag color="blue">SSL</Tag>}
         </Space>
       ),
     },
     {
-      title: '状态',
+      title: t('admin:configDB.columns.status'),
       key: 'status',
       render: (_: unknown, record: DBConfigResponse) => {
         const testResult = testResults[record.id];
         if (testResult) {
           return testResult.success ? (
-            <Badge status="success" text={`连接正常 (${testResult.latency_ms}ms)`} />
+            <Badge status="success" text={t('admin:configDB.connectionNormal', { latency: testResult.latency_ms })} />
           ) : (
-            <Badge status="error" text={testResult.error_message || '连接失败'} />
+            <Badge status="error" text={testResult.error_message || t('admin:configDB.connectionFailedShort')} />
           );
         }
         return record.is_active ? (
-          <Badge status="default" text="已启用" />
+          <Badge status="default" text={t('admin:configDB.enabled')} />
         ) : (
-          <Badge status="error" text="已禁用" />
+          <Badge status="error" text={t('admin:configDB.disabled')} />
         );
       },
     },
     {
-      title: '操作',
+      title: t('admin:configDB.columns.actions'),
       key: 'actions',
       render: (_: unknown, record: DBConfigResponse) => (
         <Space>
-          <Tooltip title="测试连接">
+          <Tooltip title={t('admin:configDB.testConnection')}>
             <Button
               type="text"
               icon={<LinkOutlined />}
               onClick={() => handleTestConnection(record.id)}
             />
           </Tooltip>
-          <Tooltip title="编辑">
+          <Tooltip title={t('common:edit')}>
             <Button
               type="text"
               icon={<EditOutlined />}
@@ -274,13 +276,13 @@ const ConfigDB: React.FC = () => {
             />
           </Tooltip>
           <Popconfirm
-            title="确定删除此配置？"
-            description="删除后相关的同步策略也将失效"
+            title={t('admin:configDB.confirmDelete')}
+            description={t('admin:configDB.confirmDeleteDescription')}
             onConfirm={() => deleteMutation.mutate(record.id)}
-            okText="确定"
-            cancelText="取消"
+            okText={t('common:confirm')}
+            cancelText={t('common:cancel')}
           >
-            <Tooltip title="删除">
+            <Tooltip title={t('common:delete')}>
               <Button type="text" danger icon={<DeleteOutlined />} />
             </Tooltip>
           </Popconfirm>
@@ -295,23 +297,23 @@ const ConfigDB: React.FC = () => {
         title={
           <Space>
             <DatabaseOutlined />
-            <span>数据库配置管理</span>
+            <span>{t('admin:configDB.title')}</span>
           </Space>
         }
         extra={
           <Space>
             <Button icon={<ReloadOutlined />} onClick={() => refetch()}>
-              刷新
+              {t('common:refresh')}
             </Button>
             <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-              添加数据库
+              {t('admin:configDB.addDatabase')}
             </Button>
           </Space>
         }
       >
         <Alert
-          message="安全提示"
-          description="建议使用只读权限的数据库账户进行数据提取，密码将加密存储并脱敏显示。"
+          message={t('admin:configDB.securityTip')}
+          description={t('admin:configDB.securityTipDescription')}
           type="warning"
           showIcon
           style={{ marginBottom: 16 }}
@@ -328,7 +330,7 @@ const ConfigDB: React.FC = () => {
 
       {/* Create/Edit Modal */}
       <Modal
-        title={editingConfig ? '编辑数据库配置' : '添加数据库配置'}
+        title={editingConfig ? t('admin:configDB.editConfig') : t('admin:configDB.addConfig')}
         open={modalVisible}
         onOk={handleSubmit}
         onCancel={() => {
@@ -342,22 +344,22 @@ const ConfigDB: React.FC = () => {
         <Form form={form} layout="vertical">
           <Form.Item
             name="name"
-            label="连接名称"
-            rules={[{ required: true, message: '请输入连接名称' }]}
+            label={t('admin:configDB.form.connectionName')}
+            rules={[{ required: true, message: t('admin:configDB.form.connectionNameRequired') }]}
           >
-            <Input placeholder="例如：生产数据库-只读" />
+            <Input placeholder={t('admin:configDB.form.connectionNamePlaceholder')} />
           </Form.Item>
 
-          <Form.Item name="description" label="描述">
-            <TextArea rows={2} placeholder="连接描述（可选）" />
+          <Form.Item name="description" label={t('admin:configDB.form.description')}>
+            <TextArea rows={2} placeholder={t('admin:configDB.form.descriptionPlaceholder')} />
           </Form.Item>
 
           <Form.Item
             name="db_type"
-            label="数据库类型"
-            rules={[{ required: true, message: '请选择数据库类型' }]}
+            label={t('admin:configDB.form.dbType')}
+            rules={[{ required: true, message: t('admin:configDB.form.dbTypeRequired') }]}
           >
-            <Select placeholder="选择数据库类型" onChange={handleDbTypeChange}>
+            <Select placeholder={t('admin:configDB.form.dbTypePlaceholder')} onChange={handleDbTypeChange}>
               {DB_TYPES.map(type => (
                 <Option key={type} value={type}>
                   {getDBTypeName(type)}
@@ -368,49 +370,49 @@ const ConfigDB: React.FC = () => {
 
           <Form.Item
             name="host"
-            label="主机地址"
-            rules={[{ required: true, message: '请输入主机地址' }]}
+            label={t('admin:configDB.form.host')}
+            rules={[{ required: true, message: t('admin:configDB.form.hostRequired') }]}
           >
-            <Input placeholder="例如：localhost 或 192.168.1.100" />
+            <Input placeholder={t('admin:configDB.form.hostPlaceholder')} />
           </Form.Item>
 
           <Form.Item
             name="port"
-            label="端口"
-            rules={[{ required: true, message: '请输入端口' }]}
+            label={t('admin:configDB.form.port')}
+            rules={[{ required: true, message: t('admin:configDB.form.portRequired') }]}
           >
             <InputNumber min={1} max={65535} style={{ width: '100%' }} />
           </Form.Item>
 
           <Form.Item
             name="database"
-            label="数据库名"
-            rules={[{ required: true, message: '请输入数据库名' }]}
+            label={t('admin:configDB.form.databaseName')}
+            rules={[{ required: true, message: t('admin:configDB.form.databaseNameRequired') }]}
           >
-            <Input placeholder="数据库名称" />
+            <Input placeholder={t('admin:configDB.form.databaseNamePlaceholder')} />
           </Form.Item>
 
           <Form.Item
             name="username"
-            label="用户名"
-            rules={[{ required: true, message: '请输入用户名' }]}
+            label={t('admin:configDB.form.username')}
+            rules={[{ required: true, message: t('admin:configDB.form.usernameRequired') }]}
           >
-            <Input placeholder="数据库用户名" />
+            <Input placeholder={t('admin:configDB.form.usernamePlaceholder')} />
           </Form.Item>
 
           <Form.Item
             name="password"
-            label="密码"
-            extra={editingConfig ? '留空则保持原有密码不变' : undefined}
+            label={t('admin:configDB.form.password')}
+            extra={editingConfig ? t('admin:configDB.form.passwordKeepEmpty') : undefined}
           >
-            <Input.Password placeholder="数据库密码（将加密存储）" />
+            <Input.Password placeholder={t('admin:configDB.form.passwordPlaceholder')} />
           </Form.Item>
 
-          <Form.Item name="is_readonly" valuePropName="checked" label="只读连接">
-            <Switch checkedChildren="只读" unCheckedChildren="读写" />
+          <Form.Item name="is_readonly" valuePropName="checked" label={t('admin:configDB.form.readonlyConnection')}>
+            <Switch checkedChildren={t('admin:configDB.readonly')} unCheckedChildren={t('admin:configDB.readwrite')} />
           </Form.Item>
 
-          <Form.Item name="ssl_enabled" valuePropName="checked" label="启用 SSL">
+          <Form.Item name="ssl_enabled" valuePropName="checked" label={t('admin:configDB.form.enableSSL')}>
             <Switch />
           </Form.Item>
         </Form>
@@ -418,12 +420,12 @@ const ConfigDB: React.FC = () => {
 
       {/* Detail Modal */}
       <Modal
-        title="数据库配置详情"
+        title={t('admin:configDB.configDetail')}
         open={detailVisible}
         onCancel={() => setDetailVisible(false)}
         footer={[
           <Button key="close" onClick={() => setDetailVisible(false)}>
-            关闭
+            {t('common:close')}
           </Button>,
           <Button
             key="test"
@@ -431,38 +433,38 @@ const ConfigDB: React.FC = () => {
             icon={<LinkOutlined />}
             onClick={() => selectedConfig && handleTestConnection(selectedConfig.id)}
           >
-            测试连接
+            {t('admin:configDB.testConnection')}
           </Button>,
         ]}
         width={600}
       >
         {selectedConfig && (
           <Descriptions column={2} bordered size="small">
-            <Descriptions.Item label="名称" span={2}>{selectedConfig.name}</Descriptions.Item>
-            <Descriptions.Item label="类型">{getDBTypeName(selectedConfig.db_type)}</Descriptions.Item>
-            <Descriptions.Item label="状态">
-              {selectedConfig.is_active ? <Badge status="success" text="已启用" /> : <Badge status="error" text="已禁用" />}
+            <Descriptions.Item label={t('admin:configDB.detail.name')} span={2}>{selectedConfig.name}</Descriptions.Item>
+            <Descriptions.Item label={t('admin:configDB.detail.type')}>{getDBTypeName(selectedConfig.db_type)}</Descriptions.Item>
+            <Descriptions.Item label={t('admin:configDB.detail.status')}>
+              {selectedConfig.is_active ? <Badge status="success" text={t('admin:configDB.enabled')} /> : <Badge status="error" text={t('admin:configDB.disabled')} />}
             </Descriptions.Item>
-            <Descriptions.Item label="主机">{selectedConfig.host}</Descriptions.Item>
-            <Descriptions.Item label="端口">{selectedConfig.port}</Descriptions.Item>
-            <Descriptions.Item label="数据库">{selectedConfig.database}</Descriptions.Item>
-            <Descriptions.Item label="用户名">{selectedConfig.username}</Descriptions.Item>
-            <Descriptions.Item label="密码" span={2}>
+            <Descriptions.Item label={t('admin:configDB.detail.host')}>{selectedConfig.host}</Descriptions.Item>
+            <Descriptions.Item label={t('admin:configDB.detail.port')}>{selectedConfig.port}</Descriptions.Item>
+            <Descriptions.Item label={t('admin:configDB.detail.database')}>{selectedConfig.database}</Descriptions.Item>
+            <Descriptions.Item label={t('admin:configDB.detail.username')}>{selectedConfig.username}</Descriptions.Item>
+            <Descriptions.Item label={t('admin:configDB.detail.password')} span={2}>
               <Space>
                 <EyeInvisibleOutlined />
                 <Text code>{selectedConfig.password_masked || '******'}</Text>
               </Space>
             </Descriptions.Item>
-            <Descriptions.Item label="权限">
-              {selectedConfig.is_readonly ? <Tag color="green">只读</Tag> : <Tag color="orange">读写</Tag>}
+            <Descriptions.Item label={t('admin:configDB.detail.permission')}>
+              {selectedConfig.is_readonly ? <Tag color="green">{t('admin:configDB.readonly')}</Tag> : <Tag color="orange">{t('admin:configDB.readwrite')}</Tag>}
             </Descriptions.Item>
             <Descriptions.Item label="SSL">
-              {selectedConfig.ssl_enabled ? <Tag color="blue">已启用</Tag> : <Tag>未启用</Tag>}
+              {selectedConfig.ssl_enabled ? <Tag color="blue">{t('admin:configDB.sslEnabled')}</Tag> : <Tag>{t('admin:configDB.sslDisabled')}</Tag>}
             </Descriptions.Item>
-            <Descriptions.Item label="创建时间" span={2}>
+            <Descriptions.Item label={t('admin:configDB.detail.createdAt')} span={2}>
               {new Date(selectedConfig.created_at).toLocaleString()}
             </Descriptions.Item>
-            <Descriptions.Item label="更新时间" span={2}>
+            <Descriptions.Item label={t('admin:configDB.detail.updatedAt')} span={2}>
               {new Date(selectedConfig.updated_at).toLocaleString()}
             </Descriptions.Item>
           </Descriptions>

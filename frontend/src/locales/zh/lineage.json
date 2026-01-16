@@ -1,0 +1,18 @@
+{
+  "graph": "血缘图谱",
+  "loadError": "加载血缘数据失败",
+  "exported": "血缘数据已导出",
+  "noData": "暂无血缘数据",
+  "nodes": "节点",
+  "edges": "关系",
+  "full": "完整",
+  "upstream": "上游",
+  "downstream": "下游",
+  "depth": "深度",
+  "export": "导出",
+  "nodeDetails": "节点详情",
+  "entityType": "实体类型",
+  "entityId": "实体ID",
+  "name": "名称",
+  "metadata": "元数据"
+}

@@ -128,7 +128,70 @@
     "userBreakdown": "User Breakdown",
     "projectBreakdown": "Project Breakdown",
     "departmentBreakdown": "Department Breakdown",
-    "trendAnalysis": "Trend Analysis"
+    "workHours": "Work Hours Report",
+    "trendAnalysis": "Trend Analysis",
+    "generateSuccess": "Report generated successfully",
+    "generateFailed": "Failed to generate report",
+    "exportSuccess": "Report exported successfully",
+    "pleaseGenerateFirst": "Please generate a report first",
+    "columns": {
+      "projectName": "Project Name",
+      "totalCost": "Total Cost",
+      "annotations": "Annotations",
+      "timeSpent": "Time Spent (hours)",
+      "avgCostPerAnnotation": "Cost per Item",
+      "percentage": "Percentage",
+      "departmentName": "Department Name",
+      "userCount": "Users",
+      "projects": "Projects",
+      "user": "User",
+      "totalHours": "Total Hours",
+      "billableHours": "Billable Hours",
+      "rate": "Rate",
+      "cost": "Cost",
+      "efficiencyScore": "Efficiency Score"
+    },
+    "tabs": {
+      "trends": "Cost Trends",
+      "projects": "Project Analysis",
+      "departments": "Department Analysis",
+      "workhours": "Work Hours",
+      "report": "Report Details"
+    },
+    "stats": {
+      "totalCost": "Total Cost",
+      "dailyAvgCost": "Daily Average",
+      "projectCount": "Projects",
+      "costTrend": "Cost Trend",
+      "userCount": "Users",
+      "totalHours": "Total Hours",
+      "totalAnnotations": "Total Annotations",
+      "totalCostLabel": "Total Cost"
+    },
+    "charts": {
+      "projectCostDist": "Project Cost Distribution",
+      "projectCostDetail": "Project Cost Details",
+      "deptCostDist": "Department Cost Distribution",
+      "deptCostDetail": "Department Cost Details",
+      "cost": "Cost",
+      "annotations": "Annotations"
+    },
+    "noTrendData": "No trend data available",
+    "noProjectData": "No project data available",
+    "noDeptData": "No department data available",
+    "pleaseGenerateReport": "Please generate a report to view details",
+    "reportId": "Report ID",
+    "reportType": "Report Type",
+    "statisticPeriod": "Period",
+    "generatedAt": "Generated At",
+    "totalAnnotations": "Total Annotations",
+    "totalTimeSpent": "Total Time Spent",
+    "billingRuleVersion": "Billing Rule Version",
+    "userBreakdownTitle": "User Breakdown",
+    "userId": "User ID",
+    "timeSpentHours": "Time Spent",
+    "hours": "hours",
+    "persons": ""
   },
   "messages": {
     "exportStarted": "Export started. The file will be downloaded shortly.",
@@ -138,5 +201,85 @@
     "noData": "No data available",
     "loadingData": "Loading data...",
     "retryLoad": "Retry"
+  },
+  "ruleConfig": {
+    "title": "Current Billing Rule",
+    "createVersion": "Create New Version",
+    "createRuleVersion": "Create Billing Rule Version",
+    "ruleHistory": "Rule Version History",
+    "loadError": "Failed to load billing rules",
+    "noActiveRule": "No active billing rule",
+    "noActiveRuleDesc": "Please create and approve a billing rule to start using billing features",
+    "pendingRulesAlert": "{{count}} pending billing rules awaiting approval",
+    "createSuccess": "Billing rule created successfully, awaiting approval",
+    "createError": "Failed to create billing rule",
+    "approveSuccess": "Rule version {{version}} approved and activated",
+    "approveError": "Failed to approve billing rule",
+    "approveConfirmTitle": "Confirm Approval",
+    "approveConfirmDesc": "Are you sure you want to approve and activate this billing rule?",
+    "createAlert": "New versions require admin approval before taking effect",
+    "billingModeTooltip": "Select the billing method that suits your business",
+    "modes": {
+      "byCount": "Per Item Billing",
+      "byTime": "Hourly Billing",
+      "byProject": "Project Billing",
+      "hybrid": "Hybrid Billing"
+    },
+    "modeLabels": {
+      "byCount": "Per Item",
+      "byTime": "Hourly",
+      "byProject": "Project",
+      "hybrid": "Hybrid"
+    },
+    "modeDescriptions": {
+      "byCount": "Charge based on annotation count",
+      "byTime": "Charge based on work hours",
+      "byProject": "Charge annual project fee",
+      "hybrid": "Combine multiple billing methods"
+    },
+    "ruleStatus": {
+      "active": "Active",
+      "approved": "Approved",
+      "pending": "Pending",
+      "inEffect": "In Effect",
+      "currentVersion": "Current Version"
+    },
+    "columns": {
+      "version": "Version",
+      "billingMode": "Billing Mode",
+      "ratePerAnnotation": "Rate/Item",
+      "ratePerHour": "Hourly Rate",
+      "projectAnnualFee": "Annual Fee",
+      "effectiveFrom": "Effective Date",
+      "status": "Status",
+      "createdBy": "Created By",
+      "approvedBy": "Approved By",
+      "action": "Action"
+    },
+    "form": {
+      "billingMode": "Billing Mode",
+      "billingModeRequired": "Please select billing mode",
+      "ratePerAnnotation": "Rate per Item (¥)",
+      "ratePerAnnotationRequired": "Please enter rate per item",
+      "ratePerAnnotationMin": "Rate cannot be negative",
+      "ratePerHour": "Hourly Rate (¥)",
+      "ratePerHourRequired": "Please enter hourly rate",
+      "ratePerHourMin": "Hourly rate cannot be negative",
+      "projectAnnualFee": "Annual Fee (¥)",
+      "projectAnnualFeeRequired": "Please enter annual fee",
+      "projectAnnualFeeMin": "Annual fee cannot be negative",
+      "perItem": "/ item",
+      "perHour": "/ hour",
+      "perYear": "/ year"
+    },
+    "actions": {
+      "approve": "Approve",
+      "createRule": "Create Rule",
+      "view": "View"
+    },
+    "labels": {
+      "versionNumber": "Version",
+      "effectiveDate": "Effective Date"
+    }
   }
 }

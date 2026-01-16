@@ -1,10 +1,12 @@
 // 403 Forbidden page
 import { Button, Result } from 'antd';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ROUTES } from '@/constants';
 
 const ForbiddenPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation('common');
 
   return (
     <div
@@ -17,11 +19,11 @@ const ForbiddenPage: React.FC = () => {
     >
       <Result
         status="403"
-        title="403"
-        subTitle="抱歉，您没有权限访问此页面。"
+        title={t('error.pages.forbidden.title')}
+        subTitle={t('error.pages.forbidden.subtitle')}
         extra={
           <Button type="primary" onClick={() => navigate(ROUTES.HOME)}>
-            返回首页
+            {t('error.pages.forbidden.backHome')}
           </Button>
         }
       />

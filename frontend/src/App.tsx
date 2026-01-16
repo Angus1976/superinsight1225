@@ -1,9 +1,11 @@
 // Main App component - Full version
+import { useEffect } from 'react';
 import { ConfigProvider, App as AntApp, theme } from 'antd';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import zhCN from 'antd/locale/zh_CN';
 import enUS from 'antd/locale/en_US';
 import { useUIStore } from '@/stores/uiStore';
+import { useLanguageStore, setupLabelStudioLanguageListener } from '@/stores/languageStore';
 import { AppRouter } from '@/router';
 import { ErrorBoundary } from '@/components/Common/ErrorBoundary';
 import { THEMES } from '@/constants';
@@ -26,7 +28,26 @@ const queryClient = new QueryClient({
 });
 
 function App() {
-  const { theme: currentTheme, language } = useUIStore();
+  const { theme: currentTheme, language: uiLanguage, setLanguage: setUILanguage } = useUIStore();
+  const { language: langStoreLanguage, initializeLanguage, setLanguage: setLangStoreLanguage } = useLanguageStore();
+
+  // Initialize language store and set up Label Studio listener
+  useEffect(() => {
+    initializeLanguage();
+    const cleanup = setupLabelStudioLanguageListener();
+    return cleanup;
+  }, [initializeLanguage]);
+
+  // Sync language between UI store and language store
+  useEffect(() => {
+    if (uiLanguage !== langStoreLanguage) {
+      // UI store changed, sync to language store
+      setLangStoreLanguage(uiLanguage);
+    }
+  }, [uiLanguage, langStoreLanguage, setLangStoreLanguage]);
+
+  // Use the language from language store (which handles Label Studio sync)
+  const language = langStoreLanguage;
 
   // Get the appropriate theme configuration
   const themeConfig = currentTheme === THEMES.DARK ? darkTheme : lightTheme;

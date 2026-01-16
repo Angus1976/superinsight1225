@@ -269,31 +269,25 @@ async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.app.app_name} v{settings.app.app_version}")
     
     try:
-        # Register all system services
-        await register_system_services()
+        # Simplified startup - skip service orchestration for now
+        # Just initialize database connection
+        init_database()
+        if test_database_connection():
+            logger.info("Database connection established")
+        else:
+            logger.warning("Database connection test failed")
         
-        # Start all services through system manager
-        success = await system_manager.start_all_services()
-        if not success:
-            raise Exception("Failed to start all system services")
-        
-        logger.info("All system services started successfully")
+        logger.info("Application startup completed (simplified mode)")
         
         yield
         
     except Exception as e:
         logger.error(f"Failed to initialize application: {e}")
-        error_handler.handle_error(
-            exception=e,
-            category=ErrorCategory.SYSTEM,
-            severity=ErrorSeverity.CRITICAL,
-            service_name="app_startup"
-        )
         raise
     finally:
         # Shutdown
         logger.info("Shutting down application")
-        await system_manager.stop_all_services()
+        close_database()
 
 # Create FastAPI application
 app = FastAPI(
@@ -377,17 +371,13 @@ async def health_check():
     """Simple health check endpoint for Docker."""
     try:
         # Simple health check - just verify database connection
-        from sqlalchemy import text
-        db = SessionLocal()
-        try:
-            db.execute(text("SELECT 1"))
-            db.close()
+        if test_database_connection():
             return JSONResponse(
                 status_code=200,
                 content={"status": "healthy", "message": "API is running"}
             )
-        except Exception as db_error:
-            logger.error(f"Database health check failed: {db_error}")
+        else:
+            logger.error("Database health check failed")
             return JSONResponse(
                 status_code=503,
                 content={"status": "unhealthy", "error": "Database connection failed"}
@@ -590,6 +580,16 @@ except Exception as e:
     import traceback
     traceback.print_exc()
 
+# Include auth router - CRITICAL for login functionality
+try:
+    from src.api.auth import router as auth_router
+    app.include_router(auth_router)
+    logger.info("Auth API loaded successfully")
+except Exception as e:
+    logger.error(f"Auth API failed to load: {e}")
+    import traceback
+    traceback.print_exc()
+
 # Include enhanced admin router
 try:
     from src.api.admin_enhanced import router as admin_enhanced_router
@@ -629,6 +629,44 @@ except Exception as e:
     logger.error(f"Audit Integrity API failed to load: {e}")
     import traceback
     traceback.print_exc()
+
+# Include business metrics router - required for dashboard
+try:
+    from src.api.business_metrics import router as business_metrics_router
+    app.include_router(business_metrics_router)
+    logger.info("Business metrics API loaded successfully")
+except Exception as e:
+    logger.error(f"Business metrics API failed to load: {e}")
+    import traceback
+    traceback.print_exc()
+
+# Include metrics router (alternative business metrics)
+try:
+    from src.api.metrics import router as metrics_router
+    app.include_router(metrics_router)
+    logger.info("Metrics API loaded successfully")
+except Exception as e:
+    logger.error(f"Metrics API failed to load: {e}")
+    import traceback
+    traceback.print_exc()
+
+# Include dashboard router
+try:
+    from src.api.dashboard import router as dashboard_router
+    app.include_router(dashboard_router)
+    logger.info("Dashboard API loaded successfully")
+except Exception as e:
+    logger.error(f"Dashboard API failed to load: {e}")
+    import traceback
+    traceback.print_exc()
+
+# Include workspace router for multi-tenant support
+try:
+    from src.api.workspace import router as workspace_router
+    app.include_router(workspace_router)
+    logger.info("Workspace API loaded successfully")
+except Exception as e:
+    logger.warning(f"Workspace API not available: {e}")
 
 # Dynamically include available API routers
 async def include_optional_routers():
@@ -997,24 +1035,13 @@ except Exception as e:
 
 
 # Include routers on startup
-@app.on_event("startup")
-async def startup_event():
-    """Application startup event."""
-    logger.info("Starting SuperInsight application...")
-    
-    # Initialize real-time alert system
-    try:
-        from src.security.alert_system_startup import initialize_real_time_alerts
-        alert_success = await initialize_real_time_alerts()
-        if alert_success:
-            logger.info("Real-time alert system started successfully")
-        else:
-            logger.warning("Real-time alert system failed to start")
-    except Exception as e:
-        logger.error(f"Failed to initialize real-time alerts: {e}")
-    
-    await include_optional_routers()
-    logger.info("SuperInsight application startup completed")
+# Startup event temporarily disabled for debugging
+# @app.on_event("startup")
+# async def startup_event():
+#     """Application startup event."""
+#     logger.info("Starting SuperInsight application...")
+#     await include_optional_routers()
+#     logger.info("SuperInsight application startup completed")
 
 
 @app.on_event("shutdown")

@@ -146,3 +146,28 @@ SuperInsight 平台需要支持多语言界面，以服务全球用户。系统�
 3. THE I18n_System SHALL support text formatting parameters for dynamic content
 4. WHEN switching languages, THE I18n_System SHALL ensure UI elements maintain proper alignment and spacing
 5. THE I18n_System SHALL provide metadata about text characteristics (length, direction) for UI optimization
+
+### Requirement 12: Label Studio 语言集成
+
+**User Story:** 作为系统用户，我希望在切换 SuperInsight 语言时，嵌入的 Label Studio 标注界面也能同步切换语言，以获得一致的用户体验。
+
+#### Acceptance Criteria
+
+1. WHEN the user changes language in SuperInsight, THE I18n_System SHALL synchronize the language setting to Label Studio iframe via postMessage
+2. THE I18n_System SHALL validate postMessage origin and type for security
+3. THE I18n_System SHALL maintain language state consistency across Zustand store, localStorage, react-i18next, and Label Studio
+4. THE I18n_System SHALL leverage Label Studio's official Chinese localization without modifying Label Studio code
+5. THE I18n_System SHALL support Label Studio language configuration via URL parameters and environment variables
+6. WHEN Label Studio iframe loads, THE I18n_System SHALL automatically sync the current language setting
+
+### Requirement 13: 全局状态管理
+
+**User Story:** 作为前端开发者，我希望语言状态能够通过全局状态管理器（Zustand）统一管理，以便在整个应用中保持语言设置的一致性。
+
+#### Acceptance Criteria
+
+1. THE I18n_System SHALL use Zustand store for global language state management
+2. THE I18n_System SHALL persist language preference to localStorage
+3. WHEN language changes, THE I18n_System SHALL update react-i18next, localStorage, and notify backend API
+4. THE I18n_System SHALL provide a centralized setLanguage function that handles all synchronization
+5. THE I18n_System SHALL support language state hydration on application startup

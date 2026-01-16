@@ -32,10 +32,10 @@ interface User {
 }
 
 const priorityOptions: { label: string; value: TaskPriority; color: string }[] = [
-  { label: 'Low', value: 'low', color: 'green' },
-  { label: 'Medium', value: 'medium', color: 'blue' },
-  { label: 'High', value: 'high', color: 'orange' },
-  { label: 'Urgent', value: 'urgent', color: 'red' },
+  { label: 'priorityLow', value: 'low', color: 'green' },
+  { label: 'priorityMedium', value: 'medium', color: 'blue' },
+  { label: 'priorityHigh', value: 'high', color: 'orange' },
+  { label: 'priorityUrgent', value: 'urgent', color: 'red' },
 ];
 
 const annotationTypeOptions: { 
@@ -45,33 +45,33 @@ const annotationTypeOptions: {
   config?: Record<string, any>;
 }[] = [
   { 
-    label: 'Text Classification', 
+    label: 'textClassification', 
     value: 'text_classification',
-    description: 'Classify text into predefined categories',
+    description: 'classifyTextCategories',
     config: { categories: [], multiLabel: false }
   },
   { 
-    label: 'Named Entity Recognition (NER)', 
+    label: 'namedEntityRecognition', 
     value: 'ner',
-    description: 'Identify and classify named entities in text',
+    description: 'identifyEntities',
     config: { entities: [], nested: false }
   },
   { 
-    label: 'Sentiment Analysis', 
+    label: 'sentimentAnalysis', 
     value: 'sentiment',
-    description: 'Analyze emotional tone of text',
+    description: 'analyzeEmotionalTone',
     config: { scale: 'binary', includeNeutral: true }
   },
   { 
-    label: 'Question & Answer', 
+    label: 'questionAnswer', 
     value: 'qa',
-    description: 'Create question-answer pairs from text',
+    description: 'createQAPairs',
     config: { questionTypes: [], answerFormat: 'text' }
   },
   { 
-    label: 'Custom', 
+    label: 'custom', 
     value: 'custom',
-    description: 'Define custom annotation schema',
+    description: 'defineCustomSchema',
     config: { schema: null }
   },
 ];
@@ -244,7 +244,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
                               backgroundColor: option.color 
                             }} 
                           />
-                          {option.label}
+                          {t(`tasks.${option.label}`)}
                         </Space>
                       </Select.Option>
                     ))}
@@ -354,9 +354,9 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
                   {annotationTypeOptions.map(option => (
                     <Radio key={option.value} value={option.value} style={{ width: '100%' }}>
                       <Space direction="vertical" size={0}>
-                        <span style={{ fontWeight: 500 }}>{option.label}</span>
+                        <span style={{ fontWeight: 500 }}>{t(`tasks.${option.label}`)}</span>
                         <span style={{ fontSize: 12, color: '#666' }}>
-                          {option.description}
+                          {t(`tasks.${option.description}`)}
                         </span>
                       </Space>
                     </Radio>

@@ -43,6 +43,7 @@ import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import quarterOfYear from 'dayjs/plugin/quarterOfYear';
 import type { Dayjs } from 'dayjs';
+import { useTranslation } from 'react-i18next';
 import { useWorkHoursStatistics, useExportBilling } from '@/hooks/useBilling';
 import type { WorkHoursStatistics } from '@/types/billing';
 
@@ -63,6 +64,8 @@ interface UserDetailModalProps {
 }
 
 const UserDetailModal: React.FC<UserDetailModalProps> = ({ visible, user, onClose }) => {
+  const { t } = useTranslation('billing');
+  
   if (!user) return null;
 
   return (
@@ -70,46 +73,46 @@ const UserDetailModal: React.FC<UserDetailModalProps> = ({ visible, user, onClos
       title={
         <Space>
           <UserOutlined />
-          <span>{user.user_name || user.user_id} - 工时详情</span>
+          <span>{user.user_name || user.user_id} - {t('workHours.report.userDetail')}</span>
         </Space>
       }
       open={visible}
       onCancel={onClose}
       footer={[
         <Button key="close" onClick={onClose}>
-          关闭
+          {t('workHours.report.actions.close')}
         </Button>,
       ]}
       width={600}
     >
       <Descriptions bordered column={2}>
-        <Descriptions.Item label="用户ID">{user.user_id}</Descriptions.Item>
-        <Descriptions.Item label="用户名称">{user.user_name || '-'}</Descriptions.Item>
-        <Descriptions.Item label="总工时">
-          <Text strong>{user.total_hours.toFixed(2)}</Text> 小时
+        <Descriptions.Item label={t('workHours.report.modal.userId')}>{user.user_id}</Descriptions.Item>
+        <Descriptions.Item label={t('workHours.report.modal.userName')}>{user.user_name || '-'}</Descriptions.Item>
+        <Descriptions.Item label={t('workHours.report.modal.totalHours')}>
+          <Text strong>{user.total_hours.toFixed(2)}</Text> {t('workHours.report.modal.hours')}
         </Descriptions.Item>
-        <Descriptions.Item label="计费工时">
-          <Text strong>{user.billable_hours.toFixed(2)}</Text> 小时
+        <Descriptions.Item label={t('workHours.report.modal.billableHours')}>
+          <Text strong>{user.billable_hours.toFixed(2)}</Text> {t('workHours.report.modal.hours')}
         </Descriptions.Item>
-        <Descriptions.Item label="计费率">
+        <Descriptions.Item label={t('workHours.report.modal.billableRate')}>
           <Progress
             percent={Number(((user.billable_hours / user.total_hours) * 100).toFixed(1)) || 0}
             size="small"
             status="active"
           />
         </Descriptions.Item>
-        <Descriptions.Item label="效率评分">
+        <Descriptions.Item label={t('workHours.report.modal.efficiencyScore')}>
           <Tag color={user.efficiency_score >= 80 ? 'green' : user.efficiency_score >= 60 ? 'orange' : 'red'}>
             {user.efficiency_score.toFixed(0)}
           </Tag>
         </Descriptions.Item>
-        <Descriptions.Item label="标注数量" span={2}>
-          <Text strong>{user.total_annotations.toLocaleString()}</Text> 条
+        <Descriptions.Item label={t('workHours.report.modal.annotationCount')} span={2}>
+          <Text strong>{user.total_annotations.toLocaleString()}</Text> {t('workHours.report.modal.items')}
         </Descriptions.Item>
-        <Descriptions.Item label="时效">
-          <Text strong>{user.annotations_per_hour.toFixed(2)}</Text> 条/小时
+        <Descriptions.Item label={t('workHours.report.modal.rate')}>
+          <Text strong>{user.annotations_per_hour.toFixed(2)}</Text> {t('workHours.report.modal.perHour')}
         </Descriptions.Item>
-        <Descriptions.Item label="总成本">
+        <Descriptions.Item label={t('workHours.report.modal.totalCost')}>
           <Text strong type="success">¥{user.total_cost.toLocaleString()}</Text>
         </Descriptions.Item>
       </Descriptions>
@@ -118,6 +121,7 @@ const UserDetailModal: React.FC<UserDetailModalProps> = ({ visible, user, onClos
 };
 
 export function WorkHoursReport({ tenantId, onExport }: WorkHoursReportProps) {
+  const { t } = useTranslation('billing');
   const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([
     dayjs().startOf('month'),
     dayjs().endOf('month'),
@@ -216,10 +220,10 @@ export function WorkHoursReport({ tenantId, onExport }: WorkHoursReportProps) {
           end_date: endDate,
         },
       });
-      message.success('工时报表导出成功');
+      message.success(t('workHours.report.messages.exportSuccess'));
       onExport?.();
     } catch {
-      message.error('导出失败，请重试');
+      message.error(t('workHours.report.messages.exportFailed'));
     }
   };
 
@@ -230,9 +234,9 @@ export function WorkHoursReport({ tenantId, onExport }: WorkHoursReportProps) {
 
   const columns: ColumnsType<WorkHoursStatistics> = [
     {
-      title: '排名',
+      title: t('workHours.report.columns.rank'),
       key: 'rank',
-      width: 60,
+      width: 70,
       render: (_, __, index) => {
         const rankColors: Record<number, string> = { 0: '#FFD700', 1: '#C0C0C0', 2: '#CD7F32' };
         return (
@@ -243,8 +247,9 @@ export function WorkHoursReport({ tenantId, onExport }: WorkHoursReportProps) {
       },
     },
     {
-      title: '用户',
+      title: t('workHours.report.columns.user'),
       key: 'user',
+      width: 140,
       render: (_, record) => (
         <Space>
           <UserOutlined />
@@ -253,9 +258,10 @@ export function WorkHoursReport({ tenantId, onExport }: WorkHoursReportProps) {
       ),
     },
     {
-      title: '总工时',
+      title: t('workHours.report.columns.totalHours'),
       dataIndex: 'total_hours',
       key: 'total_hours',
+      width: 100,
       sorter: (a, b) => a.total_hours - b.total_hours,
       render: (hours: number) => (
         <Space>
@@ -265,14 +271,15 @@ export function WorkHoursReport({ tenantId, onExport }: WorkHoursReportProps) {
       ),
     },
     {
-      title: '计费工时',
+      title: t('workHours.report.columns.billableHours'),
       dataIndex: 'billable_hours',
       key: 'billable_hours',
+      width: 130,
       sorter: (a, b) => a.billable_hours - b.billable_hours,
       render: (hours: number, record) => {
         const rate = record.total_hours > 0 ? (hours / record.total_hours) * 100 : 0;
         return (
-          <Tooltip title={`计费率: ${rate.toFixed(1)}%`}>
+          <Tooltip title={`${rate.toFixed(1)}%`}>
             <Space>
               <Text>{hours.toFixed(1)}h</Text>
               <Progress
@@ -287,27 +294,28 @@ export function WorkHoursReport({ tenantId, onExport }: WorkHoursReportProps) {
       },
     },
     {
-      title: '标注数',
+      title: t('workHours.report.columns.annotations'),
       dataIndex: 'total_annotations',
       key: 'total_annotations',
+      width: 90,
       sorter: (a, b) => a.total_annotations - b.total_annotations,
       render: (count: number) => count.toLocaleString(),
     },
     {
-      title: '时效',
+      title: t('workHours.report.columns.rate'),
       dataIndex: 'annotations_per_hour',
       key: 'annotations_per_hour',
+      width: 80,
       sorter: (a, b) => a.annotations_per_hour - b.annotations_per_hour,
       render: (rate: number) => (
-        <Tooltip title="每小时标注数量">
-          <Text>{rate.toFixed(1)} / h</Text>
-        </Tooltip>
+        <Text>{rate.toFixed(1)}/h</Text>
       ),
     },
     {
-      title: '效率评分',
+      title: t('workHours.report.columns.efficiencyScore'),
       dataIndex: 'efficiency_score',
       key: 'efficiency_score',
+      width: 90,
       sorter: (a, b) => a.efficiency_score - b.efficiency_score,
       render: (score: number) => {
         const color = score >= 80 ? 'green' : score >= 60 ? 'orange' : 'red';
@@ -320,9 +328,10 @@ export function WorkHoursReport({ tenantId, onExport }: WorkHoursReportProps) {
       },
     },
     {
-      title: '成本',
+      title: t('workHours.report.columns.cost'),
       dataIndex: 'total_cost',
       key: 'total_cost',
+      width: 100,
       sorter: (a, b) => a.total_cost - b.total_cost,
       render: (cost: number) => (
         <Text type="success" strong>
@@ -331,12 +340,12 @@ export function WorkHoursReport({ tenantId, onExport }: WorkHoursReportProps) {
       ),
     },
     {
-      title: '操作',
+      title: t('workHours.report.columns.action'),
       key: 'action',
       width: 80,
       render: (_, record) => (
         <Button type="link" size="small" onClick={() => handleViewDetail(record)}>
-          详情
+          {t('workHours.report.actions.detail')}
         </Button>
       ),
     },
@@ -345,9 +354,9 @@ export function WorkHoursReport({ tenantId, onExport }: WorkHoursReportProps) {
   if (error) {
     return (
       <Card>
-        <Empty description="加载工时数据失败">
+        <Empty description={t('workHours.report.messages.loadFailed')}>
           <Button type="primary" onClick={() => refetch()}>
-            重试
+            {t('workHours.report.actions.retry')}
           </Button>
         </Empty>
       </Card>
@@ -362,7 +371,7 @@ export function WorkHoursReport({ tenantId, onExport }: WorkHoursReportProps) {
           <Col flex="auto">
             <Space size="large">
               <Space>
-                <Text>统计周期:</Text>
+                <Text>{t('workHours.report.statisticPeriod')}:</Text>
                 <RangePicker
                   value={dateRange}
                   onChange={(dates) => {
@@ -371,10 +380,10 @@ export function WorkHoursReport({ tenantId, onExport }: WorkHoursReportProps) {
                     }
                   }}
                   presets={[
-                    { label: '本周', value: [dayjs().startOf('week'), dayjs().endOf('week')] },
-                    { label: '本月', value: [dayjs().startOf('month'), dayjs().endOf('month')] },
-                    { label: '上月', value: [dayjs().subtract(1, 'month').startOf('month'), dayjs().subtract(1, 'month').endOf('month')] },
-                    { label: '本季度', value: [dayjs().startOf('quarter'), dayjs().endOf('quarter')] },
+                    { label: t('workHours.report.datePresets.thisWeek'), value: [dayjs().startOf('week'), dayjs().endOf('week')] },
+                    { label: t('workHours.report.datePresets.thisMonth'), value: [dayjs().startOf('month'), dayjs().endOf('month')] },
+                    { label: t('workHours.report.datePresets.lastMonth'), value: [dayjs().subtract(1, 'month').startOf('month'), dayjs().subtract(1, 'month').endOf('month')] },
+                    { label: t('workHours.report.datePresets.thisQuarter'), value: [dayjs().startOf('quarter'), dayjs().endOf('quarter')] },
                   ]}
                 />
               </Space>
@@ -383,7 +392,7 @@ export function WorkHoursReport({ tenantId, onExport }: WorkHoursReportProps) {
           <Col>
             <Space>
               <Button icon={<ReloadOutlined />} onClick={() => refetch()} loading={isLoading}>
-                刷新
+                {t('workHours.report.actions.refresh')}
               </Button>
               <Button
                 type="primary"
@@ -391,7 +400,7 @@ export function WorkHoursReport({ tenantId, onExport }: WorkHoursReportProps) {
                 onClick={handleExportExcel}
                 loading={exportMutation.isPending}
               >
-                导出 Excel
+                {t('workHours.report.actions.exportExcel')}
               </Button>
             </Space>
           </Col>
@@ -403,17 +412,17 @@ export function WorkHoursReport({ tenantId, onExport }: WorkHoursReportProps) {
         <Col span={4}>
           <Card>
             <Statistic
-              title="统计人数"
+              title={t('workHours.report.stats.totalUsers')}
               value={summaryStats.totalUsers}
               prefix={<TeamOutlined />}
-              suffix="人"
+              suffix={t('workHours.report.messages.persons')}
             />
           </Card>
         </Col>
         <Col span={4}>
           <Card>
             <Statistic
-              title="总工时"
+              title={t('workHours.report.stats.totalHours')}
               value={summaryStats.totalHours}
               prefix={<ClockCircleOutlined />}
               precision={1}
@@ -424,7 +433,7 @@ export function WorkHoursReport({ tenantId, onExport }: WorkHoursReportProps) {
         <Col span={4}>
           <Card>
             <Statistic
-              title="计费工时"
+              title={t('workHours.report.stats.billableHours')}
               value={summaryStats.totalBillableHours}
               precision={1}
               suffix="h"
@@ -434,7 +443,7 @@ export function WorkHoursReport({ tenantId, onExport }: WorkHoursReportProps) {
         <Col span={4}>
           <Card>
             <Statistic
-              title="总标注数"
+              title={t('workHours.report.stats.totalAnnotations')}
               value={summaryStats.totalAnnotations}
               groupSeparator=","
             />
@@ -443,7 +452,7 @@ export function WorkHoursReport({ tenantId, onExport }: WorkHoursReportProps) {
         <Col span={4}>
           <Card>
             <Statistic
-              title="平均效率"
+              title={t('workHours.report.stats.avgEfficiency')}
               value={summaryStats.avgEfficiency}
               precision={1}
               valueStyle={{
@@ -455,7 +464,7 @@ export function WorkHoursReport({ tenantId, onExport }: WorkHoursReportProps) {
         <Col span={4}>
           <Card>
             <Statistic
-              title="总成本"
+              title={t('workHours.report.stats.totalCost')}
               value={summaryStats.totalCost}
               prefix="¥"
               precision={2}
@@ -471,13 +480,13 @@ export function WorkHoursReport({ tenantId, onExport }: WorkHoursReportProps) {
             title={
               <Space>
                 <BarChartOutlined />
-                <span>工时排名 (Top 10)</span>
+                <span>{t('workHours.report.charts.hoursRanking')}</span>
               </Space>
             }
             loading={isLoading}
           >
             {chartData.length === 0 ? (
-              <Empty description="暂无数据" />
+              <Empty description={t('workHours.report.messages.noData')} />
             ) : (
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={chartData} layout="vertical">
@@ -487,15 +496,15 @@ export function WorkHoursReport({ tenantId, onExport }: WorkHoursReportProps) {
                   <RechartsTooltip
                     formatter={(value, name) => {
                       const labels: Record<string, string> = {
-                        hours: '总工时',
-                        billable: '计费工时',
+                        hours: t('workHours.report.charts.totalHours'),
+                        billable: t('workHours.report.charts.billableHours'),
                       };
                       return [`${value as number}h`, labels[name as string] || name];
                     }}
                   />
                   <Legend />
-                  <Bar dataKey="hours" name="总工时" fill="#1890ff" />
-                  <Bar dataKey="billable" name="计费工时" fill="#52c41a" />
+                  <Bar dataKey="hours" name={t('workHours.report.charts.totalHours')} fill="#1890ff" />
+                  <Bar dataKey="billable" name={t('workHours.report.charts.billableHours')} fill="#52c41a" />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -506,13 +515,13 @@ export function WorkHoursReport({ tenantId, onExport }: WorkHoursReportProps) {
             title={
               <Space>
                 <InfoCircleOutlined />
-                <span>效率分布</span>
+                <span>{t('workHours.report.charts.efficiencyDist')}</span>
               </Space>
             }
             loading={isLoading}
           >
             {efficiencyDistribution.length === 0 ? (
-              <Empty description="暂无数据" />
+              <Empty description={t('workHours.report.messages.noData')} />
             ) : (
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={efficiencyDistribution}>
@@ -520,7 +529,7 @@ export function WorkHoursReport({ tenantId, onExport }: WorkHoursReportProps) {
                   <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                   <YAxis />
                   <RechartsTooltip
-                    formatter={(value) => [`${value as number} 人`, '人数']}
+                    formatter={(value) => [`${value as number}`, t('workHours.report.messages.persons')]}
                   />
                   <Bar
                     dataKey="count"
@@ -539,8 +548,8 @@ export function WorkHoursReport({ tenantId, onExport }: WorkHoursReportProps) {
         title={
           <Space>
             <ClockCircleOutlined />
-            <span>工时统计明细</span>
-            <Tag>{data?.user_count || 0} 人</Tag>
+            <span>{t('workHours.report.title')}</span>
+            <Tag>{data?.user_count || 0} {t('workHours.report.messages.persons')}</Tag>
           </Space>
         }
       >
@@ -552,7 +561,7 @@ export function WorkHoursReport({ tenantId, onExport }: WorkHoursReportProps) {
           pagination={{
             pageSize: 10,
             showSizeChanger: true,
-            showTotal: (total) => `共 ${total} 条记录`,
+            showTotal: (total) => t('workHours.report.messages.totalRecords', { total }),
           }}
           scroll={{ x: 1000 }}
         />

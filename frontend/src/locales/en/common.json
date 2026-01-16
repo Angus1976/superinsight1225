@@ -1,6 +1,15 @@
 {
   "appName": "SuperInsight",
   "appNameZh": "问视间",
+  "search": "Search",
+  "reset": "Reset",
+  "refresh": "Refresh",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "language": "Language",
+  "switchLanguage": "Switch Language",
+  "reload": "Reload",
+  "retry": "Retry",
   "menu": {
     "dashboard": "Dashboard",
     "tasks": "Task Management",
@@ -189,6 +198,18 @@
       "permission": "If you believe you should have this permission, please contact your administrator.",
       "server": "This is a server-side issue. Our technical team has been notified.",
       "general": "If the problem persists, please contact support with the error code."
+    },
+    "pages": {
+      "notFound": {
+        "title": "404",
+        "subtitle": "Sorry, the page you visited does not exist.",
+        "backHome": "Home"
+      },
+      "forbidden": {
+        "title": "403",
+        "subtitle": "Sorry, you don't have access to this page.",
+        "backHome": "Home"
+      }
     }
   },
   "common": {
@@ -255,5 +276,33 @@
     "recommendation": "Recommendation",
     "focusOnTopIssues": "Focus on addressing the top 3 issue categories to maximize quality improvement impact",
     "exportSuccess": "Export successful"
+  },
+  "labelStudio": {
+    "title": "Label Studio Annotation Interface",
+    "ready": "Label Studio is ready",
+    "loading": "Loading Label Studio...",
+    "loadingHint": "If it takes too long, please check if Label Studio service is running properly",
+    "loadError": "Unable to load Label Studio, please check network connection and service status",
+    "loadErrorTitle": "Label Studio Loading Error",
+    "timeout": "Label Studio response timeout, please check if the service is running properly",
+    "unknownError": "Unknown error occurred",
+    "connectionStatus": "Connection Status",
+    "syncStatus": "Sync Status",
+    "fullscreen": "Fullscreen Mode",
+    "exitFullscreen": "Exit Fullscreen",
+    "lastActivity": "Last Activity",
+    "possibleSolutions": "Possible Solutions",
+    "solution1": "Check if Label Studio service is running properly",
+    "solution2": "Verify network connection is working",
+    "solution3": "Confirm project ID and task ID are correct",
+    "solution4": "Check if authentication token is valid",
+    "languageChanging": "Switching Label Studio language...",
+    "languageChanged": "Label Studio language switched",
+    "languageNote": "Label Studio uses built-in localization, language switch requires reload",
+    "status": {
+      "connected": "Connected",
+      "connecting": "Connecting",
+      "disconnected": "Disconnected"
+    }
   }
 }

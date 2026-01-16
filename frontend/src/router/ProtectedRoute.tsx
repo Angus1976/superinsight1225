@@ -3,11 +3,11 @@ import type { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { Alert, Button, Space, Spin } from 'antd';
 import { TeamOutlined } from '@ant-design/icons';
-import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import { usePermissions } from '@/hooks/usePermissions';
 import { ROUTES } from '@/constants';
 import { Permission } from '@/utils/permissions';
+import { isTokenExpired } from '@/utils/token';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -29,7 +29,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requiredTenantId,
   requiredWorkspaceId
 }) => {
-  const { isAuthenticated, token, currentTenant, currentWorkspace } = useAuthStore();
+  const { isAuthenticated, token, currentTenant, currentWorkspace, _hasHydrated, clearAuth } = useAuthStore();
   const { 
     checkPermission, 
     checkTenantAccess, 
@@ -37,20 +37,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     roleDisplayName 
   } = usePermissions();
   const location = useLocation();
-  const [isChecking, setIsChecking] = useState(true);
 
-  // Check authentication status on mount
-  useEffect(() => {
-    // Give a small delay to ensure store is properly hydrated
-    const timer = setTimeout(() => {
-      setIsChecking(false);
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Show loading while checking authentication
-  if (isChecking) {
+  // Show loading while store is hydrating
+  if (!_hasHydrated) {
     return (
       <div style={{ 
         display: 'flex', 
@@ -68,6 +57,13 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // 检查认证状态
   if (!isAuthenticated || !token) {
+    return <Navigate to={ROUTES.LOGIN} state={{ from: location }} replace />;
+  }
+
+  // 额外检查 token 是否过期（防止 store 状态与实际 token 不同步）
+  if (isTokenExpired(token)) {
+    // Token 已过期，清除认证状态并重定向到登录页
+    clearAuth();
     return <Navigate to={ROUTES.LOGIN} state={{ from: location }} replace />;
   }
 

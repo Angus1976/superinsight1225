@@ -43,7 +43,72 @@
     "trend": "趋势",
     "reward": "奖励",
     "topPerformers": "优秀员工",
-    "avgEfficiency": "平均效率"
+    "avgEfficiency": "平均效率",
+    "report": {
+      "title": "工时统计明细",
+      "userDetail": "工时详情",
+      "statisticPeriod": "统计周期",
+      "columns": {
+        "rank": "排名",
+        "user": "用户",
+        "totalHours": "总工时",
+        "billableHours": "计费工时",
+        "annotations": "标注数",
+        "rate": "时效",
+        "efficiencyScore": "效率评分",
+        "cost": "成本",
+        "action": "操作"
+      },
+      "stats": {
+        "totalUsers": "统计人数",
+        "totalHours": "总工时",
+        "billableHours": "计费工时",
+        "totalAnnotations": "总标注数",
+        "avgEfficiency": "平均效率",
+        "totalCost": "总成本"
+      },
+      "charts": {
+        "hoursRanking": "工时排名 (Top 10)",
+        "efficiencyDist": "效率分布",
+        "totalHours": "总工时",
+        "billableHours": "计费工时"
+      },
+      "datePresets": {
+        "thisWeek": "本周",
+        "thisMonth": "本月",
+        "lastMonth": "上月",
+        "thisQuarter": "本季度"
+      },
+      "modal": {
+        "userId": "用户ID",
+        "userName": "用户名称",
+        "totalHours": "总工时",
+        "billableHours": "计费工时",
+        "billableRate": "计费率",
+        "efficiencyScore": "效率评分",
+        "annotationCount": "标注数量",
+        "rate": "时效",
+        "totalCost": "总成本",
+        "hours": "小时",
+        "items": "条",
+        "perHour": "条/小时"
+      },
+      "actions": {
+        "refresh": "刷新",
+        "exportExcel": "导出 Excel",
+        "detail": "详情",
+        "close": "关闭",
+        "retry": "重试"
+      },
+      "messages": {
+        "exportSuccess": "工时报表导出成功",
+        "exportFailed": "导出失败，请重试",
+        "loadFailed": "加载工时数据失败",
+        "noData": "暂无数据",
+        "totalRecords": "共 {{total}} 条记录",
+        "persons": "人"
+      }
+    }
   },
   "analysis": {
     "title": "成本分析",

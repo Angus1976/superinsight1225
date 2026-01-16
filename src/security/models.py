@@ -156,3 +156,33 @@ class DataMaskingRuleModel(Base):
     
     # Relationship
     creator: Mapped["UserModel"] = relationship("UserModel")
+
+
+# ============================================================================
+# Backward Compatibility Alias
+# ============================================================================
+# 
+# 问题背景：
+# 在代码重构过程中，审计日志模型从 AuditLogModel 重命名为 SecurityAuditLogModel
+# 以更好地反映其在安全模块中的作用。但是，系统中有大量文件仍在使用旧名称。
+#
+# 解决方案：
+# 为了保持向后兼容性，避免大规模修改现有代码，这里创建了一个别名。
+# 所有使用 AuditLogModel 的代码都会自动映射到 SecurityAuditLogModel。
+#
+# 使用示例：
+#   from src.security.models import AuditLogModel  # 旧代码仍然可以工作
+#   from src.security.models import SecurityAuditLogModel  # 推荐使用新名称
+#
+# 注意事项：
+# - 新代码应该使用 SecurityAuditLogModel 而不是 AuditLogModel
+# - 这个别名将在未来版本中保留，以确保兼容性
+# - 如果遇到类似的模型重命名问题，可以采用相同的别名模式
+#
+# 相关文件：
+# - src/database/models.py (已更新导入)
+# - src/security/audit_*.py (多个审计相关文件)
+# - src/compliance/*.py (合规性检查文件)
+# - tests/test_*.py (测试文件)
+# ============================================================================
+AuditLogModel = SecurityAuditLogModel

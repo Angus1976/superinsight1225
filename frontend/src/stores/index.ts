@@ -5,7 +5,8 @@
  * 
  * Architecture Overview:
  * - authStore: Authentication, user, tenant, and workspace state
- * - uiStore: UI preferences (theme, language, sidebar)
+ * - uiStore: UI preferences (theme, sidebar)
+ * - languageStore: Language state with Label Studio sync
  * - taskStore: Task management state with filters, pagination, selection
  * - dashboardStore: Dashboard data and preferences
  * - notificationStore: System notifications and preferences
@@ -21,6 +22,7 @@
 // ============================================================================
 export * from './authStore';
 export * from './uiStore';
+export * from './languageStore';
 export * from './taskStore';
 export * from './dashboardStore';
 export * from './notificationStore';

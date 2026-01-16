@@ -1,0 +1,21 @@
+# Oracle Database Support
+# 
+# This file contains optional dependencies for Oracle database connectivity.
+# 
+# Prerequisites:
+# 1. Download and install Oracle Instant Client from:
+#    https://www.oracle.com/database/technologies/instant-client/downloads.html
+# 
+# 2. Set environment variables:
+#    export LD_LIBRARY_PATH=/path/to/instantclient:$LD_LIBRARY_PATH
+#    export ORACLE_HOME=/path/to/instantclient
+# 
+# 3. Install this file:
+#    pip install -r requirements-oracle.txt
+#
+# For Docker deployment, you need to:
+# 1. Add Oracle Instant Client to the Docker image
+# 2. Set environment variables in docker-compose.yml
+# 3. Uncomment the cx-Oracle line below and rebuild the image
+
+cx-Oracle>=8.3.0

@@ -1,6 +1,15 @@
 {
   "appName": "问视间",
   "appNameEn": "SuperInsight",
+  "search": "搜索",
+  "reset": "重置",
+  "refresh": "刷新",
+  "cancel": "取消",
+  "confirm": "确认",
+  "language": "语言",
+  "switchLanguage": "切换语言",
+  "reload": "重新加载",
+  "retry": "重试",
   "menu": {
     "dashboard": "仪表盘",
     "tasks": "任务管理",
@@ -186,6 +195,18 @@
       "permission": "如果您认为应该有此权限，请联系系统管理员。",
       "server": "这是服务器端的问题，我们的技术团队已收到通知。",
       "general": "如果问题持续存在，请联系技术支持并提供错误代码。"
+    },
+    "pages": {
+      "notFound": {
+        "title": "404",
+        "subtitle": "抱歉，您访问的页面不存在。",
+        "backHome": "返回首页"
+      },
+      "forbidden": {
+        "title": "403",
+        "subtitle": "抱歉，您没有权限访问此页面。",
+        "backHome": "返回首页"
+      }
     }
   },
   "common": {
@@ -252,5 +273,33 @@
     "recommendation": "建议",
     "focusOnTopIssues": "专注于解决前3类问题以最大化质量改进效果",
     "exportSuccess": "导出成功"
+  },
+  "labelStudio": {
+    "title": "Label Studio 标注界面",
+    "ready": "Label Studio 已就绪",
+    "loading": "正在加载 Label Studio...",
+    "loadingHint": "如果长时间无响应，请检查 Label Studio 服务是否正常运行",
+    "loadError": "无法加载 Label Studio，请检查网络连接和服务状态",
+    "loadErrorTitle": "Label Studio 加载错误",
+    "timeout": "Label Studio 响应超时，请检查服务是否正常运行",
+    "unknownError": "发生未知错误",
+    "connectionStatus": "连接状态",
+    "syncStatus": "同步状态",
+    "fullscreen": "全屏模式",
+    "exitFullscreen": "退出全屏",
+    "lastActivity": "最后活动",
+    "possibleSolutions": "可能的解决方案",
+    "solution1": "检查 Label Studio 服务是否正常运行",
+    "solution2": "验证网络连接是否正常",
+    "solution3": "确认项目 ID 和任务 ID 是否正确",
+    "solution4": "检查认证令牌是否有效",
+    "languageChanging": "正在切换 Label Studio 语言...",
+    "languageChanged": "Label Studio 语言已切换",
+    "languageNote": "Label Studio 使用内置中文界面，语言切换需要重新加载",
+    "status": {
+      "connected": "已连接",
+      "connecting": "连接中",
+      "disconnected": "已断开"
+    }
   }
 }

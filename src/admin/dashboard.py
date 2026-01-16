@@ -19,9 +19,12 @@ from collections import defaultdict, deque
 from src.system.monitoring import metrics_collector, performance_monitor, health_monitor
 from src.system.business_metrics import business_metrics_collector
 from src.system.integration import system_manager
-from src.admin.config_manager import config_manager
+from src.admin.config_manager import get_config_manager
 from src.admin.user_analytics import UserAnalytics
 from src.admin.workflow_manager import WorkflowManager
+
+# Get config manager instance
+config_manager = get_config_manager()
 
 
 logger = logging.getLogger(__name__)

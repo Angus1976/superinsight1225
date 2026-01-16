@@ -57,7 +57,7 @@ class AuditEventQueryRequest(BaseModel):
 
 class StorageOptimizationRequest(BaseModel):
     """存储优化操作请求"""
-    operation: str = Field(..., regex="^(archival|cleanup|partition_maintenance|stats_collection)$", description="操作类型")
+    operation: str = Field(..., pattern="^(archival|cleanup|partition_maintenance|stats_collection)$", description="操作类型")
     tenant_id: Optional[str] = Field(None, description="租户ID")
     force: bool = Field(False, description="强制执行")
     risk_level: Optional[str] = Field(None, description="风险等级")

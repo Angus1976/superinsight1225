@@ -323,6 +323,69 @@ The i18n support system has been **fully implemented** with the following key ac
 - **Monitoring and logging** for production operations
 - **Configuration management** for different environments
 
+## Pending Tasks - Label Studio Integration
+
+- [x] 16. Implement Label Studio language synchronization
+  - [x] 16.1 Create Zustand language store with sync capabilities
+    - Implement useLanguageStore with setLanguage function
+    - Add syncToLabelStudio method for iframe communication
+    - Integrate with react-i18next changeLanguage
+    - Persist language preference to localStorage
+    - _Requirements: 12.1, 12.3, 13.1, 13.2, 13.3, 13.4_
+
+  - [x] 16.2 Implement Label Studio iframe integration component
+    - Create LabelStudioEmbed component with language sync
+    - Add postMessage communication for language changes
+    - Implement iframe load event handler for initial sync
+    - Add message listener for Label Studio language changes
+    - _Requirements: 12.1, 12.4, 12.6_
+
+  - [x] 16.3 Implement secure postMessage communication
+    - Add origin validation for incoming messages
+    - Implement message type validation
+    - Add error handling for communication failures
+    - _Requirements: 12.2_
+
+  - [x] 16.4 Create unified Language Switcher component
+    - Implement LanguageSwitcher UI component
+    - Connect to Zustand language store
+    - Add visual feedback for language changes
+    - Support both dropdown and toggle modes
+    - _Requirements: 13.4_
+
+  - [x] 16.5 Update docker-compose for Label Studio language config
+    - Add LABEL_STUDIO_LANGUAGE environment variable
+    - Configure default language to Chinese
+    - Document language configuration options
+    - _Requirements: 12.5_
+
+  - [x] 16.6 Implement iframe reload strategy for language switch
+    - Add prevLanguageRef to track language changes in LabelStudioEmbed
+    - Implement iframe src reload when language changes
+    - Show loading indicator during iframe reload
+    - Display language switching message to user via message.info
+    - Update connectionStatus to 'connecting' during reload
+    - _Requirements: 12.1, 12.6_
+
+  - [x] 16.7 Add Label Studio language switching translations
+    - Add languageChanging translation key to zh/common.json
+    - Add languageChanged translation key to zh/common.json
+    - Add languageNote translation key to zh/common.json
+    - Add corresponding English translations to en/common.json
+    - _Requirements: 10.1, 10.2_
+
+  - [x] 16.8 Write property tests for Label Studio integration
+    - **Property 24: Label Studio Language Sync**
+    - **Property 25: Cross-Origin Message Security**
+    - **Property 26: Language State Consistency**
+    - **Validates: Requirements 12.1, 12.2, 12.3**
+
+- [x] 17. Final validation for Label Studio integration
+  - [x] 17.1 Test language sync between SuperInsight and Label Studio
+  - [x] 17.2 Verify postMessage security measures
+  - [x] 17.3 Test language persistence across page reloads
+  - [x] 17.4 Validate Label Studio official Chinese interface quality
+
 ## Notes
 
 - **All requirements have been met** - The implementation covers all 11 requirements with their 55 acceptance criteria

@@ -186,7 +186,7 @@ class QualityIssueModel(Base):
 # Import security models to ensure they are registered with SQLAlchemy
 from src.security.models import (
     UserModel, ProjectPermissionModel, IPWhitelistModel,
-    AuditLogModel, DataMaskingRuleModel
+    SecurityAuditLogModel, DataMaskingRuleModel
 )
 
 # Import sync models to ensure they are registered with SQLAlchemy

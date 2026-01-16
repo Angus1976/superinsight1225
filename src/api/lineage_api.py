@@ -92,7 +92,7 @@ async def track_lineage(
 async def get_entity_lineage(
     entity_type: str,
     entity_id: str,
-    direction: str = Query("both", regex="^(upstream|downstream|both)$"),
+    direction: str = Query("both", pattern="^(upstream|downstream|both)$"),
     tenant_id: Optional[str] = Query(None),
     limit: int = Query(100, ge=1, le=500)
 ) -> Dict[str, Any]:

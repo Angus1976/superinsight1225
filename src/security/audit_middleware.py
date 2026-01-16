@@ -19,7 +19,7 @@ import logging
 from src.security.audit_service import EnhancedAuditService, RiskLevel
 from src.security.models import AuditAction, UserModel
 from src.security.controller import SecurityController
-from src.database.connection import get_db_session
+from src.database.connection import db_manager
 
 
 logger = logging.getLogger(__name__)
@@ -235,8 +235,7 @@ class ComprehensiveAuditMiddleware(BaseHTTPMiddleware):
                 return None
             
             # Get user from database
-            db = get_db_session()
-            try:
+            with db_manager.get_session() as db:
                 user = self.security_controller.get_user_by_id(payload["user_id"], db)
                 if not user:
                     return None
@@ -249,8 +248,6 @@ class ComprehensiveAuditMiddleware(BaseHTTPMiddleware):
                     "tenant_id": user.tenant_id,
                     "is_active": user.is_active
                 }
-            finally:
-                db.close()
         
         except Exception as e:
             logger.debug(f"Failed to extract user context: {e}")
@@ -267,8 +264,7 @@ class ComprehensiveAuditMiddleware(BaseHTTPMiddleware):
         """Log comprehensive audit event."""
         
         try:
-            db = get_db_session()
-            try:
+            with db_manager.get_session() as db:
                 # Prepare audit details
                 audit_details = {
                     "request_id": request_id,
@@ -314,8 +310,6 @@ class ComprehensiveAuditMiddleware(BaseHTTPMiddleware):
                     details=audit_details,
                     db=db
                 )
-            finally:
-                db.close()
                 
         except Exception as e:
             logger.error(f"Failed to log audit event: {e}")
@@ -466,8 +460,7 @@ class AuditEventCollector:
             return
         
         try:
-            db = get_db_session()
-            try:
+            with db_manager.get_session() as db:
                 # Use bulk logging for performance
                 success = self.audit_service.log_bulk_actions(self.event_queue, db)
                 
@@ -477,8 +470,6 @@ class AuditEventCollector:
                     self.last_flush = time.time()
                 else:
                     logger.error("Failed to flush audit events")
-            finally:
-                db.close()
                     
         except Exception as e:
             logger.error(f"Error flushing audit events: {e}")

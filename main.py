@@ -16,7 +16,7 @@ setup_logging()
 
 from src.config.settings import settings
 from src.system.integration import system_manager
-from src.system.service_registry import service_registry, ServiceType
+from src.system.service_registry import service_registry
 
 logger = get_logger(__name__, service_name="main")
 
@@ -26,79 +26,11 @@ async def initialize_system():
     logger.info(f"Initializing {settings.app.app_name} v{settings.app.app_version}")
     
     try:
-        # Register core services in the service registry
-        from src.system.service_registry import register_core_service
+        # Initialize service registry
+        from src.system.service_registry import initialize_service_registry
+        await initialize_service_registry()
         
-        register_core_service(
-            name="database",
-            description="PostgreSQL database service",
-            version="1.0.0"
-        )
-        
-        register_core_service(
-            name="metrics",
-            description="Metrics collection service",
-            dependencies=["database"],
-            version="1.0.0"
-        )
-        
-        register_core_service(
-            name="health_monitor",
-            description="Health monitoring service",
-            dependencies=["metrics"],
-            version="1.0.0"
-        )
-        
-        # Register feature services
-        service_registry.register_service(
-            name="extraction",
-            service_type=ServiceType.FEATURE,
-            version="1.0.0",
-            dependencies=["database"],
-            description="Data extraction service"
-        )
-        
-        service_registry.register_service(
-            name="quality",
-            service_type=ServiceType.FEATURE,
-            version="1.0.0",
-            dependencies=["database"],
-            description="Quality management service"
-        )
-        
-        service_registry.register_service(
-            name="ai_annotation",
-            service_type=ServiceType.FEATURE,
-            version="1.0.0",
-            dependencies=["database"],
-            description="AI annotation service"
-        )
-        
-        service_registry.register_service(
-            name="billing",
-            service_type=ServiceType.FEATURE,
-            version="1.0.0",
-            dependencies=["database"],
-            description="Billing and analytics service"
-        )
-        
-        service_registry.register_service(
-            name="security",
-            service_type=ServiceType.SECURITY,
-            version="1.0.0",
-            dependencies=["database"],
-            description="Security and access control service"
-        )
-        
-        # Validate service dependencies
-        missing_deps = service_registry.validate_dependencies()
-        if missing_deps:
-            logger.warning(f"Missing service dependencies: {missing_deps}")
-        
-        # Get startup order
-        startup_order = service_registry.get_startup_order()
-        logger.info(f"Service startup order: {startup_order}")
-        
+        logger.info("Service registry initialized")
         logger.info("System initialization completed successfully")
         return True
         

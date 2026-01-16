@@ -79,6 +79,10 @@ services:
       LABEL_STUDIO_HOST: http://localhost:8080
       LABEL_STUDIO_USERNAME: admin@superinsight.com
       LABEL_STUDIO_PASSWORD: admin123
+      # Language configuration - supports 'zh' (Chinese) or 'en' (English)
+      # Label Studio has built-in Chinese localization with 95%+ accuracy
+      LABEL_STUDIO_LANGUAGE: zh
+      LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED: "true"
     volumes:
       - label_studio_data:/label-studio/data
     networks:

@@ -76,9 +76,11 @@ const TasksPage: React.FC = () => {
 
   const handleDelete = (id: string) => {
     Modal.confirm({
-      title: 'Delete Task',
+      title: t('tasks.delete'),
       icon: <ExclamationCircleOutlined />,
-      content: 'Are you sure you want to delete this task?',
+      content: t('tasks.confirmDeleteTask'),
+      okText: t('common.confirm'),
+      cancelText: t('common.cancel'),
       okType: 'danger',
       onOk: async () => {
         await deleteTask.mutateAsync(id);

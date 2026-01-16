@@ -1,7 +1,9 @@
-// Label Studio iframe embed component
+// Label Studio iframe embed component with language synchronization
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Card, Spin, Alert, Button, Space, message } from 'antd';
-import { ReloadOutlined, ExpandOutlined, CompressOutlined, SyncOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import { ReloadOutlined, ExpandOutlined, CompressOutlined, SyncOutlined, InfoCircleOutlined, GlobalOutlined } from '@ant-design/icons';
+import { useLanguageStore, type LabelStudioLanguageMessage } from '@/stores/languageStore';
+import { useTranslation } from 'react-i18next';
 
 interface LabelStudioEmbedProps {
   projectId: string;
@@ -21,6 +23,8 @@ interface LabelStudioMessage {
   taskId?: string;
   annotationId?: string;
   progress?: { completed: number; total: number };
+  lang?: string;
+  source?: string;
 }
 
 export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
@@ -40,8 +44,15 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
   const [fullscreen, setFullscreen] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
   const [lastActivity, setLastActivity] = useState<Date | null>(null);
+  
+  // Language store integration
+  const { language, syncToLabelStudio } = useLanguageStore();
+  const { t } = useTranslation();
 
-  // Build Label Studio URL with authentication and context
+  // Track previous language to detect changes
+  const prevLanguageRef = useRef(language);
+  
+  // Build Label Studio URL with authentication, context, and language
   const getLabelStudioUrl = useCallback(() => {
     const params = new URLSearchParams();
     
@@ -83,65 +94,67 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
       }
 
       try {
-        let message: LabelStudioMessage;
+        let lsMessage: LabelStudioMessage;
         
         // Handle both string and object messages
         if (typeof event.data === 'string') {
           try {
-            message = JSON.parse(event.data);
+            lsMessage = JSON.parse(event.data);
           } catch {
             // Not a JSON message, might be a simple string command
-            message = { type: event.data };
+            lsMessage = { type: event.data };
           }
         } else {
-          message = event.data;
+          lsMessage = event.data;
         }
 
         // Update last activity timestamp
         setLastActivity(new Date());
 
-        console.log('Label Studio message received:', message);
+        console.log('Label Studio message received:', lsMessage);
 
-        switch (message.type) {
+        switch (lsMessage.type) {
           case 'labelStudio:ready':
           case 'ls:ready':
             setLoading(false);
             setError(null);
             setConnectionStatus('connected');
-            message.success('Label Studio 已就绪');
+            // Sync language when Label Studio is ready
+            syncToLabelStudio();
+            message.success(t('labelStudio.ready', 'Label Studio 已就绪'));
             break;
 
           case 'labelStudio:annotationCreated':
           case 'ls:annotationCreated':
             setConnectionStatus('connected');
-            onAnnotationCreate?.(message.payload);
+            onAnnotationCreate?.(lsMessage.payload);
             break;
 
           case 'labelStudio:annotationUpdated':
           case 'ls:annotationUpdated':
             setConnectionStatus('connected');
-            onAnnotationUpdate?.(message.payload);
+            onAnnotationUpdate?.(lsMessage.payload);
             break;
 
           case 'labelStudio:taskCompleted':
           case 'ls:taskCompleted':
             setConnectionStatus('connected');
-            if (message.taskId || taskId) {
-              onTaskComplete?.(message.taskId || taskId!);
+            if (lsMessage.taskId || taskId) {
+              onTaskComplete?.(lsMessage.taskId || taskId!);
             }
             break;
 
           case 'labelStudio:progressUpdate':
           case 'ls:progressUpdate':
             setConnectionStatus('connected');
-            if (message.progress) {
-              onProgressUpdate?.(message.progress);
+            if (lsMessage.progress) {
+              onProgressUpdate?.(lsMessage.progress);
             }
             break;
 
           case 'labelStudio:error':
           case 'ls:error':
-            setError(String(message.payload || 'Unknown error occurred'));
+            setError(String(lsMessage.payload || t('labelStudio.unknownError', 'Unknown error occurred')));
             setConnectionStatus('disconnected');
             setLoading(false);
             break;
@@ -149,7 +162,7 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
           case 'labelStudio:taskChanged':
           case 'ls:taskChanged':
             setConnectionStatus('connected');
-            console.log('Task changed to:', message.taskId);
+            console.log('Task changed to:', lsMessage.taskId);
             break;
 
           case 'labelStudio:heartbeat':
@@ -158,10 +171,17 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
             // Respond to heartbeat to maintain connection
             sendMessageToIframe('heartbeat:response', { timestamp: Date.now() });
             break;
+            
+          case 'languageChanged':
+            // Handle language change from Label Studio
+            if (lsMessage.lang && (lsMessage.lang === 'zh' || lsMessage.lang === 'en')) {
+              console.log('Label Studio language changed to:', lsMessage.lang);
+            }
+            break;
 
           default:
             // Log unknown message types for debugging
-            console.log('Unknown Label Studio message type:', message.type);
+            console.log('Unknown Label Studio message type:', lsMessage.type);
         }
       } catch (error) {
         console.error('Error processing Label Studio message:', error);
@@ -170,7 +190,30 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [onAnnotationCreate, onAnnotationUpdate, onTaskComplete, onProgressUpdate, taskId]);
+  }, [onAnnotationCreate, onAnnotationUpdate, onTaskComplete, onProgressUpdate, taskId, syncToLabelStudio, t]);
+  
+  // Reload iframe when language changes to apply Label Studio's built-in localization
+  // Label Studio uses Django's i18n which requires a page reload to change language
+  useEffect(() => {
+    if (prevLanguageRef.current !== language && connectionStatus === 'connected') {
+      console.log(`[LabelStudioEmbed] Language changed from ${prevLanguageRef.current} to ${language}, reloading iframe...`);
+      prevLanguageRef.current = language;
+      
+      // Show loading state and reload iframe
+      setLoading(true);
+      setConnectionStatus('connecting');
+      
+      if (iframeRef.current) {
+        // Reload the iframe to apply new language
+        iframeRef.current.src = getLabelStudioUrl();
+      }
+      
+      // Also try postMessage sync (may work for some Label Studio versions)
+      syncToLabelStudio();
+      
+      message.info(t('labelStudio.languageChanging', '正在切换 Label Studio 语言...'));
+    }
+  }, [language, connectionStatus, syncToLabelStudio, getLabelStudioUrl, t]);
 
   // Enhanced bi-directional communication
   const sendMessageToIframe = useCallback((type: string, payload?: any) => {
@@ -214,7 +257,7 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
     // Set a timeout to detect if Label Studio doesn't respond
     const timeout = setTimeout(() => {
       if (connectionStatus === 'connecting') {
-        setError('Label Studio 响应超时，请检查服务是否正常运行');
+        setError(t('labelStudio.timeout', 'Label Studio 响应超时，请检查服务是否正常运行'));
         setLoading(false);
         setConnectionStatus('disconnected');
       }
@@ -230,19 +273,20 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
       sendMessageToIframe('iframe:ready', {
         projectId,
         taskId,
+        language,
         timestamp: Date.now()
       });
     }, 1000);
 
     return clearTimeoutOnReady;
-  }, [connectionStatus, sendMessageToIframe, projectId, taskId]);
+  }, [connectionStatus, sendMessageToIframe, projectId, taskId, language, t]);
 
   // Handle iframe error
   const handleIframeError = useCallback(() => {
-    setError('无法加载 Label Studio，请检查网络连接和服务状态');
+    setError(t('labelStudio.loadError', '无法加载 Label Studio，请检查网络连接和服务状态'));
     setLoading(false);
     setConnectionStatus('disconnected');
-  }, []);
+  }, [t]);
 
   const containerStyle: React.CSSProperties = fullscreen
     ? {
@@ -267,6 +311,15 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
       default: return '#d9d9d9';
     }
   };
+  
+  const getConnectionStatusText = () => {
+    switch (connectionStatus) {
+      case 'connected': return t('labelStudio.status.connected', '已连接');
+      case 'connecting': return t('labelStudio.status.connecting', '连接中');
+      case 'disconnected': return t('labelStudio.status.disconnected', '已断开');
+      default: return '';
+    }
+  };
 
   return (
     <Card
@@ -283,7 +336,7 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
               backgroundColor: getConnectionStatusColor(),
               display: 'inline-block'
             }}
-            title={`连接状态: ${connectionStatus}`}
+            title={`${t('labelStudio.connectionStatus', '连接状态')}: ${getConnectionStatusText()}`}
           />
         </Space>
       }
@@ -291,28 +344,33 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
         <Space>
           <Button
             type="text"
+            icon={<GlobalOutlined />}
+            title={`${t('common.language', '语言')}: ${language === 'zh' ? '中文' : 'English'}`}
+          />
+          <Button
+            type="text"
             icon={<SyncOutlined spin={connectionStatus === 'connecting'} />}
             onClick={() => sendMessageToIframe('sync:request')}
-            title="同步状态"
+            title={t('labelStudio.syncStatus', '同步状态')}
             disabled={connectionStatus !== 'connected'}
           />
           <Button
             type="text"
             icon={<ReloadOutlined />}
             onClick={handleReload}
-            title="重新加载"
+            title={t('common.reload', '重新加载')}
           />
           <Button
             type="text"
             icon={fullscreen ? <CompressOutlined /> : <ExpandOutlined />}
             onClick={handleFullscreenToggle}
-            title={fullscreen ? '退出全屏' : '全屏模式'}
+            title={fullscreen ? t('labelStudio.exitFullscreen', '退出全屏') : t('labelStudio.fullscreen', '全屏模式')}
           />
           {lastActivity && (
             <Button
               type="text"
               icon={<InfoCircleOutlined />}
-              title={`最后活动: ${lastActivity.toLocaleTimeString()}`}
+              title={`${t('labelStudio.lastActivity', '最后活动')}: ${lastActivity.toLocaleTimeString()}`}
             />
           )}
         </Space>
@@ -330,12 +388,12 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
             textAlign: 'center'
           }}
         >
-          <Spin size="large" tip="正在加载 Label Studio..." />
+          <Spin size="large" tip={t('labelStudio.loading', '正在加载 Label Studio...')} />
           <div style={{ marginTop: 16, color: '#666' }}>
-            <p>连接状态: {connectionStatus}</p>
+            <p>{t('labelStudio.connectionStatus', '连接状态')}: {getConnectionStatusText()}</p>
             {connectionStatus === 'connecting' && (
               <p style={{ fontSize: 12 }}>
-                如果长时间无响应，请检查 Label Studio 服务是否正常运行
+                {t('labelStudio.loadingHint', '如果长时间无响应，请检查 Label Studio 服务是否正常运行')}
               </p>
             )}
           </div>
@@ -346,34 +404,35 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
       {error && (
         <Alert
           type="error"
-          message="Label Studio 加载错误"
+          message={t('labelStudio.loadErrorTitle', 'Label Studio 加载错误')}
           description={
             <div>
               <p>{error}</p>
               <p style={{ fontSize: 12, marginTop: 8 }}>
-                可能的解决方案：
+                {t('labelStudio.possibleSolutions', '可能的解决方案')}：
               </p>
               <ul style={{ fontSize: 12, paddingLeft: 16 }}>
-                <li>检查 Label Studio 服务是否正常运行</li>
-                <li>验证网络连接是否正常</li>
-                <li>确认项目 ID 和任务 ID 是否正确</li>
-                <li>检查认证令牌是否有效</li>
+                <li>{t('labelStudio.solution1', '检查 Label Studio 服务是否正常运行')}</li>
+                <li>{t('labelStudio.solution2', '验证网络连接是否正常')}</li>
+                <li>{t('labelStudio.solution3', '确认项目 ID 和任务 ID 是否正确')}</li>
+                <li>{t('labelStudio.solution4', '检查认证令牌是否有效')}</li>
               </ul>
             </div>
           }
           showIcon
           action={
             <Button size="small" onClick={handleReload}>
-              重试
+              {t('common.retry', '重试')}
             </Button>
           }
           style={{ margin: 16 }}
         />
       )}
 
-      {/* iframe with enhanced attributes */}
+      {/* iframe with enhanced attributes and language sync */}
       <iframe
         ref={iframeRef}
+        data-label-studio
         src={getLabelStudioUrl()}
         style={{
           width: '100%',
@@ -383,7 +442,7 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
         }}
         onLoad={handleIframeLoad}
         onError={handleIframeError}
-        title="Label Studio 标注界面"
+        title={t('labelStudio.title', 'Label Studio 标注界面')}
         allow="clipboard-read; clipboard-write; fullscreen"
         sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals"
       />

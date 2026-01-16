@@ -34,16 +34,81 @@
     "other": "Other"
   },
   "workHours": {
-    "title": "Work Hours Statistics",
-    "ranking": "Work Hours Ranking",
-    "totalHours": "Total Hours",
-    "billableHours": "Billable Hours",
+    "title": "Work Hours",
+    "ranking": "Hours Ranking",
+    "totalHours": "Total",
+    "billableHours": "Billable",
     "efficiency": "Efficiency",
     "quality": "Quality",
     "trend": "Trend",
     "reward": "Reward",
     "topPerformers": "Top Performers",
-    "avgEfficiency": "Avg Efficiency"
+    "avgEfficiency": "Avg Efficiency",
+    "report": {
+      "title": "Work Hours Report",
+      "userDetail": "Details",
+      "statisticPeriod": "Period",
+      "columns": {
+        "rank": "Rank",
+        "user": "User",
+        "totalHours": "Hours",
+        "billableHours": "Billable",
+        "annotations": "Items",
+        "rate": "Rate",
+        "efficiencyScore": "Score",
+        "cost": "Cost",
+        "action": "Action"
+      },
+      "stats": {
+        "totalUsers": "Users",
+        "totalHours": "Hours",
+        "billableHours": "Billable",
+        "totalAnnotations": "Items",
+        "avgEfficiency": "Avg Score",
+        "totalCost": "Cost"
+      },
+      "charts": {
+        "hoursRanking": "Top 10",
+        "efficiencyDist": "Distribution",
+        "totalHours": "Total",
+        "billableHours": "Billable"
+      },
+      "datePresets": {
+        "thisWeek": "This Week",
+        "thisMonth": "This Month",
+        "lastMonth": "Last Month",
+        "thisQuarter": "Quarter"
+      },
+      "modal": {
+        "userId": "User ID",
+        "userName": "Name",
+        "totalHours": "Hours",
+        "billableHours": "Billable",
+        "billableRate": "Rate",
+        "efficiencyScore": "Score",
+        "annotationCount": "Items",
+        "rate": "Rate",
+        "totalCost": "Cost",
+        "hours": "h",
+        "items": "items",
+        "perHour": "/h"
+      },
+      "actions": {
+        "refresh": "Refresh",
+        "exportExcel": "Export",
+        "detail": "Detail",
+        "close": "Close",
+        "retry": "Retry"
+      },
+      "messages": {
+        "exportSuccess": "Export successful",
+        "exportFailed": "Export failed",
+        "loadFailed": "Load failed",
+        "noData": "No data",
+        "totalRecords": "{{total}} records",
+        "persons": ""
+      }
+    }
   },
   "analysis": {
     "title": "Cost Analysis",

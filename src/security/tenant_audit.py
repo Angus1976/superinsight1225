@@ -13,7 +13,7 @@ import json
 from sqlalchemy.orm import Session
 from sqlalchemy import func, and_, or_
 
-from src.database.connection import get_db_session
+from src.database.connection import db_manager
 from src.security.models import AuditLogModel, AuditAction
 from src.middleware.tenant_middleware import get_current_tenant, get_current_user
 
@@ -91,7 +91,7 @@ class TenantAuditLogger:
             # Sanitize sensitive data
             sanitized_details = self._sanitize_details(event.details)
             
-            with get_db_session() as session:
+            with db_manager.get_session() as session:
                 audit_log = AuditLogModel(
                     user_id=event.user_id,
                     tenant_id=event.tenant_id,

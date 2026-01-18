@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Card,
   Form,
@@ -70,6 +71,7 @@ const { TextArea } = Input;
 // ==================== Component ====================
 
 const TextToSQLConfigPage: React.FC = () => {
+  const { t } = useTranslation('admin');
   const [form] = Form.useForm();
   const [pluginForm] = Form.useForm();
   const [loading, setLoading] = useState(false);
@@ -121,7 +123,7 @@ const TextToSQLConfigPage: React.FC = () => {
       });
     } catch (error) {
       console.error('Failed to load Text-to-SQL configuration:', error);
-      message.error('加载配置失败');
+      message.error(t('textToSql.loadConfigFailed'));
     } finally {
       setLoading(false);
     }
@@ -148,12 +150,12 @@ const TextToSQLConfigPage: React.FC = () => {
         auto_select_enabled: values.auto_select_enabled,
         fallback_enabled: values.fallback_enabled,
       });
-      
-      message.success('配置保存成功');
+      message.success(t('textToSql.saveConfigSuccess'));
       await loadInitialData();
+
     } catch (error) {
       console.error('Failed to save configuration:', error);
-      message.error('保存配置失败');
+      message.error(t('textToSql.saveConfigFailed'));
     } finally {
       setSaving(false);
     }
@@ -166,7 +168,7 @@ const TextToSQLConfigPage: React.FC = () => {
       await loadInitialData();
     } catch (error) {
       console.error('Failed to switch method:', error);
-      message.error('切换方法失败');
+      message.error(t('textToSql.switchMethodFailed'));
     }
   };
 
@@ -174,7 +176,7 @@ const TextToSQLConfigPage: React.FC = () => {
 
   const handleTestGenerate = async () => {
     if (!testQuery.trim()) {
-      message.warning('请输入测试查询');
+      message.warning(t('textToSql.testQueryRequired'));
       return;
     }
     
@@ -188,15 +190,15 @@ const TextToSQLConfigPage: React.FC = () => {
         db_type: 'postgresql',
       });
       setTestResult(result);
-      
       if (result.success) {
-        message.success('SQL 生成成功');
+        message.success(t('textToSql.sqlGenerationSuccess'));
       } else {
-        message.warning('SQL 生成失败');
+        message.warning(t('textToSql.sqlGenerationFailed'));
       }
+
     } catch (error) {
       console.error('Test generation failed:', error);
-      message.error('测试生成失败');
+      message.error(t('textToSql.testGenerationFailed'));
     } finally {
       setTesting(false);
     }
@@ -229,19 +231,19 @@ const TextToSQLConfigPage: React.FC = () => {
 
   const handleDeletePlugin = async (name: string) => {
     Modal.confirm({
-      title: '删除插件',
-      content: `确定要删除插件 "${name}" 吗？`,
-      okText: '删除',
+      title: t('textToSql.deletePlugin'),
+      content: t('textToSql.confirmDeletePlugin', { name }),
+      okText: t('textToSql.pluginsTable.delete'),
       okType: 'danger',
-      cancelText: '取消',
+      cancelText: t('textToSql.cancel'),
       onOk: async () => {
         try {
           await textToSqlService.unregisterPlugin(name);
-          message.success('插件删除成功');
+          message.success(t('textToSql.deletePluginSuccess'));
           await refreshPlugins();
         } catch (error) {
           console.error('Failed to delete plugin:', error);
-          message.error('删除插件失败');
+          message.error(t('textToSql.deletePluginFailed'));
         }
       },
     });
@@ -251,15 +253,15 @@ const TextToSQLConfigPage: React.FC = () => {
     try {
       if (enabled) {
         await textToSqlService.enablePlugin(name);
-        message.success(`插件 "${name}" 已启用`);
+        message.success(t('textToSql.pluginEnabled', { name }));
       } else {
         await textToSqlService.disablePlugin(name);
-        message.success(`插件 "${name}" 已禁用`);
+        message.success(t('textToSql.pluginDisabled', { name }));
       }
       await refreshPlugins();
     } catch (error) {
       console.error('Failed to toggle plugin:', error);
-      message.error('操作失败');
+      message.error(t('textToSql.operationFailed'));
     }
   };
 
@@ -279,17 +281,17 @@ const TextToSQLConfigPage: React.FC = () => {
       
       if (editingPlugin) {
         await textToSqlService.updatePlugin(editingPlugin.name, pluginConfig);
-        message.success('插件更新成功');
+        message.success(t('textToSql.pluginUpdateSuccess'));
       } else {
         await textToSqlService.registerPlugin(pluginConfig);
-        message.success('插件注册成功');
+        message.success(t('textToSql.pluginRegisterSuccess'));
       }
-      
+
       setPluginModalVisible(false);
       await refreshPlugins();
     } catch (error) {
       console.error('Failed to save plugin:', error);
-      message.error('保存插件失败');
+      message.error(t('textToSql.savePluginFailed'));
     }
   };
 
@@ -304,25 +306,25 @@ const TextToSQLConfigPage: React.FC = () => {
       await refreshPlugins();
     } catch (error) {
       console.error('Failed to check plugin health:', error);
-      message.error('健康检查失败');
+      message.error(t('textToSql.healthCheckFailed'));
     }
   };
 
   // ==================== Render Methods ====================
 
   const renderMethodsConfig = () => (
-    <Card title="方法配置" extra={
-      <Button icon={<ReloadOutlined />} onClick={loadInitialData}>刷新</Button>
+    <Card title={t('textToSql.methodsConfig')} extra={
+      <Button icon={<ReloadOutlined />} onClick={loadInitialData}>{t('textToSql.refresh')}</Button>
     }>
       <Form form={form} layout="vertical">
         <Row gutter={16}>
           <Col span={8}>
             <Form.Item
               name="default_method"
-              label="默认方法"
-              rules={[{ required: true, message: '请选择默认方法' }]}
+              label={t('textToSql.defaultMethod')}
+              rules={[{ required: true, message: t('textToSql.selectDefaultMethod') }]}
             >
-              <Select placeholder="选择默认方法" onChange={(v) => handleSwitchMethod(v)}>
+              <Select placeholder={t('textToSql.selectMethodPlaceholder')} onChange={(v) => handleSwitchMethod(v)}>
                 <Option value="template">
                   <Space>
                     <CodeOutlined />
@@ -353,19 +355,19 @@ const TextToSQLConfigPage: React.FC = () => {
           <Col span={8}>
             <Form.Item
               name="auto_select_enabled"
-              label="自动方法选择"
+              label={t('textToSql.autoSelectEnabled')}
               valuePropName="checked"
             >
-              <Switch checkedChildren="开启" unCheckedChildren="关闭" />
+              <Switch checkedChildren={t('textToSql.on')} unCheckedChildren={t('textToSql.off')} />
             </Form.Item>
           </Col>
           <Col span={8}>
             <Form.Item
               name="fallback_enabled"
-              label="失败回退"
+              label={t('textToSql.fallbackEnabled')}
               valuePropName="checked"
             >
-              <Switch checkedChildren="开启" unCheckedChildren="关闭" />
+              <Switch checkedChildren={t('textToSql.on')} unCheckedChildren={t('textToSql.off')} />
             </Form.Item>
           </Col>
         </Row>
@@ -388,9 +390,9 @@ const TextToSQLConfigPage: React.FC = () => {
                 </Space>
               }
               extra={
-                <Badge 
-                  status={method.is_available ? 'success' : 'default'} 
-                  text={method.is_available ? '可用' : '不可用'} 
+                <Badge
+                  status={method.is_available ? 'success' : 'default'}
+                  text={method.is_available ? t('textToSql.available') : t('textToSql.unavailable')}
                 />
               }
             >
@@ -410,22 +412,22 @@ const TextToSQLConfigPage: React.FC = () => {
   );
 
   const renderTestPanel = () => (
-    <Card title="SQL 生成测试">
+    <Card title={t('textToSql.sqlGenerationTest')}>
       <Row gutter={16}>
         <Col span={16}>
-          <Form.Item label="自然语言查询">
+          <Form.Item label={t('textToSql.naturalLanguageQuery')}>
             <TextArea
               rows={3}
-              placeholder="输入自然语言查询，例如：查询所有用户的订单数量"
+              placeholder={t('textToSql.queryPlaceholder')}
               value={testQuery}
               onChange={(e) => setTestQuery(e.target.value)}
             />
           </Form.Item>
         </Col>
         <Col span={8}>
-          <Form.Item label="测试方法">
+          <Form.Item label={t('textToSql.testMethod')}>
             <Select
-              placeholder="使用默认方法"
+              placeholder={t('textToSql.useDefaultMethod')}
               allowClear
               value={testMethod}
               onChange={setTestMethod}
@@ -453,10 +455,10 @@ const TextToSQLConfigPage: React.FC = () => {
           <Divider>生成结果</Divider>
           <Row gutter={16}>
             <Col span={16}>
-              <Form.Item label="生成的 SQL">
+              <Form.Item label={t('textToSql.generatedSql')}>
                 <TextArea
                   rows={6}
-                  value={testResult.sql || '(无结果)'}
+                  value={testResult.sql || t('textToSql.noResult')}
                   readOnly
                   style={{ fontFamily: 'monospace' }}
                 />
@@ -465,18 +467,18 @@ const TextToSQLConfigPage: React.FC = () => {
             <Col span={8}>
               <Space direction="vertical" style={{ width: '100%' }}>
                 <Statistic
-                  title="使用方法"
+                  title={t('textToSql.methodUsed')}
                   value={testResult.method_used}
                   prefix={testResult.success ? <CheckCircleOutlined style={{ color: '#52c41a' }} /> : <ExclamationCircleOutlined style={{ color: '#faad14' }} />}
                 />
                 <Statistic
-                  title="置信度"
+                  title={t('textToSql.confidence')}
                   value={testResult.confidence * 100}
                   precision={1}
                   suffix="%"
                 />
                 <Statistic
-                  title="执行时间"
+                  title={t('textToSql.executionTime')}
                   value={testResult.execution_time_ms}
                   precision={2}
                   suffix="ms"

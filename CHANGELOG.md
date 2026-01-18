@@ -8,17 +8,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
-- **MonitoringMiddleware Blocking Issue**: Fixed critical issue where `MonitoringMiddleware` was causing API requests to hang/timeout. The middleware was using `threading.Lock` in `MetricsCollector` which caused deadlocks in async context. Simplified the middleware to avoid calling `performance_monitor.start_request()` and `end_request()` which use locks.
-- **PostgreSQL Init Script**: Fixed SQL syntax error in `scripts/init-db.sql` - changed DO block delimiter from single `$` to `$$` for proper PL/pgSQL syntax compliance. This resolves container startup failures where PostgreSQL would fail with "ERROR: syntax error at or near '$'" during database initialization.
-- **Alembic Migration Dependencies**: Fixed multiple migration script dependency issues where revision IDs didn't match (e.g., `009_add_ai_annotation_tables` → `009_ai_annotation`)
-- **Alembic CREATE TYPE Statements**: Added `DO $$ ... EXCEPTION WHEN duplicate_object` wrappers to prevent errors when types already exist
-- **Alembic ENUM Default Values**: Fixed server_default syntax for ENUM columns using `sa.text()` wrapper
+- **Critical Async/Sync Deadlock Issue** (2026-01-17): Fixed critical API hanging issue caused by `threading.Lock` usage in async context. The `MetricsCollector` class was using `threading.Lock` with `with` statement in async middleware, causing complete API unresponsiveness. Simplified `MonitoringMiddleware` to avoid locks in hot paths and skip monitoring for health/metrics endpoints.
+- **Database Migration Dependencies** (2026-01-17): Fixed `001_add_tenant_id_fields` migration dependency - changed `down_revision` from `None` to `'add_business_logic_001'` to establish proper dependency chain and prevent migration failures.
+- **PostgreSQL Init Script** (2026-01-16): Fixed SQL syntax error in `scripts/init-db.sql` - changed DO block delimiter from single `$` to `$$` for proper PL/pgSQL syntax compliance. This resolves container startup failures where PostgreSQL would fail with "ERROR: syntax error at or near '$'" during database initialization.
+- **Alembic Migration Dependencies** (2026-01-16): Fixed multiple migration script dependency issues where revision IDs didn't match (e.g., `009_add_ai_annotation_tables` → `009_ai_annotation`)
+- **Alembic CREATE TYPE Statements** (2026-01-16): Added `DO $$ ... EXCEPTION WHEN duplicate_object` wrappers to prevent errors when types already exist
+- **Alembic ENUM Default Values** (2026-01-16): Fixed server_default syntax for ENUM columns using `sa.text()` wrapper
 
 ### Added
-- **Docker Infrastructure Documentation**: Created comprehensive documentation for Docker containerization infrastructure including requirements, design, and task breakdown in `.kiro/specs/docker-infrastructure/`
-- **Core Database Tables Migration**: Created `000_create_core_tables.py` migration with essential tables (audit_logs, users, documents, tasks, billing_records, quality_issues)
-- **Documentation Audit Script**: Added `scripts/audit_docs.py` for comprehensive documentation quality auditing
-- **API Diagnostic Tools**: Added `diagnose_api.py` and shell scripts for troubleshooting
+- **Async/Sync Safety Rules** (2026-01-17): Created comprehensive development guidelines in `.kiro/steering/async-sync-safety.md` documenting:
+  - 7 mandatory rules for async-safe code
+  - Threading.Lock vs asyncio.Lock usage patterns
+  - Migration guide from sync to async code
+  - Detection and debugging techniques
+  - Common patterns and best practices
+- **Database Migration System** (2026-01-17): Successfully applied 6 primary migration branches creating 25 essential database tables:
+  - Core tables: users, documents, tasks, audit_logs, billing_records, quality_issues
+  - Business logic: business_rules, business_patterns, business_insights, business_rule_applications
+  - Data sync: sync_jobs, sync_rules, sync_executions, sync_audit_logs, data_sources, transformation_rules
+  - Data quality: data_quality_scores, data_masking_rules
+  - Security: ip_whitelist, project_permissions
+- **Docker Infrastructure Documentation** (2026-01-16): Created comprehensive documentation for Docker containerization infrastructure including requirements, design, and task breakdown in `.kiro/specs/docker-infrastructure/`
+- **Core Database Tables Migration** (2026-01-16): Created `000_create_core_tables.py` migration with essential tables (audit_logs, users, documents, tasks, billing_records, quality_issues)
+- **Documentation Audit Script** (2026-01-16): Added `scripts/audit_docs.py` for comprehensive documentation quality auditing
+- **API Diagnostic Tools** (2026-01-16): Added `diagnose_api.py` and shell scripts for troubleshooting
+
+### Changed
+- **Database Reset Procedure** (2026-01-17): Implemented clean database reset workflow:
+  1. Terminate all active connections
+  2. Drop and recreate database
+  3. Restart API container
+  4. Apply migrations incrementally
+- **Simplified API Startup** (2026-01-17): Modified `src/app.py` to use simplified startup mode, skipping service orchestration to avoid initialization complexity during development
+
+### Documentation
+- **Migration Completion Report** (2026-01-17): Created `MIGRATION_COMPLETION_REPORT_2026_01_17.md` documenting:
+  - 25 tables successfully created
+  - Migration tree complexity analysis
+  - Available vs missing features
+  - Recommendations for completing remaining migrations
+- **Docker & Database Status Report** (2026-01-17): Created `DOCKER_DATABASE_STATUS_2026_01_17.md` documenting:
+  - Container health status
+  - API endpoint availability
+  - Database table inventory
+  - Migration issues and solutions
+  - Performance considerations
 
 ## [2.3.0] - 2026-01-11
 

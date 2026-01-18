@@ -175,6 +175,9 @@ def upgrade():
     op.execute("""
         DO $$ BEGIN
             CREATE TYPE auditaction AS ENUM (
+                'login', 'logout', 'create', 'read', 'update', 'delete',
+                'export', 'import', 'annotate', 'review',
+                'permission_check', 'permission_grant', 'permission_revoke',
                 'job_created', 'job_updated', 'job_deleted',
                 'job_started', 'job_stopped', 'job_paused', 'job_resumed',
                 'sync_started', 'sync_completed', 'sync_failed',

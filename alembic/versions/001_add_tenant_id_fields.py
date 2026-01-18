@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = '001_add_tenant_id_fields'
-down_revision = None
+down_revision = 'add_business_logic_001'  # Depends on business logic tables
 branch_labels = None
 depends_on = None
 

@@ -8,7 +8,8 @@
  */
 
 import React, { useState } from 'react';
-import { 
+import { useTranslation } from 'react-i18next';
+import {
   Card, Table, Switch, Tag, Space, Button, Select, Tabs, 
   message, Checkbox, Row, Col, Descriptions, Alert
 } from 'antd';
@@ -74,6 +75,7 @@ const DEFAULT_ROLE_PERMISSIONS: Record<string, string[]> = {
 };
 
 const PermissionConfig: React.FC = () => {
+  const { t } = useTranslation('admin');
   const [selectedTenantId, setSelectedTenantId] = useState<string | undefined>();
   const [rolePermissions, setRolePermissions] = useState<Record<string, string[]>>(DEFAULT_ROLE_PERMISSIONS);
   const queryClient = useQueryClient();
@@ -86,17 +88,17 @@ const PermissionConfig: React.FC = () => {
 
   const getRoleName = (role: string) => {
     const names: Record<string, string> = {
-      owner: '所有者',
-      admin: '管理员',
-      member: '成员',
-      guest: '访客',
+      owner: t('permissionConfig.roles.owner'),
+      admin: t('permissionConfig.roles.admin'),
+      member: t('permissionConfig.roles.member'),
+      guest: t('permissionConfig.roles.guest'),
     };
     return names[role] || role;
   };
 
   const handlePermissionChange = (role: string, permission: string, checked: boolean) => {
     if (role === 'owner') {
-      message.warning('所有者权限不可修改');
+      message.warning(t('permissionConfig.ownerPermissionImmutable'));
       return;
     }
     
@@ -112,19 +114,19 @@ const PermissionConfig: React.FC = () => {
 
   const handleSave = () => {
     // In real implementation, this would save to backend
-    message.success('权限配置已保存');
+    message.success(t('permissionConfig.saveSuccess'));
   };
 
   const handleReset = () => {
     setRolePermissions(DEFAULT_ROLE_PERMISSIONS);
-    message.info('已重置为默认配置');
+    message.info(t('permissionConfig.resetSuccess'));
   };
 
 
   // Permission matrix columns
   const matrixColumns = [
     {
-      title: '权限',
+      title: t('permissionConfig.table.permission'),
       dataIndex: 'name',
       key: 'name',
       fixed: 'left' as const,

@@ -4,6 +4,10 @@
 
 本实现计划将 SuperInsight 前端的国际化覆盖从部分支持扩展到全面覆盖。主要工作包括：更新翻译文件、修改硬编码文本的组件、添加 TypeScript 类型定义，以及编写测试用例。
 
+## Implementation Status
+
+**🔄 PARTIALLY IMPLEMENTED** - Core foundation completed, but significant work remains for Admin, Quality, and Security modules. Based on code analysis, approximately 60% of user-facing text has been internationalized, with critical gaps in administrative interfaces.
+
 ## Tasks
 
 ### Phase 1: 基础页面国际化 (已完成)
@@ -106,8 +110,8 @@
     - 添加 users.* 命名空间（用户管理相关）
   - [x] 21.2 创建 en/admin.json 翻译文件
 
-- [x] 22. 修改 Admin/Console/index.tsx
-  - [x] 22.1 替换所有硬编码中文
+- [ ] 22. 修改 Admin/Console/index.tsx
+  - [ ] 22.1 替换所有硬编码中文
     - "管理控制台" -> t('console.title')
     - "系统概览和监控" -> t('console.subtitle')
     - "刷新" -> t('common:refresh')
@@ -126,24 +130,28 @@
     - "加载中..." -> t('common:loading')
     - "最后更新" -> t('console.lastUpdated')
 
-- [x] 23. 修改 Admin/LLMConfig.tsx
-  - [x] 23.1 替换所有硬编码中文
+- [ ] 23. 修改 Admin/LLMConfig.tsx
+  - [ ] 23.1 替换所有硬编码中文
     - "LLM 配置管理" -> t('admin.llm.title')
     - "通义千问/智谱 GLM/文心一言/腾讯混元" -> t('admin.llm.providers.*')
     - "在线/离线" -> t('admin.llm.online')/t('admin.llm.offline')
 
-- [x] 24. 修改其他 Admin 子模块
-  - [x] 24.1 更新 ConfigDashboard.tsx
-  - [x] 24.2 更新 ConfigDB.tsx
-  - [x] 24.3 更新 ConfigLLM.tsx
-  - [x] 24.4 更新 ConfigSync.tsx
-  - [x] 24.5 更新 PermissionConfig.tsx
-  - [x] 24.6 更新 QuotaManagement.tsx
-  - [x] 24.7 更新 SQLBuilder.tsx
-  - [x] 24.8 更新 TextToSQLConfig.tsx
-  - [x] 24.9 更新 ThirdPartyConfig.tsx
-  - [x] 24.10 更新 BillingManagement.tsx
-  - [x] 24.11 更新 AnnotationPlugins.tsx
+- [ ] 24. 修改其他 Admin 子模块
+  - [ ] 24.1 更新 ConfigDashboard.tsx
+  - [ ] 24.2 更新 ConfigDB.tsx
+  - [ ] 24.3 更新 ConfigLLM.tsx
+  - [ ] 24.4 更新 ConfigSync.tsx
+  - [ ] 24.5 更新 PermissionConfig.tsx
+  - [ ] 24.6 更新 QuotaManagement.tsx
+  - [ ] 24.7 更新 SQLBuilder.tsx
+  - [ ] 24.8 更新 TextToSQLConfig.tsx
+  - [ ] 24.9 更新 ThirdPartyConfig.tsx
+  - [ ] 24.10 更新 BillingManagement.tsx
+  - [ ] 24.11 更新 AnnotationPlugins.tsx
+  - [ ] 24.12 更新 ConfigHistory.tsx
+  - [ ] 24.13 更新 System/index.tsx
+  - [ ] 24.14 更新 Tenants/index.tsx
+  - [ ] 24.15 更新 Users/index.tsx
 
 ### Phase 5: Quality 模块国际化 (待完成)
 
@@ -155,8 +163,8 @@
     - 添加 rules.* 命名空间
   - [x] 25.2 更新 en/quality.json 添加对应英文翻译
 
-- [x] 26. 修改 Quality/ImprovementTaskList.tsx
-  - [x] 26.1 替换所有硬编码中文
+- [ ] 26. 修改 Quality/ImprovementTaskList.tsx
+  - [ ] 26.1 替换所有硬编码中文
     - "加载任务列表失败" -> t('quality.improvementTask.loadError')
     - "待处理/进行中/待审核/已通过/已拒绝" -> t('quality.improvementTask.status.*')
     - "任务ID/优先级/问题数/负责人/状态/创建时间/提交时间/操作" -> t('quality.improvementTask.columns.*')
@@ -168,19 +176,19 @@
     - "状态筛选/优先级" -> t('quality.improvementTask.filters.*')
     - "高优先级/中优先级/低优先级" -> t('quality.improvementTask.priority.*')
 
-- [x] 27. 修改 Quality/Reports/index.tsx
-  - [x] 27.1 替换所有硬编码中文
+- [ ] 27. 修改 Quality/Reports/index.tsx
+  - [ ] 27.1 替换所有硬编码中文
     - "报告名称/类型/总体评分/样本统计" -> t('quality.reports.columns.*')
     - "日报/周报/月报/自定义" -> t('quality.reports.types.*')
     - "总数/通过" -> t('quality.reports.stats.*')
 
-- [x] 28. 修改其他 Quality 子模块
-  - [x] 28.1 更新 QualityDashboard.tsx
-  - [x] 28.2 更新 AlertList.tsx
-  - [x] 28.3 更新 ImprovementTaskDetail.tsx
-  - [x] 28.4 更新 ReportViewer.tsx
-  - [x] 28.5 更新 RuleConfig.tsx
-  - [x] 28.6 更新 WorkflowConfig.tsx
+- [ ] 28. 修改其他 Quality 子模块
+  - [ ] 28.1 更新 QualityDashboard.tsx
+  - [ ] 28.2 更新 AlertList.tsx
+  - [ ] 28.3 更新 ImprovementTaskDetail.tsx
+  - [ ] 28.4 更新 ReportViewer.tsx
+  - [ ] 28.5 更新 RuleConfig.tsx
+  - [ ] 28.6 更新 WorkflowConfig.tsx
 
 ### Phase 6: Security 模块国际化 (待完成)
 
@@ -192,8 +200,8 @@
     - 添加 sessions.* 命名空间
   - [x] 29.2 更新 en/security.json 添加对应英文翻译
 
-- [x] 30. 修改 Security/Permissions/index.tsx
-  - [x] 30.1 替换所有硬编码中文
+- [ ] 30. 修改 Security/Permissions/index.tsx
+  - [ ] 30.1 替换所有硬编码中文
     - "权限创建成功/失败" -> t('security.permissions.createSuccess')/t('security.permissions.createError')
     - "角色创建成功/失败" -> t('security.roles.createSuccess')/t('security.roles.createError')
     - "权限删除成功/失败" -> t('security.permissions.deleteSuccess')/t('security.permissions.deleteError')
@@ -206,13 +214,13 @@
     - "用户/角色/直接权限/有效权限/最后登录" -> t('security.userPermissions.columns.*')
     - "从未登录" -> t('security.userPermissions.neverLoggedIn')
 
-- [x] 31. 修改其他 Security 子模块
-  - [x] 31.1 更新 Audit 子模块
-  - [x] 31.2 更新 Dashboard 子模块
-  - [x] 31.3 更新 DataPermissions 子模块
-  - [x] 31.4 更新 RBAC 子模块
-  - [x] 31.5 更新 Sessions 子模块
-  - [x] 31.6 更新 SSO 子模块
+- [ ] 31. 修改其他 Security 子模块
+  - [ ] 31.1 更新 Audit 子模块
+  - [ ] 31.2 更新 Dashboard 子模块
+  - [ ] 31.3 更新 DataPermissions 子模块
+  - [ ] 31.4 更新 RBAC 子模块
+  - [ ] 31.5 更新 Sessions 子模块
+  - [ ] 31.6 更新 SSO 子模块
 
 ### Phase 7: Workspace 模块国际化 (待完成)
 

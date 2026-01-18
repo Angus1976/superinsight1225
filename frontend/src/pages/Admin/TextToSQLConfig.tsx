@@ -164,7 +164,10 @@ const TextToSQLConfigPage: React.FC = () => {
   const handleSwitchMethod = async (method: MethodType) => {
     try {
       const result = await textToSqlService.switchMethod(method);
-      message.success(`已切换到 ${getMethodDisplayName(method)} 方法 (${result.switch_time_ms.toFixed(2)}ms)`);
+      message.success(t('textToSql.switchMethodSuccess', {
+        method: getMethodDisplayName(method),
+        time: result.switch_time_ms.toFixed(2)
+      }));
       await loadInitialData();
     } catch (error) {
       console.error('Failed to switch method:', error);
@@ -299,9 +302,9 @@ const TextToSQLConfigPage: React.FC = () => {
     try {
       const result = await textToSqlService.getPluginHealth(name);
       if (result.healthy) {
-        message.success(`插件 "${name}" 健康状态正常`);
+        message.success(t('textToSql.pluginHealthCheckSuccess', { name }));
       } else {
-        message.warning(`插件 "${name}" 健康检查失败`);
+        message.warning(t('textToSql.pluginHealthCheckFailed', { name }));
       }
       await refreshPlugins();
     } catch (error) {
@@ -373,7 +376,7 @@ const TextToSQLConfigPage: React.FC = () => {
         </Row>
       </Form>
 
-      <Divider>可用方法</Divider>
+      <Divider>{t('textToSql.availableMethods')}</Divider>
       
       <Row gutter={[16, 16]}>
         {methods.map(method => (
@@ -445,14 +448,14 @@ const TextToSQLConfigPage: React.FC = () => {
             loading={testing}
             block
           >
-            测试生成
+            {t('textToSql.testGenerate')}
           </Button>
         </Col>
       </Row>
 
       {testResult && (
         <>
-          <Divider>生成结果</Divider>
+          <Divider>{t('textToSql.generationResult')}</Divider>
           <Row gutter={16}>
             <Col span={16}>
               <Form.Item label={t('textToSql.generatedSql')}>
@@ -494,13 +497,13 @@ const TextToSQLConfigPage: React.FC = () => {
   const renderPluginsPanel = () => {
     const columns = [
       {
-        title: '插件名称',
+        title: t('textToSql.pluginName'),
         dataIndex: 'name',
         key: 'name',
         render: (name: string) => <Text strong>{name}</Text>,
       },
       {
-        title: '连接类型',
+        title: t('textToSql.connectionType'),
         dataIndex: 'connection_type',
         key: 'connection_type',
         render: (type: ConnectionType) => (
@@ -508,7 +511,7 @@ const TextToSQLConfigPage: React.FC = () => {
         ),
       },
       {
-        title: '支持数据库',
+        title: t('textToSql.supportedDatabases'),
         dataIndex: 'supported_db_types',
         key: 'supported_db_types',
         render: (types: string[]) => (
@@ -518,15 +521,15 @@ const TextToSQLConfigPage: React.FC = () => {
         ),
       },
       {
-        title: '健康状态',
+        title: t('textToSql.healthStatus'),
         dataIndex: 'is_healthy',
         key: 'is_healthy',
         render: (healthy: boolean) => (
-          <Badge status={healthy ? 'success' : 'error'} text={healthy ? '健康' : '异常'} />
+          <Badge status={healthy ? 'success' : 'error'} text={healthy ? t('textToSql.pluginsTable.healthy') : t('textToSql.pluginsTable.unhealthy')} />
         ),
       },
       {
-        title: '启用状态',
+        title: t('textToSql.enabledStatus'),
         dataIndex: 'is_enabled',
         key: 'is_enabled',
         render: (enabled: boolean, record: PluginInfo) => (
@@ -537,25 +540,25 @@ const TextToSQLConfigPage: React.FC = () => {
         ),
       },
       {
-        title: '操作',
+        title: t('textToSql.actions'),
         key: 'actions',
         render: (_: unknown, record: PluginInfo) => (
           <Space>
-            <Tooltip title="健康检查">
+            <Tooltip title={t('textToSql.healthCheck')}>
               <Button
                 type="text"
                 icon={<CheckCircleOutlined />}
                 onClick={() => handleCheckPluginHealth(record.name)}
               />
             </Tooltip>
-            <Tooltip title="编辑">
+            <Tooltip title={t('textToSql.edit')}>
               <Button
                 type="text"
                 icon={<EditOutlined />}
                 onClick={() => handleEditPlugin(record)}
               />
             </Tooltip>
-            <Tooltip title="删除">
+            <Tooltip title={t('textToSql.delete')}>
               <Button
                 type="text"
                 danger
@@ -569,11 +572,11 @@ const TextToSQLConfigPage: React.FC = () => {
     ];
 
     return (
-      <Card 
-        title="第三方插件管理"
+      <Card
+        title={t('textToSql.thirdPartyPlugins')}
         extra={
           <Button type="primary" icon={<PlusOutlined />} onClick={handleAddPlugin}>
-            添加插件
+            {t('textToSql.addPlugin')}
           </Button>
         }
       >
@@ -582,34 +585,34 @@ const TextToSQLConfigPage: React.FC = () => {
           dataSource={plugins}
           rowKey="name"
           pagination={false}
-          locale={{ emptyText: '暂无插件' }}
+          locale={{ emptyText: t('textToSql.noPlugins') }}
         />
       </Card>
     );
   };
 
   const renderStatistics = () => (
-    <Card title="统计信息">
+    <Card title={t('textToSql.statistics')}>
       {statistics && (
         <Row gutter={16}>
           <Col span={6}>
-            <Statistic title="总调用次数" value={statistics.total_calls} />
+            <Statistic title={t('textToSql.totalCalls')} value={statistics.total_calls} />
           </Col>
           <Col span={6}>
-            <Statistic title="当前方法" value={getMethodDisplayName(statistics.current_method as MethodType)} />
+            <Statistic title={t('textToSql.currentMethod')} value={getMethodDisplayName(statistics.current_method as MethodType)} />
           </Col>
           <Col span={6}>
-            <Statistic 
-              title="平均切换时间" 
-              value={statistics.average_switch_time_ms} 
+            <Statistic
+              title={t('textToSql.averageSwitchTime')}
+              value={statistics.average_switch_time_ms}
               precision={2}
               suffix="ms"
             />
           </Col>
           <Col span={6}>
-            <Statistic 
-              title="最大切换时间" 
-              value={statistics.max_switch_time_ms} 
+            <Statistic
+              title={t('textToSql.maxSwitchTime')}
+              value={statistics.max_switch_time_ms}
               precision={2}
               suffix="ms"
             />
@@ -619,14 +622,14 @@ const TextToSQLConfigPage: React.FC = () => {
       
       {statistics && Object.keys(statistics.method_calls).length > 0 && (
         <>
-          <Divider>方法调用分布</Divider>
+          <Divider>{t('textToSql.methodUsage')}</Divider>
           <Row gutter={16}>
             {Object.entries(statistics.method_calls).map(([method, count]) => (
               <Col span={6} key={method}>
-                <Statistic 
-                  title={getMethodDisplayName(method as MethodType)} 
-                  value={count} 
-                  suffix="次"
+                <Statistic
+                  title={getMethodDisplayName(method as MethodType)}
+                  value={count}
+                  suffix={t('textToSql.times')}
                 />
               </Col>
             ))}
@@ -640,7 +643,7 @@ const TextToSQLConfigPage: React.FC = () => {
 
   const renderPluginModal = () => (
     <Modal
-      title={editingPlugin ? '编辑插件' : '添加插件'}
+      title={editingPlugin ? t('textToSql.editPlugin') : t('textToSql.addPlugin')}
       open={pluginModalVisible}
       onOk={handlePluginModalOk}
       onCancel={() => setPluginModalVisible(false)}
@@ -649,45 +652,45 @@ const TextToSQLConfigPage: React.FC = () => {
       <Form form={pluginForm} layout="vertical">
         <Form.Item
           name="name"
-          label="插件名称"
-          rules={[{ required: true, message: '请输入插件名称' }]}
+          label={t('textToSql.pluginName')}
+          rules={[{ required: true, message: t('textToSql.pluginNameRequired') }]}
         >
-          <Input placeholder="例如：vanna-ai" disabled={!!editingPlugin} />
+          <Input placeholder={t('textToSql.pluginNamePlaceholder')} disabled={!!editingPlugin} />
         </Form.Item>
         
         <Form.Item
           name="connection_type"
-          label="连接类型"
-          rules={[{ required: true, message: '请选择连接类型' }]}
+          label={t('textToSql.connectionType')}
+          rules={[{ required: true, message: t('textToSql.connectionTypeRequired') }]}
         >
-          <Select placeholder="选择连接类型">
-            <Option value="rest_api">REST API</Option>
+          <Select placeholder={t('textToSql.connectionTypePlaceholder')}>
+            <Option value="rest_api">{t('textToSql.restApi')}</Option>
             <Option value="grpc">gRPC</Option>
-            <Option value="local_sdk">本地 SDK</Option>
+            <Option value="local_sdk">{t('textToSql.localSdk')}</Option>
           </Select>
         </Form.Item>
         
         <Form.Item
           name="endpoint"
-          label="API 端点"
-          rules={[{ required: true, message: '请输入 API 端点' }]}
+          label={t('textToSql.apiEndpoint')}
+          rules={[{ required: true, message: t('textToSql.apiEndpointRequired') }]}
         >
-          <Input placeholder="例如：http://localhost:8080/api/v1" />
+          <Input placeholder={t('textToSql.apiEndpointPlaceholder')} />
         </Form.Item>
         
         <Form.Item
           name="api_key"
           label="API Key"
         >
-          <Input.Password placeholder="可选，用于认证" />
+          <Input.Password placeholder={t('textToSql.apiKeyPlaceholder')} />
         </Form.Item>
         
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
               name="timeout"
-              label="超时时间 (秒)"
-              rules={[{ required: true, type: 'number', min: 1, max: 300 }]}
+              label={t('textToSql.timeout')}
+              rules={[{ required: true, type: 'number', min: 1, max: 300, message: t('textToSql.timeoutRequired') }]}
             >
               <InputNumber min={1} max={300} style={{ width: '100%' }} />
             </Form.Item>
@@ -695,10 +698,10 @@ const TextToSQLConfigPage: React.FC = () => {
           <Col span={12}>
             <Form.Item
               name="enabled"
-              label="启用状态"
+              label={t('textToSql.enabled')}
               valuePropName="checked"
             >
-              <Switch checkedChildren="启用" unCheckedChildren="禁用" />
+              <Switch checkedChildren={t('textToSql.enabledText')} unCheckedChildren={t('textToSql.disabledText')} />
             </Form.Item>
           </Col>
         </Row>
@@ -712,7 +715,7 @@ const TextToSQLConfigPage: React.FC = () => {
     return (
       <div style={{ textAlign: 'center', padding: '50px' }}>
         <Spin size="large" />
-        <div style={{ marginTop: 16 }}>加载配置中...</div>
+        <div style={{ marginTop: 16 }}>{t('textToSql.loadingConfig')}</div>
       </div>
     );
   }
@@ -721,26 +724,26 @@ const TextToSQLConfigPage: React.FC = () => {
     <div style={{ padding: '24px' }}>
       <div style={{ marginBottom: 24 }}>
         <Title level={2}>
-          <SettingOutlined /> Text-to-SQL 配置
+          <SettingOutlined /> {t('textToSql.title')}
         </Title>
         <Paragraph>
-          配置和管理 Text-to-SQL 方法，包括模板填充、LLM 生成、混合方法和第三方工具。
+          {t('textToSql.subtitle')}
         </Paragraph>
       </div>
 
       <Tabs defaultActiveKey="methods">
-        <TabPane tab={<span><SettingOutlined />方法配置</span>} key="methods">
+        <TabPane tab={<span><SettingOutlined />{t('textToSql.methodsTab')}</span>} key="methods">
           <Space direction="vertical" style={{ width: '100%' }} size="large">
             {renderMethodsConfig()}
             {renderStatistics()}
           </Space>
         </TabPane>
-        
-        <TabPane tab={<span><PlayCircleOutlined />SQL 测试</span>} key="test">
+
+        <TabPane tab={<span><PlayCircleOutlined />{t('textToSql.testTab')}</span>} key="test">
           {renderTestPanel()}
         </TabPane>
-        
-        <TabPane tab={<span><ApiOutlined />第三方插件</span>} key="plugins">
+
+        <TabPane tab={<span><ApiOutlined />{t('textToSql.pluginsTab')}</span>} key="plugins">
           {renderPluginsPanel()}
         </TabPane>
       </Tabs>
@@ -754,15 +757,15 @@ const TextToSQLConfigPage: React.FC = () => {
             loading={saving}
             size="large"
           >
-            保存配置
+            {t('textToSql.saveConfig')}
           </Button>
-          
+
           <Button
             icon={<ReloadOutlined />}
             onClick={loadInitialData}
             size="large"
           >
-            刷新
+            {t('textToSql.refresh')}
           </Button>
         </Space>
       </div>

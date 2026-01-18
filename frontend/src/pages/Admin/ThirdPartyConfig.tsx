@@ -45,6 +45,7 @@ import {
   ThunderboltOutlined,
 } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/authStore';
 import {
   adminApi,
@@ -61,17 +62,18 @@ const { TextArea } = Input;
 
 const TOOL_TYPES: ThirdPartyToolType[] = ['text_to_sql', 'ai_annotation', 'data_processing', 'custom'];
 
-const getToolTypeName = (type: ThirdPartyToolType): string => {
-  const names: Record<ThirdPartyToolType, string> = {
-    text_to_sql: 'Text-to-SQL',
-    ai_annotation: 'AI 标注',
-    data_processing: '数据处理',
-    custom: '自定义',
-  };
-  return names[type] || type;
-};
-
 const ThirdPartyConfig: React.FC = () => {
+  const { t } = useTranslation('admin');
+
+  const getToolTypeName = (type: ThirdPartyToolType): string => {
+    const names: Record<ThirdPartyToolType, string> = {
+      text_to_sql: t('thirdPartyConfig.toolTypes.textToSql'),
+      ai_annotation: t('thirdPartyConfig.toolTypes.aiAnnotation'),
+      data_processing: t('thirdPartyConfig.toolTypes.dataProcessing'),
+      custom: t('thirdPartyConfig.toolTypes.custom'),
+    };
+    return names[type] || type;
+  };
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
   const [modalVisible, setModalVisible] = useState(false);
@@ -90,13 +92,13 @@ const ThirdPartyConfig: React.FC = () => {
     mutationFn: (config: ThirdPartyConfigCreate) =>
       adminApi.createThirdPartyConfig(config, user?.id || ''),
     onSuccess: () => {
-      message.success('第三方工具配置创建成功');
+      message.success(t('thirdPartyConfig.updateSuccess'));
       queryClient.invalidateQueries({ queryKey: ['admin-third-party-configs'] });
       setModalVisible(false);
       form.resetFields();
     },
     onError: (error: Error) => {
-      message.error(`创建失败: ${error.message}`);
+      message.error(`${t('thirdPartyConfig.updateFailed')}: ${error.message}`);
     },
   });
 
@@ -105,14 +107,14 @@ const ThirdPartyConfig: React.FC = () => {
     mutationFn: ({ id, config }: { id: string; config: ThirdPartyConfigUpdate }) =>
       adminApi.updateThirdPartyConfig(id, config, user?.id || ''),
     onSuccess: () => {
-      message.success('第三方工具配置更新成功');
+      message.success(t('thirdPartyConfig.updateSuccess'));
       queryClient.invalidateQueries({ queryKey: ['admin-third-party-configs'] });
       setModalVisible(false);
       setEditingConfig(null);
       form.resetFields();
     },
     onError: (error: Error) => {
-      message.error(`更新失败: ${error.message}`);
+      message.error(`${t('thirdPartyConfig.updateFailed')}: ${error.message}`);
     },
   });
 
@@ -120,11 +122,11 @@ const ThirdPartyConfig: React.FC = () => {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => adminApi.deleteThirdPartyConfig(id, user?.id || ''),
     onSuccess: () => {
-      message.success('第三方工具配置删除成功');
+      message.success(t('thirdPartyConfig.deleteSuccess'));
       queryClient.invalidateQueries({ queryKey: ['admin-third-party-configs'] });
     },
     onError: (error: Error) => {
-      message.error(`删除失败: ${error.message}`);
+      message.error(`${t('thirdPartyConfig.deleteFailed')}: ${error.message}`);
     },
   });
 
@@ -133,11 +135,11 @@ const ThirdPartyConfig: React.FC = () => {
     mutationFn: ({ id, enabled }: { id: string; enabled: boolean }) =>
       adminApi.updateThirdPartyConfig(id, { enabled }, user?.id || ''),
     onSuccess: (_, variables) => {
-      message.success(variables.enabled ? '工具已启用' : '工具已禁用');
+      message.success(variables.enabled ? t('thirdPartyConfig.toolEnabled') : t('thirdPartyConfig.toolDisabled'));
       queryClient.invalidateQueries({ queryKey: ['admin-third-party-configs'] });
     },
     onError: (error: Error) => {
-      message.error(`操作失败: ${error.message}`);
+      message.error(`${t('thirdPartyConfig.operationFailed')}: ${error.message}`);
     },
   });
 
@@ -145,18 +147,18 @@ const ThirdPartyConfig: React.FC = () => {
   const handleHealthCheck = async (configId: string) => {
     setHealthResults(prev => ({
       ...prev,
-      [configId]: { success: false, latency_ms: 0, error_message: '检查中...' },
+      [configId]: { success: false, latency_ms: 0, error_message: t('thirdPartyConfig.checking') },
     }));
     try {
       const result = await adminApi.checkThirdPartyHealth(configId);
       setHealthResults(prev => ({ ...prev, [configId]: result }));
       if (result.success) {
-        message.success(`健康检查通过 (${result.latency_ms}ms)`);
+        message.success(t('thirdPartyConfig.healthCheckSuccess', { latency: result.latency_ms }));
       } else {
-        message.error(`健康检查失败: ${result.error_message}`);
+        message.error(`${t('thirdPartyConfig.healthCheckFailed')}: ${result.error_message}`);
       }
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : '检查失败';
+      const errorMsg = error instanceof Error ? error.message : t('thirdPartyConfig.checkFailed');
       setHealthResults(prev => ({
         ...prev,
         [configId]: { success: false, latency_ms: 0, error_message: errorMsg },

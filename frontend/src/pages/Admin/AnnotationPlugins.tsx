@@ -316,7 +316,7 @@ const AnnotationPluginsPage: React.FC = () => {
   // Table columns
   const columns: ColumnsType<AnnotationPlugin> = [
     {
-      title: '插件名称',
+      title: t('annotationPlugins.columns.name'),
       dataIndex: 'name',
       key: 'name',
       render: (name, record) => (
@@ -333,7 +333,7 @@ const AnnotationPluginsPage: React.FC = () => {
       ),
     },
     {
-      title: '类型',
+      title: t('annotationPlugins.columns.type'),
       dataIndex: 'type',
       key: 'type',
       render: (type) => (
@@ -347,7 +347,7 @@ const AnnotationPluginsPage: React.FC = () => {
       ),
     },
     {
-      title: '端点',
+      title: t('annotationPlugins.columns.endpoint'),
       dataIndex: 'endpoint',
       key: 'endpoint',
       ellipsis: true,
@@ -360,7 +360,7 @@ const AnnotationPluginsPage: React.FC = () => {
       ),
     },
     {
-      title: '状态',
+      title: t('annotationPlugins.columns.status'),
       dataIndex: 'status',
       key: 'status',
       render: (status) => (
@@ -368,13 +368,13 @@ const AnnotationPluginsPage: React.FC = () => {
           status === 'active' ? 'success' :
           status === 'error' ? 'error' : 'default'
         }>
-          {status === 'active' ? '运行中' :
-           status === 'error' ? '错误' : '未激活'}
+          {status === 'active' ? t('annotationPlugins.status.running') :
+           status === 'error' ? t('annotationPlugins.status.error') : t('annotationPlugins.status.inactive')}
         </Tag>
       ),
     },
     {
-      title: '启用',
+      title: t('annotationPlugins.columns.enabled'),
       dataIndex: 'enabled',
       key: 'enabled',
       render: (enabled, record) => (
@@ -385,7 +385,7 @@ const AnnotationPluginsPage: React.FC = () => {
       ),
     },
     {
-      title: '优先级',
+      title: t('annotationPlugins.columns.priority'),
       dataIndex: 'priority',
       key: 'priority',
       sorter: (a, b) => b.priority - a.priority,
@@ -401,7 +401,7 @@ const AnnotationPluginsPage: React.FC = () => {
       ),
     },
     {
-      title: '支持类型',
+      title: t('annotationPlugins.columns.supportedTypes'),
       dataIndex: 'supportedTypes',
       key: 'supportedTypes',
       render: (types: string[]) => (
@@ -413,7 +413,7 @@ const AnnotationPluginsPage: React.FC = () => {
       ),
     },
     {
-      title: '操作',
+      title: t('annotationPlugins.columns.actions'),
       key: 'actions',
       render: (_, record) => (
         <Space>
@@ -469,7 +469,7 @@ const AnnotationPluginsPage: React.FC = () => {
         <Row justify="space-between" align="middle">
           <Col>
             <Title level={4} style={{ margin: 0 }}>
-              <SettingOutlined /> 标注插件管理
+              <SettingOutlined /> {t('annotationPlugins.title')}
             </Title>
           </Col>
           <Col>
@@ -478,7 +478,7 @@ const AnnotationPluginsPage: React.FC = () => {
               icon={<PlusOutlined />}
               onClick={() => handleOpenModal()}
             >
-              添加插件
+              {t('annotationPlugins.buttons.addPlugin')}
             </Button>
           </Col>
         </Row>
@@ -489,7 +489,7 @@ const AnnotationPluginsPage: React.FC = () => {
         <Col span={6}>
           <Card>
             <Statistic
-              title="总插件数"
+              title={t('annotationPlugins.statistics.totalPlugins')}
               value={overallStats.total}
               prefix={<ApiOutlined />}
             />
@@ -498,7 +498,7 @@ const AnnotationPluginsPage: React.FC = () => {
         <Col span={6}>
           <Card>
             <Statistic
-              title="已启用"
+              title={t('annotationPlugins.statistics.enabled')}
               value={overallStats.active}
               valueStyle={{ color: '#52c41a' }}
               prefix={<CheckCircleOutlined />}
@@ -508,7 +508,7 @@ const AnnotationPluginsPage: React.FC = () => {
         <Col span={6}>
           <Card>
             <Statistic
-              title="健康状态"
+              title={t('annotationPlugins.statistics.healthy')}
               value={overallStats.healthy}
               suffix={`/ ${overallStats.total}`}
               valueStyle={{ color: overallStats.healthy === overallStats.total ? '#52c41a' : '#faad14' }}
@@ -519,7 +519,7 @@ const AnnotationPluginsPage: React.FC = () => {
         <Col span={6}>
           <Card>
             <Statistic
-              title="总调用次数"
+              title={t('annotationPlugins.statistics.totalCalls')}
               value={overallStats.totalCalls}
               prefix={<BarChartOutlined />}
             />

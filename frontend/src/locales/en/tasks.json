@@ -297,5 +297,21 @@
     "rejectSuccess": "Rejected successfully",
     "revisionSuccess": "Revision requested",
     "batchSuccess": "Batch operation completed, processed {{count}} items"
-  }
+  },
+  "mockData": {
+    "customerReviewClassification": "Customer Review Classification",
+    "customerReviewDescription": "Classify customer reviews by sentiment to understand customer satisfaction levels. This task involves analyzing text reviews and categorizing them as positive, negative, or neutral.",
+    "productEntityRecognition": "Product Entity Recognition",
+    "productEntityDescription": "Identify product names and attributes",
+    "faqClassification": "FAQ Classification",
+    "faqClassificationDescription": "Categorize FAQ questions"
+  },
+  "tags": {
+    "urgent": "Urgent",
+    "customer": "Customer",
+    "sentiment": "Sentiment",
+    "product": "Product"
+  },
+  "active": "Active",
+  "complete": "Complete"
 }

@@ -16,8 +16,8 @@ const TaskEditPage: React.FC = () => {
   // Mock data for development
   const mockTask = {
     id: id || '1',
-    name: 'Customer Review Classification',
-    description: 'Classify customer reviews by sentiment',
+    name: t('mockData.customerReviewClassification'),
+    description: t('mockData.customerReviewDescription'),
     status: 'in_progress' as const,
     priority: 'high' as const,
     annotation_type: 'sentiment' as const,
@@ -31,7 +31,7 @@ const TaskEditPage: React.FC = () => {
     total_items: 1000,
     completed_items: 650,
     tenant_id: 'tenant1',
-    tags: ['urgent', 'customer'],
+    tags: [t('tags.urgent'), t('tags.customer')],
   };
 
   const currentTask = task || mockTask;

@@ -19,6 +19,7 @@ import {
   ReloadOutlined, CalendarOutlined, RiseOutlined, FallOutlined
 } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { tenantApi, quotaApi, Tenant } from '@/services/multiTenantApi';
 import dayjs from 'dayjs';
 
@@ -41,6 +42,7 @@ interface BillingRecord {
 }
 
 const BillingManagement: React.FC = () => {
+  const { t } = useTranslation('admin');
   const [selectedTenantId, setSelectedTenantId] = useState<string | undefined>();
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs] | null>(null);
 
@@ -69,9 +71,9 @@ const BillingManagement: React.FC = () => {
 
   const getStatusTag = (status: string) => {
     const config: Record<string, { color: string; text: string }> = {
-      pending: { color: 'processing', text: '待支付' },
-      paid: { color: 'success', text: '已支付' },
-      overdue: { color: 'error', text: '逾期' },
+      pending: { color: 'processing', text: t('billingManagement.status.pending') },
+      paid: { color: 'success', text: t('billingManagement.status.paid') },
+      overdue: { color: 'error', text: t('billingManagement.status.overdue') },
     };
     const { color, text } = config[status] || config.pending;
     return <Tag color={color}>{text}</Tag>;
@@ -79,18 +81,18 @@ const BillingManagement: React.FC = () => {
 
   const columns: ColumnsType<BillingRecord> = [
     {
-      title: '租户',
+      title: t('billingManagement.columns.tenant'),
       dataIndex: 'tenant_name',
       key: 'tenant_name',
     },
     {
-      title: '账期',
+      title: t('billingManagement.columns.period'),
       dataIndex: 'period',
       key: 'period',
       render: (period: string) => <Tag icon={<CalendarOutlined />}>{period}</Tag>,
     },
     {
-      title: '存储费用',
+      title: t('billingManagement.columns.storage'),
       key: 'storage',
       render: (_, record) => (
         <div>
@@ -102,31 +104,31 @@ const BillingManagement: React.FC = () => {
       ),
     },
     {
-      title: 'API 费用',
+      title: t('billingManagement.columns.api'),
       key: 'api',
       render: (_, record) => (
         <div>
           <div>¥{record.api_cost.toFixed(2)}</div>
           <div style={{ fontSize: 11, color: '#666' }}>
-            {record.api_calls.toLocaleString()} 次
+            {record.api_calls.toLocaleString()} {t('billingManagement.unit.calls')}
           </div>
         </div>
       ),
     },
     {
-      title: '用户费用',
+      title: t('billingManagement.columns.user'),
       key: 'user',
       render: (_, record) => (
         <div>
           <div>¥{record.user_cost.toFixed(2)}</div>
           <div style={{ fontSize: 11, color: '#666' }}>
-            {record.user_count} 人
+            {record.user_count} {t('billingManagement.unit.users')}
           </div>
         </div>
       ),
     },
     {
-      title: '总费用',
+      title: t('billingManagement.columns.total'),
       dataIndex: 'total_cost',
       key: 'total_cost',
       render: (cost: number) => (
@@ -137,27 +139,27 @@ const BillingManagement: React.FC = () => {
       sorter: (a, b) => a.total_cost - b.total_cost,
     },
     {
-      title: '状态',
+      title: t('billingManagement.columns.status'),
       dataIndex: 'status',
       key: 'status',
       render: (status: string) => getStatusTag(status),
       filters: [
-        { text: '待支付', value: 'pending' },
-        { text: '已支付', value: 'paid' },
-        { text: '逾期', value: 'overdue' },
+        { text: t('billingManagement.status.pending'), value: 'pending' },
+        { text: t('billingManagement.status.paid'), value: 'paid' },
+        { text: t('billingManagement.status.overdue'), value: 'overdue' },
       ],
       onFilter: (value, record) => record.status === value,
     },
     {
-      title: '操作',
+      title: t('billingManagement.columns.actions'),
       key: 'action',
       render: (_, record) => (
         <Space>
           <Button type="link" size="small" icon={<FileTextOutlined />}>
-            详情
+            {t('billingManagement.actions.details')}
           </Button>
           <Button type="link" size="small" icon={<DownloadOutlined />}>
-            下载
+            {t('billingManagement.actions.download')}
           </Button>
         </Space>
       ),
@@ -172,7 +174,7 @@ const BillingManagement: React.FC = () => {
   const paidAmount = billingData.filter(b => b.status === 'paid').reduce((sum, b) => sum + b.total_cost, 0);
 
   const handleExport = (format: 'csv' | 'excel' | 'pdf') => {
-    message.success(`正在导出 ${format.toUpperCase()} 格式报表...`);
+    message.success(t('billingManagement.export.exporting', { format: format.toUpperCase() }));
     // In real implementation, this would trigger a download
   };
 
@@ -183,46 +185,46 @@ const BillingManagement: React.FC = () => {
         <Col span={6}>
           <Card>
             <Statistic
-              title="本月总收入"
+              title={t('billingManagement.summary.monthlyRevenue')}
               value={totalRevenue}
               precision={2}
               prefix={<DollarOutlined />}
-              suffix="元"
+              suffix={t('billingManagement.unit.currency')}
             />
           </Card>
         </Col>
         <Col span={6}>
           <Card>
             <Statistic
-              title="已收款"
+              title={t('billingManagement.summary.paid')}
               value={paidAmount}
               precision={2}
               valueStyle={{ color: '#3f8600' }}
               prefix={<RiseOutlined />}
-              suffix="元"
+              suffix={t('billingManagement.unit.currency')}
             />
           </Card>
         </Col>
         <Col span={6}>
           <Card>
             <Statistic
-              title="待收款"
+              title={t('billingManagement.summary.pending')}
               value={pendingAmount}
               precision={2}
               valueStyle={{ color: '#1890ff' }}
-              suffix="元"
+              suffix={t('billingManagement.unit.currency')}
             />
           </Card>
         </Col>
         <Col span={6}>
           <Card>
             <Statistic
-              title="逾期金额"
+              title={t('billingManagement.summary.overdue')}
               value={overdueAmount}
               precision={2}
               valueStyle={{ color: '#cf1322' }}
               prefix={<FallOutlined />}
-              suffix="元"
+              suffix={t('billingManagement.unit.currency')}
             />
           </Card>
         </Col>
@@ -230,11 +232,11 @@ const BillingManagement: React.FC = () => {
 
       {/* Billing Table */}
       <Card
-        title="账单管理"
+        title={t('billingManagement.title')}
         extra={
           <Space>
             <Select
-              placeholder="选择租户"
+              placeholder={t('billingManagement.columns.tenant')}
               style={{ width: 150 }}
               allowClear
               onChange={setSelectedTenantId}
@@ -243,37 +245,37 @@ const BillingManagement: React.FC = () => {
                 <Select.Option key={t.id} value={t.id}>{t.name}</Select.Option>
               ))}
             </Select>
-            <RangePicker 
-              picker="month" 
+            <RangePicker
+              picker="month"
               onChange={(dates) => setDateRange(dates as any)}
             />
-            <Button icon={<ReloadOutlined />}>刷新</Button>
+            <Button icon={<ReloadOutlined />}>{t('common.refresh')}</Button>
             <Button.Group>
               <Button icon={<DownloadOutlined />} onClick={() => handleExport('csv')}>
-                CSV
+                {t('billingManagement.export.csv')}
               </Button>
-              <Button onClick={() => handleExport('excel')}>Excel</Button>
-              <Button onClick={() => handleExport('pdf')}>PDF</Button>
+              <Button onClick={() => handleExport('excel')}>{t('billingManagement.export.excel')}</Button>
+              <Button onClick={() => handleExport('pdf')}>{t('billingManagement.export.pdf')}</Button>
             </Button.Group>
           </Space>
         }
       >
         <Tabs defaultActiveKey="all">
-          <Tabs.TabPane tab="全部账单" key="all">
+          <Tabs.TabPane tab={t('billingManagement.tabs.all')} key="all">
             <Table
               columns={columns}
               dataSource={billingData}
               rowKey="id"
               pagination={{
                 showSizeChanger: true,
-                showTotal: (total) => `共 ${total} 条账单`,
+                showTotal: (total) => t('billingManagement.pagination.total', { total }),
               }}
               summary={(pageData) => {
                 const total = pageData.reduce((sum, record) => sum + record.total_cost, 0);
                 return (
                   <Table.Summary.Row>
                     <Table.Summary.Cell index={0} colSpan={5}>
-                      <strong>本页合计</strong>
+                      <strong>{t('billingManagement.summary.pageTotal')}</strong>
                     </Table.Summary.Cell>
                     <Table.Summary.Cell index={5}>
                       <strong style={{ color: '#1890ff' }}>¥{total.toFixed(2)}</strong>
@@ -284,7 +286,7 @@ const BillingManagement: React.FC = () => {
               }}
             />
           </Tabs.TabPane>
-          <Tabs.TabPane tab="待支付" key="pending">
+          <Tabs.TabPane tab={t('billingManagement.tabs.pending')} key="pending">
             <Table
               columns={columns}
               dataSource={billingData.filter(b => b.status === 'pending')}
@@ -292,7 +294,7 @@ const BillingManagement: React.FC = () => {
               pagination={false}
             />
           </Tabs.TabPane>
-          <Tabs.TabPane tab="已支付" key="paid">
+          <Tabs.TabPane tab={t('billingManagement.tabs.paid')} key="paid">
             <Table
               columns={columns}
               dataSource={billingData.filter(b => b.status === 'paid')}
@@ -300,7 +302,7 @@ const BillingManagement: React.FC = () => {
               pagination={false}
             />
           </Tabs.TabPane>
-          <Tabs.TabPane tab="逾期" key="overdue">
+          <Tabs.TabPane tab={t('billingManagement.tabs.overdue')} key="overdue">
             <Table
               columns={columns}
               dataSource={billingData.filter(b => b.status === 'overdue')}
@@ -314,21 +316,21 @@ const BillingManagement: React.FC = () => {
       {/* Usage Breakdown */}
       <Row gutter={16} style={{ marginTop: 16 }}>
         <Col span={8}>
-          <Card title="存储费用分布" size="small">
+          <Card title={t('billingManagement.charts.storageDistribution')} size="small">
             <div style={{ textAlign: 'center', padding: 20, color: '#666' }}>
               图表区域 - 存储费用饼图
             </div>
           </Card>
         </Col>
         <Col span={8}>
-          <Card title="API 调用趋势" size="small">
+          <Card title={t('billingManagement.charts.apiTrend')} size="small">
             <div style={{ textAlign: 'center', padding: 20, color: '#666' }}>
               图表区域 - API 调用折线图
             </div>
           </Card>
         </Col>
         <Col span={8}>
-          <Card title="收入趋势" size="small">
+          <Card title={t('billingManagement.charts.revenueTrend')} size="small">
             <div style={{ textAlign: 'center', padding: 20, color: '#666' }}>
               图表区域 - 收入柱状图
             </div>

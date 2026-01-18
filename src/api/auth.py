@@ -17,7 +17,7 @@ from src.security.models import UserModel, UserRole, AuditAction
 logger = logging.getLogger(__name__)
 
 # Initialize security controller
-security_controller = SecurityController()
+security_controller = SecurityController(secret_key="test-secret-key-for-local-development-only")
 
 # Security scheme
 security = HTTPBearer()
@@ -143,7 +143,7 @@ async def login(
                 "username": user.username,
                 "email": user.email,
                 "full_name": user.full_name,
-                "role": user.role.value,
+                "role": user.role if isinstance(user.role, str) else user.role.value,
                 "tenant_id": user.tenant_id,
                 "is_active": user.is_active,
                 "last_login": user.last_login.isoformat() if user.last_login else None

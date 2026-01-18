@@ -297,6 +297,22 @@
     "rejectSuccess": "拒绝成功",
     "revisionSuccess": "已请求修订",
     "batchSuccess": "批量操作成功，已处理 {{count}} 项"
-  }
+  },
+  "mockData": {
+    "customerReviewClassification": "客户评论分类",
+    "customerReviewDescription": "对客户评论进行情感分类，以了解客户满意度。此任务涉及分析文本评论并将其分类为积极、消极或中性。",
+    "productEntityRecognition": "产品实体识别",
+    "productEntityDescription": "识别产品名称和属性",
+    "faqClassification": "FAQ 分类",
+    "faqClassificationDescription": "对常见问题进行分类"
+  },
+  "tags": {
+    "urgent": "紧急",
+    "customer": "客户",
+    "sentiment": "情感",
+    "product": "产品"
+  },
+  "active": "活跃",
+  "complete": "完成"
 }
 

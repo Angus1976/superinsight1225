@@ -42,6 +42,7 @@ import {
 } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/stores/authStore';
+import { useTranslation } from 'react-i18next';
 import {
   adminApi,
   ConfigHistoryResponse,
@@ -59,6 +60,7 @@ const { TextArea } = Input;
 const CONFIG_TYPES: ConfigType[] = ['llm', 'database', 'sync_strategy', 'third_party'];
 
 const ConfigHistory: React.FC = () => {
+  const { t } = useTranslation(['admin', 'common']);
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
   const [filters, setFilters] = useState<{
@@ -88,14 +90,14 @@ const ConfigHistory: React.FC = () => {
       setSelectedDiff(diff);
       setDiffModalVisible(true);
     } catch (error) {
-      message.error('获取差异失败');
+      message.error(t('configHistory.loadDiffFailed'));
     }
   };
 
   // Rollback mutation
   const rollbackMutation = useMutation({
     mutationFn: () => {
-      if (!selectedHistory) throw new Error('未选择历史记录');
+      if (!selectedHistory) throw new Error(t('configHistory.rollbackConfirm'));
       return adminApi.rollbackConfig(
         selectedHistory.id,
         user?.id || '',
@@ -104,14 +106,14 @@ const ConfigHistory: React.FC = () => {
       );
     },
     onSuccess: () => {
-      message.success('配置回滚成功');
+      message.success(t('configHistory.rollbackSuccess'));
       queryClient.invalidateQueries({ queryKey: ['admin-config-history'] });
       setRollbackModalVisible(false);
       setSelectedHistory(null);
       setRollbackReason('');
     },
     onError: (error: Error) => {
-      message.error(`回滚失败: ${error.message}`);
+      message.error(t('configHistory.rollbackFailed', { error: error.message }));
     },
   });
 
@@ -156,7 +158,7 @@ const ConfigHistory: React.FC = () => {
 
   const columns = [
     {
-      title: '时间',
+      title: t('configHistory.columns.time'),
       dataIndex: 'created_at',
       key: 'created_at',
       width: 180,
@@ -168,7 +170,7 @@ const ConfigHistory: React.FC = () => {
       ),
     },
     {
-      title: '配置类型',
+      title: t('configHistory.columns.configType'),
       dataIndex: 'config_type',
       key: 'config_type',
       width: 120,
@@ -183,18 +185,18 @@ const ConfigHistory: React.FC = () => {
       },
     },
     {
-      title: '操作类型',
+      title: t('configHistory.columns.operationType'),
       key: 'operation',
       width: 100,
       render: (_: unknown, record: ConfigHistoryResponse) => {
         if (!record.old_value) {
-          return <Tag icon={<PlusOutlined />} color="success">创建</Tag>;
+          return <Tag icon={<PlusOutlined />} color="success">{t('configHistory.operations.create')}</Tag>;
         }
-        return <Tag icon={<EditOutlined />} color="processing">修改</Tag>;
+        return <Tag icon={<EditOutlined />} color="processing">{t('configHistory.operations.modify')}</Tag>;
       },
     },
     {
-      title: '操作人',
+      title: t('configHistory.columns.operator'),
       dataIndex: 'user_name',
       key: 'user_name',
       width: 120,
@@ -206,7 +208,7 @@ const ConfigHistory: React.FC = () => {
       ),
     },
     {
-      title: '变更摘要',
+      title: t('configHistory.columns.summary'),
       key: 'summary',
       ellipsis: true,
       render: (_: unknown, record: ConfigHistoryResponse) => {
@@ -216,7 +218,7 @@ const ConfigHistory: React.FC = () => {
       },
     },
     {
-      title: '操作',
+      title: t('configHistory.columns.actions'),
       key: 'actions',
       width: 150,
       render: (_: unknown, record: ConfigHistoryResponse) => (
@@ -254,18 +256,18 @@ const ConfigHistory: React.FC = () => {
         title={
           <Space>
             <HistoryOutlined />
-            <span>配置变更历史</span>
+            <span>{t('configHistory.title')}</span>
           </Space>
         }
         extra={
           <Button icon={<ReloadOutlined />} onClick={() => refetch()}>
-            刷新
+            {t('configHistory.refresh')}
           </Button>
         }
       >
         <Alert
-          message="配置历史说明"
-          description="所有配置变更都会被记录，您可以查看变更详情并回滚到之前的版本。"
+          message={t('configHistory.alert.description')}
+          description={t('configHistory.alert.descriptionText')}
           type="info"
           showIcon
           style={{ marginBottom: 16 }}

@@ -60,9 +60,8 @@ const TaskDetailPage: React.FC = () => {
   // Mock data for development
   const mockTask = {
     id: id || '1',
-    name: 'Customer Review Classification',
-    description:
-      'Classify customer reviews by sentiment to understand customer satisfaction levels. This task involves analyzing text reviews and categorizing them as positive, negative, or neutral.',
+    name: t('mockData.customerReviewClassification'),
+    description: t('mockData.customerReviewDescription'),
     status: 'in_progress' as TaskStatus,
     priority: 'high' as TaskPriority,
     annotation_type: 'sentiment' as const,
@@ -77,7 +76,7 @@ const TaskDetailPage: React.FC = () => {
     completed_items: 650,
     tenant_id: 'tenant1',
     label_studio_project_id: 'ls-project-123',
-    tags: ['urgent', 'customer', 'sentiment'],
+    tags: [t('tags.urgent'), t('tags.customer'), t('tags.sentiment')],
   };
 
   const currentTask = task || mockTask;
@@ -302,7 +301,7 @@ const TaskDetailPage: React.FC = () => {
         <Space>
           <BarChartOutlined />
           {t('progressTracking')}
-          <Badge count={currentTask.progress < 100 ? 'Active' : 'Complete'} />
+          <Badge count={currentTask.progress < 100 ? t('active') : t('completed')} />
         </Space>
       ),
       children: (

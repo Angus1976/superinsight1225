@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, Table, Button, Space, Tag, Modal, Form, Input, Select, Switch, message, Avatar, Tooltip } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined, LockOutlined, UnlockOutlined, MailOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
@@ -23,6 +24,7 @@ interface User {
 }
 
 const AdminUsers: React.FC = () => {
+  const { t } = useTranslation('admin');
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [form] = Form.useForm();
@@ -58,24 +60,24 @@ const AdminUsers: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       setIsModalVisible(false);
       form.resetFields();
-      message.success('用户创建成功');
+      message.success(t('users.createSuccess'));
     },
     onError: () => {
-      message.error('用户创建失败');
+      message.error(t('users.createFailed'));
     },
   });
 
   const updateUserMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => 
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
       api.put(`/api/v1/admin/users/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       setIsModalVisible(false);
       form.resetFields();
-      message.success('用户更新成功');
+      message.success(t('users.updateSuccess'));
     },
     onError: () => {
-      message.error('用户更新失败');
+      message.error(t('users.updateFailed'));
     },
   });
 
@@ -83,44 +85,44 @@ const AdminUsers: React.FC = () => {
     mutationFn: (id: string) => api.delete(`/api/v1/admin/users/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      message.success('用户删除成功');
+      message.success(t('users.deleteSuccess'));
     },
     onError: () => {
-      message.error('用户删除失败');
+      message.error(t('users.deleteFailed'));
     },
   });
 
   const lockUserMutation = useMutation({
-    mutationFn: ({ id, action }: { id: string; action: 'lock' | 'unlock' }) => 
+    mutationFn: ({ id, action }: { id: string; action: 'lock' | 'unlock' }) =>
       api.post(`/api/v1/admin/users/${id}/${action}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      message.success('用户状态更新成功');
+      message.success(t('users.statusUpdateSuccess'));
     },
     onError: () => {
-      message.error('用户状态更新失败');
+      message.error(t('users.statusUpdateFailed'));
     },
   });
 
   const resetPasswordMutation = useMutation({
     mutationFn: (id: string) => api.post(`/api/v1/admin/users/${id}/reset-password`),
     onSuccess: () => {
-      message.success('密码重置邮件已发送');
+      message.success(t('users.passwordResetSent'));
     },
     onError: () => {
-      message.error('密码重置失败');
+      message.error(t('users.passwordResetFailed'));
     },
   });
 
   const columns: ColumnsType<User> = [
     {
-      title: '用户信息',
+      title: t('users.columns.userInfo'),
       key: 'userInfo',
       render: (_, record) => (
         <div style={{ display: 'flex', alignItems: 'center' }}>
-          <Avatar 
-            src={record.avatar} 
-            icon={<UserOutlined />} 
+          <Avatar
+            src={record.avatar}
+            icon={<UserOutlined />}
             style={{ marginRight: 12 }}
           />
           <div>
@@ -131,7 +133,7 @@ const AdminUsers: React.FC = () => {
             <div style={{ fontSize: '12px', color: '#666' }}>
               {record.email}
               {record.isEmailVerified && (
-                <Tag color="green" size="small" style={{ marginLeft: 4 }}>已验证</Tag>
+                <Tag color="green" style={{ marginLeft: 4 }}>{t('users.info.verified')}</Tag>
               )}
             </div>
           </div>
@@ -139,13 +141,13 @@ const AdminUsers: React.FC = () => {
       ),
     },
     {
-      title: '租户',
+      title: t('users.columns.tenant'),
       dataIndex: 'tenantName',
       key: 'tenantName',
       render: (tenantName: string) => <Tag color="blue">{tenantName}</Tag>,
     },
     {
-      title: '角色',
+      title: t('users.columns.roles'),
       dataIndex: 'roles',
       key: 'roles',
       render: (roles: string[]) => (
@@ -157,7 +159,7 @@ const AdminUsers: React.FC = () => {
       ),
     },
     {
-      title: '状态',
+      title: t('users.columns.status'),
       dataIndex: 'status',
       key: 'status',
       render: (status: string) => {
@@ -167,39 +169,33 @@ const AdminUsers: React.FC = () => {
           locked: 'error',
           pending: 'processing',
         };
-        const labels = {
-          active: '活跃',
-          inactive: '非活跃',
-          locked: '已锁定',
-          pending: '待激活',
-        };
-        return <Tag color={colors[status as keyof typeof colors]}>{labels[status as keyof typeof labels]}</Tag>;
+        return <Tag color={colors[status as keyof typeof colors]}>{t(`users.status.${status}`)}</Tag>;
       },
     },
     {
-      title: '登录统计',
+      title: t('users.columns.loginStats'),
       key: 'loginStats',
       render: (_, record) => (
         <div>
-          <div>登录次数: {record.loginCount}</div>
+          <div>{t('users.info.loginCount')}: {record.loginCount}</div>
           <div style={{ fontSize: '12px', color: '#666' }}>
-            最后登录: {record.lastLoginAt ? new Date(record.lastLoginAt).toLocaleString() : '从未登录'}
+            {t('users.info.lastLogin')}: {record.lastLoginAt ? new Date(record.lastLoginAt).toLocaleString() : t('users.info.neverLoggedIn')}
           </div>
         </div>
       ),
     },
     {
-      title: '创建时间',
+      title: t('users.columns.createdAt'),
       dataIndex: 'createdAt',
       key: 'createdAt',
       render: (date: string) => new Date(date).toLocaleString(),
     },
     {
-      title: '操作',
+      title: t('users.columns.action'),
       key: 'action',
       render: (_, record) => (
         <Space size="middle">
-          <Tooltip title="编辑用户">
+          <Tooltip title={t('users.actions.edit')}>
             <Button
               type="link"
               icon={<EditOutlined />}
@@ -213,23 +209,23 @@ const AdminUsers: React.FC = () => {
               }}
             />
           </Tooltip>
-          
-          <Tooltip title="重置密码">
+
+          <Tooltip title={t('users.actions.resetPassword')}>
             <Button
               type="link"
               icon={<MailOutlined />}
               onClick={() => {
                 Modal.confirm({
-                  title: '确认重置密码',
-                  content: `确定要为用户 "${record.fullName}" 重置密码吗？重置链接将发送到用户邮箱。`,
+                  title: t('users.confirmResetPassword'),
+                  content: t('users.confirmResetPasswordMessage', { name: record.fullName }),
                   onOk: () => resetPasswordMutation.mutate(record.id),
                 });
               }}
             />
           </Tooltip>
-          
+
           {record.status === 'locked' ? (
-            <Tooltip title="解锁用户">
+            <Tooltip title={t('users.actions.unlock')}>
               <Button
                 type="link"
                 icon={<UnlockOutlined />}
@@ -237,30 +233,30 @@ const AdminUsers: React.FC = () => {
               />
             </Tooltip>
           ) : (
-            <Tooltip title="锁定用户">
+            <Tooltip title={t('users.actions.lock')}>
               <Button
                 type="link"
                 icon={<LockOutlined />}
                 onClick={() => {
                   Modal.confirm({
-                    title: '确认锁定用户',
-                    content: `确定要锁定用户 "${record.fullName}" 吗？`,
+                    title: t('users.confirmLock'),
+                    content: t('users.confirmLockMessage', { name: record.fullName }),
                     onOk: () => lockUserMutation.mutate({ id: record.id, action: 'lock' }),
                   });
                 }}
               />
             </Tooltip>
           )}
-          
-          <Tooltip title="删除用户">
+
+          <Tooltip title={t('users.actions.delete')}>
             <Button
               type="link"
               danger
               icon={<DeleteOutlined />}
               onClick={() => {
                 Modal.confirm({
-                  title: '确认删除',
-                  content: `确定要删除用户 "${record.fullName}" 吗？此操作不可恢复！`,
+                  title: t('users.confirmDelete'),
+                  content: t('users.confirmDeleteMessage', { name: record.fullName }),
                   onOk: () => deleteUserMutation.mutate(record.id),
                 });
               }}
@@ -282,50 +278,50 @@ const AdminUsers: React.FC = () => {
   return (
     <div className="admin-users">
       <Card
-        title="用户管理"
+        title={t('users.title')}
         extra={
           <Space>
             <Select
               value={selectedTenant}
               onChange={setSelectedTenant}
               style={{ width: 120 }}
-              placeholder="选择租户"
+              placeholder={t('users.filters.selectTenant')}
             >
-              <Select.Option value="all">全部租户</Select.Option>
+              <Select.Option value="all">{t('users.filters.allTenants')}</Select.Option>
               {tenants?.map((tenant: any) => (
                 <Select.Option key={tenant.id} value={tenant.id}>
                   {tenant.name}
                 </Select.Option>
               ))}
             </Select>
-            
+
             <Select
               value={selectedRole}
               onChange={setSelectedRole}
               style={{ width: 120 }}
-              placeholder="选择角色"
+              placeholder={t('users.filters.selectRole')}
             >
-              <Select.Option value="all">全部角色</Select.Option>
+              <Select.Option value="all">{t('users.filters.allRoles')}</Select.Option>
               {roles?.map((role: any) => (
                 <Select.Option key={role.code} value={role.code}>
                   {role.name}
                 </Select.Option>
               ))}
             </Select>
-            
+
             <Select
               value={selectedStatus}
               onChange={setSelectedStatus}
               style={{ width: 120 }}
-              placeholder="选择状态"
+              placeholder={t('users.filters.selectStatus')}
             >
-              <Select.Option value="all">全部状态</Select.Option>
-              <Select.Option value="active">活跃</Select.Option>
-              <Select.Option value="inactive">非活跃</Select.Option>
-              <Select.Option value="locked">已锁定</Select.Option>
-              <Select.Option value="pending">待激活</Select.Option>
+              <Select.Option value="all">{t('users.filters.allStatus')}</Select.Option>
+              <Select.Option value="active">{t('users.status.active')}</Select.Option>
+              <Select.Option value="inactive">{t('users.status.inactive')}</Select.Option>
+              <Select.Option value="locked">{t('users.status.locked')}</Select.Option>
+              <Select.Option value="pending">{t('users.status.pending')}</Select.Option>
             </Select>
-            
+
             <Button
               type="primary"
               icon={<PlusOutlined />}
@@ -335,7 +331,7 @@ const AdminUsers: React.FC = () => {
                 setIsModalVisible(true);
               }}
             >
-              新建用户
+              {t('users.createUser')}
             </Button>
           </Space>
         }
@@ -349,13 +345,13 @@ const AdminUsers: React.FC = () => {
           pagination={{
             showSizeChanger: true,
             showQuickJumper: true,
-            showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
+            showTotal: (total, range) => t('common:pagination.total', { start: range[0], end: range[1], total }),
           }}
         />
       </Card>
 
       <Modal
-        title={editingUser ? '编辑用户' : '新建用户'}
+        title={editingUser ? t('users.editUser') : t('users.createUser')}
         open={isModalVisible}
         onCancel={() => setIsModalVisible(false)}
         onOk={() => form.submit()}
@@ -369,37 +365,37 @@ const AdminUsers: React.FC = () => {
         >
           <Form.Item
             name="username"
-            label="用户名"
-            rules={[{ required: true, message: '请输入用户名' }]}
+            label={t('users.form.username')}
+            rules={[{ required: true, message: t('users.form.usernameRequired') }]}
           >
-            <Input placeholder="请输入用户名" />
+            <Input placeholder={t('users.form.usernamePlaceholder')} />
           </Form.Item>
-          
+
           <Form.Item
             name="email"
-            label="邮箱"
+            label={t('users.form.email')}
             rules={[
-              { required: true, message: '请输入邮箱' },
-              { type: 'email', message: '请输入有效的邮箱地址' },
+              { required: true, message: t('users.form.emailRequired') },
+              { type: 'email', message: t('users.form.emailInvalid') },
             ]}
           >
-            <Input placeholder="请输入邮箱" />
+            <Input placeholder={t('users.form.emailPlaceholder')} />
           </Form.Item>
-          
+
           <Form.Item
             name="fullName"
-            label="姓名"
-            rules={[{ required: true, message: '请输入姓名' }]}
+            label={t('users.form.fullName')}
+            rules={[{ required: true, message: t('users.form.fullNameRequired') }]}
           >
-            <Input placeholder="请输入姓名" />
+            <Input placeholder={t('users.form.fullNamePlaceholder')} />
           </Form.Item>
-          
+
           <Form.Item
             name="tenantId"
-            label="所属租户"
-            rules={[{ required: true, message: '请选择租户' }]}
+            label={t('users.form.tenant')}
+            rules={[{ required: true, message: t('users.form.tenantRequired') }]}
           >
-            <Select placeholder="请选择租户">
+            <Select placeholder={t('users.form.tenantPlaceholder')}>
               {tenants?.map((tenant: any) => (
                 <Select.Option key={tenant.id} value={tenant.id}>
                   {tenant.name}
@@ -407,13 +403,13 @@ const AdminUsers: React.FC = () => {
               ))}
             </Select>
           </Form.Item>
-          
+
           <Form.Item
             name="roles"
-            label="角色"
-            rules={[{ required: true, message: '请选择角色' }]}
+            label={t('users.form.roles')}
+            rules={[{ required: true, message: t('users.form.rolesRequired') }]}
           >
-            <Select mode="multiple" placeholder="请选择角色">
+            <Select mode="multiple" placeholder={t('users.form.rolesPlaceholder')}>
               {roles?.map((role: any) => (
                 <Select.Option key={role.code} value={role.code}>
                   {role.name}
@@ -421,36 +417,36 @@ const AdminUsers: React.FC = () => {
               ))}
             </Select>
           </Form.Item>
-          
+
           {!editingUser && (
             <Form.Item
               name="password"
-              label="初始密码"
-              rules={[{ required: true, message: '请输入初始密码' }]}
+              label={t('users.form.password')}
+              rules={[{ required: true, message: t('users.form.passwordRequired') }]}
             >
-              <Input.Password placeholder="请输入初始密码" />
+              <Input.Password placeholder={t('users.form.passwordPlaceholder')} />
             </Form.Item>
           )}
-          
+
           <Form.Item
             name="status"
-            label="状态"
+            label={t('users.form.status')}
             initialValue="active"
           >
             <Select>
-              <Select.Option value="active">活跃</Select.Option>
-              <Select.Option value="inactive">非活跃</Select.Option>
-              <Select.Option value="pending">待激活</Select.Option>
+              <Select.Option value="active">{t('users.status.active')}</Select.Option>
+              <Select.Option value="inactive">{t('users.status.inactive')}</Select.Option>
+              <Select.Option value="pending">{t('users.status.pending')}</Select.Option>
             </Select>
           </Form.Item>
-          
+
           <Form.Item
             name="isEmailVerified"
-            label="邮箱验证"
+            label={t('users.form.isEmailVerified')}
             valuePropName="checked"
             initialValue={false}
           >
-            <Switch checkedChildren="已验证" unCheckedChildren="未验证" />
+            <Switch checkedChildren={t('users.form.verified')} unCheckedChildren={t('users.form.unverified')} />
           </Form.Item>
         </Form>
       </Modal>

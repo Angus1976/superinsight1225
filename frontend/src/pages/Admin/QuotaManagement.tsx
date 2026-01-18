@@ -19,12 +19,14 @@ import {
   ReloadOutlined, SettingOutlined, WarningOutlined, EditOutlined
 } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
+import { useTranslation } from 'react-i18next';
+import {
   quotaApi, tenantApi,
   Tenant, QuotaResponse, QuotaUsage, QuotaConfig, EntityType
 } from '@/services/multiTenantApi';
 
 const QuotaManagement: React.FC = () => {
+  const { t } = useTranslation('admin');
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [selectedEntity, setSelectedEntity] = useState<{ id: string; type: EntityType; name: string } | null>(null);
   const [form] = Form.useForm();
@@ -71,10 +73,10 @@ const QuotaManagement: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['tenant-quotas'] });
       setIsEditModalVisible(false);
       form.resetFields();
-      message.success('配额更新成功');
+      message.success(t('quotaManagement.updateSuccess'));
     },
     onError: (error: any) => {
-      message.error(error.response?.data?.detail || '配额更新失败');
+      message.error(error.response?.data?.detail || t('quotaManagement.updateFailed'));
     },
   });
 
@@ -102,7 +104,7 @@ const QuotaManagement: React.FC = () => {
 
   const columns: ColumnsType<any> = [
     {
-      title: '租户',
+      title: t('quotaManagement.columns.tenant'),
       key: 'tenant',
       render: (_, record) => (
         <div>
@@ -114,16 +116,16 @@ const QuotaManagement: React.FC = () => {
       ),
     },
     {
-      title: '存储',
+      title: t('quotaManagement.columns.storage'),
       key: 'storage',
       render: (_, record) => {
         if (!record.quota || !record.usage) return '-';
         const percent = getUsagePercent(record.usage.storage_bytes, record.quota.storage_bytes);
         return (
           <div style={{ width: 150 }}>
-            <Progress 
-              percent={percent} 
-              size="small" 
+            <Progress
+              percent={percent}
+              size="small"
               status={getProgressStatus(percent)}
             />
             <div style={{ fontSize: 11, color: '#666' }}>
@@ -134,16 +136,16 @@ const QuotaManagement: React.FC = () => {
       },
     },
     {
-      title: '项目数',
+      title: t('quotaManagement.columns.projects'),
       key: 'projects',
       render: (_, record) => {
         if (!record.quota || !record.usage) return '-';
         const percent = getUsagePercent(record.usage.project_count, record.quota.project_count);
         return (
           <div style={{ width: 120 }}>
-            <Progress 
-              percent={percent} 
-              size="small" 
+            <Progress
+              percent={percent}
+              size="small"
               status={getProgressStatus(percent)}
             />
             <div style={{ fontSize: 11, color: '#666' }}>
@@ -154,16 +156,16 @@ const QuotaManagement: React.FC = () => {
       },
     },
     {
-      title: '用户数',
+      title: t('quotaManagement.columns.users'),
       key: 'users',
       render: (_, record) => {
         if (!record.quota || !record.usage) return '-';
         const percent = getUsagePercent(record.usage.user_count, record.quota.user_count);
         return (
           <div style={{ width: 120 }}>
-            <Progress 
-              percent={percent} 
-              size="small" 
+            <Progress
+              percent={percent}
+              size="small"
               status={getProgressStatus(percent)}
             />
             <div style={{ fontSize: 11, color: '#666' }}>
@@ -174,16 +176,16 @@ const QuotaManagement: React.FC = () => {
       },
     },
     {
-      title: 'API 调用',
+      title: t('quotaManagement.columns.apiCalls'),
       key: 'api',
       render: (_, record) => {
         if (!record.quota || !record.usage) return '-';
         const percent = getUsagePercent(record.usage.api_call_count, record.quota.api_call_count);
         return (
           <div style={{ width: 120 }}>
-            <Progress 
-              percent={percent} 
-              size="small" 
+            <Progress
+              percent={percent}
+              size="small"
               status={getProgressStatus(percent)}
             />
             <div style={{ fontSize: 11, color: '#666' }}>
@@ -194,23 +196,23 @@ const QuotaManagement: React.FC = () => {
       },
     },
     {
-      title: '状态',
+      title: t('quotaManagement.columns.status'),
       key: 'status',
       render: (_, record) => {
-        if (!record.quota || !record.usage) return <Tag>未配置</Tag>;
+        if (!record.quota || !record.usage) return <Tag>{t('quotaManagement.status.notConfigured')}</Tag>;
         const maxPercent = Math.max(
           getUsagePercent(record.usage.storage_bytes, record.quota.storage_bytes),
           getUsagePercent(record.usage.project_count, record.quota.project_count),
           getUsagePercent(record.usage.user_count, record.quota.user_count),
           getUsagePercent(record.usage.api_call_count, record.quota.api_call_count)
         );
-        if (maxPercent >= 90) return <Tag color="error" icon={<WarningOutlined />}>配额紧张</Tag>;
-        if (maxPercent >= 70) return <Tag color="warning">接近上限</Tag>;
-        return <Tag color="success">正常</Tag>;
+        if (maxPercent >= 90) return <Tag color="error" icon={<WarningOutlined />}>{t('quotaManagement.statusTags.quotaTight')}</Tag>;
+        if (maxPercent >= 70) return <Tag color="warning">{t('quotaManagement.statusTags.approachingLimit')}</Tag>;
+        return <Tag color="success">{t('quotaManagement.statusTags.normal')}</Tag>;
       },
     },
     {
-      title: '操作',
+      title: t('quotaManagement.columns.actions'),
       key: 'action',
       render: (_, record) => (
         <Button
@@ -229,7 +231,7 @@ const QuotaManagement: React.FC = () => {
             setIsEditModalVisible(true);
           }}
         >
-          调整配额
+          {t('quotaManagement.actions.adjustQuota')}
         </Button>
       ),
     },
@@ -280,7 +282,7 @@ const QuotaManagement: React.FC = () => {
         <Col span={6}>
           <Card>
             <Statistic
-              title="总存储使用"
+              title={t('quotaManagement.statistics.totalStorage')}
               value={formatBytes(summaryStats.totalStorage)}
               prefix={<CloudOutlined />}
             />
@@ -289,7 +291,7 @@ const QuotaManagement: React.FC = () => {
         <Col span={6}>
           <Card>
             <Statistic
-              title="总项目数"
+              title={t('quotaManagement.statistics.totalProjects')}
               value={summaryStats.totalProjects}
               prefix={<DatabaseOutlined />}
             />
@@ -298,7 +300,7 @@ const QuotaManagement: React.FC = () => {
         <Col span={6}>
           <Card>
             <Statistic
-              title="总用户数"
+              title={t('quotaManagement.statistics.totalUsers')}
               value={summaryStats.totalUsers}
               prefix={<TeamOutlined />}
             />
@@ -307,7 +309,7 @@ const QuotaManagement: React.FC = () => {
         <Col span={6}>
           <Card>
             <Statistic
-              title="总 API 调用"
+              title={t('quotaManagement.statistics.totalApiCalls')}
               value={summaryStats.totalApiCalls.toLocaleString()}
               prefix={<ApiOutlined />}
             />
@@ -318,7 +320,7 @@ const QuotaManagement: React.FC = () => {
       {/* Warnings */}
       {warningTenants.length > 0 && (
         <Alert
-          message={`${warningTenants.length} 个租户配额使用超过 80%`}
+          message={t('quotaManagement.alert.quotaWarning', { count: warningTenants.length })}
           description={
             <Space wrap>
               {warningTenants.map(item => (
@@ -334,11 +336,11 @@ const QuotaManagement: React.FC = () => {
 
       {/* Quota Table */}
       <Card
-        title="配额管理"
+        title={t('quotaManagement.title')}
         extra={
           <Space>
             <Button icon={<ReloadOutlined />} onClick={() => refetch()}>
-              刷新
+              {t('quotaManagement.buttons.refresh')}
             </Button>
           </Space>
         }
@@ -350,14 +352,14 @@ const QuotaManagement: React.FC = () => {
           rowKey={(record) => record.tenant.id}
           pagination={{
             showSizeChanger: true,
-            showTotal: (total) => `共 ${total} 个租户`,
+            showTotal: (total) => t('quotaManagement.pagination.total', { total }),
           }}
         />
       </Card>
 
       {/* Edit Quota Modal */}
       <Modal
-        title={`调整配额 - ${selectedEntity?.name || ''}`}
+        title={t('quotaManagement.modal.adjustQuota', { name: selectedEntity?.name || '' })}
         open={isEditModalVisible}
         onCancel={() => setIsEditModalVisible(false)}
         onOk={() => form.submit()}
@@ -367,29 +369,29 @@ const QuotaManagement: React.FC = () => {
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Form.Item
             name="storage_gb"
-            label="存储配额 (GB)"
-            rules={[{ required: true, message: '请输入存储配额' }]}
+            label={t('quotaManagement.form.storageQuota')}
+            rules={[{ required: true, message: t('quotaManagement.form.storageQuotaRequired') }]}
           >
             <InputNumber min={1} max={10000} style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item
             name="project_count"
-            label="项目数上限"
-            rules={[{ required: true, message: '请输入项目数上限' }]}
+            label={t('quotaManagement.form.projectQuota')}
+            rules={[{ required: true, message: t('quotaManagement.form.projectQuotaRequired') }]}
           >
             <InputNumber min={1} max={10000} style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item
             name="user_count"
-            label="用户数上限"
-            rules={[{ required: true, message: '请输入用户数上限' }]}
+            label={t('quotaManagement.form.userQuota')}
+            rules={[{ required: true, message: t('quotaManagement.form.userQuotaRequired') }]}
           >
             <InputNumber min={1} max={10000} style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item
             name="api_call_count"
-            label="API 调用上限 (每月)"
-            rules={[{ required: true, message: '请输入 API 调用上限' }]}
+            label={t('quotaManagement.form.apiQuota')}
+            rules={[{ required: true, message: t('quotaManagement.form.apiQuotaRequired') }]}
           >
             <InputNumber min={1000} max={100000000} style={{ width: '100%' }} />
           </Form.Item>

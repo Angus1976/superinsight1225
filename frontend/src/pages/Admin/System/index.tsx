@@ -3,6 +3,7 @@ import { Card, Form, Input, Select, Switch, Button, Space, message, Tabs, Statis
 import { SaveOutlined, ReloadOutlined, DatabaseOutlined, CloudOutlined, SettingOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
+import { useTranslation } from 'react-i18next';
 
 const { TabPane } = Tabs;
 
@@ -81,6 +82,7 @@ interface SystemStatus {
 }
 
 const AdminSystem: React.FC = () => {
+  const { t } = useTranslation(['admin', 'common']);
   const [form] = Form.useForm();
   const [activeTab, setActiveTab] = useState('general');
   const queryClient = useQueryClient();
@@ -100,10 +102,10 @@ const AdminSystem: React.FC = () => {
     mutationFn: (data: SystemConfig) => api.put('/api/v1/admin/system/config', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['system-config'] });
-      message.success('系统配置保存成功');
+      message.success(t('system.configSaveSuccess'));
     },
     onError: () => {
-      message.error('系统配置保存失败');
+      message.error(t('system.configSaveFailed'));
     },
   });
 
@@ -111,13 +113,13 @@ const AdminSystem: React.FC = () => {
     mutationFn: (type: string) => api.post(`/api/v1/admin/system/test/${type}`),
     onSuccess: (data, type) => {
       if (data.data.success) {
-        message.success(`${type}连接测试成功`);
+        message.success(t('system.connectionTestSuccess', { type }));
       } else {
-        message.error(`${type}连接测试失败: ${data.data.error}`);
+        message.error(t('system.connectionTestFailed', { type, error: data.data.error }));
       }
     },
     onError: (_, type) => {
-      message.error(`${type}连接测试失败`);
+      message.error(t('system.connectionTestFailed', { type }));
     },
   });
 
@@ -142,10 +144,10 @@ const AdminSystem: React.FC = () => {
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'healthy': return '正常';
-      case 'warning': return '警告';
-      case 'error': return '错误';
-      default: return '未知';
+      case 'healthy': return t('system.status.healthy');
+      case 'warning': return t('system.status.warning');
+      case 'error': return t('system.status.error');
+      default: return t('system.status.unknown');
     }
   };
 

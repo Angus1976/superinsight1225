@@ -44,6 +44,7 @@ import {
   FileTextOutlined,
 } from '@ant-design/icons';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/authStore';
 import {
   adminApi,
@@ -66,6 +67,7 @@ const LOGIC_OPERATORS = ['AND', 'OR'];
 const SORT_DIRECTIONS = ['ASC', 'DESC'];
 
 const SQLBuilder: React.FC = () => {
+  const { t } = useTranslation('admin');
   const { user } = useAuthStore();
   const [selectedDbId, setSelectedDbId] = useState<string | null>(null);
   const [queryConfig, setQueryConfig] = useState<QueryConfig>({
@@ -107,11 +109,11 @@ const SQLBuilder: React.FC = () => {
     onSuccess: (result) => {
       setGeneratedSQL(result.sql);
       if (!result.validation.is_valid) {
-        message.warning('SQL 生成成功，但存在验证警告');
+        message.warning(t('sqlBuilder.validationWarning'));
       }
     },
     onError: (error: Error) => {
-      message.error(`SQL 生成失败: ${error.message}`);
+      message.error(`${t('sqlBuilder.buildFailed')}: ${error.message}`);
     },
   });
 
@@ -119,7 +121,7 @@ const SQLBuilder: React.FC = () => {
   const executeMutation = useMutation({
     mutationFn: () => {
       if (!selectedDbId || !generatedSQL) {
-        throw new Error('请先选择数据库并生成 SQL');
+        throw new Error(t('sqlBuilder.selectDbFirst'));
       }
       return adminApi.executeSQL({
         db_config_id: selectedDbId,
@@ -129,17 +131,17 @@ const SQLBuilder: React.FC = () => {
     },
     onSuccess: (result) => {
       setQueryResult(result);
-      message.success(`查询成功，返回 ${result.row_count} 条记录`);
+      message.success(t('sqlBuilder.querySuccess', { count: result.row_count }));
     },
     onError: (error: Error) => {
-      message.error(`执行失败: ${error.message}`);
+      message.error(`${t('sqlBuilder.executeFailed')}: ${error.message}`);
     },
   });
 
   // Save template mutation
   const saveTemplateMutation = useMutation({
     mutationFn: () => {
-      if (!selectedDbId) throw new Error('请先选择数据库');
+      if (!selectedDbId) throw new Error(t('sqlBuilder.selectDbForTemplate'));
       return adminApi.createQueryTemplate(
         {
           name: templateName,
@@ -151,14 +153,14 @@ const SQLBuilder: React.FC = () => {
       );
     },
     onSuccess: () => {
-      message.success('模板保存成功');
+      message.success(t('sqlBuilder.templateSaved'));
       setSaveModalVisible(false);
       setTemplateName('');
       setTemplateDesc('');
       refetchTemplates();
     },
     onError: (error: Error) => {
-      message.error(`保存失败: ${error.message}`);
+      message.error(`${t('sqlBuilder.saveFailed')}: ${error.message}`);
     },
   });
 
@@ -245,12 +247,12 @@ const SQLBuilder: React.FC = () => {
   const loadTemplate = (template: QueryTemplateResponse) => {
     setQueryConfig(template.query_config);
     setGeneratedSQL(template.sql);
-    message.success(`已加载模板: ${template.name}`);
+    message.success(t('sqlBuilder.templateLoaded', { name: template.name }));
   };
 
   const copySQL = () => {
     navigator.clipboard.writeText(generatedSQL);
-    message.success('SQL 已复制到剪贴板');
+    message.success(t('sqlBuilder.sqlCopied'));
   };
 
   // Get all columns from selected tables
@@ -264,13 +266,13 @@ const SQLBuilder: React.FC = () => {
         title={
           <Space>
             <CodeOutlined />
-            <span>SQL 构建器</span>
+            <span>{t('sqlBuilder.title')}</span>
           </Space>
         }
         extra={
           <Space>
             <Select
-              placeholder="选择数据库"
+              placeholder={t('sqlBuilder.selectDatabase')}
               style={{ width: 200 }}
               value={selectedDbId}
               onChange={handleDbChange}
@@ -282,15 +284,15 @@ const SQLBuilder: React.FC = () => {
               ))}
             </Select>
             <Button icon={<ReloadOutlined />} onClick={() => refetchSchema()} disabled={!selectedDbId}>
-              刷新 Schema
+              {t('common.refresh')}
             </Button>
           </Space>
         }
       >
         {!selectedDbId ? (
           <Alert
-            message="请先选择数据库"
-            description="选择一个数据库连接以开始构建 SQL 查询"
+            message={t('sqlBuilder.selectDbFirst')}
+            description={t('sqlBuilder.selectDbDescription')}
             type="info"
             showIcon
           />
@@ -298,9 +300,9 @@ const SQLBuilder: React.FC = () => {
           <Row gutter={16}>
             {/* Left Panel - Schema Browser */}
             <Col xs={24} lg={6}>
-              <Card size="small" title="数据库结构" loading={schemaLoading}>
+              <Card size="small" title={t('sqlBuilder.databaseStructure')} loading={schemaLoading}>
                 {schema?.tables.length === 0 ? (
-                  <Empty description="无表信息" />
+                  <Empty description={t('sqlBuilder.noTables')} />
                 ) : (
                   <Collapse accordion>
                     {schema?.tables.map((table) => (
@@ -310,7 +312,7 @@ const SQLBuilder: React.FC = () => {
                             <TableOutlined />
                             <Text>{table.name}</Text>
                             {table.row_count !== undefined && (
-                              <Tag size="small">{table.row_count} 行</Tag>
+                              <Tag>{t('sqlBuilder.rows', { count: table.row_count })}</Tag>
                             )}
                           </Space>
                         }
@@ -322,7 +324,7 @@ const SQLBuilder: React.FC = () => {
                           renderItem={(col: Record<string, unknown>) => (
                             <List.Item>
                               <Text code>{col.name as string}</Text>
-                              <Tag size="small">{col.type as string}</Tag>
+                              <Tag>{col.type as string}</Tag>
                             </List.Item>
                           )}
                         />
@@ -333,9 +335,9 @@ const SQLBuilder: React.FC = () => {
               </Card>
 
               {/* Templates */}
-              <Card size="small" title="查询模板" style={{ marginTop: 16 }}>
+              <Card size="small" title={t('sqlBuilder.queryTemplates')} style={{ marginTop: 16 }}>
                 {templates.length === 0 ? (
-                  <Empty description="暂无模板" />
+                  <Empty description={t('sqlBuilder.noTemplates')} />
                 ) : (
                   <List
                     size="small"
@@ -348,7 +350,7 @@ const SQLBuilder: React.FC = () => {
                             size="small"
                             onClick={() => loadTemplate(template)}
                           >
-                            加载
+                            {t('sqlBuilder.loadTemplate')}
                           </Button>,
                         ]}
                       >

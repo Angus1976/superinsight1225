@@ -33,6 +33,7 @@ import {
   NotificationOutlined,
 } from '@ant-design/icons';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useTranslation } from 'react-i18next';
 import { RuleVisualization } from './RuleVisualization';
 import { PatternAnalysis } from './PatternAnalysis';
 import { InsightCards } from './InsightCards';
@@ -100,6 +101,7 @@ export const BusinessLogicDashboard: React.FC<BusinessLogicDashboardProps> = ({
   onPatternDetected,
   loading = false,
 }) => {
+  const { t } = useTranslation(['businessLogic', 'common']);
   const { annotation: annotationPerms } = usePermissions();
   const [stats, setStats] = useState<BusinessLogicStats | null>(null);
   const [rules, setRules] = useState<BusinessRule[]>([]);
@@ -145,7 +147,7 @@ export const BusinessLogicDashboard: React.FC<BusinessLogicDashboardProps> = ({
       }
     } catch (error) {
       console.error('加载仪表板数据失败:', error);
-      message.error('加载仪表板数据失败');
+      message.error(t('dashboard.loadError'));
     } finally {
       setDashboardLoading(false);
     }
@@ -170,17 +172,17 @@ export const BusinessLogicDashboard: React.FC<BusinessLogicDashboardProps> = ({
 
       if (response.ok) {
         const result = await response.json();
-        message.success(`模式分析完成，识别出 ${result.patterns.length} 个模式`);
+        message.success(t('analysis.success', { count: result.patterns.length }));
         setPatterns(result.patterns);
         onPatternDetected?.(result.patterns);
         setAnalysisModalVisible(false);
         form.resetFields();
       } else {
-        throw new Error('模式分析失败');
+        throw new Error(t('analysis.error'));
       }
     } catch (error) {
       console.error('模式分析失败:', error);
-      message.error('模式分析失败');
+      message.error(t('analysis.error'));
     } finally {
       setAnalysisLoading(false);
     }
@@ -203,15 +205,15 @@ export const BusinessLogicDashboard: React.FC<BusinessLogicDashboardProps> = ({
 
       if (response.ok) {
         const result = await response.json();
-        message.success(`规则提取完成，提取出 ${result.rules.length} 个规则`);
+        message.success(t('analysis.extractSuccess', { count: result.rules.length }));
         setRules(result.rules);
         onRuleExtracted?.(result.rules);
       } else {
-        throw new Error('规则提取失败');
+        throw new Error(t('analysis.extractError'));
       }
     } catch (error) {
       console.error('规则提取失败:', error);
-      message.error('规则提取失败');
+      message.error(t('analysis.extractError'));
     } finally {
       setAnalysisLoading(false);
     }
@@ -236,16 +238,16 @@ export const BusinessLogicDashboard: React.FC<BusinessLogicDashboardProps> = ({
 
       if (response.ok) {
         const result = await response.json();
-        message.success('导出任务已创建，请稍后下载');
+        message.success(t('export.success'));
         // 可以在这里处理下载链接
         window.open(result.download_url, '_blank');
         setExportModalVisible(false);
       } else {
-        throw new Error('导出失败');
+        throw new Error(t('export.error'));
       }
     } catch (error) {
       console.error('导出失败:', error);
-      message.error('导出失败');
+      message.error(t('export.error'));
     }
   };
 
@@ -257,15 +259,15 @@ export const BusinessLogicDashboard: React.FC<BusinessLogicDashboardProps> = ({
       });
 
       if (response.ok) {
-        message.success('洞察已确认');
+        message.success(t('insights.acknowledged'));
         // 更新洞察列表
         setInsights(insights.filter(insight => insight.id !== insightId));
       } else {
-        throw new Error('确认洞察失败');
+        throw new Error(t('insights.acknowledgeError'));
       }
     } catch (error) {
       console.error('确认洞察失败:', error);
-      message.error('确认洞察失败');
+      message.error(t('insights.acknowledgeError'));
     }
   };
 
@@ -278,33 +280,33 @@ export const BusinessLogicDashboard: React.FC<BusinessLogicDashboardProps> = ({
   // 规则表格列定义
   const ruleColumns = [
     {
-      title: '规则名称',
+      title: t('rules.columns.ruleName'),
       dataIndex: 'name',
       key: 'name',
       render: (text: string, record: BusinessRule) => (
         <Space>
           <Text strong>{text}</Text>
-          {!record.is_active && <Tag color="red">已停用</Tag>}
+          {!record.is_active && <Tag color="red">{t('rules.status.disabled')}</Tag>}
         </Space>
       ),
     },
     {
-      title: '类型',
+      title: t('rules.columns.type'),
       dataIndex: 'rule_type',
       key: 'rule_type',
       render: (type: string) => {
         const typeMap: Record<string, { color: string; text: string }> = {
-          sentiment_rule: { color: 'blue', text: '情感规则' },
-          keyword_rule: { color: 'green', text: '关键词规则' },
-          temporal_rule: { color: 'orange', text: '时间规则' },
-          behavioral_rule: { color: 'purple', text: '行为规则' },
+          sentiment_rule: { color: 'blue', text: t('rules.types.sentimentRule') },
+          keyword_rule: { color: 'green', text: t('rules.types.keywordRule') },
+          temporal_rule: { color: 'orange', text: t('rules.types.temporalRule') },
+          behavioral_rule: { color: 'purple', text: t('rules.types.behavioralRule') },
         };
         const config = typeMap[type] || { color: 'default', text: type };
         return <Tag color={config.color}>{config.text}</Tag>;
       },
     },
     {
-      title: '置信度',
+      title: t('rules.columns.confidence'),
       dataIndex: 'confidence',
       key: 'confidence',
       render: (confidence: number) => (
@@ -316,12 +318,12 @@ export const BusinessLogicDashboard: React.FC<BusinessLogicDashboardProps> = ({
       ),
     },
     {
-      title: '频率',
+      title: t('rules.columns.frequency'),
       dataIndex: 'frequency',
       key: 'frequency',
     },
     {
-      title: '创建时间',
+      title: t('rules.columns.createdAt'),
       dataIndex: 'created_at',
       key: 'created_at',
       render: (date: string) => new Date(date).toLocaleDateString(),
@@ -331,28 +333,28 @@ export const BusinessLogicDashboard: React.FC<BusinessLogicDashboardProps> = ({
   // 模式表格列定义
   const patternColumns = [
     {
-      title: '模式类型',
+      title: t('patterns.columns.patternType'),
       dataIndex: 'pattern_type',
       key: 'pattern_type',
       render: (type: string) => {
         const typeMap: Record<string, { color: string; text: string }> = {
-          sentiment_correlation: { color: 'blue', text: '情感关联' },
-          keyword_association: { color: 'green', text: '关键词关联' },
-          temporal_trend: { color: 'orange', text: '时间趋势' },
-          user_behavior: { color: 'purple', text: '用户行为' },
+          sentiment_correlation: { color: 'blue', text: t('patterns.types.sentimentCorrelation') },
+          keyword_association: { color: 'green', text: t('patterns.types.keywordAssociation') },
+          temporal_trend: { color: 'orange', text: t('patterns.types.temporalTrend') },
+          user_behavior: { color: 'purple', text: t('patterns.types.userBehavior') },
         };
         const config = typeMap[type] || { color: 'default', text: type };
         return <Tag color={config.color}>{config.text}</Tag>;
       },
     },
     {
-      title: '描述',
+      title: t('patterns.columns.description'),
       dataIndex: 'description',
       key: 'description',
       ellipsis: true,
     },
     {
-      title: '强度',
+      title: t('patterns.columns.strength'),
       dataIndex: 'strength',
       key: 'strength',
       render: (strength: number) => (
@@ -364,7 +366,7 @@ export const BusinessLogicDashboard: React.FC<BusinessLogicDashboardProps> = ({
       ),
     },
     {
-      title: '检测时间',
+      title: t('patterns.columns.detectedAt'),
       dataIndex: 'detected_at',
       key: 'detected_at',
       render: (date: string) => new Date(date).toLocaleDateString(),
@@ -376,7 +378,7 @@ export const BusinessLogicDashboard: React.FC<BusinessLogicDashboardProps> = ({
       <div style={{ textAlign: 'center', padding: '50px' }}>
         <Spin size="large" />
         <div style={{ marginTop: 16 }}>
-          <Text>加载业务逻辑仪表板...</Text>
+          <Text>{t('dashboard.loading')}</Text>
         </div>
       </div>
     );
@@ -388,9 +390,9 @@ export const BusinessLogicDashboard: React.FC<BusinessLogicDashboardProps> = ({
       <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
         <Col>
           <Title level={2}>
-            <BulbOutlined /> 业务逻辑仪表板
+            <BulbOutlined /> {t('dashboard.title')}
           </Title>
-          <Text type="secondary">项目: {projectId}</Text>
+          <Text type="secondary">{t('dashboard.project')}: {projectId}</Text>
         </Col>
         <Col>
           <Space>
@@ -401,7 +403,7 @@ export const BusinessLogicDashboard: React.FC<BusinessLogicDashboardProps> = ({
               loading={analysisLoading}
               disabled={!annotationPerms.create}
             >
-              运行分析
+              {t('dashboard.runAnalysis')}
             </Button>
             <Button
               icon={<NodeIndexOutlined />}
@@ -409,20 +411,20 @@ export const BusinessLogicDashboard: React.FC<BusinessLogicDashboardProps> = ({
               loading={analysisLoading}
               disabled={!annotationPerms.create}
             >
-              提取规则
+              {t('dashboard.extractRules')}
             </Button>
             <Button
               icon={<DownloadOutlined />}
               onClick={() => setExportModalVisible(true)}
               disabled={!annotationPerms.view}
             >
-              导出数据
+              {t('dashboard.exportData')}
             </Button>
             <Button
               icon={<SettingOutlined />}
               onClick={loadDashboardData}
             >
-              刷新
+              {t('common:refresh')}
             </Button>
             <InsightNotification
               projectId={projectId}
@@ -439,14 +441,14 @@ export const BusinessLogicDashboard: React.FC<BusinessLogicDashboardProps> = ({
       {/* 未确认洞察提醒 */}
       {insights.length > 0 && (
         <Alert
-          message={`您有 ${insights.length} 个未确认的业务洞察`}
-          description="点击查看详情并确认这些洞察"
+          message={t('dashboard.unacknowledgedInsights', { count: insights.length })}
+          description={t('dashboard.clickToViewInsights')}
           type="info"
           showIcon
           icon={<NotificationOutlined />}
           action={
             <Button size="small" onClick={() => setActiveTab('insights')}>
-              查看洞察
+              {t('dashboard.viewInsights')}
             </Button>
           }
           style={{ marginBottom: 24 }}
@@ -459,12 +461,12 @@ export const BusinessLogicDashboard: React.FC<BusinessLogicDashboardProps> = ({
           <Col span={6}>
             <Card>
               <Statistic
-                title="业务规则总数"
+                title={t('stats.totalRules')}
                 value={stats.total_rules}
                 prefix={<NodeIndexOutlined />}
                 suffix={
                   <Text type="secondary" style={{ fontSize: 12 }}>
-                    ({stats.active_rules} 个激活)
+                    ({stats.active_rules} {t('stats.activeRules')})
                   </Text>
                 }
               />
@@ -473,7 +475,7 @@ export const BusinessLogicDashboard: React.FC<BusinessLogicDashboardProps> = ({
           <Col span={6}>
             <Card>
               <Statistic
-                title="识别模式数"
+                title={t('stats.patternsIdentified')}
                 value={stats.total_patterns}
                 prefix={<BarChartOutlined />}
               />
@@ -482,7 +484,7 @@ export const BusinessLogicDashboard: React.FC<BusinessLogicDashboardProps> = ({
           <Col span={6}>
             <Card>
               <Statistic
-                title="业务洞察数"
+                title={t('stats.businessInsights')}
                 value={stats.total_insights}
                 prefix={<BulbOutlined />}
                 suffix={
@@ -496,7 +498,7 @@ export const BusinessLogicDashboard: React.FC<BusinessLogicDashboardProps> = ({
           <Col span={6}>
             <Card>
               <Statistic
-                title="平均置信度"
+                title={t('stats.avgConfidence')}
                 value={stats.avg_rule_confidence}
                 precision={2}
                 suffix="%"
@@ -509,10 +511,10 @@ export const BusinessLogicDashboard: React.FC<BusinessLogicDashboardProps> = ({
 
       {/* 主要内容标签页 */}
       <Tabs activeKey={activeTab} onChange={setActiveTab}>
-        <TabPane tab="概览" key="overview">
+        <TabPane tab={t('tabs.overview')} key="overview">
           <Row gutter={16}>
             <Col span={12}>
-              <Card title="业务规则" extra={<Button type="link">查看全部</Button>}>
+              <Card title={t('rules.title')} extra={<Button type="link">{t('rules.viewAll')}</Button>}>
                 <Table
                   dataSource={rules.slice(0, 5)}
                   columns={ruleColumns}
@@ -523,7 +525,7 @@ export const BusinessLogicDashboard: React.FC<BusinessLogicDashboardProps> = ({
               </Card>
             </Col>
             <Col span={12}>
-              <Card title="业务模式" extra={<Button type="link">查看全部</Button>}>
+              <Card title={t('patterns.title')} extra={<Button type="link">{t('patterns.viewAll')}</Button>}>
                 <Table
                   dataSource={patterns.slice(0, 5)}
                   columns={patternColumns}
@@ -536,7 +538,7 @@ export const BusinessLogicDashboard: React.FC<BusinessLogicDashboardProps> = ({
           </Row>
         </TabPane>
 
-        <TabPane tab="规则管理" key="rules">
+        <TabPane tab={t('tabs.ruleManagement')} key="rules">
           <BusinessRuleManager
             projectId={projectId}
             rules={rules}
@@ -544,7 +546,7 @@ export const BusinessLogicDashboard: React.FC<BusinessLogicDashboardProps> = ({
           />
         </TabPane>
 
-        <TabPane tab="模式分析" key="patterns">
+        <TabPane tab={t('tabs.patternAnalysis')} key="patterns">
           <PatternAnalysis
             projectId={projectId}
             patterns={patterns}
@@ -552,7 +554,7 @@ export const BusinessLogicDashboard: React.FC<BusinessLogicDashboardProps> = ({
           />
         </TabPane>
 
-        <TabPane tab="可视化" key="visualization">
+        <TabPane tab={t('tabs.visualization')} key="visualization">
           <RuleVisualization
             projectId={projectId}
             rules={rules}
@@ -563,7 +565,7 @@ export const BusinessLogicDashboard: React.FC<BusinessLogicDashboardProps> = ({
         <TabPane
           tab={
             <Badge count={insights.length} size="small">
-              业务洞察
+              {t('tabs.businessInsights')}
             </Badge>
           }
           key="insights"
@@ -578,7 +580,7 @@ export const BusinessLogicDashboard: React.FC<BusinessLogicDashboardProps> = ({
 
       {/* 分析配置模态框 */}
       <Modal
-        title="运行业务逻辑分析"
+        title={t('analysis.title')}
         open={analysisModalVisible}
         onCancel={() => setAnalysisModalVisible(false)}
         onOk={() => form.submit()}
@@ -595,8 +597,8 @@ export const BusinessLogicDashboard: React.FC<BusinessLogicDashboardProps> = ({
         >
           <Form.Item
             name="confidence_threshold"
-            label="置信度阈值"
-            tooltip="只有置信度高于此值的模式才会被识别"
+            label={t('analysis.confidenceThreshold')}
+            tooltip={t('analysis.confidenceThresholdTooltip')}
           >
             <InputNumber
               min={0.1}
@@ -610,16 +612,16 @@ export const BusinessLogicDashboard: React.FC<BusinessLogicDashboardProps> = ({
 
           <Form.Item
             name="min_frequency"
-            label="最小频率"
-            tooltip="模式至少出现多少次才被认为是有效的"
+            label={t('analysis.minFrequency')}
+            tooltip={t('analysis.minFrequencyTooltip')}
           >
             <InputNumber min={1} max={100} style={{ width: '100%' }} />
           </Form.Item>
 
           <Form.Item
             name="time_range_days"
-            label="时间范围（天）"
-            tooltip="分析最近多少天的数据，留空表示分析全部数据"
+            label={t('analysis.timeRangeDays')}
+            tooltip={t('analysis.timeRangeDaysTooltip')}
           >
             <InputNumber min={1} max={365} style={{ width: '100%' }} />
           </Form.Item>
@@ -628,7 +630,7 @@ export const BusinessLogicDashboard: React.FC<BusinessLogicDashboardProps> = ({
 
       {/* 导出配置模态框 */}
       <Modal
-        title="导出业务逻辑数据"
+        title={t('export.title')}
         open={exportModalVisible}
         onCancel={() => setExportModalVisible(false)}
         onOk={() => {
@@ -646,7 +648,7 @@ export const BusinessLogicDashboard: React.FC<BusinessLogicDashboardProps> = ({
             include_insights: true,
           }}
         >
-          <Form.Item name="export_format" label="导出格式">
+          <Form.Item name="export_format" label={t('export.format')}>
             <Select>
               <Select.Option value="json">JSON</Select.Option>
               <Select.Option value="csv">CSV</Select.Option>
@@ -655,15 +657,15 @@ export const BusinessLogicDashboard: React.FC<BusinessLogicDashboardProps> = ({
           </Form.Item>
 
           <Form.Item name="include_rules" valuePropName="checked">
-            <span>包含业务规则</span>
+            <span>{t('export.includeRules')}</span>
           </Form.Item>
 
           <Form.Item name="include_patterns" valuePropName="checked">
-            <span>包含业务模式</span>
+            <span>{t('export.includePatterns')}</span>
           </Form.Item>
 
           <Form.Item name="include_insights" valuePropName="checked">
-            <span>包含业务洞察</span>
+            <span>{t('export.includeInsights')}</span>
           </Form.Item>
         </Form>
       </Modal>

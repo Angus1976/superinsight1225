@@ -1,0 +1,111 @@
+{
+  "feature": "i18n-full-coverage",
+  "path": ".kiro/specs/i18n-full-coverage",
+  "files": {
+    "requirements.md": {
+      "clarity_score": 83.75509141778906,
+      "completeness": {
+        "found": [
+          "Introduction",
+          "Glossary",
+          "Requirements",
+          "Acceptance Criteria"
+        ],
+        "missing": [
+          "Non-Functional Requirements"
+        ],
+        "score": 80.0
+      },
+      "cross_references": {
+        "valid": [],
+        "broken": [],
+        "score": 100
+      },
+      "ears_notation": {
+        "total_criteria": 103,
+        "ears_compliant": 18,
+        "compliance_rate": 0.17475728155339806
+      }
+    },
+    "design.md": {
+      "clarity_score": 70.75485737908227,
+      "completeness": {
+        "found": [
+          "Correctness Properties"
+        ],
+        "missing": [
+          "Architecture Overview",
+          "Component Design",
+          "Technical Decisions"
+        ],
+        "score": 25.0
+      },
+      "cross_references": {
+        "valid": [],
+        "broken": [],
+        "score": 100
+      }
+    },
+    "tasks.md": {
+      "clarity_score": 67.02798751877803,
+      "completeness": {
+        "found": [],
+        "missing": [
+          "Task Breakdown",
+          "Progress Tracking",
+          "Dependencies",
+          "Success Criteria"
+        ],
+        "score": 0.0
+      },
+      "cross_references": {
+        "valid": [],
+        "broken": [],
+        "score": 100
+      }
+    }
+  },
+  "overall": {
+    "clarity_score": 73.84597877188311,
+    "completeness_score": 35.0,
+    "redundancy_score": 90,
+    "cross_ref_score": 100.0
+  },
+  "issues": [
+    {
+      "severity": "warning",
+      "file": "requirements.md",
+      "message": "Missing sections: Non-Functional Requirements"
+    },
+    {
+      "severity": "warning",
+      "file": "requirements.md",
+      "message": "Low EARS notation compliance: 17.5%"
+    },
+    {
+      "severity": "warning",
+      "file": "design.md",
+      "message": "Missing sections: Architecture Overview, Component Design, Technical Decisions"
+    },
+    {
+      "severity": "warning",
+      "file": "tasks.md",
+      "message": "Missing sections: Task Breakdown, Progress Tracking, Dependencies, Success Criteria"
+    },
+    {
+      "severity": "info",
+      "message": "Duplicate content between design.md and requirements.md (71.4% similar)"
+    }
+  ],
+  "redundancy": {
+    "duplicates_found": 1,
+    "details": [
+      {
+        "file1": "design.md",
+        "file2": "requirements.md",
+        "similarity": 0.7142857142857143,
+        "content_preview": "1. **frontend/src/types/i18n.d.ts** - TypeScript type definitions for translation keys\n2. **docs/i18..."
+      }
+    ]
+  }
+}

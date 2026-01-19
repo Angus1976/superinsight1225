@@ -183,11 +183,11 @@ const AnnotationPluginsPage: React.FC = () => {
       // setPlugins(response.data.plugins);
       await new Promise(resolve => setTimeout(resolve, 500));
     } catch (error) {
-      message.error('加载插件列表失败');
+      message.error(t('annotationPlugins.loadPluginsFailed'));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     fetchPlugins();
@@ -226,7 +226,7 @@ const AnnotationPluginsPage: React.FC = () => {
             ? { ...p, ...pluginData, updatedAt: new Date().toISOString() }
             : p
         ));
-        message.success('插件更新成功');
+        message.success(t('annotationPlugins.pluginUpdateSuccess'));
       } else {
         // Create new plugin
         const newPlugin: AnnotationPlugin = {
@@ -239,14 +239,14 @@ const AnnotationPluginsPage: React.FC = () => {
           healthStatus: 'unknown',
         };
         setPlugins(prev => [...prev, newPlugin]);
-        message.success('插件创建成功');
+        message.success(t('annotationPlugins.pluginCreateSuccess'));
       }
 
       setModalVisible(false);
       form.resetFields();
     } catch (error) {
       if (error instanceof SyntaxError) {
-        message.error('配置 JSON 格式错误');
+        message.error(t('annotationPlugins.configJsonError'));
       }
     }
   };
@@ -254,7 +254,7 @@ const AnnotationPluginsPage: React.FC = () => {
   // Handle delete plugin
   const handleDeletePlugin = async (pluginId: string) => {
     setPlugins(prev => prev.filter(p => p.id !== pluginId));
-    message.success('插件已删除');
+    message.success(t('annotationPlugins.pluginDeleted'));
   };
 
   // Handle enable/disable plugin
@@ -264,7 +264,7 @@ const AnnotationPluginsPage: React.FC = () => {
         ? { ...p, enabled, status: enabled ? 'active' : 'inactive' }
         : p
     ));
-    message.success(enabled ? '插件已启用' : '插件已禁用');
+    message.success(enabled ? t('annotationPlugins.pluginEnabled') : t('annotationPlugins.pluginDisabled'));
   };
 
   // Handle test connection
@@ -288,12 +288,12 @@ const AnnotationPluginsPage: React.FC = () => {
       ));
       
       if (success) {
-        message.success('连接测试成功');
+        message.success(t('annotationPlugins.connectionTestSuccess'));
       } else {
-        message.error('连接测试失败');
+        message.error(t('annotationPlugins.connectionTestFailed'));
       }
     } catch (error) {
-      message.error('连接测试出错');
+      message.error(t('annotationPlugins.connectionTestError'));
     } finally {
       setTestingPlugin(null);
     }
@@ -310,7 +310,7 @@ const AnnotationPluginsPage: React.FC = () => {
     setPlugins(prev => prev.map(p => 
       p.id === pluginId ? { ...p, priority } : p
     ));
-    message.success('优先级已更新');
+    message.success(t('annotationPlugins.priorityUpdated'));
   };
 
   // Table columns
@@ -417,7 +417,7 @@ const AnnotationPluginsPage: React.FC = () => {
       key: 'actions',
       render: (_, record) => (
         <Space>
-          <Tooltip title="测试连接">
+          <Tooltip title={t('annotationPlugins.tooltips.testConnection')}>
             <Button
               type="text"
               icon={testingPlugin === record.id ? <SyncOutlined spin /> : <LinkOutlined />}
@@ -425,14 +425,14 @@ const AnnotationPluginsPage: React.FC = () => {
               disabled={testingPlugin !== null}
             />
           </Tooltip>
-          <Tooltip title="查看统计">
+          <Tooltip title={t('annotationPlugins.tooltips.viewStats')}>
             <Button
               type="text"
               icon={<BarChartOutlined />}
               onClick={() => handleViewStats(record.id)}
             />
           </Tooltip>
-          <Tooltip title="编辑">
+          <Tooltip title={t('annotationPlugins.tooltips.edit')}>
             <Button
               type="text"
               icon={<EditOutlined />}
@@ -440,12 +440,12 @@ const AnnotationPluginsPage: React.FC = () => {
             />
           </Tooltip>
           <Popconfirm
-            title="确定要删除此插件吗？"
+            title={t('annotationPlugins.confirm.deletePlugin')}
             onConfirm={() => handleDeletePlugin(record.id)}
-            okText="确定"
-            cancelText="取消"
+            okText={t('annotationPlugins.confirm.ok')}
+            cancelText={t('annotationPlugins.confirm.cancel')}
           >
-            <Tooltip title="删除">
+            <Tooltip title={t('annotationPlugins.tooltips.delete')}>
               <Button type="text" danger icon={<DeleteOutlined />} />
             </Tooltip>
           </Popconfirm>
@@ -540,75 +540,75 @@ const AnnotationPluginsPage: React.FC = () => {
 
       {/* Add/Edit Plugin Modal */}
       <Modal
-        title={editingPlugin ? '编辑插件' : '添加插件'}
+        title={editingPlugin ? t('annotationPlugins.modal.editPlugin') : t('annotationPlugins.modal.addPlugin')}
         open={modalVisible}
         onOk={handleSavePlugin}
         onCancel={() => setModalVisible(false)}
         width={600}
-        okText="保存"
-        cancelText="取消"
+        okText={t('annotationPlugins.buttons.save')}
+        cancelText={t('annotationPlugins.confirm.cancel')}
       >
         <Form form={form} layout="vertical">
           <Form.Item
             name="name"
-            label="插件名称"
-            rules={[{ required: true, message: '请输入插件名称' }]}
+            label={t('annotationPlugins.form.name')}
+            rules={[{ required: true, message: t('annotationPlugins.form.nameRequired') }]}
           >
-            <Input placeholder="例如: Prodigy Adapter" />
+            <Input placeholder={t('annotationPlugins.form.namePlaceholder')} />
           </Form.Item>
 
           <Form.Item
             name="type"
-            label="连接类型"
-            rules={[{ required: true, message: '请选择连接类型' }]}
+            label={t('annotationPlugins.form.type')}
+            rules={[{ required: true, message: t('annotationPlugins.form.typeRequired') }]}
           >
-            <Select placeholder="选择连接类型">
-              <Option value="rest_api">REST API</Option>
-              <Option value="grpc">gRPC</Option>
-              <Option value="websocket">WebSocket</Option>
-              <Option value="sdk">SDK</Option>
+            <Select placeholder={t('annotationPlugins.form.typePlaceholder')}>
+              <Option value="rest_api">{t('annotationPlugins.types.restApi')}</Option>
+              <Option value="grpc">{t('annotationPlugins.types.grpc')}</Option>
+              <Option value="websocket">{t('annotationPlugins.types.websocket')}</Option>
+              <Option value="sdk">{t('annotationPlugins.types.sdk')}</Option>
             </Select>
           </Form.Item>
 
           <Form.Item
             name="endpoint"
-            label="端点地址"
-            rules={[{ required: true, message: '请输入端点地址' }]}
+            label={t('annotationPlugins.form.endpoint')}
+            rules={[{ required: true, message: t('annotationPlugins.form.endpointRequired') }]}
           >
-            <Input placeholder="例如: http://localhost:8080/api" />
+            <Input placeholder={t('annotationPlugins.form.endpointPlaceholder')} />
           </Form.Item>
 
           <Form.Item
             name="priority"
-            label="优先级"
+            label={t('annotationPlugins.form.priority')}
             initialValue={0}
-            tooltip="数值越大优先级越高"
+            tooltip={t('annotationPlugins.form.priorityTooltip')}
           >
             <InputNumber min={0} max={100} style={{ width: '100%' }} />
           </Form.Item>
 
           <Form.Item
             name="supportedTypes"
-            label="支持的标注类型"
-            rules={[{ required: true, message: '请选择支持的标注类型' }]}
+            label={t('annotationPlugins.form.supportedTypes')}
+            rules={[{ required: true, message: t('annotationPlugins.form.supportedTypesRequired') }]}
           >
-            <Select mode="multiple" placeholder="选择支持的标注类型">
-              <Option value="text_classification">文本分类</Option>
-              <Option value="ner">命名实体识别</Option>
-              <Option value="sentiment">情感分析</Option>
-              <Option value="relation_extraction">关系抽取</Option>
-              <Option value="qa">问答</Option>
+            <Select mode="multiple" placeholder={t('annotationPlugins.form.supportedTypesPlaceholder')}>
+              <Option value="text_classification">{t('annotationPlugins.annotationTypes.textClassification')}</Option>
+              <Option value="ner">{t('annotationPlugins.annotationTypes.ner')}</Option>
+              <Option value="sentiment">{t('annotationPlugins.annotationTypes.sentiment')}</Option>
+              <Option value="relation_extraction">{t('annotationPlugins.annotationTypes.relationExtraction')}</Option>
+              <Option value="qa">{t('annotationPlugins.annotationTypes.qa')}</Option>
             </Select>
           </Form.Item>
 
           <Form.Item
             name="config"
-            label="配置 (JSON)"
+            label={t('annotationPlugins.form.config')}
             initialValue="{}"
           >
             <TextArea
               rows={4}
-              placeholder='{"apiKey": "xxx", "timeout": 30000}'
+              placeholder={t('annotationPlugins.form.configPlaceholder')}
             />
           </Form.Item>
         </Form>
@@ -616,7 +616,7 @@ const AnnotationPluginsPage: React.FC = () => {
 
       {/* Stats Modal */}
       <Modal
-        title="插件统计"
+        title={t('annotationPlugins.modal.pluginStats')}
         open={statsModalVisible}
         onCancel={() => setStatsModalVisible(false)}
         footer={null}
@@ -627,13 +627,13 @@ const AnnotationPluginsPage: React.FC = () => {
             <Row gutter={16} style={{ marginBottom: 24 }}>
               <Col span={12}>
                 <Statistic
-                  title="总调用次数"
+                  title={t('annotationPlugins.stats.totalCalls')}
                   value={selectedPluginStats.totalCalls}
                 />
               </Col>
               <Col span={12}>
                 <Statistic
-                  title="成功率"
+                  title={t('annotationPlugins.stats.successRate')}
                   value={selectedPluginStats.successRate}
                   suffix="%"
                   valueStyle={{ 
@@ -646,14 +646,14 @@ const AnnotationPluginsPage: React.FC = () => {
             <Row gutter={16} style={{ marginBottom: 24 }}>
               <Col span={12}>
                 <Statistic
-                  title="平均延迟"
+                  title={t('annotationPlugins.stats.avgLatency')}
                   value={selectedPluginStats.avgLatencyMs}
                   suffix="ms"
                 />
               </Col>
               <Col span={12}>
                 <Statistic
-                  title="总成本"
+                  title={t('annotationPlugins.stats.totalCost')}
                   value={selectedPluginStats.totalCost}
                   prefix="¥"
                   precision={2}
@@ -663,14 +663,14 @@ const AnnotationPluginsPage: React.FC = () => {
             <Row gutter={16}>
               <Col span={12}>
                 <Statistic
-                  title="错误次数"
+                  title={t('annotationPlugins.stats.errorCount')}
                   value={selectedPluginStats.errorCount}
                   valueStyle={{ color: '#ff4d4f' }}
                 />
               </Col>
               <Col span={12}>
                 <Statistic
-                  title="最后调用"
+                  title={t('annotationPlugins.stats.lastCall')}
                   value={selectedPluginStats.lastCallAt 
                     ? new Date(selectedPluginStats.lastCallAt).toLocaleString()
                     : '-'
@@ -681,7 +681,7 @@ const AnnotationPluginsPage: React.FC = () => {
             </Row>
             
             <div style={{ marginTop: 24 }}>
-              <Text type="secondary">成功率趋势</Text>
+              <Text type="secondary">{t('annotationPlugins.stats.successRateTrend')}</Text>
               <Progress
                 percent={selectedPluginStats.successRate}
                 status={selectedPluginStats.successRate >= 95 ? 'success' : 
@@ -692,8 +692,8 @@ const AnnotationPluginsPage: React.FC = () => {
           </div>
         ) : (
           <Alert
-            message="暂无统计数据"
-            description="该插件尚未被调用过"
+            message={t('annotationPlugins.stats.noData')}
+            description={t('annotationPlugins.stats.noDataDescription')}
             type="info"
             showIcon
           />

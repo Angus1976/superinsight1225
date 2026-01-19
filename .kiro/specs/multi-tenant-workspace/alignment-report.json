@@ -1,0 +1,45 @@
+{
+  "feature": "multi-tenant-workspace",
+  "success": true,
+  "message": "Found 4 alignment issues",
+  "summary": {
+    "total_issues": 4,
+    "critical": 0,
+    "warnings": 4,
+    "info": 0
+  },
+  "issues": [
+    {
+      "severity": "warning",
+      "category": "missing_doc",
+      "file": "design.md",
+      "line": 0,
+      "description": "Missing required section: Architecture Overview",
+      "suggestion": "Add Architecture Overview section following the template"
+    },
+    {
+      "severity": "warning",
+      "category": "missing_doc",
+      "file": "design.md",
+      "line": 0,
+      "description": "Missing required section: Component Design",
+      "suggestion": "Add Component Design section following the template"
+    },
+    {
+      "severity": "warning",
+      "category": "missing_doc",
+      "file": "design.md",
+      "line": 0,
+      "description": "Missing required section: Technical Decisions",
+      "suggestion": "Add Technical Decisions section following the template"
+    },
+    {
+      "severity": "warning",
+      "category": "missing_doc",
+      "file": "tasks.md",
+      "line": 0,
+      "description": "Tasks missing time estimates",
+      "suggestion": "Add time estimates (Est: Xh) to all tasks"
+    }
+  ]
+}

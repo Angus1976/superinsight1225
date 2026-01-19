@@ -11,6 +11,7 @@
 import React, { useState, useEffect, useCallback, memo, type ReactNode } from 'react';
 import { Spin, Result, Button, Skeleton } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import styles from './AsyncContent.module.scss';
 
 /**
@@ -71,7 +72,7 @@ export function AsyncContent<T>({
   errorComponent,
   skeleton = false,
   skeletonRows = 3,
-  loadingText = '加载中...',
+  loadingText,
   retryOnError = false,
   maxRetries = 3,
   retryDelay = 1000,
@@ -81,6 +82,7 @@ export function AsyncContent<T>({
   skip = false,
   className,
 }: AsyncContentProps<T>): React.ReactElement {
+  const { t } = useTranslation('common');
   const [state, setState] = useState<AsyncState<T>>({
     data: initialData ?? null,
     loading: !skip && !initialData,
@@ -140,7 +142,7 @@ export function AsyncContent<T>({
 
     return (
       <div className={`${styles.asyncContent} ${styles.loading} ${className || ''}`}>
-        <Spin tip={loadingText} />
+        <Spin tip={loadingText || t('status.loading')} />
       </div>
     );
   }
@@ -155,11 +157,11 @@ export function AsyncContent<T>({
       <div className={`${styles.asyncContent} ${className || ''}`}>
         <Result
           status="error"
-          title="加载失败"
+          title={t('async.loadFailed')}
           subTitle={state.error.message}
           extra={
             <Button type="primary" icon={<ReloadOutlined />} onClick={refetch}>
-              重试
+              {t('retry')}
             </Button>
           }
         />

@@ -190,12 +190,12 @@ export interface AlertConfig {
 export const licenseApi = {
   // License Status
   async getStatus(): Promise<LicenseStatusResponse> {
-    const response = await api.get('/api/v1/license/status');
+    const response = await api.get<LicenseStatusResponse>('/api/v1/license/status');
     return response.data;
   },
 
   async getLicense(licenseId: string): Promise<License> {
-    const response = await api.get(`/api/v1/license/${licenseId}`);
+    const response = await api.get<License>(`/api/v1/license/${licenseId}`);
     return response.data;
   },
 
@@ -204,7 +204,7 @@ export const licenseApi = {
     limit?: number;
     offset?: number;
   }): Promise<License[]> {
-    const response = await api.get('/api/v1/license/', { params });
+    const response = await api.get<License[]>('/api/v1/license/', { params } as any);
     return response.data;
   },
 
@@ -215,7 +215,7 @@ export const licenseApi = {
     validity: LicenseValidity;
     metadata?: Record<string, unknown>;
   }): Promise<License> {
-    const response = await api.post('/api/v1/license/', data);
+    const response = await api.post<License>('/api/v1/license/', data);
     return response.data;
   },
 
@@ -223,7 +223,7 @@ export const licenseApi = {
     new_end_date: string;
     subscription_type?: SubscriptionType;
   }): Promise<License> {
-    const response = await api.post(`/api/v1/license/${licenseId}/renew`, data);
+    const response = await api.post<License>(`/api/v1/license/${licenseId}/renew`, data);
     return response.data;
   },
 
@@ -232,28 +232,28 @@ export const licenseApi = {
     new_features?: string[];
     new_limits?: Partial<LicenseLimits>;
   }): Promise<License> {
-    const response = await api.post(`/api/v1/license/${licenseId}/upgrade`, data);
+    const response = await api.post<License>(`/api/v1/license/${licenseId}/upgrade`, data);
     return response.data;
   },
 
   async revokeLicense(licenseId: string, reason: string): Promise<{ success: boolean }> {
-    const response = await api.post(`/api/v1/license/${licenseId}/revoke`, { reason });
+    const response = await api.post<{ success: boolean }>(`/api/v1/license/${licenseId}/revoke`, { reason });
     return response.data;
   },
 
   async suspendLicense(licenseId: string): Promise<{ success: boolean }> {
-    const response = await api.post(`/api/v1/license/${licenseId}/suspend`);
+    const response = await api.post<{ success: boolean }>(`/api/v1/license/${licenseId}/suspend`);
     return response.data;
   },
 
   async reactivateLicense(licenseId: string): Promise<{ success: boolean }> {
-    const response = await api.post(`/api/v1/license/${licenseId}/reactivate`);
+    const response = await api.post<{ success: boolean }>(`/api/v1/license/${licenseId}/reactivate`);
     return response.data;
   },
 
   // Features
   async getFeatures(): Promise<FeatureInfo[]> {
-    const response = await api.get('/api/v1/license/features/list');
+    const response = await api.get<FeatureInfo[]>('/api/v1/license/features/list');
     return response.data;
   },
 
@@ -264,19 +264,25 @@ export const licenseApi = {
     requires_upgrade: boolean;
     upgrade_to?: LicenseType;
   }> {
-    const response = await api.get(`/api/v1/license/features/${feature}/check`);
+    const response = await api.get<{
+      allowed: boolean;
+      feature: string;
+      reason?: string;
+      requires_upgrade: boolean;
+      upgrade_to?: LicenseType;
+    }>(`/api/v1/license/features/${feature}/check`);
     return response.data;
   },
 
   async getLimits(): Promise<LicenseLimits> {
-    const response = await api.get('/api/v1/license/limits');
+    const response = await api.get<LicenseLimits>('/api/v1/license/limits');
     return response.data;
   },
 
   async validateLicense(hardwareId?: string): Promise<ValidationResult> {
-    const response = await api.get('/api/v1/license/validate', {
+    const response = await api.get<ValidationResult>('/api/v1/license/validate', {
       params: { hardware_id: hardwareId },
-    });
+    } as any);
     return response.data;
   },
 };
@@ -290,7 +296,7 @@ export const activationApi = {
     license_key: string;
     hardware_fingerprint?: string;
   }): Promise<ActivationResult> {
-    const response = await api.post('/api/v1/activation/activate', data);
+    const response = await api.post<ActivationResult>('/api/v1/activation/activate', data);
     return response.data;
   },
 
@@ -298,16 +304,16 @@ export const activationApi = {
     licenseKey: string,
     hardwareFingerprint?: string
   ): Promise<OfflineActivationRequest> {
-    const response = await api.post('/api/v1/activation/offline/request', null, {
+    const response = await api.post<OfflineActivationRequest>('/api/v1/activation/offline/request', null, {
       params: { license_key: licenseKey, hardware_fingerprint: hardwareFingerprint },
-    });
+    } as any);
     return response.data;
   },
 
   async activateOffline(activationCode: string): Promise<ActivationResult> {
-    const response = await api.post('/api/v1/activation/offline/activate', null, {
+    const response = await api.post<ActivationResult>('/api/v1/activation/offline/activate', null, {
       params: { activation_code: activationCode },
-    });
+    } as any);
     return response.data;
   },
 
@@ -318,7 +324,13 @@ export const activationApi = {
     expires_at?: string;
     reason?: string;
   }> {
-    const response = await api.get(`/api/v1/activation/verify/${licenseId}`);
+    const response = await api.get<{
+      valid: boolean;
+      license_id?: string;
+      license_type?: string;
+      expires_at?: string;
+      reason?: string;
+    }>(`/api/v1/activation/verify/${licenseId}`);
     return response.data;
   },
 
@@ -326,14 +338,17 @@ export const activationApi = {
     fingerprint: string;
     message: string;
   }> {
-    const response = await api.get('/api/v1/activation/fingerprint');
+    const response = await api.get<{
+      fingerprint: string;
+      message: string;
+    }>('/api/v1/activation/fingerprint');
     return response.data;
   },
 
   async revokeActivation(licenseId: string, reason: string): Promise<{ success: boolean }> {
-    const response = await api.post(`/api/v1/activation/revoke/${licenseId}`, null, {
+    const response = await api.post<{ success: boolean }>(`/api/v1/activation/revoke/${licenseId}`, null, {
       params: { reason },
-    });
+    } as any);
     return response.data;
   },
 };
@@ -345,17 +360,17 @@ export const activationApi = {
 export const usageApi = {
   // Concurrent Users
   async getConcurrentUsage(): Promise<ConcurrentUsageInfo> {
-    const response = await api.get('/api/v1/usage/concurrent');
+    const response = await api.get<ConcurrentUsageInfo>('/api/v1/usage/concurrent');
     return response.data;
   },
 
   async getActiveSessions(): Promise<UserSession[]> {
-    const response = await api.get('/api/v1/usage/sessions');
+    const response = await api.get<UserSession[]>('/api/v1/usage/sessions');
     return response.data;
   },
 
   async getUserSessions(userId: string): Promise<UserSession[]> {
-    const response = await api.get(`/api/v1/usage/sessions/user/${userId}`);
+    const response = await api.get<UserSession[]>(`/api/v1/usage/sessions/user/${userId}`);
     return response.data;
   },
 
@@ -366,21 +381,21 @@ export const usageApi = {
     ip_address?: string;
     user_agent?: string;
   }): Promise<UserSession> {
-    const response = await api.post('/api/v1/usage/sessions/register', data);
+    const response = await api.post<UserSession>('/api/v1/usage/sessions/register', data);
     return response.data;
   },
 
   async releaseSession(sessionId: string, userId: string): Promise<{ success: boolean }> {
-    const response = await api.post(`/api/v1/usage/sessions/${sessionId}/release`, null, {
+    const response = await api.post<{ success: boolean }>(`/api/v1/usage/sessions/${sessionId}/release`, null, {
       params: { user_id: userId },
-    });
+    } as any);
     return response.data;
   },
 
   async terminateSession(sessionId: string, reason?: string): Promise<{ success: boolean }> {
-    const response = await api.post(`/api/v1/usage/sessions/${sessionId}/terminate`, null, {
+    const response = await api.post<{ success: boolean }>(`/api/v1/usage/sessions/${sessionId}/terminate`, null, {
       params: { reason },
-    });
+    } as any);
     return response.data;
   },
 
@@ -388,13 +403,16 @@ export const usageApi = {
     success: boolean;
     sessions_terminated: number;
   }> {
-    const response = await api.post(`/api/v1/usage/sessions/user/${userId}/logout`, { reason });
+    const response = await api.post<{
+      success: boolean;
+      sessions_terminated: number;
+    }>(`/api/v1/usage/sessions/user/${userId}/logout`, { reason });
     return response.data;
   },
 
   // Resources
   async getResourceUsage(): Promise<ResourceUsageInfo> {
-    const response = await api.get('/api/v1/usage/resources');
+    const response = await api.get<ResourceUsageInfo>('/api/v1/usage/resources');
     return response.data;
   },
 
@@ -405,7 +423,13 @@ export const usageApi = {
     current?: number;
     max?: number;
   }>> {
-    const response = await api.get('/api/v1/usage/resources/check');
+    const response = await api.get<Record<string, {
+      allowed: boolean;
+      reason?: string;
+      warning?: string;
+      current?: number;
+      max?: number;
+    }>>('/api/v1/usage/resources/check');
     return response.data;
   },
 
@@ -417,23 +441,23 @@ export const usageApi = {
     include_resources?: boolean;
     include_features?: boolean;
   }, licenseId?: string): Promise<LicenseUsageReport> {
-    const response = await api.post('/api/v1/usage/report', data, {
+    const response = await api.post<LicenseUsageReport>('/api/v1/usage/report', data, {
       params: { license_id: licenseId },
-    });
+    } as any);
     return response.data;
   },
 
   async getDailySummary(date?: string): Promise<Record<string, unknown>> {
-    const response = await api.get('/api/v1/usage/report/daily', {
+    const response = await api.get<Record<string, unknown>>('/api/v1/usage/report/daily', {
       params: { date },
-    });
+    } as any);
     return response.data;
   },
 
   async getUsageTrend(days?: number): Promise<Record<string, unknown>[]> {
-    const response = await api.get('/api/v1/usage/report/trend', {
+    const response = await api.get<Record<string, unknown>[]>('/api/v1/usage/report/trend', {
       params: { days },
-    });
+    } as any);
     return response.data;
   },
 
@@ -448,12 +472,12 @@ export const usageApi = {
     limit?: number;
     offset?: number;
   }): Promise<AuditLog[]> {
-    const response = await api.post('/api/v1/usage/audit/query', filter);
+    const response = await api.post<AuditLog[]>('/api/v1/usage/audit/query', filter);
     return response.data;
   },
 
   async getAuditLog(logId: string): Promise<AuditLog> {
-    const response = await api.get(`/api/v1/usage/audit/${logId}`);
+    const response = await api.get<AuditLog>(`/api/v1/usage/audit/${logId}`);
     return response.data;
   },
 
@@ -462,7 +486,7 @@ export const usageApi = {
     end_time?: string;
     license_id?: string;
   }): Promise<Record<string, number>> {
-    const response = await api.get('/api/v1/usage/audit/stats', { params });
+    const response = await api.get<Record<string, number>>('/api/v1/usage/audit/stats', { params } as any);
     return response.data;
   },
 
@@ -472,10 +496,10 @@ export const usageApi = {
     format?: 'csv' | 'json';
     license_id?: string;
   }): Promise<Blob> {
-    const response = await api.get('/api/v1/usage/audit/export', {
+    const response = await api.get<Blob>('/api/v1/usage/audit/export', {
       params,
       responseType: 'blob',
-    });
+    } as any);
     return response.data;
   },
 };

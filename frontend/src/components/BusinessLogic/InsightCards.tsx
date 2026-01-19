@@ -28,6 +28,7 @@ import {
   ClockCircleOutlined,
   EyeOutlined,
 } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -54,6 +55,7 @@ export const InsightCards: React.FC<InsightCardsProps> = ({
   insights,
   onInsightAcknowledge,
 }) => {
+  const { t } = useTranslation(['businessLogic', 'common']);
   const [selectedInsight, setSelectedInsight] = useState<BusinessInsight | null>(null);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
 
@@ -67,25 +69,25 @@ export const InsightCards: React.FC<InsightCardsProps> = ({
     }> = {
       quality_insight: {
         color: 'success',
-        text: '质量洞察',
+        text: t('insights.types.qualityInsight'),
         icon: <StarOutlined />,
         bgColor: '#f6ffed',
       },
       efficiency_insight: {
         color: 'processing',
-        text: '效率洞察',
+        text: t('insights.types.efficiencyInsight'),
         icon: <TrendingUpOutlined />,
         bgColor: '#e6f7ff',
       },
       pattern_insight: {
         color: 'warning',
-        text: '模式洞察',
+        text: t('insights.types.patternInsight'),
         icon: <BulbOutlined />,
         bgColor: '#fffbe6',
       },
       trend_insight: {
         color: 'error',
-        text: '趋势洞察',
+        text: t('insights.types.trendInsight'),
         icon: <WarningOutlined />,
         bgColor: '#fff2f0',
       },
@@ -100,10 +102,10 @@ export const InsightCards: React.FC<InsightCardsProps> = ({
 
   // 获取影响等级
   const getImpactLevel = (score: number) => {
-    if (score >= 0.8) return { level: '高', color: 'red' };
-    if (score >= 0.6) return { level: '中', color: 'orange' };
-    if (score >= 0.4) return { level: '低', color: 'blue' };
-    return { level: '极低', color: 'gray' };
+    if (score >= 0.8) return { level: t('insights.impactLevel.high'), color: 'red' };
+    if (score >= 0.6) return { level: t('insights.impactLevel.medium'), color: 'orange' };
+    if (score >= 0.4) return { level: t('insights.impactLevel.low'), color: 'blue' };
+    return { level: t('insights.impactLevel.veryLow'), color: 'gray' };
   };
 
   // 查看洞察详情
@@ -115,8 +117,8 @@ export const InsightCards: React.FC<InsightCardsProps> = ({
   // 确认洞察
   const handleAcknowledge = (insight: BusinessInsight) => {
     Modal.confirm({
-      title: '确认洞察',
-      content: `确定要确认洞察"${insight.title}"吗？确认后该洞察将不再显示在未确认列表中。`,
+      title: t('insights.confirmAcknowledge'),
+      content: t('insights.confirmAcknowledgeMessage', { title: insight.title }),
       onOk: () => {
         onInsightAcknowledge(insight.id);
       },
@@ -131,7 +133,7 @@ export const InsightCards: React.FC<InsightCardsProps> = ({
 
     return (
       <Badge.Ribbon 
-        text={isNew ? "新" : undefined} 
+        text={isNew ? t('insights.new') : undefined} 
         color="red" 
         style={{ display: isNew ? 'block' : 'none' }}
       >
@@ -145,22 +147,22 @@ export const InsightCards: React.FC<InsightCardsProps> = ({
                                    typeConfig.color === 'warning' ? '#faad14' : '#ff4d4f'}20`
           }}
           actions={[
-            <Tooltip title="查看详情">
+            <Tooltip title={t('insights.detail')}>
               <Button 
                 type="text" 
                 icon={<EyeOutlined />}
                 onClick={() => viewInsightDetail(insight)}
               >
-                详情
+                {t('insights.detail')}
               </Button>
             </Tooltip>,
-            <Tooltip title="确认洞察">
+            <Tooltip title={t('insights.acknowledge')}>
               <Button 
                 type="text" 
                 icon={<CheckCircleOutlined />}
                 onClick={() => handleAcknowledge(insight)}
               >
-                确认
+                {t('insights.acknowledge')}
               </Button>
             </Tooltip>,
           ]}
@@ -230,7 +232,7 @@ export const InsightCards: React.FC<InsightCardsProps> = ({
         <Col span={6}>
           <Card>
             <Statistic
-              title="未确认洞察"
+              title={t('insights.unacknowledged')}
               value={insights.length}
               prefix={<BulbOutlined />}
               valueStyle={{ color: insights.length > 0 ? '#cf1322' : '#52c41a' }}
@@ -240,7 +242,7 @@ export const InsightCards: React.FC<InsightCardsProps> = ({
         <Col span={6}>
           <Card>
             <Statistic
-              title="高影响洞察"
+              title={t('insights.highImpact')}
               value={insights.filter(i => i.impact_score >= 0.8).length}
               prefix={<WarningOutlined />}
               valueStyle={{ color: '#fa541c' }}
@@ -250,7 +252,7 @@ export const InsightCards: React.FC<InsightCardsProps> = ({
         <Col span={6}>
           <Card>
             <Statistic
-              title="平均影响分数"
+              title={t('insights.avgImpactScore')}
               value={insights.length > 0 ? insights.reduce((sum, i) => sum + i.impact_score, 0) / insights.length : 0}
               precision={2}
               prefix={<TrendingUpOutlined />}
@@ -261,7 +263,7 @@ export const InsightCards: React.FC<InsightCardsProps> = ({
         <Col span={6}>
           <Card>
             <Statistic
-              title="洞察类型"
+              title={t('insights.insightTypes')}
               value={Object.keys(groupedInsights).length}
               prefix={<InfoCircleOutlined />}
             />
@@ -272,8 +274,8 @@ export const InsightCards: React.FC<InsightCardsProps> = ({
       {/* 洞察提醒 */}
       {insights.filter(i => i.impact_score >= 0.8).length > 0 && (
         <Alert
-          message="发现高影响洞察"
-          description={`有 ${insights.filter(i => i.impact_score >= 0.8).length} 个洞察具有高影响分数，建议优先处理`}
+          message={t('insights.highImpactFound')}
+          description={t('insights.highImpactHint', { count: insights.filter(i => i.impact_score >= 0.8).length })}
           type="warning"
           showIcon
           style={{ marginBottom: 16 }}
@@ -285,8 +287,8 @@ export const InsightCards: React.FC<InsightCardsProps> = ({
         <Card>
           <div style={{ textAlign: 'center', padding: '40px 0' }}>
             <BulbOutlined style={{ fontSize: 48, color: '#d9d9d9' }} />
-            <Title level={4} type="secondary">暂无未确认的业务洞察</Title>
-            <Text type="secondary">系统会自动分析标注数据并生成业务洞察</Text>
+            <Title level={4} type="secondary">{t('insights.noUnacknowledged')}</Title>
+            <Text type="secondary">{t('insights.autoGenerate')}</Text>
           </div>
         </Card>
       ) : (
@@ -327,7 +329,7 @@ export const InsightCards: React.FC<InsightCardsProps> = ({
         width={800}
         footer={[
           <Button key="close" onClick={() => setDetailModalVisible(false)}>
-            关闭
+            {t('insights.close')}
           </Button>,
           selectedInsight && (
             <Button 
@@ -339,7 +341,7 @@ export const InsightCards: React.FC<InsightCardsProps> = ({
                 setDetailModalVisible(false);
               }}
             >
-              确认洞察
+              {t('insights.acknowledgeInsight')}
             </Button>
           ),
         ]}
@@ -347,16 +349,16 @@ export const InsightCards: React.FC<InsightCardsProps> = ({
         {selectedInsight && (
           <div>
             {/* 洞察基本信息 */}
-            <Card title="洞察信息" style={{ marginBottom: 16 }}>
+            <Card title={t('insights.insightInfo')} style={{ marginBottom: 16 }}>
               <Row gutter={16}>
                 <Col span={12}>
-                  <Text strong>洞察类型: </Text>
+                  <Text strong>{t('insights.insightType')}: </Text>
                   <Tag color={getInsightTypeConfig(selectedInsight.insight_type).color}>
                     {getInsightTypeConfig(selectedInsight.insight_type).text}
                   </Tag>
                 </Col>
                 <Col span={12}>
-                  <Text strong>影响分数: </Text>
+                  <Text strong>{t('insights.impactScore')}: </Text>
                   <Progress 
                     percent={Math.round(selectedInsight.impact_score * 100)}
                     size="small"
@@ -368,18 +370,18 @@ export const InsightCards: React.FC<InsightCardsProps> = ({
                 </Col>
               </Row>
               <div style={{ marginTop: 16 }}>
-                <Text strong>描述: </Text>
+                <Text strong>{t('insights.description')}: </Text>
                 <Paragraph>{selectedInsight.description}</Paragraph>
               </div>
               <div>
-                <Text strong>生成时间: </Text>
+                <Text strong>{t('insights.generatedAt')}: </Text>
                 <Text>{new Date(selectedInsight.created_at).toLocaleString()}</Text>
               </div>
             </Card>
 
             {/* 数据点 */}
             {selectedInsight.data_points && selectedInsight.data_points.length > 0 && (
-              <Card title="关键数据" style={{ marginBottom: 16 }}>
+              <Card title={t('insights.keyData')} style={{ marginBottom: 16 }}>
                 <Row gutter={16}>
                   {selectedInsight.data_points.map((point, index) => (
                     <Col key={index} span={8}>
@@ -400,7 +402,7 @@ export const InsightCards: React.FC<InsightCardsProps> = ({
 
             {/* 建议 */}
             {selectedInsight.recommendations && selectedInsight.recommendations.length > 0 && (
-              <Card title="优化建议">
+              <Card title={t('insights.recommendations')}>
                 <Timeline>
                   {selectedInsight.recommendations.map((recommendation, index) => (
                     <Timeline.Item key={index}>

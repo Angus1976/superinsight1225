@@ -962,12 +962,9 @@
     "databaseStructure": "Database Structure",
     "queryTemplates": "Query Templates",
     "queryConfiguration": "Query Configuration",
-    "selectTables": "Select Tables",
     "selectTablesPlaceholder": "Select tables to query",
-    "selectColumns": "Select Columns",
     "selectColumnsPlaceholder": "Select columns (leave empty for all)",
     "whereConditions": "WHERE Conditions",
-    "addCondition": "Add Condition",
     "field": "Field",
     "operator": "Operator",
     "value": "Value",
@@ -979,14 +976,14 @@
     "copySQL": "Copy SQL",
     "saveAsTemplate": "Save as Template",
     "executeQuery": "Execute Query",
-    "queryResult": "Query Result",
     "resultTruncated": "Result truncated",
-    "saveTemplate": "Save Template",
     "templateNameRequired": "Template Name",
     "templateNamePlaceholder": "Enter template name",
     "description": "Description",
     "descriptionPlaceholder": "Template description (optional)",
-    "rows": "{{count}} rows"
+    "rows": "{{count}} rows",
+    "sqlPlaceholder": "SQL will be displayed here...",
+    "queryResultTitle": "Query Result ({{count}} rows, {{time}}ms)"
   },
   "thirdPartyConfig": {
     "title": "Third-Party Tools Configuration",
@@ -1006,6 +1003,7 @@
     "actions": "Actions",
     "enabled": "Enabled",
     "disabled": "Disabled",
+    "enabledColumn": "Enabled",
     "updateSuccess": "Third-party tool configuration updated successfully",
     "updateFailed": "Update failed",
     "deleteSuccess": "Third-party tool configuration deleted successfully",
@@ -1020,14 +1018,38 @@
     "confirmDelete": "Are you sure you want to delete this tool configuration?",
     "configName": "Configuration Name",
     "configNameRequired": "Please enter configuration name",
+    "configNamePlaceholder": "e.g., Custom Text-to-SQL Service",
     "description": "Description",
+    "descriptionPlaceholder": "Tool description (optional)",
     "toolTypeRequired": "Please select tool type",
+    "toolTypePlaceholder": "Select tool type",
     "endpointRequired": "Please enter API endpoint",
+    "endpointInvalid": "Please enter a valid URL",
+    "endpointPlaceholder": "e.g., https://api.example.com/v1",
     "apiKey": "API Key",
+    "apiKeyPlaceholder": "Enter API Key (will be encrypted)",
+    "apiKeyKeepEmpty": "Leave empty to keep existing API Key",
     "timeout": "Timeout (seconds)",
     "setEnabled": "Enable Tool",
     "save": "Save",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "healthCheck": "Health Check",
+    "edit": "Edit",
+    "delete": "Delete",
+    "healthy": "Healthy",
+    "healthyWithLatency": "Healthy ({{latency}}ms)",
+    "unhealthy": "Unhealthy",
+    "notChecked": "Not Checked",
+    "callStats": "Call Statistics",
+    "calls": "Calls",
+    "infoTitle": "Third-Party Tools Info",
+    "infoDescription": "Configure and manage third-party tool integrations, including Text-to-SQL, AI annotation services. Enable/disable operations take effect immediately.",
+    "stats": {
+      "totalTools": "Total Tools",
+      "enabled": "Enabled",
+      "totalCalls": "Total Calls",
+      "avgSuccessRate": "Avg Success Rate"
+    }
   },
   "common": {
     "refresh": "Refresh"
@@ -1592,6 +1614,7 @@
     "rollbackSuccess": "Configuration rolled back successfully",
     "rollbackFailed": "Rollback failed: {{error}}",
     "rollbackConfirm": "No history record selected",
+    "unnamed": "Unnamed",
     "columns": {
       "time": "Time",
       "configType": "Config Type",
@@ -1620,7 +1643,8 @@
     },
     "filters": {
       "configType": "Config Type",
-      "dateRange": ["Start Time", "End Time"]
+      "startTime": "Start Time",
+      "endTime": "End Time"
     },
     "modal": {
       "diff": "Configuration Diff Comparison",
@@ -1638,13 +1662,12 @@
       "noDiff": "No differences",
       "loading": "Loading..."
     },
-    "rollback": {
-      "reason": "Enter rollback reason (optional)",
+    "rollbackInfo": {
       "configType": "Config Type",
       "changeTime": "Change Time",
-      "operator": "Operator"
-    },
-    "unnamed": "Unnamed"
+      "operator": "Operator",
+      "reasonPlaceholder": "Enter rollback reason (optional)"
+    }
   },
   "annotationPlugins": {
     "title": "Annotation Plugin Management",
@@ -1716,7 +1739,7 @@
       "supportedTypesRequired": "Please select supported annotation types",
       "supportedTypesPlaceholder": "Select supported annotation types",
       "config": "Configuration (JSON)",
-      "configPlaceholder": "{}"
+      "configPlaceholder": "{\"apiKey\": \"xxx\", \"timeout\": 30000}"
     },
     "types": {
       "restApi": "REST API",

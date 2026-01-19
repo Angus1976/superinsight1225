@@ -11,6 +11,7 @@
 import React, { type ReactNode, memo } from 'react';
 import { Spin, Result, Empty, Button } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 
 /**
  * ConditionalRender component props
@@ -48,19 +49,21 @@ export const ConditionalRender = memo(function ConditionalRender({
   children,
   fallback = null,
   loading = false,
-  loadingText = '加载中...',
+  loadingText,
   error = null,
   onRetry,
   empty = false,
-  emptyText = '暂无数据',
+  emptyText,
   emptyDescription,
   emptyAction,
 }: ConditionalRenderProps): React.ReactElement {
+  const { t } = useTranslation('common');
+
   // Loading state
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '40px' }}>
-        <Spin tip={loadingText} />
+        <Spin tip={loadingText || t('status.loading')} />
       </div>
     );
   }
@@ -71,12 +74,12 @@ export const ConditionalRender = memo(function ConditionalRender({
     return (
       <Result
         status="error"
-        title="出错了"
+        title={t('error.title')}
         subTitle={errorMessage}
         extra={
           onRetry && (
             <Button type="primary" icon={<ReloadOutlined />} onClick={onRetry}>
-              重试
+              {t('retry')}
             </Button>
           )
         }
@@ -87,7 +90,7 @@ export const ConditionalRender = memo(function ConditionalRender({
   // Empty state
   if (empty) {
     return (
-      <Empty description={emptyDescription || emptyText}>
+      <Empty description={emptyDescription || emptyText || t('emptyState.noData')}>
         {emptyAction}
       </Empty>
     );

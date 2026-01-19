@@ -27,6 +27,7 @@ import {
   ClockCircleOutlined,
   InfoCircleOutlined,
 } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -57,6 +58,7 @@ export const PatternAnalysis: React.FC<PatternAnalysisProps> = ({
   patterns,
   onPatternsChange,
 }) => {
+  const { t } = useTranslation(['businessLogic', 'common']);
   const [selectedPattern, setSelectedPattern] = useState<Pattern | null>(null);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [patternDetail, setPatternDetail] = useState<PatternDetail | null>(null);
@@ -88,7 +90,7 @@ export const PatternAnalysis: React.FC<PatternAnalysisProps> = ({
     switch (pattern.pattern_type) {
       case 'sentiment_correlation':
         return {
-          type: '情感关联分析',
+          type: t('patterns.analysis.sentimentAnalysis'),
           metrics: {
             positive_ratio: 0.65,
             negative_ratio: 0.20,
@@ -100,7 +102,7 @@ export const PatternAnalysis: React.FC<PatternAnalysisProps> = ({
         };
       case 'keyword_association':
         return {
-          type: '关键词关联分析',
+          type: t('patterns.analysis.keywordAnalysis'),
           metrics: {
             unique_keywords: 45,
             avg_frequency: 12.5,
@@ -115,37 +117,37 @@ export const PatternAnalysis: React.FC<PatternAnalysisProps> = ({
         };
       case 'temporal_trend':
         return {
-          type: '时间趋势分析',
+          type: t('patterns.analysis.temporalAnalysis'),
           metrics: {
             trend_direction: 'upward',
             trend_strength: 0.68,
             volatility: 0.23,
           },
           time_periods: [
-            { period: '工作日', activity: 0.75 },
-            { period: '周末', activity: 0.45 },
+            { period: t('common:time.weekday', { defaultValue: '工作日' }), activity: 0.75 },
+            { period: t('common:time.weekend', { defaultValue: '周末' }), activity: 0.45 },
           ],
           peak_hours: ['10:00-12:00', '14:00-16:00'],
           confidence: pattern.strength,
         };
       case 'user_behavior':
         return {
-          type: '用户行为分析',
+          type: t('patterns.analysis.behaviorAnalysis'),
           metrics: {
             active_users: 15,
             avg_annotations_per_user: 25.6,
             consistency_score: 0.82,
           },
           user_segments: [
-            { segment: '高频用户', count: 5, contribution: 0.60 },
-            { segment: '中频用户', count: 7, contribution: 0.30 },
-            { segment: '低频用户', count: 3, contribution: 0.10 },
+            { segment: t('common:common.highFrequencyUser', { defaultValue: '高频用户' }), count: 5, contribution: 0.60 },
+            { segment: t('common:common.mediumFrequencyUser', { defaultValue: '中频用户' }), count: 7, contribution: 0.30 },
+            { segment: t('common:common.lowFrequencyUser', { defaultValue: '低频用户' }), count: 3, contribution: 0.10 },
           ],
           confidence: pattern.strength,
         };
       default:
         return {
-          type: '通用分析',
+          type: t('patterns.analysis.generalAnalysis'),
           metrics: {},
           confidence: pattern.strength,
         };
@@ -157,34 +159,37 @@ export const PatternAnalysis: React.FC<PatternAnalysisProps> = ({
     switch (pattern.pattern_type) {
       case 'sentiment_correlation':
         return [
-          '继续保持正面情感标注的高质量',
-          '增加负面情感样本以平衡数据集',
-          '关注中性情感的标注一致性',
-          '建立情感标注质量检查机制',
+          t('patterns.recommendations.sentiment.maintainQuality'),
+          t('patterns.recommendations.sentiment.balanceDataset'),
+          t('patterns.recommendations.sentiment.neutralConsistency'),
+          t('patterns.recommendations.sentiment.qualityCheck'),
         ];
       case 'keyword_association':
         return [
-          '建立关键词标准化词典',
-          '优化关键词提取算法',
-          '增加同义词和近义词处理',
-          '定期更新关键词库',
+          t('patterns.recommendations.keyword.standardize'),
+          t('patterns.recommendations.keyword.optimizeExtraction'),
+          t('patterns.recommendations.keyword.synonyms'),
+          t('patterns.recommendations.keyword.updateRegularly'),
         ];
       case 'temporal_trend':
         return [
-          '合理安排标注任务时间',
-          '在高峰时段增加标注人员',
-          '建立时间趋势预警机制',
-          '优化工作流程提高效率',
+          t('patterns.recommendations.temporal.scheduleWisely'),
+          t('patterns.recommendations.temporal.increasePeakStaff'),
+          t('patterns.recommendations.temporal.trendAlert'),
+          t('patterns.recommendations.temporal.optimizeWorkflow'),
         ];
       case 'user_behavior':
         return [
-          '激励高频用户持续参与',
-          '提升中低频用户的参与度',
-          '建立用户培训和指导机制',
-          '优化用户体验和界面设计',
+          t('patterns.recommendations.behavior.incentivize'),
+          t('patterns.recommendations.behavior.improveEngagement'),
+          t('patterns.recommendations.behavior.training'),
+          t('patterns.recommendations.behavior.optimizeUX'),
         ];
       default:
-        return ['持续监控模式变化', '定期分析和优化'];
+        return [
+          t('patterns.recommendations.general.monitor'),
+          t('patterns.recommendations.general.analyze'),
+        ];
     }
   };
 
@@ -193,22 +198,22 @@ export const PatternAnalysis: React.FC<PatternAnalysisProps> = ({
     const configs: Record<string, { color: string; text: string; icon: React.ReactNode }> = {
       sentiment_correlation: {
         color: 'blue',
-        text: '情感关联',
+        text: t('patterns.types.sentimentCorrelation'),
         icon: <BarChartOutlined />,
       },
       keyword_association: {
         color: 'green',
-        text: '关键词关联',
+        text: t('patterns.types.keywordAssociation'),
         icon: <TagOutlined />,
       },
       temporal_trend: {
         color: 'orange',
-        text: '时间趋势',
+        text: t('patterns.types.temporalTrend'),
         icon: <TrendingUpOutlined />,
       },
       user_behavior: {
         color: 'purple',
-        text: '用户行为',
+        text: t('patterns.types.userBehavior'),
         icon: <UserOutlined />,
       },
     };
@@ -218,7 +223,7 @@ export const PatternAnalysis: React.FC<PatternAnalysisProps> = ({
   // 表格列定义
   const columns = [
     {
-      title: '模式类型',
+      title: t('patterns.columns.patternType'),
       dataIndex: 'pattern_type',
       key: 'pattern_type',
       render: (type: string) => {
@@ -231,7 +236,7 @@ export const PatternAnalysis: React.FC<PatternAnalysisProps> = ({
       },
     },
     {
-      title: '描述',
+      title: t('patterns.columns.description'),
       dataIndex: 'description',
       key: 'description',
       ellipsis: true,
@@ -242,7 +247,7 @@ export const PatternAnalysis: React.FC<PatternAnalysisProps> = ({
       ),
     },
     {
-      title: '强度',
+      title: t('patterns.columns.strength'),
       dataIndex: 'strength',
       key: 'strength',
       render: (strength: number) => (
@@ -259,7 +264,7 @@ export const PatternAnalysis: React.FC<PatternAnalysisProps> = ({
       sorter: (a: Pattern, b: Pattern) => a.strength - b.strength,
     },
     {
-      title: '检测时间',
+      title: t('patterns.columns.detectedAt'),
       dataIndex: 'detected_at',
       key: 'detected_at',
       render: (date: string) => (
@@ -272,7 +277,7 @@ export const PatternAnalysis: React.FC<PatternAnalysisProps> = ({
         new Date(a.detected_at).getTime() - new Date(b.detected_at).getTime(),
     },
     {
-      title: '最后出现',
+      title: t('patterns.columns.lastSeen'),
       dataIndex: 'last_seen',
       key: 'last_seen',
       render: (date: string) => {
@@ -284,22 +289,22 @@ export const PatternAnalysis: React.FC<PatternAnalysisProps> = ({
           <Space>
             <Badge
               status={diffHours < 24 ? 'success' : diffHours < 72 ? 'warning' : 'default'}
-              text={diffHours < 1 ? '刚刚' : `${diffHours}小时前`}
+              text={diffHours < 1 ? t('patterns.lastSeen.justNow') : t('patterns.lastSeen.hoursAgo', { hours: diffHours })}
             />
           </Space>
         );
       },
     },
     {
-      title: '操作',
+      title: t('patterns.columns.actions'),
       key: 'actions',
-      render: (_, record: Pattern) => (
+      render: (_: unknown, record: Pattern) => (
         <Button
           type="link"
           icon={<EyeOutlined />}
           onClick={() => viewPatternDetail(record)}
         >
-          查看详情
+          {t('patterns.detail.title')}
         </Button>
       ),
     },
@@ -335,7 +340,7 @@ export const PatternAnalysis: React.FC<PatternAnalysisProps> = ({
         <Col span={6}>
           <Card>
             <Statistic
-              title="模式总数"
+              title={t('patterns.stats.totalPatterns')}
               value={stats.total}
               prefix={<BarChartOutlined />}
             />
@@ -344,7 +349,7 @@ export const PatternAnalysis: React.FC<PatternAnalysisProps> = ({
         <Col span={6}>
           <Card>
             <Statistic
-              title="平均强度"
+              title={t('patterns.stats.avgStrength')}
               value={stats.avgStrength}
               precision={2}
               suffix="%"
@@ -355,7 +360,7 @@ export const PatternAnalysis: React.FC<PatternAnalysisProps> = ({
         <Col span={6}>
           <Card>
             <Statistic
-              title="强模式数"
+              title={t('patterns.stats.strongPatterns')}
               value={stats.strongPatterns}
               prefix={<TrendingUpOutlined />}
               suffix={`/ ${stats.total}`}
@@ -365,7 +370,7 @@ export const PatternAnalysis: React.FC<PatternAnalysisProps> = ({
         <Col span={6}>
           <Card>
             <Statistic
-              title="类型数量"
+              title={t('patterns.stats.typeCount')}
               value={Object.keys(stats.typeStats).length}
               prefix={<TagOutlined />}
             />
@@ -376,8 +381,8 @@ export const PatternAnalysis: React.FC<PatternAnalysisProps> = ({
       {/* 模式提醒 */}
       {stats.strongPatterns > 0 && (
         <Alert
-          message={`发现 ${stats.strongPatterns} 个强模式`}
-          description="这些模式具有较高的强度，建议重点关注和分析"
+          message={t('patterns.strongPatternsFound', { count: stats.strongPatterns })}
+          description={t('patterns.strongPatternsHint')}
           type="success"
           showIcon
           style={{ marginBottom: 16 }}
@@ -385,9 +390,9 @@ export const PatternAnalysis: React.FC<PatternAnalysisProps> = ({
       )}
 
       {/* 模式列表 */}
-      <Card title="业务模式列表" extra={
+      <Card title={t('patterns.listTitle')} extra={
         <Space>
-          <Text type="secondary">共 {patterns.length} 个模式</Text>
+          <Text type="secondary">{t('patterns.total', { count: patterns.length })}</Text>
         </Space>
       }>
         <Table
@@ -398,7 +403,7 @@ export const PatternAnalysis: React.FC<PatternAnalysisProps> = ({
             pageSize: 10,
             showSizeChanger: true,
             showQuickJumper: true,
-            showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
+            showTotal: (total, range) => t('rules.pagination.total', { start: range[0], end: range[1], total }),
           }}
         />
       </Card>
@@ -409,7 +414,7 @@ export const PatternAnalysis: React.FC<PatternAnalysisProps> = ({
           selectedPattern && (
             <Space>
               {getPatternTypeConfig(selectedPattern.pattern_type).icon}
-              <span>模式详情 - {getPatternTypeConfig(selectedPattern.pattern_type).text}</span>
+              <span>{t('patterns.detail.title')} - {getPatternTypeConfig(selectedPattern.pattern_type).text}</span>
             </Space>
           )
         }
@@ -418,46 +423,46 @@ export const PatternAnalysis: React.FC<PatternAnalysisProps> = ({
         width={800}
         footer={[
           <Button key="close" onClick={() => setDetailModalVisible(false)}>
-            关闭
+            {t('common:actions.cancel')}
           </Button>,
         ]}
       >
         {patternDetail && (
           <div>
             {/* 基本信息 */}
-            <Descriptions title="基本信息" bordered column={2}>
-              <Descriptions.Item label="模式ID">
+            <Descriptions title={t('patterns.detail.basicInfo')} bordered column={2}>
+              <Descriptions.Item label={t('patterns.detail.patternId')}>
                 {patternDetail.pattern.id}
               </Descriptions.Item>
-              <Descriptions.Item label="模式类型">
+              <Descriptions.Item label={t('patterns.detail.patternType')}>
                 <Tag color={getPatternTypeConfig(patternDetail.pattern.pattern_type).color}>
                   {getPatternTypeConfig(patternDetail.pattern.pattern_type).text}
                 </Tag>
               </Descriptions.Item>
-              <Descriptions.Item label="强度" span={2}>
+              <Descriptions.Item label={t('patterns.detail.strength')} span={2}>
                 <Progress
                   percent={Math.round(patternDetail.pattern.strength * 100)}
                   status={patternDetail.pattern.strength >= 0.7 ? 'success' : 'normal'}
                 />
               </Descriptions.Item>
-              <Descriptions.Item label="描述" span={2}>
+              <Descriptions.Item label={t('patterns.detail.description')} span={2}>
                 {patternDetail.pattern.description}
               </Descriptions.Item>
-              <Descriptions.Item label="检测时间">
+              <Descriptions.Item label={t('patterns.detail.detectedAt')}>
                 {new Date(patternDetail.pattern.detected_at).toLocaleString()}
               </Descriptions.Item>
-              <Descriptions.Item label="最后出现">
+              <Descriptions.Item label={t('patterns.detail.lastSeen')}>
                 {new Date(patternDetail.pattern.last_seen).toLocaleString()}
               </Descriptions.Item>
             </Descriptions>
 
             {/* 分析结果 */}
-            <Card title="分析结果" style={{ marginTop: 16 }}>
-              {patternDetail.analysis.type === '情感关联分析' && (
+            <Card title={t('patterns.detail.analysisResult')} style={{ marginTop: 16 }}>
+              {patternDetail.analysis.type === t('patterns.analysis.sentimentAnalysis') && (
                 <Row gutter={16}>
                   <Col span={12}>
                     <Statistic
-                      title="正面情感比例"
+                      title={t('patterns.analysis.positiveRatio')}
                       value={patternDetail.analysis.metrics.positive_ratio}
                       precision={1}
                       suffix="%"
@@ -466,7 +471,7 @@ export const PatternAnalysis: React.FC<PatternAnalysisProps> = ({
                   </Col>
                   <Col span={12}>
                     <Statistic
-                      title="负面情感比例"
+                      title={t('patterns.analysis.negativeRatio')}
                       value={patternDetail.analysis.metrics.negative_ratio}
                       precision={1}
                       suffix="%"
@@ -478,7 +483,7 @@ export const PatternAnalysis: React.FC<PatternAnalysisProps> = ({
 
               {patternDetail.analysis.keywords && (
                 <div style={{ marginTop: 16 }}>
-                  <Title level={5}>关键词</Title>
+                  <Title level={5}>{t('patterns.analysis.keywords')}</Title>
                   <Space wrap>
                     {patternDetail.analysis.keywords.map((keyword: string, index: number) => (
                       <Tag key={index} color="blue">{keyword}</Tag>
@@ -489,7 +494,7 @@ export const PatternAnalysis: React.FC<PatternAnalysisProps> = ({
             </Card>
 
             {/* 建议 */}
-            <Card title="优化建议" style={{ marginTop: 16 }}>
+            <Card title={t('patterns.detail.recommendations')} style={{ marginTop: 16 }}>
               <Timeline>
                 {patternDetail.recommendations.map((recommendation, index) => (
                   <Timeline.Item key={index}>

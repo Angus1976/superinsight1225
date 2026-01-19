@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Card, Table, Button, Space, Tag, Modal, Form, Input, Select, Switch, message, Tooltip } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, PlayCircleOutlined, PauseCircleOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, PlayCircleOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { api } from '@/services/api';
 
 interface QualityRule {
@@ -22,6 +23,7 @@ interface QualityRule {
 }
 
 const QualityRules: React.FC = () => {
+  const { t } = useTranslation('quality');
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingRule, setEditingRule] = useState<QualityRule | null>(null);
   const [form] = Form.useForm();
@@ -38,10 +40,10 @@ const QualityRules: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['quality-rules'] });
       setIsModalVisible(false);
       form.resetFields();
-      message.success('质量规则创建成功');
+      message.success(t('messages.ruleCreated'));
     },
     onError: () => {
-      message.error('质量规则创建失败');
+      message.error(t('messages.ruleCreateFailed'));
     },
   });
 
@@ -52,10 +54,10 @@ const QualityRules: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['quality-rules'] });
       setIsModalVisible(false);
       form.resetFields();
-      message.success('质量规则更新成功');
+      message.success(t('messages.ruleUpdated'));
     },
     onError: () => {
-      message.error('质量规则更新失败');
+      message.error(t('messages.ruleUpdateFailed'));
     },
   });
 
@@ -63,10 +65,10 @@ const QualityRules: React.FC = () => {
     mutationFn: (id: string) => api.delete(`/api/v1/quality/rules/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quality-rules'] });
-      message.success('质量规则删除成功');
+      message.success(t('messages.ruleDeleted'));
     },
     onError: () => {
-      message.error('质量规则删除失败');
+      message.error(t('messages.ruleDeleteFailed'));
     },
   });
 
@@ -75,16 +77,16 @@ const QualityRules: React.FC = () => {
       api.patch(`/api/v1/quality/rules/${id}/toggle`, { enabled }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quality-rules'] });
-      message.success('规则状态更新成功');
+      message.success(t('messages.ruleStatusUpdated'));
     },
     onError: () => {
-      message.error('规则状态更新失败');
+      message.error(t('messages.ruleStatusUpdateFailed'));
     },
   });
 
   const columns: ColumnsType<QualityRule> = [
     {
-      title: '规则名称',
+      title: t('rules.name'),
       dataIndex: 'name',
       key: 'name',
       render: (text: string, record) => (
@@ -95,7 +97,7 @@ const QualityRules: React.FC = () => {
       ),
     },
     {
-      title: '类型',
+      title: t('rules.type'),
       dataIndex: 'type',
       key: 'type',
       render: (type: string) => {
@@ -106,18 +108,11 @@ const QualityRules: React.FC = () => {
           consistency: 'purple',
           accuracy: 'red',
         };
-        const labels = {
-          semantic: '语义',
-          syntactic: '语法',
-          completeness: '完整性',
-          consistency: '一致性',
-          accuracy: '准确性',
-        };
-        return <Tag color={colors[type as keyof typeof colors]}>{labels[type as keyof typeof labels]}</Tag>;
+        return <Tag color={colors[type as keyof typeof colors]}>{t(`rules.types.${type}`)}</Tag>;
       },
     },
     {
-      title: '优先级',
+      title: t('rules.priority'),
       dataIndex: 'priority',
       key: 'priority',
       render: (priority: string) => {
@@ -127,51 +122,45 @@ const QualityRules: React.FC = () => {
           high: 'warning',
           critical: 'error',
         };
-        const labels = {
-          low: '低',
-          medium: '中',
-          high: '高',
-          critical: '严重',
-        };
-        return <Tag color={colors[priority as keyof typeof colors]}>{labels[priority as keyof typeof labels]}</Tag>;
+        return <Tag color={colors[priority as keyof typeof colors]}>{t(`rules.severities.${priority}`)}</Tag>;
       },
     },
     {
-      title: '阈值',
+      title: t('rules.threshold'),
       dataIndex: 'threshold',
       key: 'threshold',
       render: (threshold: number) => `${(threshold * 100).toFixed(1)}%`,
     },
     {
-      title: '状态',
+      title: t('issues.status'),
       dataIndex: 'enabled',
       key: 'enabled',
       render: (enabled: boolean, record) => (
         <Switch
           checked={enabled}
           onChange={(checked) => toggleRuleMutation.mutate({ id: record.id, enabled: checked })}
-          checkedChildren="启用"
-          unCheckedChildren="禁用"
+          checkedChildren={t('rules.enable')}
+          unCheckedChildren={t('rules.disable')}
         />
       ),
     },
     {
-      title: '执行次数',
+      title: t('rules.executionCount'),
       dataIndex: 'executionCount',
       key: 'executionCount',
     },
     {
-      title: '最后执行',
+      title: t('rules.lastExecuted'),
       dataIndex: 'lastExecuted',
       key: 'lastExecuted',
-      render: (date: string) => date ? new Date(date).toLocaleString() : '未执行',
+      render: (date: string) => date ? new Date(date).toLocaleString() : t('rules.notExecuted'),
     },
     {
-      title: '操作',
+      title: t('rules.actions'),
       key: 'action',
       render: (_, record) => (
         <Space size="middle">
-          <Tooltip title="编辑规则">
+          <Tooltip title={t('rules.editRule')}>
             <Button
               type="link"
               icon={<EditOutlined />}
@@ -182,25 +171,24 @@ const QualityRules: React.FC = () => {
               }}
             />
           </Tooltip>
-          <Tooltip title="立即执行">
+          <Tooltip title={t('rules.executeRule')}>
             <Button
               type="link"
               icon={<PlayCircleOutlined />}
               onClick={() => {
-                // 执行规则逻辑
-                message.info('规则执行功能开发中');
+                message.info(t('rules.executeInDev'));
               }}
             />
           </Tooltip>
-          <Tooltip title="删除规则">
+          <Tooltip title={t('rules.delete')}>
             <Button
               type="link"
               danger
               icon={<DeleteOutlined />}
               onClick={() => {
                 Modal.confirm({
-                  title: '确认删除',
-                  content: `确定要删除规则 "${record.name}" 吗？`,
+                  title: t('messages.confirmDelete'),
+                  content: t('rules.confirmDeleteContent', { name: record.name }),
                   onOk: () => deleteRuleMutation.mutate(record.id),
                 });
               }}
@@ -222,7 +210,7 @@ const QualityRules: React.FC = () => {
   return (
     <div className="quality-rules">
       <Card
-        title="质量规则管理"
+        title={t('rules.management')}
         extra={
           <Button
             type="primary"
@@ -233,7 +221,7 @@ const QualityRules: React.FC = () => {
               setIsModalVisible(true);
             }}
           >
-            新建规则
+            {t('rules.newRule')}
           </Button>
         }
       >
@@ -245,13 +233,13 @@ const QualityRules: React.FC = () => {
           pagination={{
             showSizeChanger: true,
             showQuickJumper: true,
-            showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
+            showTotal: (total, range) => t('reports.pagination', { start: range[0], end: range[1], total }),
           }}
         />
       </Card>
 
       <Modal
-        title={editingRule ? '编辑质量规则' : '新建质量规则'}
+        title={editingRule ? t('rules.editRule') : t('rules.newRule')}
         open={isModalVisible}
         onCancel={() => setIsModalVisible(false)}
         onOk={() => form.submit()}
@@ -265,69 +253,69 @@ const QualityRules: React.FC = () => {
         >
           <Form.Item
             name="name"
-            label="规则名称"
-            rules={[{ required: true, message: '请输入规则名称' }]}
+            label={t('rules.name')}
+            rules={[{ required: true, message: t('rules.inputRuleName') }]}
           >
-            <Input placeholder="请输入规则名称" />
+            <Input placeholder={t('rules.inputRuleName')} />
           </Form.Item>
           
           <Form.Item
             name="description"
-            label="规则描述"
-            rules={[{ required: true, message: '请输入规则描述' }]}
+            label={t('rules.description')}
+            rules={[{ required: true, message: t('rules.inputRuleDesc') }]}
           >
-            <Input.TextArea rows={3} placeholder="请输入规则描述" />
+            <Input.TextArea rows={3} placeholder={t('rules.inputRuleDesc')} />
           </Form.Item>
           
           <Form.Item
             name="type"
-            label="规则类型"
-            rules={[{ required: true, message: '请选择规则类型' }]}
+            label={t('rules.type')}
+            rules={[{ required: true, message: t('rules.selectRuleType') }]}
           >
-            <Select placeholder="请选择规则类型">
-              <Select.Option value="semantic">语义质量</Select.Option>
-              <Select.Option value="syntactic">语法质量</Select.Option>
-              <Select.Option value="completeness">完整性</Select.Option>
-              <Select.Option value="consistency">一致性</Select.Option>
-              <Select.Option value="accuracy">准确性</Select.Option>
+            <Select placeholder={t('rules.selectRuleType')}>
+              <Select.Option value="semantic">{t('rules.types.semantic')}</Select.Option>
+              <Select.Option value="syntactic">{t('rules.types.syntactic')}</Select.Option>
+              <Select.Option value="completeness">{t('rules.types.completeness')}</Select.Option>
+              <Select.Option value="consistency">{t('rules.types.consistency')}</Select.Option>
+              <Select.Option value="accuracy">{t('rules.types.accuracy')}</Select.Option>
             </Select>
           </Form.Item>
           
           <Form.Item
             name="priority"
-            label="优先级"
-            rules={[{ required: true, message: '请选择优先级' }]}
+            label={t('rules.priority')}
+            rules={[{ required: true, message: t('rules.selectPriority') }]}
           >
-            <Select placeholder="请选择优先级">
-              <Select.Option value="low">低</Select.Option>
-              <Select.Option value="medium">中</Select.Option>
-              <Select.Option value="high">高</Select.Option>
-              <Select.Option value="critical">严重</Select.Option>
+            <Select placeholder={t('rules.selectPriority')}>
+              <Select.Option value="low">{t('rules.severities.low')}</Select.Option>
+              <Select.Option value="medium">{t('rules.severities.medium')}</Select.Option>
+              <Select.Option value="high">{t('rules.severities.high')}</Select.Option>
+              <Select.Option value="critical">{t('rules.severities.critical')}</Select.Option>
             </Select>
           </Form.Item>
           
           <Form.Item
             name="threshold"
-            label="质量阈值"
-            rules={[{ required: true, message: '请输入质量阈值' }]}
+            label={t('rules.qualityThreshold')}
+            rules={[{ required: true, message: t('rules.inputThreshold') }]}
           >
             <Input
               type="number"
               min={0}
               max={1}
               step={0.01}
-              placeholder="0.0 - 1.0"
+              placeholder={t('rules.thresholdRange')}
               addonAfter="%"
             />
           </Form.Item>
           
           <Form.Item
             name="enabled"
-            label="启用状态"
+            label={t('rules.enabledStatus')}
             valuePropName="checked"
             initialValue={true}
           >
-            <Switch checkedChildren="启用" unCheckedChildren="禁用" />
+            <Switch checkedChildren={t('rules.enable')} unCheckedChildren={t('rules.disable')} />
           </Form.Item>
         </Form>
       </Modal>

@@ -206,19 +206,19 @@ const ThirdPartyConfig: React.FC = () => {
 
   const columns = [
     {
-      title: '名称',
+      title: t('thirdPartyConfig.toolName'),
       dataIndex: 'name',
       key: 'name',
       render: (text: string) => <Text strong>{text}</Text>,
     },
     {
-      title: '类型',
+      title: t('thirdPartyConfig.toolType'),
       dataIndex: 'tool_type',
       key: 'tool_type',
       render: (type: ThirdPartyToolType) => <Tag color="cyan">{getToolTypeName(type)}</Tag>,
     },
     {
-      title: '端点',
+      title: t('thirdPartyConfig.apiEndpoint'),
       dataIndex: 'endpoint',
       key: 'endpoint',
       ellipsis: true,
@@ -229,29 +229,29 @@ const ThirdPartyConfig: React.FC = () => {
       ),
     },
     {
-      title: '状态',
+      title: t('thirdPartyConfig.status'),
       key: 'status',
       render: (_: unknown, record: ThirdPartyConfigResponse) => {
         const healthResult = healthResults[record.id];
         if (healthResult) {
           return healthResult.success ? (
-            <Badge status="success" text={`健康 (${healthResult.latency_ms}ms)`} />
+            <Badge status="success" text={t('thirdPartyConfig.healthyWithLatency', { latency: healthResult.latency_ms })} />
           ) : (
-            <Badge status="error" text={healthResult.error_message || '异常'} />
+            <Badge status="error" text={healthResult.error_message || t('thirdPartyConfig.unhealthy')} />
           );
         }
         if (record.health_status) {
           return record.health_status === 'healthy' ? (
-            <Badge status="success" text="健康" />
+            <Badge status="success" text={t('thirdPartyConfig.healthy')} />
           ) : (
             <Badge status="error" text={record.health_status} />
           );
         }
-        return <Badge status="default" text="未检查" />;
+        return <Badge status="default" text={t('thirdPartyConfig.notChecked')} />;
       },
     },
     {
-      title: '启用',
+      title: t('thirdPartyConfig.enabledColumn'),
       key: 'enabled',
       render: (_: unknown, record: ThirdPartyConfigResponse) => (
         <Switch
@@ -262,11 +262,11 @@ const ThirdPartyConfig: React.FC = () => {
       ),
     },
     {
-      title: '调用统计',
+      title: t('thirdPartyConfig.callStats'),
       key: 'stats',
       render: (_: unknown, record: ThirdPartyConfigResponse) => (
         <Space direction="vertical" size="small">
-          <Text type="secondary">调用: {record.call_count}</Text>
+          <Text type="secondary">{t('thirdPartyConfig.calls')}: {record.call_count}</Text>
           <Progress
             percent={record.success_rate * 100}
             size="small"
@@ -277,18 +277,18 @@ const ThirdPartyConfig: React.FC = () => {
       ),
     },
     {
-      title: '操作',
+      title: t('thirdPartyConfig.actions'),
       key: 'actions',
       render: (_: unknown, record: ThirdPartyConfigResponse) => (
         <Space>
-          <Tooltip title="健康检查">
+          <Tooltip title={t('thirdPartyConfig.healthCheck')}>
             <Button
               type="text"
               icon={<HeartOutlined />}
               onClick={() => handleHealthCheck(record.id)}
             />
           </Tooltip>
-          <Tooltip title="编辑">
+          <Tooltip title={t('thirdPartyConfig.edit')}>
             <Button
               type="text"
               icon={<EditOutlined />}
@@ -296,12 +296,12 @@ const ThirdPartyConfig: React.FC = () => {
             />
           </Tooltip>
           <Popconfirm
-            title="确定删除此配置？"
+            title={t('thirdPartyConfig.confirmDelete')}
             onConfirm={() => deleteMutation.mutate(record.id)}
-            okText="确定"
-            cancelText="取消"
+            okText={t('common:confirm')}
+            cancelText={t('common:cancel')}
           >
-            <Tooltip title="删除">
+            <Tooltip title={t('thirdPartyConfig.delete')}>
               <Button type="text" danger icon={<DeleteOutlined />} />
             </Tooltip>
           </Popconfirm>
@@ -316,23 +316,23 @@ const ThirdPartyConfig: React.FC = () => {
         title={
           <Space>
             <SettingOutlined />
-            <span>第三方工具配置</span>
+            <span>{t('thirdPartyConfig.title')}</span>
           </Space>
         }
         extra={
           <Space>
             <Button icon={<ReloadOutlined />} onClick={() => refetch()}>
-              刷新
+              {t('common:refresh')}
             </Button>
             <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-              添加工具
+              {t('thirdPartyConfig.addTool')}
             </Button>
           </Space>
         }
       >
         <Alert
-          message="第三方工具说明"
-          description="配置和管理第三方工具集成，包括 Text-to-SQL、AI 标注等服务。启用/禁用操作将立即生效。"
+          message={t('thirdPartyConfig.infoTitle')}
+          description={t('thirdPartyConfig.infoDescription')}
           type="info"
           showIcon
           style={{ marginBottom: 16 }}
@@ -343,7 +343,7 @@ const ThirdPartyConfig: React.FC = () => {
           <Col xs={12} sm={6}>
             <Card size="small">
               <Statistic
-                title="总工具数"
+                title={t('thirdPartyConfig.stats.totalTools')}
                 value={configs.length}
                 prefix={<SettingOutlined />}
               />
@@ -352,7 +352,7 @@ const ThirdPartyConfig: React.FC = () => {
           <Col xs={12} sm={6}>
             <Card size="small">
               <Statistic
-                title="已启用"
+                title={t('thirdPartyConfig.stats.enabled')}
                 value={configs.filter((c: ThirdPartyConfigResponse) => c.enabled).length}
                 valueStyle={{ color: '#3f8600' }}
                 prefix={<CheckCircleOutlined />}
@@ -362,7 +362,7 @@ const ThirdPartyConfig: React.FC = () => {
           <Col xs={12} sm={6}>
             <Card size="small">
               <Statistic
-                title="总调用次数"
+                title={t('thirdPartyConfig.stats.totalCalls')}
                 value={configs.reduce((sum: number, c: ThirdPartyConfigResponse) => sum + c.call_count, 0)}
                 prefix={<ThunderboltOutlined />}
               />
@@ -371,7 +371,7 @@ const ThirdPartyConfig: React.FC = () => {
           <Col xs={12} sm={6}>
             <Card size="small">
               <Statistic
-                title="平均成功率"
+                title={t('thirdPartyConfig.stats.avgSuccessRate')}
                 value={
                   configs.length > 0
                     ? (configs.reduce((sum: number, c: ThirdPartyConfigResponse) => sum + c.success_rate, 0) / configs.length * 100).toFixed(1)
@@ -395,7 +395,7 @@ const ThirdPartyConfig: React.FC = () => {
 
       {/* Create/Edit Modal */}
       <Modal
-        title={editingConfig ? '编辑第三方工具' : '添加第三方工具'}
+        title={editingConfig ? t('thirdPartyConfig.editTool') : t('thirdPartyConfig.addTool')}
         open={modalVisible}
         onOk={handleSubmit}
         onCancel={() => {
@@ -409,22 +409,22 @@ const ThirdPartyConfig: React.FC = () => {
         <Form form={form} layout="vertical">
           <Form.Item
             name="name"
-            label="工具名称"
-            rules={[{ required: true, message: '请输入工具名称' }]}
+            label={t('thirdPartyConfig.configName')}
+            rules={[{ required: true, message: t('thirdPartyConfig.configNameRequired') }]}
           >
-            <Input placeholder="例如：自定义 Text-to-SQL 服务" />
+            <Input placeholder={t('thirdPartyConfig.configNamePlaceholder')} />
           </Form.Item>
 
-          <Form.Item name="description" label="描述">
-            <TextArea rows={2} placeholder="工具描述（可选）" />
+          <Form.Item name="description" label={t('thirdPartyConfig.description')}>
+            <TextArea rows={2} placeholder={t('thirdPartyConfig.descriptionPlaceholder')} />
           </Form.Item>
 
           <Form.Item
             name="tool_type"
-            label="工具类型"
-            rules={[{ required: true, message: '请选择工具类型' }]}
+            label={t('thirdPartyConfig.toolType')}
+            rules={[{ required: true, message: t('thirdPartyConfig.toolTypeRequired') }]}
           >
-            <Select placeholder="选择工具类型">
+            <Select placeholder={t('thirdPartyConfig.toolTypePlaceholder')}>
               {TOOL_TYPES.map(type => (
                 <Option key={type} value={type}>
                   {getToolTypeName(type)}
@@ -435,24 +435,24 @@ const ThirdPartyConfig: React.FC = () => {
 
           <Form.Item
             name="endpoint"
-            label="API 端点"
+            label={t('thirdPartyConfig.apiEndpoint')}
             rules={[
-              { required: true, message: '请输入 API 端点' },
-              { type: 'url', message: '请输入有效的 URL' },
+              { required: true, message: t('thirdPartyConfig.endpointRequired') },
+              { type: 'url', message: t('thirdPartyConfig.endpointInvalid') },
             ]}
           >
-            <Input placeholder="例如：https://api.example.com/v1" />
+            <Input placeholder={t('thirdPartyConfig.endpointPlaceholder')} />
           </Form.Item>
 
           <Form.Item
             name="api_key"
-            label="API Key"
-            extra={editingConfig ? '留空则保持原有 API Key 不变' : undefined}
+            label={t('thirdPartyConfig.apiKey')}
+            extra={editingConfig ? t('thirdPartyConfig.apiKeyKeepEmpty') : undefined}
           >
-            <Input.Password placeholder="输入 API Key（将加密存储）" />
+            <Input.Password placeholder={t('thirdPartyConfig.apiKeyPlaceholder')} />
           </Form.Item>
 
-          <Form.Item name="timeout_seconds" label="超时时间（秒）">
+          <Form.Item name="timeout_seconds" label={t('thirdPartyConfig.timeout')}>
             <InputNumber min={1} max={300} style={{ width: '100%' }} />
           </Form.Item>
         </Form>

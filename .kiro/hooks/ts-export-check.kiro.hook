@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "TypeScript 导出检查",
+  "description": "当编辑 frontend/src 目录下的 index.ts 文件时，自动验证导出的成员是否存在于源文件中，防止导出不存在的成员或重复导出。",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "frontend/src/**/index.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "检测到 index.ts 文件被修改。请执行以下检查：\n\n1. **导出存在性检查**: 验证所有 `export { name } from './file'` 中的 `name` 是否在对应的 `file` 中实际存在\n2. **重复导出检查**: 检查是否有相同名称被多次导出（可能来自不同文件）\n3. **命名冲突检查**: 如果使用 `export *`，检查是否与其他导出冲突\n\n如果发现问题，请：\n- 列出具体的错误\n- 提供修复建议\n- 如果是命名冲突，建议使用 `as` 重命名\n\n参考规范: .kiro/steering/typescript-export-rules.md"
+  }
+}

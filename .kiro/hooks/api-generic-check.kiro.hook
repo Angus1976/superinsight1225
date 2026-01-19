@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "API 泛型类型检查",
+  "description": "当编辑 frontend/src/services 目录下的 API 服务文件时，检查所有 api.get/post/put/delete 调用是否指定了泛型类型参数，确保类型安全。",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "frontend/src/services/**/*.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "检测到 API 服务文件被修改。请检查以下内容：\n\n1. **泛型类型检查**: 所有 `api.get()`, `api.post()`, `api.put()`, `api.delete()` 调用必须指定泛型类型参数\n\n❌ 错误示例:\n```typescript\napi.get('/api/users')\napi.post('/api/users', data)\n```\n\n✅ 正确示例:\n```typescript\napi.get<User[]>('/api/users')\napi.post<User>('/api/users', data)\n```\n\n2. **响应类型定义**: 确保返回类型与接口定义匹配\n\n如果发现缺少泛型类型的 API 调用，请列出并提供修复建议。\n\n参考规范: .kiro/steering/typescript-export-rules.md"
+  }
+}

@@ -8,6 +8,7 @@
 import { memo, ReactNode } from 'react';
 import { Card, Typography, Space, Tooltip, Button } from 'antd';
 import { ReloadOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import styles from './ContentCard.module.scss';
 
 const { Title, Text } = Typography;
@@ -49,6 +50,8 @@ export const ContentCard = memo<ContentCardProps>(({
   size = 'default',
   fullHeight = false,
 }) => {
+  const { t } = useTranslation('common');
+
   const cardTitle = title ? (
     <div className={styles.cardHeader}>
       <div className={styles.titleSection}>
@@ -74,7 +77,7 @@ export const ContentCard = memo<ContentCardProps>(({
       
       <div className={styles.headerActions}>
         {refreshable && (
-          <Tooltip title="刷新">
+          <Tooltip title={t('refresh')}>
             <Button
               type="text"
               size="small"

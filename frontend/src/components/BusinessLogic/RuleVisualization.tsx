@@ -18,6 +18,7 @@ import {
   PieChartOutlined,
   LineChartOutlined,
 } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import * as echarts from 'echarts';
 
 const { Title, Text } = Typography;
@@ -39,6 +40,7 @@ export const RuleVisualization: React.FC<RuleVisualizationProps> = ({
   rules,
   patterns,
 }) => {
+  const { t } = useTranslation(['businessLogic', 'common']);
   const [visualizationType, setVisualizationType] = useState('rule_network');
   const [loading, setLoading] = useState(false);
   const [visualizationData, setVisualizationData] = useState<VisualizationData | null>(null);
@@ -73,11 +75,11 @@ export const RuleVisualization: React.FC<RuleVisualizationProps> = ({
         setVisualizationData(data);
         renderVisualization(type, data);
       } else {
-        throw new Error('生成可视化失败');
+        throw new Error(t('visualization.generateError'));
       }
     } catch (error) {
-      console.error('生成可视化失败:', error);
-      message.error('生成可视化失败');
+      console.error('Generate visualization failed:', error);
+      message.error(t('visualization.generateError'));
     } finally {
       setLoading(false);
     }
@@ -110,15 +112,15 @@ export const RuleVisualization: React.FC<RuleVisualizationProps> = ({
 
     const option = {
       title: {
-        text: '业务规则关系网络',
+        text: t('visualization.ruleNetworkTitle'),
         left: 'center',
       },
       tooltip: {
         formatter: (params: any) => {
           if (params.dataType === 'node') {
-            return `规则: ${params.data.name}<br/>类型: ${params.data.type}<br/>置信度: ${(params.data.confidence * 100).toFixed(1)}%`;
+            return `${t('visualization.rule')}: ${params.data.name}<br/>${t('visualization.type')}: ${params.data.type}<br/>${t('visualization.confidence')}: ${(params.data.confidence * 100).toFixed(1)}%`;
           } else {
-            return `关联强度: ${(params.data.strength * 100).toFixed(1)}%`;
+            return `${t('visualization.linkStrength')}: ${(params.data.strength * 100).toFixed(1)}%`;
           }
         },
       },
@@ -174,7 +176,7 @@ export const RuleVisualization: React.FC<RuleVisualizationProps> = ({
 
     const option = {
       title: {
-        text: '业务模式时间趋势',
+        text: t('visualization.patternTimelineTitle'),
         left: 'center',
       },
       tooltip: {
@@ -184,7 +186,7 @@ export const RuleVisualization: React.FC<RuleVisualizationProps> = ({
         },
       },
       legend: {
-        data: ['模式数量', '平均强度'],
+        data: [t('visualization.patternCount'), t('visualization.avgStrength')],
         top: 30,
       },
       xAxis: {
@@ -194,18 +196,18 @@ export const RuleVisualization: React.FC<RuleVisualizationProps> = ({
       yAxis: [
         {
           type: 'value',
-          name: '模式数量',
+          name: t('visualization.patternCount'),
           position: 'left',
         },
         {
           type: 'value',
-          name: '平均强度 (%)',
+          name: t('visualization.avgStrengthPercent'),
           position: 'right',
         },
       ],
       series: [
         {
-          name: '模式数量',
+          name: t('visualization.patternCount'),
           type: 'line',
           data: patternCounts,
           smooth: true,
@@ -214,7 +216,7 @@ export const RuleVisualization: React.FC<RuleVisualizationProps> = ({
           },
         },
         {
-          name: '平均强度',
+          name: t('visualization.avgStrength'),
           type: 'line',
           yAxisIndex: 1,
           data: avgStrengths,
@@ -245,13 +247,13 @@ export const RuleVisualization: React.FC<RuleVisualizationProps> = ({
     const option = {
       title: [
         {
-          text: '规则类型分布',
+          text: t('visualization.ruleTypeDistribution'),
           left: '25%',
           top: '10%',
           textAlign: 'center',
         },
         {
-          text: '置信度分布',
+          text: t('visualization.confidenceDistribution'),
           left: '75%',
           top: '10%',
           textAlign: 'center',
@@ -303,13 +305,13 @@ export const RuleVisualization: React.FC<RuleVisualizationProps> = ({
 
   // 获取规则类型名称
   const getRuleTypeName = (type: string) => {
-    const nameMap: Record<string, string> = {
-      sentiment_rule: '情感规则',
-      keyword_rule: '关键词规则',
-      temporal_rule: '时间规则',
-      behavioral_rule: '行为规则',
+    const typeKeyMap: Record<string, string> = {
+      sentiment_rule: 'rules.types.sentimentRule',
+      keyword_rule: 'rules.types.keywordRule',
+      temporal_rule: 'rules.types.temporalRule',
+      behavioral_rule: 'rules.types.behavioralRule',
     };
-    return nameMap[type] || type;
+    return typeKeyMap[type] ? t(typeKeyMap[type]) : type;
   };
 
   // 处理窗口大小变化
@@ -345,20 +347,20 @@ export const RuleVisualization: React.FC<RuleVisualizationProps> = ({
         <Row justify="space-between" align="middle">
           <Col>
             <Space>
-              <Text strong>可视化类型:</Text>
+              <Text strong>{t('visualization.visualizationType')}:</Text>
               <Select
                 value={visualizationType}
                 onChange={setVisualizationType}
                 style={{ width: 200 }}
               >
                 <Option value="rule_network">
-                  <NodeIndexOutlined /> 规则网络图
+                  <NodeIndexOutlined /> {t('visualization.ruleNetwork')}
                 </Option>
                 <Option value="pattern_timeline">
-                  <LineChartOutlined /> 模式时间线
+                  <LineChartOutlined /> {t('visualization.patternTimeline')}
                 </Option>
                 <Option value="insight_dashboard">
-                  <PieChartOutlined /> 洞察仪表板
+                  <PieChartOutlined /> {t('visualization.insightDashboard')}
                 </Option>
               </Select>
             </Space>
@@ -370,7 +372,7 @@ export const RuleVisualization: React.FC<RuleVisualizationProps> = ({
                 onClick={() => generateVisualization(visualizationType)}
                 loading={loading}
               >
-                刷新图表
+                {t('visualization.refreshChart')}
               </Button>
             </Space>
           </Col>
@@ -380,35 +382,35 @@ export const RuleVisualization: React.FC<RuleVisualizationProps> = ({
       {/* 可视化内容 */}
       <Spin spinning={loading}>
         {visualizationType === 'rule_network' && (
-          <Card title="业务规则关系网络" style={{ height: 600 }}>
+          <Card title={t('visualization.ruleNetworkTitle')} style={{ height: 600 }}>
             <div
               ref={networkChartRef}
               style={{ width: '100%', height: 500 }}
             />
             <div style={{ marginTop: 16 }}>
               <Text type="secondary">
-                节点大小表示规则置信度，连线粗细表示规则间关联强度
+                {t('visualization.ruleNetworkHint')}
               </Text>
             </div>
           </Card>
         )}
 
         {visualizationType === 'pattern_timeline' && (
-          <Card title="业务模式时间趋势" style={{ height: 600 }}>
+          <Card title={t('visualization.patternTimelineTitle')} style={{ height: 600 }}>
             <div
               ref={timelineChartRef}
               style={{ width: '100%', height: 500 }}
             />
             <div style={{ marginTop: 16 }}>
               <Text type="secondary">
-                显示业务模式数量和平均强度随时间的变化趋势
+                {t('visualization.patternTimelineHint')}
               </Text>
             </div>
           </Card>
         )}
 
         {visualizationType === 'insight_dashboard' && (
-          <Card title="业务洞察仪表板" style={{ height: 600 }}>
+          <Card title={t('visualization.insightDashboardTitle')} style={{ height: 600 }}>
             <div
               ref={dashboardChartRef}
               style={{ width: '100%', height: 500 }}
@@ -417,12 +419,12 @@ export const RuleVisualization: React.FC<RuleVisualizationProps> = ({
               <Row gutter={16}>
                 <Col span={12}>
                   <Text type="secondary">
-                    左图显示不同类型业务规则的分布情况
+                    {t('visualization.leftChartHint')}
                   </Text>
                 </Col>
                 <Col span={12}>
                   <Text type="secondary">
-                    右图显示规则置信度的分布情况
+                    {t('visualization.rightChartHint')}
                   </Text>
                 </Col>
               </Row>
@@ -432,38 +434,35 @@ export const RuleVisualization: React.FC<RuleVisualizationProps> = ({
       </Spin>
 
       {/* 图表说明 */}
-      <Card title="图表说明" style={{ marginTop: 16 }}>
+      <Card title={t('visualization.chartGuide')} style={{ marginTop: 16 }}>
         <Row gutter={16}>
           <Col span={8}>
             <div>
               <Title level={5}>
-                <NodeIndexOutlined /> 规则网络图
+                <NodeIndexOutlined /> {t('visualization.ruleNetwork')}
               </Title>
               <Text type="secondary">
-                展示业务规则之间的关联关系，帮助理解规则间的依赖和影响。
-                节点大小代表规则置信度，连线粗细代表关联强度。
+                {t('visualization.ruleNetworkDesc')}
               </Text>
             </div>
           </Col>
           <Col span={8}>
             <div>
               <Title level={5}>
-                <LineChartOutlined /> 模式时间线
+                <LineChartOutlined /> {t('visualization.patternTimeline')}
               </Title>
               <Text type="secondary">
-                显示业务模式随时间的变化趋势，包括模式数量和平均强度的变化。
-                有助于识别业务发展的阶段性特征。
+                {t('visualization.patternTimelineDesc')}
               </Text>
             </div>
           </Col>
           <Col span={8}>
             <div>
               <Title level={5}>
-                <PieChartOutlined /> 洞察仪表板
+                <PieChartOutlined /> {t('visualization.insightDashboard')}
               </Title>
               <Text type="secondary">
-                提供业务规则和模式的统计概览，包括类型分布、置信度分布等关键指标。
-                便于快速了解整体情况。
+                {t('visualization.insightDashboardDesc')}
               </Text>
             </div>
           </Col>

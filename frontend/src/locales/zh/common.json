@@ -100,9 +100,22 @@
   "validation": {
     "required": "此项为必填项",
     "invalidEmail": "请输入有效的邮箱地址",
+    "email": "请输入有效的邮箱地址",
     "minLength": "最少需要 {{min}} 个字符",
     "maxLength": "最多允许 {{max}} 个字符"
   },
+  "placeholder": {
+    "select": "请选择",
+    "input": "请输入",
+    "search": "请搜索",
+    "description": "请输入描述"
+  },
+  "on": "开启",
+  "off": "关闭",
+  "enabled": "启用",
+  "disabled": "禁用",
+  "required": "必需",
+  "optional": "可选",
   "pagination": {
     "total": "共 {{total}} 项"
   },
@@ -332,5 +345,23 @@
       "connecting": "连接中",
       "disconnected": "已断开"
     }
-  }
+  },
+  "async": {
+    "loadFailed": "加载失败"
+  },
+  "banner": {
+    "learnMore": "了解更多"
+  },
+  "errorBoundary": {
+    "pageError": "页面发生了一些错误，请尝试刷新页面",
+    "backHome": "返回首页"
+  },
+  "layout": {
+    "openMenu": "打开菜单"
+  },
+  "infiniteScroll": {
+    "noMore": "没有更多了",
+    "loadFailed": "加载失败"
+  },
+  "unknown": "未知"
 }

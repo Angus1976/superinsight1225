@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "提交前 TypeScript 检查",
+  "description": "在提交代码前运行 TypeScript 类型检查，确保没有类型错误。此 hook 需要用户手动触发。",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "执行提交前 TypeScript 类型检查：\n\n1. 在 frontend 目录运行 `npx tsc --noEmit`\n2. 如果有错误，列出所有错误并分类：\n   - 导出错误 (TS2308, TS2305)\n   - 类型错误 (TS2322, TS2345)\n   - 未使用变量 (TS6133, TS6196)\n3. 提供修复建议\n4. 如果没有错误，确认可以提交\n\n重点检查：\n- index.ts 文件的导出是否正确\n- API 服务是否有泛型类型\n- Hook 命名是否规范\n\n参考规范: .kiro/steering/typescript-export-rules.md"
+  }
+}

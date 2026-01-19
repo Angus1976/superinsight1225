@@ -2,6 +2,7 @@
 import { useState, useMemo, ReactNode } from 'react';
 import { Drawer, Button } from 'antd';
 import { MenuOutlined, CloseOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import { useResponsive } from '@/hooks/useResponsive';
 import styles from './ResponsiveLayout.module.scss';
 
@@ -18,10 +19,13 @@ export const ResponsiveLayout: React.FC<ResponsiveLayoutProps> = ({
   siderContent,
   headerContent,
   logo,
-  title = 'SuperInsight',
+  title,
 }) => {
+  const { t } = useTranslation('common');
   const [mobileMenuVisible, setMobileMenuVisible] = useState(false);
   const { isMobile, isTablet, isDesktop } = useResponsive();
+
+  const displayTitle = title || t('appName');
 
   // Handler for closing mobile menu
   const handleCloseMobileMenu = () => {
@@ -51,11 +55,11 @@ export const ResponsiveLayout: React.FC<ResponsiveLayoutProps> = ({
             icon={<MenuOutlined />}
             onClick={handleOpenMobileMenu}
             className={styles.menuButton}
-            aria-label="打开菜单"
+            aria-label={t('layout.openMenu')}
           />
           <div className={styles.mobileTitle}>
             {logo && <span className={styles.mobileLogo}>{logo}</span>}
-            <strong>{title}</strong>
+            <strong>{displayTitle}</strong>
           </div>
           <div className={styles.mobileHeaderContent}>{headerContent}</div>
         </header>
@@ -70,7 +74,7 @@ export const ResponsiveLayout: React.FC<ResponsiveLayoutProps> = ({
           title={
             <div className={styles.drawerTitle}>
               {logo && <span className={styles.drawerLogo}>{logo}</span>}
-              <span>{title}</span>
+              <span>{displayTitle}</span>
             </div>
           }
           placement="left"
@@ -101,11 +105,11 @@ export const ResponsiveLayout: React.FC<ResponsiveLayoutProps> = ({
             icon={<MenuOutlined />}
             onClick={handleOpenMobileMenu}
             className={styles.menuButton}
-            aria-label="打开菜单"
+            aria-label={t('layout.openMenu')}
           />
           <div className={styles.tabletTitle}>
             {logo && <span className={styles.tabletLogo}>{logo}</span>}
-            <strong>{title}</strong>
+            <strong>{displayTitle}</strong>
           </div>
           <div className={styles.tabletHeaderContent}>{headerContent}</div>
         </header>
@@ -120,7 +124,7 @@ export const ResponsiveLayout: React.FC<ResponsiveLayoutProps> = ({
           title={
             <div className={styles.drawerTitle}>
               {logo && <span className={styles.drawerLogo}>{logo}</span>}
-              <span>{title}</span>
+              <span>{displayTitle}</span>
             </div>
           }
           placement="left"

@@ -27,6 +27,7 @@ import {
   MessageOutlined,
   SoundOutlined,
 } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 
 const { Text, Title } = Typography;
 
@@ -61,6 +62,7 @@ export const InsightNotification: React.FC<InsightNotificationProps> = ({
   onInsightReceived,
   onInsightAcknowledge,
 }) => {
+  const { t } = useTranslation(['businessLogic', 'common']);
   const [notifications, setNotifications] = useState<BusinessInsight[]>([]);
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [settings, setSettings] = useState<NotificationSettings>({
@@ -81,7 +83,7 @@ export const InsightNotification: React.FC<InsightNotificationProps> = ({
     const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
-      console.log('业务洞察WebSocket连接已建立');
+      console.log('Business insight WebSocket connected');
       setConnectionStatus('connected');
     };
 
@@ -102,12 +104,12 @@ export const InsightNotification: React.FC<InsightNotificationProps> = ({
           handleRuleUpdate(data.payload);
         }
       } catch (error) {
-        console.error('解析WebSocket消息失败:', error);
+        console.error('Parse WebSocket message failed:', error);
       }
     };
 
     ws.onclose = () => {
-      console.log('业务洞察WebSocket连接已关闭');
+      console.log('Business insight WebSocket closed');
       setConnectionStatus('disconnected');
       
       // 5秒后尝试重连
@@ -120,7 +122,7 @@ export const InsightNotification: React.FC<InsightNotificationProps> = ({
     };
 
     ws.onerror = (error) => {
-      console.error('业务洞察WebSocket连接错误:', error);
+      console.error('Business insight WebSocket error:', error);
       setConnectionStatus('disconnected');
     };
 
@@ -137,7 +139,7 @@ export const InsightNotification: React.FC<InsightNotificationProps> = ({
                        insight.impact_score >= 0.6 ? 'warning' : 'info';
 
     notification[impactLevel]({
-      message: '新的业务洞察',
+      message: t('notification.newInsight'),
       description: insight.title,
       icon: <BulbOutlined style={{ color: '#1890ff' }} />,
       duration: 6,
@@ -168,7 +170,7 @@ export const InsightNotification: React.FC<InsightNotificationProps> = ({
   // 处理模式变化
   const handlePatternChange = (changeData: any) => {
     notification.info({
-      message: '业务模式变化',
+      message: t('notification.patternChange'),
       description: changeData.description,
       icon: <BellOutlined style={{ color: '#52c41a' }} />,
       duration: 4,
@@ -178,7 +180,7 @@ export const InsightNotification: React.FC<InsightNotificationProps> = ({
   // 处理规则更新
   const handleRuleUpdate = (updateData: any) => {
     notification.info({
-      message: '业务规则更新',
+      message: t('notification.ruleUpdate'),
       description: updateData.description,
       icon: <SettingOutlined style={{ color: '#faad14' }} />,
       duration: 4,
@@ -191,10 +193,10 @@ export const InsightNotification: React.FC<InsightNotificationProps> = ({
       const audio = new Audio('/sounds/notification.mp3');
       audio.volume = 0.3;
       audio.play().catch(error => {
-        console.warn('播放通知音效失败:', error);
+        console.warn('Play notification sound failed:', error);
       });
     } catch (error) {
-      console.warn('创建音频对象失败:', error);
+      console.warn('Create audio object failed:', error);
     }
   };
 
@@ -216,7 +218,7 @@ export const InsightNotification: React.FC<InsightNotificationProps> = ({
         }),
       });
     } catch (error) {
-      console.error('发送邮件通知失败:', error);
+      console.error('Send email notification failed:', error);
     }
   };
 
@@ -237,7 +239,7 @@ export const InsightNotification: React.FC<InsightNotificationProps> = ({
         }),
       });
     } catch (error) {
-      console.error('发送短信通知失败:', error);
+      console.error('Send SMS notification failed:', error);
     }
   };
 
@@ -254,14 +256,14 @@ export const InsightNotification: React.FC<InsightNotificationProps> = ({
         onInsightAcknowledge?.(insightId);
         
         notification.success({
-          message: '洞察已确认',
+          message: t('insights.acknowledged'),
           duration: 2,
         });
       }
     } catch (error) {
-      console.error('确认洞察失败:', error);
+      console.error('Acknowledge insight failed:', error);
       notification.error({
-        message: '确认洞察失败',
+        message: t('insights.acknowledgeError'),
         duration: 3,
       });
     }
@@ -292,10 +294,20 @@ export const InsightNotification: React.FC<InsightNotificationProps> = ({
 
   // 获取影响等级文本
   const getImpactText = (score: number) => {
-    if (score >= 0.8) return '高影响';
-    if (score >= 0.6) return '中影响';
-    if (score >= 0.4) return '低影响';
-    return '微影响';
+    if (score >= 0.8) return t('insights.impactLevel.high');
+    if (score >= 0.6) return t('insights.impactLevel.medium');
+    if (score >= 0.4) return t('insights.impactLevel.low');
+    return t('insights.impactLevel.veryLow');
+  };
+
+  // 获取连接状态文本
+  const getConnectionStatusText = () => {
+    switch (connectionStatus) {
+      case 'connected': return t('notification.connected');
+      case 'connecting': return t('notification.connecting');
+      case 'disconnected': return t('notification.disconnected');
+      default: return t('common:unknown');
+    }
   };
 
   // 初始化WebSocket连接
@@ -319,19 +331,10 @@ export const InsightNotification: React.FC<InsightNotificationProps> = ({
     }
   };
 
-  const getConnectionStatusText = () => {
-    switch (connectionStatus) {
-      case 'connected': return '已连接';
-      case 'connecting': return '连接中';
-      case 'disconnected': return '已断开';
-      default: return '未知';
-    }
-  };
-
   return (
     <>
       {/* 通知按钮 */}
-      <Tooltip title={`业务洞察通知 (${getConnectionStatusText()})`}>
+      <Tooltip title={`${t('notification.title')} (${getConnectionStatusText()})`}>
         <Badge count={notifications.length} size="small">
           <Button
             type="text"
@@ -350,7 +353,7 @@ export const InsightNotification: React.FC<InsightNotificationProps> = ({
         title={
           <Space>
             <BulbOutlined />
-            业务洞察通知
+            {t('notification.title')}
             <Badge count={notifications.length} />
           </Space>
         }
@@ -360,17 +363,17 @@ export const InsightNotification: React.FC<InsightNotificationProps> = ({
         onClose={() => setDrawerVisible(false)}
         extra={
           <Space>
-            <Tooltip title="清空所有通知">
+            <Tooltip title={t('notification.clearAll')}>
               <Button
                 type="text"
                 size="small"
                 onClick={clearAllNotifications}
                 disabled={notifications.length === 0}
               >
-                清空
+                {t('notification.clear')}
               </Button>
             </Tooltip>
-            <Tooltip title="通知设置">
+            <Tooltip title={t('notification.settings')}>
               <Button
                 type="text"
                 size="small"
@@ -387,7 +390,7 @@ export const InsightNotification: React.FC<InsightNotificationProps> = ({
         <Alert
           message={
             <Space>
-              <span>连接状态:</span>
+              <span>{t('notification.connectionStatus')}:</span>
               <Tag color={getConnectionStatusColor()}>{getConnectionStatusText()}</Tag>
               {connectionStatus === 'disconnected' && (
                 <Button
@@ -398,7 +401,7 @@ export const InsightNotification: React.FC<InsightNotificationProps> = ({
                     initWebSocket();
                   }}
                 >
-                  重连
+                  {t('notification.reconnect')}
                 </Button>
               )}
             </Space>
@@ -410,14 +413,14 @@ export const InsightNotification: React.FC<InsightNotificationProps> = ({
 
         {/* 通知设置 */}
         <Card size="small" style={{ marginBottom: 16 }}>
-          <Title level={5}>通知设置</Title>
+          <Title level={5}>{t('notification.settings')}</Title>
           <Space direction="vertical" style={{ width: '100%' }}>
             <Space>
               <Switch
                 checked={settings.enabled}
                 onChange={(checked) => updateSettings({ enabled: checked })}
               />
-              <Text>启用通知</Text>
+              <Text>{t('notification.enableNotification')}</Text>
             </Space>
             <Space>
               <Switch
@@ -426,7 +429,7 @@ export const InsightNotification: React.FC<InsightNotificationProps> = ({
                 disabled={!settings.enabled}
               />
               <SoundOutlined />
-              <Text>声音提醒</Text>
+              <Text>{t('notification.soundAlert')}</Text>
             </Space>
             <Space>
               <Switch
@@ -435,7 +438,7 @@ export const InsightNotification: React.FC<InsightNotificationProps> = ({
                 disabled={!settings.enabled}
               />
               <MailOutlined />
-              <Text>邮件通知</Text>
+              <Text>{t('notification.emailNotification')}</Text>
             </Space>
             <Space>
               <Switch
@@ -444,7 +447,7 @@ export const InsightNotification: React.FC<InsightNotificationProps> = ({
                 disabled={!settings.enabled}
               />
               <MessageOutlined />
-              <Text>短信通知</Text>
+              <Text>{t('notification.smsNotification')}</Text>
             </Space>
           </Space>
         </Card>
@@ -453,7 +456,7 @@ export const InsightNotification: React.FC<InsightNotificationProps> = ({
         {notifications.length === 0 ? (
           <Empty
             image={Empty.PRESENTED_IMAGE_SIMPLE}
-            description="暂无新的业务洞察"
+            description={t('notification.noNewInsights')}
           />
         ) : (
           <List
@@ -462,7 +465,7 @@ export const InsightNotification: React.FC<InsightNotificationProps> = ({
               <List.Item
                 key={insight.id}
                 actions={[
-                  <Tooltip title="确认洞察">
+                  <Tooltip title={t('insights.confirmAcknowledge')}>
                     <Button
                       type="text"
                       size="small"
@@ -470,7 +473,7 @@ export const InsightNotification: React.FC<InsightNotificationProps> = ({
                       onClick={() => acknowledgeInsight(insight.id)}
                     />
                   </Tooltip>,
-                  <Tooltip title="忽略">
+                  <Tooltip title={t('notification.dismiss')}>
                     <Button
                       type="text"
                       size="small"

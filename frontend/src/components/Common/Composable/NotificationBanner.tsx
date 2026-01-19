@@ -11,6 +11,7 @@
 import React, { useState, useCallback, memo } from 'react';
 import { Alert, Button, Space } from 'antd';
 import { CloseOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import type { AlertProps } from 'antd';
 import styles from './NotificationBanner.module.scss';
 
@@ -174,10 +175,11 @@ export interface AnnouncementBannerProps {
 export const AnnouncementBanner = memo(function AnnouncementBanner({
   message,
   link,
-  linkText = '了解更多',
+  linkText,
   onDismiss,
   className,
 }: AnnouncementBannerProps): React.ReactElement {
+  const { t } = useTranslation('common');
   const [visible, setVisible] = useState(true);
 
   const handleDismiss = useCallback(() => {
@@ -195,11 +197,11 @@ export const AnnouncementBanner = memo(function AnnouncementBanner({
         <span className={styles.message}>{message}</span>
         {link && (
           <a href={link} target="_blank" rel="noopener noreferrer" className={styles.link}>
-            {linkText}
+            {linkText || t('banner.learnMore')}
           </a>
         )}
       </div>
-      <button className={styles.closeButton} onClick={handleDismiss} aria-label="关闭">
+      <button className={styles.closeButton} onClick={handleDismiss} aria-label={t('common.close')}>
         <CloseOutlined />
       </button>
     </div>

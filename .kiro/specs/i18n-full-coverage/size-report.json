@@ -1,0 +1,609 @@
+{
+  "success": true,
+  "message": "Checked 10 files, 0 need splitting",
+  "total_tokens": 27068,
+  "files": [
+    {
+      "filename": "audit-components-48.1.md",
+      "path": ".kiro/specs/i18n-full-coverage/audit-components-48.1.md",
+      "chars": 7562,
+      "tokens": 1890,
+      "lines": 190,
+      "needs_split": false,
+      "sections": [
+        {
+          "title": "Task 48.1: Components Directory Hardcoded Chinese Text Audit",
+          "lines": 1,
+          "tokens": 0
+        },
+        {
+          "title": "Summary",
+          "lines": 4,
+          "tokens": 38
+        },
+        {
+          "title": "Task 48.2 Progress",
+          "lines": 29,
+          "tokens": 376
+        },
+        {
+          "title": "Files Requiring Internationalization Updates (Remaining)",
+          "lines": 55,
+          "tokens": 703
+        },
+        {
+          "title": "Test Files with Hardcoded Chinese Text",
+          "lines": 11,
+          "tokens": 93
+        },
+        {
+          "title": "Files Already Using i18n (Good Examples)",
+          "lines": 8,
+          "tokens": 103
+        },
+        {
+          "title": "Categories Summary",
+          "lines": 13,
+          "tokens": 68
+        },
+        {
+          "title": "Common Patterns Found",
+          "lines": 36,
+          "tokens": 164
+        },
+        {
+          "title": "Recommendations",
+          "lines": 20,
+          "tokens": 187
+        },
+        {
+          "title": "Next Steps",
+          "lines": 3,
+          "tokens": 30
+        }
+      ],
+      "utilization": "18.9%"
+    },
+    {
+      "filename": "requirements.md",
+      "path": ".kiro/specs/i18n-full-coverage/requirements.md",
+      "chars": 13025,
+      "tokens": 3256,
+      "lines": 246,
+      "needs_split": false,
+      "sections": [
+        {
+          "title": "Requirements Document",
+          "lines": 1,
+          "tokens": 0
+        },
+        {
+          "title": "Introduction",
+          "lines": 3,
+          "tokens": 25
+        },
+        {
+          "title": "Glossary",
+          "lines": 8,
+          "tokens": 71
+        },
+        {
+          "title": "Requirements",
+          "lines": 230,
+          "tokens": 3082
+        }
+      ],
+      "utilization": "32.6%"
+    },
+    {
+      "filename": "hardcoded-text-verification-50.2.md",
+      "path": ".kiro/specs/i18n-full-coverage/hardcoded-text-verification-50.2.md",
+      "chars": 7917,
+      "tokens": 1979,
+      "lines": 227,
+      "needs_split": false,
+      "sections": [
+        {
+          "title": "Task 50.2: 验证无硬编码文本残留 - Verification Report",
+          "lines": 1,
+          "tokens": 0
+        },
+        {
+          "title": "Executive Summary",
+          "lines": 14,
+          "tokens": 121
+        },
+        {
+          "title": "Detailed Analysis",
+          "lines": 143,
+          "tokens": 1163
+        },
+        {
+          "title": "Comparison with Task 48.1 Audit",
+          "lines": 12,
+          "tokens": 100
+        },
+        {
+          "title": "Recommendations",
+          "lines": 35,
+          "tokens": 259
+        },
+        {
+          "title": "Files Already Internationalized (Good Examples)",
+          "lines": 8,
+          "tokens": 93
+        },
+        {
+          "title": "Conclusion",
+          "lines": 7,
+          "tokens": 134
+        }
+      ],
+      "utilization": "19.8%"
+    },
+    {
+      "filename": "current-status-analysis.md",
+      "path": ".kiro/specs/i18n-full-coverage/current-status-analysis.md",
+      "chars": 5902,
+      "tokens": 1475,
+      "lines": 149,
+      "needs_split": false,
+      "sections": [
+        {
+          "title": "Current i18n Status Analysis and Optimization Plan",
+          "lines": 1,
+          "tokens": 0
+        },
+        {
+          "title": "Executive Summary",
+          "lines": 6,
+          "tokens": 57
+        },
+        {
+          "title": "Current Implementation Status",
+          "lines": 39,
+          "tokens": 468
+        },
+        {
+          "title": "Optimization Plan",
+          "lines": 52,
+          "tokens": 447
+        },
+        {
+          "title": "Implementation Guidelines",
+          "lines": 20,
+          "tokens": 166
+        },
+        {
+          "title": "Success Metrics",
+          "lines": 7,
+          "tokens": 72
+        },
+        {
+          "title": "Risk Mitigation",
+          "lines": 7,
+          "tokens": 86
+        },
+        {
+          "title": "Next Steps",
+          "lines": 9,
+          "tokens": 89
+        }
+      ],
+      "utilization": "14.8%"
+    },
+    {
+      "filename": "language-switching-test-checklist.md",
+      "path": ".kiro/specs/i18n-full-coverage/language-switching-test-checklist.md",
+      "chars": 13583,
+      "tokens": 3395,
+      "lines": 459,
+      "needs_split": false,
+      "sections": [
+        {
+          "title": "Language Switching Test Checklist",
+          "lines": 1,
+          "tokens": 0
+        },
+        {
+          "title": "Overview",
+          "lines": 7,
+          "tokens": 64
+        },
+        {
+          "title": "Prerequisites",
+          "lines": 5,
+          "tokens": 45
+        },
+        {
+          "title": "Test Environment Setup",
+          "lines": 7,
+          "tokens": 39
+        },
+        {
+          "title": "Test Procedure",
+          "lines": 11,
+          "tokens": 88
+        },
+        {
+          "title": "1. Authentication Pages",
+          "lines": 39,
+          "tokens": 297
+        },
+        {
+          "title": "2. Error Pages",
+          "lines": 25,
+          "tokens": 180
+        },
+        {
+          "title": "3. Dashboard (`/dashboard`)",
+          "lines": 12,
+          "tokens": 85
+        },
+        {
+          "title": "4. Tasks Module (`/tasks`)",
+          "lines": 53,
+          "tokens": 469
+        },
+        {
+          "title": "5. Admin Module (`/admin`)",
+          "lines": 22,
+          "tokens": 172
+        },
+        {
+          "title": "6. Quality Module (`/quality`)",
+          "lines": 21,
+          "tokens": 144
+        },
+        {
+          "title": "7. Security Module (`/security`)",
+          "lines": 28,
+          "tokens": 206
+        },
+        {
+          "title": "8. Workspace Module (`/workspace`)",
+          "lines": 16,
+          "tokens": 105
+        },
+        {
+          "title": "9. Billing Module (`/billing`)",
+          "lines": 25,
+          "tokens": 168
+        },
+        {
+          "title": "10. Settings Page (`/settings`)",
+          "lines": 14,
+          "tokens": 102
+        },
+        {
+          "title": "11. DataSync Module (`/datasync`)",
+          "lines": 23,
+          "tokens": 152
+        },
+        {
+          "title": "12. License Module (`/license`)",
+          "lines": 10,
+          "tokens": 62
+        },
+        {
+          "title": "13. Other Modules",
+          "lines": 18,
+          "tokens": 130
+        },
+        {
+          "title": "14. Label Studio Integration",
+          "lines": 9,
+          "tokens": 60
+        },
+        {
+          "title": "15. Global Components",
+          "lines": 24,
+          "tokens": 165
+        },
+        {
+          "title": "16. Language Persistence Tests",
+          "lines": 10,
+          "tokens": 63
+        },
+        {
+          "title": "17. UI Layout Tests",
+          "lines": 14,
+          "tokens": 102
+        },
+        {
+          "title": "Summary",
+          "lines": 24,
+          "tokens": 142
+        },
+        {
+          "title": "Issues Found",
+          "lines": 9,
+          "tokens": 40
+        },
+        {
+          "title": "Sign-off",
+          "lines": 7,
+          "tokens": 32
+        }
+      ],
+      "utilization": "34.0%"
+    },
+    {
+      "filename": "tasks.md",
+      "path": ".kiro/specs/i18n-full-coverage/tasks.md",
+      "chars": 14777,
+      "tokens": 3694,
+      "lines": 438,
+      "needs_split": false,
+      "sections": [
+        {
+          "title": "Implementation Plan: i18n Full Coverage",
+          "lines": 1,
+          "tokens": 0
+        },
+        {
+          "title": "Overview",
+          "lines": 3,
+          "tokens": 23
+        },
+        {
+          "title": "Implementation Status",
+          "lines": 3,
+          "tokens": 90
+        },
+        {
+          "title": "Tasks",
+          "lines": 419,
+          "tokens": 3412
+        },
+        {
+          "title": "Notes",
+          "lines": 7,
+          "tokens": 35
+        }
+      ],
+      "utilization": "36.9%"
+    },
+    {
+      "filename": "task-50.1-verification-report.md",
+      "path": ".kiro/specs/i18n-full-coverage/task-50.1-verification-report.md",
+      "chars": 7351,
+      "tokens": 1837,
+      "lines": 240,
+      "needs_split": false,
+      "sections": [
+        {
+          "title": "Task 50.1 Verification Report: Language Switching Test",
+          "lines": 1,
+          "tokens": 0
+        },
+        {
+          "title": "Task: 测试所有页面语言切换",
+          "lines": 6,
+          "tokens": 14
+        },
+        {
+          "title": "Executive Summary",
+          "lines": 5,
+          "tokens": 72
+        },
+        {
+          "title": "1. LanguageSwitcher Component Verification ✅",
+          "lines": 21,
+          "tokens": 161
+        },
+        {
+          "title": "2. i18n Configuration Verification ✅",
+          "lines": 38,
+          "tokens": 163
+        },
+        {
+          "title": "3. Language Store Verification ✅",
+          "lines": 32,
+          "tokens": 220
+        },
+        {
+          "title": "4. Page Component Verification ✅",
+          "lines": 25,
+          "tokens": 331
+        },
+        {
+          "title": "5. Translation Key Mapping Pattern ✅",
+          "lines": 16,
+          "tokens": 88
+        },
+        {
+          "title": "6. Language Persistence Verification ✅",
+          "lines": 22,
+          "tokens": 76
+        },
+        {
+          "title": "7. Label Studio Integration ✅",
+          "lines": 12,
+          "tokens": 80
+        },
+        {
+          "title": "8. Deliverables",
+          "lines": 14,
+          "tokens": 93
+        },
+        {
+          "title": "9. Recommendations for Manual Testing",
+          "lines": 11,
+          "tokens": 132
+        },
+        {
+          "title": "10. Known Issues / Areas for Improvement",
+          "lines": 13,
+          "tokens": 110
+        },
+        {
+          "title": "Conclusion",
+          "lines": 10,
+          "tokens": 113
+        }
+      ],
+      "utilization": "18.4%"
+    },
+    {
+      "filename": "design.md",
+      "path": ".kiro/specs/i18n-full-coverage/design.md",
+      "chars": 22861,
+      "tokens": 5715,
+      "lines": 800,
+      "needs_split": false,
+      "sections": [
+        {
+          "title": "Design Document",
+          "lines": 1,
+          "tokens": 0
+        },
+        {
+          "title": "Overview",
+          "lines": 18,
+          "tokens": 102
+        },
+        {
+          "title": "Architecture",
+          "lines": 50,
+          "tokens": 284
+        },
+        {
+          "title": "Components and Interfaces",
+          "lines": 381,
+          "tokens": 2703
+        },
+        {
+          "title": "Data Models",
+          "lines": 35,
+          "tokens": 100
+        },
+        {
+          "title": "Correctness Properties",
+          "lines": 53,
+          "tokens": 615
+        },
+        {
+          "title": "Error Handling",
+          "lines": 53,
+          "tokens": 374
+        },
+        {
+          "title": "Testing Strategy",
+          "lines": 52,
+          "tokens": 437
+        },
+        {
+          "title": "UI Layout Adaptation",
+          "lines": 116,
+          "tokens": 435
+        },
+        {
+          "title": "Implementation Notes",
+          "lines": 31,
+          "tokens": 414
+        }
+      ],
+      "utilization": "57.1%"
+    },
+    {
+      "filename": "namespace-verification-49.2.md",
+      "path": ".kiro/specs/i18n-full-coverage/namespace-verification-49.2.md",
+      "chars": 5006,
+      "tokens": 1251,
+      "lines": 131,
+      "needs_split": false,
+      "sections": [
+        {
+          "title": "Namespace Translation Key Consistency Verification Report",
+          "lines": 5,
+          "tokens": 23
+        },
+        {
+          "title": "Summary",
+          "lines": 3,
+          "tokens": 41
+        },
+        {
+          "title": "Verification Details",
+          "lines": 104,
+          "tokens": 1000
+        },
+        {
+          "title": "Discrepancies Found",
+          "lines": 3,
+          "tokens": 16
+        },
+        {
+          "title": "Conclusion",
+          "lines": 11,
+          "tokens": 105
+        }
+      ],
+      "utilization": "12.5%"
+    },
+    {
+      "filename": "ui-layout-verification-50.3.md",
+      "path": ".kiro/specs/i18n-full-coverage/ui-layout-verification-50.3.md",
+      "chars": 10306,
+      "tokens": 2576,
+      "lines": 350,
+      "needs_split": false,
+      "sections": [
+        {
+          "title": "UI Layout Verification Report for i18n",
+          "lines": 5,
+          "tokens": 19
+        },
+        {
+          "title": "Executive Summary",
+          "lines": 3,
+          "tokens": 83
+        },
+        {
+          "title": "1. Analysis Methodology",
+          "lines": 7,
+          "tokens": 72
+        },
+        {
+          "title": "2. Current Styling Architecture",
+          "lines": 32,
+          "tokens": 167
+        },
+        {
+          "title": "3. I18n-Friendly Layout Patterns Found",
+          "lines": 102,
+          "tokens": 559
+        },
+        {
+          "title": "4. Potential Issues Identified",
+          "lines": 36,
+          "tokens": 270
+        },
+        {
+          "title": "5. Best Practices Implemented",
+          "lines": 43,
+          "tokens": 200
+        },
+        {
+          "title": "6. Manual QA Testing Checklist",
+          "lines": 64,
+          "tokens": 526
+        },
+        {
+          "title": "7. Recommendations",
+          "lines": 21,
+          "tokens": 233
+        },
+        {
+          "title": "8. Conclusion",
+          "lines": 27,
+          "tokens": 283
+        }
+      ],
+      "utilization": "25.8%"
+    }
+  ],
+  "needs_split": [],
+  "recommendations": []
+}

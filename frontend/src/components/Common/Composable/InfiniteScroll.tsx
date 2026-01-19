@@ -11,6 +11,7 @@
 import React, { useRef, useEffect, useCallback, useState, memo, type ReactNode } from 'react';
 import { Spin, Empty, Button } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import styles from './InfiniteScroll.module.scss';
 
 /**
@@ -78,6 +79,7 @@ export function InfiniteScroll<T>({
   direction = 'vertical',
   reverse = false,
 }: InfiniteScrollProps<T>): React.ReactElement {
+  const { t } = useTranslation('common');
   const containerRef = useRef<HTMLDivElement>(null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
@@ -136,7 +138,7 @@ export function InfiniteScroll<T>({
     return (
       <div className={styles.loadingIndicator}>
         <Spin size="small" />
-        <span>加载中...</span>
+        <span>{t('status.loading')}</span>
       </div>
     );
   };
@@ -150,7 +152,7 @@ export function InfiniteScroll<T>({
     if (items.length > 0) {
       return (
         <div className={styles.endMessage}>
-          没有更多了
+          {t('infiniteScroll.noMore')}
         </div>
       );
     }
@@ -162,7 +164,7 @@ export function InfiniteScroll<T>({
   const renderError = () => {
     return (
       <div className={styles.errorMessage}>
-        <span>加载失败</span>
+        <span>{t('infiniteScroll.loadFailed')}</span>
         {onRetry && (
           <Button
             type="link"
@@ -170,7 +172,7 @@ export function InfiniteScroll<T>({
             icon={<ReloadOutlined />}
             onClick={onRetry}
           >
-            重试
+            {t('retry')}
           </Button>
         )}
       </div>
@@ -185,7 +187,7 @@ export function InfiniteScroll<T>({
 
     return (
       <div className={`${styles.infiniteScroll} ${className || ''}`}>
-        <Empty description="暂无数据" />
+        <Empty description={t('emptyState.noData')} />
       </div>
     );
   }

@@ -213,7 +213,7 @@ const ConfigHistory: React.FC = () => {
       ellipsis: true,
       render: (_: unknown, record: ConfigHistoryResponse) => {
         const newValue = record.new_value;
-        const name = newValue.name || newValue.id || '未命名';
+        const name = newValue.name || newValue.id || t('configHistory.unnamed');
         return <Text>{name}</Text>;
       },
     },
@@ -223,20 +223,20 @@ const ConfigHistory: React.FC = () => {
       width: 150,
       render: (_: unknown, record: ConfigHistoryResponse) => (
         <Space>
-          <Tooltip title="查看差异">
+          <Tooltip title={t('configHistory.tooltips.viewDiff')}>
             <Button
               type="text"
               icon={<DiffOutlined />}
               onClick={() => handleViewDiff(record)}
             />
           </Tooltip>
-          <Tooltip title="回滚到此版本">
+          <Tooltip title={t('configHistory.tooltips.rollback')}>
             <Popconfirm
-              title="确定回滚到此版本？"
-              description="回滚将覆盖当前配置"
+              title={t('configHistory.confirm.rollback')}
+              description={t('configHistory.confirm.rollbackDescription')}
               onConfirm={() => handleRollback(record)}
-              okText="确定"
-              cancelText="取消"
+              okText={t('configHistory.confirm.ok')}
+              cancelText={t('configHistory.confirm.cancel')}
             >
               <Button
                 type="text"
@@ -277,7 +277,7 @@ const ConfigHistory: React.FC = () => {
         <Row gutter={16} style={{ marginBottom: 16 }}>
           <Col xs={24} sm={8}>
             <Select
-              placeholder="配置类型"
+              placeholder={t('configHistory.filters.configType')}
               allowClear
               style={{ width: '100%' }}
               value={filters.config_type}
@@ -295,7 +295,7 @@ const ConfigHistory: React.FC = () => {
               style={{ width: '100%' }}
               showTime
               onChange={handleDateRangeChange}
-              placeholder={['开始时间', '结束时间']}
+              placeholder={[t('configHistory.filters.startTime'), t('configHistory.filters.endTime')]}
             />
           </Col>
         </Row>
@@ -311,7 +311,7 @@ const ConfigHistory: React.FC = () => {
 
       {/* Diff Modal */}
       <Modal
-        title="配置差异对比"
+        title={t('configHistory.modal.diff')}
         open={diffModalVisible}
         onCancel={() => {
           setDiffModalVisible(false);
@@ -319,7 +319,7 @@ const ConfigHistory: React.FC = () => {
         }}
         footer={[
           <Button key="close" onClick={() => setDiffModalVisible(false)}>
-            关闭
+            {t('configHistory.modal.close')}
           </Button>,
         ]}
         width={800}
@@ -330,7 +330,7 @@ const ConfigHistory: React.FC = () => {
             {Object.keys(selectedDiff.added).length > 0 && (
               <Card
                 size="small"
-                title={<Text type="success"><PlusOutlined /> 新增字段</Text>}
+                title={<Text type="success"><PlusOutlined /> {t('configHistory.diff.added')}</Text>}
                 style={{ marginBottom: 16 }}
               >
                 <Descriptions column={1} size="small">
@@ -347,7 +347,7 @@ const ConfigHistory: React.FC = () => {
             {Object.keys(selectedDiff.removed).length > 0 && (
               <Card
                 size="small"
-                title={<Text type="danger"><MinusOutlined /> 删除字段</Text>}
+                title={<Text type="danger"><MinusOutlined /> {t('configHistory.diff.removed')}</Text>}
                 style={{ marginBottom: 16 }}
               >
                 <Descriptions column={1} size="small">
@@ -364,7 +364,7 @@ const ConfigHistory: React.FC = () => {
             {Object.keys(selectedDiff.modified).length > 0 && (
               <Card
                 size="small"
-                title={<Text type="warning"><EditOutlined /> 修改字段</Text>}
+                title={<Text type="warning"><EditOutlined /> {t('configHistory.diff.modified')}</Text>}
               >
                 <Descriptions column={1} size="small">
                   {Object.entries(selectedDiff.modified).map(([key, value]) => {
@@ -373,11 +373,11 @@ const ConfigHistory: React.FC = () => {
                       <Descriptions.Item key={key} label={key}>
                         <Row gutter={16}>
                           <Col span={12}>
-                            <Text type="secondary">旧值:</Text>
+                            <Text type="secondary">{t('configHistory.diff.oldValue')}</Text>
                             <div>{renderDiffValue(modValue.old)}</div>
                           </Col>
                           <Col span={12}>
-                            <Text type="success">新值:</Text>
+                            <Text type="success">{t('configHistory.diff.newValue')}</Text>
                             <div>{renderDiffValue(modValue.new)}</div>
                           </Col>
                         </Row>
@@ -391,17 +391,17 @@ const ConfigHistory: React.FC = () => {
             {Object.keys(selectedDiff.added).length === 0 &&
              Object.keys(selectedDiff.removed).length === 0 &&
              Object.keys(selectedDiff.modified).length === 0 && (
-              <Empty description="无差异" />
+              <Empty description={t('configHistory.diff.noDiff')} />
             )}
           </div>
         ) : (
-          <Empty description="加载中..." />
+          <Empty description={t('configHistory.diff.loading')} />
         )}
       </Modal>
 
       {/* Rollback Modal */}
       <Modal
-        title="确认回滚"
+        title={t('configHistory.modal.rollback')}
         open={rollbackModalVisible}
         onOk={() => rollbackMutation.mutate()}
         onCancel={() => {
@@ -412,8 +412,8 @@ const ConfigHistory: React.FC = () => {
         confirmLoading={rollbackMutation.isPending}
       >
         <Alert
-          message="回滚警告"
-          description="回滚操作将使用历史记录中的旧值覆盖当前配置，此操作不可撤销。"
+          message={t('configHistory.modal.rollbackWarning')}
+          description={t('configHistory.modal.rollbackWarningText')}
           type="warning"
           showIcon
           style={{ marginBottom: 16 }}
@@ -421,20 +421,20 @@ const ConfigHistory: React.FC = () => {
 
         {selectedHistory && (
           <Descriptions column={1} size="small" style={{ marginBottom: 16 }}>
-            <Descriptions.Item label="配置类型">
+            <Descriptions.Item label={t('configHistory.rollbackInfo.configType')}>
               {getConfigTypeName(selectedHistory.config_type)}
             </Descriptions.Item>
-            <Descriptions.Item label="变更时间">
+            <Descriptions.Item label={t('configHistory.rollbackInfo.changeTime')}>
               {new Date(selectedHistory.created_at).toLocaleString()}
             </Descriptions.Item>
-            <Descriptions.Item label="操作人">
+            <Descriptions.Item label={t('configHistory.rollbackInfo.operator')}>
               {selectedHistory.user_name}
             </Descriptions.Item>
           </Descriptions>
         )}
 
         <TextArea
-          placeholder="请输入回滚原因（可选）"
+          placeholder={t('configHistory.rollbackInfo.reasonPlaceholder')}
           value={rollbackReason}
           onChange={(e) => setRollbackReason(e.target.value)}
           rows={3}

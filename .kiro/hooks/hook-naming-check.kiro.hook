@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Hook 命名规范检查",
+  "description": "当编辑 frontend/src/hooks 目录下的 hook 文件时，检查 hook 命名是否符合规范，确保命名一致性。",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "frontend/src/hooks/*.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "检测到 Hook 文件被修改。请检查以下命名规范：\n\n1. **Hook 命名规则**:\n   - 所有 hook 必须以 `use` 开头\n   - 返回列表数据的 hook 使用复数形式: `useTasks` 而非 `useTaskList`\n   - 返回状态的 hook 带 `State` 后缀: `useHoverState`, `useFocusState`\n   - 返回单个实体的 hook 使用单数: `useTask(id)`\n\n2. **导出一致性**:\n   - 确保 hook 文件中导出的函数名与 index.ts 中引用的名称一致\n   - 如果重命名了 hook，需要同步更新 hooks/index.ts\n\n3. **常见错误模式**:\n   | 错误名称 | 正确名称 |\n   |---------|---------|\n   | useTaskList | useTasks |\n   | useHover | useHoverState |\n   | useFocus | useFocusState |\n\n如果发现命名不规范，请提供修改建议。\n\n参考规范: .kiro/steering/typescript-export-rules.md"
+  }
+}

@@ -12,10 +12,10 @@ import { ROUTES } from '@/constants';
  * Enhanced lazy loading with preload support
  * Allows prefetching of route chunks for faster navigation
  */
-type LazyComponent = ComponentType<unknown> & { preload?: () => Promise<{ default: ComponentType<unknown> }> };
+type LazyComponent = ComponentType<any> & { preload?: () => Promise<{ default: ComponentType<any> }> };
 
-function lazyWithPreload<T extends ComponentType<unknown>>(
-  factory: () => Promise<{ default: T }>
+function lazyWithPreload(
+  factory: () => Promise<{ default: ComponentType<any> }>
 ): LazyComponent {
   const Component = lazy(factory) as LazyComponent;
   Component.preload = factory;

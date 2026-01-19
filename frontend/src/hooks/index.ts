@@ -1,8 +1,17 @@
 // Export all hooks
 export * from './useAuth';
 export * from './useDashboard';
-// Export useTask but handle conflicts
-export { useTask, useTaskList, useTaskDetail, useTaskStats as useTaskStatistics } from './useTask';
+// Export useTask hooks
+export { 
+  useTask, 
+  useTasks, 
+  useTaskStats, 
+  useCreateTask, 
+  useUpdateTask, 
+  useDeleteTask, 
+  useAssignTask, 
+  useBatchDeleteTasks 
+} from './useTask';
 export * from './useAugmentation';
 export * from './useQuality';
 export * from './useSecurity';
@@ -12,9 +21,12 @@ export * from './usePermissions';
 // Export usePerformance but rename useMemoryMonitor to avoid conflict
 export { 
   usePerformance,
+  useRenderPerformance,
+  useApiPerformance,
   useMemoryMonitor as useBasicMemoryMonitor,
-  useCPUMonitor,
-  useNetworkMonitor
+  useNetworkInfo,
+  formatBytes,
+  formatDuration
 } from './usePerformance';
 export * from './useBreadcrumb';
 export * from './usePageLoadTime';
@@ -25,9 +37,15 @@ export * from './useMemoryOptimization';
 export * from './useNetworkOptimization';
 // Export useInteraction but rename conflicts
 export {
-  useInteraction,
-  useHover,
-  useFocus,
+  useInteractionFeedback,
+  useAnimatedState,
+  useHoverState,
+  usePressState,
+  useFocusState,
+  useGesture,
+  useScrollReveal,
+  useDebounce,
+  useThrottle,
   useKeyboardNavigation as useInteractionKeyboardNav,
   useReducedMotion as useInteractionReducedMotion,
   useClickOutside,

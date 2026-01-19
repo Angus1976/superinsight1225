@@ -100,9 +100,22 @@
   "validation": {
     "required": "This field is required",
     "invalidEmail": "Please enter a valid email",
+    "email": "Please enter a valid email",
     "minLength": "Minimum {{min}} characters required",
     "maxLength": "Maximum {{max}} characters allowed"
   },
+  "placeholder": {
+    "select": "Please select",
+    "input": "Please enter",
+    "search": "Please search",
+    "description": "Please enter description"
+  },
+  "on": "On",
+  "off": "Off",
+  "enabled": "Enabled",
+  "disabled": "Disabled",
+  "required": "Required",
+  "optional": "Optional",
   "pagination": {
     "total": "Total {{total}} items"
   },
@@ -332,5 +345,23 @@
       "connecting": "Connecting",
       "disconnected": "Disconnected"
     }
-  }
+  },
+  "async": {
+    "loadFailed": "Load Failed"
+  },
+  "banner": {
+    "learnMore": "Learn More"
+  },
+  "errorBoundary": {
+    "pageError": "Something went wrong on this page. Please try refreshing.",
+    "backHome": "Back to Home"
+  },
+  "layout": {
+    "openMenu": "Open Menu"
+  },
+  "infiniteScroll": {
+    "noMore": "No more items",
+    "loadFailed": "Load failed"
+  },
+  "unknown": "Unknown"
 }

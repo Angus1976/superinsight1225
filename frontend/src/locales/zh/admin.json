@@ -962,12 +962,9 @@
     "databaseStructure": "数据库结构",
     "queryTemplates": "查询模板",
     "queryConfiguration": "查询配置",
-    "selectTables": "选择表",
     "selectTablesPlaceholder": "选择要查询的表",
-    "selectColumns": "选择列",
     "selectColumnsPlaceholder": "选择列（留空选择全部）",
     "whereConditions": "WHERE 条件",
-    "addCondition": "添加条件",
     "field": "字段",
     "operator": "操作符",
     "value": "值",
@@ -979,14 +976,14 @@
     "copySQL": "复制 SQL",
     "saveAsTemplate": "保存为模板",
     "executeQuery": "执行查询",
-    "queryResult": "查询结果",
     "resultTruncated": "结果已截断",
-    "saveTemplate": "保存为模板",
     "templateNameRequired": "模板名称",
     "templateNamePlaceholder": "输入模板名称",
     "description": "描述",
     "descriptionPlaceholder": "模板描述（可选）",
-    "rows": "{{count}} 行"
+    "rows": "{{count}} 行",
+    "sqlPlaceholder": "SQL 将在此显示...",
+    "queryResultTitle": "查询结果 ({{count}} 行, {{time}}ms)"
   },
   "thirdPartyConfig": {
     "title": "第三方工具配置",
@@ -1006,6 +1003,7 @@
     "actions": "操作",
     "enabled": "已启用",
     "disabled": "已禁用",
+    "enabledColumn": "启用",
     "updateSuccess": "第三方工具配置更新成功",
     "updateFailed": "更新失败",
     "deleteSuccess": "第三方工具配置删除成功",
@@ -1020,14 +1018,38 @@
     "confirmDelete": "确定删除此工具配置？",
     "configName": "配置名称",
     "configNameRequired": "请输入配置名称",
+    "configNamePlaceholder": "例如：自定义 Text-to-SQL 服务",
     "description": "描述",
+    "descriptionPlaceholder": "工具描述（可选）",
     "toolTypeRequired": "请选择工具类型",
+    "toolTypePlaceholder": "选择工具类型",
     "endpointRequired": "请输入 API 端点",
+    "endpointInvalid": "请输入有效的 URL",
+    "endpointPlaceholder": "例如：https://api.example.com/v1",
     "apiKey": "API Key",
-    "timeout": "超时时间 (秒)",
+    "apiKeyPlaceholder": "输入 API Key（将加密存储）",
+    "apiKeyKeepEmpty": "留空则保持原有 API Key 不变",
+    "timeout": "超时时间（秒）",
     "setEnabled": "启用工具",
     "save": "保存",
-    "cancel": "取消"
+    "cancel": "取消",
+    "healthCheck": "健康检查",
+    "edit": "编辑",
+    "delete": "删除",
+    "healthy": "健康",
+    "healthyWithLatency": "健康 ({{latency}}ms)",
+    "unhealthy": "异常",
+    "notChecked": "未检查",
+    "callStats": "调用统计",
+    "calls": "调用",
+    "infoTitle": "第三方工具说明",
+    "infoDescription": "配置和管理第三方工具集成，包括 Text-to-SQL、AI 标注等服务。启用/禁用操作将立即生效。",
+    "stats": {
+      "totalTools": "总工具数",
+      "enabled": "已启用",
+      "totalCalls": "总调用次数",
+      "avgSuccessRate": "平均成功率"
+    }
   },
   "common": {
     "refresh": "刷新"
@@ -1592,6 +1614,7 @@
     "rollbackSuccess": "配置回滚成功",
     "rollbackFailed": "回滚失败: {{error}}",
     "rollbackConfirm": "未选择历史记录",
+    "unnamed": "未命名",
     "columns": {
       "time": "时间",
       "configType": "配置类型",
@@ -1620,7 +1643,8 @@
     },
     "filters": {
       "configType": "配置类型",
-      "dateRange": ["开始时间", "结束时间"]
+      "startTime": "开始时间",
+      "endTime": "结束时间"
     },
     "modal": {
       "diff": "配置差异对比",
@@ -1638,13 +1662,12 @@
       "noDiff": "无差异",
       "loading": "加载中..."
     },
-    "rollback": {
-      "reason": "请输入回滚原因（可选）",
+    "rollbackInfo": {
       "configType": "配置类型",
       "changeTime": "变更时间",
-      "operator": "操作人"
-    },
-    "unnamed": "未命名"
+      "operator": "操作人",
+      "reasonPlaceholder": "请输入回滚原因（可选）"
+    }
   },
   "annotationPlugins": {
     "title": "标注插件管理",
@@ -1716,7 +1739,7 @@
       "supportedTypesRequired": "请选择支持的标注类型",
       "supportedTypesPlaceholder": "选择支持的标注类型",
       "config": "配置 (JSON)",
-      "configPlaceholder": "{}"
+      "configPlaceholder": "{\"apiKey\": \"xxx\", \"timeout\": 30000}"
     },
     "types": {
       "restApi": "REST API",

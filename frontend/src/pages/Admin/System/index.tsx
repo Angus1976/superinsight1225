@@ -154,44 +154,44 @@ const AdminSystem: React.FC = () => {
   return (
     <div className="admin-system">
       {/* 系统状态概览 */}
-      <Card title="系统状态" style={{ marginBottom: 16 }}>
+      <Card title={t('system.statusOverview')} style={{ marginBottom: 16 }}>
         <Row gutter={16}>
           <Col span={6}>
             <Card>
               <Statistic
-                title="数据库"
+                title={t('system.database.title')}
                 value={getStatusText(status?.database?.status || 'unknown')}
                 valueStyle={{ color: getStatusColor(status?.database?.status || 'unknown') }}
                 prefix={<DatabaseOutlined />}
               />
               <div style={{ marginTop: 8, fontSize: '12px', color: '#666' }}>
-                连接数: {status?.database?.connections || 0}/{status?.database?.maxConnections || 0}
+                {t('system.database.connections')}: {status?.database?.connections || 0}/{status?.database?.maxConnections || 0}
               </div>
               <div style={{ fontSize: '12px', color: '#666' }}>
-                响应时间: {status?.database?.responseTime || 0}ms
+                {t('system.database.responseTime')}: {status?.database?.responseTime || 0}ms
               </div>
             </Card>
           </Col>
           <Col span={6}>
             <Card>
               <Statistic
-                title="缓存"
+                title={t('system.cache.title')}
                 value={getStatusText(status?.cache?.status || 'unknown')}
                 valueStyle={{ color: getStatusColor(status?.cache?.status || 'unknown') }}
                 prefix={<CloudOutlined />}
               />
               <div style={{ marginTop: 8, fontSize: '12px', color: '#666' }}>
-                内存使用: {((status?.cache?.memoryUsage || 0) / 1024 / 1024).toFixed(2)}MB
+                {t('system.cache.memoryUsage')}: {((status?.cache?.memoryUsage || 0) / 1024 / 1024).toFixed(2)}MB
               </div>
               <div style={{ fontSize: '12px', color: '#666' }}>
-                命中率: {((status?.cache?.hitRate || 0) * 100).toFixed(1)}%
+                {t('system.cache.hitRate')}: {((status?.cache?.hitRate || 0) * 100).toFixed(1)}%
               </div>
             </Card>
           </Col>
           <Col span={6}>
             <Card>
               <Statistic
-                title="存储"
+                title={t('system.storage.title')}
                 value={getStatusText(status?.storage?.status || 'unknown')}
                 valueStyle={{ color: getStatusColor(status?.storage?.status || 'unknown') }}
                 prefix={<SettingOutlined />}
@@ -211,7 +211,7 @@ const AdminSystem: React.FC = () => {
           <Col span={6}>
             <Card>
               <Statistic
-                title="系统负载"
+                title={t('system.systemLoad')}
                 value={`${(status?.system?.cpuUsage || 0).toFixed(1)}%`}
                 valueStyle={{ 
                   color: (status?.system?.cpuUsage || 0) > 80 ? '#f5222d' : 
@@ -220,10 +220,10 @@ const AdminSystem: React.FC = () => {
               />
               <div style={{ marginTop: 8 }}>
                 <div style={{ fontSize: '12px', color: '#666' }}>
-                  内存: {(status?.system?.memoryUsage || 0).toFixed(1)}%
+                  {t('system.memory')}: {(status?.system?.memoryUsage || 0).toFixed(1)}%
                 </div>
                 <div style={{ fontSize: '12px', color: '#666' }}>
-                  磁盘: {(status?.system?.diskUsage || 0).toFixed(1)}%
+                  {t('system.disk')}: {(status?.system?.diskUsage || 0).toFixed(1)}%
                 </div>
               </div>
             </Card>
@@ -233,7 +233,7 @@ const AdminSystem: React.FC = () => {
 
       {/* 系统配置 */}
       <Card
-        title="系统配置"
+        title={t('system.configTitle')}
         extra={
           <Space>
             <Button
@@ -243,7 +243,7 @@ const AdminSystem: React.FC = () => {
                 queryClient.invalidateQueries({ queryKey: ['system-status'] });
               }}
             >
-              刷新
+              {t('common:refresh')}
             </Button>
             <Button
               type="primary"
@@ -251,7 +251,7 @@ const AdminSystem: React.FC = () => {
               onClick={() => form.submit()}
               loading={updateConfigMutation.isPending}
             >
-              保存配置
+              {t('system.saveConfig')}
             </Button>
           </Space>
         }
@@ -264,28 +264,28 @@ const AdminSystem: React.FC = () => {
         >
           <Tabs activeKey={activeTab} onChange={setActiveTab}>
             {/* 基本设置 */}
-            <TabPane tab="基本设置" key="general">
+            <TabPane tab={t('system.general.title')} key="general">
               <Form.Item
                 name={['general', 'siteName']}
-                label="站点名称"
-                rules={[{ required: true, message: '请输入站点名称' }]}
+                label={t('system.general.siteName')}
+                rules={[{ required: true, message: t('common:validation.required') }]}
               >
                 <Input placeholder="SuperInsight AI Platform" />
               </Form.Item>
               
               <Form.Item
                 name={['general', 'siteDescription']}
-                label="站点描述"
+                label={t('system.general.siteDescription')}
               >
-                <Input.TextArea rows={3} placeholder="AI数据治理与标注平台" />
+                <Input.TextArea rows={3} placeholder={t('common:placeholder.description')} />
               </Form.Item>
               
               <Form.Item
                 name={['general', 'adminEmail']}
-                label="管理员邮箱"
+                label={t('system.general.adminEmail')}
                 rules={[
-                  { required: true, message: '请输入管理员邮箱' },
-                  { type: 'email', message: '请输入有效的邮箱地址' },
+                  { required: true, message: t('common:validation.required') },
+                  { type: 'email', message: t('common:validation.email') },
                 ]}
               >
                 <Input placeholder="admin@example.com" />
@@ -293,38 +293,38 @@ const AdminSystem: React.FC = () => {
               
               <Form.Item
                 name={['general', 'timezone']}
-                label="时区"
-                rules={[{ required: true, message: '请选择时区' }]}
+                label={t('system.general.timezone')}
+                rules={[{ required: true, message: t('common:validation.required') }]}
               >
-                <Select placeholder="请选择时区">
-                  <Select.Option value="Asia/Shanghai">Asia/Shanghai (UTC+8)</Select.Option>
-                  <Select.Option value="UTC">UTC (UTC+0)</Select.Option>
-                  <Select.Option value="America/New_York">America/New_York (UTC-5)</Select.Option>
+                <Select placeholder={t('common:placeholder.select')}>
+                  <Select.Option value="Asia/Shanghai">{t('system.general.timezones.shanghai')}</Select.Option>
+                  <Select.Option value="UTC">{t('system.general.timezones.utc')}</Select.Option>
+                  <Select.Option value="America/New_York">{t('system.general.timezones.newYork')}</Select.Option>
                 </Select>
               </Form.Item>
               
               <Form.Item
                 name={['general', 'language']}
-                label="默认语言"
-                rules={[{ required: true, message: '请选择默认语言' }]}
+                label={t('system.general.language')}
+                rules={[{ required: true, message: t('common:validation.required') }]}
               >
-                <Select placeholder="请选择默认语言">
-                  <Select.Option value="zh-CN">简体中文</Select.Option>
-                  <Select.Option value="en-US">English</Select.Option>
+                <Select placeholder={t('common:placeholder.select')}>
+                  <Select.Option value="zh-CN">{t('system.general.languages.zhCN')}</Select.Option>
+                  <Select.Option value="en-US">{t('system.general.languages.enUS')}</Select.Option>
                 </Select>
               </Form.Item>
               
               <Form.Item name={['general', 'maintenanceMode']} valuePropName="checked">
-                <Switch checkedChildren="开启" unCheckedChildren="关闭" />
-                <span style={{ marginLeft: 8 }}>维护模式</span>
+                <Switch checkedChildren={t('common:on')} unCheckedChildren={t('common:off')} />
+                <span style={{ marginLeft: 8 }}>{t('system.general.maintenanceMode')}</span>
               </Form.Item>
             </TabPane>
 
             {/* 数据库设置 */}
-            <TabPane tab="数据库" key="database">
+            <TabPane tab={t('system.database.title')} key="database">
               <Alert
-                message="数据库配置"
-                description="修改数据库配置需要重启系统才能生效，请谨慎操作。"
+                message={t('system.database.title')}
+                description={t('system.database.configWarning')}
                 type="warning"
                 showIcon
                 style={{ marginBottom: 16 }}
@@ -332,45 +332,45 @@ const AdminSystem: React.FC = () => {
               
               <Form.Item
                 name={['database', 'host']}
-                label="主机地址"
-                rules={[{ required: true, message: '请输入主机地址' }]}
+                label={t('system.database.host')}
+                rules={[{ required: true, message: t('common:validation.required') }]}
               >
                 <Input placeholder="localhost" />
               </Form.Item>
               
               <Form.Item
                 name={['database', 'port']}
-                label="端口"
-                rules={[{ required: true, message: '请输入端口' }]}
+                label={t('system.database.port')}
+                rules={[{ required: true, message: t('common:validation.required') }]}
               >
                 <Input type="number" placeholder="5432" />
               </Form.Item>
               
               <Form.Item
                 name={['database', 'name']}
-                label="数据库名"
-                rules={[{ required: true, message: '请输入数据库名' }]}
+                label={t('system.database.name')}
+                rules={[{ required: true, message: t('common:validation.required') }]}
               >
                 <Input placeholder="superinsight" />
               </Form.Item>
               
               <Form.Item
                 name={['database', 'maxConnections']}
-                label="最大连接数"
+                label={t('system.database.maxConnections')}
               >
                 <Input type="number" placeholder="100" />
               </Form.Item>
               
               <Form.Item
                 name={['database', 'connectionTimeout']}
-                label="连接超时（秒）"
+                label={t('system.database.connectionTimeout')}
               >
                 <Input type="number" placeholder="30" />
               </Form.Item>
               
               <Form.Item
                 name={['database', 'queryTimeout']}
-                label="查询超时（秒）"
+                label={t('system.database.queryTimeout')}
               >
                 <Input type="number" placeholder="60" />
               </Form.Item>
@@ -379,44 +379,44 @@ const AdminSystem: React.FC = () => {
                 onClick={() => testConnectionMutation.mutate('database')}
                 loading={testConnectionMutation.isPending}
               >
-                测试数据库连接
+                {t('system.testDatabaseConnection')}
               </Button>
             </TabPane>
 
             {/* 缓存设置 */}
-            <TabPane tab="缓存" key="cache">
+            <TabPane tab={t('system.cache.title')} key="cache">
               <Form.Item name={['cache', 'enabled']} valuePropName="checked">
-                <Switch checkedChildren="启用" unCheckedChildren="禁用" />
-                <span style={{ marginLeft: 8 }}>启用缓存</span>
+                <Switch checkedChildren={t('common:enabled')} unCheckedChildren={t('common:disabled')} />
+                <span style={{ marginLeft: 8 }}>{t('system.cache.enabled')}</span>
               </Form.Item>
               
               <Form.Item
                 name={['cache', 'type']}
-                label="缓存类型"
+                label={t('system.cache.type')}
               >
-                <Select placeholder="请选择缓存类型">
-                  <Select.Option value="redis">Redis</Select.Option>
-                  <Select.Option value="memory">内存缓存</Select.Option>
+                <Select placeholder={t('common:placeholder.select')}>
+                  <Select.Option value="redis">{t('system.cache.types.redis')}</Select.Option>
+                  <Select.Option value="memory">{t('system.cache.types.memory')}</Select.Option>
                 </Select>
               </Form.Item>
               
               <Form.Item
                 name={['cache', 'host']}
-                label="缓存主机"
+                label={t('system.cache.host')}
               >
                 <Input placeholder="localhost" />
               </Form.Item>
               
               <Form.Item
                 name={['cache', 'port']}
-                label="缓存端口"
+                label={t('system.cache.port')}
               >
                 <Input type="number" placeholder="6379" />
               </Form.Item>
               
               <Form.Item
                 name={['cache', 'ttl']}
-                label="默认TTL（秒）"
+                label={t('system.cache.ttl')}
               >
                 <Input type="number" placeholder="3600" />
               </Form.Item>
@@ -425,41 +425,41 @@ const AdminSystem: React.FC = () => {
                 onClick={() => testConnectionMutation.mutate('cache')}
                 loading={testConnectionMutation.isPending}
               >
-                测试缓存连接
+                {t('system.testCacheConnection')}
               </Button>
             </TabPane>
 
             {/* 安全设置 */}
-            <TabPane tab="安全" key="security">
+            <TabPane tab={t('system.security.title')} key="security">
               <Form.Item
                 name={['security', 'sessionTimeout']}
-                label="会话超时（分钟）"
+                label={t('system.security.sessionTimeout')}
               >
                 <Input type="number" placeholder="30" />
               </Form.Item>
               
               <Form.Item
                 name={['security', 'passwordMinLength']}
-                label="密码最小长度"
+                label={t('system.security.passwordMinLength')}
               >
                 <Input type="number" placeholder="8" />
               </Form.Item>
               
               <Form.Item name={['security', 'passwordRequireSpecialChars']} valuePropName="checked">
-                <Switch checkedChildren="要求" unCheckedChildren="不要求" />
-                <span style={{ marginLeft: 8 }}>密码包含特殊字符</span>
+                <Switch checkedChildren={t('common:required')} unCheckedChildren={t('common:optional')} />
+                <span style={{ marginLeft: 8 }}>{t('system.security.passwordRequireSpecialChars')}</span>
               </Form.Item>
               
               <Form.Item
                 name={['security', 'maxLoginAttempts']}
-                label="最大登录尝试次数"
+                label={t('system.security.maxLoginAttempts')}
               >
                 <Input type="number" placeholder="5" />
               </Form.Item>
               
               <Form.Item
                 name={['security', 'lockoutDuration']}
-                label="锁定时长（分钟）"
+                label={t('system.security.lockoutDuration')}
               >
                 <Input type="number" placeholder="15" />
               </Form.Item>

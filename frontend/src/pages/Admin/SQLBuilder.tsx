@@ -368,12 +368,12 @@ const SQLBuilder: React.FC = () => {
 
             {/* Middle Panel - Query Builder */}
             <Col xs={24} lg={10}>
-              <Card size="small" title="查询配置">
+              <Card size="small" title={t('sqlBuilder.queryConfiguration')}>
                 <Form layout="vertical">
-                  <Form.Item label="选择表">
+                  <Form.Item label={t('sqlBuilder.selectTables')}>
                     <Select
                       mode="multiple"
-                      placeholder="选择要查询的表"
+                      placeholder={t('sqlBuilder.selectTablesPlaceholder')}
                       value={queryConfig.tables}
                       onChange={handleTableSelect}
                       style={{ width: '100%' }}
@@ -386,10 +386,10 @@ const SQLBuilder: React.FC = () => {
                     </Select>
                   </Form.Item>
 
-                  <Form.Item label="选择列">
+                  <Form.Item label={t('sqlBuilder.selectColumns')}>
                     <Select
                       mode="multiple"
-                      placeholder="选择列（留空选择全部）"
+                      placeholder={t('sqlBuilder.selectColumnsPlaceholder')}
                       value={queryConfig.columns.includes('*') ? [] : queryConfig.columns}
                       onChange={handleColumnSelect}
                       style={{ width: '100%' }}
@@ -403,7 +403,7 @@ const SQLBuilder: React.FC = () => {
                     </Select>
                   </Form.Item>
 
-                  <Divider>WHERE 条件</Divider>
+                  <Divider>{t('sqlBuilder.whereConditions')}</Divider>
                   {queryConfig.where_conditions.map((cond, index) => (
                     <Space key={index} style={{ display: 'flex', marginBottom: 8 }} align="baseline">
                       {index > 0 && (
@@ -418,7 +418,7 @@ const SQLBuilder: React.FC = () => {
                         </Select>
                       )}
                       <Select
-                        placeholder="字段"
+                        placeholder={t('sqlBuilder.field')}
                         value={cond.field}
                         onChange={(v) => updateWhereCondition(index, 'field', v)}
                         style={{ width: 150 }}
@@ -437,7 +437,7 @@ const SQLBuilder: React.FC = () => {
                         ))}
                       </Select>
                       <Input
-                        placeholder="值"
+                        placeholder={t('sqlBuilder.value')}
                         value={cond.value as string}
                         onChange={(e) => updateWhereCondition(index, 'value', e.target.value)}
                         style={{ width: 150 }}
@@ -451,14 +451,14 @@ const SQLBuilder: React.FC = () => {
                     </Space>
                   ))}
                   <Button type="dashed" onClick={addWhereCondition} icon={<PlusOutlined />}>
-                    添加条件
+                    {t('sqlBuilder.addCondition')}
                   </Button>
 
-                  <Divider>ORDER BY</Divider>
+                  <Divider>{t('sqlBuilder.orderBy')}</Divider>
                   {queryConfig.order_by.map((item, index) => (
                     <Space key={index} style={{ display: 'flex', marginBottom: 8 }} align="baseline">
                       <Select
-                        placeholder="字段"
+                        placeholder={t('sqlBuilder.field')}
                         value={item.field}
                         onChange={(v) => updateOrderBy(index, 'field', v)}
                         style={{ width: 200 }}
@@ -485,11 +485,11 @@ const SQLBuilder: React.FC = () => {
                     </Space>
                   ))}
                   <Button type="dashed" onClick={addOrderBy} icon={<PlusOutlined />}>
-                    添加排序
+                    {t('sqlBuilder.addOrderBy')}
                   </Button>
 
-                  <Divider>限制</Divider>
-                  <Form.Item label="返回行数">
+                  <Divider>{t('sqlBuilder.limit')}</Divider>
+                  <Form.Item label={t('sqlBuilder.limitRows')}>
                     <InputNumber
                       min={1}
                       max={1000}
@@ -506,10 +506,10 @@ const SQLBuilder: React.FC = () => {
             <Col xs={24} lg={8}>
               <Card
                 size="small"
-                title="生成的 SQL"
+                title={t('sqlBuilder.generatedSQL')}
                 extra={
                   <Space>
-                    <Tooltip title="复制 SQL">
+                    <Tooltip title={t('sqlBuilder.copySQL')}>
                       <Button
                         type="text"
                         icon={<CopyOutlined />}
@@ -517,7 +517,7 @@ const SQLBuilder: React.FC = () => {
                         disabled={!generatedSQL}
                       />
                     </Tooltip>
-                    <Tooltip title="保存为模板">
+                    <Tooltip title={t('sqlBuilder.saveAsTemplate')}>
                       <Button
                         type="text"
                         icon={<SaveOutlined />}
@@ -533,7 +533,7 @@ const SQLBuilder: React.FC = () => {
                   readOnly
                   rows={8}
                   style={{ fontFamily: 'monospace' }}
-                  placeholder="SQL 将在此显示..."
+                  placeholder={t('sqlBuilder.sqlPlaceholder')}
                 />
                 <div style={{ marginTop: 16, textAlign: 'center' }}>
                   <Button
@@ -543,7 +543,7 @@ const SQLBuilder: React.FC = () => {
                     loading={executeMutation.isPending}
                     disabled={!generatedSQL}
                   >
-                    执行查询
+                    {t('sqlBuilder.executeQuery')}
                   </Button>
                 </div>
               </Card>
@@ -552,12 +552,12 @@ const SQLBuilder: React.FC = () => {
               {queryResult && (
                 <Card
                   size="small"
-                  title={`查询结果 (${queryResult.row_count} 行, ${queryResult.execution_time_ms}ms)`}
+                  title={t('sqlBuilder.queryResultTitle', { count: queryResult.row_count, time: queryResult.execution_time_ms })}
                   style={{ marginTop: 16 }}
                 >
                   {queryResult.truncated && (
                     <Alert
-                      message="结果已截断"
+                      message={t('sqlBuilder.resultTruncated')}
                       type="warning"
                       showIcon
                       style={{ marginBottom: 8 }}
@@ -590,25 +590,25 @@ const SQLBuilder: React.FC = () => {
 
       {/* Save Template Modal */}
       <Modal
-        title="保存为模板"
+        title={t('sqlBuilder.saveTemplate')}
         open={saveModalVisible}
         onOk={() => saveTemplateMutation.mutate()}
         onCancel={() => setSaveModalVisible(false)}
         confirmLoading={saveTemplateMutation.isPending}
       >
         <Form layout="vertical">
-          <Form.Item label="模板名称" required>
+          <Form.Item label={t('sqlBuilder.templateNameRequired')} required>
             <Input
               value={templateName}
               onChange={(e) => setTemplateName(e.target.value)}
-              placeholder="输入模板名称"
+              placeholder={t('sqlBuilder.templateNamePlaceholder')}
             />
           </Form.Item>
-          <Form.Item label="描述">
+          <Form.Item label={t('sqlBuilder.description')}>
             <TextArea
               value={templateDesc}
               onChange={(e) => setTemplateDesc(e.target.value)}
-              placeholder="模板描述（可选）"
+              placeholder={t('sqlBuilder.descriptionPlaceholder')}
               rows={3}
             />
           </Form.Item>

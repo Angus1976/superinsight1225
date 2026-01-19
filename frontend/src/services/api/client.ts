@@ -12,7 +12,8 @@ import {
 } from '@/utils/apiPerformance';
 
 // Optimized timeout for API response budget compliance
-const OPTIMIZED_TIMEOUT = API_RESPONSE_BUDGET * 2; // Allow some buffer but still enforce reasonable limits
+// Increased to 10 seconds to prevent premature timeouts during workspace loading
+const OPTIMIZED_TIMEOUT = 10000;
 
 // Create axios instance with optimized settings
 const apiClient: AxiosInstance = axios.create({

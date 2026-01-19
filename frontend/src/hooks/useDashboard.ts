@@ -26,12 +26,18 @@ export function useDashboard(options: UseDashboardOptions = {}) {
     [tenantId, workspaceId]
   );
 
+  // Only enable queries if we have at least a tenant ID
+  const queriesEnabled = enabled && !!tenantId;
+
   const summaryQuery = useQuery({
     queryKey: [...queryKeyBase, 'summary'],
     queryFn: () => dashboardService.getSummary(tenantId, workspaceId),
     refetchInterval: refreshInterval,
     staleTime: 30000,
-    enabled,
+    enabled: queriesEnabled,
+    retry: 1,
+    retryDelay: 1000,
+    gcTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const annotationEfficiencyQuery = useQuery({
@@ -39,7 +45,10 @@ export function useDashboard(options: UseDashboardOptions = {}) {
     queryFn: () => dashboardService.getAnnotationEfficiency(24, tenantId, workspaceId),
     refetchInterval: refreshInterval,
     staleTime: 30000,
-    enabled,
+    enabled: queriesEnabled,
+    retry: 1,
+    retryDelay: 1000,
+    gcTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const userActivityQuery = useQuery({
@@ -47,15 +56,18 @@ export function useDashboard(options: UseDashboardOptions = {}) {
     queryFn: () => dashboardService.getUserActivity(24, tenantId, workspaceId),
     refetchInterval: refreshInterval,
     staleTime: 30000,
-    enabled,
+    enabled: queriesEnabled,
+    retry: 1,
+    retryDelay: 1000,
+    gcTime: 5 * 60 * 1000, // 5 minutes
   });
 
   return {
     summary: summaryQuery.data,
     annotationEfficiency: annotationEfficiencyQuery.data,
     userActivity: userActivityQuery.data,
-    isLoading: summaryQuery.isLoading || annotationEfficiencyQuery.isLoading || userActivityQuery.isLoading,
-    isFetching: summaryQuery.isFetching || annotationEfficiencyQuery.isFetching || userActivityQuery.isFetching,
+    isLoading: queriesEnabled && (summaryQuery.isLoading || annotationEfficiencyQuery.isLoading || userActivityQuery.isLoading),
+    isFetching: queriesEnabled && (summaryQuery.isFetching || annotationEfficiencyQuery.isFetching || userActivityQuery.isFetching),
     error: summaryQuery.error || annotationEfficiencyQuery.error || userActivityQuery.error,
     refetch: () => {
       summaryQuery.refetch();
@@ -65,5 +77,6 @@ export function useDashboard(options: UseDashboardOptions = {}) {
     // Context info for display
     tenantId,
     workspaceId,
+    queriesEnabled,
   };
 }

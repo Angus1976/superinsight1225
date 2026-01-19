@@ -108,10 +108,7 @@ const buildConfig: BuildOptions = {
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => ({
   plugins: [
-    react({
-      // Enable Fast Refresh for development
-      fastRefresh: true,
-    }),
+    react(),
   ],
 
   resolve: {

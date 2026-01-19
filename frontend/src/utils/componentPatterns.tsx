@@ -20,7 +20,6 @@ import React, {
   Suspense,
   lazy,
   useCallback,
-  useMemo,
   useState,
   useEffect,
 } from 'react';

@@ -1,5 +1,5 @@
 // Enhanced Dashboard page with enterprise features
-import { Row, Col, Typography, Alert, Tabs } from 'antd';
+import { Row, Col, Typography, Alert, Tabs, Spin } from 'antd';
 import {
   DashboardOutlined,
   BarChartOutlined,
@@ -22,7 +22,7 @@ const { TabPane } = Tabs;
 const DashboardPage: React.FC = () => {
   const { t } = useTranslation('dashboard');
   const { user } = useAuthStore();
-  const { annotationEfficiency, isLoading, error } = useDashboard();
+  const { annotationEfficiency, isLoading, error, queriesEnabled } = useDashboard();
 
   // Prepare chart data from annotation efficiency
   const chartData = annotationEfficiency?.trends?.map((trend) => ({
@@ -30,6 +30,15 @@ const DashboardPage: React.FC = () => {
     datetime: trend.datetime,
     value: trend.annotations_per_hour,
   })) || [];
+
+  // Show loading state if queries are not enabled yet (tenant/workspace loading)
+  if (!queriesEnabled) {
+    return (
+      <div style={{ textAlign: 'center', padding: '50px 20px' }}>
+        <Spin size="large" tip={t('loading.workspace')} />
+      </div>
+    );
+  }
 
   if (error) {
     return (

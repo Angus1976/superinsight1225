@@ -4,10 +4,20 @@ export * from './token';
 export * from './format';
 export * from './networkOptimization';
 export * from './apiPerformance';
-export * from './performanceOptimization';
+// Export performanceOptimization but rename conflicts
+export {
+  memoize,
+  debounce as performanceDebounce,
+  throttle as performanceThrottle,
+  lazyLoad,
+  preloadImage,
+  preloadImages,
+  optimizeImage,
+  createImageLoader
+} from './performanceOptimization';
 export * from './errorHandler';
 
-// Code quality utilities
+// Code quality utilities (includes debounce, throttle)
 export * from './codeQuality';
 export * from './componentPatterns';
 

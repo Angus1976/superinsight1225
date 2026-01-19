@@ -9,7 +9,14 @@ export * from './MemoryMonitor';
 // Smooth interaction components
 export * from './SmoothTransition';
 export * from './InteractiveFeedback';
-export * from './SmoothScroll';
+// Export SmoothScroll but rename InfiniteScroll to avoid conflict
+export { 
+  SmoothScroll,
+  InfiniteScroll as SmoothInfiniteScroll,
+  ScrollToTop,
+  ScrollProgress,
+  ParallaxScroll
+} from './SmoothScroll';
 
 // Responsive design components
 export * from './ResponsiveContainer';
@@ -27,5 +34,5 @@ export * from './ErrorHandling';
 // Design system components
 export * from './DesignSystem';
 
-// Composable reusable components
+// Composable reusable components (includes InfiniteScroll)
 export * from './Composable';

@@ -389,17 +389,17 @@ export function SwitchCase<T extends string | number>({
  * @param fallback - Optional loading fallback
  * @returns The lazy-loaded component
  */
-export function lazyWithFallback<T extends ComponentType<unknown>>(
+export function lazyWithFallback<T extends ComponentType<any>>(
   importFn: () => Promise<{ default: T }>,
   fallback: ReactNode = <LoadingSpinner />
-): FC<React.ComponentProps<T>> {
+): T {
   const LazyComponent = lazy(importFn);
 
-  const LazyWithFallback: FC<React.ComponentProps<T>> = (props) => (
+  const LazyWithFallback = ((props: any) => (
     <Suspense fallback={fallback}>
       <LazyComponent {...props} />
     </Suspense>
-  );
+  )) as T;
 
   return LazyWithFallback;
 }

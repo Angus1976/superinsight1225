@@ -33,6 +33,67 @@
     "api": "API调用",
     "other": "其他"
   },
+  "columns": {
+    "billId": "账单编号",
+    "days": "天",
+    "items": "项",
+    "daysOverdue": "天逾期",
+    "payment": "支付信息",
+    "notPaid": "未支付"
+  },
+  "statistics": {
+    "overdueAmount": "逾期金额",
+    "vsLastPeriod": "相比上期",
+    "requiresAttention": "需要立即处理"
+  },
+  "filters": {
+    "searchPlaceholder": "按编号或描述搜索",
+    "filterByStatus": "按状态筛选",
+    "selected": "已选",
+    "compare": "对比",
+    "exportExcel": "导出 Excel",
+    "presets": {
+      "last7Days": "最近7天",
+      "last30Days": "最近30天",
+      "last3Months": "最近3个月",
+      "thisYear": "今年"
+    }
+  },
+  "tabs": {
+    "dashboard": "分析看板",
+    "records": "账单记录",
+    "workHours": "工时分析",
+    "export": "导出与报表",
+    "total": "共",
+    "of": "的",
+    "recordsText": "条记录"
+  },
+  "modal": {
+    "overview": "概览",
+    "duration": "时长",
+    "paymentDate": "支付日期",
+    "paid": "已支付",
+    "notPaidYet": "尚未支付",
+    "created": "创建时间",
+    "lineItems": "明细项目",
+    "total": "合计"
+  },
+  "compare": {
+    "title": "对比账单记录",
+    "bill": "账单",
+    "items": "项目",
+    "topCategories": "主要类别"
+  },
+  "messages": {
+    "exportSuccess": "导出成功",
+    "exportFailed": "导出失败",
+    "selectAtLeast2": "请至少选择2条记录进行对比",
+    "compareMax3": "最多可对比3条记录",
+    "invoiceComingSoon": "发票下载功能即将推出",
+    "loadFailed": "加载账单数据失败",
+    "checkConnection": "请检查网络连接后重试",
+    "retry": "重试"
+  },
   "workHours": {
     "title": "工时统计",
     "ranking": "工时排行榜",
@@ -192,15 +253,6 @@
     "timeSpentHours": "工时",
     "hours": "小时",
     "persons": "人"
-  },
-  "messages": {
-    "exportStarted": "导出已开始，文件将很快下载。",
-    "reportGenerated": "报表生成成功",
-    "reportFailed": "报表生成失败",
-    "exportSuccess": "报表导出成功",
-    "noData": "暂无数据",
-    "loadingData": "加载数据中...",
-    "retryLoad": "重试"
   },
   "ruleConfig": {
     "title": "当前计费规则",

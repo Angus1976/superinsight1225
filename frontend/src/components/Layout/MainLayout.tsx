@@ -113,7 +113,7 @@ const menuItems = [
         name: 'dataSources',
       },
       {
-        path: `${ROUTES.DATA_SYNC}/tasks`,
+        path: `${ROUTES.DATA_SYNC}/scheduler`,
         name: 'syncTasks',
       },
       {

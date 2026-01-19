@@ -8,9 +8,12 @@ from typing import List, Optional
 from uuid import UUID
 from datetime import datetime
 
+import redis
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
 
+from src.database.connection import get_db_session
 from src.security.rbac_engine import RBACEngine, Permission
 from src.security.permission_manager import PermissionManager, AccessContext, AccessDecision
 
@@ -100,29 +103,27 @@ class BulkPermissionCheckResponse(BaseModel):
 
 
 # ============================================================================
-# Dependency Injection (placeholder - would be properly configured in app)
+# Dependency Injection
 # ============================================================================
 
-async def get_rbac_engine() -> RBACEngine:
+def get_redis_client() -> redis.Redis:
+    """Get Redis client instance."""
+    from src.config.settings import settings
+    return redis.Redis.from_url(settings.redis.redis_url)
+
+
+def get_rbac_engine() -> RBACEngine:
     """Get RBAC engine instance."""
-    # In production, this would be properly injected
-    from src.database.connection import get_db_session
-    from src.database.redis_client import get_redis_client
-    
-    db = await get_db_session()
-    cache = await get_redis_client()
-    return RBACEngine(db, cache)
+    return RBACEngine(cache_ttl=300)
 
 
-async def get_permission_manager() -> PermissionManager:
+def get_permission_manager(
+    db: Session = Depends(get_db_session)
+) -> PermissionManager:
     """Get permission manager instance."""
-    from src.database.connection import get_db_session
-    from src.database.redis_client import get_redis_client
     from src.security.audit_logger import AuditLogger
     
-    db = await get_db_session()
-    cache = await get_redis_client()
-    rbac_engine = RBACEngine(db, cache)
+    rbac_engine = RBACEngine(cache_ttl=300)
     audit_logger = AuditLogger(db)
     return PermissionManager(db, rbac_engine, audit_logger)
 

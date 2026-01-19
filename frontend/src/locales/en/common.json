@@ -174,6 +174,8 @@
     "id": "Error ID",
     "fieldErrors": "Field Errors",
     "retrying": "Retrying ({{attempt}}/{{max}})...",
+    "operationFailed": "Operation failed",
+    "loadFailed": "Load failed",
     "titles": {
       "network": "Network Connection Failed",
       "auth": "Authentication Failed",
@@ -302,7 +304,9 @@
     "preventCommonIssues": "Prevent common issues through automated validation",
     "recommendation": "Recommendation",
     "focusOnTopIssues": "Focus on addressing the top 3 issue categories to maximize quality improvement impact",
-    "exportSuccess": "Export successful"
+    "exportSuccess": "Export successful",
+    "generate": "Generate",
+    "loadFailed": "Load failed"
   },
   "emptyState": {
     "noData": "No Data",

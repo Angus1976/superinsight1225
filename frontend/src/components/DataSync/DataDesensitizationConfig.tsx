@@ -37,7 +37,7 @@ import {
   SecurityScanOutlined,
   EyeOutlined,
   EyeInvisibleOutlined,
-  ShieldOutlined,
+  SafetyOutlined,
   AuditOutlined,
   WarningOutlined,
   CheckCircleOutlined,
@@ -372,7 +372,7 @@ const DataDesensitizationConfig: React.FC = () => {
       case 'remove':
         return <DeleteOutlined />;
       default:
-        return <ShieldOutlined />;
+        return <SafetyOutlined />;
     }
   };
 
@@ -666,7 +666,7 @@ const DataDesensitizationConfig: React.FC = () => {
             <Statistic
               title={t('security:stats.totalRules')}
               value={rules.length}
-              prefix={<ShieldOutlined />}
+              prefix={<SafetyOutlined />}
             />
           </Card>
         </Col>

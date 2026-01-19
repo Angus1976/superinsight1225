@@ -27,7 +27,7 @@ import {
   EyeOutlined,
   RiseOutlined,
   FallOutlined,
-  CompareArrowsOutlined,
+  SwapOutlined,
   FileExcelOutlined,
   CalendarOutlined,
   HistoryOutlined,
@@ -35,34 +35,33 @@ import {
   DashboardOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/authStore';
 import { useBillingList, useBillingAnalysis, useExportBilling } from '@/hooks/useBilling';
-import { WorkHoursAnalysis, ExcelExportManager, BillingDashboard } from '@/components/Billing';
 import type { BillingRecord, BillingStatus, BillingListParams } from '@/types/billing';
+import { BillingDashboard } from '@/components/Billing/BillingDashboard';
+import { WorkHoursAnalysis } from '@/components/Billing/WorkHoursAnalysis';
+import { ExcelExportManager } from '@/components/Billing/ExcelExportManager';
 import dayjs from 'dayjs';
+import type { Dayjs } from 'dayjs';
 
 const { RangePicker } = DatePicker;
 const { Search } = Input;
 const { TabPane } = Tabs;
 const { Text, Title } = Typography;
 
-const statusColorMap: Record<BillingStatus, string> = {
-  pending: 'processing',
-  paid: 'success',
-  overdue: 'error',
-  cancelled: 'default',
-};
-
-const statusTextMap: Record<BillingStatus, string> = {
-  pending: 'Pending',
-  paid: 'Paid',
-  overdue: 'Overdue',
-  cancelled: 'Cancelled',
-};
-
 const BillingPage: React.FC = () => {
+  const { t } = useTranslation('billing');
   const { currentTenant } = useAuthStore();
   const tenantId = currentTenant?.id || 'default';
+  
+  // Status color map
+  const statusColorMap: Record<BillingStatus, string> = {
+    pending: 'processing',
+    paid: 'success',
+    overdue: 'error',
+    cancelled: 'default',
+  };
   
   // State management
   const [selectedRecord, setSelectedRecord] = useState<BillingRecord | null>(null);
@@ -141,9 +140,9 @@ const BillingPage: React.FC = () => {
   const handleExport = async () => {
     try {
       await exportMutation.mutateAsync({ tenantId, params: filters });
-      message.success('Export completed successfully');
+      message.success(t('messages.exportSuccess'));
     } catch {
-      message.error('Export failed');
+      message.error(t('messages.exportFailed'));
     }
   };
 
@@ -154,11 +153,11 @@ const BillingPage: React.FC = () => {
 
   const handleCompareRecords = () => {
     if (selectedRowKeys.length < 2) {
-      message.warning('Please select at least 2 records to compare');
+      message.warning(t('messages.selectAtLeast2'));
       return;
     }
     if (selectedRowKeys.length > 3) {
-      message.warning('You can compare up to 3 records at once');
+      message.warning(t('messages.compareMax3'));
       return;
     }
     
@@ -187,12 +186,16 @@ const BillingPage: React.FC = () => {
     }));
   };
 
-  const handleDateRangeChange = (dates: [dayjs.Dayjs, dayjs.Dayjs] | null) => {
-    setDateRange(dates);
-    if (dates) {
+  const handleDateRangeChange = (
+    dates: [Dayjs | null, Dayjs | null] | null,
+    _dateStrings: [string, string]
+  ) => {
+    if (dates && dates[0] && dates[1]) {
+      setDateRange([dates[0], dates[1]]);
       handleFilterChange('start_date', dates[0].format('YYYY-MM-DD'));
       handleFilterChange('end_date', dates[1].format('YYYY-MM-DD'));
     } else {
+      setDateRange(null);
       const newFilters = { ...filters };
       delete newFilters.start_date;
       delete newFilters.end_date;
@@ -203,7 +206,7 @@ const BillingPage: React.FC = () => {
   // Table columns configuration
   const columns: ColumnsType<BillingRecord> = [
     {
-      title: 'Bill ID',
+      title: t('columns.billId'),
       dataIndex: 'id',
       key: 'id',
       width: 120,
@@ -214,7 +217,7 @@ const BillingPage: React.FC = () => {
       ),
     },
     {
-      title: 'Period',
+      title: t('period'),
       key: 'period',
       width: 200,
       render: (_, record) => (
@@ -223,14 +226,14 @@ const BillingPage: React.FC = () => {
             {dayjs(record.period_start).format('MMM DD')} - {dayjs(record.period_end).format('MMM DD, YYYY')}
           </Text>
           <Text type="secondary" style={{ fontSize: '12px' }}>
-            {dayjs(record.period_end).diff(dayjs(record.period_start), 'day') + 1} days
+            {dayjs(record.period_end).diff(dayjs(record.period_start), 'day') + 1} {t('columns.days')}
           </Text>
         </Space>
       ),
       sorter: (a, b) => dayjs(a.period_start).unix() - dayjs(b.period_start).unix(),
     },
     {
-      title: 'Amount',
+      title: t('amount'),
       dataIndex: 'total_amount',
       key: 'total_amount',
       width: 150,
@@ -240,38 +243,37 @@ const BillingPage: React.FC = () => {
             ¥{amount.toLocaleString()}
           </Text>
           <Text type="secondary" style={{ fontSize: '12px' }}>
-            {/* Show items count */}
-            {billingRecords.find(r => r.total_amount === amount)?.items.length || 0} items
+            {billingRecords.find(r => r.total_amount === amount)?.items.length || 0} {t('columns.items')}
           </Text>
         </Space>
       ),
       sorter: (a, b) => a.total_amount - b.total_amount,
     },
     {
-      title: 'Status',
+      title: t('status'),
       dataIndex: 'status',
       key: 'status',
       width: 120,
       render: (status: BillingStatus, record) => (
         <Space direction="vertical" size={0}>
-          <Tag color={statusColorMap[status]}>{statusTextMap[status]}</Tag>
+          <Tag color={statusColorMap[status]}>{t(`status.${status}`)}</Tag>
           {status === 'overdue' && (
             <Text type="danger" style={{ fontSize: '12px' }}>
-              {dayjs().diff(dayjs(record.due_date), 'day')} days overdue
+              {dayjs().diff(dayjs(record.due_date), 'day')} {t('columns.daysOverdue')}
             </Text>
           )}
         </Space>
       ),
       filters: [
-        { text: 'Pending', value: 'pending' },
-        { text: 'Paid', value: 'paid' },
-        { text: 'Overdue', value: 'overdue' },
-        { text: 'Cancelled', value: 'cancelled' },
+        { text: t('status.pending'), value: 'pending' },
+        { text: t('status.paid'), value: 'paid' },
+        { text: t('status.overdue'), value: 'overdue' },
+        { text: t('status.cancelled'), value: 'cancelled' },
       ],
       onFilter: (value, record) => record.status === value,
     },
     {
-      title: 'Due Date',
+      title: t('dueDate'),
       dataIndex: 'due_date',
       key: 'due_date',
       width: 120,
@@ -286,7 +288,7 @@ const BillingPage: React.FC = () => {
       sorter: (a, b) => dayjs(a.due_date).unix() - dayjs(b.due_date).unix(),
     },
     {
-      title: 'Payment',
+      title: t('columns.payment'),
       key: 'payment',
       width: 150,
       render: (_, record) => (
@@ -299,19 +301,19 @@ const BillingPage: React.FC = () => {
               </Text>
             </>
           ) : (
-            <Text type="secondary">Not paid</Text>
+            <Text type="secondary">{t('columns.notPaid')}</Text>
           )}
         </Space>
       ),
     },
     {
-      title: 'Actions',
+      title: t('actions'),
       key: 'actions',
       width: 120,
       fixed: 'right',
       render: (_, record) => (
         <Space>
-          <Tooltip title="View Details">
+          <Tooltip title={t('view')}>
             <Button
               type="link"
               size="small"
@@ -319,12 +321,12 @@ const BillingPage: React.FC = () => {
               onClick={() => handleViewDetail(record)}
             />
           </Tooltip>
-          <Tooltip title="Download Invoice">
+          <Tooltip title={t('downloadInvoice')}>
             <Button
               type="link"
               size="small"
               icon={<DownloadOutlined />}
-              onClick={() => message.info('Invoice download feature coming soon')}
+              onClick={() => message.info(t('messages.invoiceComingSoon'))}
             />
           </Tooltip>
         </Space>
@@ -345,12 +347,12 @@ const BillingPage: React.FC = () => {
     return (
       <Card>
         <Alert
-          message="Failed to load billing data"
-          description="Please check your connection and try again."
+          message={t('messages.loadFailed')}
+          description={t('messages.checkConnection')}
           type="error"
           action={
             <Button size="small" onClick={() => refetch()}>
-              Retry
+              {t('messages.retry')}
             </Button>
           }
         />
@@ -360,14 +362,14 @@ const BillingPage: React.FC = () => {
 
   return (
     <div className="billing-page">
-      <Title level={2}>Billing Management</Title>
+      <Title level={2}>{t('title')}</Title>
       
       {/* Statistics Cards */}
       <Row gutter={16} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={12} lg={6}>
           <Card>
             <Statistic
-              title="Total Spending"
+              title={t('totalSpending')}
               value={statistics.totalSpending}
               prefix={<DollarOutlined />}
               suffix="¥"
@@ -378,7 +380,7 @@ const BillingPage: React.FC = () => {
         <Col xs={24} sm={12} lg={6}>
           <Card>
             <Statistic
-              title="Average Monthly"
+              title={t('averageMonthly')}
               value={statistics.averageMonthly}
               prefix={statistics.trendPercentage >= 0 ? <RiseOutlined /> : <FallOutlined />}
               suffix="¥"
@@ -389,7 +391,7 @@ const BillingPage: React.FC = () => {
             />
             <div style={{ marginTop: 8 }}>
               <Text type="secondary" style={{ fontSize: '12px' }}>
-                {statistics.trendPercentage >= 0 ? '+' : ''}{statistics.trendPercentage.toFixed(1)}% vs last period
+                {statistics.trendPercentage >= 0 ? '+' : ''}{statistics.trendPercentage.toFixed(1)}% {t('statistics.vsLastPeriod')}
               </Text>
             </div>
           </Card>
@@ -397,7 +399,7 @@ const BillingPage: React.FC = () => {
         <Col xs={24} sm={12} lg={6}>
           <Card>
             <Statistic
-              title="Pending Payment"
+              title={t('pendingPayment')}
               value={statistics.pendingAmount}
               prefix={<CalendarOutlined />}
               suffix="¥"
@@ -408,7 +410,7 @@ const BillingPage: React.FC = () => {
         <Col xs={24} sm={12} lg={6}>
           <Card>
             <Statistic
-              title="Overdue Amount"
+              title={t('statistics.overdueAmount')}
               value={statistics.overdueAmount}
               prefix={<HistoryOutlined />}
               suffix="¥"
@@ -417,7 +419,7 @@ const BillingPage: React.FC = () => {
             {statistics.overdueAmount > 0 && (
               <div style={{ marginTop: 8 }}>
                 <Text type="danger" style={{ fontSize: '12px' }}>
-                  Requires immediate attention
+                  {t('statistics.requiresAttention')}
                 </Text>
               </div>
             )}
@@ -431,14 +433,14 @@ const BillingPage: React.FC = () => {
           <Col flex="auto">
             <Space wrap>
               <Search
-                placeholder="Search by ID or description"
+                placeholder={t('filters.searchPlaceholder')}
                 allowClear
                 style={{ width: 250 }}
                 onSearch={handleSearch}
                 onChange={(e) => !e.target.value && setSearchText('')}
               />
               <Select
-                placeholder="Filter by status"
+                placeholder={t('filters.filterByStatus')}
                 allowClear
                 style={{ width: 150 }}
                 value={statusFilter}
@@ -447,20 +449,20 @@ const BillingPage: React.FC = () => {
                   handleFilterChange('status', value);
                 }}
                 options={[
-                  { value: 'pending', label: 'Pending' },
-                  { value: 'paid', label: 'Paid' },
-                  { value: 'overdue', label: 'Overdue' },
-                  { value: 'cancelled', label: 'Cancelled' },
+                  { value: 'pending', label: t('status.pending') },
+                  { value: 'paid', label: t('status.paid') },
+                  { value: 'overdue', label: t('status.overdue') },
+                  { value: 'cancelled', label: t('status.cancelled') },
                 ]}
               />
               <RangePicker
                 value={dateRange}
                 onChange={handleDateRangeChange}
                 presets={[
-                  { label: 'Last 7 Days', value: [dayjs().subtract(7, 'day'), dayjs()] },
-                  { label: 'Last 30 Days', value: [dayjs().subtract(30, 'day'), dayjs()] },
-                  { label: 'Last 3 Months', value: [dayjs().subtract(3, 'month'), dayjs()] },
-                  { label: 'This Year', value: [dayjs().startOf('year'), dayjs()] },
+                  { label: t('filters.presets.last7Days'), value: [dayjs().subtract(7, 'day'), dayjs()] },
+                  { label: t('filters.presets.last30Days'), value: [dayjs().subtract(30, 'day'), dayjs()] },
+                  { label: t('filters.presets.last3Months'), value: [dayjs().subtract(3, 'month'), dayjs()] },
+                  { label: t('filters.presets.thisYear'), value: [dayjs().startOf('year'), dayjs()] },
                 ]}
               />
             </Space>
@@ -469,13 +471,13 @@ const BillingPage: React.FC = () => {
             <Space>
               {selectedRowKeys.length > 0 && (
                 <>
-                  <Text type="secondary">{selectedRowKeys.length} selected</Text>
+                  <Text type="secondary">{selectedRowKeys.length} {t('filters.selected')}</Text>
                   <Button
-                    icon={<CompareArrowsOutlined />}
+                    icon={<SwapOutlined />}
                     onClick={handleCompareRecords}
                     disabled={selectedRowKeys.length < 2}
                   >
-                    Compare
+                    {t('filters.compare')}
                   </Button>
                 </>
               )}
@@ -484,7 +486,7 @@ const BillingPage: React.FC = () => {
                 onClick={handleExport}
                 loading={exportMutation.isPending}
               >
-                Export Excel
+                {t('filters.exportExcel')}
               </Button>
             </Space>
           </Col>
@@ -497,7 +499,7 @@ const BillingPage: React.FC = () => {
           tab={
             <span>
               <DashboardOutlined />
-              Analytics Dashboard
+              {t('tabs.dashboard')}
             </span>
           }
           key="dashboard"
@@ -509,7 +511,7 @@ const BillingPage: React.FC = () => {
           tab={
             <span>
               <HistoryOutlined />
-              Billing Records
+              {t('tabs.records')}
             </span>
           }
           key="records"
@@ -519,8 +521,8 @@ const BillingPage: React.FC = () => {
             title={
               <Space>
                 <HistoryOutlined />
-                Billing Records
-                <Text type="secondary">({totalRecords} total)</Text>
+                {t('records')}
+                <Text type="secondary">({totalRecords} {t('tabs.total')})</Text>
               </Space>
             }
           >
@@ -537,7 +539,7 @@ const BillingPage: React.FC = () => {
                 showSizeChanger: true,
                 showQuickJumper: true,
                 showTotal: (total, range) => 
-                  `${range[0]}-${range[1]} of ${total} records`,
+                  `${range[0]}-${range[1]} ${t('tabs.of')} ${total} ${t('tabs.recordsText')}`,
                 pageSizeOptions: ['10', '20', '50', '100'],
               }}
               onChange={handleTableChange}
@@ -551,7 +553,7 @@ const BillingPage: React.FC = () => {
           tab={
             <span>
               <ClockCircleOutlined />
-              Work Hours Analysis
+              {t('tabs.workHours')}
             </span>
           }
           key="workhours"
@@ -563,7 +565,7 @@ const BillingPage: React.FC = () => {
           tab={
             <span>
               <FileExcelOutlined />
-              Export & Reports
+              {t('tabs.export')}
             </span>
           }
           key="export"
@@ -577,10 +579,10 @@ const BillingPage: React.FC = () => {
         title={
           <Space>
             <EyeOutlined />
-            Billing Details
+            {t('details')}
             {selectedRecord && (
               <Tag color={statusColorMap[selectedRecord.status]}>
-                {statusTextMap[selectedRecord.status]}
+                {t(`status.${selectedRecord.status}`)}
               </Tag>
             )}
           </Space>
@@ -589,64 +591,64 @@ const BillingPage: React.FC = () => {
         onCancel={() => setDetailModalOpen(false)}
         footer={[
           <Button key="close" onClick={() => setDetailModalOpen(false)}>
-            Close
+            {t('close')}
           </Button>,
           <Button key="download" type="primary" icon={<DownloadOutlined />}>
-            Download Invoice
+            {t('downloadInvoice')}
           </Button>,
         ]}
         width={800}
       >
         {selectedRecord && (
           <Tabs defaultActiveKey="overview">
-            <TabPane tab="Overview" key="overview">
+            <TabPane tab={t('modal.overview')} key="overview">
               <Descriptions bordered column={2} style={{ marginBottom: 24 }}>
-                <Descriptions.Item label="Bill ID" span={2}>
+                <Descriptions.Item label={t('columns.billId')} span={2}>
                   <Text code copyable>{selectedRecord.id}</Text>
                 </Descriptions.Item>
-                <Descriptions.Item label="Period">
+                <Descriptions.Item label={t('period')}>
                   {dayjs(selectedRecord.period_start).format('MMMM DD, YYYY')} - {dayjs(selectedRecord.period_end).format('MMMM DD, YYYY')}
                 </Descriptions.Item>
-                <Descriptions.Item label="Duration">
-                  {dayjs(selectedRecord.period_end).diff(dayjs(selectedRecord.period_start), 'day') + 1} days
+                <Descriptions.Item label={t('modal.duration')}>
+                  {dayjs(selectedRecord.period_end).diff(dayjs(selectedRecord.period_start), 'day') + 1} {t('columns.days')}
                 </Descriptions.Item>
-                <Descriptions.Item label="Status">
+                <Descriptions.Item label={t('status')}>
                   <Tag color={statusColorMap[selectedRecord.status]}>
-                    {statusTextMap[selectedRecord.status]}
+                    {t(`status.${selectedRecord.status}`)}
                   </Tag>
                 </Descriptions.Item>
-                <Descriptions.Item label="Total Amount">
+                <Descriptions.Item label={t('amount')}>
                   <Text strong style={{ fontSize: '18px', color: '#1890ff' }}>
                     ¥{selectedRecord.total_amount.toLocaleString()}
                   </Text>
                 </Descriptions.Item>
-                <Descriptions.Item label="Due Date">
+                <Descriptions.Item label={t('dueDate')}>
                   {dayjs(selectedRecord.due_date).format('MMMM DD, YYYY')}
                   <br />
                   <Text type="secondary">
                     ({dayjs(selectedRecord.due_date).fromNow()})
                   </Text>
                 </Descriptions.Item>
-                <Descriptions.Item label="Payment Date">
+                <Descriptions.Item label={t('modal.paymentDate')}>
                   {selectedRecord.paid_at ? (
                     <>
                       {dayjs(selectedRecord.paid_at).format('MMMM DD, YYYY HH:mm')}
                       <br />
                       <Text type="success">
-                        Paid {dayjs(selectedRecord.paid_at).fromNow()}
+                        {t('modal.paid')} {dayjs(selectedRecord.paid_at).fromNow()}
                       </Text>
                     </>
                   ) : (
-                    <Text type="secondary">Not paid yet</Text>
+                    <Text type="secondary">{t('modal.notPaidYet')}</Text>
                   )}
                 </Descriptions.Item>
-                <Descriptions.Item label="Created">
+                <Descriptions.Item label={t('modal.created')}>
                   {dayjs(selectedRecord.created_at).format('MMMM DD, YYYY HH:mm')}
                 </Descriptions.Item>
               </Descriptions>
             </TabPane>
             
-            <TabPane tab="Line Items" key="items">
+            <TabPane tab={t('modal.lineItems')} key="items">
               <Table
                 size="small"
                 dataSource={selectedRecord.items}
@@ -654,35 +656,35 @@ const BillingPage: React.FC = () => {
                 pagination={false}
                 columns={[
                   { 
-                    title: 'Description', 
+                    title: t('description'), 
                     dataIndex: 'description', 
                     key: 'description',
                     render: (text: string) => <Text strong>{text}</Text>
                   },
                   { 
-                    title: 'Category', 
+                    title: t('category'), 
                     dataIndex: 'category', 
                     key: 'category',
                     render: (category: string) => (
-                      <Tag color="blue">{category}</Tag>
+                      <Tag color="blue">{t(`categories.${category}`)}</Tag>
                     )
                   },
                   { 
-                    title: 'Quantity', 
+                    title: t('quantity'), 
                     dataIndex: 'quantity', 
                     key: 'quantity',
                     align: 'right',
                     render: (qty: number) => qty.toLocaleString()
                   },
                   {
-                    title: 'Unit Price',
+                    title: t('unitPrice'),
                     dataIndex: 'unit_price',
                     key: 'unit_price',
                     align: 'right',
                     render: (price: number) => `¥${price.toFixed(2)}`,
                   },
                   {
-                    title: 'Amount',
+                    title: t('amount'),
                     dataIndex: 'amount',
                     key: 'amount',
                     align: 'right',
@@ -698,7 +700,7 @@ const BillingPage: React.FC = () => {
                   return (
                     <Table.Summary.Row>
                       <Table.Summary.Cell index={0} colSpan={4}>
-                        <Text strong>Total</Text>
+                        <Text strong>{t('modal.total')}</Text>
                       </Table.Summary.Cell>
                       <Table.Summary.Cell index={4}>
                         <Text strong style={{ color: '#1890ff', fontSize: '16px' }}>
@@ -718,15 +720,15 @@ const BillingPage: React.FC = () => {
       <Modal
         title={
           <Space>
-            <CompareArrowsOutlined />
-            Compare Billing Records
+            <SwapOutlined />
+            {t('compare.title')}
           </Space>
         }
         open={compareModalOpen}
         onCancel={() => setCompareModalOpen(false)}
         footer={[
           <Button key="close" onClick={() => setCompareModalOpen(false)}>
-            Close
+            {t('close')}
           </Button>,
         ]}
         width={1000}
@@ -739,26 +741,26 @@ const BillingPage: React.FC = () => {
                   size="small" 
                   title={
                     <Space>
-                      <Text strong>Bill #{index + 1}</Text>
+                      <Text strong>{t('compare.bill')} #{index + 1}</Text>
                       <Tag color={statusColorMap[record.status]}>
-                        {statusTextMap[record.status]}
+                        {t(`status.${record.status}`)}
                       </Tag>
                     </Space>
                   }
                 >
                   <Descriptions size="small" column={1}>
-                    <Descriptions.Item label="Period">
+                    <Descriptions.Item label={t('period')}>
                       {dayjs(record.period_start).format('MMM DD')} - {dayjs(record.period_end).format('MMM DD, YYYY')}
                     </Descriptions.Item>
-                    <Descriptions.Item label="Amount">
+                    <Descriptions.Item label={t('amount')}>
                       <Text strong style={{ color: '#1890ff' }}>
                         ¥{record.total_amount.toLocaleString()}
                       </Text>
                     </Descriptions.Item>
-                    <Descriptions.Item label="Items">
-                      {record.items.length} items
+                    <Descriptions.Item label={t('compare.items')}>
+                      {record.items.length} {t('columns.items')}
                     </Descriptions.Item>
-                    <Descriptions.Item label="Due Date">
+                    <Descriptions.Item label={t('dueDate')}>
                       {dayjs(record.due_date).format('MMM DD, YYYY')}
                     </Descriptions.Item>
                   </Descriptions>
@@ -766,11 +768,11 @@ const BillingPage: React.FC = () => {
                   <Divider style={{ margin: '12px 0' }} />
                   
                   <div>
-                    <Text strong style={{ fontSize: '12px' }}>Top Categories:</Text>
+                    <Text strong style={{ fontSize: '12px' }}>{t('compare.topCategories')}:</Text>
                     <div style={{ marginTop: 8 }}>
                       {record.items.slice(0, 3).map(item => (
                         <div key={item.id} style={{ marginBottom: 4 }}>
-                          <Tag size="small">{item.category}</Tag>
+                          <Tag style={{ fontSize: '12px' }}>{t(`categories.${item.category}`)}</Tag>
                           <Text style={{ fontSize: '12px' }}>
                             ¥{item.amount.toLocaleString()}
                           </Text>

@@ -91,6 +91,50 @@ graph TB
     BM --> QBC
 ```
 
+### 前端路由设计
+
+#### 计费管理页面路由结构
+
+```mermaid
+graph TD
+    subgraph "计费管理路由 /billing"
+        B[/billing] --> BO[/billing/overview]
+        B --> BR[/billing/reports]
+    end
+    
+    BO --> |默认重定向| B
+```
+
+**路由配置:**
+```typescript
+// frontend/src/router/routes.tsx
+{
+  path: 'billing',
+  element: withSuspense(BillingPage, 'table'),
+  children: [
+    {
+      index: true,
+      element: <Navigate to="overview" replace />,
+    },
+    {
+      path: 'overview',
+      element: withSuspense(BillingPage, 'table'),
+    },
+    {
+      path: 'reports',
+      element: withSuspense(BillingPage, 'table'),
+    },
+  ],
+}
+```
+
+**路由说明:**
+| 路径 | 组件 | 功能描述 |
+|------|------|----------|
+| `/billing` | BillingPage | 计费管理主页面，自动重定向到 overview |
+| `/billing/overview` | BillingPage | 计费概览，显示账单汇总和统计 |
+| `/billing/reports` | BillingPage | 计费报表，详细的计费明细和导出功能 |
+
 ### 核心组件设计
 
 #### 1. 智能工单派发系统

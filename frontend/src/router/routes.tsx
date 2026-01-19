@@ -64,7 +64,10 @@ const SecurityPermissionsPage = lazyWithPreload(() => import('@/pages/Security/P
 // Data Sync pages
 const DataSyncPage = lazyWithPreload(() => import('@/pages/DataSync'));
 const DataSyncSourcesPage = lazyWithPreload(() => import('@/pages/DataSync/Sources'));
+const DataSyncHistoryPage = lazyWithPreload(() => import('@/pages/DataSync/History'));
+const DataSyncSchedulerPage = lazyWithPreload(() => import('@/pages/DataSync/Scheduler'));
 const DataSyncSecurityPage = lazyWithPreload(() => import('@/pages/DataSync/Security'));
+const DataSyncExportPage = lazyWithPreload(() => import('@/pages/DataSync/Export'));
 
 // Admin pages
 const AdminConsolePage = lazyWithPreload(() => import('@/pages/Admin/Console'));
@@ -201,7 +204,20 @@ export const routes: RouteObject[] = [
       },
       {
         path: 'billing',
-        element: withSuspense(BillingPage, 'table'),
+        children: [
+          {
+            index: true,
+            element: <Navigate to="overview" replace />,
+          },
+          {
+            path: 'overview',
+            element: withSuspense(BillingPage, 'table'),
+          },
+          {
+            path: 'reports',
+            element: withSuspense(BillingPage, 'table'),
+          },
+        ],
       },
       {
         path: 'settings',
@@ -365,8 +381,20 @@ export const routes: RouteObject[] = [
             element: withSuspense(DataSyncSourcesPage, 'table'),
           },
           {
+            path: 'history',
+            element: withSuspense(DataSyncHistoryPage, 'table'),
+          },
+          {
+            path: 'scheduler',
+            element: withSuspense(DataSyncSchedulerPage, 'table'),
+          },
+          {
             path: 'security',
             element: withSuspense(DataSyncSecurityPage, 'form'),
+          },
+          {
+            path: 'export',
+            element: withSuspense(DataSyncExportPage, 'table'),
           },
         ],
       },

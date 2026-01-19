@@ -33,6 +33,7 @@ import {
   ReloadOutlined,
 } from '@ant-design/icons';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import type { ColumnsType } from 'antd/es/table';
 import { auditApi, AuditLog, AuditLogQueryParams } from '@/services/auditApi';
 import dayjs from 'dayjs';
@@ -51,6 +52,7 @@ const eventTypeColors: Record<string, string> = {
 };
 
 const AuditLogs: React.FC = () => {
+  const { t } = useTranslation(['security', 'common']);
   const [filters, setFilters] = useState<AuditLogQueryParams>({
     limit: 50,
     offset: 0,
@@ -88,10 +90,10 @@ const AuditLogs: React.FC = () => {
       a.download = `audit_logs_${dayjs().format('YYYY-MM-DD')}.${format}`;
       a.click();
       window.URL.revokeObjectURL(url);
-      message.success('Export completed');
+      message.success(t('audit.stats.exportSuccess'));
     },
     onError: () => {
-      message.error('Export failed');
+      message.error(t('audit.stats.exportFailed'));
     },
   });
 
@@ -104,13 +106,13 @@ const AuditLogs: React.FC = () => {
       }),
     onSuccess: (result) => {
       if (result.valid) {
-        message.success(`Integrity verified: ${result.verified_count} logs checked`);
+        message.success(t('audit.verifySuccess', { count: result.verified_count }));
       } else {
-        message.error(`Integrity check failed: ${result.error}`);
+        message.error(t('audit.verifyFailed', { error: result.error }));
       }
     },
     onError: () => {
-      message.error('Verification failed');
+      message.error(t('audit.verifyError'));
     },
   });
 
@@ -143,7 +145,7 @@ const AuditLogs: React.FC = () => {
 
   const columns: ColumnsType<AuditLog> = [
     {
-      title: 'Timestamp',
+      title: t('audit.columns.timestamp'),
       dataIndex: 'timestamp',
       key: 'timestamp',
       width: 180,
@@ -151,7 +153,7 @@ const AuditLogs: React.FC = () => {
       sorter: true,
     },
     {
-      title: 'Event Type',
+      title: t('audit.columns.eventType'),
       dataIndex: 'event_type',
       key: 'event_type',
       width: 150,
@@ -162,50 +164,50 @@ const AuditLogs: React.FC = () => {
       ),
     },
     {
-      title: 'User',
+      title: t('audit.columns.user'),
       dataIndex: 'user_id',
       key: 'user_id',
       width: 120,
       ellipsis: true,
     },
     {
-      title: 'Resource',
+      title: t('audit.columns.resource'),
       dataIndex: 'resource',
       key: 'resource',
       ellipsis: true,
     },
     {
-      title: 'Action',
+      title: t('audit.columns.action'),
       dataIndex: 'action',
       key: 'action',
       width: 100,
     },
     {
-      title: 'Result',
+      title: t('audit.columns.result'),
       dataIndex: 'result',
       key: 'result',
       width: 80,
       render: (result) =>
         result === true ? (
           <Tag icon={<CheckCircleOutlined />} color="success">
-            OK
+            {t('audit.results.success')}
           </Tag>
         ) : result === false ? (
           <Tag icon={<CloseCircleOutlined />} color="error">
-            Fail
+            {t('audit.results.failed')}
           </Tag>
         ) : (
           <Tag>-</Tag>
         ),
     },
     {
-      title: 'IP Address',
+      title: t('audit.columns.ipAddress'),
       dataIndex: 'ip_address',
       key: 'ip_address',
       width: 130,
     },
     {
-      title: 'Actions',
+      title: t('common:actions'),
       key: 'actions',
       width: 80,
       render: (_, record) => (
@@ -226,7 +228,7 @@ const AuditLogs: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Total Logs"
+              title={t('audit.stats.totalLogs')}
               value={stats?.total_logs || 0}
               prefix={<SafetyOutlined />}
             />
@@ -235,7 +237,7 @@ const AuditLogs: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Event Types"
+              title={t('audit.stats.eventTypes')}
               value={Object.keys(stats?.event_types || {}).length}
             />
           </Card>
@@ -243,7 +245,7 @@ const AuditLogs: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Success Rate"
+              title={t('audit.stats.successRate')}
               value={
                 stats?.results
                   ? (
@@ -261,7 +263,7 @@ const AuditLogs: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Failed Operations"
+              title={t('audit.stats.failedOperations')}
               value={stats?.results?.['False'] || 0}
               valueStyle={{ color: stats?.results?.['False'] ? '#ff4d4f' : '#52c41a' }}
             />
@@ -271,16 +273,16 @@ const AuditLogs: React.FC = () => {
 
       {/* Main Content */}
       <Card
-        title="Audit Logs"
+        title={t('audit.logs')}
         extra={
           <Space>
-            <Tooltip title="Verify log integrity">
+            <Tooltip title={t('audit.verifyIntegrity')}>
               <Button
                 icon={<SafetyOutlined />}
                 onClick={() => verifyMutation.mutate()}
                 loading={verifyMutation.isPending}
               >
-                Verify Integrity
+                {t('audit.verifyIntegrity')}
               </Button>
             </Tooltip>
             <Button
@@ -288,7 +290,7 @@ const AuditLogs: React.FC = () => {
               onClick={() => exportMutation.mutate('csv')}
               loading={exportMutation.isPending}
             >
-              Export CSV
+              {t('audit.exportCsv')}
             </Button>
           </Space>
         }
@@ -299,45 +301,45 @@ const AuditLogs: React.FC = () => {
             <RangePicker
               showTime
               onChange={handleDateRangeChange}
-              placeholder={['Start Time', 'End Time']}
+              placeholder={[t('audit.filters.startTime'), t('audit.filters.endTime')]}
             />
             <Select
-              placeholder="Event Type"
+              placeholder={t('audit.filters.eventType')}
               style={{ width: 150 }}
               allowClear
               onChange={(value) => handleFilterChange('event_type', value)}
               options={[
-                { label: 'Login Attempt', value: 'login_attempt' },
-                { label: 'Data Access', value: 'data_access' },
-                { label: 'Permission Change', value: 'permission_change' },
-                { label: 'Session Created', value: 'session_created' },
-                { label: 'Security Event', value: 'security_event' },
+                { label: t('audit.eventTypes.loginAttempt'), value: 'login_attempt' },
+                { label: t('audit.eventTypes.dataAccess'), value: 'data_access' },
+                { label: t('audit.eventTypes.permissionChange'), value: 'permission_change' },
+                { label: t('audit.eventTypes.sessionCreated'), value: 'session_created' },
+                { label: t('audit.eventTypes.securityEvent'), value: 'security_event' },
               ]}
             />
             <Select
-              placeholder="Result"
+              placeholder={t('audit.filters.result')}
               style={{ width: 120 }}
               allowClear
               onChange={(value) => handleFilterChange('result', value)}
               options={[
-                { label: 'Success', value: true },
-                { label: 'Failed', value: false },
+                { label: t('audit.results.success'), value: true },
+                { label: t('audit.results.failed'), value: false },
               ]}
             />
             <Input
-              placeholder="User ID"
+              placeholder={t('audit.filters.userId')}
               style={{ width: 150 }}
               allowClear
               onChange={(e) => handleFilterChange('user_id', e.target.value || undefined)}
             />
             <Input
-              placeholder="IP Address"
+              placeholder={t('audit.filters.ipAddress')}
               style={{ width: 150 }}
               allowClear
               onChange={(e) => handleFilterChange('ip_address', e.target.value || undefined)}
             />
             <Button icon={<ReloadOutlined />} onClick={() => refetch()}>
-              Refresh
+              {t('common:refresh')}
             </Button>
           </Space>
         </div>
@@ -352,7 +354,7 @@ const AuditLogs: React.FC = () => {
             pageSize: filters.limit || 50,
             total: logsResponse?.total || 0,
             showSizeChanger: true,
-            showTotal: (total) => `Total ${total} logs`,
+            showTotal: (total) => t('security:common.totalLogs', { total }),
             onChange: (page, pageSize) => {
               setFilters((prev) => ({
                 ...prev,
@@ -367,12 +369,12 @@ const AuditLogs: React.FC = () => {
 
       {/* Detail Modal */}
       <Modal
-        title="Audit Log Details"
+        title={t('audit.logDetails')}
         open={detailModalOpen}
         onCancel={() => setDetailModalOpen(false)}
         footer={[
           <Button key="close" onClick={() => setDetailModalOpen(false)}>
-            Close
+            {t('common:close')}
           </Button>,
         ]}
         width={700}
@@ -380,35 +382,35 @@ const AuditLogs: React.FC = () => {
         {selectedLog && (
           <Descriptions column={1} bordered size="small">
             <Descriptions.Item label="ID">{selectedLog.id}</Descriptions.Item>
-            <Descriptions.Item label="Timestamp">
+            <Descriptions.Item label={t('audit.timestamp')}>
               {dayjs(selectedLog.timestamp).format('YYYY-MM-DD HH:mm:ss')}
             </Descriptions.Item>
-            <Descriptions.Item label="Event Type">
+            <Descriptions.Item label={t('audit.eventType')}>
               <Tag color={eventTypeColors[selectedLog.event_type] || 'default'}>
                 {selectedLog.event_type}
               </Tag>
             </Descriptions.Item>
-            <Descriptions.Item label="User ID">{selectedLog.user_id}</Descriptions.Item>
-            <Descriptions.Item label="Resource">{selectedLog.resource || '-'}</Descriptions.Item>
-            <Descriptions.Item label="Action">{selectedLog.action || '-'}</Descriptions.Item>
-            <Descriptions.Item label="Result">
+            <Descriptions.Item label={t('audit.user')}>{selectedLog.user_id}</Descriptions.Item>
+            <Descriptions.Item label={t('audit.resource')}>{selectedLog.resource || '-'}</Descriptions.Item>
+            <Descriptions.Item label={t('audit.action')}>{selectedLog.action || '-'}</Descriptions.Item>
+            <Descriptions.Item label={t('audit.result')}>
               {selectedLog.result === true ? (
-                <Tag color="success">Success</Tag>
+                <Tag color="success">{t('audit.results.success')}</Tag>
               ) : selectedLog.result === false ? (
-                <Tag color="error">Failed</Tag>
+                <Tag color="error">{t('audit.results.failed')}</Tag>
               ) : (
                 '-'
               )}
             </Descriptions.Item>
-            <Descriptions.Item label="IP Address">{selectedLog.ip_address || '-'}</Descriptions.Item>
-            <Descriptions.Item label="User Agent">{selectedLog.user_agent || '-'}</Descriptions.Item>
-            <Descriptions.Item label="Session ID">{selectedLog.session_id || '-'}</Descriptions.Item>
-            <Descriptions.Item label="Details">
+            <Descriptions.Item label={t('audit.ipAddress')}>{selectedLog.ip_address || '-'}</Descriptions.Item>
+            <Descriptions.Item label={t('audit.userAgent')}>{selectedLog.user_agent || '-'}</Descriptions.Item>
+            <Descriptions.Item label={t('audit.sessionId')}>{selectedLog.session_id || '-'}</Descriptions.Item>
+            <Descriptions.Item label={t('audit.details')}>
               <pre style={{ margin: 0, fontSize: 12, maxHeight: 200, overflow: 'auto' }}>
                 {JSON.stringify(selectedLog.details, null, 2)}
               </pre>
             </Descriptions.Item>
-            <Descriptions.Item label="Hash">
+            <Descriptions.Item label={t('audit.hash')}>
               <Text code style={{ fontSize: 10 }}>
                 {selectedLog.hash}
               </Text>

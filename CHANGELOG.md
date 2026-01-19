@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Billing Page Nested Routes** (2026-01-19): Added nested routing structure for billing management page:
+  - `/billing` now redirects to `/billing/overview` by default
+  - Added `/billing/overview` route for billing summary and statistics
+  - Added `/billing/reports` route for detailed billing reports and export
+  - Updated design.md with frontend routing documentation
+
 ### Added
 - **Claude Commands Full Adaptation** (2026-01-19): Adapted all 13 Claude Code commands from habit-tracker to SuperInsight project:
   - Core PIV Loop: `/prime`, `/plan-feature`, `/execute`

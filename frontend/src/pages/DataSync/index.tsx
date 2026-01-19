@@ -7,7 +7,10 @@ import {
   SecurityScanOutlined,
   InfoCircleOutlined,
   DashboardOutlined,
-  ShieldOutlined,
+  SafetyOutlined,
+  ExportOutlined,
+  HistoryOutlined,
+  ScheduleOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import DataSourceManager from '../../components/DataSync/DataSourceManager';
@@ -33,17 +36,32 @@ const DataSyncPage: React.FC = () => {
           <Menu mode="horizontal" selectedKeys={[location.pathname.split('/').pop() || '']}>
             <Menu.Item key="data-sync">
               <Link to="/data-sync">
-                <DashboardOutlined /> 同步概览
+                <DashboardOutlined /> {t('dataSync:nav.overview', '同步概览')}
               </Link>
             </Menu.Item>
             <Menu.Item key="sources">
               <Link to="/data-sync/sources">
-                <DatabaseOutlined /> 数据源管理
+                <DatabaseOutlined /> {t('dataSync:nav.sources', '数据源管理')}
+              </Link>
+            </Menu.Item>
+            <Menu.Item key="history">
+              <Link to="/data-sync/history">
+                <HistoryOutlined /> {t('dataSync:nav.history', '同步历史')}
+              </Link>
+            </Menu.Item>
+            <Menu.Item key="scheduler">
+              <Link to="/data-sync/scheduler">
+                <ScheduleOutlined /> {t('dataSync:nav.scheduler', '调度配置')}
               </Link>
             </Menu.Item>
             <Menu.Item key="security">
               <Link to="/data-sync/security">
-                <ShieldOutlined /> 安全配置
+                <SafetyOutlined /> {t('dataSync:nav.security', '安全配置')}
+              </Link>
+            </Menu.Item>
+            <Menu.Item key="export">
+              <Link to="/data-sync/export">
+                <ExportOutlined /> {t('dataSync:nav.export', '数据导出')}
               </Link>
             </Menu.Item>
           </Menu>

@@ -277,6 +277,9 @@ async def lifespan(app: FastAPI):
         else:
             logger.warning("Database connection test failed")
         
+        # Include optional routers
+        await include_optional_routers()
+        
         logger.info("Application startup completed (simplified mode)")
         
         yield
@@ -538,6 +541,16 @@ except ImportError as e:
 except Exception as e:
     logger.error(f"Tasks API failed to load: {e}")
 
+# Include data sync API router
+try:
+    from src.api.data_sync import router as data_sync_router
+    app.include_router(data_sync_router)
+    logger.info("Data Sync API loaded successfully")
+except ImportError as e:
+    logger.error(f"Data Sync API not available: {e}")
+except Exception as e:
+    logger.error(f"Data Sync API failed to load: {e}")
+
 # Include dashboard API router
 try:
     from src.api.dashboard import router as dashboard_router
@@ -782,6 +795,46 @@ async def include_optional_routers():
     except Exception as e:
         logger.warning(f"Security API failed to load: {e}")
     
+    # RBAC (Role-Based Access Control) API
+    try:
+        from src.api.rbac import router as rbac_router
+        app.include_router(rbac_router)
+        logger.info("✅ RBAC API registered: /api/v1/rbac")
+    except ImportError as e:
+        logger.warning(f"⚠️ RBAC API not available: {e}")
+    except Exception as e:
+        logger.error(f"❌ RBAC API failed to load: {e}")
+    
+    # SSO (Single Sign-On) API
+    try:
+        from src.api.sso import router as sso_router
+        app.include_router(sso_router)
+        logger.info("✅ SSO API registered: /api/v1/sso")
+    except ImportError as e:
+        logger.warning(f"⚠️ SSO API not available: {e}")
+    except Exception as e:
+        logger.error(f"❌ SSO API failed to load: {e}")
+    
+    # Session Management API
+    try:
+        from src.api.sessions import router as sessions_router
+        app.include_router(sessions_router)
+        logger.info("✅ Sessions API registered: /api/v1/sessions")
+    except ImportError as e:
+        logger.warning(f"⚠️ Sessions API not available: {e}")
+    except Exception as e:
+        logger.error(f"❌ Sessions API failed to load: {e}")
+    
+    # Data Permissions API
+    try:
+        from src.api.data_permission_router import router as data_permission_router
+        app.include_router(data_permission_router)
+        logger.info("✅ Data Permissions API registered: /api/v1/data-permissions")
+    except ImportError as e:
+        logger.warning(f"⚠️ Data Permissions API not available: {e}")
+    except Exception as e:
+        logger.error(f"❌ Data Permissions API failed to load: {e}")
+    
     # Collaboration router
     try:
         from src.api.collaboration import router as collaboration_router
@@ -841,6 +894,16 @@ async def include_optional_routers():
         logger.warning(f"Compliance Reports API not available: {e}")
     except Exception as e:
         logger.warning(f"Compliance Reports API failed to load: {e}")
+    
+    # Data Sync API
+    try:
+        from src.api.data_sync import router as data_sync_router
+        app.include_router(data_sync_router)
+        logger.info("Data Sync API loaded successfully")
+    except ImportError as e:
+        logger.warning(f"Data Sync API not available: {e}")
+    except Exception as e:
+        logger.warning(f"Data Sync API failed to load: {e}")
     
     # SOX Compliance API - moved to main app setup for immediate availability
     # This is handled in the main app setup section below
@@ -1034,14 +1097,70 @@ except Exception as e:
     logger.warning(f"Multi-Tenant Workspace API failed to load: {e}")
 
 
-# Include routers on startup
-# Startup event temporarily disabled for debugging
-# @app.on_event("startup")
-# async def startup_event():
-#     """Application startup event."""
-#     logger.info("Starting SuperInsight application...")
-#     await include_optional_routers()
-#     logger.info("SuperInsight application startup completed")
+# Include optional routers synchronously at module load time
+def _include_optional_routers_sync():
+    """Include optional API routers synchronously."""
+    
+    # Billing router - load synchronously
+    try:
+        from src.api.billing import router as billing_router
+        app.include_router(billing_router)
+        logger.info("Billing API loaded successfully")
+    except ImportError as e:
+        logger.warning(f"Billing API not available: {e}")
+    except Exception as e:
+        logger.warning(f"Billing API failed to load: {e}")
+    
+    # RBAC (Role-Based Access Control) API
+    try:
+        from src.api.rbac import router as rbac_router
+        app.include_router(rbac_router)
+        logger.info("✅ RBAC API registered: /api/v1/rbac")
+    except ImportError as e:
+        logger.warning(f"⚠️ RBAC API not available: {e}")
+    except Exception as e:
+        logger.error(f"❌ RBAC API failed to load: {e}")
+    
+    # SSO (Single Sign-On) API
+    try:
+        from src.api.sso import router as sso_router
+        app.include_router(sso_router)
+        logger.info("✅ SSO API registered: /api/v1/sso")
+    except ImportError as e:
+        logger.warning(f"⚠️ SSO API not available: {e}")
+    except Exception as e:
+        logger.error(f"❌ SSO API failed to load: {e}")
+    
+    # Session Management API
+    try:
+        from src.api.sessions import router as sessions_router
+        app.include_router(sessions_router)
+        logger.info("✅ Sessions API registered: /api/v1/sessions")
+    except ImportError as e:
+        logger.warning(f"⚠️ Sessions API not available: {e}")
+    except Exception as e:
+        logger.error(f"❌ Sessions API failed to load: {e}")
+    
+    # Data Permissions API
+    try:
+        from src.api.data_permission_router import router as data_permission_router
+        app.include_router(data_permission_router)
+        logger.info("✅ Data Permissions API registered: /api/v1/data-permissions")
+    except ImportError as e:
+        logger.warning(f"⚠️ Data Permissions API not available: {e}")
+    except Exception as e:
+        logger.error(f"❌ Data Permissions API failed to load: {e}")
+
+# Call synchronously at module load
+_include_optional_routers_sync()
+
+
+@app.on_event("startup")
+async def startup_event():
+    """Application startup event."""
+    logger.info("Starting SuperInsight application...")
+    await include_optional_routers()
+    logger.info("SuperInsight application startup completed")
 
 
 @app.on_event("shutdown")

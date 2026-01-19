@@ -55,6 +55,7 @@ const reportTypeColors: Record<string, string> = {
 };
 
 const ComplianceReports: React.FC = () => {
+  const { t } = useTranslation(['security', 'common']);
   const [generateModalOpen, setGenerateModalOpen] = useState(false);
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState<ComplianceReport | null>(null);
@@ -75,24 +76,24 @@ const ComplianceReports: React.FC = () => {
   const generateGDPRMutation = useMutation({
     mutationFn: (data: ComplianceReportRequest) => auditApi.generateGDPRReport(data),
     onSuccess: () => {
-      message.success('GDPR report generated successfully');
+      message.success(t('compliance.types.gdpr') + ' ' + t('compliance.generated').toLowerCase());
       queryClient.invalidateQueries({ queryKey: ['complianceReports'] });
       setGenerateModalOpen(false);
     },
     onError: () => {
-      message.error('Failed to generate report');
+      message.error(t('common:error.operationFailed'));
     },
   });
 
   const generateSOC2Mutation = useMutation({
     mutationFn: (data: ComplianceReportRequest) => auditApi.generateSOC2Report(data),
     onSuccess: () => {
-      message.success('SOC 2 report generated successfully');
+      message.success(t('compliance.types.soc2') + ' ' + t('compliance.generated').toLowerCase());
       queryClient.invalidateQueries({ queryKey: ['complianceReports'] });
       setGenerateModalOpen(false);
     },
     onError: () => {
-      message.error('Failed to generate report');
+      message.error(t('common:error.operationFailed'));
     },
   });
 
@@ -103,12 +104,12 @@ const ComplianceReports: React.FC = () => {
         end_date: data.end_date,
       }),
     onSuccess: () => {
-      message.success('Access report generated successfully');
+      message.success(t('compliance.types.access') + ' ' + t('compliance.generated').toLowerCase());
       queryClient.invalidateQueries({ queryKey: ['complianceReports'] });
       setGenerateModalOpen(false);
     },
     onError: () => {
-      message.error('Failed to generate report');
+      message.error(t('common:error.operationFailed'));
     },
   });
 
@@ -119,12 +120,12 @@ const ComplianceReports: React.FC = () => {
         end_date: data.end_date,
       }),
     onSuccess: () => {
-      message.success('Permission change report generated successfully');
+      message.success(t('compliance.types.permissionChanges') + ' ' + t('compliance.generated').toLowerCase());
       queryClient.invalidateQueries({ queryKey: ['complianceReports'] });
       setGenerateModalOpen(false);
     },
     onError: () => {
-      message.error('Failed to generate report');
+      message.error(t('common:error.operationFailed'));
     },
   });
 
@@ -157,7 +158,7 @@ const ComplianceReports: React.FC = () => {
       setSelectedReport(report);
       setViewModalOpen(true);
     } catch {
-      message.error('Failed to load report');
+      message.error(t('common:error.loadFailed'));
     }
   };
 
@@ -176,17 +177,17 @@ const ComplianceReports: React.FC = () => {
     compliance_score?: number;
   }> = [
     {
-      title: 'Report Type',
+      title: t('compliance.reportType'),
       dataIndex: 'report_type',
       key: 'report_type',
       render: (type) => (
         <Tag color={reportTypeColors[type.toLowerCase()] || 'default'}>
-          {reportTypeLabels[type.toLowerCase()] || type}
+          {t(`compliance.types.${type.toLowerCase()}`, reportTypeLabels[type.toLowerCase()] || type)}
         </Tag>
       ),
     },
     {
-      title: 'Period',
+      title: t('compliance.period'),
       key: 'period',
       render: (_, record) => (
         <Text>
@@ -196,7 +197,7 @@ const ComplianceReports: React.FC = () => {
       ),
     },
     {
-      title: 'Compliance Score',
+      title: t('compliance.complianceScore'),
       dataIndex: 'compliance_score',
       key: 'compliance_score',
       render: (score) =>
@@ -212,13 +213,13 @@ const ComplianceReports: React.FC = () => {
         ),
     },
     {
-      title: 'Generated',
+      title: t('compliance.generated'),
       dataIndex: 'generated_at',
       key: 'generated_at',
       render: (date) => dayjs(date).format('YYYY-MM-DD HH:mm'),
     },
     {
-      title: 'Actions',
+      title: t('common:actions'),
       key: 'actions',
       width: 120,
       render: (_, record) => (
@@ -229,7 +230,7 @@ const ComplianceReports: React.FC = () => {
             icon={<EyeOutlined />}
             onClick={() => handleViewReport(record.id)}
           >
-            View
+            {t('common:view')}
           </Button>
         </Space>
       ),
@@ -242,7 +243,7 @@ const ComplianceReports: React.FC = () => {
         title={
           <Space>
             <SafetyCertificateOutlined />
-            <span>Compliance Reports</span>
+            <span>{t('compliance.title')}</span>
           </Space>
         }
         extra={
@@ -251,7 +252,7 @@ const ComplianceReports: React.FC = () => {
             icon={<PlusOutlined />}
             onClick={() => setGenerateModalOpen(true)}
           >
-            Generate Report
+            {t('compliance.generateReport')}
           </Button>
         }
       >
@@ -262,38 +263,38 @@ const ComplianceReports: React.FC = () => {
           loading={isLoading}
           pagination={{
             pageSize: 10,
-            showTotal: (total) => `Total ${total} reports`,
+            showTotal: (total) => t('security:common.totalReports', { total }),
           }}
         />
       </Card>
 
       {/* Generate Report Modal */}
       <Modal
-        title="Generate Compliance Report"
+        title={t('compliance.generateReport')}
         open={generateModalOpen}
         onOk={handleGenerateReport}
         onCancel={() => setGenerateModalOpen(false)}
         confirmLoading={isGenerating}
-        okText="Generate"
+        okText={t('common:generate')}
       >
         <Space direction="vertical" style={{ width: '100%' }} size="large">
           <div>
-            <Text strong>Report Type</Text>
+            <Text strong>{t('compliance.reportType')}</Text>
             <Select
               value={reportType}
               onChange={setReportType}
               style={{ width: '100%', marginTop: 8 }}
               options={[
-                { label: 'GDPR Compliance Report', value: 'gdpr' },
-                { label: 'SOC 2 Compliance Report', value: 'soc2' },
-                { label: 'Data Access Report', value: 'access' },
-                { label: 'Permission Changes Report', value: 'permission_changes' },
+                { label: t('compliance.types.gdpr'), value: 'gdpr' },
+                { label: t('compliance.types.soc2'), value: 'soc2' },
+                { label: t('compliance.types.access'), value: 'access' },
+                { label: t('compliance.types.permissionChanges'), value: 'permission_changes' },
               ]}
             />
           </div>
 
           <div>
-            <Text strong>Report Period</Text>
+            <Text strong>{t('compliance.reportPeriod')}</Text>
             <RangePicker
               value={dateRange}
               onChange={(dates) => {
@@ -306,8 +307,10 @@ const ComplianceReports: React.FC = () => {
           </div>
 
           <Alert
-            message="Report Generation"
-            description={`This will generate a ${reportTypeLabels[reportType] || reportType} for the selected period. The report will include detailed findings and recommendations.`}
+            message={t('compliance.generateReport')}
+            description={t('compliance.generateInfo', { 
+              type: t(`compliance.types.${reportType}`, reportTypeLabels[reportType] || reportType)
+            })}
             type="info"
             showIcon
           />
@@ -318,14 +321,15 @@ const ComplianceReports: React.FC = () => {
       <Modal
         title={
           selectedReport
-            ? `${reportTypeLabels[selectedReport.report_type.toLowerCase()] || selectedReport.report_type} Report`
-            : 'Report Details'
+            ? t(`compliance.types.${selectedReport.report_type.toLowerCase()}`, 
+                reportTypeLabels[selectedReport.report_type.toLowerCase()] || selectedReport.report_type)
+            : t('compliance.title')
         }
         open={viewModalOpen}
         onCancel={() => setViewModalOpen(false)}
         footer={[
           <Button key="close" onClick={() => setViewModalOpen(false)}>
-            Close
+            {t('common:close')}
           </Button>,
         ]}
         width={800}
@@ -335,7 +339,7 @@ const ComplianceReports: React.FC = () => {
             <Row gutter={16} style={{ marginBottom: 24 }}>
               <Col span={8}>
                 <Statistic
-                  title="Compliance Score"
+                  title={t('compliance.complianceScore')}
                   value={selectedReport.compliance_score || 'N/A'}
                   suffix={selectedReport.compliance_score !== undefined ? '%' : ''}
                   valueStyle={{
@@ -352,7 +356,7 @@ const ComplianceReports: React.FC = () => {
               </Col>
               <Col span={8}>
                 <Statistic
-                  title="Period"
+                  title={t('compliance.period')}
                   value={`${dayjs(selectedReport.period_start).format('MMM D')} - ${dayjs(
                     selectedReport.period_end
                   ).format('MMM D, YYYY')}`}
@@ -360,7 +364,7 @@ const ComplianceReports: React.FC = () => {
               </Col>
               <Col span={8}>
                 <Statistic
-                  title="Generated"
+                  title={t('compliance.generated')}
                   value={dayjs(selectedReport.generated_at).format('YYYY-MM-DD HH:mm')}
                 />
               </Col>
@@ -370,7 +374,7 @@ const ComplianceReports: React.FC = () => {
               items={[
                 {
                   key: 'summary',
-                  label: 'Summary',
+                  label: t('compliance.summary'),
                   children: (
                     <Descriptions column={2} bordered size="small">
                       {Object.entries(selectedReport.summary || {}).map(([key, value]) => (
@@ -383,7 +387,7 @@ const ComplianceReports: React.FC = () => {
                 },
                 {
                   key: 'findings',
-                  label: `Findings (${selectedReport.findings?.length || 0})`,
+                  label: `${t('compliance.findings')} (${selectedReport.findings?.length || 0})`,
                   children: (
                     <List
                       dataSource={selectedReport.findings || []}
@@ -417,13 +421,13 @@ const ComplianceReports: React.FC = () => {
                           />
                         </List.Item>
                       )}
-                      locale={{ emptyText: 'No findings' }}
+                      locale={{ emptyText: t('compliance.noFindings') }}
                     />
                   ),
                 },
                 {
                   key: 'recommendations',
-                  label: `Recommendations (${selectedReport.recommendations?.length || 0})`,
+                  label: `${t('compliance.recommendations')} (${selectedReport.recommendations?.length || 0})`,
                   children: (
                     <List
                       dataSource={selectedReport.recommendations || []}
@@ -434,7 +438,7 @@ const ComplianceReports: React.FC = () => {
                           </Text>
                         </List.Item>
                       )}
-                      locale={{ emptyText: 'No recommendations' }}
+                      locale={{ emptyText: t('compliance.noRecommendations') }}
                     />
                   ),
                 },

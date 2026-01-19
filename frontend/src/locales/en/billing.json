@@ -33,6 +33,67 @@
     "api": "API",
     "other": "Other"
   },
+  "columns": {
+    "billId": "Bill ID",
+    "days": "days",
+    "items": "items",
+    "daysOverdue": "days overdue",
+    "payment": "Payment",
+    "notPaid": "Not paid"
+  },
+  "statistics": {
+    "overdueAmount": "Overdue Amount",
+    "vsLastPeriod": "vs last period",
+    "requiresAttention": "Requires immediate attention"
+  },
+  "filters": {
+    "searchPlaceholder": "Search by ID or description",
+    "filterByStatus": "Filter by status",
+    "selected": "selected",
+    "compare": "Compare",
+    "exportExcel": "Export Excel",
+    "presets": {
+      "last7Days": "Last 7 Days",
+      "last30Days": "Last 30 Days",
+      "last3Months": "Last 3 Months",
+      "thisYear": "This Year"
+    }
+  },
+  "tabs": {
+    "dashboard": "Analytics Dashboard",
+    "records": "Billing Records",
+    "workHours": "Work Hours Analysis",
+    "export": "Export & Reports",
+    "total": "total",
+    "of": "of",
+    "recordsText": "records"
+  },
+  "modal": {
+    "overview": "Overview",
+    "duration": "Duration",
+    "paymentDate": "Payment Date",
+    "paid": "Paid",
+    "notPaidYet": "Not paid yet",
+    "created": "Created",
+    "lineItems": "Line Items",
+    "total": "Total"
+  },
+  "compare": {
+    "title": "Compare Billing Records",
+    "bill": "Bill",
+    "items": "Items",
+    "topCategories": "Top Categories"
+  },
+  "messages": {
+    "exportSuccess": "Export completed successfully",
+    "exportFailed": "Export failed",
+    "selectAtLeast2": "Please select at least 2 records to compare",
+    "compareMax3": "You can compare up to 3 records at once",
+    "invoiceComingSoon": "Invoice download feature coming soon",
+    "loadFailed": "Failed to load billing data",
+    "checkConnection": "Please check your connection and try again.",
+    "retry": "Retry"
+  },
   "workHours": {
     "title": "Work Hours",
     "ranking": "Hours Ranking",
@@ -192,15 +253,6 @@
     "timeSpentHours": "Time Spent",
     "hours": "hours",
     "persons": ""
-  },
-  "messages": {
-    "exportStarted": "Export started. The file will be downloaded shortly.",
-    "reportGenerated": "Report generated successfully",
-    "reportFailed": "Failed to generate report",
-    "exportSuccess": "Report exported successfully",
-    "noData": "No data available",
-    "loadingData": "Loading data...",
-    "retryLoad": "Retry"
   },
   "ruleConfig": {
     "title": "Current Billing Rule",

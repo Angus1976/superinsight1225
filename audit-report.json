@@ -1,0 +1,1179 @@
+{
+  "timestamp": "2026-01-19T17:51:37.397567",
+  "alignment": {
+    "superinsight-platform": {
+      "score": 75,
+      "has_report": false,
+      "estimated": true
+    },
+    "collaboration-workflow": {
+      "score": 75,
+      "has_report": false,
+      "estimated": true
+    },
+    "data-version-lineage": {
+      "score": 75,
+      "has_report": false,
+      "estimated": true
+    },
+    "tcb-deployment": {
+      "score": 75,
+      "has_report": false,
+      "estimated": true
+    },
+    "api-registration-fix": {
+      "score": 75,
+      "has_report": false,
+      "estimated": true
+    },
+    "quality-workflow": {
+      "score": 75,
+      "has_report": false,
+      "estimated": true
+    },
+    "i18n-full-coverage": {
+      "score": 0,
+      "has_report": true
+    },
+    "knowledge-graph": {
+      "score": 75,
+      "has_report": false,
+      "estimated": true
+    },
+    "quality-billing-loop": {
+      "score": 75,
+      "has_report": false,
+      "estimated": true
+    },
+    "admin-configuration": {
+      "score": 75,
+      "has_report": false,
+      "estimated": true
+    },
+    "audit-security": {
+      "score": 0,
+      "has_report": true
+    },
+    "i18n-support": {
+      "score": 75,
+      "has_report": false,
+      "estimated": true
+    },
+    "llm-integration": {
+      "score": 75,
+      "has_report": false,
+      "estimated": true
+    },
+    "multi-tenant-workspace": {
+      "score": 0,
+      "has_report": true
+    },
+    "ai-annotation": {
+      "score": 75,
+      "has_report": false,
+      "estimated": true
+    },
+    "superinsight-frontend": {
+      "score": 75,
+      "has_report": false,
+      "estimated": true
+    },
+    "data-sync-system": {
+      "score": 75,
+      "has_report": false,
+      "estimated": true
+    },
+    "license-management": {
+      "score": 75,
+      "has_report": false,
+      "estimated": true
+    },
+    "data-sync-pipeline": {
+      "score": 0,
+      "has_report": true
+    },
+    "ai-agent-system": {
+      "score": 75,
+      "has_report": false,
+      "estimated": true
+    },
+    "docker-infrastructure": {
+      "score": 0,
+      "has_report": true
+    },
+    "brand-identity-system": {
+      "score": 75,
+      "has_report": false,
+      "estimated": true
+    },
+    "new": {
+      "score": 0,
+      "has_report": false,
+      "estimated": true
+    },
+    "label-studio-iframe-integration": {
+      "score": 75,
+      "has_report": false,
+      "estimated": true
+    },
+    "text-to-sql-methods": {
+      "score": 75,
+      "has_report": false,
+      "estimated": true
+    },
+    "system-health-fixes": {
+      "score": 75,
+      "has_report": false,
+      "estimated": true
+    },
+    "data-permission-control": {
+      "score": 75,
+      "has_report": false,
+      "estimated": true
+    }
+  },
+  "size": {
+    "by_feature": {
+      "superinsight-platform": {
+        "requirements.md": {
+          "words": 611,
+          "tokens": 814,
+          "oversized": false
+        },
+        "design.md": {
+          "words": 1732,
+          "tokens": 2309,
+          "oversized": false
+        },
+        "tasks.md": {
+          "words": 2313,
+          "tokens": 3084,
+          "oversized": false
+        }
+      },
+      "collaboration-workflow": {
+        "requirements.md": {
+          "words": 687,
+          "tokens": 916,
+          "oversized": false
+        },
+        "design.md": {
+          "words": 2793,
+          "tokens": 3724,
+          "oversized": false
+        },
+        "tasks.md": {
+          "words": 1055,
+          "tokens": 1406,
+          "oversized": false
+        }
+      },
+      "data-version-lineage": {
+        "requirements.md": {
+          "words": 336,
+          "tokens": 448,
+          "oversized": false
+        },
+        "design.md": {
+          "words": 3218,
+          "tokens": 4290,
+          "oversized": false
+        },
+        "tasks.md": {
+          "words": 1221,
+          "tokens": 1628,
+          "oversized": false
+        }
+      },
+      "tcb-deployment": {
+        "requirements.md": {
+          "words": 554,
+          "tokens": 738,
+          "oversized": false
+        },
+        "design.md": {
+          "words": 1185,
+          "tokens": 1580,
+          "oversized": false
+        },
+        "tasks.md": {
+          "words": 1824,
+          "tokens": 2432,
+          "oversized": false
+        }
+      },
+      "api-registration-fix": {
+        "requirements.md": {
+          "words": 534,
+          "tokens": 712,
+          "oversized": false
+        },
+        "design.md": {
+          "words": 1409,
+          "tokens": 1878,
+          "oversized": false
+        },
+        "tasks.md": {
+          "words": 1280,
+          "tokens": 1706,
+          "oversized": false
+        }
+      },
+      "quality-workflow": {
+        "requirements.md": {
+          "words": 383,
+          "tokens": 510,
+          "oversized": false
+        },
+        "design.md": {
+          "words": 3465,
+          "tokens": 4620,
+          "oversized": false
+        },
+        "tasks.md": {
+          "words": 1404,
+          "tokens": 1872,
+          "oversized": false
+        }
+      },
+      "i18n-full-coverage": {
+        "requirements.md": {
+          "words": 1687,
+          "tokens": 2249,
+          "oversized": false
+        },
+        "design.md": {
+          "words": 2484,
+          "tokens": 3312,
+          "oversized": false
+        },
+        "tasks.md": {
+          "words": 1829,
+          "tokens": 2438,
+          "oversized": false
+        }
+      },
+      "knowledge-graph": {
+        "requirements.md": {
+          "words": 498,
+          "tokens": 664,
+          "oversized": false
+        },
+        "design.md": {
+          "words": 1662,
+          "tokens": 2216,
+          "oversized": false
+        },
+        "tasks.md": {
+          "words": 1973,
+          "tokens": 2630,
+          "oversized": false
+        }
+      },
+      "quality-billing-loop": {
+        "requirements.md": {
+          "words": 481,
+          "tokens": 641,
+          "oversized": false
+        },
+        "design.md": {
+          "words": 985,
+          "tokens": 1313,
+          "oversized": false
+        },
+        "tasks.md": {
+          "words": 2433,
+          "tokens": 3244,
+          "oversized": false
+        }
+      },
+      "admin-configuration": {
+        "requirements.md": {
+          "words": 442,
+          "tokens": 589,
+          "oversized": false
+        },
+        "design.md": {
+          "words": 1307,
+          "tokens": 1742,
+          "oversized": false
+        },
+        "tasks.md": {
+          "words": 895,
+          "tokens": 1193,
+          "oversized": false
+        }
+      },
+      "audit-security": {
+        "requirements.md": {
+          "words": 450,
+          "tokens": 600,
+          "oversized": false
+        },
+        "design.md": {
+          "words": 3923,
+          "tokens": 5230,
+          "oversized": false
+        },
+        "tasks.md": {
+          "words": 1584,
+          "tokens": 2112,
+          "oversized": false
+        }
+      },
+      "i18n-support": {
+        "requirements.md": {
+          "words": 1047,
+          "tokens": 1396,
+          "oversized": false
+        },
+        "design.md": {
+          "words": 2388,
+          "tokens": 3184,
+          "oversized": false
+        },
+        "tasks.md": {
+          "words": 2193,
+          "tokens": 2924,
+          "oversized": false
+        }
+      },
+      "llm-integration": {
+        "requirements.md": {
+          "words": 432,
+          "tokens": 576,
+          "oversized": false
+        },
+        "design.md": {
+          "words": 1667,
+          "tokens": 2222,
+          "oversized": false
+        },
+        "tasks.md": {
+          "words": 813,
+          "tokens": 1084,
+          "oversized": false
+        }
+      },
+      "multi-tenant-workspace": {
+        "requirements.md": {
+          "words": 510,
+          "tokens": 680,
+          "oversized": false
+        },
+        "design.md": {
+          "words": 2248,
+          "tokens": 2997,
+          "oversized": false
+        },
+        "tasks.md": {
+          "words": 958,
+          "tokens": 1277,
+          "oversized": false
+        }
+      },
+      "ai-annotation": {
+        "requirements.md": {
+          "words": 533,
+          "tokens": 710,
+          "oversized": false
+        },
+        "design.md": {
+          "words": 2515,
+          "tokens": 3353,
+          "oversized": false
+        },
+        "tasks.md": {
+          "words": 934,
+          "tokens": 1245,
+          "oversized": false
+        }
+      },
+      "superinsight-frontend": {
+        "requirements.md": {
+          "words": 408,
+          "tokens": 544,
+          "oversized": false
+        },
+        "design.md": {
+          "words": 1046,
+          "tokens": 1394,
+          "oversized": false
+        },
+        "tasks.md": {
+          "words": 1628,
+          "tokens": 2170,
+          "oversized": false
+        }
+      },
+      "data-sync-system": {
+        "requirements.md": {
+          "words": 479,
+          "tokens": 638,
+          "oversized": false
+        },
+        "design.md": {
+          "words": 1766,
+          "tokens": 2354,
+          "oversized": false
+        },
+        "tasks.md": {
+          "words": 2292,
+          "tokens": 3056,
+          "oversized": false
+        }
+      },
+      "license-management": {
+        "requirements.md": {
+          "words": 432,
+          "tokens": 576,
+          "oversized": false
+        },
+        "design.md": {
+          "words": 1865,
+          "tokens": 2486,
+          "oversized": false
+        },
+        "tasks.md": {
+          "words": 1033,
+          "tokens": 1377,
+          "oversized": false
+        }
+      },
+      "data-sync-pipeline": {
+        "requirements.md": {
+          "words": 445,
+          "tokens": 593,
+          "oversized": false
+        },
+        "design.md": {
+          "words": 2417,
+          "tokens": 3222,
+          "oversized": false
+        },
+        "tasks.md": {
+          "words": 1055,
+          "tokens": 1406,
+          "oversized": false
+        }
+      },
+      "ai-agent-system": {
+        "requirements.md": {
+          "words": 516,
+          "tokens": 688,
+          "oversized": false
+        },
+        "design.md": {
+          "words": 1171,
+          "tokens": 1561,
+          "oversized": false
+        },
+        "tasks.md": {
+          "words": 1629,
+          "tokens": 2172,
+          "oversized": false
+        }
+      },
+      "docker-infrastructure": {
+        "requirements.md": {
+          "words": 837,
+          "tokens": 1116,
+          "oversized": false
+        },
+        "design.md": {
+          "words": 1407,
+          "tokens": 1876,
+          "oversized": false
+        },
+        "tasks.md": {
+          "words": 1047,
+          "tokens": 1396,
+          "oversized": false
+        }
+      },
+      "brand-identity-system": {
+        "requirements.md": {
+          "words": 1027,
+          "tokens": 1369,
+          "oversized": false
+        },
+        "design.md": {
+          "words": 1276,
+          "tokens": 1701,
+          "oversized": false
+        },
+        "tasks.md": {
+          "words": 1181,
+          "tokens": 1574,
+          "oversized": false
+        }
+      },
+      "new": {},
+      "label-studio-iframe-integration": {
+        "requirements.md": {
+          "words": 450,
+          "tokens": 600,
+          "oversized": false
+        },
+        "design.md": {
+          "words": 1000,
+          "tokens": 1333,
+          "oversized": false
+        },
+        "tasks.md": {
+          "words": 910,
+          "tokens": 1213,
+          "oversized": false
+        }
+      },
+      "text-to-sql-methods": {
+        "requirements.md": {
+          "words": 468,
+          "tokens": 624,
+          "oversized": false
+        },
+        "design.md": {
+          "words": 1541,
+          "tokens": 2054,
+          "oversized": false
+        },
+        "tasks.md": {
+          "words": 866,
+          "tokens": 1154,
+          "oversized": false
+        }
+      },
+      "system-health-fixes": {
+        "requirements.md": {
+          "words": 649,
+          "tokens": 865,
+          "oversized": false
+        },
+        "design.md": {
+          "words": 1491,
+          "tokens": 1988,
+          "oversized": false
+        },
+        "tasks.md": {
+          "words": 1013,
+          "tokens": 1350,
+          "oversized": false
+        }
+      },
+      "data-permission-control": {
+        "requirements.md": {
+          "words": 384,
+          "tokens": 512,
+          "oversized": false
+        },
+        "design.md": {
+          "words": 2133,
+          "tokens": 2844,
+          "oversized": false
+        },
+        "tasks.md": {
+          "words": 1041,
+          "tokens": 1388,
+          "oversized": false
+        }
+      }
+    },
+    "oversized_files": []
+  },
+  "redundancy": {
+    "score": 0.17323516673884798,
+    "total_paragraphs": 2309,
+    "duplicate_paragraphs": 4,
+    "duplicates": [
+      {
+        "locations": [
+          "collaboration-workflow/design.md",
+          "ai-annotation/design.md"
+        ],
+        "preview": "# \u4efb\u52a1\u5206\u914d\n@router.post(\"/tasks/{task_id}/assign\")\nasync def assign_task(task_id: str, request: AssignRe"
+      },
+      {
+        "locations": [
+          "collaboration-workflow/design.md",
+          "admin-configuration/design.md",
+          "multi-tenant-workspace/design.md",
+          "ai-annotation/design.md",
+          "ai-annotation/design.md",
+          "data-sync-pipeline/design.md"
+        ],
+        "preview": "*A property is a characteristic or behavior that should hold true across all valid executions of a s"
+      },
+      {
+        "locations": [
+          "i18n-full-coverage/design.md",
+          "i18n-support/design.md",
+          "system-health-fixes/design.md"
+        ],
+        "preview": "*A property is a characteristic or behavior that should hold true across all valid executions of a s"
+      },
+      {
+        "locations": [
+          "knowledge-graph/design.md",
+          "ai-agent-system/design.md"
+        ],
+        "preview": "```python\nfrom pydantic import BaseModel\nfrom typing import List, Dict, Optional, Any\nfrom datetime "
+      }
+    ]
+  },
+  "completeness": {
+    "superinsight-platform": {
+      "score": 60.0,
+      "files": {
+        "requirements.md": true,
+        "design.md": true,
+        "tasks.md": true,
+        "CHANGELOG.md": false,
+        "README.md": false
+      },
+      "ears_notation": false,
+      "has_diagrams": true
+    },
+    "collaboration-workflow": {
+      "score": 60.0,
+      "files": {
+        "requirements.md": true,
+        "design.md": true,
+        "tasks.md": true,
+        "CHANGELOG.md": false,
+        "README.md": false
+      },
+      "ears_notation": true,
+      "has_diagrams": true
+    },
+    "data-version-lineage": {
+      "score": 60.0,
+      "files": {
+        "requirements.md": true,
+        "design.md": true,
+        "tasks.md": true,
+        "CHANGELOG.md": false,
+        "README.md": false
+      },
+      "ears_notation": true,
+      "has_diagrams": true
+    },
+    "tcb-deployment": {
+      "score": 60.0,
+      "files": {
+        "requirements.md": true,
+        "design.md": true,
+        "tasks.md": true,
+        "CHANGELOG.md": false,
+        "README.md": false
+      },
+      "ears_notation": true,
+      "has_diagrams": true
+    },
+    "api-registration-fix": {
+      "score": 80.0,
+      "files": {
+        "requirements.md": true,
+        "design.md": true,
+        "tasks.md": true,
+        "CHANGELOG.md": false,
+        "README.md": true
+      },
+      "ears_notation": true,
+      "has_diagrams": true
+    },
+    "quality-workflow": {
+      "score": 60.0,
+      "files": {
+        "requirements.md": true,
+        "design.md": true,
+        "tasks.md": true,
+        "CHANGELOG.md": false,
+        "README.md": false
+      },
+      "ears_notation": true,
+      "has_diagrams": true
+    },
+    "i18n-full-coverage": {
+      "score": 60.0,
+      "files": {
+        "requirements.md": true,
+        "design.md": true,
+        "tasks.md": true,
+        "CHANGELOG.md": false,
+        "README.md": false
+      },
+      "ears_notation": true,
+      "has_diagrams": true
+    },
+    "knowledge-graph": {
+      "score": 60.0,
+      "files": {
+        "requirements.md": true,
+        "design.md": true,
+        "tasks.md": true,
+        "CHANGELOG.md": false,
+        "README.md": false
+      },
+      "ears_notation": true,
+      "has_diagrams": true
+    },
+    "quality-billing-loop": {
+      "score": 60.0,
+      "files": {
+        "requirements.md": true,
+        "design.md": true,
+        "tasks.md": true,
+        "CHANGELOG.md": false,
+        "README.md": false
+      },
+      "ears_notation": true,
+      "has_diagrams": true
+    },
+    "admin-configuration": {
+      "score": 60.0,
+      "files": {
+        "requirements.md": true,
+        "design.md": true,
+        "tasks.md": true,
+        "CHANGELOG.md": false,
+        "README.md": false
+      },
+      "ears_notation": true,
+      "has_diagrams": true
+    },
+    "audit-security": {
+      "score": 60.0,
+      "files": {
+        "requirements.md": true,
+        "design.md": true,
+        "tasks.md": true,
+        "CHANGELOG.md": false,
+        "README.md": false
+      },
+      "ears_notation": true,
+      "has_diagrams": true
+    },
+    "i18n-support": {
+      "score": 80.0,
+      "files": {
+        "requirements.md": true,
+        "design.md": true,
+        "tasks.md": true,
+        "CHANGELOG.md": false,
+        "README.md": true
+      },
+      "ears_notation": true,
+      "has_diagrams": true
+    },
+    "llm-integration": {
+      "score": 60.0,
+      "files": {
+        "requirements.md": true,
+        "design.md": true,
+        "tasks.md": true,
+        "CHANGELOG.md": false,
+        "README.md": false
+      },
+      "ears_notation": true,
+      "has_diagrams": true
+    },
+    "multi-tenant-workspace": {
+      "score": 60.0,
+      "files": {
+        "requirements.md": true,
+        "design.md": true,
+        "tasks.md": true,
+        "CHANGELOG.md": false,
+        "README.md": false
+      },
+      "ears_notation": true,
+      "has_diagrams": true
+    },
+    "ai-annotation": {
+      "score": 60.0,
+      "files": {
+        "requirements.md": true,
+        "design.md": true,
+        "tasks.md": true,
+        "CHANGELOG.md": false,
+        "README.md": false
+      },
+      "ears_notation": true,
+      "has_diagrams": true
+    },
+    "superinsight-frontend": {
+      "score": 60.0,
+      "files": {
+        "requirements.md": true,
+        "design.md": true,
+        "tasks.md": true,
+        "CHANGELOG.md": false,
+        "README.md": false
+      },
+      "ears_notation": false,
+      "has_diagrams": true
+    },
+    "data-sync-system": {
+      "score": 60.0,
+      "files": {
+        "requirements.md": true,
+        "design.md": true,
+        "tasks.md": true,
+        "CHANGELOG.md": false,
+        "README.md": false
+      },
+      "ears_notation": false,
+      "has_diagrams": true
+    },
+    "license-management": {
+      "score": 60.0,
+      "files": {
+        "requirements.md": true,
+        "design.md": true,
+        "tasks.md": true,
+        "CHANGELOG.md": false,
+        "README.md": false
+      },
+      "ears_notation": true,
+      "has_diagrams": true
+    },
+    "data-sync-pipeline": {
+      "score": 60.0,
+      "files": {
+        "requirements.md": true,
+        "design.md": true,
+        "tasks.md": true,
+        "CHANGELOG.md": false,
+        "README.md": false
+      },
+      "ears_notation": true,
+      "has_diagrams": true
+    },
+    "ai-agent-system": {
+      "score": 60.0,
+      "files": {
+        "requirements.md": true,
+        "design.md": true,
+        "tasks.md": true,
+        "CHANGELOG.md": false,
+        "README.md": false
+      },
+      "ears_notation": true,
+      "has_diagrams": true
+    },
+    "docker-infrastructure": {
+      "score": 60.0,
+      "files": {
+        "requirements.md": true,
+        "design.md": true,
+        "tasks.md": true,
+        "CHANGELOG.md": false,
+        "README.md": false
+      },
+      "ears_notation": true,
+      "has_diagrams": true
+    },
+    "brand-identity-system": {
+      "score": 80.0,
+      "files": {
+        "requirements.md": true,
+        "design.md": true,
+        "tasks.md": true,
+        "CHANGELOG.md": false,
+        "README.md": true
+      },
+      "ears_notation": false,
+      "has_diagrams": false
+    },
+    "new": {
+      "score": 20.0,
+      "files": {
+        "requirements.md": false,
+        "design.md": false,
+        "tasks.md": false,
+        "CHANGELOG.md": false,
+        "README.md": true
+      },
+      "ears_notation": false,
+      "has_diagrams": false
+    },
+    "label-studio-iframe-integration": {
+      "score": 60.0,
+      "files": {
+        "requirements.md": true,
+        "design.md": true,
+        "tasks.md": true,
+        "CHANGELOG.md": false,
+        "README.md": false
+      },
+      "ears_notation": false,
+      "has_diagrams": true
+    },
+    "text-to-sql-methods": {
+      "score": 60.0,
+      "files": {
+        "requirements.md": true,
+        "design.md": true,
+        "tasks.md": true,
+        "CHANGELOG.md": false,
+        "README.md": false
+      },
+      "ears_notation": true,
+      "has_diagrams": true
+    },
+    "system-health-fixes": {
+      "score": 60.0,
+      "files": {
+        "requirements.md": true,
+        "design.md": true,
+        "tasks.md": true,
+        "CHANGELOG.md": false,
+        "README.md": false
+      },
+      "ears_notation": false,
+      "has_diagrams": false
+    },
+    "data-permission-control": {
+      "score": 60.0,
+      "files": {
+        "requirements.md": true,
+        "design.md": true,
+        "tasks.md": true,
+        "CHANGELOG.md": false,
+        "README.md": false
+      },
+      "ears_notation": true,
+      "has_diagrams": true
+    }
+  },
+  "structure": {
+    "issues": [
+      {
+        "feature": "superinsight-platform",
+        "file": "design.md",
+        "issue": "heading_skip",
+        "detail": "Skipped from H1 to H3"
+      },
+      {
+        "feature": "superinsight-platform",
+        "file": "design.md",
+        "issue": "heading_skip",
+        "detail": "Skipped from H1 to H3"
+      },
+      {
+        "feature": "tcb-deployment",
+        "file": "design.md",
+        "issue": "heading_skip",
+        "detail": "Skipped from H1 to H4"
+      },
+      {
+        "feature": "tcb-deployment",
+        "file": "design.md",
+        "issue": "heading_skip",
+        "detail": "Skipped from H1 to H4"
+      },
+      {
+        "feature": "tcb-deployment",
+        "file": "design.md",
+        "issue": "heading_skip",
+        "detail": "Skipped from H1 to H4"
+      },
+      {
+        "feature": "tcb-deployment",
+        "file": "tasks.md",
+        "issue": "heading_skip",
+        "detail": "Skipped from H1 to H3"
+      },
+      {
+        "feature": "api-registration-fix",
+        "file": "design.md",
+        "issue": "heading_skip",
+        "detail": "Skipped from H1 to H3"
+      },
+      {
+        "feature": "knowledge-graph",
+        "file": "tasks.md",
+        "issue": "heading_skip",
+        "detail": "Skipped from H1 to H3"
+      },
+      {
+        "feature": "quality-billing-loop",
+        "file": "tasks.md",
+        "issue": "heading_skip",
+        "detail": "Skipped from H1 to H3"
+      },
+      {
+        "feature": "i18n-support",
+        "file": "design.md",
+        "issue": "heading_skip",
+        "detail": "Skipped from H1 to H3"
+      },
+      {
+        "feature": "llm-integration",
+        "file": "design.md",
+        "issue": "heading_skip",
+        "detail": "Skipped from H1 to H3"
+      },
+      {
+        "feature": "superinsight-frontend",
+        "file": "tasks.md",
+        "issue": "heading_skip",
+        "detail": "Skipped from H1 to H3"
+      },
+      {
+        "feature": "data-sync-system",
+        "file": "design.md",
+        "issue": "heading_skip",
+        "detail": "Skipped from H1 to H3"
+      },
+      {
+        "feature": "data-sync-system",
+        "file": "design.md",
+        "issue": "heading_skip",
+        "detail": "Skipped from H1 to H3"
+      },
+      {
+        "feature": "data-sync-system",
+        "file": "design.md",
+        "issue": "heading_skip",
+        "detail": "Skipped from H1 to H3"
+      },
+      {
+        "feature": "data-sync-system",
+        "file": "design.md",
+        "issue": "heading_skip",
+        "detail": "Skipped from H1 to H3"
+      },
+      {
+        "feature": "data-sync-system",
+        "file": "tasks.md",
+        "issue": "heading_skip",
+        "detail": "Skipped from H1 to H3"
+      },
+      {
+        "feature": "license-management",
+        "file": "design.md",
+        "issue": "heading_skip",
+        "detail": "Skipped from H1 to H3"
+      },
+      {
+        "feature": "ai-agent-system",
+        "file": "tasks.md",
+        "issue": "heading_skip",
+        "detail": "Skipped from H1 to H3"
+      },
+      {
+        "feature": "brand-identity-system",
+        "file": "design.md",
+        "issue": "heading_skip",
+        "detail": "Skipped from H1 to H3"
+      },
+      {
+        "feature": "data-permission-control",
+        "file": "design.md",
+        "issue": "heading_skip",
+        "detail": "Skipped from H1 to H3"
+      },
+      {
+        "feature": "data-permission-control",
+        "file": "design.md",
+        "issue": "heading_skip",
+        "detail": "Skipped from H1 to H3"
+      },
+      {
+        "feature": "data-permission-control",
+        "file": "design.md",
+        "issue": "heading_skip",
+        "detail": "Skipped from H1 to H3"
+      },
+      {
+        "feature": "data-permission-control",
+        "file": "design.md",
+        "issue": "heading_skip",
+        "detail": "Skipped from H1 to H3"
+      }
+    ],
+    "issue_count": 24
+  },
+  "metrics": {
+    "total_features": 27,
+    "total_documents": 78,
+    "alignment_score": 58.333333333333336,
+    "completeness_score": 60.74074074074074,
+    "redundancy_score": 0.17323516673884798,
+    "oversized_files": 0,
+    "structure_issues": 24,
+    "avg_document_size": 1739.5128205128206
+  },
+  "recommendations": [
+    {
+      "priority": "HIGH",
+      "category": "Alignment",
+      "title": "Improve alignment for 6 features",
+      "details": [
+        "i18n-full-coverage",
+        "audit-security",
+        "multi-tenant-workspace",
+        "data-sync-pipeline",
+        "docker-infrastructure",
+        "new"
+      ]
+    },
+    {
+      "priority": "MEDIUM",
+      "category": "Completeness",
+      "title": "Complete documentation for 27 features",
+      "details": [
+        "superinsight-platform",
+        "collaboration-workflow",
+        "data-version-lineage",
+        "tcb-deployment",
+        "api-registration-fix",
+        "quality-workflow",
+        "i18n-full-coverage",
+        "knowledge-graph",
+        "quality-billing-loop",
+        "admin-configuration"
+      ]
+    },
+    {
+      "priority": "MEDIUM",
+      "category": "Requirements",
+      "title": "Add EARS notation to 6 requirements documents",
+      "details": [
+        "superinsight-platform",
+        "superinsight-frontend",
+        "data-sync-system",
+        "brand-identity-system",
+        "label-studio-iframe-integration",
+        "system-health-fixes"
+      ]
+    },
+    {
+      "priority": "LOW",
+      "category": "Design",
+      "title": "Add diagrams to 2 design documents",
+      "details": [
+        "brand-identity-system",
+        "system-health-fixes"
+      ]
+    },
+    {
+      "priority": "LOW",
+      "category": "Structure",
+      "title": "Fix 24 structure issues",
+      "details": [
+        "superinsight-platform/design.md: heading_skip",
+        "superinsight-platform/design.md: heading_skip",
+        "tcb-deployment/design.md: heading_skip",
+        "tcb-deployment/design.md: heading_skip",
+        "tcb-deployment/design.md: heading_skip",
+        "tcb-deployment/tasks.md: heading_skip",
+        "api-registration-fix/design.md: heading_skip",
+        "knowledge-graph/tasks.md: heading_skip",
+        "quality-billing-loop/tasks.md: heading_skip",
+        "i18n-support/design.md: heading_skip"
+      ]
+    }
+  ]
+}

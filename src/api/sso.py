@@ -10,7 +10,9 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
 
+from src.database.connection import get_db_session
 from src.security.sso.provider import SSOProvider
 from src.security.sso.base import (
     SSOConfigurationError, SSOAuthenticationError, ProviderNotFoundError
@@ -123,11 +125,8 @@ class SSOTestResponse(BaseModel):
 # Dependency Injection
 # ============================================================================
 
-async def get_sso_provider() -> SSOProvider:
+async def get_sso_provider(db: Session = Depends(get_db_session)) -> SSOProvider:
     """Get SSO provider instance."""
-    from src.database.connection import get_db_session
-    
-    db = await get_db_session()
     provider = SSOProvider(db)
     await provider.load_providers()
     return provider

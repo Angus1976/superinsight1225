@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, Form, Input, Select, Switch, Button, Space, message, Divider, Alert, Table, Tag } from 'antd';
-import { SaveOutlined, ReloadOutlined, ShieldOutlined, KeyOutlined } from '@ant-design/icons';
+import { SaveOutlined, ReloadOutlined, SafetyOutlined, KeyOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -175,7 +175,7 @@ const DataSyncSecurity: React.FC = () => {
         extra={
           <Space>
             <Button
-              icon={<ShieldOutlined />}
+              icon={<SafetyOutlined />}
               onClick={handleTest}
               loading={testConnectionMutation.isPending}
             >

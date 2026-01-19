@@ -7,9 +7,12 @@ Provides REST API endpoints for user session management.
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 
+import redis
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session as DBSession
 
+from src.database.connection import get_db_session
 from src.security.session_manager import SessionManager, Session
 
 
@@ -83,16 +86,20 @@ class ExtendSessionRequest(BaseModel):
 # Dependency Injection
 # ============================================================================
 
-async def get_session_manager() -> SessionManager:
+def get_redis_client() -> redis.Redis:
+    """Get Redis client instance."""
+    from src.config.settings import settings
+    return redis.Redis.from_url(settings.redis.redis_url)
+
+
+def get_session_manager(
+    redis_client: redis.Redis = Depends(get_redis_client),
+    db: DBSession = Depends(get_db_session)
+) -> SessionManager:
     """Get session manager instance."""
-    from src.database.redis_client import get_redis_client
-    from src.database.connection import get_db_session
     from src.security.audit_logger import AuditLogger
     
-    redis_client = await get_redis_client()
-    db = await get_db_session()
     audit_logger = AuditLogger(db)
-    
     return SessionManager(redis_client, audit_logger)
 
 

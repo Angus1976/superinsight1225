@@ -396,7 +396,7 @@ const SyncScheduler: React.FC = () => {
           </Form.Item>
           <Form.Item>
             <Space>
-              <Button type="primary" htmlType="submit">{t('common:actions.create')}</Button>
+              <Button type="primary" htmlType="submit">{t('common:create')}</Button>
               <Button onClick={() => setIsModalVisible(false)}>{t('common:cancel')}</Button>
             </Space>
           </Form.Item>

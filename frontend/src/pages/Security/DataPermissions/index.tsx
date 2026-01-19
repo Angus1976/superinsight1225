@@ -51,7 +51,7 @@ const DataPermissionsPage: React.FC = () => {
             label: (
               <span>
                 <ImportOutlined />
-                {t('dataPermissions.policyImport')}
+                {t('dataPermissions.policyImport.title')}
               </span>
             ),
             children: <PolicyImportWizard />,
@@ -81,7 +81,7 @@ const DataPermissionsPage: React.FC = () => {
             label: (
               <span>
                 <FileSearchOutlined />
-                {t('dataPermissions.classification')}
+                {t('dataPermissions.classification.title')}
               </span>
             ),
             children: <DataClassificationPage />,

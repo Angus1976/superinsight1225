@@ -30,7 +30,7 @@ const DataSyncSources: React.FC = () => {
   const [form] = Form.useForm();
   const queryClient = useQueryClient();
 
-  const { data: sources, isLoading } = useQuery({
+  const { data: sources = [], isLoading } = useQuery({
     queryKey: ['data-sources'],
     queryFn: () => api.get('/api/v1/data-sync/sources').then(res => res.data),
   });
@@ -105,9 +105,9 @@ const DataSyncSources: React.FC = () => {
         <div>
           <div>{text}</div>
           <div style={{ fontSize: '12px', color: '#666' }}>
-            {record.connectionString.length > 50 
+            {record.connectionString && record.connectionString.length > 50 
               ? `${record.connectionString.substring(0, 50)}...` 
-              : record.connectionString}
+              : record.connectionString || '-'}
           </div>
         </div>
       ),
@@ -144,16 +144,19 @@ const DataSyncSources: React.FC = () => {
       title: t('dataSource.syncProgress'),
       key: 'progress',
       render: (_, record) => {
-        const progress = record.totalRecords > 0 ? (record.syncedRecords / record.totalRecords) * 100 : 0;
+        const totalRecords = record.totalRecords || 0;
+        const syncedRecords = record.syncedRecords || 0;
+        const errorCount = record.errorCount || 0;
+        const progress = totalRecords > 0 ? (syncedRecords / totalRecords) * 100 : 0;
         return (
           <div>
             <Progress 
               percent={progress} 
               size="small" 
-              status={record.errorCount > 0 ? 'exception' : 'normal'}
+              status={errorCount > 0 ? 'exception' : 'normal'}
             />
             <div style={{ fontSize: '12px', color: '#666' }}>
-              {record.syncedRecords}/{record.totalRecords} {t('dataSource.records')}
+              {syncedRecords}/{totalRecords} {t('dataSource.records')}
             </div>
           </div>
         );

@@ -7,8 +7,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/services/api';
 
-const { TabPane } = Tabs;
-
 interface Permission {
   id: string;
   name: string;
@@ -297,7 +295,7 @@ const SecurityPermissions: React.FC = () => {
       key: 'roles',
       render: (roles: string[]) => (
         <Space wrap>
-          {roles.map(role => (
+          {(roles || []).map(role => (
             <Tag key={role} color="blue">{role}</Tag>
           ))}
         </Space>
@@ -307,13 +305,13 @@ const SecurityPermissions: React.FC = () => {
       title: t('userPermissions.columns.directPermissions'),
       dataIndex: 'directPermissions',
       key: 'directPermissions',
-      render: (permissions: string[]) => permissions.length,
+      render: (permissions: string[]) => (permissions || []).length,
     },
     {
       title: t('userPermissions.columns.effectivePermissions'),
       dataIndex: 'effectivePermissions',
       key: 'effectivePermissions',
-      render: (permissions: string[]) => permissions.length,
+      render: (permissions: string[]) => (permissions || []).length,
     },
     {
       title: t('userPermissions.columns.lastLogin'),
@@ -369,87 +367,101 @@ const SecurityPermissions: React.FC = () => {
 
   return (
     <div className="security-permissions">
-      <Tabs activeKey={activeTab} onChange={setActiveTab}>
-        <TabPane tab={t('permissions.title')} key="permissions">
-          <Card
-            title={t('permissions.title')}
-            extra={
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => {
-                  setModalType('permission');
-                  setEditingItem(null);
-                  form.resetFields();
-                  setIsModalVisible(true);
-                }}
+      <Tabs 
+        activeKey={activeTab} 
+        onChange={setActiveTab}
+        items={[
+          {
+            key: 'permissions',
+            label: t('permissions.title'),
+            children: (
+              <Card
+                title={t('permissions.title')}
+                extra={
+                  <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={() => {
+                      setModalType('permission');
+                      setEditingItem(null);
+                      form.resetFields();
+                      setIsModalVisible(true);
+                    }}
+                  >
+                    {t('permissions.createPermission')}
+                  </Button>
+                }
               >
-                {t('permissions.createPermission')}
-              </Button>
-            }
-          >
-            <Table
-              columns={permissionColumns}
-              dataSource={permissions}
-              loading={permissionsLoading}
-              rowKey="id"
-              pagination={{
-                showSizeChanger: true,
-                showQuickJumper: true,
-                showTotal: (total, range) => t('common.range', { start: range[0], end: range[1], total }),
-              }}
-            />
-          </Card>
-        </TabPane>
-
-        <TabPane tab={t('roles.title')} key="roles">
-          <Card
-            title={t('roles.title')}
-            extra={
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => {
-                  setModalType('role');
-                  setEditingItem(null);
-                  form.resetFields();
-                  setIsModalVisible(true);
-                }}
+                <Table
+                  columns={permissionColumns}
+                  dataSource={permissions}
+                  loading={permissionsLoading}
+                  rowKey="id"
+                  pagination={{
+                    showSizeChanger: true,
+                    showQuickJumper: true,
+                    showTotal: (total, range) => t('common.range', { start: range[0], end: range[1], total }),
+                  }}
+                />
+              </Card>
+            ),
+          },
+          {
+            key: 'roles',
+            label: t('roles.title'),
+            children: (
+              <Card
+                title={t('roles.title')}
+                extra={
+                  <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={() => {
+                      setModalType('role');
+                      setEditingItem(null);
+                      form.resetFields();
+                      setIsModalVisible(true);
+                    }}
+                  >
+                    {t('roles.createRole')}
+                  </Button>
+                }
               >
-                {t('roles.createRole')}
-              </Button>
-            }
-          >
-            <Table
-              columns={roleColumns}
-              dataSource={roles}
-              loading={rolesLoading}
-              rowKey="id"
-              pagination={{
-                showSizeChanger: true,
-                showQuickJumper: true,
-                showTotal: (total, range) => t('common.range', { start: range[0], end: range[1], total }),
-              }}
-            />
-          </Card>
-        </TabPane>
-
-        <TabPane tab={t('userPermissions.title')} key="user-permissions">
-          <Card title={t('userPermissions.title')}>
-            <Table
-              columns={userPermissionColumns}
-              dataSource={userPermissions}
-              loading={userPermissionsLoading}
-              rowKey="userId"
-              pagination={{
-                showSizeChanger: true,
-                showQuickJumper: true,
-                showTotal: (total, range) => t('common.range', { start: range[0], end: range[1], total }),
-              }}
-            />
-          </Card>
-        </TabPane>
-      </Tabs>
+                <Table
+                  columns={roleColumns}
+                  dataSource={roles}
+                  loading={rolesLoading}
+                  rowKey="id"
+                  pagination={{
+                    showSizeChanger: true,
+                    showQuickJumper: true,
+                    showTotal: (total, range) => t('common.range', { start: range[0], end: range[1], total }),
+                  }}
+                />
+              </Card>
+            ),
+          },
+          {
+            key: 'user-permissions',
+            label: t('userPermissions.title'),
+            children: (
+              <Card title={t('userPermissions.title')}>
+                <Table
+                  columns={userPermissionColumns}
+                  dataSource={userPermissions}
+                  loading={userPermissionsLoading}
+                  rowKey="userId"
+                  pagination={{
+                    showSizeChanger: true,
+                    showQuickJumper: true,
+                    showTotal: (total, range) => t('common.range', { start: range[0], end: range[1], total }),
+                  }}
+                />
+              </Card>
+            ),
+          },
+        ]}
+      />
 
       {/* 创建/编辑模态框 */}
       <Modal

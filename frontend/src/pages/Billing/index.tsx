@@ -250,7 +250,7 @@ const BillingPage: React.FC = () => {
       sorter: (a, b) => a.total_amount - b.total_amount,
     },
     {
-      title: t('status'),
+      title: t('statusLabel'),
       dataIndex: 'status',
       key: 'status',
       width: 120,

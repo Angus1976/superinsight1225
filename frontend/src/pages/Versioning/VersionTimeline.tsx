@@ -244,8 +244,8 @@ const VersionTimeline: React.FC<VersionTimelineProps> = ({
                     <Popconfirm
                       title={t('rollbackConfirm', 'Rollback to this version?')}
                       onConfirm={() => handleRollback(version)}
-                      okText={t('common:actions.yes', 'Yes')}
-                      cancelText={t('common:actions.no', 'No')}
+                      okText={t('common:confirm', 'Yes')}
+                      cancelText={t('common:cancel', 'No')}
                     >
                       <Tooltip title={t('rollback', 'Rollback')}>
                         <Button

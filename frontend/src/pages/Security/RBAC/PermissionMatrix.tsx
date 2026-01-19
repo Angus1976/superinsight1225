@@ -22,21 +22,10 @@ import {
   SaveOutlined,
 } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { rbacApi, Role, Permission } from '@/services/rbacApi';
 
 const { Text, Title } = Typography;
-
-// Resource definitions
-const RESOURCES = [
-  { key: 'projects', label: 'Projects' },
-  { key: 'tasks', label: 'Tasks' },
-  { key: 'annotations', label: 'Annotations' },
-  { key: 'users', label: 'Users' },
-  { key: 'billing', label: 'Billing' },
-  { key: 'reports', label: 'Reports' },
-  { key: 'settings', label: 'Settings' },
-  { key: 'admin', label: 'Admin' },
-];
 
 const ACTIONS = ['read', 'write', 'delete', '*'];
 
@@ -49,9 +38,22 @@ interface PermissionCell {
 }
 
 const PermissionMatrix: React.FC = () => {
+  const { t } = useTranslation(['security', 'common']);
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const [pendingChanges, setPendingChanges] = useState<Map<string, boolean>>(new Map());
   const queryClient = useQueryClient();
+
+  // Resource definitions with i18n
+  const RESOURCES = [
+    { key: 'projects', label: t('rbac.resources.projects') },
+    { key: 'tasks', label: t('rbac.resources.tasks') },
+    { key: 'annotations', label: t('rbac.resources.annotations') },
+    { key: 'users', label: t('rbac.resources.users') },
+    { key: 'billing', label: t('rbac.resources.billing') },
+    { key: 'reports', label: t('rbac.resources.reports') },
+    { key: 'settings', label: t('rbac.resources.settings') },
+    { key: 'admin', label: t('rbac.resources.admin') },
+  ];
 
   // Fetch roles
   const { data: roles = [], isLoading } = useQuery({
@@ -64,12 +66,12 @@ const PermissionMatrix: React.FC = () => {
     mutationFn: ({ id, permissions }: { id: string; permissions: Permission[] }) =>
       rbacApi.updateRole(id, { permissions }),
     onSuccess: () => {
-      message.success('Permissions updated successfully');
+      message.success(t('rbac.permissionsUpdated'));
       queryClient.invalidateQueries({ queryKey: ['roles'] });
       setPendingChanges(new Map());
     },
     onError: () => {
-      message.error('Failed to update permissions');
+      message.error(t('rbac.permissionsUpdateFailed'));
     },
   });
 
@@ -166,7 +168,7 @@ const PermissionMatrix: React.FC = () => {
 
   const columns = [
     {
-      title: 'Resource',
+      title: t('audit.resource'),
       dataIndex: 'resource',
       key: 'resource',
       fixed: 'left' as const,
@@ -177,8 +179,8 @@ const PermissionMatrix: React.FC = () => {
     },
     ...ACTIONS.map((action) => ({
       title: (
-        <Tooltip title={action === '*' ? 'All actions' : `${action} permission`}>
-          <span>{action === '*' ? 'All' : action.charAt(0).toUpperCase() + action.slice(1)}</span>
+        <Tooltip title={action === '*' ? t('rbac.actions.all') : t(`rbac.actions.${action}`)}>
+          <span>{action === '*' ? t('rbac.actions.all') : t(`rbac.actions.${action}`)}</span>
         </Tooltip>
       ),
       key: action,
@@ -192,9 +194,9 @@ const PermissionMatrix: React.FC = () => {
           <Tooltip
             title={
               cell.isWildcard
-                ? 'Granted via wildcard'
+                ? t('rbac.grantedViaWildcard')
                 : cell.isInherited
-                ? 'Inherited from parent role'
+                ? t('rbac.inheritedFromParent')
                 : ''
             }
           >
@@ -221,9 +223,9 @@ const PermissionMatrix: React.FC = () => {
       title={
         <Space>
           <Title level={5} style={{ margin: 0 }}>
-            Permission Matrix
+            {t('rbac.permissionMatrix')}
           </Title>
-          <Tooltip title="Configure permissions for each role by resource and action">
+          <Tooltip title={t('rbac.selectRoleHint')}>
             <QuestionCircleOutlined />
           </Tooltip>
         </Space>
@@ -231,7 +233,7 @@ const PermissionMatrix: React.FC = () => {
       extra={
         <Space>
           <Select
-            placeholder="Select a role"
+            placeholder={t('rbac.selectRole')}
             style={{ width: 200 }}
             value={selectedRole}
             onChange={setSelectedRole}
@@ -246,7 +248,7 @@ const PermissionMatrix: React.FC = () => {
               onClick={handleSaveChanges}
               loading={updateMutation.isPending}
             >
-              Save Changes ({pendingChanges.size})
+              {t('rbac.saveChanges')} ({pendingChanges.size})
             </Button>
           )}
         </Space>
@@ -254,7 +256,7 @@ const PermissionMatrix: React.FC = () => {
     >
       {!selectedRole ? (
         <div style={{ textAlign: 'center', padding: 40, color: '#999' }}>
-          Select a role to view and edit its permissions
+          {t('rbac.selectRoleHint')}
         </div>
       ) : (
         <>
@@ -269,11 +271,11 @@ const PermissionMatrix: React.FC = () => {
           <div style={{ marginTop: 16 }}>
             <Space>
               <Tag icon={<CheckCircleOutlined />} color="success">
-                Direct Permission
+                {t('rbac.directPermission')}
               </Tag>
-              <Tag color="purple">* Wildcard</Tag>
+              <Tag color="purple">* {t('rbac.wildcard')}</Tag>
               <Tag icon={<CloseCircleOutlined />} color="default">
-                No Permission
+                {t('rbac.noPermission')}
               </Tag>
             </Space>
           </div>

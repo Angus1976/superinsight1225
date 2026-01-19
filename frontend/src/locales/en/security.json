@@ -118,7 +118,9 @@
       "totalLogs": "Total Logs",
       "eventTypes": "Event Types",
       "successRate": "Success Rate",
-      "failedOperations": "Failed Operations"
+      "failedOperations": "Failed Operations",
+      "exportSuccess": "Export completed successfully",
+      "exportFailed": "Failed to export logs"
     },
     "filters": {
       "startTime": "Start Time",
@@ -140,6 +142,9 @@
       "failed": "Failed"
     },
     "verifyIntegrity": "Verify Integrity",
+    "verifySuccess": "Integrity verified: {{count}} logs checked",
+    "verifyFailed": "Integrity verification failed: {{error}}",
+    "verifyError": "Failed to verify integrity",
     "exportCsv": "Export CSV",
     "logDetails": "Audit Log Details"
   },

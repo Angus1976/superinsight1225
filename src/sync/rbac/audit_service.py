@@ -17,7 +17,8 @@ import json
 from src.database.connection import get_db_session
 from .models import (
     DataAccessAuditModel, AuditEventType, PermissionAction,
-    ResourceType, FieldAccessLevel
+    SyncResourceType, FieldAccessLevel,
+    ResourceType  # Re-exported from security module
 )
 from .tenant_isolation import tenant_context
 

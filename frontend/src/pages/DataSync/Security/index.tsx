@@ -56,7 +56,7 @@ const DataSyncSecurity: React.FC = () => {
     queryFn: () => api.get('/api/v1/data-sync/security/config').then(res => res.data),
   });
 
-  const { data: rules, isLoading: rulesLoading } = useQuery({
+  const { data: rules = [], isLoading: rulesLoading } = useQuery({
     queryKey: ['data-sync-security-rules'],
     queryFn: () => api.get('/api/v1/data-sync/security/rules').then(res => res.data),
   });
@@ -126,7 +126,7 @@ const DataSyncSecurity: React.FC = () => {
       key: 'enabled',
       render: (enabled: boolean) => (
         <Tag color={enabled ? 'success' : 'default'}>
-          {enabled ? t('common:actions.enabled') : t('common:actions.disabled')}
+          {enabled ? t('common:enabled') : t('common:disabled')}
         </Tag>
       ),
     },
@@ -209,7 +209,7 @@ const DataSyncSecurity: React.FC = () => {
           {/* 加密配置 */}
           <Card type="inner" title={t('security.encryption.title')} style={{ marginBottom: 16 }}>
             <Form.Item name={['encryption', 'enabled']} valuePropName="checked">
-              <Switch checkedChildren={t('common:actions.enabled')} unCheckedChildren={t('common:actions.disabled')} />
+              <Switch checkedChildren={t('common:enabled')} unCheckedChildren={t('common:disabled')} />
               <span style={{ marginLeft: 8 }}>{t('security.encryption.enabled')}</span>
             </Form.Item>
             
@@ -235,7 +235,7 @@ const DataSyncSecurity: React.FC = () => {
           {/* 认证配置 */}
           <Card type="inner" title={t('security.authentication.title')} style={{ marginBottom: 16 }}>
             <Form.Item name={['authentication', 'required']} valuePropName="checked">
-              <Switch checkedChildren={t('common:actions.required')} unCheckedChildren={t('common:actions.optional')} />
+              <Switch checkedChildren={t('common:required')} unCheckedChildren={t('common:optional')} />
               <span style={{ marginLeft: 8 }}>{t('security.authentication.required')}</span>
             </Form.Item>
             
@@ -262,7 +262,7 @@ const DataSyncSecurity: React.FC = () => {
           {/* 授权配置 */}
           <Card type="inner" title={t('security.authorization.title')} style={{ marginBottom: 16 }}>
             <Form.Item name={['authorization', 'enabled']} valuePropName="checked">
-              <Switch checkedChildren={t('common:actions.enabled')} unCheckedChildren={t('common:actions.disabled')} />
+              <Switch checkedChildren={t('common:enabled')} unCheckedChildren={t('common:disabled')} />
               <span style={{ marginLeft: 8 }}>{t('security.authorization.enabled')}</span>
             </Form.Item>
             
@@ -278,7 +278,7 @@ const DataSyncSecurity: React.FC = () => {
             </Form.Item>
             
             <Form.Item name={['authorization', 'strictMode']} valuePropName="checked">
-              <Switch checkedChildren={t('common:actions.strict')} unCheckedChildren={t('common:actions.loose')} />
+              <Switch checkedChildren={t('common:strict')} unCheckedChildren={t('common:loose')} />
               <span style={{ marginLeft: 8 }}>{t('security.authorization.strictMode')}</span>
             </Form.Item>
           </Card>
@@ -286,7 +286,7 @@ const DataSyncSecurity: React.FC = () => {
           {/* 审计配置 */}
           <Card type="inner" title={t('security.audit.title')} style={{ marginBottom: 16 }}>
             <Form.Item name={['audit', 'enabled']} valuePropName="checked">
-              <Switch checkedChildren={t('common:actions.enabled')} unCheckedChildren={t('common:actions.disabled')} />
+              <Switch checkedChildren={t('common:enabled')} unCheckedChildren={t('common:disabled')} />
               <span style={{ marginLeft: 8 }}>{t('security.audit.enabled')}</span>
             </Form.Item>
             
@@ -313,12 +313,12 @@ const DataSyncSecurity: React.FC = () => {
           {/* 数据保护配置 */}
           <Card type="inner" title={t('security.dataProtection.title')}>
             <Form.Item name={['dataProtection', 'piiDetection']} valuePropName="checked">
-              <Switch checkedChildren={t('common:actions.enabled')} unCheckedChildren={t('common:actions.disabled')} />
+              <Switch checkedChildren={t('common:enabled')} unCheckedChildren={t('common:disabled')} />
               <span style={{ marginLeft: 8 }}>{t('security.dataProtection.piiDetection')}</span>
             </Form.Item>
             
             <Form.Item name={['dataProtection', 'autoDesensitization']} valuePropName="checked">
-              <Switch checkedChildren={t('common:actions.enabled')} unCheckedChildren={t('common:actions.disabled')} />
+              <Switch checkedChildren={t('common:enabled')} unCheckedChildren={t('common:disabled')} />
               <span style={{ marginLeft: 8 }}>{t('security.dataProtection.autoDesensitization')}</span>
             </Form.Item>
             

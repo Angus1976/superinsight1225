@@ -16,7 +16,8 @@ from src.database.connection import get_db_session
 from .models import (
     RoleModel, PermissionModel, RolePermissionModel, UserRoleModel,
     ResourcePermissionModel, FieldPermissionModel,
-    PermissionAction, ResourceType, FieldAccessLevel
+    PermissionAction, SyncResourceType, FieldAccessLevel,
+    ResourceType  # Re-exported from security module
 )
 from .permission_manager import PermissionManager, PermissionContext
 

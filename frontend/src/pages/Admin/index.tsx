@@ -9,10 +9,12 @@ import {
   AppstoreOutlined, SyncOutlined, HistoryOutlined, CodeOutlined, ToolOutlined,
   DownOutlined
 } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import SystemPage from '@/pages/System';
 import { useAuthStore } from '@/stores/authStore';
 
 const AdminPage: React.FC = () => {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const location = useLocation();
 
@@ -61,37 +63,37 @@ const AdminPage: React.FC = () => {
   const configMenuItems: MenuProps['items'] = [
     {
       key: 'config',
-      label: <Link to="/admin/config">配置中心</Link>,
+      label: <Link to="/admin/config">{t('admin:nav.configCenter')}</Link>,
       icon: <DashboardOutlined />,
     },
     {
       key: 'config-llm',
-      label: <Link to="/admin/config/llm">LLM 配置</Link>,
+      label: <Link to="/admin/config/llm">{t('admin:nav.llmConfig')}</Link>,
       icon: <ApiOutlined />,
     },
     {
       key: 'config-db',
-      label: <Link to="/admin/config/databases">数据库配置</Link>,
+      label: <Link to="/admin/config/databases">{t('admin:nav.databaseConfig')}</Link>,
       icon: <DatabaseOutlined />,
     },
     {
       key: 'config-sync',
-      label: <Link to="/admin/config/sync">同步策略</Link>,
+      label: <Link to="/admin/config/sync">{t('admin:nav.syncStrategy')}</Link>,
       icon: <SyncOutlined />,
     },
     {
       key: 'config-sql',
-      label: <Link to="/admin/config/sql-builder">SQL 构建器</Link>,
+      label: <Link to="/admin/config/sql-builder">{t('admin:nav.sqlBuilder')}</Link>,
       icon: <CodeOutlined />,
     },
     {
       key: 'config-history',
-      label: <Link to="/admin/config/history">配置历史</Link>,
+      label: <Link to="/admin/config/history">{t('admin:nav.configHistory')}</Link>,
       icon: <HistoryOutlined />,
     },
     {
       key: 'config-third-party',
-      label: <Link to="/admin/config/third-party">第三方工具</Link>,
+      label: <Link to="/admin/config/third-party">{t('admin:nav.thirdPartyTools')}</Link>,
       icon: <ToolOutlined />,
     },
   ];
@@ -107,58 +109,58 @@ const AdminPage: React.FC = () => {
           <Menu mode="horizontal" selectedKeys={[selectedKey]}>
             <Menu.Item key="admin">
               <Link to="/admin">
-                <DashboardOutlined /> 概览
+                <DashboardOutlined /> {t('admin:nav.overview')}
               </Link>
             </Menu.Item>
             <Menu.Item key="console">
               <Link to="/admin/console">
-                <AppstoreOutlined /> 控制台
+                <AppstoreOutlined /> {t('admin:nav.console')}
               </Link>
             </Menu.Item>
             <Menu.Item key="tenants">
               <Link to="/admin/tenants">
-                <DatabaseOutlined /> 租户
+                <DatabaseOutlined /> {t('admin:nav.tenants')}
               </Link>
             </Menu.Item>
             <Menu.Item key="workspaces">
               <Link to="/admin/workspaces">
-                <AppstoreOutlined /> 工作空间
+                <AppstoreOutlined /> {t('admin:nav.workspaces')}
               </Link>
             </Menu.Item>
             <Menu.Item key="members">
               <Link to="/admin/members">
-                <TeamOutlined /> 成员
+                <TeamOutlined /> {t('admin:nav.members')}
               </Link>
             </Menu.Item>
             <Menu.Item key="permissions">
               <Link to="/admin/permissions">
-                <SafetyOutlined /> 权限
+                <SafetyOutlined /> {t('admin:nav.permissions')}
               </Link>
             </Menu.Item>
             <Menu.Item key="quotas">
               <Link to="/admin/quotas">
-                <CloudOutlined /> 配额
+                <CloudOutlined /> {t('admin:nav.quotas')}
               </Link>
             </Menu.Item>
             <Menu.Item key="billing">
               <Link to="/admin/billing">
-                <DollarOutlined /> 计费
+                <DollarOutlined /> {t('admin:nav.billing')}
               </Link>
             </Menu.Item>
             <Menu.Item key="system">
               <Link to="/admin/system">
-                <SettingOutlined /> 系统
+                <SettingOutlined /> {t('admin:nav.system')}
               </Link>
             </Menu.Item>
             <Menu.Item key="llm-config">
               <Link to="/admin/llm-config">
-                <ApiOutlined /> LLM
+                <ApiOutlined /> {t('admin:nav.llm')}
               </Link>
             </Menu.Item>
             <Menu.Item key="config-menu" style={{ padding: 0 }}>
               <Dropdown menu={{ items: configMenuItems, selectedKeys: isConfigSelected ? [selectedKey] : [] }} placement="bottomLeft">
                 <Space style={{ padding: '0 16px', color: isConfigSelected ? '#1890ff' : undefined }}>
-                  <SettingOutlined /> 配置管理 <DownOutlined />
+                  <SettingOutlined /> {t('admin:nav.configManagement')} <DownOutlined />
                 </Space>
               </Dropdown>
             </Menu.Item>

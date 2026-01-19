@@ -26,6 +26,7 @@ import {
   SearchOutlined,
 } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import type { ColumnsType } from 'antd/es/table';
 import { rbacApi, Role, UserRoleAssignment as Assignment } from '@/services/rbacApi';
 import dayjs from 'dayjs';
@@ -48,6 +49,7 @@ interface UserWithRoles {
 }
 
 const UserRoleAssignment: React.FC = () => {
+  const { t } = useTranslation(['security', 'common']);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [searchText, setSearchText] = useState('');
@@ -82,12 +84,12 @@ const UserRoleAssignment: React.FC = () => {
     mutationFn: ({ userId, roleId, expiresAt }: { userId: string; roleId: string; expiresAt?: string }) =>
       rbacApi.assignRoleToUser(userId, { role_id: roleId, expires_at: expiresAt }),
     onSuccess: () => {
-      message.success('Role assigned successfully');
+      message.success(t('rbac.assignment.assignSuccess'));
       queryClient.invalidateQueries({ queryKey: ['userRoles'] });
       handleCloseModal();
     },
     onError: () => {
-      message.error('Failed to assign role');
+      message.error(t('rbac.assignment.assignFailed'));
     },
   });
 
@@ -96,11 +98,11 @@ const UserRoleAssignment: React.FC = () => {
     mutationFn: ({ userId, roleId }: { userId: string; roleId: string }) =>
       rbacApi.revokeRoleFromUser(userId, roleId),
     onSuccess: () => {
-      message.success('Role revoked successfully');
+      message.success(t('rbac.assignment.revokeSuccess'));
       queryClient.invalidateQueries({ queryKey: ['userRoles'] });
     },
     onError: () => {
-      message.error('Failed to revoke role');
+      message.error(t('rbac.assignment.revokeFailed'));
     },
   });
 
@@ -146,7 +148,7 @@ const UserRoleAssignment: React.FC = () => {
 
   const columns: ColumnsType<UserWithRoles> = [
     {
-      title: 'User',
+      title: t('userPermissions.columns.user'),
       key: 'user',
       render: (_, record) => (
         <Space>
@@ -162,12 +164,12 @@ const UserRoleAssignment: React.FC = () => {
       ),
     },
     {
-      title: 'Assigned Roles',
+      title: t('userPermissions.columns.roles'),
       key: 'roles',
       render: (_, record) => (
         <Space wrap>
           {record.roles.length === 0 ? (
-            <Text type="secondary">No roles assigned</Text>
+            <Text type="secondary">{t('userPermissions.noRolesAssigned')}</Text>
           ) : (
             record.roles.map((assignment) => (
               <Tag
@@ -185,7 +187,7 @@ const UserRoleAssignment: React.FC = () => {
                 {assignment.role_name}
                 {assignment.expires_at && (
                   <span style={{ marginLeft: 4, fontSize: 10 }}>
-                    (expires: {new Date(assignment.expires_at).toLocaleDateString()})
+                    ({t('rbac.assignment.expires')}: {new Date(assignment.expires_at).toLocaleDateString()})
                   </span>
                 )}
               </Tag>
@@ -195,7 +197,7 @@ const UserRoleAssignment: React.FC = () => {
       ),
     },
     {
-      title: 'Actions',
+      title: t('common:actions'),
       key: 'actions',
       width: 120,
       render: (_, record) => (
@@ -205,7 +207,7 @@ const UserRoleAssignment: React.FC = () => {
           icon={<PlusOutlined />}
           onClick={() => handleOpenModal(record.id)}
         >
-          Add Role
+          {t('userPermissions.addRole')}
         </Button>
       ),
     },
@@ -213,11 +215,11 @@ const UserRoleAssignment: React.FC = () => {
 
   return (
     <Card
-      title="User Role Assignments"
+      title={t('rbac.assignment.title')}
       extra={
         <Space>
           <Input
-            placeholder="Search users..."
+            placeholder={t('rbac.assignment.searchUsers')}
             prefix={<SearchOutlined />}
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
@@ -225,7 +227,7 @@ const UserRoleAssignment: React.FC = () => {
             allowClear
           />
           <Button type="primary" icon={<PlusOutlined />} onClick={() => handleOpenModal()}>
-            Assign Role
+            {t('rbac.assignment.assignRole')}
           </Button>
         </Space>
       }
@@ -238,12 +240,12 @@ const UserRoleAssignment: React.FC = () => {
         pagination={{
           pageSize: 10,
           showSizeChanger: true,
-          showTotal: (total) => `Total ${total} users`,
+          showTotal: (total) => t('common.totalUsers', { total }),
         }}
       />
 
       <Modal
-        title="Assign Role to User"
+        title={t('rbac.assignment.assignRole')}
         open={modalOpen}
         onOk={handleSubmit}
         onCancel={handleCloseModal}
@@ -252,11 +254,11 @@ const UserRoleAssignment: React.FC = () => {
         <Form form={form} layout="vertical">
           <Form.Item
             name="user_id"
-            label="User"
-            rules={[{ required: true, message: 'Please select a user' }]}
+            label={t('rbac.assignment.selectUser')}
+            rules={[{ required: true, message: t('common:pleaseSelect', { field: t('rbac.assignment.selectUser') }) }]}
           >
             <Select
-              placeholder="Select user"
+              placeholder={t('rbac.assignment.selectUser')}
               disabled={!!selectedUser}
               options={mockUsers.map((u) => ({
                 label: `${u.name} (${u.email})`,
@@ -267,11 +269,11 @@ const UserRoleAssignment: React.FC = () => {
 
           <Form.Item
             name="role_id"
-            label="Role"
-            rules={[{ required: true, message: 'Please select a role' }]}
+            label={t('rbac.assignment.selectRoleToAssign')}
+            rules={[{ required: true, message: t('common:pleaseSelect', { field: t('rbac.assignment.selectRoleToAssign') }) }]}
           >
             <Select
-              placeholder="Select role"
+              placeholder={t('rbac.assignment.selectRoleToAssign')}
               options={roles.map((r) => ({
                 label: r.name,
                 value: r.id,
@@ -279,7 +281,7 @@ const UserRoleAssignment: React.FC = () => {
             />
           </Form.Item>
 
-          <Form.Item name="expires_at" label="Expiration (Optional)">
+          <Form.Item name="expires_at" label={t('rbac.assignment.expiration')}>
             <DatePicker
               showTime
               style={{ width: '100%' }}

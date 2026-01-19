@@ -33,6 +33,7 @@ import {
   DownloadOutlined,
 } from '@ant-design/icons';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import {
@@ -68,6 +69,7 @@ const sensitivityColors: Record<SensitivityLevel, string> = {
 };
 
 const AccessLogPage: React.FC = () => {
+  const { t } = useTranslation(['security', 'common']);
   const [filters, setFilters] = useState<AccessLogFilter>({
     limit: 50,
     offset: 0,
@@ -109,10 +111,10 @@ const AccessLogPage: React.FC = () => {
       a.download = `access_logs_${dayjs().format('YYYY-MM-DD')}.${format}`;
       a.click();
       window.URL.revokeObjectURL(url);
-      message.success('Export completed');
+      message.success(t('dataPermissions.accessLog.exportSuccess'));
     },
     onError: () => {
-      message.error('Export failed');
+      message.error(t('dataPermissions.accessLog.exportFailed'));
     },
   });
 
@@ -147,7 +149,7 @@ const AccessLogPage: React.FC = () => {
 
   const columns: ColumnsType<AccessLog> = [
     {
-      title: 'Timestamp',
+      title: t('dataPermissions.accessLog.columns.timestamp'),
       dataIndex: 'timestamp',
       key: 'timestamp',
       width: 180,
@@ -155,25 +157,25 @@ const AccessLogPage: React.FC = () => {
       sorter: true,
     },
     {
-      title: 'Operation',
+      title: t('dataPermissions.accessLog.columns.operation'),
       dataIndex: 'operation_type',
       key: 'operation_type',
       width: 120,
       render: (type: AccessLogOperation) => (
         <Tag icon={operationIcons[type]} color={operationColors[type]}>
-          {type.toUpperCase()}
+          {t(`dataPermissions.accessLog.operations.${type}`)}
         </Tag>
       ),
     },
     {
-      title: 'User',
+      title: t('dataPermissions.accessLog.columns.user'),
       dataIndex: 'user_id',
       key: 'user_id',
       width: 150,
       ellipsis: true,
     },
     {
-      title: 'Resource',
+      title: t('dataPermissions.accessLog.columns.resource'),
       key: 'resource',
       render: (_, record) => (
         <div>
@@ -183,32 +185,32 @@ const AccessLogPage: React.FC = () => {
       ),
     },
     {
-      title: 'Sensitivity',
+      title: t('dataPermissions.accessLog.columns.sensitivity'),
       dataIndex: 'sensitivity_level',
       key: 'sensitivity_level',
       width: 120,
       render: (level: SensitivityLevel | undefined) =>
         level ? (
-          <Tag color={sensitivityColors[level]}>{level.toUpperCase()}</Tag>
+          <Tag color={sensitivityColors[level]}>{t(`sensitivity.${level}`)}</Tag>
         ) : (
           '-'
         ),
     },
     {
-      title: 'Records',
+      title: t('dataPermissions.accessLog.columns.records'),
       dataIndex: 'record_count',
       key: 'record_count',
       width: 80,
       render: (count) => count || '-',
     },
     {
-      title: 'IP Address',
+      title: t('dataPermissions.accessLog.columns.ipAddress'),
       dataIndex: 'ip_address',
       key: 'ip_address',
       width: 130,
     },
     {
-      title: 'Actions',
+      title: t('common:actions'),
       key: 'actions',
       width: 80,
       render: (_, record) => (
@@ -229,7 +231,7 @@ const AccessLogPage: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Total Accesses"
+              title={t('dataPermissions.accessLog.stats.totalAccesses')}
               value={stats?.total_accesses || 0}
               prefix={<DatabaseOutlined />}
             />
@@ -238,7 +240,7 @@ const AccessLogPage: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Read Operations"
+              title={t('dataPermissions.accessLog.stats.readOperations')}
               value={stats?.by_operation?.read || 0}
               valueStyle={{ color: '#1890ff' }}
             />
@@ -247,7 +249,7 @@ const AccessLogPage: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Modify Operations"
+              title={t('dataPermissions.accessLog.stats.modifyOperations')}
               value={stats?.by_operation?.modify || 0}
               valueStyle={{ color: '#faad14' }}
             />
@@ -256,7 +258,7 @@ const AccessLogPage: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Export Operations"
+              title={t('dataPermissions.accessLog.stats.exportOperations')}
               value={stats?.by_operation?.export || 0}
               valueStyle={{ color: '#722ed1' }}
             />
@@ -266,7 +268,7 @@ const AccessLogPage: React.FC = () => {
 
       {/* Main Content */}
       <Card
-        title="Access Logs"
+        title={t('dataPermissions.accessLog.title')}
         extra={
           <Space>
             <Button
@@ -274,14 +276,14 @@ const AccessLogPage: React.FC = () => {
               onClick={() => exportMutation.mutate('csv')}
               loading={exportMutation.isPending}
             >
-              Export CSV
+              {t('dataPermissions.accessLog.exportCsv')}
             </Button>
             <Button
               icon={<ExportOutlined />}
               onClick={() => exportMutation.mutate('json')}
               loading={exportMutation.isPending}
             >
-              Export JSON
+              {t('dataPermissions.accessLog.exportJson')}
             </Button>
           </Space>
         }
@@ -292,32 +294,32 @@ const AccessLogPage: React.FC = () => {
             <RangePicker
               showTime
               onChange={handleDateRangeChange}
-              placeholder={['Start Time', 'End Time']}
+              placeholder={[t('audit.filters.startTime'), t('audit.filters.endTime')]}
             />
             <Select
-              placeholder="Operation Type"
+              placeholder={t('dataPermissions.accessLog.columns.operation')}
               style={{ width: 150 }}
               allowClear
               onChange={(value) => handleFilterChange('operation_type', value)}
             >
-              <Option value="read">Read</Option>
-              <Option value="modify">Modify</Option>
-              <Option value="export">Export</Option>
-              <Option value="api_call">API Call</Option>
+              <Option value="read">{t('dataPermissions.accessLog.operations.read')}</Option>
+              <Option value="modify">{t('dataPermissions.accessLog.operations.modify')}</Option>
+              <Option value="export">{t('dataPermissions.accessLog.operations.export')}</Option>
+              <Option value="api_call">{t('dataPermissions.accessLog.operations.apiCall')}</Option>
             </Select>
             <Select
-              placeholder="Sensitivity"
+              placeholder={t('dataPermissions.accessLog.columns.sensitivity')}
               style={{ width: 150 }}
               allowClear
               onChange={(value) => handleFilterChange('sensitivity_level', value)}
             >
-              <Option value="public">Public</Option>
-              <Option value="internal">Internal</Option>
-              <Option value="confidential">Confidential</Option>
-              <Option value="top_secret">Top Secret</Option>
+              <Option value="public">{t('sensitivity.public')}</Option>
+              <Option value="internal">{t('sensitivity.internal')}</Option>
+              <Option value="confidential">{t('sensitivity.confidential')}</Option>
+              <Option value="top_secret">{t('sensitivity.topSecret')}</Option>
             </Select>
             <Input
-              placeholder="User ID"
+              placeholder={t('audit.filters.userId')}
               style={{ width: 150 }}
               allowClear
               onChange={(e) =>
@@ -325,7 +327,7 @@ const AccessLogPage: React.FC = () => {
               }
             />
             <Input
-              placeholder="Resource"
+              placeholder={t('dataPermissions.accessLog.columns.resource')}
               style={{ width: 150 }}
               allowClear
               onChange={(e) =>
@@ -333,7 +335,7 @@ const AccessLogPage: React.FC = () => {
               }
             />
             <Input
-              placeholder="IP Address"
+              placeholder={t('audit.filters.ipAddress')}
               style={{ width: 150 }}
               allowClear
               onChange={(e) =>
@@ -341,7 +343,7 @@ const AccessLogPage: React.FC = () => {
               }
             />
             <Button icon={<ReloadOutlined />} onClick={() => refetch()}>
-              Refresh
+              {t('common:refresh')}
             </Button>
           </Space>
         </div>
@@ -356,7 +358,7 @@ const AccessLogPage: React.FC = () => {
             pageSize: filters.limit || 50,
             total: logsResponse?.total || 0,
             showSizeChanger: true,
-            showTotal: (total) => `Total ${total} logs`,
+            showTotal: (total) => t('common.totalLogs', { total }),
             onChange: (page, pageSize) => {
               setFilters((prev) => ({
                 ...prev,
@@ -371,12 +373,12 @@ const AccessLogPage: React.FC = () => {
 
       {/* Detail Modal */}
       <Modal
-        title="Access Log Details"
+        title={t('dataPermissions.accessLog.logDetails')}
         open={detailModalOpen}
         onCancel={() => setDetailModalOpen(false)}
         footer={[
           <Button key="close" onClick={() => setDetailModalOpen(false)}>
-            Close
+            {t('common:close')}
           </Button>,
         ]}
         width={700}
@@ -384,44 +386,44 @@ const AccessLogPage: React.FC = () => {
         {selectedLog && (
           <Descriptions column={1} bordered size="small">
             <Descriptions.Item label="ID">{selectedLog.id}</Descriptions.Item>
-            <Descriptions.Item label="Timestamp">
+            <Descriptions.Item label={t('dataPermissions.accessLog.columns.timestamp')}>
               {dayjs(selectedLog.timestamp).format('YYYY-MM-DD HH:mm:ss')}
             </Descriptions.Item>
-            <Descriptions.Item label="Operation">
+            <Descriptions.Item label={t('dataPermissions.accessLog.columns.operation')}>
               <Tag
                 icon={operationIcons[selectedLog.operation_type]}
                 color={operationColors[selectedLog.operation_type]}
               >
-                {selectedLog.operation_type.toUpperCase()}
+                {t(`dataPermissions.accessLog.operations.${selectedLog.operation_type}`)}
               </Tag>
             </Descriptions.Item>
-            <Descriptions.Item label="User ID">{selectedLog.user_id}</Descriptions.Item>
-            <Descriptions.Item label="Resource">{selectedLog.resource}</Descriptions.Item>
-            <Descriptions.Item label="Resource Type">
+            <Descriptions.Item label={t('dataPermissions.accessLog.columns.user')}>{selectedLog.user_id}</Descriptions.Item>
+            <Descriptions.Item label={t('dataPermissions.accessLog.columns.resource')}>{selectedLog.resource}</Descriptions.Item>
+            <Descriptions.Item label={t('dataPermissions.permissionConfig.form.resourceType')}>
               {selectedLog.resource_type}
             </Descriptions.Item>
-            <Descriptions.Item label="Sensitivity">
+            <Descriptions.Item label={t('dataPermissions.accessLog.columns.sensitivity')}>
               {selectedLog.sensitivity_level ? (
                 <Tag color={sensitivityColors[selectedLog.sensitivity_level]}>
-                  {selectedLog.sensitivity_level}
+                  {t(`sensitivity.${selectedLog.sensitivity_level}`)}
                 </Tag>
               ) : (
                 '-'
               )}
             </Descriptions.Item>
-            <Descriptions.Item label="Record Count">
+            <Descriptions.Item label={t('dataPermissions.accessLog.columns.records')}>
               {selectedLog.record_count || '-'}
             </Descriptions.Item>
-            <Descriptions.Item label="Fields Accessed">
+            <Descriptions.Item label={t('dataPermissions.accessLog.fieldsAccessed')}>
               {selectedLog.fields_accessed?.map((f) => <Tag key={f}>{f}</Tag>) || '-'}
             </Descriptions.Item>
-            <Descriptions.Item label="IP Address">
+            <Descriptions.Item label={t('dataPermissions.accessLog.columns.ipAddress')}>
               {selectedLog.ip_address || '-'}
             </Descriptions.Item>
-            <Descriptions.Item label="User Agent">
+            <Descriptions.Item label={t('audit.userAgent')}>
               {selectedLog.user_agent || '-'}
             </Descriptions.Item>
-            <Descriptions.Item label="Details">
+            <Descriptions.Item label={t('audit.details')}>
               <pre style={{ margin: 0, fontSize: 12, maxHeight: 200, overflow: 'auto' }}>
                 {JSON.stringify(selectedLog.details, null, 2)}
               </pre>

@@ -60,6 +60,11 @@ const LicenseAlertsPage = lazyWithPreload(() => import('@/pages/License/AlertCon
 const SecurityPage = lazyWithPreload(() => import('@/pages/Security'));
 const SecurityAuditPage = lazyWithPreload(() => import('@/pages/Security/Audit'));
 const SecurityPermissionsPage = lazyWithPreload(() => import('@/pages/Security/Permissions'));
+const SecurityDashboardPage = lazyWithPreload(() => import('@/pages/Security/Dashboard'));
+const SecurityRBACPage = lazyWithPreload(() => import('@/pages/Security/RBAC'));
+const SecuritySSOPage = lazyWithPreload(() => import('@/pages/Security/SSO'));
+const SecuritySessionsPage = lazyWithPreload(() => import('@/pages/Security/Sessions'));
+const SecurityDataPermissionsPage = lazyWithPreload(() => import('@/pages/Security/DataPermissions'));
 
 // Data Sync pages
 const DataSyncPage = lazyWithPreload(() => import('@/pages/DataSync'));
@@ -369,6 +374,26 @@ export const routes: RouteObject[] = [
           {
             path: 'permissions',
             element: withSuspense(SecurityPermissionsPage, 'table'),
+          },
+          {
+            path: 'dashboard',
+            element: withSuspense(SecurityDashboardPage, 'dashboard'),
+          },
+          {
+            path: 'rbac',
+            element: withSuspense(SecurityRBACPage, 'table'),
+          },
+          {
+            path: 'sso',
+            element: withSuspense(SecuritySSOPage, 'form'),
+          },
+          {
+            path: 'sessions',
+            element: withSuspense(SecuritySessionsPage, 'table'),
+          },
+          {
+            path: 'data-permissions',
+            element: withSuspense(SecurityDataPermissionsPage, 'table'),
           },
         ],
       },

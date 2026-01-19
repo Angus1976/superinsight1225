@@ -26,6 +26,7 @@ import {
   TeamOutlined,
 } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import type { ColumnsType } from 'antd/es/table';
 import { rbacApi, Role, Permission, CreateRoleRequest } from '@/services/rbacApi';
 
@@ -33,6 +34,7 @@ const { Text } = Typography;
 const { TextArea } = Input;
 
 const RoleList: React.FC = () => {
+  const { t } = useTranslation(['security', 'common']);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingRole, setEditingRole] = useState<Role | null>(null);
   const [form] = Form.useForm();
@@ -48,12 +50,12 @@ const RoleList: React.FC = () => {
   const createMutation = useMutation({
     mutationFn: (data: CreateRoleRequest) => rbacApi.createRole(data),
     onSuccess: () => {
-      message.success('Role created successfully');
+      message.success(t('roles.createSuccess'));
       queryClient.invalidateQueries({ queryKey: ['roles'] });
       handleCloseModal();
     },
     onError: () => {
-      message.error('Failed to create role');
+      message.error(t('roles.createError'));
     },
   });
 
@@ -62,12 +64,12 @@ const RoleList: React.FC = () => {
     mutationFn: ({ id, data }: { id: string; data: CreateRoleRequest }) =>
       rbacApi.updateRole(id, data),
     onSuccess: () => {
-      message.success('Role updated successfully');
+      message.success(t('roles.updateSuccess'));
       queryClient.invalidateQueries({ queryKey: ['roles'] });
       handleCloseModal();
     },
     onError: () => {
-      message.error('Failed to update role');
+      message.error(t('roles.updateError'));
     },
   });
 
@@ -75,11 +77,11 @@ const RoleList: React.FC = () => {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => rbacApi.deleteRole(id),
     onSuccess: () => {
-      message.success('Role deleted successfully');
+      message.success(t('roles.deleteSuccess'));
       queryClient.invalidateQueries({ queryKey: ['roles'] });
     },
     onError: () => {
-      message.error('Failed to delete role');
+      message.error(t('roles.deleteError'));
     },
   });
 
@@ -134,7 +136,7 @@ const RoleList: React.FC = () => {
 
   const columns: ColumnsType<Role> = [
     {
-      title: 'Role Name',
+      title: t('roles.columns.name'),
       dataIndex: 'name',
       key: 'name',
       render: (name) => (
@@ -145,13 +147,13 @@ const RoleList: React.FC = () => {
       ),
     },
     {
-      title: 'Description',
+      title: t('roles.columns.description'),
       dataIndex: 'description',
       key: 'description',
       ellipsis: true,
     },
     {
-      title: 'Permissions',
+      title: t('roles.columns.permissionCount'),
       dataIndex: 'permissions',
       key: 'permissions',
       render: (permissions: Permission[]) => (
@@ -175,7 +177,7 @@ const RoleList: React.FC = () => {
       ),
     },
     {
-      title: 'Parent Role',
+      title: t('roles.columns.parentRole'),
       dataIndex: 'parent_role_id',
       key: 'parent_role_id',
       render: (parentId) => {
@@ -185,13 +187,13 @@ const RoleList: React.FC = () => {
       },
     },
     {
-      title: 'Created',
+      title: t('roles.columns.createdAt'),
       dataIndex: 'created_at',
       key: 'created_at',
       render: (date) => new Date(date).toLocaleDateString(),
     },
     {
-      title: 'Actions',
+      title: t('common:actions'),
       key: 'actions',
       width: 120,
       render: (_, record) => (
@@ -203,11 +205,11 @@ const RoleList: React.FC = () => {
             onClick={() => handleOpenModal(record)}
           />
           <Popconfirm
-            title="Delete this role?"
-            description="This will also remove all user assignments."
+            title={t('roles.confirmDelete', { name: record.name })}
+            description={t('roles.deleteWarning')}
             onConfirm={() => deleteMutation.mutate(record.id)}
-            okText="Delete"
-            cancelText="Cancel"
+            okText={t('common:delete')}
+            cancelText={t('common:cancel')}
           >
             <Button type="link" size="small" danger icon={<DeleteOutlined />} />
           </Popconfirm>
@@ -218,27 +220,27 @@ const RoleList: React.FC = () => {
 
   // Common permission options
   const permissionOptions = [
-    { label: 'Projects: Read', value: 'projects:read' },
-    { label: 'Projects: Write', value: 'projects:write' },
-    { label: 'Projects: Delete', value: 'projects:delete' },
-    { label: 'Tasks: Read', value: 'tasks:read' },
-    { label: 'Tasks: Write', value: 'tasks:write' },
-    { label: 'Tasks: Delete', value: 'tasks:delete' },
-    { label: 'Annotations: Read', value: 'annotations:read' },
-    { label: 'Annotations: Write', value: 'annotations:write' },
-    { label: 'Users: Read', value: 'users:read' },
-    { label: 'Users: Write', value: 'users:write' },
-    { label: 'Admin: All', value: 'admin:*' },
-    { label: 'All Resources: Read', value: '*:read' },
-    { label: 'All Resources: All', value: '*:*' },
+    { label: `${t('rbac.resources.projects')}: ${t('rbac.actions.read')}`, value: 'projects:read' },
+    { label: `${t('rbac.resources.projects')}: ${t('rbac.actions.write')}`, value: 'projects:write' },
+    { label: `${t('rbac.resources.projects')}: ${t('rbac.actions.delete')}`, value: 'projects:delete' },
+    { label: `${t('rbac.resources.tasks')}: ${t('rbac.actions.read')}`, value: 'tasks:read' },
+    { label: `${t('rbac.resources.tasks')}: ${t('rbac.actions.write')}`, value: 'tasks:write' },
+    { label: `${t('rbac.resources.tasks')}: ${t('rbac.actions.delete')}`, value: 'tasks:delete' },
+    { label: `${t('rbac.resources.annotations')}: ${t('rbac.actions.read')}`, value: 'annotations:read' },
+    { label: `${t('rbac.resources.annotations')}: ${t('rbac.actions.write')}`, value: 'annotations:write' },
+    { label: `${t('rbac.resources.users')}: ${t('rbac.actions.read')}`, value: 'users:read' },
+    { label: `${t('rbac.resources.users')}: ${t('rbac.actions.write')}`, value: 'users:write' },
+    { label: `${t('rbac.resources.admin')}: ${t('rbac.actions.all')}`, value: 'admin:*' },
+    { label: `All Resources: ${t('rbac.actions.read')}`, value: '*:read' },
+    { label: `All Resources: ${t('rbac.actions.all')}`, value: '*:*' },
   ];
 
   return (
     <Card
-      title="Role Management"
+      title={t('rbac.roleManagement')}
       extra={
         <Button type="primary" icon={<PlusOutlined />} onClick={() => handleOpenModal()}>
-          Create Role
+          {t('rbac.createRole')}
         </Button>
       }
     >
@@ -250,12 +252,12 @@ const RoleList: React.FC = () => {
         pagination={{
           pageSize: 10,
           showSizeChanger: true,
-          showTotal: (total) => `Total ${total} roles`,
+          showTotal: (total) => t('common.totalRoles', { total }),
         }}
       />
 
       <Modal
-        title={editingRole ? 'Edit Role' : 'Create Role'}
+        title={editingRole ? t('roles.editRole') : t('roles.createRole')}
         open={modalOpen}
         onOk={handleSubmit}
         onCancel={handleCloseModal}
@@ -265,28 +267,28 @@ const RoleList: React.FC = () => {
         <Form form={form} layout="vertical">
           <Form.Item
             name="name"
-            label="Role Name"
-            rules={[{ required: true, message: 'Please enter role name' }]}
+            label={t('roles.columns.name')}
+            rules={[{ required: true, message: t('common:pleaseInput', { field: t('roles.columns.name') }) }]}
           >
-            <Input placeholder="e.g., project_manager" />
+            <Input placeholder={t('roles.form.namePlaceholder')} />
           </Form.Item>
 
-          <Form.Item name="description" label="Description">
-            <TextArea rows={2} placeholder="Role description" />
+          <Form.Item name="description" label={t('roles.columns.description')}>
+            <TextArea rows={2} placeholder={t('roles.form.descriptionPlaceholder')} />
           </Form.Item>
 
-          <Form.Item name="permissions" label="Permissions">
+          <Form.Item name="permissions" label={t('rbac.permissionMatrix')}>
             <Select
               mode="multiple"
-              placeholder="Select permissions"
+              placeholder={t('roles.form.selectPermissions')}
               options={permissionOptions}
               allowClear
             />
           </Form.Item>
 
-          <Form.Item name="parent_role_id" label="Parent Role (Inheritance)">
+          <Form.Item name="parent_role_id" label={t('roles.columns.parentRole')}>
             <Select
-              placeholder="Select parent role"
+              placeholder={t('roles.form.selectParentRole')}
               allowClear
               options={roles
                 .filter((r) => r.id !== editingRole?.id)

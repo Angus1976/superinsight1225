@@ -51,6 +51,7 @@ import {
   Area,
 } from 'recharts';
 import type { ColumnsType } from 'antd/es/table';
+import { useTranslation } from 'react-i18next';
 import dayjs from 'dayjs';
 import {
   useWorkHoursStatistics,
@@ -101,6 +102,7 @@ const ANOMALY_COLORS = {
 };
 
 export const WorkHoursAnalysis: React.FC<WorkHoursAnalysisProps> = ({ tenantId }) => {
+  const { t } = useTranslation('billing');
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs]>([
     dayjs().subtract(30, 'day'),
     dayjs(),
@@ -220,7 +222,7 @@ export const WorkHoursAnalysis: React.FC<WorkHoursAnalysisProps> = ({ tenantId }
   // Table columns for individual statistics
   const individualColumns: ColumnsType<WorkHoursStatistics> = [
     {
-      title: 'User',
+      title: t('workHoursAnalysis.columns.user'),
       dataIndex: 'user_name',
       key: 'user_name',
       render: (name: string, record) => (
@@ -231,7 +233,7 @@ export const WorkHoursAnalysis: React.FC<WorkHoursAnalysisProps> = ({ tenantId }
       ),
     },
     {
-      title: 'Total Hours',
+      title: t('workHoursAnalysis.columns.totalHours'),
       dataIndex: 'total_hours',
       key: 'total_hours',
       sorter: (a, b) => a.total_hours - b.total_hours,
@@ -243,7 +245,7 @@ export const WorkHoursAnalysis: React.FC<WorkHoursAnalysisProps> = ({ tenantId }
       ),
     },
     {
-      title: 'Billable Hours',
+      title: t('workHoursAnalysis.columns.billableHours'),
       dataIndex: 'billable_hours',
       key: 'billable_hours',
       render: (hours: number, record) => (
@@ -258,20 +260,20 @@ export const WorkHoursAnalysis: React.FC<WorkHoursAnalysisProps> = ({ tenantId }
       ),
     },
     {
-      title: 'Annotations',
+      title: t('workHoursAnalysis.columns.annotations'),
       dataIndex: 'total_annotations',
       key: 'total_annotations',
       sorter: (a, b) => a.total_annotations - b.total_annotations,
       render: (count: number) => count.toLocaleString(),
     },
     {
-      title: 'Efficiency',
+      title: t('workHoursAnalysis.columns.efficiency'),
       dataIndex: 'annotations_per_hour',
       key: 'annotations_per_hour',
       render: (rate: number) => `${rate.toFixed(1)}/h`,
     },
     {
-      title: 'Quality Score',
+      title: t('workHoursAnalysis.columns.qualityScore'),
       dataIndex: 'efficiency_score',
       key: 'efficiency_score',
       sorter: (a, b) => a.efficiency_score - b.efficiency_score,
@@ -284,7 +286,7 @@ export const WorkHoursAnalysis: React.FC<WorkHoursAnalysisProps> = ({ tenantId }
       ),
     },
     {
-      title: 'Cost',
+      title: t('workHoursAnalysis.columns.cost'),
       dataIndex: 'total_cost',
       key: 'total_cost',
       sorter: (a, b) => a.total_cost - b.total_cost,
@@ -295,7 +297,7 @@ export const WorkHoursAnalysis: React.FC<WorkHoursAnalysisProps> = ({ tenantId }
   // Department columns
   const departmentColumns: ColumnsType<DepartmentStats> = [
     {
-      title: 'Department',
+      title: t('workHoursAnalysis.columns.department'),
       dataIndex: 'department',
       key: 'department',
       render: (name: string) => (
@@ -306,19 +308,19 @@ export const WorkHoursAnalysis: React.FC<WorkHoursAnalysisProps> = ({ tenantId }
       ),
     },
     {
-      title: 'Total Hours',
+      title: t('workHoursAnalysis.columns.totalHours'),
       dataIndex: 'totalHours',
       key: 'totalHours',
       render: (hours: number) => `${hours}h`,
     },
     {
-      title: 'Team Size',
+      title: t('workHoursAnalysis.columns.teamSize'),
       dataIndex: 'userCount',
       key: 'userCount',
       render: (count: number) => `${count} users`,
     },
     {
-      title: 'Avg Efficiency',
+      title: t('workHoursAnalysis.columns.avgEfficiency'),
       dataIndex: 'avgEfficiency',
       key: 'avgEfficiency',
       render: (efficiency: number) => (
@@ -330,7 +332,7 @@ export const WorkHoursAnalysis: React.FC<WorkHoursAnalysisProps> = ({ tenantId }
       ),
     },
     {
-      title: 'Total Cost',
+      title: t('workHoursAnalysis.columns.totalCost'),
       dataIndex: 'cost',
       key: 'cost',
       render: (cost: number) => <Text>¥{cost.toLocaleString()}</Text>,
@@ -344,7 +346,7 @@ export const WorkHoursAnalysis: React.FC<WorkHoursAnalysisProps> = ({ tenantId }
       <Card>
         <div style={{ textAlign: 'center', padding: '50px 0' }}>
           <Spin size="large" />
-          <p style={{ marginTop: 16 }}>Loading work hours analysis...</p>
+          <p style={{ marginTop: 16 }}>{t('workHoursAnalysis.loading')}</p>
         </div>
       </Card>
     );
@@ -358,7 +360,7 @@ export const WorkHoursAnalysis: React.FC<WorkHoursAnalysisProps> = ({ tenantId }
           <Col flex="auto">
             <Space size="large">
               <Space>
-                <Text>Date Range:</Text>
+                <Text>{t('workHoursAnalysis.dateRange')}:</Text>
                 <RangePicker
                   value={dateRange}
                   onChange={(dates) => {
@@ -367,21 +369,21 @@ export const WorkHoursAnalysis: React.FC<WorkHoursAnalysisProps> = ({ tenantId }
                     }
                   }}
                   presets={[
-                    { label: 'Last 7 Days', value: [dayjs().subtract(7, 'day'), dayjs()] },
-                    { label: 'Last 30 Days', value: [dayjs().subtract(30, 'day'), dayjs()] },
-                    { label: 'Last 3 Months', value: [dayjs().subtract(3, 'month'), dayjs()] },
+                    { label: t('workHoursAnalysis.presets.last7Days'), value: [dayjs().subtract(7, 'day'), dayjs()] },
+                    { label: t('workHoursAnalysis.presets.last30Days'), value: [dayjs().subtract(30, 'day'), dayjs()] },
+                    { label: t('workHoursAnalysis.presets.last3Months'), value: [dayjs().subtract(3, 'month'), dayjs()] },
                   ]}
                 />
               </Space>
               <Space>
-                <Text>View:</Text>
+                <Text>{t('workHoursAnalysis.view')}:</Text>
                 <Select
                   value={viewType}
                   onChange={setViewType}
                   options={[
-                    { value: 'individual', label: 'Individual' },
-                    { value: 'team', label: 'Team' },
-                    { value: 'department', label: 'Department' },
+                    { value: 'individual', label: t('workHoursAnalysis.individual') },
+                    { value: 'team', label: t('workHoursAnalysis.team') },
+                    { value: 'department', label: t('workHoursAnalysis.department') },
                   ]}
                   style={{ width: 120 }}
                 />
@@ -390,7 +392,7 @@ export const WorkHoursAnalysis: React.FC<WorkHoursAnalysisProps> = ({ tenantId }
           </Col>
           <Col>
             <Button icon={<ExportOutlined />}>
-              Export Analysis
+              {t('workHoursAnalysis.exportAnalysis')}
             </Button>
           </Col>
         </Row>
@@ -401,7 +403,7 @@ export const WorkHoursAnalysis: React.FC<WorkHoursAnalysisProps> = ({ tenantId }
         <Col span={6}>
           <Card>
             <Statistic
-              title="Total Hours"
+              title={t('workHoursAnalysis.totalHours')}
               value={summaryMetrics.totalHours.toFixed(1)}
               prefix={<ClockCircleOutlined />}
               suffix="h"
@@ -411,7 +413,7 @@ export const WorkHoursAnalysis: React.FC<WorkHoursAnalysisProps> = ({ tenantId }
         <Col span={6}>
           <Card>
             <Statistic
-              title="Billable Hours"
+              title={t('workHoursAnalysis.billableHours')}
               value={summaryMetrics.totalBillableHours.toFixed(1)}
               prefix={<CalendarOutlined />}
               suffix="h"
@@ -428,7 +430,7 @@ export const WorkHoursAnalysis: React.FC<WorkHoursAnalysisProps> = ({ tenantId }
         <Col span={6}>
           <Card>
             <Statistic
-              title="Avg Efficiency"
+              title={t('workHoursAnalysis.avgEfficiency')}
               value={summaryMetrics.avgEfficiency.toFixed(1)}
               prefix={<BarChartOutlined />}
               suffix="%"
@@ -441,7 +443,7 @@ export const WorkHoursAnalysis: React.FC<WorkHoursAnalysisProps> = ({ tenantId }
         <Col span={6}>
           <Card>
             <Statistic
-              title="Total Cost"
+              title={t('workHoursAnalysis.totalCost')}
               value={summaryMetrics.totalCost}
               prefix={<RiseOutlined />}
               precision={0}
@@ -455,7 +457,7 @@ export const WorkHoursAnalysis: React.FC<WorkHoursAnalysisProps> = ({ tenantId }
         <Col span={8}>
           <Card size="small">
             <Statistic
-              title="Top Performers"
+              title={t('workHoursAnalysis.topPerformers')}
               value={summaryMetrics.topPerformers}
               suffix={`/ ${userCount}`}
               prefix={<TrophyOutlined />}
@@ -466,7 +468,7 @@ export const WorkHoursAnalysis: React.FC<WorkHoursAnalysisProps> = ({ tenantId }
         <Col span={8}>
           <Card size="small">
             <Statistic
-              title="Needs Attention"
+              title={t('workHoursAnalysis.needsAttention')}
               value={summaryMetrics.lowPerformers}
               suffix={`/ ${userCount}`}
               prefix={<ExclamationCircleOutlined />}
@@ -477,7 +479,7 @@ export const WorkHoursAnalysis: React.FC<WorkHoursAnalysisProps> = ({ tenantId }
         <Col span={8}>
           <Card size="small">
             <Statistic
-              title="Avg Hourly Rate"
+              title={t('workHoursAnalysis.avgHourlyRate')}
               value={summaryMetrics.avgHourlyRate.toFixed(0)}
               prefix="¥"
               valueStyle={{ color: '#1890ff' }}
@@ -489,14 +491,14 @@ export const WorkHoursAnalysis: React.FC<WorkHoursAnalysisProps> = ({ tenantId }
       {/* Anomaly Detection Alert */}
       {anomalies.length > 0 && (
         <Alert
-          message="Anomalies Detected"
-          description={`${anomalies.length} work pattern anomalies require attention`}
+          message={t('workHoursAnalysis.anomaliesDetected')}
+          description={t('workHoursAnalysis.anomaliesDescription', { count: anomalies.length })}
           type="warning"
           showIcon
           style={{ marginBottom: 16 }}
           action={
             <Button size="small" type="link">
-              View Details
+              {t('workHoursAnalysis.viewDetails')}
             </Button>
           }
         />
@@ -508,7 +510,7 @@ export const WorkHoursAnalysis: React.FC<WorkHoursAnalysisProps> = ({ tenantId }
           tab={
             <span>
               <LineChartOutlined />
-              Productivity Trends
+              {t('workHoursAnalysis.productivityTrends')}
             </span>
           }
           key="trends"
@@ -522,12 +524,12 @@ export const WorkHoursAnalysis: React.FC<WorkHoursAnalysisProps> = ({ tenantId }
                 <YAxis yAxisId="right" orientation="right" />
                 <RechartsTooltip />
                 <Legend />
-                <Bar yAxisId="left" dataKey="hours" name="Hours" fill="#1890ff" />
+                <Bar yAxisId="left" dataKey="hours" name={t('workHoursAnalysis.charts.hours')} fill="#1890ff" />
                 <Line
                   yAxisId="right"
                   type="monotone"
                   dataKey="efficiency"
-                  name="Efficiency %"
+                  name={t('workHoursAnalysis.charts.efficiency')}
                   stroke="#52c41a"
                 />
               </ComposedChart>
@@ -539,7 +541,7 @@ export const WorkHoursAnalysis: React.FC<WorkHoursAnalysisProps> = ({ tenantId }
           tab={
             <span>
               <TeamOutlined />
-              {viewType === 'individual' ? 'Individual' : viewType === 'team' ? 'Team' : 'Department'} Analysis
+              {viewType === 'individual' ? t('workHoursAnalysis.individual') : viewType === 'team' ? t('workHoursAnalysis.team') : t('workHoursAnalysis.department')} {t('workHoursAnalysis.analysis')}
             </span>
           }
           key="analysis"
@@ -568,14 +570,14 @@ export const WorkHoursAnalysis: React.FC<WorkHoursAnalysisProps> = ({ tenantId }
           tab={
             <span>
               <ExclamationCircleOutlined />
-              Anomaly Detection
+              {t('workHoursAnalysis.anomalyDetection')}
             </span>
           }
           key="anomalies"
         >
           <Card>
             {anomalies.length === 0 ? (
-              <Empty description="No anomalies detected" />
+              <Empty description={t('workHoursAnalysis.noAnomalies')} />
             ) : (
               <Space direction="vertical" style={{ width: '100%' }}>
                 {anomalies.map((anomaly, index) => (
@@ -604,7 +606,7 @@ export const WorkHoursAnalysis: React.FC<WorkHoursAnalysisProps> = ({ tenantId }
                       </Col>
                       <Col span={6} style={{ textAlign: 'right' }}>
                         <Button size="small" type="link">
-                          View Details
+                          {t('workHoursAnalysis.viewDetails')}
                         </Button>
                       </Col>
                     </Row>
@@ -619,14 +621,14 @@ export const WorkHoursAnalysis: React.FC<WorkHoursAnalysisProps> = ({ tenantId }
           tab={
             <span>
               <BarChartOutlined />
-              Cost Analysis
+              {t('workHoursAnalysis.costAnalysis')}
             </span>
           }
           key="cost"
         >
           <Row gutter={16}>
             <Col span={12}>
-              <Card title="Cost by Department">
+              <Card title={t('workHoursAnalysis.costByDepartment')}>
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
@@ -649,7 +651,7 @@ export const WorkHoursAnalysis: React.FC<WorkHoursAnalysisProps> = ({ tenantId }
               </Card>
             </Col>
             <Col span={12}>
-              <Card title="Efficiency vs Cost">
+              <Card title={t('workHoursAnalysis.efficiencyVsCost')}>
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={departmentStats}>
                     <CartesianGrid strokeDasharray="3 3" />
@@ -658,12 +660,12 @@ export const WorkHoursAnalysis: React.FC<WorkHoursAnalysisProps> = ({ tenantId }
                     <YAxis yAxisId="right" orientation="right" />
                     <RechartsTooltip />
                     <Legend />
-                    <Bar yAxisId="left" dataKey="cost" name="Cost (¥)" fill="#1890ff" />
+                    <Bar yAxisId="left" dataKey="cost" name={t('workHoursAnalysis.charts.cost')} fill="#1890ff" />
                     <Line
                       yAxisId="right"
                       type="monotone"
                       dataKey="avgEfficiency"
-                      name="Efficiency %"
+                      name={t('workHoursAnalysis.charts.efficiency')}
                       stroke="#52c41a"
                     />
                   </BarChart>

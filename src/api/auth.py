@@ -206,14 +206,41 @@ async def get_current_user_info(
 
 
 @router.get("/tenants")
-async def get_tenants():
+async def get_tenants(db: Session = Depends(get_db_session)):
     """Get available tenants for login."""
-    # For now, return a default tenant
-    # In a real implementation, this would query the database
-    return [
-        {
-            "id": "default_tenant",
-            "name": "Default Tenant",
-            "logo": None
-        }
-    ]
+    try:
+        from src.database.multi_tenant_models import TenantModel, TenantStatus
+        
+        # Query active tenants from database
+        tenants = db.query(TenantModel).filter(
+            TenantModel.status == TenantStatus.ACTIVE
+        ).all()
+        
+        if tenants:
+            return [
+                {
+                    "id": tenant.id,
+                    "name": tenant.display_name or tenant.name,
+                    "logo": tenant.configuration.get("logo") if tenant.configuration else None
+                }
+                for tenant in tenants
+            ]
+        
+        # Fallback to default tenant if no tenants in database
+        return [
+            {
+                "id": "default_tenant",
+                "name": "Default Tenant",
+                "logo": None
+            }
+        ]
+    except Exception as e:
+        logger.warning(f"Failed to query tenants from database: {e}")
+        # Return default tenant on error
+        return [
+            {
+                "id": "default_tenant",
+                "name": "Default Tenant",
+                "logo": None
+            }
+        ]

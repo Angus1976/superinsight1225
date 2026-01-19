@@ -215,6 +215,11 @@ const SecurityPage: React.FC = () => {
                 <KeyOutlined /> {t('permissionManagement')}
               </Link>
             </Menu.Item>
+            <Menu.Item key="data-permissions">
+              <Link to="/security/data-permissions">
+                <LockOutlined /> {t('dataPermissions.title')}
+              </Link>
+            </Menu.Item>
           </Menu>
         </Card>
         <Outlet />

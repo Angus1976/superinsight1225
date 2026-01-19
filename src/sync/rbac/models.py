@@ -1,8 +1,11 @@
 """
 RBAC models for fine-grained permission control in data sync system.
 
-Provides comprehensive role-based access control with tenant isolation,
-field-level permissions, and audit logging.
+This module re-exports RBAC models from src.security.rbac_models and adds
+sync-specific models for field-level permissions and data access auditing.
+
+NOTE: The core RBAC models (RoleModel, PermissionModel, etc.) are defined in
+src/security/rbac_models.py to avoid duplicate model registration issues.
 """
 
 from datetime import datetime
@@ -16,9 +19,21 @@ from typing import Optional, List, Dict, Any
 
 from src.database.connection import Base
 
+# Re-export core RBAC models from security module to avoid duplicate registration
+from src.security.rbac_models import (
+    RoleModel,
+    PermissionModel,
+    RolePermissionModel,
+    UserRoleModel,
+    ResourcePermissionModel,
+    ResourceType,
+    PermissionScope,
+)
 
+
+# Sync-specific enums
 class PermissionAction(str, enum.Enum):
-    """Permission action enumeration."""
+    """Permission action enumeration for sync operations."""
     CREATE = "create"
     READ = "read"
     UPDATE = "update"
@@ -30,8 +45,8 @@ class PermissionAction(str, enum.Enum):
     AUDIT = "audit"
 
 
-class ResourceType(str, enum.Enum):
-    """Resource type enumeration."""
+class SyncResourceType(str, enum.Enum):
+    """Resource type enumeration for sync-specific resources."""
     SYNC_JOB = "sync_job"
     DATA_SOURCE = "data_source"
     SYNC_EXECUTION = "sync_execution"
@@ -60,179 +75,6 @@ class AuditEventType(str, enum.Enum):
     FIELD_ACCESS = "field_access"
     ROLE_ASSIGNED = "role_assigned"
     ROLE_REVOKED = "role_revoked"
-
-
-class RoleModel(Base):
-    """
-    Role definition table for RBAC system.
-    
-    Defines roles with hierarchical structure and tenant isolation.
-    """
-    __tablename__ = "rbac_roles"
-    
-    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
-    name: Mapped[str] = mapped_column(String(100), nullable=False)
-    display_name: Mapped[str] = mapped_column(String(200), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    
-    # Role hierarchy
-    parent_role_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("rbac_roles.id"), nullable=True)
-    level: Mapped[int] = mapped_column(Integer, default=0)  # 0 = root level
-    
-    # Role properties
-    is_system_role: Mapped[bool] = mapped_column(Boolean, default=False)  # System-defined roles
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    max_users: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)  # Max users for this role
-    
-    # Role metadata
-    role_metadata: Mapped[dict] = mapped_column(JSONB, default={})
-    
-    # Timestamps
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
-    created_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
-    
-    # Relationships
-    parent_role: Mapped[Optional["RoleModel"]] = relationship("RoleModel", remote_side=[id], back_populates="child_roles")
-    child_roles: Mapped[List["RoleModel"]] = relationship("RoleModel", back_populates="parent_role")
-    role_permissions: Mapped[List["RolePermissionModel"]] = relationship("RolePermissionModel", back_populates="role")
-    user_roles: Mapped[List["UserRoleModel"]] = relationship("UserRoleModel", back_populates="role")
-
-
-class PermissionModel(Base):
-    """
-    Permission definition table.
-    
-    Defines granular permissions for different actions and resources.
-    """
-    __tablename__ = "rbac_permissions"
-    
-    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    name: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
-    display_name: Mapped[str] = mapped_column(String(200), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    
-    # Permission scope
-    resource_type: Mapped[ResourceType] = mapped_column(SQLEnum(ResourceType), nullable=False)
-    action: Mapped[PermissionAction] = mapped_column(SQLEnum(PermissionAction), nullable=False)
-    
-    # Permission properties
-    is_system_permission: Mapped[bool] = mapped_column(Boolean, default=False)
-    requires_approval: Mapped[bool] = mapped_column(Boolean, default=False)
-    
-    # Conditions (JSON query format for dynamic conditions)
-    conditions: Mapped[dict] = mapped_column(JSONB, default={})
-    
-    # Timestamps
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
-    
-    # Relationships
-    role_permissions: Mapped[List["RolePermissionModel"]] = relationship("RolePermissionModel", back_populates="permission")
-
-
-class RolePermissionModel(Base):
-    """
-    Role-Permission mapping table.
-    
-    Associates roles with permissions, including conditional grants.
-    """
-    __tablename__ = "rbac_role_permissions"
-    
-    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    role_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("rbac_roles.id"), nullable=False)
-    permission_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("rbac_permissions.id"), nullable=False)
-    
-    # Grant properties
-    is_granted: Mapped[bool] = mapped_column(Boolean, default=True)
-    is_inherited: Mapped[bool] = mapped_column(Boolean, default=False)  # Inherited from parent role
-    
-    # Conditional grants
-    conditions: Mapped[dict] = mapped_column(JSONB, default={})
-    
-    # Validity period
-    valid_from: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-    valid_until: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-    
-    # Timestamps
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    granted_by: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
-    
-    # Relationships
-    role: Mapped["RoleModel"] = relationship("RoleModel", back_populates="role_permissions")
-    permission: Mapped["PermissionModel"] = relationship("PermissionModel", back_populates="role_permissions")
-
-
-class UserRoleModel(Base):
-    """
-    User-Role assignment table.
-    
-    Assigns roles to users with tenant isolation and validity periods.
-    """
-    __tablename__ = "rbac_user_roles"
-    
-    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    user_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), nullable=False, index=True)
-    role_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("rbac_roles.id"), nullable=False)
-    tenant_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
-    
-    # Assignment properties
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    is_primary: Mapped[bool] = mapped_column(Boolean, default=False)  # Primary role for user
-    
-    # Validity period
-    valid_from: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    valid_until: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-    
-    # Assignment context
-    assigned_by: Mapped[UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
-    assignment_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    
-    # Timestamps
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
-    
-    # Relationships
-    role: Mapped["RoleModel"] = relationship("RoleModel", back_populates="user_roles")
-
-
-class ResourcePermissionModel(Base):
-    """
-    Resource-specific permission overrides.
-    
-    Provides fine-grained permissions for specific resources.
-    """
-    __tablename__ = "rbac_resource_permissions"
-    
-    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    user_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), nullable=False, index=True)
-    tenant_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
-    
-    # Resource identification
-    resource_type: Mapped[ResourceType] = mapped_column(SQLEnum(ResourceType), nullable=False)
-    resource_id: Mapped[str] = mapped_column(String(255), nullable=False)
-    
-    # Permission details
-    action: Mapped[PermissionAction] = mapped_column(SQLEnum(PermissionAction), nullable=False)
-    is_granted: Mapped[bool] = mapped_column(Boolean, default=True)
-    
-    # Override properties
-    overrides_role: Mapped[bool] = mapped_column(Boolean, default=False)  # Overrides role-based permission
-    
-    # Conditions
-    conditions: Mapped[dict] = mapped_column(JSONB, default={})
-    
-    # Validity period
-    valid_from: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    valid_until: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-    
-    # Grant context
-    granted_by: Mapped[UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
-    grant_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    
-    # Timestamps
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 class FieldPermissionModel(Base):
@@ -290,7 +132,7 @@ class DataAccessAuditModel(Base):
     event_type: Mapped[AuditEventType] = mapped_column(SQLEnum(AuditEventType), nullable=False)
     
     # Resource information
-    resource_type: Mapped[Optional[ResourceType]] = mapped_column(SQLEnum(ResourceType), nullable=True)
+    resource_type: Mapped[Optional[SyncResourceType]] = mapped_column(SQLEnum(SyncResourceType), nullable=True)
     resource_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     table_name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
     field_names: Mapped[Optional[List[str]]] = mapped_column(JSONB, nullable=True)
@@ -312,3 +154,24 @@ class DataAccessAuditModel(Base):
     
     # Timestamp
     timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
+
+
+# Export all models and enums for backward compatibility
+__all__ = [
+    # Re-exported from security module
+    "RoleModel",
+    "PermissionModel",
+    "RolePermissionModel",
+    "UserRoleModel",
+    "ResourcePermissionModel",
+    "ResourceType",
+    "PermissionScope",
+    # Sync-specific enums
+    "PermissionAction",
+    "SyncResourceType",
+    "FieldAccessLevel",
+    "AuditEventType",
+    # Sync-specific models
+    "FieldPermissionModel",
+    "DataAccessAuditModel",
+]

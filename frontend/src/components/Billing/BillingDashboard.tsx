@@ -39,6 +39,7 @@ import {
   LineChartOutlined,
   ThunderboltOutlined,
 } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import type { ProjectCostBreakdown, DepartmentCostAllocation, WorkHoursRanking } from '@/types/billing';
 import {
   useBillingDashboard,
@@ -166,6 +167,7 @@ const ProgressRing: React.FC<{
 
 // Main Dashboard Component
 export const BillingDashboard: React.FC = () => {
+  const { t } = useTranslation('billing');
   const { currentTenant } = useAuthStore();
   const tenantId = currentTenant?.id || 'default';
 
@@ -227,7 +229,7 @@ export const BillingDashboard: React.FC = () => {
   // Top performers table columns
   const performerColumns = [
     {
-      title: 'Rank',
+      title: t('dashboard.columns.rank', 'Rank'),
       key: 'rank',
       width: 60,
       render: (_: unknown, __: unknown, index: number) => (
@@ -237,19 +239,19 @@ export const BillingDashboard: React.FC = () => {
       ),
     },
     {
-      title: 'User',
+      title: t('dashboard.columns.user', 'User'),
       dataIndex: 'user_name',
       key: 'user_name',
       render: (name: string) => <Text strong>{name}</Text>,
     },
     {
-      title: 'Hours',
+      title: t('dashboard.columns.hours', 'Hours'),
       dataIndex: 'total_hours',
       key: 'total_hours',
       render: (hours: number) => `${(hours || 0).toFixed(1)}h`,
     },
     {
-      title: 'Productivity',
+      title: t('dashboard.columns.productivity', 'Productivity'),
       dataIndex: 'efficiency_score',
       key: 'efficiency_score',
       render: (score: number) => (
@@ -261,7 +263,7 @@ export const BillingDashboard: React.FC = () => {
       ),
     },
     {
-      title: 'Annotations',
+      title: t('dashboard.columns.annotations', 'Annotations'),
       dataIndex: 'annotations_count',
       key: 'annotations_count',
       render: (count: number) => (
@@ -273,26 +275,26 @@ export const BillingDashboard: React.FC = () => {
   // Project breakdown table columns
   const projectColumns = [
     {
-      title: 'Project',
+      title: t('dashboard.columns.project', 'Project'),
       dataIndex: 'project_name',
       key: 'project_name',
       render: (name: string) => <Text strong>{name}</Text>,
     },
     {
-      title: 'Cost',
+      title: t('dashboard.columns.cost', 'Cost'),
       dataIndex: 'total_cost',
       key: 'total_cost',
       render: (cost: number) => `¥${(cost || 0).toLocaleString()}`,
       sorter: (a: ProjectCostBreakdown, b: ProjectCostBreakdown) => (a.total_cost || 0) - (b.total_cost || 0),
     },
     {
-      title: 'Hours',
+      title: t('dashboard.columns.hours', 'Hours'),
       dataIndex: 'total_time_spent',
       key: 'total_time_spent',
       render: (hours: number) => `${((hours || 0) / 3600).toFixed(1)}h`,
     },
     {
-      title: 'Share',
+      title: t('dashboard.columns.share', 'Share'),
       dataIndex: 'percentage_of_total',
       key: 'percentage_of_total',
       render: (pct: number) => (
@@ -305,11 +307,11 @@ export const BillingDashboard: React.FC = () => {
     return (
       <Alert
         type="error"
-        message="Failed to load billing dashboard"
-        description="Please check your connection and try again."
+        message={t('dashboard.loadFailed', 'Failed to load billing dashboard')}
+        description={t('messages.checkConnection')}
         action={
           <Space>
-            <a onClick={() => refetch()}>Retry</a>
+            <a onClick={() => refetch()}>{t('messages.retry')}</a>
           </Space>
         }
       />
@@ -322,7 +324,7 @@ export const BillingDashboard: React.FC = () => {
       <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
         <Col>
           <Title level={4} style={{ margin: 0 }}>
-            <BarChartOutlined /> Billing Analytics Dashboard
+            <BarChartOutlined /> {t('dashboard.title', 'Billing Analytics Dashboard')}
           </Title>
         </Col>
         <Col>
@@ -332,18 +334,18 @@ export const BillingDashboard: React.FC = () => {
               onChange={setTrendDays}
               style={{ width: 120 }}
               options={[
-                { value: 7, label: 'Last 7 days' },
-                { value: 30, label: 'Last 30 days' },
-                { value: 90, label: 'Last 90 days' },
+                { value: 7, label: t('dashboard.last7Days', 'Last 7 days') },
+                { value: 30, label: t('dashboard.last30Days', 'Last 30 days') },
+                { value: 90, label: t('dashboard.last90Days', 'Last 90 days') },
               ]}
             />
             <RangePicker
               value={dateRange}
               onChange={(dates) => dates && setDateRange(dates as [dayjs.Dayjs, dayjs.Dayjs])}
               presets={[
-                { label: 'This Month', value: [dayjs().startOf('month'), dayjs()] },
-                { label: 'Last Month', value: [dayjs().subtract(1, 'month').startOf('month'), dayjs().subtract(1, 'month').endOf('month')] },
-                { label: 'This Quarter', value: [dayjs().startOf('quarter'), dayjs()] },
+                { label: t('dashboard.thisMonth', 'This Month'), value: [dayjs().startOf('month'), dayjs()] },
+                { label: t('dashboard.lastMonth', 'Last Month'), value: [dayjs().subtract(1, 'month').startOf('month'), dayjs().subtract(1, 'month').endOf('month')] },
+                { label: t('dashboard.thisQuarter', 'This Quarter'), value: [dayjs().startOf('quarter'), dayjs()] },
               ]}
             />
           </Space>
@@ -354,19 +356,19 @@ export const BillingDashboard: React.FC = () => {
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={12} lg={6}>
           <MetricCard
-            title="Total Spending"
+            title={t('totalSpending')}
             value={metrics.totalSpending.toLocaleString()}
             prefix={<DollarOutlined />}
             suffix="¥"
             trend={metrics.trendPct}
-            trendLabel="vs last period"
+            trendLabel={t('statistics.vsLastPeriod')}
             color="#1890ff"
             loading={isLoading}
           />
         </Col>
         <Col xs={24} sm={12} lg={6}>
           <MetricCard
-            title="Total Work Hours"
+            title={t('dashboard.totalWorkHours', 'Total Work Hours')}
             value={metrics.totalHours.toFixed(1)}
             prefix={<ClockCircleOutlined />}
             suffix="h"
@@ -376,7 +378,7 @@ export const BillingDashboard: React.FC = () => {
         </Col>
         <Col xs={24} sm={12} lg={6}>
           <MetricCard
-            title="Active Users"
+            title={t('dashboard.activeUsers', 'Active Users')}
             value={metrics.activeUsers}
             prefix={<TeamOutlined />}
             color="#722ed1"
@@ -385,7 +387,7 @@ export const BillingDashboard: React.FC = () => {
         </Col>
         <Col xs={24} sm={12} lg={6}>
           <MetricCard
-            title="Forecast (Next Month)"
+            title={t('dashboard.forecast', 'Forecast (Next Month)')}
             value={metrics.forecastAmount.toLocaleString()}
             prefix={<ThunderboltOutlined />}
             suffix="¥"
@@ -403,7 +405,7 @@ export const BillingDashboard: React.FC = () => {
             title={
               <Space>
                 <LineChartOutlined />
-                Cost Trends
+                {t('dashboard.costTrends', 'Cost Trends')}
               </Space>
             }
             loading={trendsLoading}
@@ -417,7 +419,7 @@ export const BillingDashboard: React.FC = () => {
                 </div>
               </>
             ) : (
-              <Empty description="No trend data available" />
+              <Empty description={t('dashboard.noTrendData', 'No trend data available')} />
             )}
           </Card>
         </Col>
@@ -428,7 +430,7 @@ export const BillingDashboard: React.FC = () => {
             title={
               <Space>
                 <PieChartOutlined />
-                Efficiency Metrics
+                {t('dashboard.efficiencyMetrics', 'Efficiency Metrics')}
               </Space>
             }
             loading={productivityLoading}
@@ -437,16 +439,16 @@ export const BillingDashboard: React.FC = () => {
               <Col span={12}>
                 <ProgressRing
                   percent={Math.round(metrics.avgProductivity * 100)}
-                  title="Productivity"
-                  subtitle="Team Average"
+                  title={t('dashboard.productivity', 'Productivity')}
+                  subtitle={t('dashboard.teamAverage', 'Team Average')}
                   color="#52c41a"
                 />
               </Col>
               <Col span={12}>
                 <ProgressRing
                   percent={Math.round(metrics.forecastConfidence * 100)}
-                  title="Forecast"
-                  subtitle="Confidence"
+                  title={t('dashboard.forecastLabel', 'Forecast')}
+                  subtitle={t('dashboard.confidence', 'Confidence')}
                   color="#1890ff"
                 />
               </Col>
@@ -463,7 +465,7 @@ export const BillingDashboard: React.FC = () => {
             title={
               <Space>
                 <TrophyOutlined style={{ color: '#faad14' }} />
-                Top Performers
+                {t('dashboard.topPerformers', 'Top Performers')}
               </Space>
             }
             loading={isLoading}
@@ -484,7 +486,7 @@ export const BillingDashboard: React.FC = () => {
             title={
               <Space>
                 <ProjectOutlined />
-                Project Cost Breakdown
+                {t('dashboard.projectBreakdown', 'Project Cost Breakdown')}
               </Space>
             }
             loading={projectLoading}
@@ -498,7 +500,7 @@ export const BillingDashboard: React.FC = () => {
                 size="small"
               />
             ) : (
-              <Empty description="No project data available" />
+              <Empty description={t('dashboard.noProjectData', 'No project data available')} />
             )}
           </Card>
         </Col>
@@ -511,7 +513,7 @@ export const BillingDashboard: React.FC = () => {
             title={
               <Space>
                 <TeamOutlined />
-                Department Cost Allocation
+                {t('dashboard.departmentAllocation', 'Department Cost Allocation')}
               </Space>
             }
             loading={deptLoading}
@@ -537,7 +539,7 @@ export const BillingDashboard: React.FC = () => {
                 ))}
               </Row>
             ) : (
-              <Empty description="No department data available" />
+              <Empty description={t('dashboard.noDeptData', 'No department data available')} />
             )}
           </Card>
         </Col>

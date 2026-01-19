@@ -1,6 +1,14 @@
 {
   "title": "Data Synchronization Management",
   "description": "Manage data sources, synchronization tasks, and security configurations for enterprise data integration.",
+  "nav": {
+    "overview": "Sync Overview",
+    "sources": "Data Sources",
+    "history": "Sync History",
+    "scheduler": "Scheduler",
+    "security": "Security",
+    "export": "Data Export"
+  },
   "notice": {
     "title": "Data Sync Configuration",
     "description": "Configure data sources, sync strategies, and security policies to ensure compliant and efficient data synchronization across your enterprise systems."

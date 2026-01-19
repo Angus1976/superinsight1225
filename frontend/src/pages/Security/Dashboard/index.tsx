@@ -155,7 +155,7 @@ const SecurityDashboard: React.FC = () => {
 
   const eventColumns: ColumnsType<SecurityEvent> = [
     {
-      title: 'Severity',
+      title: t('audit.riskLevel'),
       dataIndex: 'severity',
       key: 'severity',
       width: 100,
@@ -164,27 +164,27 @@ const SecurityDashboard: React.FC = () => {
       ),
     },
     {
-      title: 'Event Type',
+      title: t('audit.eventType'),
       dataIndex: 'event_type',
       key: 'event_type',
       render: (type) => type.replace(/_/g, ' '),
     },
     {
-      title: 'User',
+      title: t('audit.user'),
       dataIndex: 'user_id',
       key: 'user_id',
       width: 120,
       ellipsis: true,
     },
     {
-      title: 'Time',
+      title: t('audit.timestamp'),
       dataIndex: 'created_at',
       key: 'created_at',
       width: 150,
       render: (date) => dayjs(date).fromNow(),
     },
     {
-      title: 'Actions',
+      title: t('common:actions'),
       key: 'actions',
       width: 100,
       render: (_, record) => (
@@ -193,7 +193,7 @@ const SecurityDashboard: React.FC = () => {
           size="small"
           onClick={() => handleResolveEvent(record)}
         >
-          Resolve
+          {t('common:resolve')}
         </Button>
       ),
     },
@@ -201,7 +201,7 @@ const SecurityDashboard: React.FC = () => {
 
   const sessionColumns: ColumnsType<Session> = [
     {
-      title: 'User',
+      title: t('sessions.columns.user'),
       dataIndex: 'user_id',
       key: 'user_id',
       render: (userId) => (
@@ -212,18 +212,18 @@ const SecurityDashboard: React.FC = () => {
       ),
     },
     {
-      title: 'IP Address',
+      title: t('sessions.columns.ipAddress'),
       dataIndex: 'ip_address',
       key: 'ip_address',
     },
     {
-      title: 'Last Activity',
+      title: t('sessions.columns.lastActivity'),
       dataIndex: 'last_activity',
       key: 'last_activity',
       render: (date) => dayjs(date).fromNow(),
     },
     {
-      title: 'Actions',
+      title: t('common:actions'),
       key: 'actions',
       width: 100,
       render: (_, record) => (
@@ -233,7 +233,7 @@ const SecurityDashboard: React.FC = () => {
           danger
           onClick={() => forceLogoutMutation.mutate(record.user_id)}
         >
-          Logout
+          {t('sessions.forceLogout')}
         </Button>
       ),
     },

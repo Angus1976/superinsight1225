@@ -118,7 +118,9 @@
       "totalLogs": "日志总数",
       "eventTypes": "事件类型",
       "successRate": "成功率",
-      "failedOperations": "失败操作"
+      "failedOperations": "失败操作",
+      "exportSuccess": "导出成功",
+      "exportFailed": "导出日志失败"
     },
     "filters": {
       "startTime": "开始时间",
@@ -140,6 +142,9 @@
       "failed": "失败"
     },
     "verifyIntegrity": "验证完整性",
+    "verifySuccess": "完整性验证通过：已检查 {{count}} 条日志",
+    "verifyFailed": "完整性验证失败：{{error}}",
+    "verifyError": "验证完整性失败",
     "exportCsv": "导出 CSV",
     "logDetails": "审计日志详情"
   },

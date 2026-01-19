@@ -40,6 +40,7 @@ import {
   ExclamationCircleOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
+import { useTranslation } from 'react-i18next';
 import dayjs from 'dayjs';
 import { useExportBilling } from '@/hooks/useBilling';
 
@@ -97,25 +98,26 @@ interface ShareSettings {
 }
 
 const AVAILABLE_FIELDS = [
-  { value: 'id', label: 'Bill ID' },
-  { value: 'period_start', label: 'Period Start' },
-  { value: 'period_end', label: 'Period End' },
-  { value: 'total_amount', label: 'Total Amount' },
-  { value: 'status', label: 'Status' },
-  { value: 'due_date', label: 'Due Date' },
-  { value: 'paid_at', label: 'Paid At' },
-  { value: 'items', label: 'Line Items' },
-  { value: 'created_at', label: 'Created At' },
+  { value: 'id', label: 'billId' },
+  { value: 'period_start', label: 'periodStart' },
+  { value: 'period_end', label: 'periodEnd' },
+  { value: 'total_amount', label: 'totalAmount' },
+  { value: 'status', label: 'status' },
+  { value: 'due_date', label: 'dueDate' },
+  { value: 'paid_at', label: 'paidAt' },
+  { value: 'items', label: 'items' },
+  { value: 'created_at', label: 'createdAt' },
 ];
 
 const SCHEDULE_OPTIONS = [
-  { value: 'daily', label: 'Daily' },
-  { value: 'weekly', label: 'Weekly' },
-  { value: 'monthly', label: 'Monthly' },
-  { value: 'quarterly', label: 'Quarterly' },
+  { value: 'daily', label: 'daily' },
+  { value: 'weekly', label: 'weekly' },
+  { value: 'monthly', label: 'monthly' },
+  { value: 'quarterly', label: 'quarterly' },
 ];
 
 export const ExcelExportManager: React.FC<ExcelExportManagerProps> = ({ tenantId }) => {
+  const { t } = useTranslation('billing');
   const [activeTab, setActiveTab] = useState<'export' | 'templates' | 'scheduled' | 'history'>('export');
   const [exportModalVisible, setExportModalVisible] = useState(false);
   const [templateModalVisible, setTemplateModalVisible] = useState(false);
@@ -250,11 +252,11 @@ export const ExcelExportManager: React.FC<ExcelExportManagerProps> = ({ tenantId
       });
 
       setCurrentStep(2);
-      message.success('Export completed successfully');
+      message.success(t('excelExport.messages.exportSuccess'));
       setExportModalVisible(false);
       setCurrentStep(0);
     } catch {
-      message.error('Export failed');
+      message.error(t('excelExport.messages.exportFailed'));
       setCurrentStep(0);
     }
   };
@@ -263,11 +265,11 @@ export const ExcelExportManager: React.FC<ExcelExportManagerProps> = ({ tenantId
   const handleCreateTemplate = async (values: Record<string, unknown>) => {
     try {
       console.log('Creating template:', values);
-      message.success('Template created successfully');
+      message.success(t('excelExport.messages.templateCreated'));
       setTemplateModalVisible(false);
       templateForm.resetFields();
     } catch {
-      message.error('Failed to create template');
+      message.error(t('excelExport.messages.templateFailed'));
     }
   };
 
@@ -275,11 +277,11 @@ export const ExcelExportManager: React.FC<ExcelExportManagerProps> = ({ tenantId
   const handleCreateSchedule = async (values: Record<string, unknown>) => {
     try {
       console.log('Creating schedule:', values);
-      message.success('Scheduled export created successfully');
+      message.success(t('excelExport.messages.scheduleCreated'));
       setScheduleModalVisible(false);
       scheduleForm.resetFields();
     } catch {
-      message.error('Failed to create scheduled export');
+      message.error(t('excelExport.messages.scheduleFailed'));
     }
   };
 
@@ -287,18 +289,18 @@ export const ExcelExportManager: React.FC<ExcelExportManagerProps> = ({ tenantId
   const handleShare = async (values: Record<string, unknown>) => {
     try {
       console.log('Sharing export:', values);
-      message.success('Export shared successfully');
+      message.success(t('excelExport.messages.shareSuccess'));
       setShareModalVisible(false);
       shareForm.resetFields();
     } catch {
-      message.error('Failed to share export');
+      message.error(t('excelExport.messages.shareFailed'));
     }
   };
 
   // Table columns for templates
   const templateColumns: ColumnsType<ExportTemplate> = [
     {
-      title: 'Template Name',
+      title: t('excelExport.columns.templateName'),
       dataIndex: 'name',
       key: 'name',
       render: (name: string, record) => (
@@ -309,12 +311,12 @@ export const ExcelExportManager: React.FC<ExcelExportManagerProps> = ({ tenantId
       ),
     },
     {
-      title: 'Description',
+      title: t('excelExport.columns.description'),
       dataIndex: 'description',
       key: 'description',
     },
     {
-      title: 'Format',
+      title: t('excelExport.columns.format'),
       dataIndex: 'format',
       key: 'format',
       render: (format: string) => (
@@ -322,19 +324,19 @@ export const ExcelExportManager: React.FC<ExcelExportManagerProps> = ({ tenantId
       ),
     },
     {
-      title: 'Fields',
+      title: t('excelExport.columns.fields'),
       dataIndex: 'fields',
       key: 'fields',
-      render: (fields: string[]) => `${fields.length} fields`,
+      render: (fields: string[]) => `${fields.length} ${t('excelExport.fields')}`,
     },
     {
-      title: 'Created',
+      title: t('excelExport.columns.created'),
       dataIndex: 'createdAt',
       key: 'createdAt',
       render: (date: string) => dayjs(date).format('MMM DD, YYYY'),
     },
     {
-      title: 'Actions',
+      title: t('excelExport.columns.actions'),
       key: 'actions',
       render: (_, record) => (
         <Space>
@@ -344,7 +346,7 @@ export const ExcelExportManager: React.FC<ExcelExportManagerProps> = ({ tenantId
             icon={<EyeOutlined />}
             onClick={() => setSelectedTemplate(record)}
           >
-            View
+            {t('excelExport.columns.view')}
           </Button>
           <Button
             type="link"
@@ -359,7 +361,7 @@ export const ExcelExportManager: React.FC<ExcelExportManagerProps> = ({ tenantId
               setExportModalVisible(true);
             }}
           >
-            Export
+            {t('excelExport.columns.export')}
           </Button>
         </Space>
       ),
@@ -369,42 +371,42 @@ export const ExcelExportManager: React.FC<ExcelExportManagerProps> = ({ tenantId
   // Table columns for scheduled exports
   const scheduleColumns: ColumnsType<ScheduledExport> = [
     {
-      title: 'Template',
+      title: t('excelExport.template'),
       dataIndex: 'templateName',
       key: 'templateName',
     },
     {
-      title: 'Schedule',
+      title: t('excelExport.columns.schedule'),
       dataIndex: 'schedule',
       key: 'schedule',
       render: (schedule: string) => (
-        <Tag color="blue">{schedule}</Tag>
+        <Tag color="blue">{t(`excelExport.scheduleOptions.${schedule}`)}</Tag>
       ),
     },
     {
-      title: 'Next Run',
+      title: t('excelExport.columns.nextRun'),
       dataIndex: 'nextRun',
       key: 'nextRun',
       render: (date: string) => dayjs(date).format('MMM DD, YYYY HH:mm'),
     },
     {
-      title: 'Recipients',
+      title: t('excelExport.columns.recipients'),
       dataIndex: 'recipients',
       key: 'recipients',
-      render: (recipients: string[]) => `${recipients.length} recipients`,
+      render: (recipients: string[]) => `${recipients.length} ${t('excelExport.recipients')}`,
     },
     {
-      title: 'Status',
+      title: t('excelExport.columns.status'),
       dataIndex: 'status',
       key: 'status',
       render: (status: string) => (
         <Tag color={status === 'active' ? 'green' : status === 'paused' ? 'orange' : 'red'}>
-          {status}
+          {t(`excelExport.status.${status}`)}
         </Tag>
       ),
     },
     {
-      title: 'Last Run',
+      title: t('excelExport.columns.lastRun'),
       key: 'lastRun',
       render: (_, record) => (
         <Space direction="vertical" size={0}>
@@ -413,24 +415,24 @@ export const ExcelExportManager: React.FC<ExcelExportManagerProps> = ({ tenantId
           )}
           {record.lastStatus && (
             <Tag color={record.lastStatus === 'success' ? 'green' : 'red'} size="small">
-              {record.lastStatus}
+              {t(`excelExport.status.${record.lastStatus}`)}
             </Tag>
           )}
         </Space>
       ),
     },
     {
-      title: 'Actions',
+      title: t('excelExport.columns.actions'),
       key: 'actions',
       render: (_, record) => (
         <Space>
           <Button type="link" size="small">
-            Edit
+            {t('excelExport.edit')}
           </Button>
           <Button type="link" size="small">
-            Pause
+            {t('excelExport.columns.pause')}
           </Button>
-          <Popconfirm title="Delete this scheduled export?" onConfirm={() => {}}>
+          <Popconfirm title={t('excelExport.messages.deleteConfirm')} onConfirm={() => {}}>
             <Button type="link" size="small" danger icon={<DeleteOutlined />} />
           </Popconfirm>
         </Space>
@@ -441,20 +443,20 @@ export const ExcelExportManager: React.FC<ExcelExportManagerProps> = ({ tenantId
   // Table columns for export history
   const historyColumns: ColumnsType<ExportHistory> = [
     {
-      title: 'Template',
+      title: t('excelExport.template'),
       dataIndex: 'templateName',
       key: 'templateName',
     },
     {
-      title: 'Type',
+      title: t('excelExport.columns.type'),
       dataIndex: 'exportType',
       key: 'exportType',
       render: (type: string) => (
-        <Tag color={type === 'manual' ? 'blue' : 'green'}>{type}</Tag>
+        <Tag color={type === 'manual' ? 'blue' : 'green'}>{t(`excelExport.status.${type}`)}</Tag>
       ),
     },
     {
-      title: 'Status',
+      title: t('excelExport.columns.status'),
       dataIndex: 'status',
       key: 'status',
       render: (status: string) => {
@@ -472,19 +474,19 @@ export const ExcelExportManager: React.FC<ExcelExportManagerProps> = ({ tenantId
         };
         return (
           <Tag color={colors[status as keyof typeof colors]} icon={icons[status as keyof typeof icons]}>
-            {status}
+            {t(`excelExport.status.${status}`)}
           </Tag>
         );
       },
     },
     {
-      title: 'Created',
+      title: t('excelExport.columns.created'),
       dataIndex: 'createdAt',
       key: 'createdAt',
       render: (date: string) => dayjs(date).format('MMM DD, HH:mm'),
     },
     {
-      title: 'Size',
+      title: t('excelExport.columns.size'),
       dataIndex: 'fileSize',
       key: 'fileSize',
       render: (size?: number) => {
@@ -495,7 +497,7 @@ export const ExcelExportManager: React.FC<ExcelExportManagerProps> = ({ tenantId
       },
     },
     {
-      title: 'Actions',
+      title: t('excelExport.columns.actions'),
       key: 'actions',
       render: (_, record) => (
         <Space>
@@ -505,11 +507,10 @@ export const ExcelExportManager: React.FC<ExcelExportManagerProps> = ({ tenantId
               size="small"
               icon={<DownloadOutlined />}
               onClick={() => {
-                // Simulate download
-                message.success('Download started');
+                message.success(t('excelExport.messages.downloadStarted'));
               }}
             >
-              Download
+              {t('excelExport.download')}
             </Button>
           )}
           {record.status === 'completed' && (
@@ -522,13 +523,13 @@ export const ExcelExportManager: React.FC<ExcelExportManagerProps> = ({ tenantId
                 setShareModalVisible(true);
               }}
             >
-              Share
+              {t('excelExport.columns.share')}
             </Button>
           )}
           {record.status === 'failed' && record.error && (
             <Tooltip title={record.error}>
               <Button type="link" size="small" danger>
-                View Error
+                {t('excelExport.columns.viewError')}
               </Button>
             </Tooltip>
           )}
@@ -541,7 +542,7 @@ export const ExcelExportManager: React.FC<ExcelExportManagerProps> = ({ tenantId
     <div className="excel-export-manager">
       <Row gutter={16} style={{ marginBottom: 16 }}>
         <Col span={18}>
-          <Title level={3}>Export & Reports Manager</Title>
+          <Title level={3}>{t('excelExport.title')}</Title>
         </Col>
         <Col span={6} style={{ textAlign: 'right' }}>
           <Space>
@@ -550,13 +551,13 @@ export const ExcelExportManager: React.FC<ExcelExportManagerProps> = ({ tenantId
               icon={<FileExcelOutlined />}
               onClick={() => setExportModalVisible(true)}
             >
-              Quick Export
+              {t('excelExport.quickExport')}
             </Button>
             <Button
               icon={<SettingOutlined />}
               onClick={() => setTemplateModalVisible(true)}
             >
-              New Template
+              {t('excelExport.newTemplate')}
             </Button>
           </Space>
         </Col>
@@ -569,25 +570,25 @@ export const ExcelExportManager: React.FC<ExcelExportManagerProps> = ({ tenantId
             type={activeTab === 'export' ? 'primary' : 'default'}
             onClick={() => setActiveTab('export')}
           >
-            Quick Export
+            {t('excelExport.quickExport')}
           </Button>
           <Button
             type={activeTab === 'templates' ? 'primary' : 'default'}
             onClick={() => setActiveTab('templates')}
           >
-            Templates ({templates.length})
+            {t('excelExport.templates')} ({templates.length})
           </Button>
           <Button
             type={activeTab === 'scheduled' ? 'primary' : 'default'}
             onClick={() => setActiveTab('scheduled')}
           >
-            Scheduled ({scheduledExports.length})
+            {t('excelExport.scheduled')} ({scheduledExports.length})
           </Button>
           <Button
             type={activeTab === 'history' ? 'primary' : 'default'}
             onClick={() => setActiveTab('history')}
           >
-            History ({exportHistory.length})
+            {t('excelExport.history')} ({exportHistory.length})
           </Button>
         </Space>
 
@@ -597,7 +598,7 @@ export const ExcelExportManager: React.FC<ExcelExportManagerProps> = ({ tenantId
         {activeTab === 'export' && (
           <Row gutter={16}>
             <Col span={12}>
-              <Card title="Quick Export" size="small">
+              <Card title={t('excelExport.quickExport')} size="small">
                 <Form
                   form={form}
                   layout="vertical"
@@ -605,10 +606,10 @@ export const ExcelExportManager: React.FC<ExcelExportManagerProps> = ({ tenantId
                 >
                   <Form.Item
                     name="template"
-                    label="Template"
+                    label={t('excelExport.template')}
                     rules={[{ required: true }]}
                   >
-                    <Select placeholder="Select a template">
+                    <Select placeholder={t('excelExport.selectTemplate')}>
                       {templates.map(template => (
                         <Option key={template.id} value={template.id}>
                           {template.name}
@@ -619,18 +620,18 @@ export const ExcelExportManager: React.FC<ExcelExportManagerProps> = ({ tenantId
 
                   <Form.Item
                     name="dateRange"
-                    label="Date Range"
+                    label={t('excelExport.dateRange')}
                     rules={[{ required: true }]}
                   >
                     <RangePicker style={{ width: '100%' }} />
                   </Form.Item>
 
-                  <Form.Item name="status" label="Status Filter">
-                    <Select mode="multiple" placeholder="All statuses">
-                      <Option value="pending">Pending</Option>
-                      <Option value="paid">Paid</Option>
-                      <Option value="overdue">Overdue</Option>
-                      <Option value="cancelled">Cancelled</Option>
+                  <Form.Item name="status" label={t('excelExport.statusFilter')}>
+                    <Select mode="multiple" placeholder={t('excelExport.allStatuses')}>
+                      <Option value="pending">{t('status.pending')}</Option>
+                      <Option value="paid">{t('status.paid')}</Option>
+                      <Option value="overdue">{t('status.overdue')}</Option>
+                      <Option value="cancelled">{t('status.cancelled')}</Option>
                     </Select>
                   </Form.Item>
 
@@ -641,14 +642,14 @@ export const ExcelExportManager: React.FC<ExcelExportManagerProps> = ({ tenantId
                       loading={exportMutation.isPending}
                       block
                     >
-                      Export Now
+                      {t('excelExport.exportNow')}
                     </Button>
                   </Form.Item>
                 </Form>
               </Card>
             </Col>
             <Col span={12}>
-              <Card title="Recent Exports" size="small">
+              <Card title={t('excelExport.recentExports')} size="small">
                 <List
                   dataSource={exportHistory.slice(0, 5)}
                   renderItem={(item) => (
@@ -656,7 +657,7 @@ export const ExcelExportManager: React.FC<ExcelExportManagerProps> = ({ tenantId
                       actions={[
                         item.status === 'completed' && (
                           <Button type="link" size="small" icon={<DownloadOutlined />}>
-                            Download
+                            {t('excelExport.download')}
                           </Button>
                         ),
                       ].filter(Boolean)}
@@ -666,7 +667,7 @@ export const ExcelExportManager: React.FC<ExcelExportManagerProps> = ({ tenantId
                         description={
                           <Space>
                             <Tag color={item.status === 'completed' ? 'green' : 'orange'}>
-                              {item.status}
+                              {t(`excelExport.status.${item.status}`)}
                             </Tag>
                             <Text type="secondary">
                               {dayjs(item.createdAt).fromNow()}
@@ -691,7 +692,7 @@ export const ExcelExportManager: React.FC<ExcelExportManagerProps> = ({ tenantId
                 icon={<SettingOutlined />}
                 onClick={() => setTemplateModalVisible(true)}
               >
-                Create Template
+                {t('excelExport.createTemplate')}
               </Button>
             </div>
             <Table
@@ -712,7 +713,7 @@ export const ExcelExportManager: React.FC<ExcelExportManagerProps> = ({ tenantId
                 icon={<ScheduleOutlined />}
                 onClick={() => setScheduleModalVisible(true)}
               >
-                Schedule Export
+                {t('excelExport.scheduleExport')}
               </Button>
             </div>
             <Table
@@ -737,7 +738,7 @@ export const ExcelExportManager: React.FC<ExcelExportManagerProps> = ({ tenantId
 
       {/* Export Modal */}
       <Modal
-        title="Export Billing Data"
+        title={t('excelExport.exportBillingData')}
         open={exportModalVisible}
         onCancel={() => {
           setExportModalVisible(false);
@@ -747,15 +748,15 @@ export const ExcelExportManager: React.FC<ExcelExportManagerProps> = ({ tenantId
         width={600}
       >
         <Steps current={currentStep} style={{ marginBottom: 24 }}>
-          <Step title="Configure" />
-          <Step title="Processing" />
-          <Step title="Complete" />
+          <Step title={t('excelExport.configure')} />
+          <Step title={t('excelExport.processing')} />
+          <Step title={t('excelExport.complete')} />
         </Steps>
 
         {currentStep === 0 && (
           <Form form={form} layout="vertical" onFinish={handleExport}>
-            <Form.Item name="template" label="Template" rules={[{ required: true }]}>
-              <Select placeholder="Select template">
+            <Form.Item name="template" label={t('excelExport.template')} rules={[{ required: true }]}>
+              <Select placeholder={t('excelExport.selectTemplate')}>
                 {templates.map(template => (
                   <Option key={template.id} value={template.id}>
                     {template.name}
@@ -764,15 +765,15 @@ export const ExcelExportManager: React.FC<ExcelExportManagerProps> = ({ tenantId
               </Select>
             </Form.Item>
 
-            <Form.Item name="dateRange" label="Date Range" rules={[{ required: true }]}>
+            <Form.Item name="dateRange" label={t('excelExport.dateRange')} rules={[{ required: true }]}>
               <RangePicker style={{ width: '100%' }} />
             </Form.Item>
 
-            <Form.Item name="fields" label="Fields to Export">
-              <Checkbox.Group options={AVAILABLE_FIELDS} />
+            <Form.Item name="fields" label={t('excelExport.fieldsToExport')}>
+              <Checkbox.Group options={AVAILABLE_FIELDS.map(f => ({ ...f, label: t(`excelExport.fieldLabels.${f.label}`) }))} />
             </Form.Item>
 
-            <Form.Item name="format" label="Format" initialValue="xlsx">
+            <Form.Item name="format" label={t('excelExport.format')} initialValue="xlsx">
               <Select>
                 <Option value="xlsx">Excel (.xlsx)</Option>
                 <Option value="csv">CSV (.csv)</Option>
@@ -783,10 +784,10 @@ export const ExcelExportManager: React.FC<ExcelExportManagerProps> = ({ tenantId
             <Form.Item>
               <Space>
                 <Button onClick={() => setExportModalVisible(false)}>
-                  Cancel
+                  {t('excelExport.cancel')}
                 </Button>
                 <Button type="primary" htmlType="submit">
-                  Start Export
+                  {t('excelExport.startExport')}
                 </Button>
               </Space>
             </Form.Item>
@@ -796,16 +797,16 @@ export const ExcelExportManager: React.FC<ExcelExportManagerProps> = ({ tenantId
         {currentStep === 1 && (
           <div style={{ textAlign: 'center', padding: '40px 0' }}>
             <Progress type="circle" percent={75} />
-            <p style={{ marginTop: 16 }}>Processing export...</p>
+            <p style={{ marginTop: 16 }}>{t('excelExport.processingExport')}</p>
           </div>
         )}
 
         {currentStep === 2 && (
           <div style={{ textAlign: 'center', padding: '40px 0' }}>
             <CheckCircleOutlined style={{ fontSize: 48, color: '#52c41a' }} />
-            <p style={{ marginTop: 16 }}>Export completed successfully!</p>
+            <p style={{ marginTop: 16 }}>{t('excelExport.exportCompleted')}</p>
             <Button type="primary" icon={<DownloadOutlined />}>
-              Download File
+              {t('excelExport.downloadFile')}
             </Button>
           </div>
         )}
@@ -813,26 +814,26 @@ export const ExcelExportManager: React.FC<ExcelExportManagerProps> = ({ tenantId
 
       {/* Template Creation Modal */}
       <Modal
-        title="Create Export Template"
+        title={t('excelExport.createExportTemplate')}
         open={templateModalVisible}
         onCancel={() => setTemplateModalVisible(false)}
         onOk={() => templateForm.submit()}
         width={600}
       >
         <Form form={templateForm} layout="vertical" onFinish={handleCreateTemplate}>
-          <Form.Item name="name" label="Template Name" rules={[{ required: true }]}>
-            <Input placeholder="Enter template name" />
+          <Form.Item name="name" label={t('excelExport.templateName')} rules={[{ required: true }]}>
+            <Input placeholder={t('excelExport.enterTemplateName')} />
           </Form.Item>
 
-          <Form.Item name="description" label="Description">
-            <TextArea rows={3} placeholder="Describe this template" />
+          <Form.Item name="description" label={t('excelExport.description')}>
+            <TextArea rows={3} placeholder={t('excelExport.describeTemplate')} />
           </Form.Item>
 
-          <Form.Item name="fields" label="Fields" rules={[{ required: true }]}>
-            <Checkbox.Group options={AVAILABLE_FIELDS} />
+          <Form.Item name="fields" label={t('excelExport.fields')} rules={[{ required: true }]}>
+            <Checkbox.Group options={AVAILABLE_FIELDS.map(f => ({ ...f, label: t(`excelExport.fieldLabels.${f.label}`) }))} />
           </Form.Item>
 
-          <Form.Item name="format" label="Default Format" initialValue="xlsx">
+          <Form.Item name="format" label={t('excelExport.defaultFormat')} initialValue="xlsx">
             <Select>
               <Option value="xlsx">Excel (.xlsx)</Option>
               <Option value="csv">CSV (.csv)</Option>
@@ -841,22 +842,22 @@ export const ExcelExportManager: React.FC<ExcelExportManagerProps> = ({ tenantId
           </Form.Item>
 
           <Form.Item name="isDefault" valuePropName="checked">
-            <Checkbox>Set as default template</Checkbox>
+            <Checkbox>{t('excelExport.setAsDefault')}</Checkbox>
           </Form.Item>
         </Form>
       </Modal>
 
       {/* Schedule Export Modal */}
       <Modal
-        title="Schedule Export"
+        title={t('excelExport.scheduleExport')}
         open={scheduleModalVisible}
         onCancel={() => setScheduleModalVisible(false)}
         onOk={() => scheduleForm.submit()}
         width={600}
       >
         <Form form={scheduleForm} layout="vertical" onFinish={handleCreateSchedule}>
-          <Form.Item name="templateId" label="Template" rules={[{ required: true }]}>
-            <Select placeholder="Select template">
+          <Form.Item name="templateId" label={t('excelExport.template')} rules={[{ required: true }]}>
+            <Select placeholder={t('excelExport.selectTemplate')}>
               {templates.map(template => (
                 <Option key={template.id} value={template.id}>
                   {template.name}
@@ -865,15 +866,15 @@ export const ExcelExportManager: React.FC<ExcelExportManagerProps> = ({ tenantId
             </Select>
           </Form.Item>
 
-          <Form.Item name="schedule" label="Schedule" rules={[{ required: true }]}>
-            <Select placeholder="Select frequency" options={SCHEDULE_OPTIONS} />
+          <Form.Item name="schedule" label={t('excelExport.schedule')} rules={[{ required: true }]}>
+            <Select placeholder={t('excelExport.selectFrequency')} options={SCHEDULE_OPTIONS.map(o => ({ ...o, label: t(`excelExport.scheduleOptions.${o.label}`) }))} />
           </Form.Item>
 
-          <Form.Item name="recipients" label="Recipients" rules={[{ required: true }]}>
-            <Select mode="tags" placeholder="Enter email addresses" />
+          <Form.Item name="recipients" label={t('excelExport.recipients')} rules={[{ required: true }]}>
+            <Select mode="tags" placeholder={t('excelExport.enterEmailAddresses')} />
           </Form.Item>
 
-          <Form.Item name="startDate" label="Start Date" rules={[{ required: true }]}>
+          <Form.Item name="startDate" label={t('excelExport.startDate')} rules={[{ required: true }]}>
             <DatePicker style={{ width: '100%' }} />
           </Form.Item>
         </Form>
@@ -881,30 +882,30 @@ export const ExcelExportManager: React.FC<ExcelExportManagerProps> = ({ tenantId
 
       {/* Share Modal */}
       <Modal
-        title="Share Export"
+        title={t('excelExport.shareExport')}
         open={shareModalVisible}
         onCancel={() => setShareModalVisible(false)}
         onOk={() => shareForm.submit()}
       >
         <Form form={shareForm} layout="vertical" onFinish={handleShare}>
-          <Form.Item name="recipients" label="Recipients" rules={[{ required: true }]}>
-            <Select mode="tags" placeholder="Enter email addresses" />
+          <Form.Item name="recipients" label={t('excelExport.recipients')} rules={[{ required: true }]}>
+            <Select mode="tags" placeholder={t('excelExport.enterEmailAddresses')} />
           </Form.Item>
 
-          <Form.Item name="permissions" label="Permissions" initialValue="download">
+          <Form.Item name="permissions" label={t('excelExport.permissions')} initialValue="download">
             <Select>
-              <Option value="view">View Only</Option>
-              <Option value="download">Download</Option>
-              <Option value="edit">Edit</Option>
+              <Option value="view">{t('excelExport.viewOnly')}</Option>
+              <Option value="download">{t('excelExport.download')}</Option>
+              <Option value="edit">{t('excelExport.edit')}</Option>
             </Select>
           </Form.Item>
 
-          <Form.Item name="expiresAt" label="Expires At">
+          <Form.Item name="expiresAt" label={t('excelExport.expiresAt')}>
             <DatePicker showTime style={{ width: '100%' }} />
           </Form.Item>
 
-          <Form.Item name="password" label="Password Protection">
-            <Input.Password placeholder="Optional password" />
+          <Form.Item name="password" label={t('excelExport.passwordProtection')}>
+            <Input.Password placeholder={t('excelExport.optionalPassword')} />
           </Form.Item>
         </Form>
       </Modal>

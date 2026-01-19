@@ -20,7 +20,8 @@ from src.database.connection import get_db_session
 from .models import (
     RoleModel, PermissionModel, RolePermissionModel, UserRoleModel,
     ResourcePermissionModel, FieldPermissionModel, DataAccessAuditModel,
-    PermissionAction, ResourceType, FieldAccessLevel, AuditEventType
+    PermissionAction, SyncResourceType, FieldAccessLevel, AuditEventType,
+    ResourceType  # Re-exported from security module
 )
 
 logger = logging.getLogger(__name__)

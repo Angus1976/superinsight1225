@@ -33,6 +33,7 @@ import {
   SafetyCertificateOutlined,
 } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import type { ColumnsType } from 'antd/es/table';
 import { auditApi, ComplianceReport, ComplianceReportRequest } from '@/services/auditApi';
 import dayjs from 'dayjs';

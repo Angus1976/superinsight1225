@@ -1,4 +1,24 @@
 {
+  "nav": {
+    "overview": "Overview",
+    "console": "Console",
+    "tenants": "Tenants",
+    "workspaces": "Workspaces",
+    "members": "Members",
+    "permissions": "Permissions",
+    "quotas": "Quotas",
+    "billing": "Billing",
+    "system": "System",
+    "llm": "LLM",
+    "configManagement": "Config Management",
+    "configCenter": "Config Center",
+    "llmConfig": "LLM Config",
+    "databaseConfig": "Database Config",
+    "syncStrategy": "Sync Strategy",
+    "sqlBuilder": "SQL Builder",
+    "configHistory": "Config History",
+    "thirdPartyTools": "Third-party Tools"
+  },
   "configSync": {
     "title": "Sync Strategy Management",
     "addStrategy": "Add Strategy",

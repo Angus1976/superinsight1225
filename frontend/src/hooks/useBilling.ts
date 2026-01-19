@@ -58,13 +58,23 @@ export function useBillingAnalysis(tenantId: string) {
 }
 
 // Hook for work hours ranking
+// Note: This endpoint may not exist in all deployments, so we handle errors gracefully
 export function useWorkHoursRanking(tenantId: string, period: 'week' | 'month' | 'quarter' = 'month') {
   return useQuery({
     queryKey: billingKeys.ranking(tenantId, period),
-    queryFn: () => billingService.getWorkHoursRanking(tenantId),
+    queryFn: async () => {
+      try {
+        return await billingService.getWorkHoursRanking(tenantId);
+      } catch (error) {
+        // Return empty array if endpoint doesn't exist (404) or other errors
+        console.warn('Work hours ranking endpoint not available:', error);
+        return [];
+      }
+    },
     staleTime: 60000,
     refetchInterval: 300000, // Refresh every 5 minutes
     enabled: !!tenantId,
+    retry: false, // Don't retry if endpoint doesn't exist
   });
 }
 
@@ -79,52 +89,97 @@ export function useWorkHoursStatistics(tenantId: string, startDate: string, endD
 }
 
 // Hook for project cost breakdown
+// Note: Returns empty data if endpoint fails
 export function useProjectBreakdown(tenantId: string, startDate: string, endDate: string) {
   return useQuery({
     queryKey: billingKeys.projectBreakdown(tenantId, startDate, endDate),
-    queryFn: () => billingService.getProjectBreakdown(tenantId, startDate, endDate),
+    queryFn: async () => {
+      try {
+        return await billingService.getProjectBreakdown(tenantId, startDate, endDate);
+      } catch (error) {
+        console.warn('Project breakdown endpoint error:', error);
+        return { breakdowns: [], total_cost: 0 };
+      }
+    },
     staleTime: 60000,
     enabled: !!tenantId && !!startDate && !!endDate,
+    retry: 1,
   });
 }
 
 // Hook for department cost allocation
+// Note: Returns empty data if endpoint fails
 export function useDepartmentAllocation(tenantId: string, startDate: string, endDate: string) {
   return useQuery({
     queryKey: billingKeys.departmentAllocation(tenantId, startDate, endDate),
-    queryFn: () => billingService.getDepartmentAllocation(tenantId, startDate, endDate),
+    queryFn: async () => {
+      try {
+        return await billingService.getDepartmentAllocation(tenantId, startDate, endDate);
+      } catch (error) {
+        console.warn('Department allocation endpoint error:', error);
+        return { allocations: [], total_cost: 0 };
+      }
+    },
     staleTime: 60000,
     enabled: !!tenantId && !!startDate && !!endDate,
+    retry: 1,
   });
 }
 
 // Hook for cost trends
+// Note: Returns empty object if endpoint fails - dashboard should still load
 export function useCostTrends(tenantId: string, days: number = 30) {
   return useQuery({
     queryKey: billingKeys.costTrends(tenantId, days),
-    queryFn: () => billingService.getCostTrends(tenantId, days),
+    queryFn: async () => {
+      try {
+        return await billingService.getCostTrends(tenantId, days);
+      } catch (error) {
+        console.warn('Cost trends endpoint error:', error);
+        return { daily_costs: [], total_cost: 0 };
+      }
+    },
     staleTime: 60000,
     enabled: !!tenantId,
+    retry: 1,
   });
 }
 
 // Hook for user productivity
+// Note: Returns default values if endpoint fails
 export function useUserProductivity(tenantId: string, days: number = 30) {
   return useQuery({
     queryKey: billingKeys.userProductivity(tenantId, days),
-    queryFn: () => billingService.getUserProductivity(tenantId, days),
+    queryFn: async () => {
+      try {
+        return await billingService.getUserProductivity(tenantId, days);
+      } catch (error) {
+        console.warn('User productivity endpoint error:', error);
+        return { average_productivity: 0, users: [] };
+      }
+    },
     staleTime: 60000,
     enabled: !!tenantId,
+    retry: 1,
   });
 }
 
 // Hook for cost forecast
+// Note: Returns default values if endpoint fails
 export function useCostForecast(tenantId: string, targetMonth: string) {
   return useQuery({
     queryKey: billingKeys.costForecast(tenantId, targetMonth),
-    queryFn: () => billingService.getCostForecast(tenantId, targetMonth),
+    queryFn: async () => {
+      try {
+        return await billingService.getCostForecast(tenantId, targetMonth);
+      } catch (error) {
+        console.warn('Cost forecast endpoint error:', error);
+        return { predicted_amount: 0, confidence: 0 };
+      }
+    },
     staleTime: 300000, // 5 minutes
     enabled: !!tenantId && !!targetMonth,
+    retry: 1,
   });
 }
 
@@ -195,19 +250,30 @@ export function useExportBilling() {
 }
 
 // Composite hook for billing dashboard
+// Note: This hook is resilient to individual query failures - empty data is NOT an error
 export function useBillingDashboard(tenantId: string) {
   const listQuery = useBillingList(tenantId);
   const analysisQuery = useBillingAnalysis(tenantId);
   const rankingQuery = useWorkHoursRanking(tenantId);
   const trendsQuery = useCostTrends(tenantId);
 
+  // Only consider it a critical error if ALL primary queries fail
+  // Individual query failures should not block the dashboard
+  const hasCriticalError = 
+    listQuery.error && 
+    analysisQuery.error && 
+    !listQuery.isLoading && 
+    !analysisQuery.isLoading;
+
   return {
     records: listQuery.data,
     analysis: analysisQuery.data,
-    ranking: rankingQuery.data,
+    // Provide empty array as fallback for ranking if query fails (endpoint may not exist)
+    ranking: rankingQuery.data ?? [],
     trends: trendsQuery.data,
-    isLoading: listQuery.isLoading || analysisQuery.isLoading || rankingQuery.isLoading || trendsQuery.isLoading,
-    error: listQuery.error || analysisQuery.error || rankingQuery.error || trendsQuery.error,
+    isLoading: listQuery.isLoading || analysisQuery.isLoading,
+    // Only report error if critical queries fail - ranking/trends failures are non-critical
+    error: hasCriticalError ? (listQuery.error || analysisQuery.error) : null,
     refetch: () => {
       listQuery.refetch();
       analysisQuery.refetch();

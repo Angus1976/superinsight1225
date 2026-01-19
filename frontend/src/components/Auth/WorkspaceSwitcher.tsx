@@ -157,6 +157,16 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = ({
     form.resetFields();
   }, [form]);
 
+  // Translate workspace name for display
+  const translateWorkspaceName = useCallback((name: string): string => {
+    // Check if it's a default workspace name pattern: "{tenant_id} Workspace"
+    if (name.endsWith(' Workspace') || name.endsWith(' workspace')) {
+      return t('workspace.defaultWorkspaceName', '默认工作空间');
+    }
+    // Return original name for custom workspaces
+    return name;
+  }, [t]);
+
   // Optimized filter function for search
   const filterOption = useCallback((input: string, option?: { label?: string; value?: string }) => {
     if (!option) return false;
@@ -169,10 +179,10 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = ({
   const workspaceOptions = useMemo(() => {
     return workspaces.map((workspace) => ({
       value: workspace.id,
-      label: workspace.name,
+      label: translateWorkspaceName(workspace.name),
       workspace,
     }));
-  }, [workspaces]);
+  }, [workspaces, translateWorkspaceName]);
 
   // Don't show if not logged in
   if (!user) {
@@ -246,7 +256,7 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = ({
             <Select.Option 
               key={value} 
               value={value}
-              label={workspace.name}
+              label={translateWorkspaceName(workspace.name)}
             >
               <div 
                 style={{ 
@@ -260,7 +270,7 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = ({
                 <Space size={8}>
                   <FolderOutlined style={{ color: '#1890ff', fontSize: 14 }} />
                   <span style={{ fontWeight: workspace.id === currentWorkspace?.id ? 500 : 400 }}>
-                    {workspace.name}
+                    {translateWorkspaceName(workspace.name)}
                   </span>
                 </Space>
                 <Space size={4}>
@@ -343,10 +353,10 @@ export const WorkspaceSwitcher: React.FC<WorkspaceSwitcherProps> = ({
           <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
             <Space>
               <Button onClick={handleCloseCreateModal}>
-                {t('actions.cancel', { ns: 'common' })}
+                {t('cancel', { ns: 'common' })}
               </Button>
               <Button type="primary" htmlType="submit" loading={creating}>
-                {t('actions.create', { ns: 'common' })}
+                {t('create', { ns: 'common' })}
               </Button>
             </Space>
           </Form.Item>

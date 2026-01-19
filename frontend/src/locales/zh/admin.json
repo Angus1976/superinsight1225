@@ -1,4 +1,24 @@
 {
+  "nav": {
+    "overview": "概览",
+    "console": "控制台",
+    "tenants": "租户",
+    "workspaces": "工作空间",
+    "members": "成员",
+    "permissions": "权限",
+    "quotas": "配额",
+    "billing": "计费",
+    "system": "系统",
+    "llm": "LLM",
+    "configManagement": "配置管理",
+    "configCenter": "配置中心",
+    "llmConfig": "LLM 配置",
+    "databaseConfig": "数据库配置",
+    "syncStrategy": "同步策略",
+    "sqlBuilder": "SQL 构建器",
+    "configHistory": "配置历史",
+    "thirdPartyTools": "第三方工具"
+  },
   "configSync": {
     "title": "同步策略管理",
     "addStrategy": "添加策略",

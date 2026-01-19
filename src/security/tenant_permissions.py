@@ -12,10 +12,11 @@ from sqlalchemy.orm import Session
 
 from src.database.connection import get_db_session
 from src.security.models import UserModel, UserRole
-from src.sync.rbac.models import (
+from src.security.rbac_models import (
     RoleModel, PermissionModel, UserRoleModel, 
-    ResourcePermissionModel, FieldPermissionModel
+    ResourcePermissionModel
 )
+# Note: FieldPermissionModel was removed as it's not used and not available in rbac_models
 
 logger = logging.getLogger(__name__)
 

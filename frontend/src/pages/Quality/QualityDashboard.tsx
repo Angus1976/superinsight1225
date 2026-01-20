@@ -270,7 +270,7 @@ const QualityDashboard: React.FC<{ projectId?: string }> = ({ projectId = 'defau
       ),
     },
     {
-      title: t('common:actions'),
+      title: t('common:actions.label'),
       key: 'actions',
       render: (_, record: QualityRule) => (
         <Space>

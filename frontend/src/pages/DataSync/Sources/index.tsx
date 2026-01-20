@@ -194,7 +194,7 @@ const DataSyncSources: React.FC = () => {
       ),
     },
     {
-      title: t('common:actions'),
+      title: t('common:actions.label'),
       key: 'action',
       render: (_, record) => (
         <Space size="middle">

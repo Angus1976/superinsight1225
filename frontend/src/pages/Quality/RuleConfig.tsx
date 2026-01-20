@@ -203,7 +203,7 @@ const RuleConfig: React.FC<RuleConfigProps> = ({ projectId }) => {
       ),
     },
     {
-      title: t('common:actions'),
+      title: t('common:actions.label'),
       key: 'actions',
       width: 180,
       render: (_, record) => (

@@ -457,7 +457,7 @@ const SyncTaskConfig: React.FC = () => {
       render: (date) => date ? dayjs(date).format('YYYY-MM-DD HH:mm') : '-',
     },
     {
-      title: t('common:actions'),
+      title: t('common:actions.label'),
       key: 'actions',
       render: (_, record) => (
         <Space>

@@ -160,7 +160,7 @@ const SecurityPermissions: React.FC = () => {
       render: (date: string) => new Date(date).toLocaleString(),
     },
     {
-      title: t('common:actions'),
+      title: t('common:actions.label'),
       key: 'action',
       render: (_, record) => (
         <Space size="middle">
@@ -241,7 +241,7 @@ const SecurityPermissions: React.FC = () => {
       render: (date: string) => new Date(date).toLocaleString(),
     },
     {
-      title: t('common:actions'),
+      title: t('common:actions.label'),
       key: 'action',
       render: (_, record) => (
         <Space size="middle">
@@ -320,7 +320,7 @@ const SecurityPermissions: React.FC = () => {
       render: (date: string) => date ? new Date(date).toLocaleString() : t('userPermissions.neverLoggedIn'),
     },
     {
-      title: t('common:actions'),
+      title: t('common:actions.label'),
       key: 'action',
       render: (_, record) => (
         <Space size="middle">

@@ -220,7 +220,7 @@ const ComplianceReports: React.FC = () => {
       render: (date) => dayjs(date).format('YYYY-MM-DD HH:mm'),
     },
     {
-      title: t('common:actions'),
+      title: t('common:actions.label'),
       key: 'actions',
       width: 120,
       render: (_, record) => (

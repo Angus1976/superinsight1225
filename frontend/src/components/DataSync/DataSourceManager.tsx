@@ -362,7 +362,7 @@ const DataSourceManager: React.FC = () => {
       ),
     },
     {
-      title: t('common:actions'),
+      title: t('common:actions.label'),
       key: 'actions',
       render: (_, record) => (
         <Space>

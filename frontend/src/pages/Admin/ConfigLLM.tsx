@@ -230,7 +230,7 @@ const ConfigLLM: React.FC = () => {
       },
     },
     {
-      title: t('common:actions'),
+      title: t('common:actions.label'),
       key: 'actions',
       render: (_: unknown, record: LLMConfigResponse) => (
         <Space>

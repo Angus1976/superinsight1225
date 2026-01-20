@@ -210,7 +210,7 @@ const AccessLogPage: React.FC = () => {
       width: 130,
     },
     {
-      title: t('common:actions'),
+      title: t('common:actions.label'),
       key: 'actions',
       width: 80,
       render: (_, record) => (

@@ -184,7 +184,7 @@ const SecurityDashboard: React.FC = () => {
       render: (date) => dayjs(date).fromNow(),
     },
     {
-      title: t('common:actions'),
+      title: t('common:actions.label'),
       key: 'actions',
       width: 100,
       render: (_, record) => (
@@ -223,7 +223,7 @@ const SecurityDashboard: React.FC = () => {
       render: (date) => dayjs(date).fromNow(),
     },
     {
-      title: t('common:actions'),
+      title: t('common:actions.label'),
       key: 'actions',
       width: 100,
       render: (_, record) => (

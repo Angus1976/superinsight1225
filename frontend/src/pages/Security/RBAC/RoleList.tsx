@@ -193,7 +193,7 @@ const RoleList: React.FC = () => {
       render: (date) => new Date(date).toLocaleDateString(),
     },
     {
-      title: t('common:actions'),
+      title: t('common:actions.label'),
       key: 'actions',
       width: 120,
       render: (_, record) => (

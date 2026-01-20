@@ -490,7 +490,7 @@ const DataDesensitizationConfig: React.FC = () => {
       ),
     },
     {
-      title: t('common:actions'),
+      title: t('common:actions.label'),
       key: 'actions',
       render: (_, record) => (
         <Space>
@@ -570,7 +570,7 @@ const DataDesensitizationConfig: React.FC = () => {
       ),
     },
     {
-      title: t('common:actions'),
+      title: t('common:actions.label'),
       key: 'actions',
       render: (_, record) => (
         <Space>

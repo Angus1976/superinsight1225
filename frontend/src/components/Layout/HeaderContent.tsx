@@ -24,11 +24,6 @@ export const HeaderContent: React.FC = () => {
 
   const userMenuItems: MenuProps['items'] = [
     {
-      key: 'profile',
-      icon: <UserOutlined />,
-      label: t('menu.settings'),
-    },
-    {
       key: 'settings',
       icon: <SettingOutlined />,
       label: t('menu.settings'),

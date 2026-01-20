@@ -1,0 +1,31 @@
+{
+  "envId": "cloud2-3gegxdemf86cb89a",
+  "region": "ap-shanghai",
+  "framework": {
+    "name": "superinsight",
+    "plugins": {
+      "container": {
+        "use": "@cloudbase/framework-plugin-container",
+        "inputs": {
+          "serviceName": "superinsight-api",
+          "servicePath": "/",
+          "dockerfilePath": "./deploy/tcb/Dockerfile.api",
+          "containerPort": 8000,
+          "cpu": 2,
+          "mem": 4,
+          "minNum": 1,
+          "maxNum": 5,
+          "policyType": "cpu",
+          "policyThreshold": 70,
+          "envVariables": {
+            "ENVIRONMENT": "production",
+            "LOG_LEVEL": "INFO",
+            "PYTHONUNBUFFERED": "1"
+          },
+          "customLogs": "stdout",
+          "initialDelaySeconds": 60
+        }
+      }
+    }
+  }
+}

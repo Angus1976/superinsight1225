@@ -100,21 +100,53 @@ services:
   superinsight-api:
     build:
       context: .
-      dockerfile: Dockerfile.dev
+      dockerfile: deploy/private/Dockerfile.api
     container_name: superinsight-api
     ports:
-      - "8000:8000"
+      - "${API_PORT:-8000}:8000"
+      - "9090:9090"  # Prometheus metrics
     environment:
-      DATABASE_URL: postgresql://superinsight:password@postgres:5432/superinsight
+      # Database
+      DATABASE_URL: postgresql://${POSTGRES_USER:-superinsight}:${POSTGRES_PASSWORD:-password}@postgres:5432/${POSTGRES_DB:-superinsight}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-superinsight}
+      POSTGRES_USER: ${POSTGRES_USER:-superinsight}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      
+      # Redis
       REDIS_URL: redis://redis:6379/0
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      
+      # Label Studio
       LABEL_STUDIO_URL: http://label-studio:8080
+      LABEL_STUDIO_API_TOKEN: ${LABEL_STUDIO_API_TOKEN:-}
+      
+      # Neo4j
       NEO4J_URI: bolt://neo4j:7687
       NEO4J_USER: neo4j
-      NEO4J_PASSWORD: password
-      DEBUG: "true"
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD:-password}
+      
+      # Security
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-your-secret-key-change-in-production}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      JWT_EXPIRE_MINUTES: ${JWT_EXPIRE_MINUTES:-1440}
+      
+      # LLM Configuration
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      AZURE_API_KEY: ${AZURE_API_KEY:-}
+      HUGGINGFACE_API_KEY: ${HUGGINGFACE_API_KEY:-}
+      
+      # Application
+      DEBUG: ${DEBUG:-true}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      PYTHONUNBUFFERED: 1
     volumes:
-      - .:/app
-      - uploads:/app/uploads
+      - ./uploads:/app/uploads
+      - ./exports:/app/exports
+      - ./logs/api:/app/logs
     networks:
       - superinsight-network
     depends_on:
@@ -126,7 +158,62 @@ services:
         condition: service_healthy
       neo4j:
         condition: service_healthy
-    command: ["python", "-m", "uvicorn", "src.app:app", "--host", "0.0.0.0", "--port", "8000"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Ollama Local LLM (Optional)
+  ollama:
+    image: ollama/ollama:latest
+    container_name: superinsight-ollama
+    ports:
+      - "${OLLAMA_PORT:-11434}:11434"
+    environment:
+      OLLAMA_HOST: 0.0.0.0
+      OLLAMA_ORIGINS: "*"
+    volumes:
+      - ollama_data:/root/.ollama
+      - ./logs/ollama:/var/log/ollama
+    networks:
+      - superinsight-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    profiles:
+      - ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  # Frontend (Optional - for development)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: superinsight-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_BASE_URL: http://localhost:8000
+      VITE_APP_ENV: development
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - superinsight-network
+    depends_on:
+      - superinsight-api
+    profiles:
+      - frontend
 
 volumes:
   postgres_data:
@@ -134,7 +221,7 @@ volumes:
   neo4j_data:
   neo4j_logs:
   label_studio_data:
-  uploads:
+  ollama_data:
 
 networks:
   superinsight-network:

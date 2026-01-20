@@ -146,7 +146,10 @@
     "verifyFailed": "完整性验证失败：{{error}}",
     "verifyError": "验证完整性失败",
     "exportCsv": "导出 CSV",
-    "logDetails": "审计日志详情"
+    "logDetails": "审计日志详情",
+    "securityAlert": "安全警告",
+    "unresolvedEventsMessage": "有 {{count}} 个未解决的安全事件需要关注。",
+    "viewEvents": "查看事件"
   },
 
   "compliance": {

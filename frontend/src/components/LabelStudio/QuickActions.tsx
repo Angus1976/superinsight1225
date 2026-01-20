@@ -72,7 +72,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
     onSave?.();
     setTimeout(() => {
       setIsSaving(false);
-      message.success(t('actions.saved') || 'Annotation saved');
+      message.success(t('common:save') || 'Annotation saved');
     }, 500);
   }
 
@@ -186,7 +186,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
         <Space style={{ width: '100%', justifyContent: 'space-between' }}>
           {/* Navigation */}
           <Space>
-            <Tooltip title={t('actions.previous') || 'Previous (Ctrl+←)'}>
+            <Tooltip title={t('common:previous') || 'Previous (Ctrl+←)'}>
               <Button
                 icon={<BackwardOutlined />}
                 onClick={onPrevious}
@@ -203,7 +203,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
               />
             </Badge>
             
-            <Tooltip title={t('actions.next') || 'Next (Ctrl+→)'}>
+            <Tooltip title={t('common:next') || 'Next (Ctrl+→)'}>
               <Button
                 icon={<ForwardOutlined />}
                 onClick={onNext}
@@ -214,15 +214,15 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
 
           {/* Actions */}
           <Space>
-            <Tooltip title={t('actions.undo') || 'Undo (Ctrl+Z)'}>
+            <Tooltip title={t('common:undo') || 'Undo (Ctrl+Z)'}>
               <Button icon={<UndoOutlined />} onClick={handleUndo} disabled={isLoading} />
             </Tooltip>
             
-            <Tooltip title={t('actions.redo') || 'Redo (Ctrl+Y)'}>
+            <Tooltip title={t('common:redo') || 'Redo (Ctrl+Y)'}>
               <Button icon={<RedoOutlined />} onClick={handleRedo} disabled={isLoading} />
             </Tooltip>
 
-            <Tooltip title={t('actions.save') || 'Save (Ctrl+S)'}>
+            <Tooltip title={t('common:save') || 'Save (Ctrl+S)'}>
               <Button
                 icon={isSaving ? <Spin size="small" /> : <SaveOutlined />}
                 onClick={handleSave}
@@ -230,38 +230,38 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
               />
             </Tooltip>
 
-            <Tooltip title={t('actions.skip') || 'Skip (Ctrl+Shift+S)'}>
+            <Tooltip title={t('common:skip') || 'Skip (Ctrl+Shift+S)'}>
               <Button onClick={onSkip} disabled={isLoading}>
-                {t('actions.skip') || 'Skip'}
+                {t('common:skip') || 'Skip'}
               </Button>
             </Tooltip>
 
-            <Tooltip title={t('actions.submitNext') || 'Submit & Next (Ctrl+Enter)'}>
+            <Tooltip title={t('common:submitNext') || 'Submit & Next (Ctrl+Enter)'}>
               <Button
                 type="primary"
                 icon={<CheckOutlined />}
                 onClick={handleSubmitAndNext}
                 disabled={isLoading}
               >
-                {t('actions.submitNext') || 'Submit & Next'}
+                {t('common:submitNext') || 'Submit & Next'}
               </Button>
             </Tooltip>
           </Space>
 
           {/* Tools */}
           <Space>
-            <Tooltip title={t('actions.reload') || 'Reload'}>
+            <Tooltip title={t('common:reload') || 'Reload'}>
               <Button
                 icon={<ReloadOutlined />}
                 onClick={() => {
                   sendMessageToIframe('labelStudio:reload');
-                  message.info(t('actions.reloading') || 'Reloading...');
+                  message.info(t('common:reloading') || 'Reloading...');
                 }}
                 disabled={isLoading}
               />
             </Tooltip>
 
-            <Tooltip title={isFullscreen ? (t('actions.exitFullscreen') || 'Exit Fullscreen') : (t('actions.fullscreen') || 'Fullscreen (F11)')}>
+            <Tooltip title={isFullscreen ? (t('common:exitFullscreen') || 'Exit Fullscreen') : (t('common:fullscreen') || 'Fullscreen (F11)')}>
               <Button
                 icon={isFullscreen ? <FullscreenExitOutlined /> : <FullscreenOutlined />}
                 onClick={handleFullscreenToggle}

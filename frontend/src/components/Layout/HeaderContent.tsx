@@ -39,7 +39,7 @@ export const HeaderContent: React.FC = () => {
     {
       key: 'logout',
       icon: <LogoutOutlined />,
-      label: t('actions.logout', '退出登录'),
+      label: t('common:logout', '退出登录'),
       danger: true,
     },
   ];

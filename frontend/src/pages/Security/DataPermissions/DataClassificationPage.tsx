@@ -34,6 +34,7 @@ import {
   BarChartOutlined,
 } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import {
@@ -61,6 +62,7 @@ const methodColors: Record<ClassificationMethod, string> = {
 };
 
 const DataClassificationPage: React.FC = () => {
+  const { t } = useTranslation(['security', 'common']);
   const [ruleModalOpen, setRuleModalOpen] = useState(false);
   const [classifyModalOpen, setClassifyModalOpen] = useState(false);
   const [reportModalOpen, setReportModalOpen] = useState(false);
@@ -105,11 +107,11 @@ const DataClassificationPage: React.FC = () => {
       setClassifyModalOpen(false);
       classifyForm.resetFields();
       message.success(
-        `Classification completed: ${result.classified_count}/${result.total_fields} fields classified`
+        t('dataPermissions.classification.classificationComplete', { classified: result.classified_count, total: result.total_fields })
       );
     },
     onError: () => {
-      message.error('Classification failed');
+      message.error(t('dataPermissions.classification.classificationFailed'));
     },
   });
 
@@ -121,10 +123,10 @@ const DataClassificationPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['classificationRules'] });
       setRuleModalOpen(false);
       ruleForm.resetFields();
-      message.success('Rule created successfully');
+      message.success(t('dataPermissions.classification.ruleCreated'));
     },
     onError: () => {
-      message.error('Failed to create rule');
+      message.error(t('dataPermissions.classification.ruleCreateFailed'));
     },
   });
 
@@ -137,10 +139,10 @@ const DataClassificationPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['classificationReport'] });
       setEditModalOpen(false);
       editForm.resetFields();
-      message.success(`Updated ${result.updated_count} classifications`);
+      message.success(t('dataPermissions.classification.updateSuccess', { count: result.updated_count }));
     },
     onError: () => {
-      message.error('Update failed');
+      message.error(t('dataPermissions.classification.updateFailed'));
     },
   });
 
@@ -168,46 +170,46 @@ const DataClassificationPage: React.FC = () => {
 
   const columns: ColumnsType<DataClassification> = [
     {
-      title: 'Dataset',
+      title: t('dataPermissions.classification.columns.dataset'),
       dataIndex: 'dataset_id',
       key: 'dataset_id',
       ellipsis: true,
     },
     {
-      title: 'Field',
+      title: t('dataPermissions.classification.columns.field'),
       dataIndex: 'field_name',
       key: 'field_name',
-      render: (name) => name || <Tag>All Fields</Tag>,
+      render: (name) => name || <Tag>{t('dataPermissions.classification.allFields')}</Tag>,
     },
     {
-      title: 'Category',
+      title: t('dataPermissions.classification.columns.category'),
       dataIndex: 'category',
       key: 'category',
       render: (category) => <Tag>{category}</Tag>,
     },
     {
-      title: 'Sensitivity',
+      title: t('dataPermissions.classification.columns.sensitivity'),
       dataIndex: 'sensitivity_level',
       key: 'sensitivity_level',
       width: 120,
       render: (level: SensitivityLevel) => (
-        <Tag color={sensitivityColors[level]}>{level.toUpperCase()}</Tag>
+        <Tag color={sensitivityColors[level]}>{t(`sensitivity.${level}`)}</Tag>
       ),
     },
     {
-      title: 'Method',
+      title: t('dataPermissions.classification.columns.method'),
       dataIndex: 'classified_by',
       key: 'classified_by',
       width: 120,
       render: (method: ClassificationMethod) => (
         <Tag color={methodColors[method]}>
           {method === 'ai_based' && <RobotOutlined style={{ marginRight: 4 }} />}
-          {method.replace('_', ' ').toUpperCase()}
+          {t(`dataPermissions.classification.methods.${method === 'rule_based' ? 'ruleBased' : method === 'ai_based' ? 'aiBased' : 'manual'}`)}
         </Tag>
       ),
     },
     {
-      title: 'Confidence',
+      title: t('dataPermissions.classification.columns.confidence'),
       dataIndex: 'confidence_score',
       key: 'confidence_score',
       width: 120,
@@ -219,27 +221,27 @@ const DataClassificationPage: React.FC = () => {
         ),
     },
     {
-      title: 'Verified',
+      title: t('dataPermissions.classification.columns.verified'),
       dataIndex: 'manually_verified',
       key: 'manually_verified',
       width: 80,
       render: (verified) => (
-        <Tag color={verified ? 'success' : 'default'}>{verified ? 'Yes' : 'No'}</Tag>
+        <Tag color={verified ? 'success' : 'default'}>{verified ? t('common:yes') : t('common:no')}</Tag>
       ),
     },
     {
-      title: 'Updated',
+      title: t('dataPermissions.classification.columns.updated'),
       dataIndex: 'updated_at',
       key: 'updated_at',
       width: 150,
       render: (date) => dayjs(date).format('YYYY-MM-DD HH:mm'),
     },
     {
-      title: 'Actions',
+      title: t('common:actions.label'),
       key: 'actions',
       width: 80,
       render: (_, record) => (
-        <Tooltip title="Edit">
+        <Tooltip title={t('common:edit')}>
           <Button
             type="link"
             size="small"
@@ -253,31 +255,31 @@ const DataClassificationPage: React.FC = () => {
 
   const ruleColumns: ColumnsType<ClassificationRule> = [
     {
-      title: 'Name',
+      title: t('dataPermissions.classification.ruleName'),
       dataIndex: 'name',
       key: 'name',
     },
     {
-      title: 'Pattern',
+      title: t('dataPermissions.classification.regexPattern'),
       dataIndex: 'pattern',
       key: 'pattern',
       render: (pattern) => <code>{pattern}</code>,
     },
     {
-      title: 'Category',
+      title: t('dataPermissions.classification.category'),
       dataIndex: 'category',
       key: 'category',
     },
     {
-      title: 'Sensitivity',
+      title: t('dataPermissions.classification.columns.sensitivity'),
       dataIndex: 'sensitivity_level',
       key: 'sensitivity_level',
       render: (level: SensitivityLevel) => (
-        <Tag color={sensitivityColors[level]}>{level}</Tag>
+        <Tag color={sensitivityColors[level]}>{t(`sensitivity.${level}`)}</Tag>
       ),
     },
     {
-      title: 'Priority',
+      title: t('dataPermissions.classification.priority'),
       dataIndex: 'priority',
       key: 'priority',
     },
@@ -290,7 +292,7 @@ const DataClassificationPage: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Total Fields"
+              title={t('dataPermissions.classification.stats.totalFields')}
               value={report?.total_fields || 0}
               prefix={<FileSearchOutlined />}
             />
@@ -299,7 +301,7 @@ const DataClassificationPage: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Classified"
+              title={t('dataPermissions.classification.stats.classified')}
               value={
                 (report?.total_fields || 0) - (report?.unclassified_count || 0)
               }
@@ -311,7 +313,7 @@ const DataClassificationPage: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Confidential+"
+              title={t('dataPermissions.classification.stats.confidentialPlus')}
               value={
                 (report?.by_sensitivity?.confidential || 0) +
                 (report?.by_sensitivity?.top_secret || 0)
@@ -323,7 +325,7 @@ const DataClassificationPage: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Unclassified"
+              title={t('dataPermissions.classification.stats.unclassified')}
               value={report?.unclassified_count || 0}
               valueStyle={{
                 color: (report?.unclassified_count || 0) > 0 ? '#ff4d4f' : '#52c41a',
@@ -335,21 +337,21 @@ const DataClassificationPage: React.FC = () => {
 
       {/* Main Content */}
       <Card
-        title="Data Classifications"
+        title={t('dataPermissions.classification.title')}
         extra={
           <Space>
             <Button icon={<BarChartOutlined />} onClick={() => setReportModalOpen(true)}>
-              View Report
+              {t('dataPermissions.classification.viewReport')}
             </Button>
             <Button icon={<PlusOutlined />} onClick={() => setRuleModalOpen(true)}>
-              Add Rule
+              {t('dataPermissions.classification.addRule')}
             </Button>
             <Button
               type="primary"
               icon={<SyncOutlined />}
               onClick={() => setClassifyModalOpen(true)}
             >
-              Auto Classify
+              {t('dataPermissions.classification.autoClassify')}
             </Button>
           </Space>
         }
@@ -358,17 +360,17 @@ const DataClassificationPage: React.FC = () => {
         <div style={{ marginBottom: 16 }}>
           <Space wrap>
             <Select
-              placeholder="Sensitivity Level"
+              placeholder={t('dataPermissions.classification.columns.sensitivity')}
               style={{ width: 150 }}
               allowClear
               onChange={(value) =>
                 setFilters((prev) => ({ ...prev, sensitivity_level: value, offset: 0 }))
               }
             >
-              <Option value="public">Public</Option>
-              <Option value="internal">Internal</Option>
-              <Option value="confidential">Confidential</Option>
-              <Option value="top_secret">Top Secret</Option>
+              <Option value="public">{t('sensitivity.public')}</Option>
+              <Option value="internal">{t('sensitivity.internal')}</Option>
+              <Option value="confidential">{t('sensitivity.confidential')}</Option>
+              <Option value="top_secret">{t('sensitivity.topSecret')}</Option>
             </Select>
           </Space>
         </div>
@@ -383,7 +385,7 @@ const DataClassificationPage: React.FC = () => {
             pageSize: filters.limit,
             total: classificationsData?.total || 0,
             showSizeChanger: true,
-            showTotal: (total) => `Total ${total} classifications`,
+            showTotal: (total) => t('common.totalLogs', { total }),
             onChange: (page, pageSize) => {
               setFilters((prev) => ({
                 ...prev,
@@ -397,7 +399,7 @@ const DataClassificationPage: React.FC = () => {
       </Card>
 
       {/* Classification Rules */}
-      <Card title="Classification Rules" style={{ marginTop: 24 }}>
+      <Card title={t('dataPermissions.classification.classificationRules')} style={{ marginTop: 24 }}>
         <Table
           columns={ruleColumns}
           dataSource={rules || []}
@@ -409,7 +411,7 @@ const DataClassificationPage: React.FC = () => {
 
       {/* Auto Classify Modal */}
       <Modal
-        title="Auto Classify Dataset"
+        title={t('dataPermissions.classification.autoClassifyDataset')}
         open={classifyModalOpen}
         onCancel={() => setClassifyModalOpen(false)}
         onOk={() => classifyForm.submit()}
@@ -427,28 +429,28 @@ const DataClassificationPage: React.FC = () => {
         >
           <Form.Item
             name="dataset_id"
-            label="Dataset ID"
-            rules={[{ required: true, message: 'Please enter dataset ID' }]}
+            label={t('dataPermissions.classification.datasetId')}
+            rules={[{ required: true, message: t('dataPermissions.classification.datasetId') }]}
           >
-            <Input placeholder="Dataset identifier" />
+            <Input placeholder={t('dataPermissions.classification.datasetId')} />
           </Form.Item>
 
           <Form.Item
             name="use_ai"
-            label="Classification Method"
+            label={t('dataPermissions.classification.classificationMethod')}
             initialValue={false}
           >
             <Select>
-              <Option value={false}>Rule-based Classification</Option>
+              <Option value={false}>{t('dataPermissions.classification.ruleBasedClassification')}</Option>
               <Option value={true}>
-                <RobotOutlined /> AI-based Classification
+                <RobotOutlined /> {t('dataPermissions.classification.aiBasedClassification')}
               </Option>
             </Select>
           </Form.Item>
 
           <Alert
-            message="AI Classification"
-            description="AI-based classification uses machine learning to detect sensitive data patterns. It may take longer but provides higher accuracy for complex data."
+            message={t('dataPermissions.classification.aiBasedClassification')}
+            description={t('dataPermissions.classification.aiClassificationInfo')}
             type="info"
             showIcon
           />
@@ -457,7 +459,7 @@ const DataClassificationPage: React.FC = () => {
 
       {/* Add Rule Modal */}
       <Modal
-        title="Add Classification Rule"
+        title={t('dataPermissions.classification.addRuleTitle')}
         open={ruleModalOpen}
         onCancel={() => setRuleModalOpen(false)}
         onOk={() => ruleForm.submit()}
@@ -466,50 +468,50 @@ const DataClassificationPage: React.FC = () => {
         <Form form={ruleForm} layout="vertical" onFinish={createRuleMutation.mutate}>
           <Form.Item
             name="name"
-            label="Rule Name"
-            rules={[{ required: true, message: 'Please enter rule name' }]}
+            label={t('dataPermissions.classification.ruleName')}
+            rules={[{ required: true, message: t('dataPermissions.classification.ruleName') }]}
           >
             <Input placeholder="e.g., Email Pattern" />
           </Form.Item>
 
           <Form.Item
             name="pattern"
-            label="Regex Pattern"
-            rules={[{ required: true, message: 'Please enter pattern' }]}
+            label={t('dataPermissions.classification.regexPattern')}
+            rules={[{ required: true, message: t('dataPermissions.classification.regexPattern') }]}
           >
             <Input placeholder="e.g., ^email$|.*_email$" />
           </Form.Item>
 
           <Form.Item
             name="category"
-            label="Category"
-            rules={[{ required: true, message: 'Please enter category' }]}
+            label={t('dataPermissions.classification.category')}
+            rules={[{ required: true, message: t('dataPermissions.classification.category') }]}
           >
             <Input placeholder="e.g., PII, Financial, Health" />
           </Form.Item>
 
           <Form.Item
             name="sensitivity_level"
-            label="Sensitivity Level"
-            rules={[{ required: true, message: 'Please select sensitivity' }]}
+            label={t('dataPermissions.classification.columns.sensitivity')}
+            rules={[{ required: true, message: t('dataPermissions.classification.columns.sensitivity') }]}
           >
-            <Select placeholder="Select sensitivity">
-              <Option value="public">Public</Option>
-              <Option value="internal">Internal</Option>
-              <Option value="confidential">Confidential</Option>
-              <Option value="top_secret">Top Secret</Option>
+            <Select placeholder={t('dataPermissions.classification.columns.sensitivity')}>
+              <Option value="public">{t('sensitivity.public')}</Option>
+              <Option value="internal">{t('sensitivity.internal')}</Option>
+              <Option value="confidential">{t('sensitivity.confidential')}</Option>
+              <Option value="top_secret">{t('sensitivity.topSecret')}</Option>
             </Select>
           </Form.Item>
 
-          <Form.Item name="priority" label="Priority" initialValue={0}>
-            <Input type="number" placeholder="Higher priority rules are applied first" />
+          <Form.Item name="priority" label={t('dataPermissions.classification.priority')} initialValue={0}>
+            <Input type="number" placeholder={t('dataPermissions.masking.form.priorityHint')} />
           </Form.Item>
         </Form>
       </Modal>
 
       {/* Edit Classification Modal */}
       <Modal
-        title="Edit Classification"
+        title={t('dataPermissions.classification.editClassification')}
         open={editModalOpen}
         onCancel={() => setEditModalOpen(false)}
         onOk={() => editForm.submit()}
@@ -518,22 +520,22 @@ const DataClassificationPage: React.FC = () => {
         <Form form={editForm} layout="vertical" onFinish={handleEditSubmit}>
           <Form.Item
             name="category"
-            label="Category"
-            rules={[{ required: true, message: 'Please enter category' }]}
+            label={t('dataPermissions.classification.category')}
+            rules={[{ required: true, message: t('dataPermissions.classification.category') }]}
           >
-            <Input placeholder="Category" />
+            <Input placeholder={t('dataPermissions.classification.category')} />
           </Form.Item>
 
           <Form.Item
             name="sensitivity_level"
-            label="Sensitivity Level"
-            rules={[{ required: true, message: 'Please select sensitivity' }]}
+            label={t('dataPermissions.classification.columns.sensitivity')}
+            rules={[{ required: true, message: t('dataPermissions.classification.columns.sensitivity') }]}
           >
-            <Select placeholder="Select sensitivity">
-              <Option value="public">Public</Option>
-              <Option value="internal">Internal</Option>
-              <Option value="confidential">Confidential</Option>
-              <Option value="top_secret">Top Secret</Option>
+            <Select placeholder={t('dataPermissions.classification.columns.sensitivity')}>
+              <Option value="public">{t('sensitivity.public')}</Option>
+              <Option value="internal">{t('sensitivity.internal')}</Option>
+              <Option value="confidential">{t('sensitivity.confidential')}</Option>
+              <Option value="top_secret">{t('sensitivity.topSecret')}</Option>
             </Select>
           </Form.Item>
         </Form>
@@ -541,12 +543,12 @@ const DataClassificationPage: React.FC = () => {
 
       {/* Report Modal */}
       <Modal
-        title="Classification Report"
+        title={t('dataPermissions.classification.report.title')}
         open={reportModalOpen}
         onCancel={() => setReportModalOpen(false)}
         footer={[
           <Button key="close" onClick={() => setReportModalOpen(false)}>
-            Close
+            {t('common:close')}
           </Button>,
         ]}
         width={600}
@@ -554,26 +556,26 @@ const DataClassificationPage: React.FC = () => {
         {report && (
           <>
             <Descriptions column={2} bordered size="small">
-              <Descriptions.Item label="Total Datasets">
+              <Descriptions.Item label={t('dataPermissions.classification.report.totalDatasets')}>
                 {report.total_datasets}
               </Descriptions.Item>
-              <Descriptions.Item label="Total Fields">
+              <Descriptions.Item label={t('dataPermissions.classification.report.totalFields')}>
                 {report.total_fields}
               </Descriptions.Item>
-              <Descriptions.Item label="Unclassified">
+              <Descriptions.Item label={t('dataPermissions.classification.report.unclassified')}>
                 {report.unclassified_count}
               </Descriptions.Item>
-              <Descriptions.Item label="Generated At">
+              <Descriptions.Item label={t('dataPermissions.classification.report.generatedAt')}>
                 {dayjs(report.generated_at).format('YYYY-MM-DD HH:mm')}
               </Descriptions.Item>
             </Descriptions>
 
-            <Divider>By Sensitivity Level</Divider>
+            <Divider>{t('dataPermissions.classification.report.bySensitivity')}</Divider>
             <Row gutter={16}>
               {Object.entries(report.by_sensitivity || {}).map(([level, count]) => (
                 <Col span={6} key={level}>
                   <Statistic
-                    title={level.toUpperCase()}
+                    title={t(`sensitivity.${level}`)}
                     value={count}
                     valueStyle={{ color: sensitivityColors[level as SensitivityLevel] }}
                   />
@@ -581,12 +583,12 @@ const DataClassificationPage: React.FC = () => {
               ))}
             </Row>
 
-            <Divider>By Classification Method</Divider>
+            <Divider>{t('dataPermissions.classification.report.byMethod')}</Divider>
             <Row gutter={16}>
               {Object.entries(report.by_method || {}).map(([method, count]) => (
                 <Col span={8} key={method}>
                   <Statistic
-                    title={method.replace('_', ' ').toUpperCase()}
+                    title={t(`dataPermissions.classification.methods.${method === 'rule_based' ? 'ruleBased' : method === 'ai_based' ? 'aiBased' : 'manual'}`)}
                     value={count}
                   />
                 </Col>

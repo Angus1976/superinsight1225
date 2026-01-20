@@ -33,6 +33,7 @@ import {
   SyncOutlined,
 } from '@ant-design/icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import type { ColumnsType } from 'antd/es/table';
 import {
   dataPermissionApi,
@@ -52,6 +53,7 @@ const { Option } = Select;
 type PolicyType = 'ldap' | 'oauth' | 'custom';
 
 const PolicyImportWizard: React.FC = () => {
+  const { t } = useTranslation(['security', 'common']);
   const [currentStep, setCurrentStep] = useState(0);
   const [policyType, setPolicyType] = useState<PolicyType | null>(null);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
@@ -76,7 +78,7 @@ const PolicyImportWizard: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['policySources'] });
     },
     onError: () => {
-      message.error('LDAP import failed');
+      message.error(t('dataPermissions.policyImport.ldapImportFailed'));
     },
   });
 
@@ -88,7 +90,7 @@ const PolicyImportWizard: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['policySources'] });
     },
     onError: () => {
-      message.error('OAuth import failed');
+      message.error(t('dataPermissions.policyImport.oauthImportFailed'));
     },
   });
 
@@ -100,7 +102,7 @@ const PolicyImportWizard: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['policySources'] });
     },
     onError: () => {
-      message.error('Custom policy import failed');
+      message.error(t('dataPermissions.policyImport.customImportFailed'));
     },
   });
 
@@ -108,11 +110,11 @@ const PolicyImportWizard: React.FC = () => {
   const syncMutation = useMutation({
     mutationFn: (sourceId: string) => dataPermissionApi.syncPolicies(sourceId),
     onSuccess: () => {
-      message.success('Sync completed');
+      message.success(t('dataPermissions.policyImport.syncSuccess'));
       queryClient.invalidateQueries({ queryKey: ['policySources'] });
     },
     onError: () => {
-      message.error('Sync failed');
+      message.error(t('dataPermissions.policyImport.syncFailed'));
     },
   });
 
@@ -161,18 +163,18 @@ const PolicyImportWizard: React.FC = () => {
 
   const conflictColumns: ColumnsType<PolicyConflict> = [
     {
-      title: 'Type',
+      title: t('audit.eventType'),
       dataIndex: 'conflict_type',
       key: 'conflict_type',
       render: (type) => <Tag color="warning">{type}</Tag>,
     },
     {
-      title: 'Description',
+      title: t('permissions.columns.description'),
       dataIndex: 'description',
       key: 'description',
     },
     {
-      title: 'Suggested Resolution',
+      title: t('compliance.recommendations'),
       dataIndex: 'suggested_resolution',
       key: 'suggested_resolution',
     },
@@ -180,12 +182,12 @@ const PolicyImportWizard: React.FC = () => {
 
   const sourceColumns: ColumnsType<PolicySource> = [
     {
-      title: 'Name',
+      title: t('sso.providerName'),
       dataIndex: 'name',
       key: 'name',
     },
     {
-      title: 'Type',
+      title: t('audit.eventType'),
       dataIndex: 'source_type',
       key: 'source_type',
       render: (type) => (
@@ -195,21 +197,21 @@ const PolicyImportWizard: React.FC = () => {
       ),
     },
     {
-      title: 'Status',
+      title: t('sso.status'),
       dataIndex: 'is_active',
       key: 'is_active',
       render: (active) => (
-        <Tag color={active ? 'success' : 'default'}>{active ? 'Active' : 'Inactive'}</Tag>
+        <Tag color={active ? 'success' : 'default'}>{active ? t('dataPermissions.masking.active') : t('dataPermissions.masking.inactive')}</Tag>
       ),
     },
     {
-      title: 'Last Sync',
+      title: t('sessions.columns.lastActivity'),
       dataIndex: 'last_sync_at',
       key: 'last_sync_at',
-      render: (date) => (date ? new Date(date).toLocaleString() : 'Never'),
+      render: (date) => (date ? new Date(date).toLocaleString() : t('sessions.neverLoggedIn')),
     },
     {
-      title: 'Actions',
+      title: t('common:actions.label'),
       key: 'actions',
       render: (_, record) => (
         <Button
@@ -218,7 +220,7 @@ const PolicyImportWizard: React.FC = () => {
           onClick={() => syncMutation.mutate(record.id)}
           loading={syncMutation.isPending}
         >
-          Sync
+          {t('dataPermissions.policyImport.sync')}
         </Button>
       ),
     },
@@ -233,8 +235,8 @@ const PolicyImportWizard: React.FC = () => {
           style={{ textAlign: 'center', cursor: 'pointer' }}
         >
           <CloudServerOutlined style={{ fontSize: 48, color: '#1890ff' }} />
-          <h3>LDAP / Active Directory</h3>
-          <p>Import users and groups from LDAP or Active Directory</p>
+          <h3>{t('dataPermissions.policyImport.types.ldap')}</h3>
+          <p>{t('dataPermissions.policyImport.types.ldapDesc')}</p>
         </Card>
       </Col>
       <Col xs={24} md={8}>
@@ -244,8 +246,8 @@ const PolicyImportWizard: React.FC = () => {
           style={{ textAlign: 'center', cursor: 'pointer' }}
         >
           <ApiOutlined style={{ fontSize: 48, color: '#52c41a' }} />
-          <h3>OAuth / OIDC</h3>
-          <p>Import permissions from OAuth or OpenID Connect provider</p>
+          <h3>{t('dataPermissions.policyImport.types.oauth')}</h3>
+          <p>{t('dataPermissions.policyImport.types.oauthDesc')}</p>
         </Card>
       </Col>
       <Col xs={24} md={8}>
@@ -255,8 +257,8 @@ const PolicyImportWizard: React.FC = () => {
           style={{ textAlign: 'center', cursor: 'pointer' }}
         >
           <FileTextOutlined style={{ fontSize: 48, color: '#722ed1' }} />
-          <h3>Custom Policy</h3>
-          <p>Import from JSON or YAML policy files</p>
+          <h3>{t('dataPermissions.policyImport.types.custom')}</h3>
+          <p>{t('dataPermissions.policyImport.types.customDesc')}</p>
         </Card>
       </Col>
     </Row>
@@ -266,42 +268,42 @@ const PolicyImportWizard: React.FC = () => {
     <Form form={ldapForm} layout="vertical">
       <Form.Item
         name="url"
-        label="LDAP URL"
-        rules={[{ required: true, message: 'Please enter LDAP URL' }]}
+        label={t('dataPermissions.policyImport.ldapConfig.url')}
+        rules={[{ required: true, message: t('dataPermissions.policyImport.ldapConfig.url') }]}
       >
         <Input placeholder="ldap://ldap.example.com:389" />
       </Form.Item>
       <Form.Item
         name="base_dn"
-        label="Base DN"
-        rules={[{ required: true, message: 'Please enter Base DN' }]}
+        label={t('dataPermissions.policyImport.ldapConfig.baseDn')}
+        rules={[{ required: true, message: t('dataPermissions.policyImport.ldapConfig.baseDn') }]}
       >
         <Input placeholder="dc=example,dc=com" />
       </Form.Item>
       <Form.Item
         name="bind_dn"
-        label="Bind DN"
-        rules={[{ required: true, message: 'Please enter Bind DN' }]}
+        label={t('dataPermissions.policyImport.ldapConfig.bindDn')}
+        rules={[{ required: true, message: t('dataPermissions.policyImport.ldapConfig.bindDn') }]}
       >
         <Input placeholder="cn=admin,dc=example,dc=com" />
       </Form.Item>
       <Form.Item
         name="bind_password"
-        label="Bind Password"
-        rules={[{ required: true, message: 'Please enter password' }]}
+        label={t('dataPermissions.policyImport.ldapConfig.bindPassword')}
+        rules={[{ required: true, message: t('dataPermissions.policyImport.ldapConfig.bindPassword') }]}
       >
-        <Input.Password placeholder="Password" />
+        <Input.Password placeholder={t('dataPermissions.policyImport.ldapConfig.bindPassword')} />
       </Form.Item>
-      <Form.Item name="user_filter" label="User Filter">
+      <Form.Item name="user_filter" label={t('dataPermissions.policyImport.ldapConfig.userFilter')}>
         <Input placeholder="(objectClass=person)" />
       </Form.Item>
-      <Form.Item name="group_filter" label="Group Filter">
+      <Form.Item name="group_filter" label={t('dataPermissions.policyImport.ldapConfig.groupFilter')}>
         <Input placeholder="(objectClass=group)" />
       </Form.Item>
-      <Form.Item name="use_ssl" label="Use SSL" valuePropName="checked" initialValue={true}>
+      <Form.Item name="use_ssl" label={t('dataPermissions.policyImport.ldapConfig.useSsl')} valuePropName="checked" initialValue={true}>
         <Switch />
       </Form.Item>
-      <Form.Item name="timeout" label="Timeout (seconds)" initialValue={30}>
+      <Form.Item name="timeout" label={t('dataPermissions.policyImport.ldapConfig.timeout')} initialValue={30}>
         <Input type="number" />
       </Form.Item>
     </Form>
@@ -311,34 +313,34 @@ const PolicyImportWizard: React.FC = () => {
     <Form form={oauthForm} layout="vertical">
       <Form.Item
         name="provider_url"
-        label="Provider URL"
-        rules={[{ required: true, message: 'Please enter provider URL' }]}
+        label={t('dataPermissions.policyImport.oauthConfig.providerUrl')}
+        rules={[{ required: true, message: t('dataPermissions.policyImport.oauthConfig.providerUrl') }]}
       >
         <Input placeholder="https://auth.example.com" />
       </Form.Item>
       <Form.Item
         name="client_id"
-        label="Client ID"
-        rules={[{ required: true, message: 'Please enter client ID' }]}
+        label={t('dataPermissions.policyImport.oauthConfig.clientId')}
+        rules={[{ required: true, message: t('dataPermissions.policyImport.oauthConfig.clientId') }]}
       >
-        <Input placeholder="Client ID" />
+        <Input placeholder={t('dataPermissions.policyImport.oauthConfig.clientId')} />
       </Form.Item>
       <Form.Item
         name="client_secret"
-        label="Client Secret"
-        rules={[{ required: true, message: 'Please enter client secret' }]}
+        label={t('dataPermissions.policyImport.oauthConfig.clientSecret')}
+        rules={[{ required: true, message: t('dataPermissions.policyImport.oauthConfig.clientSecret') }]}
       >
-        <Input.Password placeholder="Client Secret" />
+        <Input.Password placeholder={t('dataPermissions.policyImport.oauthConfig.clientSecret')} />
       </Form.Item>
-      <Form.Item name="scopes" label="Scopes">
-        <Select mode="tags" placeholder="Add scopes">
+      <Form.Item name="scopes" label={t('dataPermissions.policyImport.oauthConfig.scopes')}>
+        <Select mode="tags" placeholder={t('dataPermissions.policyImport.oauthConfig.scopes')}>
           <Option value="openid">openid</Option>
           <Option value="profile">profile</Option>
           <Option value="email">email</Option>
           <Option value="groups">groups</Option>
         </Select>
       </Form.Item>
-      <Form.Item name="use_pkce" label="Use PKCE" valuePropName="checked" initialValue={true}>
+      <Form.Item name="use_pkce" label={t('dataPermissions.policyImport.oauthConfig.usePkce')} valuePropName="checked" initialValue={true}>
         <Switch />
       </Form.Item>
     </Form>
@@ -348,8 +350,8 @@ const PolicyImportWizard: React.FC = () => {
     <Form form={customForm} layout="vertical">
       <Form.Item
         name="format"
-        label="Format"
-        rules={[{ required: true, message: 'Please select format' }]}
+        label={t('dataPermissions.policyImport.customConfig.format')}
+        rules={[{ required: true, message: t('dataPermissions.policyImport.customConfig.format') }]}
         initialValue="json"
       >
         <Select>
@@ -359,8 +361,8 @@ const PolicyImportWizard: React.FC = () => {
       </Form.Item>
       <Form.Item
         name="content"
-        label="Policy Content"
-        rules={[{ required: true, message: 'Please enter policy content' }]}
+        label={t('dataPermissions.policyImport.customConfig.content')}
+        rules={[{ required: true, message: t('dataPermissions.policyImport.customConfig.content') }]}
       >
         <TextArea
           rows={12}
@@ -398,13 +400,13 @@ const PolicyImportWizard: React.FC = () => {
     return (
       <div>
         <Alert
-          message="Review Configuration"
-          description="Please review your configuration before importing."
+          message={t('dataPermissions.policyImport.reviewConfig')}
+          description={t('dataPermissions.policyImport.reviewConfigDesc')}
           type="info"
           showIcon
           style={{ marginBottom: 16 }}
         />
-        <Card title="Configuration Summary">
+        <Card title={t('dataPermissions.policyImport.configSummary')}>
           <pre style={{ background: '#f5f5f5', padding: 16, borderRadius: 4 }}>
             {JSON.stringify(
               { ...values, bind_password: '***', client_secret: '***' },
@@ -423,17 +425,17 @@ const PolicyImportWizard: React.FC = () => {
     return (
       <Result
         status={importResult.success ? 'success' : 'warning'}
-        title={importResult.success ? 'Import Successful' : 'Import Completed with Issues'}
-        subTitle={`Imported: ${importResult.imported_count}, Updated: ${importResult.updated_count}, Skipped: ${importResult.skipped_count}`}
+        title={importResult.success ? t('dataPermissions.policyImport.importSuccess') : t('dataPermissions.policyImport.importWithIssues')}
+        subTitle={t('dataPermissions.policyImport.importStats', { imported: importResult.imported_count, updated: importResult.updated_count, skipped: importResult.skipped_count })}
         extra={[
           <Button type="primary" key="new" onClick={handleReset}>
-            Import Another
+            {t('dataPermissions.policyImport.importAnother')}
           </Button>,
         ]}
       >
         {importResult.conflicts.length > 0 && (
           <div style={{ marginTop: 24 }}>
-            <Divider>Conflicts ({importResult.conflicts.length})</Divider>
+            <Divider>{t('dataPermissions.policyImport.conflicts')} ({importResult.conflicts.length})</Divider>
             <Table
               columns={conflictColumns}
               dataSource={importResult.conflicts}
@@ -445,7 +447,7 @@ const PolicyImportWizard: React.FC = () => {
         )}
         {importResult.errors.length > 0 && (
           <div style={{ marginTop: 24 }}>
-            <Divider>Errors ({importResult.errors.length})</Divider>
+            <Divider>{t('dataPermissions.policyImport.errors')} ({importResult.errors.length})</Divider>
             {importResult.errors.map((error, index) => (
               <Alert key={index} message={error} type="error" style={{ marginBottom: 8 }} />
             ))}
@@ -456,10 +458,10 @@ const PolicyImportWizard: React.FC = () => {
   };
 
   const steps = [
-    { title: 'Select Type', icon: <FileTextOutlined /> },
-    { title: 'Configure', icon: <CloudServerOutlined /> },
-    { title: 'Preview', icon: <CheckCircleOutlined /> },
-    { title: 'Result', icon: <CheckCircleOutlined /> },
+    { title: t('dataPermissions.policyImport.steps.selectType'), icon: <FileTextOutlined /> },
+    { title: t('dataPermissions.policyImport.steps.configure'), icon: <CloudServerOutlined /> },
+    { title: t('dataPermissions.policyImport.steps.preview'), icon: <CheckCircleOutlined /> },
+    { title: t('dataPermissions.policyImport.steps.result'), icon: <CheckCircleOutlined /> },
   ];
 
   const isImporting =
@@ -470,7 +472,7 @@ const PolicyImportWizard: React.FC = () => {
   return (
     <div>
       {/* Existing Sources */}
-      <Card title="Existing Policy Sources" style={{ marginBottom: 24 }}>
+      <Card title={t('dataPermissions.policyImport.existingSources')} style={{ marginBottom: 24 }}>
         <Table
           columns={sourceColumns}
           dataSource={policySources || []}
@@ -482,7 +484,7 @@ const PolicyImportWizard: React.FC = () => {
       </Card>
 
       {/* Import Wizard */}
-      <Card title="Import New Policy Source">
+      <Card title={t('dataPermissions.policyImport.title')}>
         <Steps current={currentStep} style={{ marginBottom: 24 }}>
           {steps.map((step) => (
             <Step key={step.title} title={step.title} icon={step.icon} />
@@ -499,15 +501,15 @@ const PolicyImportWizard: React.FC = () => {
         {currentStep > 0 && currentStep < 3 && (
           <div style={{ marginTop: 24, textAlign: 'right' }}>
             <Space>
-              <Button onClick={() => setCurrentStep(currentStep - 1)}>Previous</Button>
+              <Button onClick={() => setCurrentStep(currentStep - 1)}>{t('common:previous')}</Button>
               {currentStep === 1 && (
                 <Button type="primary" onClick={handleConfigSubmit}>
-                  Next
+                  {t('common:next')}
                 </Button>
               )}
               {currentStep === 2 && (
                 <Button type="primary" onClick={handleImport} loading={isImporting}>
-                  Import
+                  {t('common:import')}
                 </Button>
               )}
             </Space>

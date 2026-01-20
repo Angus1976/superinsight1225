@@ -238,7 +238,7 @@ const SecurityPage: React.FC = () => {
 
   const logColumns: ColumnsType<AuditLog> = [
     {
-      title: 'Time',
+      title: t('audit.columns.timestamp'),
       dataIndex: 'created_at',
       key: 'created_at',
       width: 180,
@@ -246,7 +246,7 @@ const SecurityPage: React.FC = () => {
       sorter: (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
     },
     {
-      title: 'User',
+      title: t('audit.columns.user'),
       dataIndex: 'user_name',
       key: 'user_name',
       width: 120,
@@ -258,7 +258,7 @@ const SecurityPage: React.FC = () => {
       ),
     },
     {
-      title: 'Action',
+      title: t('audit.columns.action'),
       dataIndex: 'action',
       key: 'action',
       width: 100,
@@ -267,13 +267,13 @@ const SecurityPage: React.FC = () => {
       ),
     },
     {
-      title: 'Resource',
+      title: t('audit.columns.resource'),
       dataIndex: 'resource',
       key: 'resource',
       ellipsis: true,
     },
     {
-      title: 'IP Address',
+      title: t('audit.columns.ipAddress'),
       dataIndex: 'ip_address',
       key: 'ip_address',
       width: 140,
@@ -285,28 +285,28 @@ const SecurityPage: React.FC = () => {
       ),
     },
     {
-      title: 'Status',
+      title: t('audit.columns.result'),
       dataIndex: 'status',
       key: 'status',
       width: 100,
       render: (status) =>
         status === 'success' ? (
           <Tag icon={<CheckCircleOutlined />} color="success">
-            Success
+            {t('audit.results.success')}
           </Tag>
         ) : (
           <Tag icon={<WarningOutlined />} color="error">
-            Failed
+            {t('audit.results.failed')}
           </Tag>
         ),
       filters: [
-        { text: 'Success', value: 'success' },
-        { text: 'Failed', value: 'failed' },
+        { text: t('audit.results.success'), value: 'success' },
+        { text: t('audit.results.failed'), value: 'failed' },
       ],
       onFilter: (value, record) => record.status === value,
     },
     {
-      title: 'Actions',
+      title: t('common:actions.label'),
       key: 'actions',
       width: 80,
       render: (_, record) => (
@@ -315,9 +315,7 @@ const SecurityPage: React.FC = () => {
           size="small"
           icon={<EyeOutlined />}
           onClick={() => handleViewDetail(record)}
-        >
-          View
-        </Button>
+        />
       ),
     },
   ];
@@ -331,14 +329,14 @@ const SecurityPage: React.FC = () => {
 
   return (
     <div>
-      <h2 style={{ marginBottom: 24 }}>Security Audit</h2>
+      <h2 style={{ marginBottom: 24 }}>{t('audit.title')}</h2>
 
       {/* Stats */}
       <Row gutter={16} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Total Logs (Today)"
+              title={t('audit.stats.totalLogs')}
               value={todayLogs.length}
               prefix={<ClockCircleOutlined />}
             />
@@ -347,7 +345,7 @@ const SecurityPage: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Failed Attempts"
+              title={t('audit.stats.failedOperations')}
               value={failedLogs.length}
               prefix={<WarningOutlined />}
               valueStyle={{ color: failedLogs.length > 0 ? '#ff4d4f' : '#52c41a' }}
@@ -357,7 +355,7 @@ const SecurityPage: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Security Events"
+              title={t('audit.stats.eventTypes')}
               value={unresolvedEvents.length}
               prefix={<SecurityScanOutlined />}
               valueStyle={{ color: unresolvedEvents.length > 0 ? '#faad14' : '#52c41a' }}
@@ -367,7 +365,7 @@ const SecurityPage: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Active Users"
+              title={t('security:overview')}
               value={3}
               prefix={<UserOutlined />}
               valueStyle={{ color: '#1890ff' }}
@@ -379,14 +377,14 @@ const SecurityPage: React.FC = () => {
       {/* Alerts */}
       {unresolvedEvents.length > 0 && (
         <Alert
-          message="Security Alert"
-          description={`There are ${unresolvedEvents.length} unresolved security events that require attention.`}
+          message={t('audit.securityAlert')}
+          description={t('audit.unresolvedEventsMessage', { count: unresolvedEvents.length })}
           type="warning"
           showIcon
           style={{ marginBottom: 24 }}
           action={
             <Button size="small" type="primary">
-              View Events
+              {t('audit.viewEvents')}
             </Button>
           }
         />
@@ -402,7 +400,7 @@ const SecurityPage: React.FC = () => {
               label: (
                 <span>
                   <LockOutlined />
-                  Audit Logs
+                  {t('audit.logs')}
                 </span>
               ),
               children: (
@@ -411,23 +409,23 @@ const SecurityPage: React.FC = () => {
                     <Space wrap>
                       <RangePicker />
                       <Select
-                        placeholder="Action"
+                        placeholder={t('audit.filters.eventType')}
                         style={{ width: 120 }}
                         allowClear
                         options={[
-                          { value: 'LOGIN', label: 'Login' },
-                          { value: 'CREATE', label: 'Create' },
-                          { value: 'UPDATE', label: 'Update' },
-                          { value: 'DELETE', label: 'Delete' },
+                          { value: 'LOGIN', label: t('audit.eventTypes.loginAttempt') },
+                          { value: 'CREATE', label: t('common:actions.submit') },
+                          { value: 'UPDATE', label: t('common:actions.save') },
+                          { value: 'DELETE', label: t('common:actions.delete') },
                         ]}
                       />
                       <Input.Search
-                        placeholder="Search user or resource"
+                        placeholder={t('audit.filters.userId')}
                         style={{ width: 250 }}
                       />
-                      <Button icon={<FilterOutlined />}>More Filters</Button>
+                      <Button icon={<FilterOutlined />}>{t('audit.filters.eventType')}</Button>
                       <Button icon={<ExportOutlined />} onClick={handleExport}>
-                        Export
+                        {t('audit.exportCsv')}
                       </Button>
                     </Space>
                   </div>
@@ -438,7 +436,7 @@ const SecurityPage: React.FC = () => {
                     pagination={{
                       pageSize: 10,
                       showSizeChanger: true,
-                      showTotal: (total) => `Total ${total} logs`,
+                      showTotal: (total) => t('security:common.totalLogs', { total }),
                     }}
                   />
                 </>
@@ -449,7 +447,7 @@ const SecurityPage: React.FC = () => {
               label: (
                 <span>
                   <SecurityScanOutlined />
-                  Security Events
+                  {t('audit.stats.eventTypes')}
                   {unresolvedEvents.length > 0 && (
                     <Tag color="red" style={{ marginLeft: 8 }}>
                       {unresolvedEvents.length}
@@ -475,15 +473,15 @@ const SecurityPage: React.FC = () => {
                           <Text strong>{event.type.replace('_', ' ').toUpperCase()}</Text>
                           {event.resolved && (
                             <Tag color="success" icon={<CheckCircleOutlined />}>
-                              Resolved
+                              {t('audit.results.success')}
                             </Tag>
                           )}
                         </Space>
                         <p style={{ margin: '8px 0' }}>{event.description}</p>
                         <Text type="secondary">
                           {new Date(event.created_at).toLocaleString()}
-                          {event.user_name && ` • User: ${event.user_name}`}
-                          {event.ip_address && ` • IP: ${event.ip_address}`}
+                          {event.user_name && ` • ${t('audit.columns.user')}: ${event.user_name}`}
+                          {event.ip_address && ` • ${t('audit.columns.ipAddress')}: ${event.ip_address}`}
                         </Text>
                       </div>
                     ),
@@ -497,37 +495,37 @@ const SecurityPage: React.FC = () => {
 
       {/* Detail Modal */}
       <Modal
-        title="Audit Log Details"
+        title={t('audit.logDetails')}
         open={detailModalOpen}
         onCancel={() => setDetailModalOpen(false)}
         footer={[
           <Button key="close" onClick={() => setDetailModalOpen(false)}>
-            Close
+            {t('common:close')}
           </Button>,
         ]}
         width={600}
       >
         {selectedLog && (
           <Descriptions column={1} bordered>
-            <Descriptions.Item label="Time">
+            <Descriptions.Item label={t('audit.columns.timestamp')}>
               {new Date(selectedLog.created_at).toLocaleString()}
             </Descriptions.Item>
-            <Descriptions.Item label="User">{selectedLog.user_name}</Descriptions.Item>
-            <Descriptions.Item label="Action">
+            <Descriptions.Item label={t('audit.columns.user')}>{selectedLog.user_name}</Descriptions.Item>
+            <Descriptions.Item label={t('audit.columns.action')}>
               <Tag color={actionColors[selectedLog.action]}>{selectedLog.action}</Tag>
             </Descriptions.Item>
-            <Descriptions.Item label="Resource">{selectedLog.resource}</Descriptions.Item>
-            <Descriptions.Item label="IP Address">{selectedLog.ip_address}</Descriptions.Item>
-            <Descriptions.Item label="User Agent">{selectedLog.user_agent}</Descriptions.Item>
-            <Descriptions.Item label="Status">
+            <Descriptions.Item label={t('audit.columns.resource')}>{selectedLog.resource}</Descriptions.Item>
+            <Descriptions.Item label={t('audit.columns.ipAddress')}>{selectedLog.ip_address}</Descriptions.Item>
+            <Descriptions.Item label={t('audit.userAgent')}>{selectedLog.user_agent}</Descriptions.Item>
+            <Descriptions.Item label={t('audit.columns.result')}>
               {selectedLog.status === 'success' ? (
-                <Tag color="success">Success</Tag>
+                <Tag color="success">{t('audit.results.success')}</Tag>
               ) : (
-                <Tag color="error">Failed</Tag>
+                <Tag color="error">{t('audit.results.failed')}</Tag>
               )}
             </Descriptions.Item>
             {selectedLog.details && (
-              <Descriptions.Item label="Details">{selectedLog.details}</Descriptions.Item>
+              <Descriptions.Item label={t('audit.details')}>{selectedLog.details}</Descriptions.Item>
             )}
           </Descriptions>
         )}

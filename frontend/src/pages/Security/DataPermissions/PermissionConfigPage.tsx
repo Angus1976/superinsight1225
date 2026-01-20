@@ -35,6 +35,7 @@ import {
   ExperimentOutlined,
 } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import {
@@ -65,6 +66,7 @@ const actionColors: Record<DataPermissionAction, string> = {
 };
 
 const PermissionConfigPage: React.FC = () => {
+  const { t } = useTranslation(['security', 'common']);
   const [grantModalOpen, setGrantModalOpen] = useState(false);
   const [testModalOpen, setTestModalOpen] = useState(false);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
@@ -93,10 +95,10 @@ const PermissionConfigPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['dataPermissions'] });
       setGrantModalOpen(false);
       grantForm.resetFields();
-      message.success('Permission granted successfully');
+      message.success(t('dataPermissions.permissionConfig.grantSuccess'));
     },
     onError: () => {
-      message.error('Failed to grant permission');
+      message.error(t('dataPermissions.permissionConfig.grantFailed'));
     },
   });
 
@@ -113,10 +115,10 @@ const PermissionConfigPage: React.FC = () => {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['dataPermissions'] });
-      message.success('Permission revoked successfully');
+      message.success(t('dataPermissions.permissionConfig.revokeSuccess'));
     },
     onError: () => {
-      message.error('Failed to revoke permission');
+      message.error(t('dataPermissions.permissionConfig.revokeFailed'));
     },
   });
 
@@ -127,7 +129,7 @@ const PermissionConfigPage: React.FC = () => {
       setTestResult(result);
     },
     onError: () => {
-      message.error('Permission test failed');
+      message.error(t('dataPermissions.permissionConfig.test.testFailed'));
     },
   });
 
@@ -150,79 +152,79 @@ const PermissionConfigPage: React.FC = () => {
 
   const columns: ColumnsType<DataPermission> = [
     {
-      title: 'Resource Level',
+      title: t('dataPermissions.permissionConfig.columns.resourceLevel'),
       dataIndex: 'resource_level',
       key: 'resource_level',
       width: 120,
       render: (level: ResourceLevel) => (
-        <Tag color={resourceLevelColors[level]}>{level.toUpperCase()}</Tag>
+        <Tag color={resourceLevelColors[level]}>{t(`dataPermissions.permissionConfig.resourceLevels.${level}`)}</Tag>
       ),
     },
     {
-      title: 'Resource',
+      title: t('dataPermissions.permissionConfig.columns.resource'),
       key: 'resource',
       render: (_, record) => (
         <div>
           <div>{record.resource_type}/{record.resource_id}</div>
           {record.field_name && (
-            <div style={{ fontSize: 12, color: '#666' }}>Field: {record.field_name}</div>
+            <div style={{ fontSize: 12, color: '#666' }}>{t('dataPermissions.permissionConfig.form.fieldName')}: {record.field_name}</div>
           )}
         </div>
       ),
     },
     {
-      title: 'User/Role',
+      title: t('dataPermissions.permissionConfig.columns.userRole'),
       key: 'target',
       render: (_, record) => (
         <div>
-          {record.user_id && <Tag color="blue">User: {record.user_id.slice(0, 8)}...</Tag>}
-          {record.role_id && <Tag color="green">Role: {record.role_id.slice(0, 8)}...</Tag>}
+          {record.user_id && <Tag color="blue">{t('audit.user')}: {record.user_id.slice(0, 8)}...</Tag>}
+          {record.role_id && <Tag color="green">{t('permissions.role')}: {record.role_id.slice(0, 8)}...</Tag>}
         </div>
       ),
     },
     {
-      title: 'Action',
+      title: t('dataPermissions.permissionConfig.columns.action'),
       dataIndex: 'action',
       key: 'action',
       width: 100,
       render: (action: DataPermissionAction) => (
-        <Tag color={actionColors[action]}>{action.toUpperCase()}</Tag>
+        <Tag color={actionColors[action]}>{t(`dataPermissions.permissionConfig.actions.${action}`)}</Tag>
       ),
     },
     {
-      title: 'Status',
+      title: t('dataPermissions.permissionConfig.columns.status'),
       key: 'status',
       width: 100,
       render: (_, record) => (
         <Space direction="vertical" size={0}>
           <Tag color={record.is_active ? 'success' : 'default'}>
-            {record.is_active ? 'Active' : 'Inactive'}
+            {record.is_active ? t('dataPermissions.masking.active') : t('dataPermissions.masking.inactive')}
           </Tag>
-          {record.is_temporary && <Tag color="warning">Temporary</Tag>}
+          {record.is_temporary && <Tag color="warning">{t('dataPermissions.permissionConfig.stats.temporary')}</Tag>}
         </Space>
       ),
     },
     {
-      title: 'Expires',
+      title: t('dataPermissions.permissionConfig.columns.expires'),
       dataIndex: 'expires_at',
       key: 'expires_at',
       width: 150,
-      render: (date) => (date ? dayjs(date).format('YYYY-MM-DD HH:mm') : 'Never'),
+      render: (date) => (date ? dayjs(date).format('YYYY-MM-DD HH:mm') : t('dataPermissions.permissionConfig.never')),
     },
     {
-      title: 'Granted',
+      title: t('dataPermissions.permissionConfig.columns.granted'),
       dataIndex: 'granted_at',
       key: 'granted_at',
       width: 150,
       render: (date) => dayjs(date).format('YYYY-MM-DD HH:mm'),
     },
     {
-      title: 'Actions',
+      title: t('common:actions.label'),
       key: 'actions',
       width: 120,
       render: (_, record) => (
         <Space>
-          <Tooltip title="View Details">
+          <Tooltip title={t('dataPermissions.approval.viewDetails')}>
             <Button
               type="link"
               size="small"
@@ -231,12 +233,12 @@ const PermissionConfigPage: React.FC = () => {
             />
           </Tooltip>
           <Popconfirm
-            title="Revoke this permission?"
+            title={t('dataPermissions.permissionConfig.revokePermission')}
             onConfirm={() => revokeMutation.mutate(record)}
-            okText="Yes"
-            cancelText="No"
+            okText={t('common:yes')}
+            cancelText={t('common:no')}
           >
-            <Tooltip title="Revoke">
+            <Tooltip title={t('common:revoke')}>
               <Button type="link" size="small" danger icon={<DeleteOutlined />} />
             </Tooltip>
           </Popconfirm>
@@ -252,7 +254,7 @@ const PermissionConfigPage: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Total Permissions"
+              title={t('dataPermissions.permissionConfig.stats.totalPermissions')}
               value={permissionsData?.total || 0}
               prefix={<SafetyOutlined />}
             />
@@ -261,7 +263,7 @@ const PermissionConfigPage: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Active"
+              title={t('dataPermissions.permissionConfig.stats.active')}
               value={permissionsData?.permissions?.filter((p) => p.is_active).length || 0}
               valueStyle={{ color: '#52c41a' }}
             />
@@ -270,7 +272,7 @@ const PermissionConfigPage: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Temporary"
+              title={t('dataPermissions.permissionConfig.stats.temporary')}
               value={permissionsData?.permissions?.filter((p) => p.is_temporary).length || 0}
               valueStyle={{ color: '#faad14' }}
             />
@@ -279,7 +281,7 @@ const PermissionConfigPage: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Expiring Soon"
+              title={t('dataPermissions.permissionConfig.stats.expiringSoon')}
               value={
                 permissionsData?.permissions?.filter(
                   (p) => p.expires_at && dayjs(p.expires_at).diff(dayjs(), 'day') <= 7
@@ -293,14 +295,14 @@ const PermissionConfigPage: React.FC = () => {
 
       {/* Main Table */}
       <Card
-        title="Data Permissions"
+        title={t('dataPermissions.permissionConfig.title')}
         extra={
           <Space>
             <Button icon={<ExperimentOutlined />} onClick={() => setTestModalOpen(true)}>
-              Test Permission
+              {t('dataPermissions.permissionConfig.testPermission')}
             </Button>
             <Button type="primary" icon={<PlusOutlined />} onClick={() => setGrantModalOpen(true)}>
-              Grant Permission
+              {t('dataPermissions.permissionConfig.grantPermission')}
             </Button>
           </Space>
         }
@@ -309,14 +311,14 @@ const PermissionConfigPage: React.FC = () => {
         <div style={{ marginBottom: 16 }}>
           <Space wrap>
             <Select
-              placeholder="Resource Type"
+              placeholder={t('dataPermissions.permissionConfig.form.resourceType')}
               style={{ width: 150 }}
               allowClear
               onChange={(value) => setFilters((prev) => ({ ...prev, resource_type: value }))}
             >
-              <Option value="dataset">Dataset</Option>
-              <Option value="project">Project</Option>
-              <Option value="task">Task</Option>
+              <Option value="dataset">{t('dataPermissions.permissionConfig.resourceLevels.dataset')}</Option>
+              <Option value="project">{t('rbac.resources.projects')}</Option>
+              <Option value="task">{t('rbac.resources.tasks')}</Option>
             </Select>
           </Space>
         </div>
@@ -331,7 +333,7 @@ const PermissionConfigPage: React.FC = () => {
             pageSize: filters.limit,
             total: permissionsData?.total || 0,
             showSizeChanger: true,
-            showTotal: (total) => `Total ${total} permissions`,
+            showTotal: (total) => t('common.totalPermissions', { total }),
             onChange: (page, pageSize) => {
               setFilters((prev) => ({
                 ...prev,
@@ -346,7 +348,7 @@ const PermissionConfigPage: React.FC = () => {
 
       {/* Grant Permission Modal */}
       <Modal
-        title="Grant Permission"
+        title={t('dataPermissions.permissionConfig.grantPermission')}
         open={grantModalOpen}
         onCancel={() => setGrantModalOpen(false)}
         onOk={() => grantForm.submit()}
@@ -356,76 +358,76 @@ const PermissionConfigPage: React.FC = () => {
         <Form form={grantForm} layout="vertical" onFinish={handleGrantSubmit}>
           <Form.Item
             name="resource_level"
-            label="Resource Level"
-            rules={[{ required: true, message: 'Please select resource level' }]}
+            label={t('dataPermissions.permissionConfig.form.resourceLevel')}
+            rules={[{ required: true, message: t('dataPermissions.permissionConfig.form.resourceLevel') }]}
           >
-            <Select placeholder="Select level">
-              <Option value="dataset">Dataset</Option>
-              <Option value="record">Record</Option>
-              <Option value="field">Field</Option>
+            <Select placeholder={t('dataPermissions.permissionConfig.form.resourceLevel')}>
+              <Option value="dataset">{t('dataPermissions.permissionConfig.resourceLevels.dataset')}</Option>
+              <Option value="record">{t('dataPermissions.permissionConfig.resourceLevels.record')}</Option>
+              <Option value="field">{t('dataPermissions.permissionConfig.resourceLevels.field')}</Option>
             </Select>
           </Form.Item>
 
           <Form.Item
             name="resource_type"
-            label="Resource Type"
-            rules={[{ required: true, message: 'Please enter resource type' }]}
+            label={t('dataPermissions.permissionConfig.form.resourceType')}
+            rules={[{ required: true, message: t('dataPermissions.permissionConfig.form.resourceType') }]}
           >
-            <Input placeholder="e.g., dataset, project, task" />
+            <Input placeholder={t('dataPermissions.permissionConfig.form.resourceTypePlaceholder')} />
           </Form.Item>
 
           <Form.Item
             name="resource_id"
-            label="Resource ID"
-            rules={[{ required: true, message: 'Please enter resource ID' }]}
+            label={t('dataPermissions.permissionConfig.form.resourceId')}
+            rules={[{ required: true, message: t('dataPermissions.permissionConfig.form.resourceId') }]}
           >
-            <Input placeholder="Resource identifier" />
+            <Input placeholder={t('dataPermissions.permissionConfig.form.resourceIdPlaceholder')} />
           </Form.Item>
 
-          <Form.Item name="field_name" label="Field Name (for field-level)">
-            <Input placeholder="Field name (optional)" />
+          <Form.Item name="field_name" label={t('dataPermissions.permissionConfig.form.fieldName')}>
+            <Input placeholder={t('dataPermissions.permissionConfig.form.fieldNamePlaceholder')} />
           </Form.Item>
 
-          <Form.Item name="user_id" label="User ID">
-            <Input placeholder="User UUID (leave empty for role-based)" />
+          <Form.Item name="user_id" label={t('dataPermissions.permissionConfig.form.userId')}>
+            <Input placeholder={t('dataPermissions.permissionConfig.form.userIdPlaceholder')} />
           </Form.Item>
 
-          <Form.Item name="role_id" label="Role ID">
-            <Input placeholder="Role UUID (leave empty for user-based)" />
+          <Form.Item name="role_id" label={t('dataPermissions.permissionConfig.form.roleId')}>
+            <Input placeholder={t('dataPermissions.permissionConfig.form.roleIdPlaceholder')} />
           </Form.Item>
 
           <Form.Item
             name="action"
-            label="Action"
-            rules={[{ required: true, message: 'Please select action' }]}
+            label={t('dataPermissions.permissionConfig.form.action')}
+            rules={[{ required: true, message: t('dataPermissions.permissionConfig.form.selectAction') }]}
           >
-            <Select placeholder="Select action">
-              <Option value="read">Read</Option>
-              <Option value="write">Write</Option>
-              <Option value="delete">Delete</Option>
-              <Option value="export">Export</Option>
-              <Option value="annotate">Annotate</Option>
-              <Option value="review">Review</Option>
+            <Select placeholder={t('dataPermissions.permissionConfig.form.selectAction')}>
+              <Option value="read">{t('dataPermissions.permissionConfig.actions.read')}</Option>
+              <Option value="write">{t('dataPermissions.permissionConfig.actions.write')}</Option>
+              <Option value="delete">{t('dataPermissions.permissionConfig.actions.delete')}</Option>
+              <Option value="export">{t('dataPermissions.permissionConfig.actions.export')}</Option>
+              <Option value="annotate">{t('dataPermissions.permissionConfig.actions.annotate')}</Option>
+              <Option value="review">{t('dataPermissions.permissionConfig.actions.review')}</Option>
             </Select>
           </Form.Item>
 
-          <Form.Item name="expires_at" label="Expires At">
+          <Form.Item name="expires_at" label={t('dataPermissions.permissionConfig.form.expiresAt')}>
             <DatePicker showTime style={{ width: '100%' }} />
           </Form.Item>
 
-          <Form.Item name="is_temporary" label="Temporary Permission" valuePropName="checked">
+          <Form.Item name="is_temporary" label={t('dataPermissions.permissionConfig.form.isTemporary')} valuePropName="checked">
             <Switch />
           </Form.Item>
 
-          <Form.Item name="tags" label="Tags">
-            <Select mode="tags" placeholder="Add tags" />
+          <Form.Item name="tags" label={t('dataPermissions.permissionConfig.form.tags')}>
+            <Select mode="tags" placeholder={t('dataPermissions.permissionConfig.form.addTags')} />
           </Form.Item>
         </Form>
       </Modal>
 
       {/* Test Permission Modal */}
       <Modal
-        title="Test Permission"
+        title={t('dataPermissions.permissionConfig.test.title')}
         open={testModalOpen}
         onCancel={() => {
           setTestModalOpen(false);
@@ -433,7 +435,7 @@ const PermissionConfigPage: React.FC = () => {
         }}
         footer={[
           <Button key="close" onClick={() => setTestModalOpen(false)}>
-            Close
+            {t('common:close')}
           </Button>,
           <Button
             key="test"
@@ -441,7 +443,7 @@ const PermissionConfigPage: React.FC = () => {
             onClick={() => testForm.submit()}
             loading={testMutation.isPending}
           >
-            Test
+            {t('common:test')}
           </Button>,
         ]}
         width={600}
@@ -449,70 +451,70 @@ const PermissionConfigPage: React.FC = () => {
         <Form form={testForm} layout="vertical" onFinish={handleTestSubmit}>
           <Form.Item
             name="user_id"
-            label="User ID"
-            rules={[{ required: true, message: 'Please enter user ID' }]}
+            label={t('dataPermissions.permissionConfig.test.userId')}
+            rules={[{ required: true, message: t('dataPermissions.permissionConfig.test.userId') }]}
           >
-            <Input placeholder="User UUID to test" />
+            <Input placeholder={t('dataPermissions.permissionConfig.test.userIdPlaceholder')} />
           </Form.Item>
 
           <Form.Item
             name="resource_type"
-            label="Resource Type"
-            rules={[{ required: true, message: 'Please enter resource type' }]}
+            label={t('dataPermissions.permissionConfig.test.resourceType')}
+            rules={[{ required: true, message: t('dataPermissions.permissionConfig.test.resourceType') }]}
           >
-            <Input placeholder="e.g., dataset, project" />
+            <Input placeholder={t('dataPermissions.permissionConfig.form.resourceTypePlaceholder')} />
           </Form.Item>
 
           <Form.Item
             name="resource_id"
-            label="Resource ID"
-            rules={[{ required: true, message: 'Please enter resource ID' }]}
+            label={t('dataPermissions.permissionConfig.test.resourceId')}
+            rules={[{ required: true, message: t('dataPermissions.permissionConfig.test.resourceId') }]}
           >
-            <Input placeholder="Resource identifier" />
+            <Input placeholder={t('dataPermissions.permissionConfig.form.resourceIdPlaceholder')} />
           </Form.Item>
 
           <Form.Item
             name="action"
-            label="Action"
-            rules={[{ required: true, message: 'Please select action' }]}
+            label={t('dataPermissions.permissionConfig.test.action')}
+            rules={[{ required: true, message: t('dataPermissions.permissionConfig.form.selectAction') }]}
           >
-            <Select placeholder="Select action">
-              <Option value="read">Read</Option>
-              <Option value="write">Write</Option>
-              <Option value="delete">Delete</Option>
-              <Option value="export">Export</Option>
+            <Select placeholder={t('dataPermissions.permissionConfig.form.selectAction')}>
+              <Option value="read">{t('dataPermissions.permissionConfig.actions.read')}</Option>
+              <Option value="write">{t('dataPermissions.permissionConfig.actions.write')}</Option>
+              <Option value="delete">{t('dataPermissions.permissionConfig.actions.delete')}</Option>
+              <Option value="export">{t('dataPermissions.permissionConfig.actions.export')}</Option>
             </Select>
           </Form.Item>
 
-          <Form.Item name="field_name" label="Field Name (optional)">
-            <Input placeholder="For field-level check" />
+          <Form.Item name="field_name" label={t('dataPermissions.permissionConfig.test.fieldName')}>
+            <Input placeholder={t('dataPermissions.permissionConfig.test.fieldNamePlaceholder')} />
           </Form.Item>
         </Form>
 
         {testResult && (
           <Card style={{ marginTop: 16 }}>
             <Descriptions column={1} size="small">
-              <Descriptions.Item label="Result">
+              <Descriptions.Item label={t('dataPermissions.permissionConfig.test.result')}>
                 {testResult.allowed ? (
                   <Tag icon={<CheckCircleOutlined />} color="success">
-                    ALLOWED
+                    {t('dataPermissions.permissionConfig.test.allowed')}
                   </Tag>
                 ) : (
                   <Tag icon={<CloseCircleOutlined />} color="error">
-                    DENIED
+                    {t('dataPermissions.permissionConfig.test.denied')}
                   </Tag>
                 )}
               </Descriptions.Item>
               {testResult.reason && (
-                <Descriptions.Item label="Reason">{testResult.reason}</Descriptions.Item>
+                <Descriptions.Item label={t('dataPermissions.permissionConfig.test.reason')}>{testResult.reason}</Descriptions.Item>
               )}
               {testResult.requires_approval && (
-                <Descriptions.Item label="Requires Approval">
-                  <Tag color="warning">Yes</Tag>
+                <Descriptions.Item label={t('dataPermissions.permissionConfig.test.requiresApproval')}>
+                  <Tag color="warning">{t('common:yes')}</Tag>
                 </Descriptions.Item>
               )}
               {testResult.masked_fields.length > 0 && (
-                <Descriptions.Item label="Masked Fields">
+                <Descriptions.Item label={t('dataPermissions.permissionConfig.test.maskedFields')}>
                   {testResult.masked_fields.map((f) => (
                     <Tag key={f}>{f}</Tag>
                   ))}
@@ -525,58 +527,58 @@ const PermissionConfigPage: React.FC = () => {
 
       {/* Detail Modal */}
       <Modal
-        title="Permission Details"
+        title={t('dataPermissions.permissionConfig.details.title')}
         open={detailModalOpen}
         onCancel={() => setDetailModalOpen(false)}
         footer={[
           <Button key="close" onClick={() => setDetailModalOpen(false)}>
-            Close
+            {t('common:close')}
           </Button>,
         ]}
         width={600}
       >
         {selectedPermission && (
           <Descriptions column={1} bordered size="small">
-            <Descriptions.Item label="ID">{selectedPermission.id}</Descriptions.Item>
-            <Descriptions.Item label="Resource Level">
+            <Descriptions.Item label={t('dataPermissions.permissionConfig.details.id')}>{selectedPermission.id}</Descriptions.Item>
+            <Descriptions.Item label={t('dataPermissions.permissionConfig.details.resourceLevel')}>
               <Tag color={resourceLevelColors[selectedPermission.resource_level]}>
-                {selectedPermission.resource_level}
+                {t(`dataPermissions.permissionConfig.resourceLevels.${selectedPermission.resource_level}`)}
               </Tag>
             </Descriptions.Item>
-            <Descriptions.Item label="Resource Type">
+            <Descriptions.Item label={t('dataPermissions.permissionConfig.details.resourceType')}>
               {selectedPermission.resource_type}
             </Descriptions.Item>
-            <Descriptions.Item label="Resource ID">{selectedPermission.resource_id}</Descriptions.Item>
+            <Descriptions.Item label={t('dataPermissions.permissionConfig.details.resourceId')}>{selectedPermission.resource_id}</Descriptions.Item>
             {selectedPermission.field_name && (
-              <Descriptions.Item label="Field Name">{selectedPermission.field_name}</Descriptions.Item>
+              <Descriptions.Item label={t('dataPermissions.permissionConfig.details.fieldName')}>{selectedPermission.field_name}</Descriptions.Item>
             )}
-            <Descriptions.Item label="User ID">{selectedPermission.user_id || '-'}</Descriptions.Item>
-            <Descriptions.Item label="Role ID">{selectedPermission.role_id || '-'}</Descriptions.Item>
-            <Descriptions.Item label="Action">
-              <Tag color={actionColors[selectedPermission.action]}>{selectedPermission.action}</Tag>
+            <Descriptions.Item label={t('dataPermissions.permissionConfig.details.userId')}>{selectedPermission.user_id || '-'}</Descriptions.Item>
+            <Descriptions.Item label={t('dataPermissions.permissionConfig.details.roleId')}>{selectedPermission.role_id || '-'}</Descriptions.Item>
+            <Descriptions.Item label={t('dataPermissions.permissionConfig.details.action')}>
+              <Tag color={actionColors[selectedPermission.action]}>{t(`dataPermissions.permissionConfig.actions.${selectedPermission.action}`)}</Tag>
             </Descriptions.Item>
-            <Descriptions.Item label="Status">
+            <Descriptions.Item label={t('dataPermissions.permissionConfig.details.status')}>
               <Tag color={selectedPermission.is_active ? 'success' : 'default'}>
-                {selectedPermission.is_active ? 'Active' : 'Inactive'}
+                {selectedPermission.is_active ? t('dataPermissions.masking.active') : t('dataPermissions.masking.inactive')}
               </Tag>
             </Descriptions.Item>
-            <Descriptions.Item label="Temporary">
-              {selectedPermission.is_temporary ? 'Yes' : 'No'}
+            <Descriptions.Item label={t('dataPermissions.permissionConfig.details.temporary')}>
+              {selectedPermission.is_temporary ? t('common:yes') : t('common:no')}
             </Descriptions.Item>
-            <Descriptions.Item label="Tags">
-              {selectedPermission.tags?.map((t) => <Tag key={t}>{t}</Tag>) || '-'}
+            <Descriptions.Item label={t('dataPermissions.permissionConfig.details.tags')}>
+              {selectedPermission.tags?.map((tag) => <Tag key={tag}>{tag}</Tag>) || '-'}
             </Descriptions.Item>
-            <Descriptions.Item label="Granted By">{selectedPermission.granted_by}</Descriptions.Item>
-            <Descriptions.Item label="Granted At">
+            <Descriptions.Item label={t('dataPermissions.permissionConfig.details.grantedBy')}>{selectedPermission.granted_by}</Descriptions.Item>
+            <Descriptions.Item label={t('dataPermissions.permissionConfig.details.grantedAt')}>
               {dayjs(selectedPermission.granted_at).format('YYYY-MM-DD HH:mm:ss')}
             </Descriptions.Item>
-            <Descriptions.Item label="Expires At">
+            <Descriptions.Item label={t('dataPermissions.permissionConfig.details.expiresAt')}>
               {selectedPermission.expires_at
                 ? dayjs(selectedPermission.expires_at).format('YYYY-MM-DD HH:mm:ss')
-                : 'Never'}
+                : t('dataPermissions.permissionConfig.never')}
             </Descriptions.Item>
             {selectedPermission.conditions && (
-              <Descriptions.Item label="Conditions">
+              <Descriptions.Item label={t('dataPermissions.permissionConfig.details.conditions')}>
                 <pre style={{ margin: 0, fontSize: 12 }}>
                   {JSON.stringify(selectedPermission.conditions, null, 2)}
                 </pre>

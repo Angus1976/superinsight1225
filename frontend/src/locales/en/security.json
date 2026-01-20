@@ -146,7 +146,10 @@
     "verifyFailed": "Integrity verification failed: {{error}}",
     "verifyError": "Failed to verify integrity",
     "exportCsv": "Export CSV",
-    "logDetails": "Audit Log Details"
+    "logDetails": "Audit Log Details",
+    "securityAlert": "Security Alert",
+    "unresolvedEventsMessage": "There are {{count}} unresolved security events that require attention.",
+    "viewEvents": "View Events"
   },
 
   "compliance": {

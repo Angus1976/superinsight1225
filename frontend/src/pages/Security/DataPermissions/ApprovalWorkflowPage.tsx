@@ -37,6 +37,7 @@ import {
   HistoryOutlined,
 } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import {
@@ -67,6 +68,7 @@ const sensitivityColors: Record<SensitivityLevel, string> = {
 };
 
 const ApprovalWorkflowPage: React.FC = () => {
+  const { t } = useTranslation(['security', 'common']);
   const [activeTab, setActiveTab] = useState('pending');
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [decisionModalOpen, setDecisionModalOpen] = useState(false);
@@ -106,10 +108,10 @@ const ApprovalWorkflowPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['myApprovals'] });
       setDecisionModalOpen(false);
       decisionForm.resetFields();
-      message.success('Decision submitted successfully');
+      message.success(t('dataPermissions.approval.decisionSubmitted'));
     },
     onError: () => {
-      message.error('Failed to submit decision');
+      message.error(t('dataPermissions.approval.decisionFailed'));
     },
   });
 
@@ -119,10 +121,10 @@ const ApprovalWorkflowPage: React.FC = () => {
     onSuccess: () => {
       setDelegateModalOpen(false);
       delegateForm.resetFields();
-      message.success('Delegation created successfully');
+      message.success(t('dataPermissions.approval.delegation.createSuccess'));
     },
     onError: () => {
-      message.error('Failed to create delegation');
+      message.error(t('dataPermissions.approval.delegation.createFailed'));
     },
   });
 
@@ -132,7 +134,7 @@ const ApprovalWorkflowPage: React.FC = () => {
       const history = await dataPermissionApi.getApprovalHistory(requestId);
       setApprovalHistory(history);
     } catch {
-      message.error('Failed to fetch approval history');
+      message.error(t('common:loadFailed'));
     }
   };
 
@@ -168,7 +170,7 @@ const ApprovalWorkflowPage: React.FC = () => {
 
   const pendingColumns: ColumnsType<ApprovalRequest> = [
     {
-      title: 'Resource',
+      title: t('dataPermissions.approval.columns.resource'),
       key: 'resource',
       render: (_, record) => (
         <div>
@@ -178,44 +180,44 @@ const ApprovalWorkflowPage: React.FC = () => {
       ),
     },
     {
-      title: 'Action',
+      title: t('dataPermissions.approval.columns.action'),
       dataIndex: 'action',
       key: 'action',
       width: 100,
       render: (action) => <Tag>{action.toUpperCase()}</Tag>,
     },
     {
-      title: 'Requester',
+      title: t('dataPermissions.approval.columns.requester'),
       dataIndex: 'requester_id',
       key: 'requester_id',
       width: 150,
       ellipsis: true,
     },
     {
-      title: 'Sensitivity',
+      title: t('dataPermissions.approval.columns.sensitivity'),
       dataIndex: 'sensitivity_level',
       key: 'sensitivity_level',
       width: 120,
       render: (level: SensitivityLevel) => (
-        <Tag color={sensitivityColors[level]}>{level.toUpperCase()}</Tag>
+        <Tag color={sensitivityColors[level]}>{t(`sensitivity.${level}`)}</Tag>
       ),
     },
     {
-      title: 'Level',
+      title: t('dataPermissions.approval.columns.level'),
       dataIndex: 'current_level',
       key: 'current_level',
       width: 80,
       render: (level) => <Badge count={level} style={{ backgroundColor: '#1890ff' }} />,
     },
     {
-      title: 'Created',
+      title: t('dataPermissions.approval.columns.created'),
       dataIndex: 'created_at',
       key: 'created_at',
       width: 150,
       render: (date) => dayjs(date).format('YYYY-MM-DD HH:mm'),
     },
     {
-      title: 'Expires',
+      title: t('dataPermissions.approval.columns.expires'),
       dataIndex: 'expires_at',
       key: 'expires_at',
       width: 150,
@@ -229,12 +231,12 @@ const ApprovalWorkflowPage: React.FC = () => {
       },
     },
     {
-      title: 'Actions',
+      title: t('common:actions.label'),
       key: 'actions',
       width: 200,
       render: (_, record) => (
         <Space>
-          <Tooltip title="View Details">
+          <Tooltip title={t('dataPermissions.approval.viewDetails')}>
             <Button
               type="link"
               size="small"
@@ -242,7 +244,7 @@ const ApprovalWorkflowPage: React.FC = () => {
               onClick={() => handleViewDetail(record)}
             />
           </Tooltip>
-          <Tooltip title="Approve">
+          <Tooltip title={t('dataPermissions.approval.approve')}>
             <Button
               type="link"
               size="small"
@@ -251,7 +253,7 @@ const ApprovalWorkflowPage: React.FC = () => {
               onClick={() => handleDecision(record, 'approved')}
             />
           </Tooltip>
-          <Tooltip title="Reject">
+          <Tooltip title={t('dataPermissions.approval.reject')}>
             <Button
               type="link"
               size="small"
@@ -267,7 +269,7 @@ const ApprovalWorkflowPage: React.FC = () => {
 
   const myRequestColumns: ColumnsType<ApprovalRequest> = [
     {
-      title: 'Resource',
+      title: t('dataPermissions.approval.columns.resource'),
       key: 'resource',
       render: (_, record) => (
         <div>
@@ -277,46 +279,46 @@ const ApprovalWorkflowPage: React.FC = () => {
       ),
     },
     {
-      title: 'Action',
+      title: t('dataPermissions.approval.columns.action'),
       dataIndex: 'action',
       key: 'action',
       width: 100,
       render: (action) => <Tag>{action.toUpperCase()}</Tag>,
     },
     {
-      title: 'Status',
+      title: t('dataPermissions.approval.columns.status'),
       dataIndex: 'status',
       key: 'status',
       width: 120,
       render: (status: ApprovalStatus) => (
-        <Tag color={statusColors[status]}>{status.toUpperCase()}</Tag>
+        <Tag color={statusColors[status]}>{t(`dataPermissions.approval.status.${status}`)}</Tag>
       ),
     },
     {
-      title: 'Sensitivity',
+      title: t('dataPermissions.approval.columns.sensitivity'),
       dataIndex: 'sensitivity_level',
       key: 'sensitivity_level',
       width: 120,
       render: (level: SensitivityLevel) => (
-        <Tag color={sensitivityColors[level]}>{level.toUpperCase()}</Tag>
+        <Tag color={sensitivityColors[level]}>{t(`sensitivity.${level}`)}</Tag>
       ),
     },
     {
-      title: 'Created',
+      title: t('dataPermissions.approval.columns.created'),
       dataIndex: 'created_at',
       key: 'created_at',
       width: 150,
       render: (date) => dayjs(date).format('YYYY-MM-DD HH:mm'),
     },
     {
-      title: 'Resolved',
+      title: t('dataPermissions.approval.columns.resolved'),
       dataIndex: 'resolved_at',
       key: 'resolved_at',
       width: 150,
       render: (date) => (date ? dayjs(date).format('YYYY-MM-DD HH:mm') : '-'),
     },
     {
-      title: 'Actions',
+      title: t('common:actions.label'),
       key: 'actions',
       width: 80,
       render: (_, record) => (
@@ -339,7 +341,7 @@ const ApprovalWorkflowPage: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Pending Approvals"
+              title={t('dataPermissions.approval.stats.pending')}
               value={pendingCount}
               prefix={<ClockCircleOutlined />}
               valueStyle={{ color: pendingCount > 0 ? '#faad14' : '#52c41a' }}
@@ -349,7 +351,7 @@ const ApprovalWorkflowPage: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="My Requests"
+              title={t('dataPermissions.approval.stats.myRequests')}
               value={myApprovals?.length || 0}
               prefix={<HistoryOutlined />}
             />
@@ -358,7 +360,7 @@ const ApprovalWorkflowPage: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Approved Today"
+              title={t('dataPermissions.approval.stats.approvedToday')}
               value={
                 myApprovals?.filter(
                   (r) =>
@@ -373,7 +375,7 @@ const ApprovalWorkflowPage: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Rejected Today"
+              title={t('dataPermissions.approval.stats.rejectedToday')}
               value={
                 myApprovals?.filter(
                   (r) =>
@@ -391,7 +393,7 @@ const ApprovalWorkflowPage: React.FC = () => {
       <Card
         extra={
           <Button icon={<UserSwitchOutlined />} onClick={() => setDelegateModalOpen(true)}>
-            Delegate Approvals
+            {t('dataPermissions.approval.delegateApprovals')}
           </Button>
         }
       >
@@ -404,7 +406,7 @@ const ApprovalWorkflowPage: React.FC = () => {
               label: (
                 <span>
                   <ClockCircleOutlined />
-                  Pending Approvals
+                  {t('dataPermissions.approval.pendingApprovals')}
                   {pendingCount > 0 && (
                     <Badge count={pendingCount} style={{ marginLeft: 8 }} />
                   )}
@@ -426,7 +428,7 @@ const ApprovalWorkflowPage: React.FC = () => {
               label: (
                 <span>
                   <HistoryOutlined />
-                  My Requests
+                  {t('dataPermissions.approval.myRequests')}
                 </span>
               ),
               children: (
@@ -446,12 +448,12 @@ const ApprovalWorkflowPage: React.FC = () => {
 
       {/* Detail Modal */}
       <Modal
-        title="Approval Request Details"
+        title={t('dataPermissions.approval.requestDetails')}
         open={detailModalOpen}
         onCancel={() => setDetailModalOpen(false)}
         footer={[
           <Button key="close" onClick={() => setDetailModalOpen(false)}>
-            Close
+            {t('common:close')}
           </Button>,
         ]}
         width={700}
@@ -460,52 +462,52 @@ const ApprovalWorkflowPage: React.FC = () => {
           <>
             <Descriptions column={2} bordered size="small">
               <Descriptions.Item label="ID">{selectedRequest.id}</Descriptions.Item>
-              <Descriptions.Item label="Status">
+              <Descriptions.Item label={t('dataPermissions.approval.columns.status')}>
                 <Tag color={statusColors[selectedRequest.status]}>
-                  {selectedRequest.status.toUpperCase()}
+                  {t(`dataPermissions.approval.status.${selectedRequest.status}`)}
                 </Tag>
               </Descriptions.Item>
-              <Descriptions.Item label="Resource">{selectedRequest.resource}</Descriptions.Item>
-              <Descriptions.Item label="Resource Type">
+              <Descriptions.Item label={t('dataPermissions.approval.columns.resource')}>{selectedRequest.resource}</Descriptions.Item>
+              <Descriptions.Item label={t('dataPermissions.permissionConfig.form.resourceType')}>
                 {selectedRequest.resource_type}
               </Descriptions.Item>
-              <Descriptions.Item label="Action">{selectedRequest.action}</Descriptions.Item>
-              <Descriptions.Item label="Sensitivity">
+              <Descriptions.Item label={t('dataPermissions.approval.columns.action')}>{selectedRequest.action}</Descriptions.Item>
+              <Descriptions.Item label={t('dataPermissions.approval.columns.sensitivity')}>
                 <Tag color={sensitivityColors[selectedRequest.sensitivity_level]}>
-                  {selectedRequest.sensitivity_level}
+                  {t(`sensitivity.${selectedRequest.sensitivity_level}`)}
                 </Tag>
               </Descriptions.Item>
-              <Descriptions.Item label="Requester" span={2}>
+              <Descriptions.Item label={t('dataPermissions.approval.columns.requester')} span={2}>
                 {selectedRequest.requester_id}
               </Descriptions.Item>
-              <Descriptions.Item label="Reason" span={2}>
+              <Descriptions.Item label={t('dataPermissions.permissionConfig.test.reason')} span={2}>
                 {selectedRequest.reason}
               </Descriptions.Item>
-              <Descriptions.Item label="Created">
+              <Descriptions.Item label={t('dataPermissions.approval.columns.created')}>
                 {dayjs(selectedRequest.created_at).format('YYYY-MM-DD HH:mm:ss')}
               </Descriptions.Item>
-              <Descriptions.Item label="Expires">
+              <Descriptions.Item label={t('dataPermissions.approval.columns.expires')}>
                 {dayjs(selectedRequest.expires_at).format('YYYY-MM-DD HH:mm:ss')}
               </Descriptions.Item>
             </Descriptions>
 
             {approvalHistory.length > 0 && (
               <div style={{ marginTop: 24 }}>
-                <h4>Approval History</h4>
+                <h4>{t('dataPermissions.approval.approvalHistory')}</h4>
                 <Timeline
                   items={approvalHistory.map((action) => ({
                     color: action.decision === 'approved' ? 'green' : 'red',
                     children: (
                       <div>
                         <div>
-                          <strong>Level {action.approval_level}</strong> -{' '}
+                          <strong>{t('dataPermissions.approval.columns.level')} {action.approval_level}</strong> -{' '}
                           <Tag color={action.decision === 'approved' ? 'success' : 'error'}>
-                            {action.decision.toUpperCase()}
+                            {t(`dataPermissions.approval.status.${action.decision}`)}
                           </Tag>
                         </div>
                         <div style={{ fontSize: 12, color: '#666' }}>
-                          By: {action.approver_id}
-                          {action.delegated_from && ` (delegated from ${action.delegated_from})`}
+                          {t('audit.user')}: {action.approver_id}
+                          {action.delegated_from && ` (${t('dataPermissions.approval.delegateApprovals')} ${action.delegated_from})`}
                         </div>
                         {action.comments && (
                           <div style={{ fontSize: 12, marginTop: 4 }}>{action.comments}</div>
@@ -525,7 +527,7 @@ const ApprovalWorkflowPage: React.FC = () => {
 
       {/* Decision Modal */}
       <Modal
-        title={`${decisionForm.getFieldValue('decision') === 'approved' ? 'Approve' : 'Reject'} Request`}
+        title={`${decisionForm.getFieldValue('decision') === 'approved' ? t('dataPermissions.approval.approve') : t('dataPermissions.approval.reject')} ${t('dataPermissions.approval.requestDetails')}`}
         open={decisionModalOpen}
         onCancel={() => setDecisionModalOpen(false)}
         onOk={() => decisionForm.submit()}
@@ -538,22 +540,22 @@ const ApprovalWorkflowPage: React.FC = () => {
 
           {selectedRequest && (
             <Alert
-              message={`Resource: ${selectedRequest.resource}`}
-              description={`Action: ${selectedRequest.action} | Sensitivity: ${selectedRequest.sensitivity_level}`}
+              message={`${t('dataPermissions.approval.columns.resource')}: ${selectedRequest.resource}`}
+              description={`${t('dataPermissions.approval.columns.action')}: ${selectedRequest.action} | ${t('dataPermissions.approval.columns.sensitivity')}: ${t(`sensitivity.${selectedRequest.sensitivity_level}`)}`}
               type="info"
               style={{ marginBottom: 16 }}
             />
           )}
 
-          <Form.Item name="comments" label="Comments">
-            <TextArea rows={4} placeholder="Add comments (optional)" />
+          <Form.Item name="comments" label={t('dataPermissions.approval.comments')}>
+            <TextArea rows={4} placeholder={t('dataPermissions.approval.commentsPlaceholder')} />
           </Form.Item>
         </Form>
       </Modal>
 
       {/* Delegate Modal */}
       <Modal
-        title="Delegate Approvals"
+        title={t('dataPermissions.approval.delegation.title')}
         open={delegateModalOpen}
         onCancel={() => setDelegateModalOpen(false)}
         onOk={() => delegateForm.submit()}
@@ -562,24 +564,24 @@ const ApprovalWorkflowPage: React.FC = () => {
         <Form form={delegateForm} layout="vertical" onFinish={handleDelegateSubmit}>
           <Form.Item
             name="delegate_to"
-            label="Delegate To"
-            rules={[{ required: true, message: 'Please enter delegate user ID' }]}
+            label={t('dataPermissions.approval.delegation.delegateTo')}
+            rules={[{ required: true, message: t('dataPermissions.approval.delegation.delegateTo') }]}
           >
-            <Input placeholder="User ID to delegate approvals to" />
+            <Input placeholder={t('dataPermissions.approval.delegation.delegateToPlaceholder')} />
           </Form.Item>
 
           <Form.Item
             name="start_date"
-            label="Start Date"
-            rules={[{ required: true, message: 'Please select start date' }]}
+            label={t('dataPermissions.approval.delegation.startDate')}
+            rules={[{ required: true, message: t('dataPermissions.approval.delegation.startDate') }]}
           >
             <DatePicker showTime style={{ width: '100%' }} />
           </Form.Item>
 
           <Form.Item
             name="end_date"
-            label="End Date"
-            rules={[{ required: true, message: 'Please select end date' }]}
+            label={t('dataPermissions.approval.delegation.endDate')}
+            rules={[{ required: true, message: t('dataPermissions.approval.delegation.endDate') }]}
           >
             <DatePicker showTime style={{ width: '100%' }} />
           </Form.Item>

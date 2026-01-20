@@ -186,7 +186,7 @@ const WorkspaceManagement: React.FC = () => {
       {
         key: 'add-child',
         icon: <PlusOutlined />,
-        label: t('actions.addChild'),
+        label: t('common:addChild'),
         onClick: () => {
           setParentId(workspace.id);
           setEditingWorkspace(null);
@@ -197,7 +197,7 @@ const WorkspaceManagement: React.FC = () => {
       {
         key: 'edit',
         icon: <EditOutlined />,
-        label: t('actions.edit'),
+        label: t('common:edit'),
         onClick: () => {
           setEditingWorkspace(workspace);
           form.setFieldsValue({
@@ -210,7 +210,7 @@ const WorkspaceManagement: React.FC = () => {
       {
         key: 'duplicate',
         icon: <CopyOutlined />,
-        label: t('actions.duplicate'),
+        label: t('common:duplicate'),
         onClick: () => {
           message.info(t('templateInDev'));
         },
@@ -219,7 +219,7 @@ const WorkspaceManagement: React.FC = () => {
       workspace.status === 'active' ? {
         key: 'archive',
         icon: <InboxOutlined />,
-        label: t('actions.archive'),
+        label: t('common:archive'),
         onClick: () => {
           Modal.confirm({
             title: t('confirmArchive'),
@@ -230,13 +230,13 @@ const WorkspaceManagement: React.FC = () => {
       } : {
         key: 'restore',
         icon: <UndoOutlined />,
-        label: t('actions.restore'),
+        label: t('common:restore'),
         onClick: () => restoreMutation.mutate(workspace.id),
       },
       {
         key: 'delete',
         icon: <DeleteOutlined />,
-        label: t('actions.delete'),
+        label: t('common:delete'),
         danger: true,
         onClick: () => {
           Modal.confirm({
@@ -355,21 +355,21 @@ const WorkspaceManagement: React.FC = () => {
                         setIsModalVisible(true);
                       }}
                     >
-                      {t('actions.edit')}
+                      {t('common:edit')}
                     </Button>
                     {selectedWorkspace.status === 'active' ? (
                       <Button
                         icon={<InboxOutlined />}
                         onClick={() => archiveMutation.mutate(selectedWorkspace.id)}
                       >
-                        {t('actions.archive')}
+                        {t('common:archive')}
                       </Button>
                     ) : (
                       <Button
                         icon={<UndoOutlined />}
                         onClick={() => restoreMutation.mutate(selectedWorkspace.id)}
                       >
-                        {t('actions.restore')}
+                        {t('common:restore')}
                       </Button>
                     )}
                     <Button

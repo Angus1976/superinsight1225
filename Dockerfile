@@ -34,9 +34,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY src/ ./src/
 COPY main.py .
 
-# 复制数据库迁移文件（如果存在）
-COPY alembic/ ./alembic/ 2>/dev/null || true
-COPY alembic.ini . 2>/dev/null || true
+# 复制数据库迁移文件
+COPY alembic/ ./alembic/
+COPY alembic.ini .
 
 # 创建必要的目录
 RUN mkdir -p /app/logs /app/uploads /app/exports /app/data

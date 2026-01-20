@@ -9,7 +9,7 @@
         "inputs": {
           "serviceName": "superinsight-api",
           "servicePath": "/",
-          "dockerfilePath": "./deploy/tcb/Dockerfile.api",
+          "dockerfilePath": "./Dockerfile",
           "containerPort": 8000,
           "cpu": 2,
           "mem": 4,

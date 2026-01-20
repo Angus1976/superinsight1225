@@ -1,0 +1,78 @@
+# Git
+.git
+.gitignore
+.github
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.hypothesis/
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Data directories
+data/
+logs/
+uploads/
+exports/
+operations_data/
+quality_monitoring/
+
+# Frontend
+frontend/
+habit-tracker/
+
+# Deployment
+deploy/
+scripts/
+文档/
+脚本/
+
+# Docker
+docker-compose*.yml
+Dockerfile.*
+.dockerignore
+
+# Redis
+redis-stable/
+
+# Temporary files
+*.log
+*.pid
+.backend.pid
+.frontend.pid
+backend.pid
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# TCB
+cloudbaserc.json
+deploy-*.sh
+start-*.sh
+stop-*.sh
+quick-*.sh

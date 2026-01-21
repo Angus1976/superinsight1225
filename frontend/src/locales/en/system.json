@@ -130,5 +130,166 @@
     "noData": "No data available",
     "error": "Error occurred",
     "success": "Operation successful"
+  },
+  "error": {
+    "validation": {
+      "invalidInput": "Invalid input data",
+      "missingField": "Missing required field",
+      "invalidFormat": "Invalid format",
+      "invalidValue": "Invalid value",
+      "fieldTooLong": "Field too long",
+      "fieldTooShort": "Field too short",
+      "invalidType": "Invalid type",
+      "invalidRange": "Value out of range",
+      "invalidEnum": "Invalid enum value",
+      "invalidJson": "Invalid JSON format"
+    },
+    "auth": {
+      "invalidCredentials": "Invalid username or password",
+      "tokenExpired": "Token expired",
+      "tokenInvalid": "Invalid token",
+      "tokenMissing": "Missing authentication token",
+      "sessionExpired": "Session expired",
+      "accountLocked": "Account locked",
+      "accountDisabled": "Account disabled"
+    },
+    "permission": {
+      "accessDenied": "Access denied",
+      "insufficientRole": "Insufficient permissions",
+      "resourceForbidden": "Access to this resource is forbidden",
+      "operationForbidden": "This operation is forbidden",
+      "tenantMismatch": "Tenant mismatch"
+    },
+    "notFound": {
+      "resource": "Resource not found",
+      "user": "User not found",
+      "task": "Task not found",
+      "project": "Project not found",
+      "annotation": "Annotation not found",
+      "dataSource": "Data source not found",
+      "evaluation": "Evaluation result not found",
+      "rule": "Rule not found",
+      "endpoint": "Endpoint not found"
+    },
+    "conflict": {
+      "resourceExists": "Resource already exists",
+      "versionMismatch": "Version mismatch",
+      "stateInvalid": "Invalid state",
+      "duplicateKey": "Duplicate key",
+      "concurrentUpdate": "Concurrent update conflict"
+    },
+    "rateLimit": {
+      "exceeded": "Rate limit exceeded",
+      "apiQuota": "API quota exhausted",
+      "userQuota": "User quota exhausted"
+    },
+    "internal": {
+      "serverError": "Internal server error",
+      "databaseError": "Database error",
+      "cacheError": "Cache error",
+      "processingError": "Processing error",
+      "configurationError": "Configuration error",
+      "unexpectedError": "Unexpected error"
+    },
+    "service": {
+      "unavailable": "Service unavailable",
+      "maintenance": "Service under maintenance",
+      "overloaded": "Service overloaded",
+      "dependencyFailed": "Dependency service failed",
+      "timeout": "Service timeout"
+    }
+  },
+  "cache": {
+    "strategy": {
+      "cacheHit": "Cache hit",
+      "cacheMiss": "Cache miss",
+      "cacheSet": "Cache set",
+      "cacheInvalidated": "Cache invalidated",
+      "batchInvalidated": "Batch cache invalidated"
+    },
+    "warmup": {
+      "started": "Cache warmup started",
+      "completed": "Cache warmup completed",
+      "failed": "Cache warmup failed"
+    },
+    "monitor": {
+      "hitRateLow": "Cache hit rate too low",
+      "statsReset": "Cache statistics reset"
+    },
+    "error": {
+      "connectionFailed": "Cache connection failed",
+      "serializationFailed": "Serialization failed",
+      "deserializationFailed": "Deserialization failed",
+      "operationFailed": "Cache operation failed"
+    }
+  },
+  "database": {
+    "batch": {
+      "insertStarted": "Batch insert started: {{count}} records",
+      "insertCompleted": "Batch insert completed: {{count}} records, duration {{duration}}ms",
+      "updateStarted": "Batch update started: {{count}} records",
+      "updateCompleted": "Batch update completed: {{count}} records, duration {{duration}}ms",
+      "upsertStarted": "Batch upsert started: {{count}} records",
+      "upsertCompleted": "Batch upsert completed: {{count}} records, duration {{duration}}ms",
+      "batchFailed": "Batch operation failed: {{error}}"
+    },
+    "pagination": {
+      "invalidPage": "Invalid page number: {{page}}",
+      "invalidSize": "Invalid page size: {{size}}",
+      "queryStarted": "Pagination query started: page={{page}}, size={{size}}",
+      "queryCompleted": "Pagination query completed: returned {{count}} records"
+    },
+    "monitor": {
+      "slowQueryDetected": "Slow query detected: {{duration}}ms",
+      "statsReset": "Slow query statistics reset",
+      "thresholdUpdated": "Slow query threshold updated: {{threshold}}ms",
+      "queryRecorded": "Query recorded: {{duration}}ms"
+    },
+    "error": {
+      "queryFailed": "Query failed: {{error}}"
+    }
+  },
+  "notification": {
+    "sla": {
+      "emailSubjectBreach": "SLA Breach Alert: {{ticketTitle}}",
+      "emailSubjectWarning": "SLA Warning: {{ticketTitle}}",
+      "emailSubjectEscalation": "SLA Escalation Alert: {{ticketTitle}}",
+      "breachMessage": "Ticket {{ticketId}} has breached SLA, please handle immediately",
+      "warningMessage": "Ticket {{ticketId}} is about to breach SLA, please handle soon",
+      "escalationMessage": "Ticket {{ticketId}} SLA breach has been escalated",
+      "sendFailed": "Notification send failed: {{error}}",
+      "channelUnavailable": "Notification channel unavailable: {{channel}}",
+      "retryAttempt": "Retrying notification send (attempt {{attempt}})",
+      "allChannelsFailed": "All notification channels failed",
+      "sendSuccess": "Notification sent successfully: {{channel}}",
+      "wechatCardTitle": "SLA Alert Notification",
+      "wechatCardDescription": "Ticket {{ticketId}} requires your attention"
+    },
+    "email": {
+      "sendStarted": "Email send started: {{recipient}}",
+      "sendCompleted": "Email send completed: {{recipient}}",
+      "sendFailed": "Email send failed: {{error}}",
+      "retryAttempt": "Email send retry (attempt {{attempt}})"
+    }
+  },
+  "compliance": {
+    "scheduler": {
+      "jobAdded": "Compliance report job added: {{reportType}}",
+      "jobRemoved": "Compliance report job removed: {{reportType}}",
+      "jobExecuted": "Compliance report job executed: {{reportType}}",
+      "jobFailed": "Compliance report job failed: {{error}}",
+      "invalidCron": "Invalid cron expression: {{expression}}",
+      "invalidReportType": "Invalid report type: {{reportType}}",
+      "nextRun": "Next run time: {{nextRun}}"
+    }
+  },
+  "sync": {
+    "manager": {
+      "syncStarted": "Sync started",
+      "syncCompleted": "Sync completed: {{count}} records",
+      "syncFailed": "Sync failed: {{error}}",
+      "conflictResolved": "Conflict resolved: {{itemId}}",
+      "modelDownloaded": "Model downloaded: {{modelName}}"
+    }
   }
 }

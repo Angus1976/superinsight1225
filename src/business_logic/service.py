@@ -4,6 +4,7 @@
 提供业务逻辑分析、规则提取、模式识别等核心服务
 
 实现需求 13: 客户业务逻辑提炼与智能化
+实现需求 5.1-5.9: 业务逻辑服务数据库操作
 """
 
 import logging
@@ -13,7 +14,6 @@ import asyncio
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_, desc
 
 from .extractor import BusinessLogicExtractor, PatternType, RuleType
 from .models import (
@@ -27,18 +27,59 @@ from .models import (
     ChangeDetectionRequest, ChangeDetectionResponse,
     BusinessLogicStats, RuleTypeEnum, PatternTypeEnum, InsightTypeEnum
 )
+from .repository import (
+    BusinessRuleRepository,
+    BusinessPatternRepository,
+    BusinessInsightRepository
+)
+from src.i18n import get_translation
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 class BusinessLogicService:
-    """业务逻辑服务类"""
+    """业务逻辑服务类
     
-    def __init__(self):
-        """初始化业务逻辑服务"""
-        self.extractor = BusinessLogicExtractor()
+    提供业务规则、模式和洞察的完整 CRUD 操作，
+    支持数据库持久化和多租户隔离。
+    
+    Implements Requirements 5.1-5.9
+    """
+    
+    def __init__(self, db: Optional[Session] = None, tenant_id: str = "default"):
+        """初始化业务逻辑服务
         
+        Args:
+            db: SQLAlchemy 数据库会话（可选）
+            tenant_id: 租户标识符（默认: "default"）
+        """
+        self.extractor = BusinessLogicExtractor()
+        self.db = db
+        self.tenant_id = tenant_id
+        
+        # 初始化仓库（如果提供了数据库会话）
+        self._rule_repo: Optional[BusinessRuleRepository] = None
+        self._pattern_repo: Optional[BusinessPatternRepository] = None
+        self._insight_repo: Optional[BusinessInsightRepository] = None
+        
+        if db:
+            self._rule_repo = BusinessRuleRepository(db)
+            self._pattern_repo = BusinessPatternRepository(db)
+            self._insight_repo = BusinessInsightRepository(db)
+    
+    def set_db_session(self, db: Session):
+        """设置数据库会话
+        
+        Args:
+            db: SQLAlchemy 数据库会话
+        """
+        self.db = db
+        self._rule_repo = BusinessRuleRepository(db)
+        self._pattern_repo = BusinessPatternRepository(db)
+        self._insight_repo = BusinessInsightRepository(db)
+    
     async def analyze_patterns(self, request: PatternAnalysisRequest) -> PatternAnalysisResponse:
         """
         分析项目标注数据中的业务模式
@@ -64,6 +105,7 @@ class BusinessLogicService:
             for pattern in analysis.patterns:
                 pattern_model = BusinessPattern(
                     id=str(uuid.uuid4()),
+                    tenant_id=self.tenant_id,
                     project_id=request.project_id,
                     pattern_type=PatternTypeEnum(pattern.type.value),
                     description=pattern.description,
@@ -83,7 +125,12 @@ class BusinessLogicService:
             )
             
         except Exception as e:
-            logger.error(f"模式分析失败: {e}")
+            logger.error(
+                get_translation(
+                    "business_logic.service.pattern_analysis_failed",
+                    default=f"模式分析失败: {e}"
+                )
+            )
             raise
     
     async def extract_business_rules(self, request: RuleExtractionRequest) -> RuleExtractionResponse:
@@ -108,6 +155,7 @@ class BusinessLogicService:
             for rule in extracted_rules:
                 rule_model = BusinessRule(
                     id=rule.id,
+                    tenant_id=self.tenant_id,
                     project_id=request.project_id,
                     name=rule.name,
                     description=rule.description,
@@ -130,7 +178,12 @@ class BusinessLogicService:
             )
             
         except Exception as e:
-            logger.error(f"规则提取失败: {e}")
+            logger.error(
+                get_translation(
+                    "business_logic.service.rule_extraction_failed",
+                    default=f"规则提取失败: {e}"
+                )
+            )
             raise
     
     async def get_business_rules(
@@ -149,40 +202,56 @@ class BusinessLogicService:
             
         Returns:
             List[BusinessRule]: 业务规则列表
+            
+        Implements Requirement 5.1: Query business rules from database with filtering
         """
         try:
-            # TODO: 从数据库查询规则
-            # 这里返回示例数据
-            rules = []
+            # 如果有数据库连接，从数据库查询
+            if self._rule_repo:
+                rule_dicts = await self._rule_repo.find_by_project(
+                    project_id=project_id,
+                    tenant_id=self.tenant_id,
+                    rule_type=rule_type,
+                    active_only=active_only
+                )
+                
+                rules = []
+                for rule_dict in rule_dicts:
+                    rule = BusinessRule(
+                        id=rule_dict['id'],
+                        tenant_id=rule_dict['tenant_id'],
+                        project_id=rule_dict['project_id'],
+                        name=rule_dict['name'],
+                        description=rule_dict.get('description'),
+                        pattern=rule_dict['pattern'],
+                        rule_type=RuleTypeEnum(rule_dict['rule_type']),
+                        confidence=rule_dict['confidence'],
+                        frequency=rule_dict['frequency'],
+                        examples=rule_dict.get('examples', []),
+                        is_active=rule_dict['is_active'],
+                        created_at=datetime.fromisoformat(rule_dict['created_at']) if isinstance(rule_dict['created_at'], str) else rule_dict['created_at'],
+                        updated_at=datetime.fromisoformat(rule_dict['updated_at']) if isinstance(rule_dict['updated_at'], str) else rule_dict['updated_at']
+                    )
+                    rules.append(rule)
+                
+                return rules
             
-            # 示例规则
-            example_rule = BusinessRule(
-                id=f"rule_{project_id}_001",
-                project_id=project_id,
-                name="正面情感识别规则",
-                description="基于关键词识别正面情感的规则",
-                pattern="IF text CONTAINS ['excellent', 'great', 'amazing'] THEN sentiment = 'positive'",
-                rule_type=RuleTypeEnum.SENTIMENT_RULE,
-                confidence=0.85,
-                frequency=25,
-                examples=[],
-                is_active=True,
-                created_at=datetime.now() - timedelta(days=7),
-                updated_at=datetime.now() - timedelta(days=1)
+            # 如果没有数据库连接，返回空列表
+            logger.warning(
+                get_translation(
+                    "business_logic.service.no_db_connection",
+                    default="No database connection, returning empty list"
+                )
             )
-            rules.append(example_rule)
-            
-            # 应用过滤条件
-            if rule_type:
-                rules = [r for r in rules if r.rule_type.value == rule_type]
-            
-            if active_only:
-                rules = [r for r in rules if r.is_active]
-            
-            return rules
+            return []
             
         except Exception as e:
-            logger.error(f"获取业务规则失败: {e}")
+            logger.error(
+                get_translation(
+                    "business_logic.service.get_rules_failed",
+                    default=f"获取业务规则失败: {e}"
+                )
+            )
             raise
     
     async def get_business_patterns(
@@ -201,43 +270,394 @@ class BusinessLogicService:
             
         Returns:
             List[BusinessPattern]: 业务模式列表
+            
+        Implements Requirement 5.2: Query business patterns from database with strength filtering
         """
         try:
-            # TODO: 从数据库查询模式
-            # 这里返回示例数据
-            patterns = []
+            # 如果有数据库连接，从数据库查询
+            if self._pattern_repo:
+                pattern_dicts = await self._pattern_repo.find_by_project(
+                    project_id=project_id,
+                    tenant_id=self.tenant_id,
+                    pattern_type=pattern_type,
+                    min_strength=min_strength
+                )
+                
+                patterns = []
+                for pattern_dict in pattern_dicts:
+                    pattern = BusinessPattern(
+                        id=pattern_dict['id'],
+                        tenant_id=pattern_dict['tenant_id'],
+                        project_id=pattern_dict['project_id'],
+                        pattern_type=PatternTypeEnum(pattern_dict['pattern_type']),
+                        description=pattern_dict.get('description'),
+                        strength=pattern_dict['strength'],
+                        evidence=pattern_dict.get('evidence', []),
+                        detected_at=datetime.fromisoformat(pattern_dict['detected_at']) if isinstance(pattern_dict['detected_at'], str) else pattern_dict['detected_at'],
+                        last_seen=datetime.fromisoformat(pattern_dict['last_seen']) if isinstance(pattern_dict['last_seen'], str) else pattern_dict['last_seen']
+                    )
+                    patterns.append(pattern)
+                
+                return patterns
             
-            # 示例模式
-            example_pattern = BusinessPattern(
-                id=f"pattern_{project_id}_001",
-                project_id=project_id,
-                pattern_type=PatternTypeEnum.SENTIMENT_CORRELATION,
-                description="正面情感占比65%，主要关键词: excellent, great, amazing",
-                strength=0.65,
-                evidence=[
-                    {
-                        "sentiment": "positive",
-                        "count": 130,
-                        "percentage": 0.65,
-                        "keywords": ["excellent", "great", "amazing", "wonderful", "fantastic"]
-                    }
-                ],
-                detected_at=datetime.now() - timedelta(days=3),
-                last_seen=datetime.now()
+            # 如果没有数据库连接，返回空列表
+            logger.warning(
+                get_translation(
+                    "business_logic.service.no_db_connection",
+                    default="No database connection, returning empty list"
+                )
             )
-            patterns.append(example_pattern)
-            
-            # 应用过滤条件
-            if pattern_type:
-                patterns = [p for p in patterns if p.pattern_type.value == pattern_type]
-            
-            patterns = [p for p in patterns if p.strength >= min_strength]
-            
-            return patterns
+            return []
             
         except Exception as e:
-            logger.error(f"获取业务模式失败: {e}")
+            logger.error(
+                get_translation(
+                    "business_logic.service.get_patterns_failed",
+                    default=f"获取业务模式失败: {e}"
+                )
+            )
             raise
+    
+    async def get_business_insights(
+        self,
+        project_id: str,
+        insight_type: Optional[str] = None,
+        unacknowledged_only: bool = False
+    ) -> List[BusinessInsight]:
+        """
+        获取业务洞察列表
+        
+        Args:
+            project_id: 项目ID
+            insight_type: 洞察类型过滤
+            unacknowledged_only: 是否只返回未确认的洞察
+            
+        Returns:
+            List[BusinessInsight]: 业务洞察列表
+            
+        Implements Requirement 5.3: Query business insights from database
+        """
+        try:
+            # 如果有数据库连接，从数据库查询
+            if self._insight_repo:
+                insight_dicts = await self._insight_repo.find_by_project(
+                    project_id=project_id,
+                    tenant_id=self.tenant_id,
+                    insight_type=insight_type,
+                    unacknowledged_only=unacknowledged_only
+                )
+                
+                insights = []
+                for insight_dict in insight_dicts:
+                    insight = BusinessInsight(
+                        id=insight_dict['id'],
+                        tenant_id=insight_dict['tenant_id'],
+                        project_id=insight_dict['project_id'],
+                        insight_type=InsightTypeEnum(insight_dict['insight_type']),
+                        title=insight_dict['title'],
+                        description=insight_dict.get('description'),
+                        impact_score=insight_dict['impact_score'],
+                        recommendations=insight_dict.get('recommendations', []),
+                        data_points=insight_dict.get('data_points', []),
+                        created_at=datetime.fromisoformat(insight_dict['created_at']) if isinstance(insight_dict['created_at'], str) else insight_dict['created_at'],
+                        acknowledged_at=datetime.fromisoformat(insight_dict['acknowledged_at']) if insight_dict.get('acknowledged_at') and isinstance(insight_dict['acknowledged_at'], str) else insight_dict.get('acknowledged_at')
+                    )
+                    insights.append(insight)
+                
+                return insights
+            
+            # 如果没有数据库连接，返回空列表
+            logger.warning(
+                get_translation(
+                    "business_logic.service.no_db_connection",
+                    default="No database connection, returning empty list"
+                )
+            )
+            return []
+            
+        except Exception as e:
+            logger.error(
+                get_translation(
+                    "business_logic.service.get_insights_failed",
+                    default=f"获取业务洞察失败: {e}"
+                )
+            )
+            raise
+
+    
+    async def save_pattern_analysis(self, project_id: str, analysis: PatternAnalysisResponse):
+        """保存模式分析结果
+        
+        Args:
+            project_id: 项目ID
+            analysis: 模式分析响应
+            
+        Implements Requirement 5.4: Persist pattern analysis results to database
+        """
+        try:
+            if self._pattern_repo:
+                patterns_to_save = []
+                for pattern in analysis.patterns:
+                    pattern_dict = {
+                        'id': pattern.id,
+                        'tenant_id': self.tenant_id,
+                        'project_id': project_id,
+                        'pattern_type': pattern.pattern_type.value,
+                        'description': pattern.description,
+                        'strength': pattern.strength,
+                        'evidence': pattern.evidence,
+                        'detected_at': pattern.detected_at,
+                        'last_seen': pattern.last_seen
+                    }
+                    patterns_to_save.append(pattern_dict)
+                
+                saved_count = await self._pattern_repo.save_batch(patterns_to_save)
+                logger.info(
+                    get_translation(
+                        "business_logic.service.patterns_saved",
+                        default=f"项目 {project_id} 的 {saved_count} 个模式分析结果已保存"
+                    )
+                )
+            else:
+                logger.warning(
+                    get_translation(
+                        "business_logic.service.no_db_save_patterns",
+                        default="No database connection, patterns not saved"
+                    )
+                )
+        except Exception as e:
+            logger.error(
+                get_translation(
+                    "business_logic.service.save_patterns_failed",
+                    default=f"保存模式分析结果失败: {e}"
+                )
+            )
+            raise
+    
+    async def save_extracted_rules(self, project_id: str, rules: List[BusinessRule]):
+        """保存提取的规则
+        
+        Args:
+            project_id: 项目ID
+            rules: 业务规则列表
+            
+        Implements Requirement 5.5: Persist extracted rules to database
+        """
+        try:
+            if self._rule_repo:
+                saved_count = 0
+                for rule in rules:
+                    rule_dict = {
+                        'id': rule.id,
+                        'tenant_id': self.tenant_id,
+                        'project_id': project_id,
+                        'name': rule.name,
+                        'description': rule.description,
+                        'pattern': rule.pattern,
+                        'rule_type': rule.rule_type.value,
+                        'confidence': rule.confidence,
+                        'frequency': rule.frequency,
+                        'examples': rule.examples,
+                        'is_active': rule.is_active,
+                        'created_at': rule.created_at,
+                        'updated_at': rule.updated_at
+                    }
+                    await self._rule_repo.save(rule_dict)
+                    saved_count += 1
+                
+                logger.info(
+                    get_translation(
+                        "business_logic.service.rules_saved",
+                        default=f"项目 {project_id} 的 {saved_count} 个提取规则已保存"
+                    )
+                )
+            else:
+                logger.warning(
+                    get_translation(
+                        "business_logic.service.no_db_save_rules",
+                        default="No database connection, rules not saved"
+                    )
+                )
+        except Exception as e:
+            logger.error(
+                get_translation(
+                    "business_logic.service.save_rules_failed",
+                    default=f"保存提取规则失败: {e}"
+                )
+            )
+            raise
+    
+    async def acknowledge_insight(self, insight_id: str) -> bool:
+        """确认业务洞察
+        
+        Args:
+            insight_id: 洞察ID
+            
+        Returns:
+            bool: 是否成功确认
+            
+        Implements Requirement 5.6: Update acknowledged_at timestamp
+        """
+        try:
+            if self._insight_repo:
+                result = await self._insight_repo.acknowledge(insight_id)
+                if result:
+                    logger.info(
+                        get_translation(
+                            "business_logic.service.insight_acknowledged",
+                            default=f"确认洞察 {insight_id}"
+                        )
+                    )
+                return result
+            
+            logger.warning(
+                get_translation(
+                    "business_logic.service.no_db_ack_insight",
+                    default="No database connection, insight not acknowledged"
+                )
+            )
+            return False
+        except Exception as e:
+            logger.error(
+                get_translation(
+                    "business_logic.service.ack_insight_failed",
+                    default=f"确认洞察失败: {e}"
+                )
+            )
+            return False
+    
+    async def update_rule_confidence(self, rule_id: str, confidence: float) -> bool:
+        """更新规则置信度
+        
+        Args:
+            rule_id: 规则ID
+            confidence: 新的置信度值 (0.0 到 1.0)
+            
+        Returns:
+            bool: 是否成功更新
+            
+        Implements Requirement 5.7: Update rule confidence in database
+        """
+        try:
+            if self._rule_repo:
+                result = await self._rule_repo.update_confidence(rule_id, confidence)
+                if result:
+                    logger.info(
+                        get_translation(
+                            "business_logic.service.confidence_updated",
+                            default=f"更新规则 {rule_id} 置信度为 {confidence}"
+                        )
+                    )
+                return result
+            
+            logger.warning(
+                get_translation(
+                    "business_logic.service.no_db_update_confidence",
+                    default="No database connection, confidence not updated"
+                )
+            )
+            return False
+        except Exception as e:
+            logger.error(
+                get_translation(
+                    "business_logic.service.update_confidence_failed",
+                    default=f"更新规则置信度失败: {e}"
+                )
+            )
+            return False
+    
+    async def delete_business_rule(self, rule_id: str) -> bool:
+        """删除业务规则
+        
+        Args:
+            rule_id: 规则ID
+            
+        Returns:
+            bool: 是否成功删除
+            
+        Implements Requirement 5.8: Delete rule from database
+        """
+        try:
+            if self._rule_repo:
+                result = await self._rule_repo.delete(rule_id)
+                if result:
+                    logger.info(
+                        get_translation(
+                            "business_logic.service.rule_deleted",
+                            default=f"删除规则 {rule_id}"
+                        )
+                    )
+                return result
+            
+            logger.warning(
+                get_translation(
+                    "business_logic.service.no_db_delete_rule",
+                    default="No database connection, rule not deleted"
+                )
+            )
+            return False
+        except Exception as e:
+            logger.error(
+                get_translation(
+                    "business_logic.service.delete_rule_failed",
+                    default=f"删除规则失败: {e}"
+                )
+            )
+            return False
+    
+    async def toggle_rule_status(self, rule_id: str) -> Optional[BusinessRule]:
+        """切换规则激活状态
+        
+        Args:
+            rule_id: 规则ID
+            
+        Returns:
+            Optional[BusinessRule]: 更新后的规则，如果未找到则返回 None
+            
+        Implements Requirement 5.9: Update is_active field in database
+        """
+        try:
+            if self._rule_repo:
+                rule_dict = await self._rule_repo.toggle_active(rule_id)
+                if rule_dict:
+                    logger.info(
+                        get_translation(
+                            "business_logic.service.rule_status_toggled",
+                            default=f"切换规则 {rule_id} 状态"
+                        )
+                    )
+                    return BusinessRule(
+                        id=rule_dict['id'],
+                        tenant_id=rule_dict['tenant_id'],
+                        project_id=rule_dict['project_id'],
+                        name=rule_dict['name'],
+                        description=rule_dict.get('description'),
+                        pattern=rule_dict['pattern'],
+                        rule_type=RuleTypeEnum(rule_dict['rule_type']),
+                        confidence=rule_dict['confidence'],
+                        frequency=rule_dict['frequency'],
+                        examples=rule_dict.get('examples', []),
+                        is_active=rule_dict['is_active'],
+                        created_at=datetime.fromisoformat(rule_dict['created_at']) if isinstance(rule_dict['created_at'], str) else rule_dict['created_at'],
+                        updated_at=datetime.fromisoformat(rule_dict['updated_at']) if isinstance(rule_dict['updated_at'], str) else rule_dict['updated_at']
+                    )
+                return None
+            
+            logger.warning(
+                get_translation(
+                    "business_logic.service.no_db_toggle_rule",
+                    default="No database connection, rule status not toggled"
+                )
+            )
+            return None
+        except Exception as e:
+            logger.error(
+                get_translation(
+                    "business_logic.service.toggle_rule_failed",
+                    default=f"切换规则状态失败: {e}"
+                )
+            )
+            return None
     
     async def generate_visualization(self, request: VisualizationRequest) -> VisualizationResponse:
         """
@@ -254,18 +674,30 @@ class BusinessLogicService:
             chart_config = {}
             
             if request.visualization_type == "rule_network":
-                # 规则网络图
-                chart_data = {
-                    "nodes": [
-                        {"id": "rule_1", "name": "正面情感规则", "type": "sentiment_rule", "confidence": 0.85},
-                        {"id": "rule_2", "name": "关键词规则", "type": "keyword_rule", "confidence": 0.78},
-                        {"id": "rule_3", "name": "时间趋势规则", "type": "temporal_rule", "confidence": 0.92}
-                    ],
-                    "links": [
-                        {"source": "rule_1", "target": "rule_2", "strength": 0.6},
-                        {"source": "rule_2", "target": "rule_3", "strength": 0.4}
-                    ]
-                }
+                # 从数据库获取规则数据
+                rules = await self.get_business_rules(request.project_id, active_only=True)
+                
+                nodes = []
+                for rule in rules:
+                    nodes.append({
+                        "id": rule.id,
+                        "name": rule.name,
+                        "type": rule.rule_type.value,
+                        "confidence": rule.confidence
+                    })
+                
+                # 简单的链接生成（基于规则类型相似性）
+                links = []
+                for i, rule1 in enumerate(rules):
+                    for rule2 in rules[i+1:]:
+                        if rule1.rule_type == rule2.rule_type:
+                            links.append({
+                                "source": rule1.id,
+                                "target": rule2.id,
+                                "strength": 0.5
+                            })
+                
+                chart_data = {"nodes": nodes, "links": links}
                 chart_config = {
                     "type": "network",
                     "layout": "force",
@@ -274,16 +706,29 @@ class BusinessLogicService:
                 }
                 
             elif request.visualization_type == "pattern_timeline":
-                # 模式时间线
-                chart_data = {
-                    "timeline": [
-                        {"date": "2026-01-01", "pattern_count": 5, "avg_strength": 0.7},
-                        {"date": "2026-01-02", "pattern_count": 7, "avg_strength": 0.75},
-                        {"date": "2026-01-03", "pattern_count": 6, "avg_strength": 0.8},
-                        {"date": "2026-01-04", "pattern_count": 8, "avg_strength": 0.78},
-                        {"date": "2026-01-05", "pattern_count": 9, "avg_strength": 0.82}
-                    ]
-                }
+                # 从数据库获取模式数据
+                patterns = await self.get_business_patterns(request.project_id)
+                
+                # 按日期分组
+                timeline = {}
+                for pattern in patterns:
+                    date_str = pattern.detected_at.strftime("%Y-%m-%d")
+                    if date_str not in timeline:
+                        timeline[date_str] = {"date": date_str, "pattern_count": 0, "total_strength": 0.0}
+                    timeline[date_str]["pattern_count"] += 1
+                    timeline[date_str]["total_strength"] += pattern.strength
+                
+                # 计算平均强度
+                timeline_data = []
+                for date_str, data in sorted(timeline.items()):
+                    avg_strength = data["total_strength"] / data["pattern_count"] if data["pattern_count"] > 0 else 0
+                    timeline_data.append({
+                        "date": date_str,
+                        "pattern_count": data["pattern_count"],
+                        "avg_strength": round(avg_strength, 2)
+                    })
+                
+                chart_data = {"timeline": timeline_data}
                 chart_config = {
                     "type": "line",
                     "x_field": "date",
@@ -292,26 +737,19 @@ class BusinessLogicService:
                 }
                 
             elif request.visualization_type == "insight_dashboard":
-                # 洞察仪表板
+                # 从数据库获取统计数据
+                stats = await self.get_business_logic_stats(request.project_id)
+                
                 chart_data = {
                     "metrics": {
-                        "total_rules": 15,
-                        "active_rules": 12,
-                        "avg_confidence": 0.82,
-                        "total_patterns": 8,
-                        "new_insights": 3
+                        "total_rules": stats.total_rules,
+                        "active_rules": stats.active_rules,
+                        "avg_confidence": stats.avg_rule_confidence,
+                        "total_patterns": stats.total_patterns,
+                        "new_insights": stats.total_insights
                     },
-                    "rule_distribution": [
-                        {"type": "sentiment_rule", "count": 6},
-                        {"type": "keyword_rule", "count": 4},
-                        {"type": "temporal_rule", "count": 3},
-                        {"type": "behavioral_rule", "count": 2}
-                    ],
-                    "confidence_distribution": [
-                        {"range": "0.9-1.0", "count": 5},
-                        {"range": "0.8-0.9", "count": 7},
-                        {"range": "0.7-0.8", "count": 3}
-                    ]
+                    "rule_distribution": stats.top_pattern_types,
+                    "confidence_distribution": []
                 }
                 chart_config = {
                     "type": "dashboard",
@@ -328,7 +766,12 @@ class BusinessLogicService:
             )
             
         except Exception as e:
-            logger.error(f"可视化生成失败: {e}")
+            logger.error(
+                get_translation(
+                    "business_logic.service.visualization_failed",
+                    default=f"可视化生成失败: {e}"
+                )
+            )
             raise
     
     async def export_business_logic(self, request: BusinessLogicExportRequest) -> BusinessLogicExportResponse:
@@ -359,7 +802,12 @@ class BusinessLogicService:
             )
             
         except Exception as e:
-            logger.error(f"业务逻辑导出失败: {e}")
+            logger.error(
+                get_translation(
+                    "business_logic.service.export_failed",
+                    default=f"业务逻辑导出失败: {e}"
+                )
+            )
             raise
     
     async def apply_business_rules(self, request: RuleApplicationRequest) -> RuleApplicationResponse:
@@ -388,6 +836,7 @@ class BusinessLogicService:
                     # 创建新规则（复制到目标项目）
                     new_rule = BusinessRule(
                         id=f"rule_{request.target_project_id}_{uuid.uuid4().hex[:8]}",
+                        tenant_id=self.tenant_id,
                         project_id=request.target_project_id,
                         name=f"{rule.name} (应用自 {request.source_project_id})",
                         description=rule.description,
@@ -401,11 +850,34 @@ class BusinessLogicService:
                         updated_at=datetime.now()
                     )
                     
+                    # 保存到数据库
+                    if self._rule_repo:
+                        await self._rule_repo.save({
+                            'id': new_rule.id,
+                            'tenant_id': new_rule.tenant_id,
+                            'project_id': new_rule.project_id,
+                            'name': new_rule.name,
+                            'description': new_rule.description,
+                            'pattern': new_rule.pattern,
+                            'rule_type': new_rule.rule_type.value,
+                            'confidence': new_rule.confidence,
+                            'frequency': new_rule.frequency,
+                            'examples': new_rule.examples,
+                            'is_active': new_rule.is_active,
+                            'created_at': new_rule.created_at,
+                            'updated_at': new_rule.updated_at
+                        })
+                    
                     applied_rules.append(new_rule)
                     success_count += 1
                     
                 except Exception as e:
-                    logger.error(f"应用规则 {rule.id} 失败: {e}")
+                    logger.error(
+                        get_translation(
+                            "business_logic.service.apply_rule_failed",
+                            default=f"应用规则 {rule.id} 失败: {e}"
+                        )
+                    )
                     failure_count += 1
             
             return RuleApplicationResponse(
@@ -418,7 +890,12 @@ class BusinessLogicService:
             )
             
         except Exception as e:
-            logger.error(f"规则应用失败: {e}")
+            logger.error(
+                get_translation(
+                    "business_logic.service.apply_rules_failed",
+                    default=f"规则应用失败: {e}"
+                )
+            )
             raise
     
     async def detect_pattern_changes(self, request: ChangeDetectionRequest) -> ChangeDetectionResponse:
@@ -436,32 +913,40 @@ class BusinessLogicService:
             end_date = datetime.now()
             start_date = end_date - timedelta(days=request.time_window_days)
             
-            # 模拟变化检测结果
-            changes_detected = [
-                {
-                    "type": "pattern_strength_change",
-                    "pattern_id": "pattern_001",
-                    "description": "情感关联模式强度从0.65增加到0.78",
-                    "old_value": 0.65,
-                    "new_value": 0.78,
-                    "change_percentage": 0.2,
-                    "detected_at": datetime.now() - timedelta(hours=2)
-                },
-                {
-                    "type": "new_rule_discovered",
-                    "rule_id": "rule_new_001",
-                    "description": "发现新的关键词规则",
-                    "confidence": 0.82,
-                    "detected_at": datetime.now() - timedelta(hours=6)
-                }
-            ]
+            # 从数据库获取模式和规则
+            patterns = await self.get_business_patterns(request.project_id)
+            rules = await self.get_business_rules(request.project_id)
+            
+            changes_detected = []
+            
+            # 检测模式强度变化
+            for pattern in patterns:
+                if pattern.detected_at >= start_date:
+                    changes_detected.append({
+                        "type": "new_pattern_detected",
+                        "pattern_id": pattern.id,
+                        "description": f"检测到新模式: {pattern.description}",
+                        "strength": pattern.strength,
+                        "detected_at": pattern.detected_at.isoformat()
+                    })
+            
+            # 检测新规则
+            for rule in rules:
+                if rule.created_at >= start_date:
+                    changes_detected.append({
+                        "type": "new_rule_discovered",
+                        "rule_id": rule.id,
+                        "description": f"发现新规则: {rule.name}",
+                        "confidence": rule.confidence,
+                        "detected_at": rule.created_at.isoformat()
+                    })
             
             change_summary = {
                 "total_changes": len(changes_detected),
-                "pattern_changes": 1,
-                "rule_changes": 1,
-                "significant_changes": 2,
-                "change_trend": "increasing"
+                "pattern_changes": len([c for c in changes_detected if "pattern" in c["type"]]),
+                "rule_changes": len([c for c in changes_detected if "rule" in c["type"]]),
+                "significant_changes": len([c for c in changes_detected if c.get("confidence", c.get("strength", 0)) > request.change_threshold]),
+                "change_trend": "increasing" if len(changes_detected) > 0 else "stable"
             }
             
             return ChangeDetectionResponse(
@@ -473,64 +958,12 @@ class BusinessLogicService:
             )
             
         except Exception as e:
-            logger.error(f"变化检测失败: {e}")
-            raise
-    
-    async def get_business_insights(
-        self,
-        project_id: str,
-        insight_type: Optional[str] = None,
-        unacknowledged_only: bool = False
-    ) -> List[BusinessInsight]:
-        """
-        获取业务洞察列表
-        
-        Args:
-            project_id: 项目ID
-            insight_type: 洞察类型过滤
-            unacknowledged_only: 是否只返回未确认的洞察
-            
-        Returns:
-            List[BusinessInsight]: 业务洞察列表
-        """
-        try:
-            # TODO: 从数据库查询洞察
-            # 这里返回示例数据
-            insights = []
-            
-            # 示例洞察
-            example_insight = BusinessInsight(
-                id=f"insight_{project_id}_001",
-                project_id=project_id,
-                insight_type=InsightTypeEnum.PATTERN_INSIGHT,
-                title="发现新的情感模式",
-                description="检测到正面情感标注比例显著增加，可能表明数据质量提升",
-                impact_score=0.8,
-                recommendations=[
-                    "继续保持当前标注质量",
-                    "考虑调整标注指南以平衡情感分布",
-                    "增加负面情感样本的标注"
-                ],
-                data_points=[
-                    {"metric": "positive_sentiment_ratio", "value": 0.78, "change": "+15%"},
-                    {"metric": "annotation_quality_score", "value": 0.92, "change": "+8%"}
-                ],
-                created_at=datetime.now() - timedelta(hours=4),
-                acknowledged_at=None
+            logger.error(
+                get_translation(
+                    "business_logic.service.change_detection_failed",
+                    default=f"变化检测失败: {e}"
+                )
             )
-            insights.append(example_insight)
-            
-            # 应用过滤条件
-            if insight_type:
-                insights = [i for i in insights if i.insight_type.value == insight_type]
-            
-            if unacknowledged_only:
-                insights = [i for i in insights if i.acknowledged_at is None]
-            
-            return insights
-            
-        except Exception as e:
-            logger.error(f"获取业务洞察失败: {e}")
             raise
     
     async def get_business_logic_stats(self, project_id: str) -> BusinessLogicStats:
@@ -544,28 +977,56 @@ class BusinessLogicService:
             BusinessLogicStats: 统计信息
         """
         try:
-            # TODO: 从数据库查询统计信息
-            # 这里返回示例数据
+            # 从数据库获取统计数据
+            rules = await self.get_business_rules(project_id, active_only=False)
+            patterns = await self.get_business_patterns(project_id)
+            insights = await self.get_business_insights(project_id)
+            
+            active_rules = [r for r in rules if r.is_active]
+            
+            # 计算平均置信度
+            avg_confidence = 0.0
+            if rules:
+                avg_confidence = sum(r.confidence for r in rules) / len(rules)
+            
+            # 统计模式类型分布
+            pattern_type_counts = {}
+            for pattern in patterns:
+                pattern_type = pattern.pattern_type.value
+                if pattern_type not in pattern_type_counts:
+                    pattern_type_counts[pattern_type] = 0
+                pattern_type_counts[pattern_type] += 1
+            
+            top_pattern_types = [
+                {"type": k, "count": v}
+                for k, v in sorted(pattern_type_counts.items(), key=lambda x: x[1], reverse=True)
+            ]
+            
+            # 获取最后分析时间
+            last_analysis = None
+            if patterns:
+                last_analysis = max(p.detected_at for p in patterns)
+            
             stats = BusinessLogicStats(
                 project_id=project_id,
-                total_rules=15,
-                active_rules=12,
-                total_patterns=8,
-                total_insights=5,
-                last_analysis=datetime.now() - timedelta(hours=2),
-                avg_rule_confidence=0.82,
-                top_pattern_types=[
-                    {"type": "sentiment_correlation", "count": 3},
-                    {"type": "keyword_association", "count": 2},
-                    {"type": "temporal_trend", "count": 2},
-                    {"type": "user_behavior", "count": 1}
-                ]
+                total_rules=len(rules),
+                active_rules=len(active_rules),
+                total_patterns=len(patterns),
+                total_insights=len(insights),
+                last_analysis=last_analysis,
+                avg_rule_confidence=round(avg_confidence, 2),
+                top_pattern_types=top_pattern_types
             )
             
             return stats
             
         except Exception as e:
-            logger.error(f"获取统计信息失败: {e}")
+            logger.error(
+                get_translation(
+                    "business_logic.service.get_stats_failed",
+                    default=f"获取统计信息失败: {e}"
+                )
+            )
             raise
     
     async def _get_project_annotations(
@@ -584,8 +1045,8 @@ class BusinessLogicService:
             List[Dict[str, Any]]: 标注数据列表
         """
         try:
-            # TODO: 从数据库查询标注数据
-            # 这里返回示例数据
+            # TODO: 从标注数据库查询实际数据
+            # 这里返回示例数据用于测试
             annotations = [
                 {
                     "id": "ann_001",
@@ -621,88 +1082,60 @@ class BusinessLogicService:
             return annotations
             
         except Exception as e:
-            logger.error(f"获取项目标注数据失败: {e}")
+            logger.error(
+                get_translation(
+                    "business_logic.service.get_annotations_failed",
+                    default=f"获取项目标注数据失败: {e}"
+                )
+            )
             raise
-    
-    # 异步任务方法
-    async def save_pattern_analysis(self, project_id: str, analysis: PatternAnalysisResponse):
-        """保存模式分析结果"""
-        try:
-            logger.info(f"保存项目 {project_id} 的模式分析结果")
-            # TODO: 保存到数据库
-            await asyncio.sleep(0.1)  # 模拟异步操作
-            logger.info(f"项目 {project_id} 模式分析结果已保存")
-        except Exception as e:
-            logger.error(f"保存模式分析结果失败: {e}")
-    
-    async def save_extracted_rules(self, project_id: str, rules: List[BusinessRule]):
-        """保存提取的规则"""
-        try:
-            logger.info(f"保存项目 {project_id} 的 {len(rules)} 个提取规则")
-            # TODO: 保存到数据库
-            await asyncio.sleep(0.1)  # 模拟异步操作
-            logger.info(f"项目 {project_id} 提取规则已保存")
-        except Exception as e:
-            logger.error(f"保存提取规则失败: {e}")
     
     async def execute_export(self, project_id: str, request: BusinessLogicExportRequest):
         """执行导出任务"""
         try:
-            logger.info(f"执行项目 {project_id} 的导出任务")
+            logger.info(
+                get_translation(
+                    "business_logic.service.export_started",
+                    default=f"执行项目 {project_id} 的导出任务"
+                )
+            )
             # TODO: 实际导出逻辑
             await asyncio.sleep(2)  # 模拟导出过程
-            logger.info(f"项目 {project_id} 导出任务完成")
+            logger.info(
+                get_translation(
+                    "business_logic.service.export_completed",
+                    default=f"项目 {project_id} 导出任务完成"
+                )
+            )
         except Exception as e:
-            logger.error(f"执行导出任务失败: {e}")
+            logger.error(
+                get_translation(
+                    "business_logic.service.export_task_failed",
+                    default=f"执行导出任务失败: {e}"
+                )
+            )
     
     async def update_rule_application(self, project_id: str, result: RuleApplicationResponse):
         """更新规则应用结果"""
         try:
-            logger.info(f"更新项目 {project_id} 的规则应用结果")
+            logger.info(
+                get_translation(
+                    "business_logic.service.rule_application_updated",
+                    default=f"更新项目 {project_id} 的规则应用结果"
+                )
+            )
             # TODO: 更新数据库
             await asyncio.sleep(0.1)  # 模拟异步操作
-            logger.info(f"项目 {project_id} 规则应用结果已更新")
+            logger.info(
+                get_translation(
+                    "business_logic.service.rule_application_saved",
+                    default=f"项目 {project_id} 规则应用结果已更新"
+                )
+            )
         except Exception as e:
-            logger.error(f"更新规则应用结果失败: {e}")
-    
-    # 其他辅助方法
-    async def acknowledge_insight(self, insight_id: str) -> bool:
-        """确认业务洞察"""
-        try:
-            # TODO: 更新数据库
-            logger.info(f"确认洞察 {insight_id}")
-            return True
-        except Exception as e:
-            logger.error(f"确认洞察失败: {e}")
-            return False
-    
-    async def update_rule_confidence(self, rule_id: str, confidence: float) -> bool:
-        """更新规则置信度"""
-        try:
-            # TODO: 更新数据库
-            logger.info(f"更新规则 {rule_id} 置信度为 {confidence}")
-            return True
-        except Exception as e:
-            logger.error(f"更新规则置信度失败: {e}")
-            return False
-    
-    async def delete_business_rule(self, rule_id: str) -> bool:
-        """删除业务规则"""
-        try:
-            # TODO: 从数据库删除
-            logger.info(f"删除规则 {rule_id}")
-            return True
-        except Exception as e:
-            logger.error(f"删除规则失败: {e}")
-            return False
-    
-    async def toggle_rule_status(self, rule_id: str) -> Optional[BusinessRule]:
-        """切换规则激活状态"""
-        try:
-            # TODO: 更新数据库
-            logger.info(f"切换规则 {rule_id} 状态")
-            # 返回更新后的规则
-            return None
-        except Exception as e:
-            logger.error(f"切换规则状态失败: {e}")
-            return None
+            logger.error(
+                get_translation(
+                    "business_logic.service.update_application_failed",
+                    default=f"更新规则应用结果失败: {e}"
+                )
+            )

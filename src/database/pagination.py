@@ -2,13 +2,24 @@
 Advanced pagination system for SuperInsight Platform.
 
 Provides efficient pagination with cursor-based and offset-based strategies.
+Implements Requirement 9.3 for database query optimization.
+
+i18n Translation Keys:
+- database.pagination.invalid_page: 无效的页码: {page}
+- database.pagination.invalid_size: 无效的页大小: {size}
+- database.pagination.query_started: 分页查询开始: page={page}, size={size}
+- database.pagination.query_completed: 分页查询完成: 返回 {count} 条记录
+- database.error.query_failed: 查询失败: {error}
 """
 
 import logging
+import base64
+import json
 from typing import List, Dict, Any, Optional, TypeVar, Generic, Union, Tuple
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, asc, desc, and_, or_
 from sqlalchemy.sql import Select
 from sqlalchemy.sql.elements import UnaryExpression
@@ -505,3 +516,466 @@ class SmartPaginator:
 
 # Global pagination service instance
 pagination_service = PaginationService()
+
+
+
+# ============================================================================
+# Generic Pagination Functions (Requirement 9.3)
+# ============================================================================
+
+@dataclass
+class PageInfo:
+    """Pagination information.
+    
+    Attributes:
+        page: Current page number (1-indexed)
+        page_size: Number of items per page
+        total_items: Total number of items
+        total_pages: Total number of pages
+        has_next: Whether there is a next page
+        has_prev: Whether there is a previous page
+    """
+    page: int
+    page_size: int
+    total_items: int
+    total_pages: int
+    has_next: bool
+    has_prev: bool
+
+
+@dataclass
+class PaginatedResult(Generic[T]):
+    """Paginated query result.
+    
+    Attributes:
+        items: List of items for the current page
+        page_info: Pagination metadata
+    """
+    items: List[T]
+    page_info: PageInfo
+
+
+@dataclass
+class CursorPaginatedResult(Generic[T]):
+    """Cursor-based paginated query result.
+    
+    Attributes:
+        items: List of items for the current page
+        next_cursor: Cursor for the next page (None if no more pages)
+        prev_cursor: Cursor for the previous page (None if first page)
+        has_next: Whether there is a next page
+        has_prev: Whether there is a previous page
+    """
+    items: List[T]
+    next_cursor: Optional[str] = None
+    prev_cursor: Optional[str] = None
+    has_next: bool = False
+    has_prev: bool = False
+
+
+class Pagination:
+    """Generic pagination utility class.
+    
+    Provides static methods for offset-based and cursor-based pagination.
+    
+    Example:
+        ```python
+        # Offset pagination
+        result = await Pagination.paginate(
+            query=select(UserModel),
+            session=session,
+            page=1,
+            page_size=20
+        )
+        
+        # Cursor pagination
+        items, next_cursor = await Pagination.cursor_paginate(
+            query=select(UserModel),
+            session=session,
+            cursor=None,
+            limit=20
+        )
+        ```
+    """
+    
+    @staticmethod
+    async def paginate(
+        query: Select,
+        session: AsyncSession,
+        page: int = 1,
+        page_size: int = 20,
+        count_query: Optional[Select] = None
+    ) -> PaginatedResult:
+        """Paginate query results using offset-based pagination.
+        
+        Args:
+            query: SQLAlchemy select query
+            session: Async database session
+            page: Page number (1-indexed, default: 1)
+            page_size: Number of items per page (default: 20)
+            count_query: Optional custom count query
+            
+        Returns:
+            PaginatedResult with items and pagination info
+            
+        Raises:
+            ValueError: If page or page_size is invalid
+        """
+        # Validate parameters
+        if page < 1:
+            # i18n key: database.pagination.invalid_page
+            logger.warning(f"database.pagination.invalid_page: page={page}")
+            page = 1
+        
+        if page_size < 1:
+            # i18n key: database.pagination.invalid_size
+            logger.warning(f"database.pagination.invalid_size: size={page_size}")
+            page_size = 20
+        
+        if page_size > 1000:
+            # Cap page size at 1000
+            page_size = 1000
+        
+        # Log query start
+        logger.debug(
+            f"database.pagination.query_started: page={page}, size={page_size}",
+            extra={"page": page, "size": page_size}
+        )
+        
+        try:
+            # Get total count
+            if count_query is not None:
+                total_result = await session.execute(count_query)
+                total_items = total_result.scalar() or 0
+            else:
+                count_stmt = select(func.count()).select_from(query.subquery())
+                total_result = await session.execute(count_stmt)
+                total_items = total_result.scalar() or 0
+            
+            # Calculate pagination info
+            total_pages = (total_items + page_size - 1) // page_size if total_items > 0 else 0
+            
+            # Adjust page if out of bounds
+            if page > total_pages and total_pages > 0:
+                page = total_pages
+            
+            # Calculate offset
+            offset = (page - 1) * page_size
+            
+            # Execute paginated query
+            paginated_query = query.offset(offset).limit(page_size)
+            result = await session.execute(paginated_query)
+            items = list(result.scalars().all())
+            
+            # Build page info
+            page_info = PageInfo(
+                page=page,
+                page_size=page_size,
+                total_items=total_items,
+                total_pages=total_pages,
+                has_next=page < total_pages,
+                has_prev=page > 1
+            )
+            
+            # Log completion
+            logger.debug(
+                f"database.pagination.query_completed: count={len(items)}",
+                extra={"count": len(items)}
+            )
+            
+            return PaginatedResult(items=items, page_info=page_info)
+            
+        except Exception as e:
+            # i18n key: database.error.query_failed
+            logger.error(
+                f"database.error.query_failed: error={str(e)}",
+                extra={"error": str(e)}
+            )
+            raise
+    
+    @staticmethod
+    async def cursor_paginate(
+        query: Select,
+        session: AsyncSession,
+        cursor: Optional[str] = None,
+        limit: int = 20,
+        cursor_field: str = "id",
+        model_class: Optional[type] = None
+    ) -> Tuple[List[Any], Optional[str]]:
+        """Paginate query results using cursor-based pagination.
+        
+        Cursor-based pagination is more efficient for large datasets
+        as it doesn't require counting total items.
+        
+        Args:
+            query: SQLAlchemy select query
+            session: Async database session
+            cursor: Cursor from previous page (None for first page)
+            limit: Number of items per page (default: 20)
+            cursor_field: Field to use for cursor (default: "id")
+            model_class: Optional model class for cursor field access
+            
+        Returns:
+            Tuple of (items, next_cursor)
+            
+        Note:
+            The cursor is a base64-encoded JSON string containing the
+            cursor field value from the last item.
+        """
+        if limit < 1:
+            limit = 20
+        if limit > 1000:
+            limit = 1000
+        
+        try:
+            # Decode cursor if provided
+            cursor_value = None
+            if cursor:
+                try:
+                    decoded = base64.b64decode(cursor.encode()).decode()
+                    cursor_data = json.loads(decoded)
+                    cursor_value = cursor_data.get("value")
+                except Exception:
+                    logger.warning(f"Invalid cursor format: {cursor}")
+                    cursor_value = None
+            
+            # Apply cursor filter if we have a cursor value
+            if cursor_value is not None and model_class is not None:
+                cursor_field_attr = getattr(model_class, cursor_field, None)
+                if cursor_field_attr is not None:
+                    query = query.where(cursor_field_attr > cursor_value)
+            
+            # Order by cursor field and limit
+            if model_class is not None:
+                cursor_field_attr = getattr(model_class, cursor_field, None)
+                if cursor_field_attr is not None:
+                    query = query.order_by(asc(cursor_field_attr))
+            
+            # Fetch one extra item to determine if there's a next page
+            result = await session.execute(query.limit(limit + 1))
+            items = list(result.scalars().all())
+            
+            # Determine if there's a next page
+            has_next = len(items) > limit
+            if has_next:
+                items = items[:limit]  # Remove the extra item
+            
+            # Generate next cursor
+            next_cursor = None
+            if has_next and items:
+                last_item = items[-1]
+                last_value = getattr(last_item, cursor_field, None)
+                if last_value is not None:
+                    cursor_data = {"value": str(last_value)}
+                    next_cursor = base64.b64encode(
+                        json.dumps(cursor_data).encode()
+                    ).decode()
+            
+            return items, next_cursor
+            
+        except Exception as e:
+            logger.error(
+                f"database.error.query_failed: error={str(e)}",
+                extra={"error": str(e)}
+            )
+            raise
+    
+    @staticmethod
+    async def cursor_paginate_full(
+        query: Select,
+        session: AsyncSession,
+        cursor: Optional[str] = None,
+        limit: int = 20,
+        cursor_field: str = "id",
+        model_class: Optional[type] = None,
+        direction: str = "next"
+    ) -> CursorPaginatedResult:
+        """Full cursor pagination with bidirectional support.
+        
+        Args:
+            query: SQLAlchemy select query
+            session: Async database session
+            cursor: Cursor from previous/next page
+            limit: Number of items per page
+            cursor_field: Field to use for cursor
+            model_class: Model class for cursor field access
+            direction: "next" or "prev" for pagination direction
+            
+        Returns:
+            CursorPaginatedResult with items and cursors
+        """
+        items, next_cursor = await Pagination.cursor_paginate(
+            query=query,
+            session=session,
+            cursor=cursor,
+            limit=limit,
+            cursor_field=cursor_field,
+            model_class=model_class
+        )
+        
+        # Generate previous cursor from first item
+        prev_cursor = None
+        if cursor and items:
+            first_item = items[0]
+            first_value = getattr(first_item, cursor_field, None)
+            if first_value is not None:
+                cursor_data = {"value": str(first_value)}
+                prev_cursor = base64.b64encode(
+                    json.dumps(cursor_data).encode()
+                ).decode()
+        
+        return CursorPaginatedResult(
+            items=items,
+            next_cursor=next_cursor,
+            prev_cursor=prev_cursor,
+            has_next=next_cursor is not None,
+            has_prev=cursor is not None
+        )
+
+
+class SyncPagination:
+    """Synchronous pagination utility class.
+    
+    Provides the same functionality as Pagination but for
+    synchronous database sessions.
+    """
+    
+    @staticmethod
+    def paginate(
+        query: Select,
+        session: Session,
+        page: int = 1,
+        page_size: int = 20,
+        count_query: Optional[Select] = None
+    ) -> PaginatedResult:
+        """Paginate query results using offset-based pagination (sync version).
+        
+        Args:
+            query: SQLAlchemy select query
+            session: Synchronous database session
+            page: Page number (1-indexed)
+            page_size: Number of items per page
+            count_query: Optional custom count query
+            
+        Returns:
+            PaginatedResult with items and pagination info
+        """
+        # Validate parameters
+        if page < 1:
+            logger.warning(f"database.pagination.invalid_page: page={page}")
+            page = 1
+        
+        if page_size < 1:
+            logger.warning(f"database.pagination.invalid_size: size={page_size}")
+            page_size = 20
+        
+        if page_size > 1000:
+            page_size = 1000
+        
+        try:
+            # Get total count
+            if count_query is not None:
+                total_result = session.execute(count_query)
+                total_items = total_result.scalar() or 0
+            else:
+                count_stmt = select(func.count()).select_from(query.subquery())
+                total_result = session.execute(count_stmt)
+                total_items = total_result.scalar() or 0
+            
+            # Calculate pagination info
+            total_pages = (total_items + page_size - 1) // page_size if total_items > 0 else 0
+            
+            if page > total_pages and total_pages > 0:
+                page = total_pages
+            
+            offset = (page - 1) * page_size
+            
+            # Execute paginated query
+            paginated_query = query.offset(offset).limit(page_size)
+            result = session.execute(paginated_query)
+            items = list(result.scalars().all())
+            
+            page_info = PageInfo(
+                page=page,
+                page_size=page_size,
+                total_items=total_items,
+                total_pages=total_pages,
+                has_next=page < total_pages,
+                has_prev=page > 1
+            )
+            
+            return PaginatedResult(items=items, page_info=page_info)
+            
+        except Exception as e:
+            logger.error(f"database.error.query_failed: error={str(e)}")
+            raise
+    
+    @staticmethod
+    def cursor_paginate(
+        query: Select,
+        session: Session,
+        cursor: Optional[str] = None,
+        limit: int = 20,
+        cursor_field: str = "id",
+        model_class: Optional[type] = None
+    ) -> Tuple[List[Any], Optional[str]]:
+        """Paginate query results using cursor-based pagination (sync version).
+        
+        Args:
+            query: SQLAlchemy select query
+            session: Synchronous database session
+            cursor: Cursor from previous page
+            limit: Number of items per page
+            cursor_field: Field to use for cursor
+            model_class: Model class for cursor field access
+            
+        Returns:
+            Tuple of (items, next_cursor)
+        """
+        if limit < 1:
+            limit = 20
+        if limit > 1000:
+            limit = 1000
+        
+        try:
+            cursor_value = None
+            if cursor:
+                try:
+                    decoded = base64.b64decode(cursor.encode()).decode()
+                    cursor_data = json.loads(decoded)
+                    cursor_value = cursor_data.get("value")
+                except Exception:
+                    cursor_value = None
+            
+            if cursor_value is not None and model_class is not None:
+                cursor_field_attr = getattr(model_class, cursor_field, None)
+                if cursor_field_attr is not None:
+                    query = query.where(cursor_field_attr > cursor_value)
+            
+            if model_class is not None:
+                cursor_field_attr = getattr(model_class, cursor_field, None)
+                if cursor_field_attr is not None:
+                    query = query.order_by(asc(cursor_field_attr))
+            
+            result = session.execute(query.limit(limit + 1))
+            items = list(result.scalars().all())
+            
+            has_next = len(items) > limit
+            if has_next:
+                items = items[:limit]
+            
+            next_cursor = None
+            if has_next and items:
+                last_item = items[-1]
+                last_value = getattr(last_item, cursor_field, None)
+                if last_value is not None:
+                    cursor_data = {"value": str(last_value)}
+                    next_cursor = base64.b64encode(
+                        json.dumps(cursor_data).encode()
+                    ).decode()
+            
+            return items, next_cursor
+            
+        except Exception as e:
+            logger.error(f"database.error.query_failed: error={str(e)}")
+            raise

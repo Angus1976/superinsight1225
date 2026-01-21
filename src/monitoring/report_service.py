@@ -7,18 +7,26 @@ Provides comprehensive reporting capabilities including:
 - Capacity planning recommendations
 - SLA compliance reporting
 - Custom report templates
+- Email notification with retry logic
 """
 
 import logging
 import asyncio
 import json
 import statistics
+import smtplib
+import ssl
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, date
 from typing import Dict, Any, List, Optional, Callable, Tuple
 from enum import Enum
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
+from email import encoders
 import hashlib
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +58,47 @@ class ReportFrequency(str, Enum):
     WEEKLY = "weekly"
     MONTHLY = "monthly"
     ON_DEMAND = "on_demand"
+
+
+@dataclass
+class SMTPConfig:
+    """SMTP 邮件服务器配置"""
+    host: str = ""
+    port: int = 587
+    username: str = ""
+    password: str = ""
+    use_tls: bool = True
+    timeout: int = 30
+    from_address: str = ""
+    from_name: str = "SuperInsight Platform"
+    
+    @classmethod
+    def from_env(cls) -> "SMTPConfig":
+        """从环境变量加载配置"""
+        return cls(
+            host=os.getenv("SMTP_HOST", ""),
+            port=int(os.getenv("SMTP_PORT", "587")),
+            username=os.getenv("SMTP_USERNAME", ""),
+            password=os.getenv("SMTP_PASSWORD", ""),
+            use_tls=os.getenv("SMTP_USE_TLS", "true").lower() == "true",
+            timeout=int(os.getenv("SMTP_TIMEOUT", "30")),
+            from_address=os.getenv("SMTP_FROM_ADDRESS", ""),
+            from_name=os.getenv("SMTP_FROM_NAME", "SuperInsight Platform")
+        )
+    
+    def is_configured(self) -> bool:
+        """检查是否已配置"""
+        return bool(self.host and self.username and self.password)
+
+
+@dataclass
+class SendResult:
+    """邮件发送结果"""
+    recipient: str
+    success: bool
+    error_message: Optional[str] = None
+    retry_count: int = 0
+    sent_at: Optional[datetime] = None
 
 
 @dataclass
@@ -146,72 +195,306 @@ class MetricsDataProvider:
     def __init__(self):
         self._metrics_cache: Dict[str, List[Tuple[float, float]]] = defaultdict(list)
 
-    def record_metric(self, name: str, value: float, timestamp: Optional[float] = None):
-        """Record a metric value."""
-        ts = timestamp or datetime.now().timestamp()
-        self._metrics_cache[name].append((ts, value))
 
-        # Keep last 10000 points per metric
-        if len(self._metrics_cache[name]) > 10000:
-            self._metrics_cache[name] = self._metrics_cache[name][-10000:]
-
-    async def get_metric_values(
+class EmailSender:
+    """
+    邮件发送器
+    
+    支持 HTML 和纯文本格式，带指数退避重试机制
+    """
+    
+    def __init__(self, smtp_config: Optional[SMTPConfig] = None):
+        self.config = smtp_config or SMTPConfig.from_env()
+        self.retry_count = 3
+        self.retry_delays = [1, 2, 4]  # 指数退避：1秒, 2秒, 4秒
+        self._send_logs: List[Dict[str, Any]] = []
+    
+    def _create_message(
         self,
-        metric_name: str,
-        start_time: datetime,
-        end_time: datetime
-    ) -> List[Tuple[datetime, float]]:
-        """Get metric values for a time range."""
-        start_ts = start_time.timestamp()
-        end_ts = end_time.timestamp()
-
-        values = [
-            (datetime.fromtimestamp(ts), val)
-            for ts, val in self._metrics_cache.get(metric_name, [])
-            if start_ts <= ts <= end_ts
+        recipient: str,
+        subject: str,
+        content: str,
+        format: ReportFormat = ReportFormat.HTML
+    ) -> MIMEMultipart:
+        """创建邮件消息"""
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = subject
+        msg["From"] = f"{self.config.from_name} <{self.config.from_address}>"
+        msg["To"] = recipient
+        
+        if format == ReportFormat.HTML:
+            # 添加纯文本版本作为备选
+            text_content = self._html_to_text(content)
+            msg.attach(MIMEText(text_content, "plain", "utf-8"))
+            msg.attach(MIMEText(content, "html", "utf-8"))
+        else:
+            msg.attach(MIMEText(content, "plain", "utf-8"))
+        
+        return msg
+    
+    def _html_to_text(self, html: str) -> str:
+        """简单的 HTML 转纯文本"""
+        import re
+        # 移除 HTML 标签
+        text = re.sub(r'<[^>]+>', '', html)
+        # 处理常见 HTML 实体
+        text = text.replace('&nbsp;', ' ')
+        text = text.replace('&lt;', '<')
+        text = text.replace('&gt;', '>')
+        text = text.replace('&amp;', '&')
+        return text.strip()
+    
+    def _log_send_attempt(
+        self,
+        recipient: str,
+        subject: str,
+        success: bool,
+        error_message: Optional[str] = None,
+        retry_count: int = 0
+    ):
+        """记录发送尝试"""
+        log_entry = {
+            "timestamp": datetime.now().isoformat(),
+            "recipient": recipient,
+            "subject": subject,
+            "success": success,
+            "error_message": error_message,
+            "retry_count": retry_count
+        }
+        self._send_logs.append(log_entry)
+        
+        # 保留最近 1000 条日志
+        if len(self._send_logs) > 1000:
+            self._send_logs = self._send_logs[-1000:]
+        
+        if success:
+            logger.info(f"邮件发送成功: {recipient}, 主题: {subject}")
+        else:
+            logger.warning(f"邮件发送失败: {recipient}, 错误: {error_message}, 重试次数: {retry_count}")
+    
+    async def send_report(
+        self,
+        recipient: str,
+        subject: str,
+        content: str,
+        format: ReportFormat = ReportFormat.HTML
+    ) -> SendResult:
+        """
+        发送报告邮件，带重试机制
+        
+        Args:
+            recipient: 收件人邮箱
+            subject: 邮件主题
+            content: 邮件内容
+            format: 内容格式 (HTML 或纯文本)
+            
+        Returns:
+            SendResult: 发送结果
+        """
+        if not self.config.is_configured():
+            error_msg = "SMTP 未配置"
+            self._log_send_attempt(recipient, subject, False, error_msg)
+            return SendResult(
+                recipient=recipient,
+                success=False,
+                error_message=error_msg
+            )
+        
+        last_error = None
+        
+        for attempt in range(self.retry_count):
+            try:
+                msg = self._create_message(recipient, subject, content, format)
+                
+                # 在线程池中执行同步 SMTP 操作
+                loop = asyncio.get_event_loop()
+                await loop.run_in_executor(
+                    None,
+                    self._send_smtp,
+                    msg,
+                    recipient
+                )
+                
+                self._log_send_attempt(recipient, subject, True, retry_count=attempt)
+                
+                return SendResult(
+                    recipient=recipient,
+                    success=True,
+                    retry_count=attempt,
+                    sent_at=datetime.now()
+                )
+                
+            except Exception as e:
+                last_error = str(e)
+                self._log_send_attempt(recipient, subject, False, last_error, attempt)
+                
+                if attempt < self.retry_count - 1:
+                    delay = self.retry_delays[attempt]
+                    logger.info(f"等待 {delay} 秒后重试发送邮件到 {recipient}")
+                    await asyncio.sleep(delay)
+        
+        return SendResult(
+            recipient=recipient,
+            success=False,
+            error_message=last_error,
+            retry_count=self.retry_count
+        )
+    
+    def _send_smtp(self, msg: MIMEMultipart, recipient: str):
+        """同步发送 SMTP 邮件"""
+        if self.config.use_tls:
+            context = ssl.create_default_context()
+            with smtplib.SMTP(self.config.host, self.config.port, timeout=self.config.timeout) as server:
+                server.starttls(context=context)
+                server.login(self.config.username, self.config.password)
+                server.sendmail(self.config.from_address, recipient, msg.as_string())
+        else:
+            with smtplib.SMTP(self.config.host, self.config.port, timeout=self.config.timeout) as server:
+                server.login(self.config.username, self.config.password)
+                server.sendmail(self.config.from_address, recipient, msg.as_string())
+    
+    async def send_batch(
+        self,
+        recipients: List[str],
+        subject: str,
+        content: str,
+        format: ReportFormat = ReportFormat.HTML
+    ) -> List[SendResult]:
+        """
+        并发发送给多个收件人
+        
+        Args:
+            recipients: 收件人列表
+            subject: 邮件主题
+            content: 邮件内容
+            format: 内容格式
+            
+        Returns:
+            List[SendResult]: 所有发送结果
+        """
+        if not recipients:
+            return []
+        
+        # 并发发送
+        tasks = [
+            self.send_report(recipient, subject, content, format)
+            for recipient in recipients
         ]
+        
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        # 处理异常结果
+        processed_results = []
+        for i, result in enumerate(results):
+            if isinstance(result, Exception):
+                processed_results.append(SendResult(
+                    recipient=recipients[i],
+                    success=False,
+                    error_message=str(result)
+                ))
+            else:
+                processed_results.append(result)
+        
+        # 统计结果
+        success_count = sum(1 for r in processed_results if r.success)
+        logger.info(f"批量发送完成: {success_count}/{len(recipients)} 成功")
+        
+        return processed_results
+    
+    def get_send_logs(self, limit: int = 100) -> List[Dict[str, Any]]:
+        """获取发送日志"""
+        return self._send_logs[-limit:]
 
-        return sorted(values, key=lambda x: x[0])
 
-    async def get_metric_summary(
-        self,
-        metric_name: str,
-        start_time: datetime,
-        end_time: datetime
-    ) -> Dict[str, Any]:
-        """Get summary statistics for a metric in a time range."""
-        values = await self.get_metric_values(metric_name, start_time, end_time)
+class MetricsDataProviderImpl(MetricsDataProvider):
+    """
+    MetricsDataProvider 的具体实现
+    """
+    pass
 
-        if not values:
-            return {
-                "metric_name": metric_name,
-                "count": 0,
-                "min": None,
-                "max": None,
-                "avg": None,
-                "median": None,
-                "std_dev": None
-            }
 
-        vals = [v for _, v in values]
+# 将方法添加到 MetricsDataProvider 类
+def _mp_record_metric(self, name: str, value: float, timestamp: Optional[float] = None):
+    """Record a metric value."""
+    ts = timestamp or datetime.now().timestamp()
+    self._metrics_cache[name].append((ts, value))
 
+    # Keep last 10000 points per metric
+    if len(self._metrics_cache[name]) > 10000:
+        self._metrics_cache[name] = self._metrics_cache[name][-10000:]
+
+
+MetricsDataProvider.record_metric = _mp_record_metric
+
+
+async def _mp_get_metric_values(
+    self,
+    metric_name: str,
+    start_time: datetime,
+    end_time: datetime
+) -> List[Tuple[datetime, float]]:
+    """Get metric values for a time range."""
+    start_ts = start_time.timestamp()
+    end_ts = end_time.timestamp()
+
+    values = [
+        (datetime.fromtimestamp(ts), val)
+        for ts, val in self._metrics_cache.get(metric_name, [])
+        if start_ts <= ts <= end_ts
+    ]
+
+    return sorted(values, key=lambda x: x[0])
+
+
+MetricsDataProvider.get_metric_values = _mp_get_metric_values
+
+
+async def _mp_get_metric_summary(
+    self,
+    metric_name: str,
+    start_time: datetime,
+    end_time: datetime
+) -> Dict[str, Any]:
+    """Get summary statistics for a metric in a time range."""
+    values = await self.get_metric_values(metric_name, start_time, end_time)
+
+    if not values:
         return {
             "metric_name": metric_name,
-            "count": len(vals),
-            "min": min(vals),
-            "max": max(vals),
-            "avg": statistics.mean(vals),
-            "median": statistics.median(vals),
-            "std_dev": statistics.stdev(vals) if len(vals) > 1 else 0,
-            "first_value": vals[0],
-            "last_value": vals[-1],
-            "first_timestamp": values[0][0].isoformat(),
-            "last_timestamp": values[-1][0].isoformat()
+            "count": 0,
+            "min": None,
+            "max": None,
+            "avg": None,
+            "median": None,
+            "std_dev": None
         }
 
-    async def get_available_metrics(self) -> List[str]:
-        """Get list of available metrics."""
-        return list(self._metrics_cache.keys())
+    vals = [v for _, v in values]
+
+    return {
+        "metric_name": metric_name,
+        "count": len(vals),
+        "min": min(vals),
+        "max": max(vals),
+        "avg": statistics.mean(vals),
+        "median": statistics.median(vals),
+        "std_dev": statistics.stdev(vals) if len(vals) > 1 else 0,
+        "first_value": vals[0],
+        "last_value": vals[-1],
+        "first_timestamp": values[0][0].isoformat(),
+        "last_timestamp": values[-1][0].isoformat()
+    }
+
+
+MetricsDataProvider.get_metric_summary = _mp_get_metric_summary
+
+
+async def _mp_get_available_metrics(self) -> List[str]:
+    """Get list of available metrics."""
+    return list(self._metrics_cache.keys())
+
+
+MetricsDataProvider.get_available_metrics = _mp_get_available_metrics
 
 
 class SLAMonitor:
@@ -769,11 +1052,14 @@ class MonitoringReportService:
     Coordinates report generation, scheduling, and distribution.
     """
 
-    def __init__(self):
+    def __init__(self, smtp_config: Optional[SMTPConfig] = None):
         self.data_provider = MetricsDataProvider()
         self.sla_monitor = SLAMonitor(self.data_provider)
         self.capacity_planner = CapacityPlanner(self.data_provider)
         self.trend_analyzer = TrendAnalyzer(self.data_provider)
+        
+        # 初始化邮件发送器
+        self.email_sender = EmailSender(smtp_config)
 
         self.report_schedules: Dict[str, ReportSchedule] = {}
         self.report_history: List[GeneratedReport] = []
@@ -851,16 +1137,29 @@ class MonitoringReportService:
                 await asyncio.sleep(60)
 
     async def _execute_scheduled_report(self, schedule: ReportSchedule):
-        """Execute a scheduled report."""
+        """Execute a scheduled report and send to recipients."""
         try:
             report = await self.generate_report(
                 schedule.report_type,
                 schedule.parameters
             )
 
-            # TODO: Send report to recipients
-            for recipient in schedule.recipients:
-                logger.info(f"Would send report to: {recipient}")
+            # 生成报告内容
+            report_content = self._format_report_for_email(report)
+            subject = f"[SuperInsight] {report.title} - {report.generated_at.strftime('%Y-%m-%d %H:%M')}"
+            
+            # 发送报告给所有收件人
+            if schedule.recipients:
+                results = await self.email_sender.send_batch(
+                    recipients=schedule.recipients,
+                    subject=subject,
+                    content=report_content,
+                    format=ReportFormat.HTML
+                )
+                
+                # 记录发送结果
+                success_count = sum(1 for r in results if r.success)
+                logger.info(f"报告发送完成: {success_count}/{len(schedule.recipients)} 成功")
 
             # Update schedule
             schedule.last_run = datetime.now()
@@ -870,6 +1169,57 @@ class MonitoringReportService:
 
         except Exception as e:
             logger.error(f"Failed to execute scheduled report {schedule.schedule_id}: {e}")
+    
+    def _format_report_for_email(self, report: GeneratedReport) -> str:
+        """将报告格式化为 HTML 邮件内容"""
+        content = report.content
+        
+        html = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+        .header {{ background: #1890ff; color: white; padding: 20px; text-align: center; }}
+        .content {{ padding: 20px; }}
+        .summary {{ background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 15px 0; }}
+        .metric {{ display: inline-block; margin: 10px; padding: 10px; background: white; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }}
+        .metric-value {{ font-size: 24px; font-weight: bold; color: #1890ff; }}
+        .metric-label {{ font-size: 12px; color: #666; }}
+        table {{ width: 100%; border-collapse: collapse; margin: 15px 0; }}
+        th, td {{ padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }}
+        th {{ background: #f5f5f5; }}
+        .status-ok {{ color: #52c41a; }}
+        .status-warning {{ color: #faad14; }}
+        .status-error {{ color: #f5222d; }}
+        .footer {{ text-align: center; padding: 20px; color: #999; font-size: 12px; }}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>{report.title}</h1>
+        <p>生成时间: {report.generated_at.strftime('%Y-%m-%d %H:%M:%S')}</p>
+    </div>
+    <div class="content">
+        <div class="summary">
+            <h3>报告摘要</h3>
+            <p>报告类型: {report.report_type.value}</p>
+            <p>时间范围: {report.period_start.strftime('%Y-%m-%d %H:%M')} - {report.period_end.strftime('%Y-%m-%d %H:%M')}</p>
+        </div>
+        <div class="details">
+            <h3>详细内容</h3>
+            <pre>{json.dumps(content, indent=2, ensure_ascii=False, default=str)}</pre>
+        </div>
+    </div>
+    <div class="footer">
+        <p>此邮件由 SuperInsight AI 数据治理平台自动发送</p>
+        <p>如有问题，请联系系统管理员</p>
+    </div>
+</body>
+</html>
+"""
+        return html
 
     def _calculate_next_run(self, frequency: ReportFrequency) -> datetime:
         """Calculate next run time based on frequency."""

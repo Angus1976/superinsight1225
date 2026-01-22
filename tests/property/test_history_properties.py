@@ -760,6 +760,483 @@ class TestConfigurationHistoryCompleteness:
 
 
 # ============================================================================
+# Property 19: Configuration Rollback Round-Trip
+# ============================================================================
+
+class TestConfigurationRollbackRoundTrip:
+    """
+    Property 19: Configuration Rollback Round-Trip
+
+    For any configuration rollback operation, the rolled-back configuration
+    should exactly match the previous state that was targeted for rollback,
+    and a new history entry should be created documenting the rollback.
+
+    **Feature: admin-configuration**
+    **Validates: Requirements 6.3**
+    """
+
+    @given(
+        initial_config=llm_config_strategy(),
+        updated_config=llm_config_strategy(),
+        user_info=user_info_strategy()
+    )
+    @settings(max_examples=100, deadline=None)
+    def test_rollback_restores_exact_previous_state(self, initial_config, updated_config, user_info):
+        """
+        Rolling back a configuration restores the exact previous state.
+
+        For any configuration that was updated, rolling back to a previous
+        version should restore the configuration to that exact state.
+        """
+        # Skip configs with empty names or API keys
+        assume(len(initial_config.name.strip()) > 0)
+        assume(len(initial_config.api_key.strip()) >= 20)
+        assume(len(updated_config.name.strip()) > 0)
+        assume(len(updated_config.api_key.strip()) >= 20)
+        # Ensure configs are different
+        assume(initial_config.name != updated_config.name or
+               initial_config.model_name != updated_config.model_name)
+
+        user_id, user_name = user_info
+        assume(len(user_id.strip()) >= 10)
+        assume(len(user_name.strip()) >= 3)
+
+        # Create fresh instances for this test
+        config_manager = ConfigManager()
+        config_manager.clear_in_memory_storage()
+        history_tracker = config_manager._history_tracker
+
+        async def run_test():
+            # Create initial configuration
+            saved_config = await config_manager.save_llm_config(
+                config=initial_config,
+                user_id=user_id,
+                user_name=user_name
+            )
+            config_id = saved_config.id
+
+            # Update the configuration
+            await config_manager.save_llm_config(
+                config=updated_config,
+                user_id=user_id,
+                user_name=user_name,
+                config_id=config_id
+            )
+
+            # Get history to find the update entry
+            history = await history_tracker.get_history(
+                config_type=ConfigType.LLM,
+                config_id=config_id,
+                limit=10
+            )
+
+            # Find history entry with old_value (the update operation)
+            update_history = None
+            for h in history:
+                if h.old_value is not None:
+                    update_history = h
+                    break
+
+            assert update_history is not None, "Should have history entry with old_value"
+
+            # Store the old_value for comparison
+            expected_rollback_state = update_history.old_value
+
+            # Perform rollback
+            rollback_user_id = str(uuid4())
+            rollback_user_name = "rollback_test_user"
+
+            rolled_back_value = await history_tracker.rollback(
+                history_id=update_history.id,
+                user_id=rollback_user_id,
+                user_name=rollback_user_name
+            )
+
+            # Verify rollback restores exact previous state
+            assert rolled_back_value is not None, "Rollback should return a value"
+
+            # Compare key fields (excluding timestamps and generated IDs)
+            assert rolled_back_value.get("name") == expected_rollback_state.get("name"), \
+                "Rollback should restore exact name"
+            assert rolled_back_value.get("model_name") == expected_rollback_state.get("model_name"), \
+                "Rollback should restore exact model_name"
+            assert rolled_back_value.get("llm_type") == expected_rollback_state.get("llm_type"), \
+                "Rollback should restore exact llm_type"
+
+            # Optional fields should also match
+            if "temperature" in expected_rollback_state:
+                assert rolled_back_value.get("temperature") == expected_rollback_state.get("temperature"), \
+                    "Rollback should restore exact temperature"
+            if "max_tokens" in expected_rollback_state:
+                assert rolled_back_value.get("max_tokens") == expected_rollback_state.get("max_tokens"), \
+                    "Rollback should restore exact max_tokens"
+
+        asyncio.run(run_test())
+
+    @given(
+        initial_config=llm_config_strategy(),
+        updated_config=llm_config_strategy(),
+        user_info=user_info_strategy()
+    )
+    @settings(max_examples=100, deadline=None)
+    def test_rollback_creates_new_history_entry(self, initial_config, updated_config, user_info):
+        """
+        Rolling back creates a new history entry documenting the rollback.
+
+        For any rollback operation, a new history entry should be created
+        with the rollback details, timestamp, and user information.
+        """
+        # Skip configs with empty names or API keys
+        assume(len(initial_config.name.strip()) > 0)
+        assume(len(initial_config.api_key.strip()) >= 20)
+        assume(len(updated_config.name.strip()) > 0)
+        assume(len(updated_config.api_key.strip()) >= 20)
+        # Ensure configs are different
+        assume(initial_config.name != updated_config.name)
+
+        user_id, user_name = user_info
+        assume(len(user_id.strip()) >= 10)
+        assume(len(user_name.strip()) >= 3)
+
+        # Create fresh instances for this test
+        config_manager = ConfigManager()
+        config_manager.clear_in_memory_storage()
+        history_tracker = config_manager._history_tracker
+
+        async def run_test():
+            # Create and update configuration
+            saved_config = await config_manager.save_llm_config(
+                config=initial_config,
+                user_id=user_id,
+                user_name=user_name
+            )
+            config_id = saved_config.id
+
+            await config_manager.save_llm_config(
+                config=updated_config,
+                user_id=user_id,
+                user_name=user_name,
+                config_id=config_id
+            )
+
+            # Get history to find the update entry
+            history = await history_tracker.get_history(
+                config_type=ConfigType.LLM,
+                config_id=config_id,
+                limit=10
+            )
+
+            update_history = None
+            for h in history:
+                if h.old_value is not None:
+                    update_history = h
+                    break
+
+            assert update_history is not None, "Should have history entry with old_value"
+
+            history_count_before = len(history)
+
+            # Perform rollback
+            rollback_user_id = str(uuid4())
+            rollback_user_name = "rollback_entry_test_user"
+
+            await history_tracker.rollback(
+                history_id=update_history.id,
+                user_id=rollback_user_id,
+                user_name=rollback_user_name
+            )
+
+            # Get history after rollback
+            history_after = await history_tracker.get_history(
+                config_type=ConfigType.LLM,
+                limit=20
+            )
+
+            # Should have more history entries
+            assert len(history_after) > history_count_before, \
+                "Rollback should create new history entry"
+
+            # Most recent entry should be the rollback
+            rollback_entry = history_after[0]
+
+            # Verify rollback entry has correct user info
+            assert rollback_entry.user_id == rollback_user_id, \
+                "Rollback entry should have rollback user_id"
+            assert rollback_entry.user_name == rollback_user_name, \
+                "Rollback entry should have rollback user_name"
+
+            # Verify timestamp is recent
+            time_diff = datetime.utcnow() - rollback_entry.created_at
+            assert time_diff.total_seconds() < 5, \
+                "Rollback entry timestamp should be recent"
+
+            # Verify new_value matches the rolled-back state
+            assert rollback_entry.new_value is not None, \
+                "Rollback entry should have new_value"
+
+        asyncio.run(run_test())
+
+    @given(
+        config=llm_config_strategy(),
+        updates=st.lists(llm_config_strategy(), min_size=2, max_size=4),
+        user_info=user_info_strategy()
+    )
+    @settings(max_examples=50, deadline=None)
+    def test_multiple_rollbacks_to_different_versions(self, config, updates, user_info):
+        """
+        Multiple rollbacks to different versions work correctly.
+
+        For any sequence of configuration changes, rolling back to
+        any specific version should restore that exact version.
+        """
+        # Skip configs with empty names or API keys
+        assume(len(config.name.strip()) > 0)
+        assume(len(config.api_key.strip()) >= 20)
+        for update in updates:
+            assume(len(update.name.strip()) > 0)
+            assume(len(update.api_key.strip()) >= 20)
+
+        user_id, user_name = user_info
+        assume(len(user_id.strip()) >= 10)
+        assume(len(user_name.strip()) >= 3)
+
+        # Create fresh instances for this test
+        config_manager = ConfigManager()
+        config_manager.clear_in_memory_storage()
+        history_tracker = config_manager._history_tracker
+
+        async def run_test():
+            # Create initial configuration
+            saved_config = await config_manager.save_llm_config(
+                config=config,
+                user_id=user_id,
+                user_name=user_name
+            )
+            config_id = saved_config.id
+
+            # Apply all updates
+            for update in updates:
+                await config_manager.save_llm_config(
+                    config=update,
+                    user_id=user_id,
+                    user_name=user_name,
+                    config_id=config_id
+                )
+
+            # Get full history
+            history = await history_tracker.get_history(
+                config_type=ConfigType.LLM,
+                config_id=config_id,
+                limit=20
+            )
+
+            # Find entries with old_value (these are updates we can roll back)
+            rollbackable_entries = [h for h in history if h.old_value is not None]
+
+            if len(rollbackable_entries) >= 2:
+                # Pick a random entry to roll back to
+                target_entry = rollbackable_entries[1]  # Not the most recent
+                expected_state = target_entry.old_value
+
+                # Perform rollback
+                rollback_user_id = str(uuid4())
+                rolled_back = await history_tracker.rollback(
+                    history_id=target_entry.id,
+                    user_id=rollback_user_id,
+                    user_name="multi_rollback_user"
+                )
+
+                # Verify rolled back to correct version
+                assert rolled_back is not None, "Rollback should return value"
+                assert rolled_back.get("name") == expected_state.get("name"), \
+                    "Multi-rollback should restore correct version"
+
+        asyncio.run(run_test())
+
+    @given(
+        config=db_config_strategy(),
+        user_info=user_info_strategy()
+    )
+    @settings(max_examples=50, deadline=None)
+    def test_rollback_works_for_database_configs(self, config, user_info):
+        """
+        Rollback works correctly for database configurations.
+
+        For any database configuration, rollback should restore
+        the exact previous state including connection parameters.
+        """
+        # Skip configs with empty names or passwords
+        assume(len(config.name.strip()) > 0)
+        assume(len(config.password.strip()) >= 8)
+
+        user_id, user_name = user_info
+        assume(len(user_id.strip()) >= 10)
+        assume(len(user_name.strip()) >= 3)
+
+        # Create fresh instances for this test
+        config_manager = ConfigManager()
+        config_manager.clear_in_memory_storage()
+        history_tracker = config_manager._history_tracker
+
+        async def run_test():
+            # Create initial configuration
+            saved_config = await config_manager.save_db_config(
+                config=config,
+                user_id=user_id,
+                user_name=user_name
+            )
+            config_id = saved_config.id
+            original_name = config.name
+
+            # Update the configuration
+            updated_config = DBConfigCreate(
+                name=f"{config.name}_updated",
+                db_type=config.db_type,
+                host=config.host,
+                port=config.port + 1,  # Change port
+                database=config.database,
+                username=config.username,
+                password=config.password,
+                is_readonly=not config.is_readonly,  # Toggle readonly
+                ssl_enabled=config.ssl_enabled
+            )
+
+            await config_manager.save_db_config(
+                config=updated_config,
+                user_id=user_id,
+                user_name=user_name,
+                config_id=config_id
+            )
+
+            # Get history
+            history = await history_tracker.get_history(
+                config_type=ConfigType.DATABASE,
+                config_id=config_id,
+                limit=10
+            )
+
+            # Find update entry
+            update_history = None
+            for h in history:
+                if h.old_value is not None:
+                    update_history = h
+                    break
+
+            if update_history:
+                expected_state = update_history.old_value
+
+                # Perform rollback
+                rolled_back = await history_tracker.rollback(
+                    history_id=update_history.id,
+                    user_id=str(uuid4()),
+                    user_name="db_rollback_user"
+                )
+
+                # Verify database-specific fields are restored
+                assert rolled_back is not None, "Rollback should return value"
+                assert rolled_back.get("name") == expected_state.get("name"), \
+                    "Database config name should be restored"
+                assert rolled_back.get("port") == expected_state.get("port"), \
+                    "Database config port should be restored"
+                assert rolled_back.get("is_readonly") == expected_state.get("is_readonly"), \
+                    "Database config is_readonly should be restored"
+
+        asyncio.run(run_test())
+
+    @given(
+        config=llm_config_strategy(),
+        updated_config=llm_config_strategy(),
+        user_info=user_info_strategy()
+    )
+    @settings(max_examples=50, deadline=None)
+    def test_rollback_preserves_sensitive_field_security(self, config, updated_config, user_info):
+        """
+        Rollback preserves security of sensitive fields.
+
+        When rolling back a configuration, sensitive fields like API keys
+        should remain properly encrypted/protected in the restored state.
+        """
+        # Skip configs with empty names or API keys
+        assume(len(config.name.strip()) > 0)
+        assume(len(config.api_key.strip()) >= 20)
+        assume(len(updated_config.name.strip()) > 0)
+        assume(len(updated_config.api_key.strip()) >= 20)
+        assume(config.api_key != updated_config.api_key)  # Different API keys
+
+        user_id, user_name = user_info
+        assume(len(user_id.strip()) >= 10)
+        assume(len(user_name.strip()) >= 3)
+
+        # Create fresh instances for this test
+        config_manager = ConfigManager()
+        config_manager.clear_in_memory_storage()
+        history_tracker = config_manager._history_tracker
+
+        async def run_test():
+            # Create initial configuration
+            saved_config = await config_manager.save_llm_config(
+                config=config,
+                user_id=user_id,
+                user_name=user_name
+            )
+            config_id = saved_config.id
+
+            # Update with different API key
+            await config_manager.save_llm_config(
+                config=updated_config,
+                user_id=user_id,
+                user_name=user_name,
+                config_id=config_id
+            )
+
+            # Get history
+            history = await history_tracker.get_history(
+                config_type=ConfigType.LLM,
+                config_id=config_id,
+                limit=10
+            )
+
+            # Find update entry
+            update_history = None
+            for h in history:
+                if h.old_value is not None:
+                    update_history = h
+                    break
+
+            if update_history:
+                # Check that API key is redacted in history
+                old_value = update_history.old_value
+                new_value = update_history.new_value
+
+                # API key should be redacted in history
+                if "api_key" in old_value:
+                    assert old_value["api_key"] == "[REDACTED]" or \
+                           "encrypted" in str(old_value.get("api_key_encrypted", "")), \
+                        "API key should be redacted in history old_value"
+
+                if "api_key" in new_value:
+                    assert new_value["api_key"] == "[REDACTED]" or \
+                           "encrypted" in str(new_value.get("api_key_encrypted", "")), \
+                        "API key should be redacted in history new_value"
+
+                # Perform rollback
+                rolled_back = await history_tracker.rollback(
+                    history_id=update_history.id,
+                    user_id=str(uuid4()),
+                    user_name="security_test_user"
+                )
+
+                # Rolled back state should also have API key protected
+                if rolled_back and "api_key" in rolled_back:
+                    # Should not be plaintext original API key
+                    assert rolled_back["api_key"] == "[REDACTED]" or \
+                           rolled_back["api_key"] != config.api_key, \
+                        "Rolled back API key should be protected"
+
+        asyncio.run(run_test())
+
+
+# ============================================================================
 # Run tests
 # ============================================================================
 

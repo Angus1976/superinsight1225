@@ -1,0 +1,18 @@
+{
+  "enabled": false,
+  "name": "自动更新文档 [已禁用]",
+  "description": "代码修改时自动更新相关文档（默认禁用以提升性能）",
+  "version": "1.0.0",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.ts",
+      "src/**/*.py",
+      "frontend/src/**/*.tsx"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A source code file has been modified. Please update documentation following documentation best practices:\n1. Check if this file has associated documentation that needs updating\n2. Look for README files, API documentation, or inline comments that reference this code\n3. Update any outdated documentation to reflect the changes\n4. Generate JSDoc/docstring comments if they're missing from new functions\n5. Update any relevant examples or usage instructions\n6. Maintain single comprehensive README covering all aspects including deployment\n7. Keep documentation close to relevant code\n8. Include relevant documentation links in code comments\n9. Update documentation when upgrading dependencies"
+  }
+}

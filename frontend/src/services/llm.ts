@@ -321,4 +321,121 @@ export function isApiKeyMasked(key?: string): boolean {
   return key.includes('*');
 }
 
+// ==================== Provider Management Functions ====================
+
+/**
+ * Provider configuration types for CRUD operations
+ */
+export interface ProviderConfig {
+  id: string;
+  name: string;
+  provider_type: string;
+  deployment_mode: 'local' | 'cloud';
+  is_active: boolean;
+  is_fallback: boolean;
+  status: 'healthy' | 'unhealthy' | 'unknown';
+  created_at: string;
+  updated_at: string;
+  config?: Record<string, unknown>;
+}
+
+export interface ProviderConfigCreate {
+  name: string;
+  provider_type: string;
+  deployment_mode: 'local' | 'cloud';
+  config: Record<string, unknown>;
+  is_fallback?: boolean;
+}
+
+export interface ProviderConfigUpdate {
+  name?: string;
+  config?: Record<string, unknown>;
+  is_fallback?: boolean;
+}
+
+export const llmProviderService = {
+  /**
+   * List all LLM providers
+   */
+  async getProviders(): Promise<ProviderConfig[]> {
+    const response = await apiClient.get<ApiResponse<ProviderConfig[]>>(
+      `${LLM_API_BASE}/providers`
+    );
+    return response.data.data;
+  },
+
+  /**
+   * Get a single provider by ID
+   */
+  async getProvider(id: string): Promise<ProviderConfig> {
+    const response = await apiClient.get<ApiResponse<ProviderConfig>>(
+      `${LLM_API_BASE}/providers/${id}`
+    );
+    return response.data.data;
+  },
+
+  /**
+   * Create a new provider
+   */
+  async createProvider(data: ProviderConfigCreate): Promise<ProviderConfig> {
+    const response = await apiClient.post<ApiResponse<ProviderConfig>>(
+      `${LLM_API_BASE}/providers`,
+      data
+    );
+    return response.data.data;
+  },
+
+  /**
+   * Update an existing provider
+   */
+  async updateProvider(id: string, data: ProviderConfigUpdate): Promise<ProviderConfig> {
+    const response = await apiClient.put<ApiResponse<ProviderConfig>>(
+      `${LLM_API_BASE}/providers/${id}`,
+      data
+    );
+    return response.data.data;
+  },
+
+  /**
+   * Delete a provider
+   */
+  async deleteProvider(id: string): Promise<void> {
+    await apiClient.delete(`${LLM_API_BASE}/providers/${id}`);
+  },
+
+  /**
+   * Test provider connection
+   */
+  async testConnection(id: string): Promise<HealthStatus> {
+    const response = await apiClient.post<ApiResponse<HealthStatus>>(
+      `${LLM_API_BASE}/providers/${id}/test`
+    );
+    return response.data.data;
+  },
+
+  /**
+   * Activate a provider (set as active)
+   */
+  async activateProvider(id: string): Promise<void> {
+    await apiClient.post(`${LLM_API_BASE}/providers/${id}/activate`);
+  },
+
+  /**
+   * Set provider as fallback
+   */
+  async setFallbackProvider(id: string): Promise<void> {
+    await apiClient.post(`${LLM_API_BASE}/providers/${id}/set-fallback`);
+  },
+
+  /**
+   * Get provider health status
+   */
+  async getProviderHealth(id: string): Promise<HealthStatus> {
+    const response = await apiClient.get<ApiResponse<HealthStatus>>(
+      `${LLM_API_BASE}/providers/${id}/health`
+    );
+    return response.data.data;
+  },
+};
+
 export default llmService;

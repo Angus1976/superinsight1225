@@ -1,7 +1,7 @@
 {
   "enabled": true,
-  "name": "Documentation-First Enforcer",
-  "description": "Blocks code file edits and prompts to update documentation first (requirements.md, design.md, tasks.md, CHANGELOG.md) before any code changes",
+  "name": "文档优先强制检查",
+  "description": "修改代码前必须先更新文档 (requirements/design/tasks/CHANGELOG)",
   "version": "1",
   "when": {
     "type": "fileEdited",

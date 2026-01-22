@@ -1,7 +1,7 @@
 {
   "enabled": true,
-  "name": "Documentation Comprehensive Audit",
-  "description": "Provides manual trigger for comprehensive documentation audit including size checks, redundancy detection, and alignment verification",
+  "name": "文档全面审计 [手动]",
+  "description": "手动触发全面文档审计：大小、冗余、对齐检查",
   "version": "1",
   "when": {
     "type": "userTriggered"

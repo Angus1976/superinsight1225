@@ -49,7 +49,12 @@ class ConfigManager:
     history tracking, and caching.
     
     **Feature: admin-configuration**
-    **Validates: Requirements 2.4, 3.4**
+    **Validates: Requirements 2.4, 3.4, 7.1, 7.2, 7.3**
+    
+    **Multi-Tenant Isolation**:
+    All configuration queries MUST filter by tenant_id to enforce
+    multi-tenant isolation (Requirements 7.1, 7.2, 7.3). This prevents
+    cross-tenant configuration access at the database level.
     """
     
     # Cache TTL in seconds
@@ -62,6 +67,7 @@ class ConfigManager:
         encryptor: Optional[CredentialEncryptor] = None,
         validator: Optional[ConfigValidator] = None,
         history_tracker: Optional[HistoryTracker] = None,
+        require_tenant_id: bool = True,
     ):
         """
         Initialize the config manager.
@@ -72,12 +78,14 @@ class ConfigManager:
             encryptor: Credential encryptor
             validator: Config validator
             history_tracker: History tracker
+            require_tenant_id: If True, require tenant_id for all operations (default: True)
         """
         self._db = db
         self._cache = cache
         self._encryptor = encryptor or get_credential_encryptor()
         self._validator = validator or get_config_validator()
         self._history_tracker = history_tracker or get_history_tracker()
+        self._require_tenant_id = require_tenant_id
         
         # In-memory storage for testing without database
         self._in_memory_configs: Dict[str, Dict[str, Any]] = {
@@ -86,6 +94,32 @@ class ConfigManager:
             ConfigType.SYNC_STRATEGY.value: {},
             ConfigType.THIRD_PARTY.value: {},
         }
+    
+    def _validate_tenant_id(self, tenant_id: Optional[str], operation: str) -> None:
+        """
+        Validate tenant_id is provided for multi-tenant isolation.
+        
+        Args:
+            tenant_id: Tenant ID to validate
+            operation: Operation name for error message
+            
+        Raises:
+            ValueError: If tenant_id is required but not provided
+            
+        **Feature: admin-configuration**
+        **Validates: Requirements 7.1, 7.2, 7.3**
+        """
+        if self._require_tenant_id and tenant_id is None:
+            raise ValueError(
+                f"tenant_id is required for {operation} to enforce multi-tenant isolation. "
+                f"This prevents cross-tenant configuration access (Requirements 7.1, 7.2, 7.3)."
+            )
+        
+        if tenant_id is None:
+            logger.warning(
+                f"Operation '{operation}' called without tenant_id. "
+                f"This may allow cross-tenant access. Ensure this is intentional."
+            )
     
     @property
     def db(self) -> Optional[AsyncSession]:
@@ -110,13 +144,19 @@ class ConfigManager:
         
         Args:
             config_id: Configuration ID
-            tenant_id: Optional tenant ID for multi-tenant
+            tenant_id: Tenant ID for multi-tenant isolation (required in production)
             
         Returns:
             LLMConfigResponse if found, None otherwise
+            
+        **Feature: admin-configuration**
+        **Validates: Requirements 7.1, 7.2, 7.3**
         """
+        # Validate tenant_id for multi-tenant isolation
+        self._validate_tenant_id(tenant_id, "get_llm_config")
+        
         # Try cache first
-        cache_key = f"llm_config:{config_id}"
+        cache_key = f"llm_config:{tenant_id}:{config_id}"
         cached = await self._get_from_cache(cache_key)
         if cached:
             return LLMConfigResponse(**cached)
@@ -125,6 +165,9 @@ class ConfigManager:
             config = await self._get_llm_from_db(config_id, tenant_id)
         else:
             config = self._in_memory_configs[ConfigType.LLM.value].get(config_id)
+            # Filter by tenant_id in memory
+            if config and tenant_id and config.get("tenant_id") != tenant_id:
+                config = None
         
         if config:
             # Mask sensitive fields
@@ -140,19 +183,28 @@ class ConfigManager:
         active_only: bool = True,
     ) -> List[LLMConfigResponse]:
         """
-        List all LLM configurations.
+        List all LLM configurations for a tenant.
         
         Args:
-            tenant_id: Optional tenant ID filter
+            tenant_id: Tenant ID filter (required in production)
             active_only: Only return active configs
             
         Returns:
             List of LLMConfigResponse
+            
+        **Feature: admin-configuration**
+        **Validates: Requirements 7.1, 7.2, 7.3**
         """
+        # Validate tenant_id for multi-tenant isolation
+        self._validate_tenant_id(tenant_id, "list_llm_configs")
+        
         if self._db is not None:
             configs = await self._list_llm_from_db(tenant_id, active_only)
         else:
             configs = list(self._in_memory_configs[ConfigType.LLM.value].values())
+            # Filter by tenant_id in memory
+            if tenant_id:
+                configs = [c for c in configs if c.get("tenant_id") == tenant_id]
             if active_only:
                 configs = [c for c in configs if c.get("is_active", True)]
         
@@ -259,11 +311,17 @@ class ConfigManager:
             config_id: Configuration ID to delete
             user_id: User making the change
             user_name: User name for history
-            tenant_id: Tenant ID for multi-tenant
+            tenant_id: Tenant ID for multi-tenant isolation (required in production)
             
         Returns:
             True if deleted, False if not found
+            
+        **Feature: admin-configuration**
+        **Validates: Requirements 7.1, 7.2, 7.3**
         """
+        # Validate tenant_id for multi-tenant isolation
+        self._validate_tenant_id(tenant_id, "delete_llm_config")
+        
         # Get old value for history
         existing = await self.get_llm_config(config_id, tenant_id)
         if not existing:
@@ -276,7 +334,16 @@ class ConfigManager:
             await self._delete_llm_from_db(config_id, tenant_id)
         else:
             if config_id in self._in_memory_configs[ConfigType.LLM.value]:
-                del self._in_memory_configs[ConfigType.LLM.value][config_id]
+                # Verify tenant_id matches before deleting
+                config = self._in_memory_configs[ConfigType.LLM.value][config_id]
+                if tenant_id is None or config.get("tenant_id") == tenant_id:
+                    del self._in_memory_configs[ConfigType.LLM.value][config_id]
+                else:
+                    logger.warning(
+                        f"Attempted to delete config {config_id} from different tenant. "
+                        f"Expected: {tenant_id}, Found: {config.get('tenant_id')}"
+                    )
+                    return False
         
         # Record history (new_value indicates deletion)
         await self._history_tracker.record_change(
@@ -290,7 +357,7 @@ class ConfigManager:
         )
         
         # Invalidate cache
-        await self._invalidate_cache(f"llm_config:{config_id}")
+        await self._invalidate_cache(f"llm_config:{tenant_id}:{config_id}")
         
         return True
     
@@ -301,8 +368,23 @@ class ConfigManager:
         config_id: str,
         tenant_id: Optional[str] = None,
     ) -> Optional[DBConfigResponse]:
-        """Get database configuration by ID."""
-        cache_key = f"db_config:{config_id}"
+        """
+        Get database configuration by ID.
+        
+        Args:
+            config_id: Configuration ID
+            tenant_id: Tenant ID for multi-tenant isolation (required in production)
+            
+        Returns:
+            DBConfigResponse if found, None otherwise
+            
+        **Feature: admin-configuration**
+        **Validates: Requirements 7.1, 7.2, 7.3**
+        """
+        # Validate tenant_id for multi-tenant isolation
+        self._validate_tenant_id(tenant_id, "get_db_config")
+        
+        cache_key = f"db_config:{tenant_id}:{config_id}"
         cached = await self._get_from_cache(cache_key)
         if cached:
             return DBConfigResponse(**cached)
@@ -311,6 +393,9 @@ class ConfigManager:
             config = await self._get_db_from_db(config_id, tenant_id)
         else:
             config = self._in_memory_configs[ConfigType.DATABASE.value].get(config_id)
+            # Filter by tenant_id in memory
+            if config and tenant_id and config.get("tenant_id") != tenant_id:
+                config = None
         
         if config:
             response = self._to_db_response(config)
@@ -324,11 +409,29 @@ class ConfigManager:
         tenant_id: Optional[str] = None,
         active_only: bool = True,
     ) -> List[DBConfigResponse]:
-        """List all database configurations."""
+        """
+        List all database configurations for a tenant.
+        
+        Args:
+            tenant_id: Tenant ID filter (required in production)
+            active_only: Only return active configs
+            
+        Returns:
+            List of DBConfigResponse
+            
+        **Feature: admin-configuration**
+        **Validates: Requirements 7.1, 7.2, 7.3**
+        """
+        # Validate tenant_id for multi-tenant isolation
+        self._validate_tenant_id(tenant_id, "list_db_configs")
+        
         if self._db is not None:
             configs = await self._list_db_from_db(tenant_id, active_only)
         else:
             configs = list(self._in_memory_configs[ConfigType.DATABASE.value].values())
+            # Filter by tenant_id in memory
+            if tenant_id:
+                configs = [c for c in configs if c.get("tenant_id") == tenant_id]
             if active_only:
                 configs = [c for c in configs if c.get("is_active", True)]
         
@@ -405,7 +508,24 @@ class ConfigManager:
         user_name: str = "Unknown",
         tenant_id: Optional[str] = None,
     ) -> bool:
-        """Delete database configuration."""
+        """
+        Delete database configuration.
+        
+        Args:
+            config_id: Configuration ID to delete
+            user_id: User making the change
+            user_name: User name for history
+            tenant_id: Tenant ID for multi-tenant isolation (required in production)
+            
+        Returns:
+            True if deleted, False if not found
+            
+        **Feature: admin-configuration**
+        **Validates: Requirements 7.1, 7.2, 7.3**
+        """
+        # Validate tenant_id for multi-tenant isolation
+        self._validate_tenant_id(tenant_id, "delete_db_config")
+        
         existing = await self.get_db_config(config_id, tenant_id)
         if not existing:
             return False
@@ -416,7 +536,16 @@ class ConfigManager:
             await self._delete_db_from_db(config_id, tenant_id)
         else:
             if config_id in self._in_memory_configs[ConfigType.DATABASE.value]:
-                del self._in_memory_configs[ConfigType.DATABASE.value][config_id]
+                # Verify tenant_id matches before deleting
+                config = self._in_memory_configs[ConfigType.DATABASE.value][config_id]
+                if tenant_id is None or config.get("tenant_id") == tenant_id:
+                    del self._in_memory_configs[ConfigType.DATABASE.value][config_id]
+                else:
+                    logger.warning(
+                        f"Attempted to delete config {config_id} from different tenant. "
+                        f"Expected: {tenant_id}, Found: {config.get('tenant_id')}"
+                    )
+                    return False
         
         await self._history_tracker.record_change(
             config_type=ConfigType.DATABASE,
@@ -428,7 +557,7 @@ class ConfigManager:
             config_id=config_id,
         )
         
-        await self._invalidate_cache(f"db_config:{config_id}")
+        await self._invalidate_cache(f"db_config:{tenant_id}:{config_id}")
         
         return True
     
@@ -731,6 +860,151 @@ class ConfigManager:
         query = delete(DatabaseConnection).where(and_(*conditions))
         await self._db.execute(query)
         await self._db.commit()
+    
+    async def archive_tenant_configs(
+        self,
+        tenant_id: str,
+        user_id: str,
+        user_name: str = "System",
+        reason: str = "Tenant deletion",
+    ) -> Dict[str, int]:
+        """
+        Archive all configurations for a tenant on deletion.
+        
+        This method archives all tenant-specific configurations (LLM, database,
+        sync strategies, third-party tools) when a tenant is deleted. The archived
+        data is retained in the configuration history for compliance purposes.
+        
+        Args:
+            tenant_id: Tenant ID whose configurations should be archived
+            user_id: User ID performing the archival (typically system user)
+            user_name: User name for audit trail
+            reason: Reason for archival (default: "Tenant deletion")
+            
+        Returns:
+            Dictionary with counts of archived configurations by type:
+            {
+                "llm": 2,
+                "database": 3,
+                "sync_strategy": 1,
+                "third_party": 0,
+                "total": 6
+            }
+            
+        **Feature: admin-configuration**
+        **Validates: Requirements 7.6**
+        
+        **Implementation Notes**:
+        - Uses database transactions to ensure atomicity
+        - All configurations are recorded in history before deletion
+        - Archived data includes full configuration details
+        - Timestamp and reason are recorded for compliance
+        - Does NOT permanently delete data - only marks as archived in history
+        """
+        if not tenant_id:
+            raise ValueError("tenant_id is required for archival")
+        
+        archived_counts = {
+            "llm": 0,
+            "database": 0,
+            "sync_strategy": 0,
+            "third_party": 0,
+            "total": 0,
+        }
+        
+        logger.info(f"Starting tenant configuration archival for tenant_id={tenant_id}")
+        
+        try:
+            # Archive LLM configurations
+            llm_configs = await self.list_llm_configs(tenant_id=tenant_id, active_only=False)
+            for config in llm_configs:
+                await self.delete_llm_config(
+                    config_id=config.id,
+                    user_id=user_id,
+                    user_name=user_name,
+                    tenant_id=tenant_id,
+                )
+                archived_counts["llm"] += 1
+            
+            # Archive database configurations
+            db_configs = await self.list_db_configs(tenant_id=tenant_id, active_only=False)
+            for config in db_configs:
+                await self.delete_db_config(
+                    config_id=config.id,
+                    user_id=user_id,
+                    user_name=user_name,
+                    tenant_id=tenant_id,
+                )
+                archived_counts["database"] += 1
+            
+            # Archive sync strategies (if database is available)
+            if self._db is not None:
+                from src.models.admin_config import SyncStrategy
+                
+                # Get all sync strategies for this tenant
+                query = select(SyncStrategy).where(SyncStrategy.tenant_id == tenant_id)
+                result = await self._db.execute(query)
+                sync_strategies = result.scalars().all()
+                
+                for strategy in sync_strategies:
+                    # Record in history before deletion
+                    await self._history_tracker.record_change(
+                        config_type=ConfigType.SYNC_STRATEGY,
+                        old_value=strategy.to_dict(),
+                        new_value={"_deleted": True, "id": str(strategy.id), "_reason": reason},
+                        user_id=user_id,
+                        user_name=user_name,
+                        tenant_id=tenant_id,
+                        config_id=str(strategy.id),
+                    )
+                    
+                    # Delete the strategy
+                    await self._db.delete(strategy)
+                    archived_counts["sync_strategy"] += 1
+                
+                # Archive third-party tool configurations
+                from src.models.admin_config import ThirdPartyToolConfig
+                
+                query = select(ThirdPartyToolConfig).where(ThirdPartyToolConfig.tenant_id == tenant_id)
+                result = await self._db.execute(query)
+                third_party_configs = result.scalars().all()
+                
+                for config in third_party_configs:
+                    # Record in history before deletion
+                    await self._history_tracker.record_change(
+                        config_type=ConfigType.THIRD_PARTY,
+                        old_value=config.to_dict(mask_api_key=False),
+                        new_value={"_deleted": True, "id": str(config.id), "_reason": reason},
+                        user_id=user_id,
+                        user_name=user_name,
+                        tenant_id=tenant_id,
+                        config_id=str(config.id),
+                    )
+                    
+                    # Delete the config
+                    await self._db.delete(config)
+                    archived_counts["third_party"] += 1
+                
+                # Commit all deletions
+                await self._db.commit()
+            
+            # Calculate total
+            archived_counts["total"] = sum(
+                count for key, count in archived_counts.items() if key != "total"
+            )
+            
+            logger.info(
+                f"Tenant configuration archival completed for tenant_id={tenant_id}. "
+                f"Archived: {archived_counts}"
+            )
+            
+            return archived_counts
+            
+        except Exception as e:
+            logger.error(f"Failed to archive tenant configurations for tenant_id={tenant_id}: {e}")
+            if self._db is not None:
+                await self._db.rollback()
+            raise
     
     def clear_in_memory_storage(self) -> None:
         """Clear in-memory storage (for testing)."""

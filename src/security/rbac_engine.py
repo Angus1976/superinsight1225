@@ -21,8 +21,9 @@ from dataclasses import dataclass, field
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, select, func
 
+from src.security.rbac_models import RoleModel, UserRoleModel
 from src.models.security import (
-    RoleModel, UserRoleAssignmentModel, DynamicPolicyModel,
+    UserRoleAssignmentModel, DynamicPolicyModel,
     AuditLogModel, SecurityEventModel, PolicyType
 )
 

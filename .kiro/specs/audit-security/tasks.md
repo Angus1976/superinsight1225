@@ -98,7 +98,7 @@ graph TD
 - [x] 实现 IP 白名单策略（_check_ip_whitelist）
 - [x] 实现敏感级别策略（_check_sensitivity_level）
 - [x] 实现属性策略（ABAC）
-- [ ] 实现权限决策日志记录
+- [x] 实现权限决策日志记录（_log_decision）
 
 **对应需求**: Requirement 2
 

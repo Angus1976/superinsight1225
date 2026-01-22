@@ -1,7 +1,7 @@
 {
   "enabled": true,
-  "name": "Documentation Alignment Validator",
-  "description": "Triggers documentation audit and alignment check after agent completes work to ensure docs and code remain synchronized",
+  "name": "文档代码对齐验证",
+  "description": "Agent 完成后检查文档与代码是否同步",
   "version": "1",
   "when": {
     "type": "agentStop"

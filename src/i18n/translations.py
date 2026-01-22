@@ -589,6 +589,139 @@ TRANSLATIONS: Dict[str, Dict[str, Any]] = {
         'ontology.format.fastchat': 'FastChat 格式',
         'ontology.format.belle': 'BELLE 格式',
         'ontology.format.custom': '自定义格式',
+        
+        # ============================================================================
+        # LLM 集成模块 (LLM Integration Module)
+        # ============================================================================
+        
+        # LLM 提供商类型 - llm.provider.*
+        'llm.provider.openai': 'OpenAI',
+        'llm.provider.groq': 'Groq',
+        'llm.provider.anthropic': 'Anthropic',
+        'llm.provider.qwen': '通义千问',
+        'llm.provider.zhipu': '智谱AI',
+        'llm.provider.baidu': '百度文心',
+        'llm.provider.tencent': '腾讯混元',
+        'llm.provider.ollama': 'Ollama',
+        'llm.provider.docker': 'Docker',
+        'llm.provider.azure': 'Azure OpenAI',
+        
+        # LLM 配置页面标签 - llm.config.*
+        'llm.config.title': 'LLM 配置',
+        'llm.config.subtitle': '配置和管理大语言模型提供商',
+        'llm.config.add_provider': '添加提供商',
+        'llm.config.edit_provider': '编辑提供商',
+        'llm.config.delete_provider': '删除提供商',
+        'llm.config.test_connection': '测试连接',
+        'llm.config.set_active': '设为活跃',
+        'llm.config.set_fallback': '设为备用',
+        'llm.config.provider_name': '提供商名称',
+        'llm.config.provider_type': '提供商类型',
+        'llm.config.deployment_mode': '部署模式',
+        'llm.config.api_endpoint': 'API 端点',
+        'llm.config.api_key': 'API 密钥',
+        'llm.config.model_name': '模型名称',
+        'llm.config.max_tokens': '最大 Token 数',
+        'llm.config.timeout': '超时时间（秒）',
+        'llm.config.max_retries': '最大重试次数',
+        'llm.config.local_mode': '本地模式',
+        'llm.config.cloud_mode': '云端模式',
+        
+        # LLM 错误消息 - llm.error.*
+        'llm.error.provider_unavailable': '提供商不可用',
+        'llm.error.rate_limit': '请求频率超限',
+        'llm.error.timeout': '请求超时',
+        'llm.error.invalid_config': '配置无效',
+        'llm.error.invalid_api_key': 'API 密钥无效',
+        'llm.error.invalid_endpoint': 'API 端点无效',
+        'llm.error.connection_failed': '连接失败',
+        'llm.error.authentication_failed': '认证失败',
+        'llm.error.model_not_found': '模型未找到',
+        'llm.error.quota_exceeded': '配额已用尽',
+        'llm.error.invalid_response': '响应格式无效',
+        'llm.error.provider_not_found': '提供商未找到',
+        'llm.error.cannot_delete_active': '无法删除活跃提供商',
+        'llm.error.failover_failed': '故障转移失败',
+        'llm.error.all_providers_failed': '所有提供商均失败',
+        'llm.error.max_retries_exceeded': '已超过最大重试次数',
+        
+        # LLM 状态消息 - llm.status.*
+        'llm.status.healthy': '健康',
+        'llm.status.unhealthy': '不健康',
+        'llm.status.connecting': '连接中',
+        'llm.status.connected': '已连接',
+        'llm.status.disconnected': '已断开',
+        'llm.status.active': '活跃',
+        'llm.status.inactive': '非活跃',
+        'llm.status.fallback': '备用',
+        'llm.status.checking': '检查中',
+        
+        # LLM 操作消息 - llm.action.*
+        'llm.action.add': '添加',
+        'llm.action.edit': '编辑',
+        'llm.action.delete': '删除',
+        'llm.action.test': '测试',
+        'llm.action.activate': '激活',
+        'llm.action.deactivate': '停用',
+        'llm.action.save': '保存',
+        'llm.action.cancel': '取消',
+        'llm.action.refresh': '刷新',
+        'llm.action.retry': '重试',
+        
+        # LLM 成功消息 - llm.success.*
+        'llm.success.provider_added': '提供商添加成功',
+        'llm.success.provider_updated': '提供商更新成功',
+        'llm.success.provider_deleted': '提供商删除成功',
+        'llm.success.connection_test': '连接测试成功',
+        'llm.success.provider_activated': '提供商已激活',
+        'llm.success.config_saved': '配置保存成功',
+        
+        # LLM 预标注 - llm.preannotation.*
+        'llm.preannotation.title': 'AI 预标注',
+        'llm.preannotation.start': '开始预标注',
+        'llm.preannotation.in_progress': '预标注进行中',
+        'llm.preannotation.completed': '预标注完成',
+        'llm.preannotation.failed': '预标注失败',
+        'llm.preannotation.confidence': '置信度',
+        'llm.preannotation.review_required': '需要审核',
+        
+        # LLM 健康监控 - llm.health.*
+        'llm.health.title': '健康监控',
+        'llm.health.check_started': '健康检查已启动',
+        'llm.health.check_completed': '健康检查完成',
+        'llm.health.check_failed': '健康检查失败',
+        'llm.health.provider_recovered': '提供商 {provider_id} 已恢复',
+        'llm.health.provider_unhealthy': '提供商 {provider_id} 不健康',
+        'llm.health.all_healthy': '所有提供商健康',
+        'llm.health.some_unhealthy': '{count} 个提供商不健康',
+        
+        # LLM 批处理 - llm.batch.*
+        'llm.batch.title': '批量处理',
+        'llm.batch.started': '批处理已启动',
+        'llm.batch.progress': '处理进度: {current}/{total}',
+        'llm.batch.completed': '批处理完成',
+        'llm.batch.failed': '批处理失败',
+        'llm.batch.cancelled': '批处理已取消',
+        
+        # LLM 缓存 - llm.cache.*
+        'llm.cache.hit': '缓存命中',
+        'llm.cache.miss': '缓存未命中',
+        'llm.cache.stored': '响应已缓存',
+        'llm.cache.expired': '缓存已过期',
+        'llm.cache.cleared': '缓存已清除',
+        
+        # LLM 速率限制 - llm.rate_limit.*
+        'llm.rate_limit.exceeded': '速率限制已超过',
+        'llm.rate_limit.waiting': '等待速率限制重置',
+        'llm.rate_limit.reset_at': '重置时间: {reset_time}',
+        'llm.rate_limit.remaining': '剩余请求: {remaining}',
+        
+        # LLM 审计 - llm.audit.*
+        'llm.audit.config_created': 'LLM 配置已创建',
+        'llm.audit.config_updated': 'LLM 配置已更新',
+        'llm.audit.config_deleted': 'LLM 配置已删除',
+        'llm.audit.provider_switched': '提供商已切换',
+        'llm.audit.request_logged': 'LLM 请求已记录',
     },
     'en': {
         # General
@@ -1150,6 +1283,139 @@ TRANSLATIONS: Dict[str, Dict[str, Any]] = {
         'ontology.format.fastchat': 'FastChat Format',
         'ontology.format.belle': 'BELLE Format',
         'ontology.format.custom': 'Custom Format',
+        
+        # ============================================================================
+        # LLM Integration Module
+        # ============================================================================
+        
+        # LLM Provider Types - llm.provider.*
+        'llm.provider.openai': 'OpenAI',
+        'llm.provider.groq': 'Groq',
+        'llm.provider.anthropic': 'Anthropic',
+        'llm.provider.qwen': 'Qwen',
+        'llm.provider.zhipu': 'Zhipu AI',
+        'llm.provider.baidu': 'Baidu Ernie',
+        'llm.provider.tencent': 'Tencent Hunyuan',
+        'llm.provider.ollama': 'Ollama',
+        'llm.provider.docker': 'Docker',
+        'llm.provider.azure': 'Azure OpenAI',
+        
+        # LLM Configuration Labels - llm.config.*
+        'llm.config.title': 'LLM Configuration',
+        'llm.config.subtitle': 'Configure and manage LLM providers',
+        'llm.config.add_provider': 'Add Provider',
+        'llm.config.edit_provider': 'Edit Provider',
+        'llm.config.delete_provider': 'Delete Provider',
+        'llm.config.test_connection': 'Test Connection',
+        'llm.config.set_active': 'Set Active',
+        'llm.config.set_fallback': 'Set Fallback',
+        'llm.config.provider_name': 'Provider Name',
+        'llm.config.provider_type': 'Provider Type',
+        'llm.config.deployment_mode': 'Deployment Mode',
+        'llm.config.api_endpoint': 'API Endpoint',
+        'llm.config.api_key': 'API Key',
+        'llm.config.model_name': 'Model Name',
+        'llm.config.max_tokens': 'Max Tokens',
+        'llm.config.timeout': 'Timeout (seconds)',
+        'llm.config.max_retries': 'Max Retries',
+        'llm.config.local_mode': 'Local Mode',
+        'llm.config.cloud_mode': 'Cloud Mode',
+        
+        # LLM Error Messages - llm.error.*
+        'llm.error.provider_unavailable': 'Provider unavailable',
+        'llm.error.rate_limit': 'Rate limit exceeded',
+        'llm.error.timeout': 'Request timeout',
+        'llm.error.invalid_config': 'Invalid configuration',
+        'llm.error.invalid_api_key': 'Invalid API key',
+        'llm.error.invalid_endpoint': 'Invalid API endpoint',
+        'llm.error.connection_failed': 'Connection failed',
+        'llm.error.authentication_failed': 'Authentication failed',
+        'llm.error.model_not_found': 'Model not found',
+        'llm.error.quota_exceeded': 'Quota exceeded',
+        'llm.error.invalid_response': 'Invalid response format',
+        'llm.error.provider_not_found': 'Provider not found',
+        'llm.error.cannot_delete_active': 'Cannot delete active provider',
+        'llm.error.failover_failed': 'Failover failed',
+        'llm.error.all_providers_failed': 'All providers failed',
+        'llm.error.max_retries_exceeded': 'Max retries exceeded',
+        
+        # LLM Status Messages - llm.status.*
+        'llm.status.healthy': 'Healthy',
+        'llm.status.unhealthy': 'Unhealthy',
+        'llm.status.connecting': 'Connecting',
+        'llm.status.connected': 'Connected',
+        'llm.status.disconnected': 'Disconnected',
+        'llm.status.active': 'Active',
+        'llm.status.inactive': 'Inactive',
+        'llm.status.fallback': 'Fallback',
+        'llm.status.checking': 'Checking',
+        
+        # LLM Action Messages - llm.action.*
+        'llm.action.add': 'Add',
+        'llm.action.edit': 'Edit',
+        'llm.action.delete': 'Delete',
+        'llm.action.test': 'Test',
+        'llm.action.activate': 'Activate',
+        'llm.action.deactivate': 'Deactivate',
+        'llm.action.save': 'Save',
+        'llm.action.cancel': 'Cancel',
+        'llm.action.refresh': 'Refresh',
+        'llm.action.retry': 'Retry',
+        
+        # LLM Success Messages - llm.success.*
+        'llm.success.provider_added': 'Provider added successfully',
+        'llm.success.provider_updated': 'Provider updated successfully',
+        'llm.success.provider_deleted': 'Provider deleted successfully',
+        'llm.success.connection_test': 'Connection test successful',
+        'llm.success.provider_activated': 'Provider activated',
+        'llm.success.config_saved': 'Configuration saved successfully',
+        
+        # LLM Pre-annotation - llm.preannotation.*
+        'llm.preannotation.title': 'AI Pre-annotation',
+        'llm.preannotation.start': 'Start Pre-annotation',
+        'llm.preannotation.in_progress': 'Pre-annotation in progress',
+        'llm.preannotation.completed': 'Pre-annotation completed',
+        'llm.preannotation.failed': 'Pre-annotation failed',
+        'llm.preannotation.confidence': 'Confidence',
+        'llm.preannotation.review_required': 'Review required',
+        
+        # LLM Health Monitoring - llm.health.*
+        'llm.health.title': 'Health Monitoring',
+        'llm.health.check_started': 'Health check started',
+        'llm.health.check_completed': 'Health check completed',
+        'llm.health.check_failed': 'Health check failed',
+        'llm.health.provider_recovered': 'Provider {provider_id} recovered',
+        'llm.health.provider_unhealthy': 'Provider {provider_id} unhealthy',
+        'llm.health.all_healthy': 'All providers healthy',
+        'llm.health.some_unhealthy': '{count} providers unhealthy',
+        
+        # LLM Batch Processing - llm.batch.*
+        'llm.batch.title': 'Batch Processing',
+        'llm.batch.started': 'Batch processing started',
+        'llm.batch.progress': 'Progress: {current}/{total}',
+        'llm.batch.completed': 'Batch processing completed',
+        'llm.batch.failed': 'Batch processing failed',
+        'llm.batch.cancelled': 'Batch processing cancelled',
+        
+        # LLM Cache - llm.cache.*
+        'llm.cache.hit': 'Cache hit',
+        'llm.cache.miss': 'Cache miss',
+        'llm.cache.stored': 'Response cached',
+        'llm.cache.expired': 'Cache expired',
+        'llm.cache.cleared': 'Cache cleared',
+        
+        # LLM Rate Limiting - llm.rate_limit.*
+        'llm.rate_limit.exceeded': 'Rate limit exceeded',
+        'llm.rate_limit.waiting': 'Waiting for rate limit reset',
+        'llm.rate_limit.reset_at': 'Reset at: {reset_time}',
+        'llm.rate_limit.remaining': 'Remaining requests: {remaining}',
+        
+        # LLM Audit - llm.audit.*
+        'llm.audit.config_created': 'LLM configuration created',
+        'llm.audit.config_updated': 'LLM configuration updated',
+        'llm.audit.config_deleted': 'LLM configuration deleted',
+        'llm.audit.provider_switched': 'Provider switched',
+        'llm.audit.request_logged': 'LLM request logged',
     }
 }
 

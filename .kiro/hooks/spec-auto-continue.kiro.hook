@@ -1,10 +1,10 @@
 {
   "enabled": true,
-  "name": "Spec Auto Continue",
-  "description": "Spec workflow automation with 'Waiting on your input' detection",
+  "name": "Spec 自动继续 [手动]",
+  "description": "手动触发：恢复未完成的 Spec 任务",
   "version": "5",
   "when": {
-    "type": "sessionCreated"
+    "type": "userTriggered"
   },
   "then": {
     "type": "askAgent",

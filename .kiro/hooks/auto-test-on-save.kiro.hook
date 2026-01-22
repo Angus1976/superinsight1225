@@ -1,0 +1,18 @@
+{
+  "enabled": true,
+  "name": "保存时自动测试",
+  "description": "保存 TS/Python 文件时自动运行相关测试",
+  "version": "1.0.0",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "**/*.ts",
+      "**/*.tsx",
+      "**/*.py"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A code file has been saved. Run the appropriate tests for this file and report any failures. IMPORTANT: Use minimal verbosity to prevent session timeouts - add --silent, --quiet, or similar flags. If this is a test file, run it directly with filtering (--grep, --testNamePattern). If this is a source file, find and run related tests. Use commands like: npm test -- --silent, npx vitest --run --silent, or pytest -q -k 'test_name'."
+  }
+}

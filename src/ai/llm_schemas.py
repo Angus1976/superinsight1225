@@ -76,6 +76,7 @@ class LLMResponse(BaseModel):
     latency_ms: float = Field(default=0.0, ge=0.0, description="Response latency in milliseconds")
     finish_reason: Optional[str] = Field(default=None, description="Reason for completion")
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
+    cached: bool = Field(default=False, description="Whether this response was served from cache")
     
     model_config = ConfigDict(extra='allow')
 

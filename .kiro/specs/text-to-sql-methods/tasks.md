@@ -1,251 +1,662 @@
-# Implementation Plan: Text-to-SQL Methods (Text-to-SQL 方法)
+# Implementation Plan: Text-to-SQL Methods
 
 ## Overview
 
-本任务文档将 Text-to-SQL Methods 设计分解为可执行的开发任务，实现多种自然语言转 SQL 方法，包括模板填充、LLM 生成、混合方法，以及第三方专业工具对接。
+This implementation plan breaks down the Text-to-SQL Methods feature into discrete, testable tasks. The plan follows a bottom-up approach, implementing core components first, then building up to the complete system with frontend integration. Each task includes specific requirements references and validation steps.
 
 ## Tasks
 
-- [x] 1. 核心数据模型和基础设施
-  - [x] 1.1 创建数据模型
-    - 创建 `src/text-to-sql/schemas.py`，定义 `SQLGenerationResult`、`MethodInfo`、`PluginConfig` 等 Pydantic 模型
-    - 创建 `src/models/text_to_sql.py`，定义 `TextToSQLConfiguration`、`ThirdPartyPlugin`、`SQLGenerationLog` SQLAlchemy 模型
-    - _需求 4.1, 6.1: 配置模型和插件接口_
-  
-  - [x] 1.2 创建数据库迁移
-    - 创建 Alembic 迁移脚本，添加 `text_to_sql_configurations`、`third_party_plugins`、`sql_generation_logs` 表
-    - 添加索引优化查询性能
-    - _需求 4.1: 配置持久化_
-  
-  - [x] 1.3 创建目录结构
-    - 创建 `src/text-to-sql/` 目录
-    - 创建 `__init__.py` 和基础模块文件
-    - _基础设施_
+- [ ] 1. Set up project structure and core data models
+  - Create `src/text_to_sql/` directory structure
+  - Define core data models (SQLGenerationRequest, SQLGenerationResult, DatabaseSchema, etc.)
+  - Create database models (TextToSQLQuery, SQLTemplate, TextToSQLMetrics)
+  - Set up Alembic migration for new tables
+  - _Requirements: All requirements (foundation)_
 
-- [x] 2. Schema Analyzer 实现
-  - [x] 2.1 实现 Schema 分析器
-    - 创建 `src/text-to-sql/schema_analyzer.py`
-    - 实现 `analyze()` 方法提取表结构信息
-    - 实现 `to_llm_context()` 生成 LLM 友好描述
-    - _需求 5.1, 5.2, 5.4: Schema 分析_
+- [ ] 2. Implement Schema Manager
+  - [ ] 2.1 Create SchemaManager class with async methods
+    - Implement `get_schema()` to retrieve complete database schema
+    - Implement `get_table_info()` for specific table details
+    - Implement `get_relationships()` for foreign key relationships
+    - Support PostgreSQL, MySQL, Oracle, SQL Server
+    - _Requirements: 6.1, 6.3_
   
-  - [x] 2.2 实现相关表筛选
-    - 实现 `filter_relevant_tables()` 方法
-    - 支持表数量超过 50 时的智能筛选
-    - 实现增量更新 `incremental_update()`
-    - _需求 5.3, 5.5: 增量更新和筛选_
+  - [ ] 2.2 Implement schema caching with Redis
+    - Cache schema with 1-hour TTL
+    - Implement cache invalidation on DDL operations
+    - Use database connection as cache key
+    - _Requirements: 10.1, 10.3_
   
-  - [x] 2.3 编写 Schema Analyzer 属性测试
-    - **Property 6: Schema 信息完整性**
-    - **Validates: Requirements 5.2**
+  - [ ] 2.3 Write property test for schema manager
+    - **Property 5: Schema Context Retrieval**
+    - **Property 27: Database Type Auto-Detection**
+    - **Validates: Requirements 1.6, 6.3**
 
-- [x] 3. Checkpoint - 确保 Schema 分析基础完成
-  - 验证 Schema 提取功能
-  - 确保所有测试通过，如有问题请询问用户
+- [ ] 3. Implement SQL Validator
+  - [ ] 3.1 Create SQLValidator class with validation methods
+    - Implement `validate()` for comprehensive SQL validation
+    - Implement `check_sql_injection()` for security patterns
+    - Implement `check_permissions()` for table access
+    - Implement `check_syntax()` for database-specific syntax
+    - _Requirements: 5.1, 5.2, 5.3, 5.4_
+  
+  - [ ] 3.2 Define SQL injection patterns and dangerous operations
+    - Create regex patterns for SQL injection detection
+    - Define list of dangerous operations (DROP, TRUNCATE, etc.)
+    - Implement pattern matching logic
+    - _Requirements: 5.1, 5.2_
+  
+  - [ ] 3.3 Implement validation error formatting
+    - Create ValidationResult, ValidationError, ValidationWarning classes
+    - Format error messages with specific violation types
+    - Include SQL location in error messages
+    - Support i18n for error messages
+    - _Requirements: 5.5, 11.1, 11.6_
+  
+  - [ ] 3.4 Implement validation audit logging
+    - Log all validation attempts with correlation IDs
+    - Include SQL, result, user info, timestamp
+    - Integrate with existing audit system
+    - _Requirements: 5.6, 11.7_
+  
+  - [ ] 3.5 Write property tests for SQL validator
+    - **Property 20: SQL Injection Detection**
+    - **Property 21: Dangerous Operation Detection**
+    - **Property 22: Permission Validation**
+    - **Property 23: Syntax Validation**
+    - **Property 24: Validation Error Specificity**
+    - **Property 25: Validation Audit Logging**
+    - **Validates: Requirements 5.1, 5.2, 5.3, 5.4, 5.5, 5.6**
 
+- [ ] 4. Implement Query Cache
+  - [ ] 4.1 Create QueryCache class with Redis backend
+    - Implement `get()` to retrieve cached SQL
+    - Implement `set()` to cache query-SQL pairs
+    - Implement `invalidate_by_schema()` for schema changes
+    - Implement `get_stats()` for cache metrics
+    - _Requirements: 10.1, 10.2, 10.3_
+  
+  - [ ] 4.2 Implement cache key generation
+    - Generate keys from query, database type, schema version
+    - Use MD5 hashing for query normalization
+    - Format: `text2sql:{db_type}:{schema_hash}:{query_hash}`
+    - _Requirements: 10.1_
+  
+  - [ ] 4.3 Implement LRU eviction policy
+    - Track access times for cache entries
+    - Evict least recently used when cache is full
+    - Configure max cache size
+    - _Requirements: 10.6_
+  
+  - [ ] 4.4 Write property tests for query cache
+    - **Property 42: Query-SQL Caching with TTL**
+    - **Property 43: Cache Performance**
+    - **Property 44: Schema Change Cache Invalidation**
+    - **Property 45: LRU Cache Eviction**
+    - **Validates: Requirements 10.1, 10.2, 10.3, 10.6**
 
-- [x] 4. Template Filler 实现
-  - [x] 4.1 创建模板填充器
-    - 创建 `src/text-to-sql/basic.py`，实现 `TemplateFiller` 类
-    - 实现 `match_template()` 模板匹配
-    - 实现 `fill_template()` 参数填充
-    - _需求 1.1, 1.2: 模板匹配和填充_
-  
-  - [x] 4.2 创建预定义模板
-    - 创建 `src/text-to-sql/templates/` 目录
-    - 创建聚合、筛选、排序、分组、连接查询模板
-    - 实现模板加载和管理
-    - _需求 1.3: 模板类型_
-  
-  - [x] 4.3 实现参数类型验证
-    - 实现 `validate_params()` 方法
-    - 支持数字、字符串、日期类型验证
-    - 实现匹配失败回退建议
-    - _需求 1.4, 1.5: 参数验证和回退_
-  
-  - [x] 4.4 编写 Template Filler 属性测试
-    - **Property 5: 参数类型验证**
-    - **Validates: Requirements 1.5**
+- [ ] 5. Checkpoint - Ensure core infrastructure tests pass
+  - Run all unit tests for SchemaManager, SQLValidator, QueryCache
+  - Run all property tests
+  - Verify Redis integration works
+  - Ask the user if questions arise
 
-- [x] 5. LLM SQL Generator 实现
-  - [x] 5.1 创建 LLM 生成器
-    - 创建 `src/text-to-sql/llm-based.py`，实现 `LLMSQLGenerator` 类
-    - 集成 LLM Switcher（复用 llm-integration 模块）
-    - 实现 `build_prompt()` 构建 prompt
-    - _需求 2.1, 2.2: LLM 生成_
+- [ ] 6. Implement Template Method
+  - [ ] 6.1 Create TemplateMethod class
+    - Implement `generate_sql()` for template-based generation
+    - Implement `match_template()` to find best matching template
+    - Implement `extract_parameters()` to parse query parameters
+    - Implement `add_template()` to add new templates
+    - _Requirements: 1.1, 1.2, 1.3_
   
-  - [x] 5.2 实现 SQL 验证和重试
-    - 实现 `validate_sql()` SQL 语法验证
-    - 实现 `retry_generate()` 重试机制（最多 3 次）
-    - 支持 LangChain 和 SQLCoder 框架
-    - _需求 2.3, 2.4, 2.5: 验证和重试_
+  - [ ] 6.2 Create SQLTemplate data model
+    - Define template structure (pattern, sql_template, parameters, priority)
+    - Support regex patterns for matching
+    - Support parameter placeholders in SQL
+    - _Requirements: 1.1_
   
-  - [x] 5.3 编写 LLM Generator 属性测试
-    - **Property 1: SQL 语法正确性**
-    - **Validates: Requirements 1.2, 2.4**
+  - [ ] 6.3 Implement template matching logic
+    - Match query against template patterns using regex
+    - Calculate specificity score (parameter count + pattern complexity)
+    - Select most specific template when multiple match
+    - Return "no match" status when no templates match
+    - _Requirements: 1.2, 1.3_
+  
+  - [ ] 6.4 Implement parameter extraction and substitution
+    - Extract parameter values from query using regex groups
+    - Validate parameters for SQL injection
+    - Substitute parameters into SQL template
+    - _Requirements: 1.1, 1.5_
+  
+  - [ ] 6.5 Create default template library
+    - Create templates for SELECT, INSERT, UPDATE, DELETE
+    - Support PostgreSQL, MySQL, Oracle, SQL Server syntax
+    - Include examples for each template
+    - _Requirements: 1.4, 6.1, 6.2_
+  
+  - [ ] 6.6 Write property tests for template method
+    - **Property 1: Template Parameter Substitution**
+    - **Property 2: Template Selection Specificity**
+    - **Property 3: Template Non-Match Handling**
+    - **Property 4: SQL Injection Prevention in Templates**
+    - **Property 28: Database-Specific Template Libraries**
+    - **Validates: Requirements 1.1, 1.2, 1.3, 1.5, 6.4**
 
-- [x] 6. Hybrid Generator 实现
-  - [x] 6.1 创建混合生成器
-    - 创建 `src/text-to-sql/hybrid.py`，实现 `HybridGenerator` 类
-    - 实现模板优先、LLM 回退逻辑
-    - 实现规则后处理优化
-    - _需求 3.1, 3.2, 3.3: 混合方法_
+- [ ] 7. Implement LLM Method
+  - [ ] 7.1 Create LLMMethod class
+    - Implement `generate_sql()` for LLM-based generation
+    - Implement `build_prompt()` with schema context
+    - Implement `parse_llm_response()` to extract SQL
+    - Implement `retry_with_refinement()` for error recovery
+    - _Requirements: 2.1, 2.2, 2.3_
   
-  - [x] 6.2 实现方法记录和置信度
-    - 实现 `log_method_usage()` 方法记录
-    - 实现置信度计算和返回
-    - _需求 3.4, 3.5: 记录和置信度_
+  - [ ] 7.2 Implement prompt template
+    - Create prompt template with schema description
+    - Include database type and syntax requirements
+    - Add example queries for few-shot learning
+    - Format schema as readable text (tables, columns, relationships)
+    - _Requirements: 2.2_
   
-  - [x] 6.3 编写 Hybrid Generator 属性测试
-    - **Property 3: 混合方法优先级**
-    - **Validates: Requirements 3.1, 3.2**
+  - [ ] 7.3 Integrate with existing LLM infrastructure
+    - Use existing LLM service from `src/ai/`
+    - Support multiple providers (Ollama, OpenAI, Chinese LLMs)
+    - Configure model, temperature, timeout
+    - _Requirements: 2.4, 13.1_
+  
+  - [ ] 7.4 Implement retry logic with refinement
+    - Retry up to 3 times on validation failure
+    - Include validation errors in refined prompt
+    - Use exponential backoff for rate limits
+    - _Requirements: 2.3_
+  
+  - [ ] 7.5 Implement timeout enforcement
+    - Set 5-second timeout for LLM calls
+    - Return timeout error if exceeded
+    - Log timeout events for monitoring
+    - _Requirements: 2.5_
+  
+  - [ ] 7.6 Implement LLM logging
+    - Log all prompts and generated SQL
+    - Include query, database type, model used
+    - Store for quality assessment and training
+    - _Requirements: 2.6_
+  
+  - [ ] 7.7 Write property tests for LLM method
+    - **Property 6: LLM SQL Generation**
+    - **Property 7: LLM Prompt Schema Inclusion**
+    - **Property 8: LLM Retry Logic**
+    - **Property 9: LLM Timeout Enforcement**
+    - **Property 10: LLM Logging Completeness**
+    - **Validates: Requirements 2.1, 2.2, 2.3, 2.5, 2.6**
 
-- [x] 7. Checkpoint - 确保内置方法完成
-  - 验证模板、LLM、混合方法
-  - 确保所有测试通过，如有问题请询问用户
+- [ ] 8. Implement Hybrid Method
+  - [ ] 8.1 Create HybridMethod class
+    - Implement `generate_sql()` with template-first strategy
+    - Implement fallback from template to LLM
+    - Implement validation-based retry
+    - Implement `should_cache_as_template()` for learning
+    - _Requirements: 3.1, 3.2, 3.5_
+  
+  - [ ] 8.2 Implement template caching from LLM results
+    - Track successful LLM-generated SQL
+    - Cache as template after 3 successful executions
+    - Extract pattern from query using NLP
+    - Store in template library
+    - _Requirements: 3.6_
+  
+  - [ ] 8.3 Implement error handling
+    - Return descriptive error when both methods fail
+    - Include details from both attempts
+    - Provide suggestions for query refinement
+    - _Requirements: 3.3_
+  
+  - [ ] 8.4 Write property tests for hybrid method
+    - **Property 11: Hybrid Method Execution Order**
+    - **Property 12: Hybrid Fallback Behavior**
+    - **Property 13: Hybrid Error Handling**
+    - **Property 14: Hybrid Validation Fallback**
+    - **Property 15: Hybrid Template Caching**
+    - **Validates: Requirements 3.1, 3.2, 3.3, 3.5, 3.6**
 
-- [x] 8. Plugin Manager 和第三方适配器
-  - [x] 8.1 创建插件接口规范
-    - 创建 `src/text-to-sql/plugin_interface.py`，定义 `PluginInterface` 抽象类
-    - 定义必要的接口方法：`get_info`、`to_native_format`、`call`、`from_native_format`、`health_check`
-    - _需求 6.1: 插件接口规范_
-  
-  - [x] 8.2 实现 Plugin Manager
-    - 创建 `src/text-to-sql/plugin_manager.py`，实现 `PluginManager` 类
-    - 实现插件注册、注销、启用、禁用
-    - 实现接口验证逻辑
-    - _需求 6.2: 接口验证_
-  
-  - [x] 8.3 实现第三方适配器
-    - 创建 `src/text-to-sql/third_party_adapter.py`，实现 `ThirdPartyAdapter` 类
-    - 实现请求/响应格式转换
-    - 实现自动回退机制
-    - _需求 6.4, 6.5, 6.7: 格式转换和回退_
-  
-  - [x] 8.4 实现主流工具适配器
-    - 创建 `src/text-to-sql/adapters/` 目录
-    - 实现 REST API 适配器基类
-    - 实现 Vanna.ai 适配器示例
-    - _需求 6.3, 6.6: 对接方式和工具支持_
-  
-  - [x] 8.5 编写插件管理属性测试
-    - **Property 7: 插件接口验证**
-    - **Property 8: 自动回退机制**
-    - **Validates: Requirements 6.2, 6.7**
+- [ ] 9. Checkpoint - Ensure all generation methods work
+  - Run all unit tests for TemplateMethod, LLMMethod, HybridMethod
+  - Run all property tests
+  - Test with real database connections
+  - Ask the user if questions arise
 
-- [x] 9. Method Switcher 实现
-  - [x] 9.1 创建方法切换器
-    - 创建 `src/text-to-sql/switcher.py`，实现 `MethodSwitcher` 类
-    - 实现 `generate_sql()` 统一入口
-    - 实现方法路由逻辑
-    - _需求 4.1, 4.2, 4.3: 方法切换_
+- [ ] 10. Implement Method Switcher
+  - [ ] 10.1 Create MethodSwitcher class
+    - Implement `select_method()` for method selection
+    - Implement `calculate_complexity()` for query analysis
+    - Implement `get_method_stats()` for performance metrics
+    - _Requirements: 4.1, 4.2, 4.3, 4.4_
   
-  - [x] 9.2 实现自动方法选择
-    - 实现 `auto_select_method()` 基于场景选择
-    - 支持基于数据库类型的选择
-    - 确保切换在 500ms 内完成
-    - _需求 4.4, 4.5: 自动选择_
+  - [ ] 10.2 Implement query complexity calculation
+    - Analyze keywords (SELECT, JOIN, WHERE, GROUP BY, etc.)
+    - Count conditions, tables, aggregations
+    - Calculate complexity score (0-100)
+    - Classify as simple (<30), medium (31-60), complex (>60)
+    - _Requirements: 4.1_
   
-  - [x] 9.3 编写 Method Switcher 属性测试
-    - **Property 2: 方法路由正确性**
-    - **Validates: Requirements 4.1, 4.2**
+  - [ ] 10.3 Implement method selection logic
+    - Select Template for simple queries
+    - Select LLM for complex queries
+    - Select Hybrid for medium queries
+    - Consider database type in selection
+    - Respect user preference if provided
+    - _Requirements: 4.2, 4.3, 4.4, 4.5_
+  
+  - [ ] 10.4 Implement fallback mechanism
+    - Try next best method when selected method fails
+    - Track failure reasons
+    - Log fallback events
+    - _Requirements: 4.6_
+  
+  - [ ] 10.5 Implement method performance tracking
+    - Track success rate per method
+    - Track average execution time per method
+    - Store in MethodStats data model
+    - _Requirements: 8.1, 8.2_
+  
+  - [ ] 10.6 Write property tests for method switcher
+    - **Property 16: Query Complexity Analysis**
+    - **Property 17: Complexity-Based Method Selection**
+    - **Property 18: Database-Aware Method Selection**
+    - **Property 19: Method Fallback on Failure**
+    - **Validates: Requirements 4.1, 4.2, 4.3, 4.4, 4.5, 4.6**
 
-- [x] 10. Checkpoint - 确保核心功能完成
-  - 验证所有方法和切换逻辑 ✓
-  - 验证第三方工具对接 ✓
-  - 确保所有测试通过 ✓ (88 tests passed)
+- [ ] 11. Implement Text-to-SQL Service
+  - [ ] 11.1 Create TextToSQLService class
+    - Implement `generate_sql()` as main entry point
+    - Integrate MethodSwitcher, QueryCache, SQLValidator
+    - Implement error handling with retry
+    - Implement metrics collection
+    - _Requirements: All requirements (orchestration)_
+  
+  - [ ] 11.2 Implement request/response handling
+    - Parse SQLGenerationRequest
+    - Build SQLGenerationResult
+    - Include method used, execution time, confidence score
+    - Handle optional query execution
+    - _Requirements: All requirements_
+  
+  - [ ] 11.3 Implement metrics collection
+    - Track execution time per method
+    - Track success/failure rates
+    - Track LLM token usage and costs
+    - Track cache hit/miss rates
+    - Store in TextToSQLMetrics table
+    - _Requirements: 8.1, 8.2, 8.3, 12.3_
+  
+  - [ ] 11.4 Implement multi-tenant support
+    - Isolate configurations per tenant
+    - Isolate database connections per tenant
+    - Isolate cache entries per tenant
+    - Track usage per tenant
+    - _Requirements: 12.1, 12.2, 12.3, 12.6_
+  
+  - [ ] 11.5 Implement quota enforcement
+    - Check tenant LLM usage quota
+    - Switch to template-only mode when exceeded
+    - Notify tenant administrators
+    - _Requirements: 12.4_
+  
+  - [ ] 11.6 Write property tests for text-to-sql service
+    - **Property 34: Comprehensive Metrics Tracking**
+    - **Property 51: Tenant Data Isolation**
+    - **Property 52: Tenant Usage Tracking**
+    - **Property 53: Tenant Quota Enforcement**
+    - **Validates: Requirements 8.1, 8.2, 8.3, 12.1, 12.2, 12.3, 12.4, 12.6**
 
-- [x] 11. API 路由实现
-  - [x] 11.1 创建 Text-to-SQL API 路由
-    - 创建 `src/api/text_to_sql.py`，实现 API 路由
-    - 实现 `POST /api/v1/text-to-sql/methods/generate` 生成接口
-    - 实现 `GET /api/v1/text-to-sql/methods` 列出方法
-    - 实现 `POST /api/v1/text-to-sql/methods/test` 测试生成
-    - _需求 7.4, 7.5: 测试功能_
+- [ ] 12. Implement API Endpoints
+  - [ ] 12.1 Create FastAPI router for Text-to-SQL
+    - Create `src/api/text_to_sql.py`
+    - Set up router with `/api/v1/text-to-sql` prefix
+    - Add authentication and rate limiting middleware
+    - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5, 14.6_
   
-  - [x] 11.2 实现配置 API
-    - 实现 `GET /api/v1/text-to-sql/config` 获取配置
-    - 实现 `PUT /api/v1/text-to-sql/config` 更新配置
-    - _需求 7.3: 配置保存_
+  - [ ] 12.2 Implement POST /generate endpoint
+    - Accept SQLGenerationRequest
+    - Call TextToSQLService.generate_sql()
+    - Return SQLGenerationResult
+    - Handle errors with consistent format
+    - _Requirements: 14.1_
   
-  - [x] 11.3 实现插件管理 API
-    - 实现插件 CRUD API
-    - 实现插件启用/禁用 API
-    - 实现插件健康检查 API
-    - _需求 7.6, 7.7, 7.8: 插件管理_
+  - [ ] 12.3 Implement GET /methods endpoint
+    - List available methods (Template, LLM, Hybrid)
+    - Include method descriptions and capabilities
+    - Return method performance stats
+    - _Requirements: 14.2_
   
-  - [x] 11.4 注册路由到主应用
-    - 在 `src/app.py` 和 `src/app_auth.py` 中注册路由 (已存在)
-    - 添加权限控制
-    - _需求 7.1: 页面访问_
+  - [ ] 12.4 Implement POST /validate endpoint
+    - Accept SQL and database type
+    - Call SQLValidator.validate()
+    - Return ValidationResult
+    - _Requirements: 14.3_
   
-  - [x] 11.5 编写 API 属性测试
-    - **Property 4: 第三方工具格式转换往返**
-    - **Validates: Requirements 6.4, 6.5**
+  - [ ] 12.5 Implement GET /templates endpoint
+    - List available templates
+    - Filter by database type
+    - Include template patterns and examples
+    - Support pagination
+    - _Requirements: 14.4_
+  
+  - [ ] 12.6 Implement POST /feedback endpoint
+    - Accept user feedback (correct/incorrect/partially_correct)
+    - Store in TextToSQLQuery table
+    - Update quality metrics
+    - _Requirements: 14.5, 9.2_
+  
+  - [ ] 12.7 Implement GET /metrics endpoint
+    - Return aggregated performance metrics
+    - Filter by date range, method, database type
+    - Include cache stats, success rates, execution times
+    - _Requirements: 14.6_
+  
+  - [ ] 12.8 Implement error response formatting
+    - Create consistent error response format
+    - Include error code, message, correlation ID
+    - Support i18n for error messages
+    - Provide suggestions for common errors
+    - _Requirements: 14.8, 11.1, 11.2_
+  
+  - [ ] 12.9 Write integration tests for API endpoints
+    - Test all endpoints with real requests
+    - Test authentication and authorization
+    - Test error handling
+    - Test multi-tenant isolation
+    - **Property 54: Consistent API Error Responses**
+    - **Validates: Requirements 14.1-14.8**
 
-- [x] 12. 前端配置页面实现
-  - [x] 12.1 创建 Text-to-SQL 配置页面
-    - 创建 `frontend/src/pages/admin/TextToSQLConfig.tsx`
-    - 实现方法选择器和配置表单
-    - 实现方法特点预览
-    - _需求 7.1, 7.2: 配置页面_
-  
-  - [x] 12.2 实现 SQL 测试功能
-    - 实现自然语言输入框
-    - 实现 SQL 预览和方法显示
-    - 实现置信度显示
-    - _需求 7.4, 7.5: 测试功能_
-  
-  - [x] 12.3 实现第三方工具管理界面
-    - 实现插件列表展示
-    - 实现添加/编辑/删除插件表单
-    - 实现启用/禁用开关
-    - 实现健康状态和调用统计显示
-    - _需求 7.6, 7.7, 7.8: 插件管理界面_
-  
-  - [x] 12.4 添加路由和菜单
-    - 在 `frontend/src/router/routes.tsx` 中添加路由
-    - 在管理员菜单中添加入口
-    - _需求 7.1: 页面访问_
-  
-  - [x] 12.5 编写前端单元测试
-    - 测试配置表单验证
-    - 测试插件管理功能
-    - _需求 7.2, 7.6_
+- [ ] 13. Checkpoint - Ensure backend is complete
+  - Run all unit tests
+  - Run all property tests
+  - Run all integration tests
+  - Test API endpoints with Postman/curl
+  - Verify database migrations work
+  - Ask the user if questions arise
 
-- [x] 13. Checkpoint - 确保前端功能完成
-  - 验证配置页面渲染 ✓
-  - 验证 SQL 测试功能 ✓
-  - 验证插件管理界面 ✓
-  - 确保所有测试通过 ✓
-
-- [x] 14. 集成测试和文档
-  - [x] 14.1 编写端到端集成测试
-    - 测试完整的查询 → SQL 生成流程
-    - 测试第三方工具对接
-    - 测试回退机制
-    - _需求 6.7: 回退验证_
+- [ ] 14. Implement Monitoring and Alerting
+  - [ ] 14.1 Implement Prometheus metrics
+    - Export counters for requests, cache hits/misses, validation failures
+    - Export histograms for execution times
+    - Export gauges for cache size, active connections
+    - _Requirements: 8.5_
   
-  - [x] 14.2 更新 API 文档
-    - 更新 OpenAPI 文档 (自动生成)
-    - 添加 Text-to-SQL API 使用示例
-    - _文档更新_
+  - [ ] 14.2 Implement slow query logging
+    - Log queries with execution time >2 seconds
+    - Include query, SQL, method used, database type
+    - Store in separate log file for analysis
+    - _Requirements: 8.6_
   
-  - [x] 14.3 创建插件开发指南
-    - 编写第三方工具对接指南 `docs/text-to-sql-plugin-guide.md`
-    - 提供插件开发模板
-    - _需求 6.1: 插件接口文档_
+  - [ ] 14.3 Implement performance alerting
+    - Monitor success rate per method
+    - Monitor average execution time per method
+    - Send alerts when thresholds exceeded
+    - Integrate with existing alerting system
+    - _Requirements: 8.4_
+  
+  - [ ] 14.4 Implement accuracy monitoring
+    - Track syntax correctness, semantic correctness, execution success
+    - Calculate overall accuracy per 24-hour period
+    - Trigger review process when accuracy <90%
+    - _Requirements: 9.4, 9.5_
+  
+  - [ ] 14.5 Write property tests for monitoring
+    - **Property 35: Performance Degradation Alerting**
+    - **Property 36: Prometheus Metrics Export**
+    - **Property 37: Slow Query Logging**
+    - **Property 40: Accuracy Metrics Tracking**
+    - **Property 41: Accuracy Threshold Alerting**
+    - **Validates: Requirements 8.4, 8.5, 8.6, 9.4, 9.5**
 
-- [x] 15. Final Checkpoint - 确保所有功能完成
-  - 运行完整测试套件 ✓ (110 tests passed)
-  - 验证所有需求已实现 ✓
-  - 确保所有测试通过 ✓
+- [ ] 15. Implement Quality Assessment
+  - [ ] 15.1 Integrate with Ragas framework
+    - Use Ragas to assess semantic quality of generated SQL
+    - Calculate quality scores for each generation
+    - Store scores in TextToSQLQuery table
+    - _Requirements: 9.3_
+  
+  - [ ] 15.2 Implement feedback collection
+    - Allow users to rate generated SQL
+    - Collect feedback comments
+    - Store in TextToSQLQuery table
+    - _Requirements: 9.2_
+  
+  - [ ] 15.3 Implement training data export
+    - Export successful query-SQL pairs
+    - Format for LLM fine-tuning
+    - Include metadata (database type, method used, quality score)
+    - _Requirements: 9.7_
+  
+  - [ ] 15.4 Write property tests for quality assessment
+    - **Property 38: User Feedback Collection**
+    - **Property 39: Ragas Quality Assessment**
+    - **Validates: Requirements 9.2, 9.3**
+
+- [ ] 16. Implement Frontend Configuration UI
+  - [ ] 16.1 Create TextToSqlConfig page component
+    - Create `frontend/src/pages/TextToSqlConfig.tsx`
+    - Set up page layout with header, sidebar, main content
+    - Add routing in React Router
+    - _Requirements: 7.1_
+  
+  - [ ] 16.2 Implement method selection interface
+    - Display available methods with descriptions
+    - Show method performance metrics
+    - Allow user to select preferred method
+    - _Requirements: 7.1, 7.6_
+  
+  - [ ] 16.3 Implement query input component
+    - Create text area with syntax highlighting
+    - Add autocomplete for SQL keywords
+    - Show character count and validation status
+    - _Requirements: 7.2_
+  
+  - [ ] 16.4 Implement real-time SQL generation
+    - Call API on query input change (debounced)
+    - Display selected method
+    - Display generated SQL with syntax highlighting
+    - Show execution time and confidence score
+    - _Requirements: 7.3_
+  
+  - [ ] 16.5 Implement database schema viewer
+    - Display schema in tree view
+    - Show tables, columns, data types
+    - Show relationships (foreign keys)
+    - Support expand/collapse
+    - _Requirements: 7.4_
+  
+  - [ ] 16.6 Implement query tester
+    - Add "Test Query" button
+    - Execute SQL and display results in table
+    - Show execution time
+    - Handle errors gracefully
+    - _Requirements: 7.5_
+  
+  - [ ] 16.7 Implement database connection switcher
+    - List available database connections
+    - Allow switching between connections
+    - Update schema and templates on switch
+    - _Requirements: 7.7_
+  
+  - [ ] 16.8 Implement metrics dashboard
+    - Display method performance metrics
+    - Show success rates, execution times
+    - Show cache hit rates
+    - Use charts (line, bar, pie)
+    - _Requirements: 7.6_
+  
+  - [ ] 16.9 Implement i18n support
+    - Add translations for zh-CN and en-US
+    - Use existing i18n system
+    - Translate all UI text and error messages
+    - _Requirements: 7.8, 11.1_
+  
+  - [ ] 16.10 Write E2E tests for frontend
+    - Test query input and SQL generation
+    - Test method selection
+    - Test query execution
+    - Test database connection switching
+    - Test i18n language switching
+    - **Property 30: UI Real-Time Updates**
+    - **Property 31: UI Query Execution Display**
+    - **Property 32: UI Connection Switching**
+    - **Property 33: UI Internationalization**
+    - **Validates: Requirements 7.3, 7.5, 7.7, 7.8**
+
+- [ ] 17. Implement Database-Specific Features
+  - [ ] 17.1 Implement PostgreSQL support
+    - Create PostgreSQL-specific templates
+    - Implement PostgreSQL syntax validation
+    - Test with real PostgreSQL database
+    - _Requirements: 6.1, 6.2_
+  
+  - [ ] 17.2 Implement MySQL support
+    - Create MySQL-specific templates
+    - Implement MySQL syntax validation
+    - Test with real MySQL database
+    - _Requirements: 6.1, 6.2_
+  
+  - [ ] 17.3 Implement Oracle support
+    - Create Oracle-specific templates
+    - Implement Oracle syntax validation
+    - Test with real Oracle database
+    - _Requirements: 6.1, 6.2_
+  
+  - [ ] 17.4 Implement SQL Server support
+    - Create SQL Server-specific templates
+    - Implement SQL Server syntax validation
+    - Test with real SQL Server database
+    - _Requirements: 6.1, 6.2_
+  
+  - [ ] 17.5 Write property tests for database-specific features
+    - **Property 26: Database-Specific Syntax Generation**
+    - **Property 29: Database-Specific Syntax Validation**
+    - **Validates: Requirements 6.2, 6.6**
+
+- [ ] 18. Implement Error Handling and User Feedback
+  - [ ] 18.1 Implement i18n error messages
+    - Add error message translations
+    - Use user's preferred language
+    - Include error codes and correlation IDs
+    - _Requirements: 11.1_
+  
+  - [ ] 18.2 Implement ambiguous query suggestions
+    - Detect ambiguous queries (multiple interpretations)
+    - Provide clarification suggestions
+    - Offer alternative phrasings
+    - _Requirements: 11.2_
+  
+  - [ ] 18.3 Implement LLM fallback notification
+    - Detect LLM unavailability
+    - Fall back to template method
+    - Notify user of fallback
+    - _Requirements: 11.4_
+  
+  - [ ] 18.4 Implement validation error highlighting
+    - Parse validation errors for SQL location
+    - Highlight problematic SQL in UI
+    - Show error tooltip on hover
+    - _Requirements: 11.6_
+  
+  - [ ] 18.5 Implement correlation ID logging
+    - Generate correlation ID for each request
+    - Include in all logs
+    - Return in error responses
+    - _Requirements: 11.7_
+  
+  - [ ] 18.6 Write property tests for error handling
+    - **Property 46: Internationalized Error Messages**
+    - **Property 47: Ambiguous Query Suggestions**
+    - **Property 48: LLM Unavailable Fallback**
+    - **Property 49: Validation Error Highlighting**
+    - **Property 50: Error Correlation Logging**
+    - **Validates: Requirements 11.1, 11.2, 11.4, 11.6, 11.7**
+
+- [ ] 19. Final Integration and Testing
+  - [ ] 19.1 Run complete test suite
+    - Run all unit tests (>80% coverage)
+    - Run all property tests (100 iterations each)
+    - Run all integration tests
+    - Run all E2E tests
+    - _Requirements: 15.1, 15.2, 15.3, 15.6_
+  
+  - [ ] 19.2 Run security tests
+    - Test SQL injection prevention
+    - Test dangerous operation detection
+    - Test permission enforcement
+    - Test multi-tenant isolation
+    - _Requirements: 15.5_
+  
+  - [ ] 19.3 Run performance benchmarks
+    - Benchmark each method execution time
+    - Benchmark cache performance
+    - Benchmark end-to-end latency
+    - Verify performance requirements met
+    - _Requirements: 15.4_
+  
+  - [ ] 19.4 Test with all database types
+    - Test with PostgreSQL
+    - Test with MySQL
+    - Test with Oracle
+    - Test with SQL Server
+    - _Requirements: 15.7_
+  
+  - [ ] 19.5 Verify integration with existing systems
+    - Verify LLM integration works
+    - Verify database connection management works
+    - Verify authentication/authorization works
+    - Verify audit logging works
+    - Verify i18n works
+    - Verify monitoring works
+    - _Requirements: 13.1, 13.2, 13.3, 13.4, 13.5, 13.7_
+
+- [ ] 20. Documentation and Deployment
+  - [ ] 20.1 Write API documentation
+    - Document all endpoints with OpenAPI 3.0
+    - Include request/response examples
+    - Document error codes
+    - _Requirements: 14.7_
+  
+  - [ ] 20.2 Write user documentation
+    - Write user guide for Text-to-SQL feature
+    - Include examples for each database type
+    - Document method selection logic
+    - Document troubleshooting steps
+    - _Requirements: 11.5_
+  
+  - [ ] 20.3 Write deployment guide
+    - Document configuration options
+    - Document environment variables
+    - Document database migrations
+    - Document monitoring setup
+    - _Requirements: All requirements_
+  
+  - [ ] 20.4 Create demo data and examples
+    - Create example queries for each database type
+    - Create example templates
+    - Seed demo data for testing
+    - _Requirements: 11.5_
+
+- [ ] 21. Final Checkpoint - Complete feature verification
+  - All tests passing (unit, property, integration, E2E, security, performance)
+  - All database types supported and tested
+  - Frontend UI complete and functional
+  - API documentation complete
+  - User documentation complete
+  - Deployment guide complete
+  - Ask the user if questions arise
 
 ## Notes
 
-- 所有任务（包括测试任务）均为必须完成
-- 每个任务引用具体需求以确保可追溯性
-- Checkpoint 任务用于阶段性验证
-- 属性测试使用 Hypothesis 库，每个属性至少运行 100 次
-- 复用 llm-integration 模块的 LLM Switcher
-- 第三方工具适配器采用插件架构，便于扩展
+- All tasks are required for comprehensive implementation
+- Each task references specific requirements for traceability
+- Property tests validate universal correctness properties
+- Integration tests validate complete workflows
+- E2E tests validate user-facing functionality
+- All async operations must use `async`/`await` pattern
+- All database operations must be async
+- All code must follow existing project patterns and conventions
+- All UI text must support i18n (zh-CN, en-US)
+- All errors must include correlation IDs for troubleshooting

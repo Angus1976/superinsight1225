@@ -1,7 +1,7 @@
 {
   "enabled": true,
-  "name": "Documentation Structure Validator",
-  "description": "Monitors documentation file creation to ensure proper structure, templates, and index files are maintained",
+  "name": "文档结构验证",
+  "description": "新建文档时验证结构、模板和索引是否正确",
   "version": "1",
   "when": {
     "type": "fileCreated",

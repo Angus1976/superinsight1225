@@ -448,28 +448,32 @@ This implementation plan breaks down the Text-to-SQL Methods feature into discre
     - **Property 41: Accuracy Threshold Alerting** ✅
     - **Validates: Requirements 8.4, 8.5, 8.6, 9.4, 9.5**
 
-- [ ] 15. Implement Quality Assessment
-  - [ ] 15.1 Integrate with Ragas framework
-    - Use Ragas to assess semantic quality of generated SQL
-    - Calculate quality scores for each generation
-    - Store scores in TextToSQLQuery table
+- [x] 15. Implement Quality Assessment ✅ COMPLETED
+  - [x] 15.1 Integrate with Ragas framework ✅
+    - src/text_to_sql/quality_assessment.py (~700 lines)
+    - RagasQualityAssessor class for semantic quality evaluation
+    - Assesses syntax, faithfulness, relevance dimensions
+    - Overall quality score calculation (average of all three)
     - _Requirements: 9.3_
-  
-  - [ ] 15.2 Implement feedback collection
-    - Allow users to rate generated SQL
-    - Collect feedback comments
-    - Store in TextToSQLQuery table
+
+  - [x] 15.2 Implement feedback collection ✅
+    - QualityAssessmentService.submit_feedback() method
+    - User feedback with ratings (correct, partially_correct, incorrect)
+    - Feedback storage with query, SQL, user_id, timestamp
+    - Feedback analysis and aggregation
     - _Requirements: 9.2_
-  
-  - [ ] 15.3 Implement training data export
-    - Export successful query-SQL pairs
-    - Format for LLM fine-tuning
-    - Include metadata (database type, method used, quality score)
+
+  - [x] 15.3 Implement training data export ✅
+    - export_training_data() method
+    - Supports JSONL and CSV formats
+    - Filters by minimum quality score
+    - Includes metadata (database type, method used, quality score)
     - _Requirements: 9.7_
-  
-  - [ ] 15.4 Write property tests for quality assessment
-    - **Property 38: User Feedback Collection**
-    - **Property 39: Ragas Quality Assessment**
+
+  - [x] 15.4 Write property tests for quality assessment ✅
+    - tests/text_to_sql/test_quality_assessment_properties.py (~350 lines)
+    - **Property 38: User Feedback Collection** ✅
+    - **Property 39: Ragas Quality Assessment** ✅
     - **Validates: Requirements 9.2, 9.3**
 
 - [ ] 16. Implement Frontend Configuration UI
@@ -721,13 +725,15 @@ This implementation plan breaks down the Text-to-SQL Methods feature into discre
 - Monitoring and Alerting (Task 14) - 100% ✅ COMPLETED 2026-01-22
   - src/text_to_sql/monitoring.py (~650 lines)
   - tests/text_to_sql/test_monitoring_properties.py (~450 lines)
+- Quality Assessment (Task 15) - 100% ✅ COMPLETED 2026-01-22
+  - src/text_to_sql/quality_assessment.py (~700 lines)
+  - tests/text_to_sql/test_quality_assessment_properties.py (~350 lines)
 - Frontend UI (Task 16) - 100%
 - Database-Specific Features (Task 17) - 80%
-- Property Tests Coverage - 140+ test cases ✅ UPDATED
+- Property Tests Coverage - 150+ test cases ✅ UPDATED
 
 ### 🔄 In Progress
 - Text-to-SQL Service integration (Task 11) - 70%
-- Quality Assessment (Task 15) - 20%
 - Error Handling i18n (Task 18) - 60%
 
 ### ❌ Not Started / Low Priority
@@ -735,7 +741,7 @@ This implementation plan breaks down the Text-to-SQL Methods feature into discre
 - Documentation and Deployment (Task 20)
 - Final Checkpoint (Task 21)
 
-### Overall Completion: ~92%
+### Overall Completion: ~95%
 
 ### Priority Order
 1. **High Priority**: Complete quality assessment (Ragas)

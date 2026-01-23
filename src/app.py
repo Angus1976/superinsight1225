@@ -7,11 +7,14 @@ Main web application with all API endpoints and system integration.
 import logging
 import asyncio
 import time
+import importlib
 from contextlib import asynccontextmanager
+from typing import Dict, Any, List, Optional, Tuple
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
+from pydantic import BaseModel
 
 from src.config.settings import settings
 from src.database.connection import init_database, test_database_connection, close_database
@@ -24,6 +27,545 @@ from src.system.health import health_checker
 from src.api.extraction import router as extraction_router
 
 logger = logging.getLogger(__name__)
+
+
+# =============================================================================
+# Global API Registration Tracking
+# =============================================================================
+
+# Global tracking for API registration status
+# Validates: Requirements 2.5 - 清晰的 API 注册状态
+_registered_apis: List[Dict[str, Any]] = []
+_failed_apis: List[Dict[str, Any]] = []
+
+
+def _track_api_registration(
+    module_path: str,
+    prefix: str,
+    tags: List[str],
+    success: bool,
+    error: Optional[str] = None
+) -> None:
+    """Track API registration status.
+    
+    Args:
+        module_path: The module path of the API
+        prefix: The route prefix
+        tags: API tags
+        success: Whether registration was successful
+        error: Error message if registration failed
+    
+    Note:
+        This function avoids duplicate tracking by checking if the API
+        is already registered before adding it to the tracking lists.
+    """
+    # Check if already tracked to avoid duplicates
+    existing_paths = [api["path"] for api in _registered_apis]
+    failed_paths = [api["path"] for api in _failed_apis]
+    
+    if prefix in existing_paths or prefix in failed_paths:
+        return  # Already tracked, skip
+    
+    if success:
+        _registered_apis.append({
+            "path": prefix,
+            "name": module_path.split(".")[-1].replace("_router", "").replace("_", " ").title(),
+            "tags": tags,
+            "status": "active"
+        })
+    else:
+        _failed_apis.append({
+            "path": prefix,
+            "module": module_path,
+            "error": error or "Unknown error"
+        })
+
+
+def get_api_registration_status() -> Dict[str, Any]:
+    """Get the current API registration status.
+    
+    Returns:
+        Dict containing registration statistics and details.
+    
+    Validates: Requirements 2.5 - 清晰的 API 注册状态
+    """
+    # Check if all high priority APIs are registered
+    high_priority_prefixes = [config.prefix for config in HIGH_PRIORITY_APIS]
+    registered_prefixes = [api["path"] for api in _registered_apis]
+    
+    missing_high_priority = [
+        prefix for prefix in high_priority_prefixes 
+        if prefix not in registered_prefixes
+    ]
+    
+    return {
+        "registered_count": len(_registered_apis),
+        "failed_count": len(_failed_apis),
+        "registered": _registered_apis,
+        "failed": _failed_apis,
+        "validation": {
+            "high_priority_complete": len(missing_high_priority) == 0,
+            "missing_count": len(missing_high_priority),
+            "missing_apis": missing_high_priority
+        }
+    }
+
+
+def _log_api_registration_summary() -> None:
+    """Log API registration summary with emoji format.
+    
+    Outputs a structured summary of API registration status including:
+    - Total APIs attempted
+    - Successful registrations
+    - Failed registrations
+    - List of failed APIs (if any)
+    
+    Validates: Requirements 3.2 - 详细的日志记录每个 API 的注册状态
+    """
+    status = get_api_registration_status()
+    total = status["registered_count"] + status["failed_count"]
+    successful = status["registered_count"]
+    failed = status["failed_count"]
+    
+    # Log summary header
+    logger.info("=" * 60)
+    logger.info("📊 API Registration Summary")
+    logger.info("=" * 60)
+    
+    # Log statistics
+    if failed == 0:
+        logger.info(f"✅ All APIs registered successfully: {successful}/{total}")
+    else:
+        logger.info(f"📈 Registration Results: {successful}/{total} successful, {failed} failed")
+    
+    # Log high priority API validation
+    validation = status["validation"]
+    if validation["high_priority_complete"]:
+        logger.info("✅ All high-priority APIs registered successfully")
+    else:
+        logger.warning(f"⚠️ Missing high-priority APIs: {validation['missing_count']}")
+        for missing_api in validation["missing_apis"]:
+            logger.warning(f"   - {missing_api}")
+    
+    # Log failed APIs if any
+    if failed > 0:
+        logger.warning("❌ Failed API registrations:")
+        for failed_api in status["failed"]:
+            logger.warning(f"   - {failed_api['path']}: {failed_api['error']}")
+    
+    # Log footer
+    logger.info("=" * 60)
+
+
+# =============================================================================
+# API Registration Configuration Model
+# =============================================================================
+
+class APIRouterConfig(BaseModel):
+    """API 路由配置模型
+    
+    用于定义 API 路由的配置信息，支持批量注册和配置管理。
+    
+    Attributes:
+        module_path: 模块路径，如 "src.api.license_router"
+        router_name: 路由对象名称，默认 "router"
+        prefix: 路由前缀，如 "/api/v1/license"
+        tags: API 标签列表
+        required: 是否为必需 API（失败时是否抛出异常）
+        priority: 优先级: high, medium, low
+        description: 描述信息
+    
+    Validates: Requirements 2.5 - 清晰的 API 注册规范
+    """
+    module_path: str
+    router_name: str = "router"
+    prefix: Optional[str] = None
+    tags: Optional[List[str]] = None
+    required: bool = False
+    priority: str = "high"
+    description: str = ""
+
+
+# =============================================================================
+# API Registration Manager
+# =============================================================================
+
+class APIRegistrationManager:
+    """API 注册管理器
+    
+    统一管理 API 路由注册，提供错误处理、日志记录和注册报告功能。
+    
+    Features:
+        - 单个路由注册 (register_router)
+        - 批量路由注册 (register_batch)
+        - 配置对象注册 (register_from_configs)
+        - 注册状态查询 (is_registered, get_registered_count, get_failed_count)
+        - 注册报告生成 (get_registration_report)
+    
+    Validates: Requirements 2.5 - 清晰的 API 注册规范
+    Validates: Requirements 3.1 - 失败的 API 注册不应阻塞其他 API 的加载
+    Validates: Requirements 3.2 - 单个 API 注册失败不应导致整个应用崩溃
+    
+    Example:
+        >>> manager = APIRegistrationManager(app, logger)
+        >>> manager.register_router(
+        ...     module_path="src.api.license_router",
+        ...     prefix="/api/v1/license",
+        ...     tags=["license"]
+        ... )
+        True
+        >>> manager.get_registration_report()
+        {'total': 1, 'successful': 1, 'failed': 0, ...}
+    """
+    
+    def __init__(self, app: FastAPI, logger: logging.Logger):
+        """初始化 API 注册管理器
+        
+        Args:
+            app: FastAPI 应用实例
+            logger: 日志记录器
+        """
+        self.app = app
+        self.logger = logger
+        self.registered_apis: List[str] = []
+        self.failed_apis: List[Tuple[str, str]] = []
+    
+    def register_router(
+        self,
+        module_path: str,
+        router_name: str = "router",
+        prefix: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+        required: bool = False
+    ) -> bool:
+        """注册单个 API 路由
+        
+        动态导入模块并注册其路由到 FastAPI 应用。
+        
+        Args:
+            module_path: 模块路径，如 "src.api.license_router"
+            router_name: 路由对象名称，默认 "router"
+            prefix: 路由前缀，如 "/api/v1/license"
+            tags: API 标签列表
+            required: 是否为必需 API（失败时是否抛出异常）
+        
+        Returns:
+            bool: 注册是否成功
+        
+        Raises:
+            ImportError: 当 required=True 且模块不存在时
+            AttributeError: 当 required=True 且路由对象不存在时
+            Exception: 当 required=True 且发生其他错误时
+        
+        Validates: Requirements 2.5 - 清晰的 API 注册规范
+        Validates: Requirements 3.2 - 详细的日志记录每个 API 的注册状态
+        """
+        try:
+            # 动态导入模块
+            module = importlib.import_module(module_path)
+            
+            # 获取路由对象
+            router = getattr(module, router_name)
+            
+            # 构建 include_router 参数
+            include_kwargs: Dict[str, Any] = {}
+            if prefix:
+                include_kwargs["prefix"] = prefix
+            if tags:
+                include_kwargs["tags"] = tags
+            
+            # 注册路由
+            self.app.include_router(router, **include_kwargs)
+            
+            # 记录成功
+            self.registered_apis.append(module_path)
+            display_prefix = prefix or "(default)"
+            self.logger.info(f"✅ {module_path} registered: {display_prefix}")
+            
+            return True
+            
+        except ImportError as e:
+            # 模块不存在
+            error_msg = str(e)
+            self.failed_apis.append((module_path, error_msg))
+            self.logger.warning(f"⚠️ {module_path} not available: {error_msg}")
+            
+            if required:
+                raise
+            return False
+            
+        except AttributeError as e:
+            # 路由对象不存在
+            error_msg = f"Router '{router_name}' not found: {e}"
+            self.failed_apis.append((module_path, error_msg))
+            self.logger.error(f"❌ {module_path} failed: {error_msg}")
+            
+            if required:
+                raise
+            return False
+            
+        except Exception as e:
+            # 其他错误
+            error_msg = str(e)
+            self.failed_apis.append((module_path, error_msg))
+            self.logger.error(f"❌ {module_path} failed to load: {error_msg}")
+            
+            if required:
+                raise
+            return False
+    
+    def register_batch(self, routers: List[Dict[str, Any]]) -> Tuple[int, int]:
+        """批量注册 API 路由
+        
+        按顺序注册多个路由，单个失败不影响其他路由的注册。
+        
+        Args:
+            routers: 路由配置列表，每个配置是一个字典，包含:
+                - module_path: 模块路径 (必需)
+                - router_name: 路由对象名称 (可选，默认 "router")
+                - prefix: 路由前缀 (可选)
+                - tags: API 标签 (可选)
+                - required: 是否必需 (可选，默认 False)
+        
+        Returns:
+            Tuple[int, int]: (成功数量, 失败数量)
+        
+        Validates: Requirements 3.1 - 失败的 API 注册不应阻塞其他 API 的加载
+        """
+        success_count = 0
+        failed_count = 0
+        
+        for router_config in routers:
+            try:
+                # 检查必需字段
+                module_path = router_config.get("module_path")
+                if not module_path:
+                    self.failed_apis.append(("unknown", "Missing module_path"))
+                    self.logger.error("❌ Missing module_path in router config")
+                    failed_count += 1
+                    continue
+                
+                # 提取配置
+                router_name = router_config.get("router_name", "router")
+                prefix = router_config.get("prefix")
+                tags = router_config.get("tags")
+                required = router_config.get("required", False)
+                
+                # 注册路由
+                result = self.register_router(
+                    module_path=module_path,
+                    router_name=router_name,
+                    prefix=prefix,
+                    tags=tags,
+                    required=required
+                )
+                
+                if result:
+                    success_count += 1
+                else:
+                    failed_count += 1
+                    
+            except Exception as e:
+                # 捕获所有异常，确保批量注册继续
+                failed_count += 1
+                self.logger.error(f"❌ Batch registration error: {e}")
+        
+        # 输出批量注册摘要
+        total = success_count + failed_count
+        self.logger.info(
+            f"📊 Batch Registration Summary: {success_count}/{total} successful, "
+            f"{failed_count} failed"
+        )
+        
+        return success_count, failed_count
+    
+    def register_from_configs(self, configs: List[APIRouterConfig]) -> Tuple[int, int]:
+        """从配置对象列表注册 API 路由
+        
+        使用 APIRouterConfig 对象进行批量注册。
+        
+        Args:
+            configs: APIRouterConfig 对象列表
+        
+        Returns:
+            Tuple[int, int]: (成功数量, 失败数量)
+        
+        Validates: Requirements 2.5 - 使用配置对象注册
+        """
+        routers = [config.model_dump() for config in configs]
+        return self.register_batch(routers)
+    
+    def get_registration_report(self) -> Dict[str, Any]:
+        """获取注册报告
+        
+        生成包含注册状态、成功/失败列表和统计信息的报告。
+        
+        Returns:
+            Dict[str, Any]: 注册报告，包含:
+                - total: 总注册数
+                - successful: 成功数
+                - failed: 失败数
+                - success_rate: 成功率 (0.0-1.0)
+                - status: 状态 ("complete" 或 "partial")
+                - registered_apis: 已注册的 API 列表
+                - failed_apis: 失败的 API 列表 [(module_path, error)]
+        
+        Validates: Requirements 2.5 - 清晰的 API 注册状态
+        """
+        total = len(self.registered_apis) + len(self.failed_apis)
+        successful = len(self.registered_apis)
+        failed = len(self.failed_apis)
+        
+        # 计算成功率
+        success_rate = successful / total if total > 0 else 0.0
+        
+        # 确定状态
+        if failed == 0:
+            status = "complete"
+        else:
+            status = "partial"
+        
+        return {
+            "total": total,
+            "successful": successful,
+            "failed": failed,
+            "success_rate": success_rate,
+            "status": status,
+            "registered_apis": list(self.registered_apis),
+            "failed_apis": list(self.failed_apis)
+        }
+    
+    def is_registered(self, module_path: str) -> bool:
+        """检查模块是否已注册
+        
+        Args:
+            module_path: 模块路径
+        
+        Returns:
+            bool: 是否已注册
+        """
+        return module_path in self.registered_apis
+    
+    def get_registered_count(self) -> int:
+        """获取已注册的 API 数量
+        
+        Returns:
+            int: 已注册数量
+        """
+        return len(self.registered_apis)
+    
+    def get_failed_count(self) -> int:
+        """获取注册失败的 API 数量
+        
+        Returns:
+            int: 失败数量
+        """
+        return len(self.failed_apis)
+
+
+# =============================================================================
+# High Priority API Configurations
+# =============================================================================
+
+HIGH_PRIORITY_APIS: List[APIRouterConfig] = [
+    # License 模块 (3个)
+    # Validates: Requirements 2.1 - License 模块用户需求
+    APIRouterConfig(
+        module_path="src.api.license_router",
+        prefix="/api/v1/license",
+        tags=["License"],
+        priority="high",
+        description="License management API"
+    ),
+    APIRouterConfig(
+        module_path="src.api.usage_router",
+        prefix="/api/v1/usage",
+        tags=["Usage"],
+        priority="high",
+        description="License usage monitoring API"
+    ),
+    APIRouterConfig(
+        module_path="src.api.activation_router",
+        prefix="/api/v1/activation",
+        tags=["Activation"],
+        priority="high",
+        description="License activation API"
+    ),
+    
+    # Quality 子模块 (3个)
+    # Validates: Requirements 2.2 - Quality 模块用户需求
+    APIRouterConfig(
+        module_path="src.api.quality_rules",
+        prefix="/api/v1/quality-rules",
+        tags=["Quality Rules"],
+        priority="high",
+        description="Quality rules management API"
+    ),
+    APIRouterConfig(
+        module_path="src.api.quality_reports",
+        prefix="/api/v1/quality-reports",
+        tags=["Quality Reports"],
+        priority="high",
+        description="Quality reports API"
+    ),
+    APIRouterConfig(
+        module_path="src.api.quality_workflow",
+        prefix="/api/v1/quality-workflow",
+        tags=["Quality Workflow"],
+        priority="high",
+        description="Quality workflow API"
+    ),
+    
+    # Augmentation 模块 (1个)
+    # Validates: Requirements 2.3 - Augmentation 模块用户需求
+    APIRouterConfig(
+        module_path="src.api.augmentation",
+        prefix="/api/v1/augmentation",
+        tags=["Augmentation"],
+        priority="high",
+        description="Data augmentation API"
+    ),
+    
+    # Security 子模块 (4个)
+    # Validates: Requirements 2.4 - Security 子模块用户需求
+    APIRouterConfig(
+        module_path="src.api.sessions",
+        prefix="/api/v1/sessions",
+        tags=["Sessions"],
+        priority="medium",
+        description="Session management API"
+    ),
+    APIRouterConfig(
+        module_path="src.api.sso",
+        prefix="/api/v1/sso",
+        tags=["SSO"],
+        priority="medium",
+        description="SSO configuration API"
+    ),
+    APIRouterConfig(
+        module_path="src.api.rbac",
+        prefix="/api/v1/rbac",
+        tags=["RBAC"],
+        priority="medium",
+        description="RBAC management API"
+    ),
+    APIRouterConfig(
+        module_path="src.api.data_permission_router",
+        prefix="/api/v1/data-permissions",
+        tags=["Data Permissions"],
+        priority="medium",
+        description="Data permissions API"
+    ),
+    
+    # Versioning (1个)
+    APIRouterConfig(
+        module_path="src.api.versioning",
+        prefix="/api/v1/versioning",
+        tags=["Versioning"],
+        priority="medium",
+        description="Data versioning API"
+    ),
+]
 
 # Middleware for request tracking and monitoring
 class MonitoringMiddleware(BaseHTTPMiddleware):
@@ -371,19 +913,45 @@ async def global_exception_handler(request: Request, exc: Exception):
 # Health check endpoint
 @app.get("/health")
 async def health_check():
-    """Simple health check endpoint for Docker."""
+    """Simple health check endpoint for Docker.
+    
+    Returns health status including API registration information.
+    
+    Response Fields:
+        - status: "healthy" or "unhealthy"
+        - message: Status message
+        - api_registration_status: "complete" if all high priority APIs registered, "partial" otherwise
+        - registered_apis_count: Total number of registered APIs
+    
+    Validates: Requirements 3.2 - 可靠性要求
+    """
     try:
+        # Get API registration status
+        api_status = get_api_registration_status()
+        api_registration_status = "complete" if api_status["validation"]["high_priority_complete"] else "partial"
+        registered_apis_count = api_status["registered_count"]
+        
         # Simple health check - just verify database connection
         if test_database_connection():
             return JSONResponse(
                 status_code=200,
-                content={"status": "healthy", "message": "API is running"}
+                content={
+                    "status": "healthy",
+                    "message": "API is running",
+                    "api_registration_status": api_registration_status,
+                    "registered_apis_count": registered_apis_count
+                }
             )
         else:
             logger.error("Database health check failed")
             return JSONResponse(
                 status_code=503,
-                content={"status": "unhealthy", "error": "Database connection failed"}
+                content={
+                    "status": "unhealthy",
+                    "error": "Database connection failed",
+                    "api_registration_status": api_registration_status,
+                    "registered_apis_count": registered_apis_count
+                }
             )
     except Exception as e:
         logger.error(f"Health check failed: {e}")
@@ -681,229 +1249,556 @@ try:
 except Exception as e:
     logger.warning(f"Workspace API not available: {e}")
 
+# Include LLM API router for LLM integration
+try:
+    from src.api.llm import router as llm_router
+    app.include_router(llm_router)
+    logger.info("LLM API loaded successfully")
+except Exception as e:
+    logger.warning(f"LLM API not available: {e}")
+    import traceback
+    traceback.print_exc()
+
 # Dynamically include available API routers
 async def include_optional_routers():
-    """Include optional API routers if available."""
+    """Include optional API routers if available.
+    
+    Registers all optional API routers with proper error handling and logging.
+    Uses emoji format for clear status indication:
+    - ✅ Success
+    - ⚠️ Warning (module not available)
+    - ❌ Error (registration failed)
+    
+    Validates: Requirements 3.2 - 详细的日志记录每个 API 的注册状态
+    """
     
     # Quality management router
     try:
         from src.api.quality import router as quality_router
         app.include_router(quality_router)
-        logger.info("Quality management API loaded successfully")
+        logger.info("✅ Quality management API loaded successfully")
     except ImportError as e:
-        logger.warning(f"Quality management API not available: {e}")
+        logger.warning(f"⚠️ Quality management API not available: {e}")
     except Exception as e:
-        logger.warning(f"Quality management API failed to load: {e}")
+        logger.error(f"❌ Quality management API failed to load: {e}")
     
     # AI annotation router
     try:
         from src.api.ai_annotation import router as ai_router
         app.include_router(ai_router)
-        logger.info("AI annotation API loaded successfully")
+        logger.info("✅ AI annotation API loaded successfully")
     except ImportError as e:
-        logger.warning(f"AI annotation API not available: {e}")
+        logger.warning(f"⚠️ AI annotation API not available: {e}")
     except Exception as e:
-        logger.warning(f"AI annotation API failed to load: {e}")
+        logger.error(f"❌ AI annotation API failed to load: {e}")
+    
+    # Annotation workflow router (pre-annotation, mid-coverage, post-validation)
+    # Requirements: 7.1, 7.2, 7.4 - Pre-annotation integration with Label Studio
+    try:
+        from src.api.annotation import router as annotation_router
+        app.include_router(annotation_router)
+        logger.info("✅ Annotation Workflow API loaded successfully")
+    except ImportError as e:
+        logger.warning(f"⚠️ Annotation Workflow API not available: {e}")
+    except Exception as e:
+        logger.error(f"❌ Annotation Workflow API failed to load: {e}")
     
     # Billing router
     try:
         from src.api.billing import router as billing_router
         app.include_router(billing_router)
-        logger.info("Billing API loaded successfully")
+        logger.info("✅ Billing API loaded successfully")
     except ImportError as e:
-        logger.warning(f"Billing API not available: {e}")
+        logger.warning(f"⚠️ Billing API not available: {e}")
     except Exception as e:
-        logger.warning(f"Billing API failed to load: {e}")
+        logger.error(f"❌ Billing API failed to load: {e}")
+
+    # License Management API
+    # Validates: Requirements 2.1 - License 模块用户需求
+    try:
+        from src.api.license_router import router as license_router
+        app.include_router(license_router)
+        _track_api_registration(
+            module_path="src.api.license_router",
+            prefix="/api/v1/license",
+            tags=["License"],
+            success=True
+        )
+        logger.info("✅ License API registered: /api/v1/license")
+    except ImportError as e:
+        _track_api_registration(
+            module_path="src.api.license_router",
+            prefix="/api/v1/license",
+            tags=["License"],
+            success=False,
+            error=str(e)
+        )
+        logger.warning(f"⚠️ License API not available: {e}")
+    except Exception as e:
+        _track_api_registration(
+            module_path="src.api.license_router",
+            prefix="/api/v1/license",
+            tags=["License"],
+            success=False,
+            error=str(e)
+        )
+        logger.error(f"❌ License API failed to load: {e}")
+
+    # License Usage API
+    # Validates: Requirements 2.1 - 许可证使用监控
+    try:
+        from src.api.usage_router import router as usage_router
+        app.include_router(usage_router)
+        _track_api_registration(
+            module_path="src.api.usage_router",
+            prefix="/api/v1/usage",
+            tags=["Usage"],
+            success=True
+        )
+        logger.info("✅ Usage API registered: /api/v1/usage")
+    except ImportError as e:
+        _track_api_registration(
+            module_path="src.api.usage_router",
+            prefix="/api/v1/usage",
+            tags=["Usage"],
+            success=False,
+            error=str(e)
+        )
+        logger.warning(f"⚠️ Usage API not available: {e}")
+    except Exception as e:
+        _track_api_registration(
+            module_path="src.api.usage_router",
+            prefix="/api/v1/usage",
+            tags=["Usage"],
+            success=False,
+            error=str(e)
+        )
+        logger.error(f"❌ Usage API failed to load: {e}")
+
+    # License Activation API
+    # Validates: Requirements 2.1 - 许可证激活
+    try:
+        from src.api.activation_router import router as activation_router
+        app.include_router(activation_router)
+        _track_api_registration(
+            module_path="src.api.activation_router",
+            prefix="/api/v1/activation",
+            tags=["Activation"],
+            success=True
+        )
+        logger.info("✅ Activation API registered: /api/v1/activation")
+    except ImportError as e:
+        _track_api_registration(
+            module_path="src.api.activation_router",
+            prefix="/api/v1/activation",
+            tags=["Activation"],
+            success=False,
+            error=str(e)
+        )
+        logger.warning(f"⚠️ Activation API not available: {e}")
+    except Exception as e:
+        _track_api_registration(
+            module_path="src.api.activation_router",
+            prefix="/api/v1/activation",
+            tags=["Activation"],
+            success=False,
+            error=str(e)
+        )
+        logger.error(f"❌ Activation API failed to load: {e}")
+
+    # Quality Rules API
+    # Validates: Requirements 2.2 - 质量规则管理
+    try:
+        from src.api.quality_rules import router as quality_rules_router
+        app.include_router(quality_rules_router)
+        _track_api_registration(
+            module_path="src.api.quality_rules",
+            prefix="/api/v1/quality-rules",
+            tags=["Quality Rules"],
+            success=True
+        )
+        logger.info("✅ Quality Rules API registered: /api/v1/quality-rules")
+    except ImportError as e:
+        _track_api_registration(
+            module_path="src.api.quality_rules",
+            prefix="/api/v1/quality-rules",
+            tags=["Quality Rules"],
+            success=False,
+            error=str(e)
+        )
+        logger.warning(f"⚠️ Quality Rules API not available: {e}")
+    except Exception as e:
+        _track_api_registration(
+            module_path="src.api.quality_rules",
+            prefix="/api/v1/quality-rules",
+            tags=["Quality Rules"],
+            success=False,
+            error=str(e)
+        )
+        logger.error(f"❌ Quality Rules API failed to load: {e}")
+
+    # Quality Reports API
+    # Validates: Requirements 2.2 - 质量报告
+    try:
+        from src.api.quality_reports import router as quality_reports_router
+        app.include_router(quality_reports_router)
+        _track_api_registration(
+            module_path="src.api.quality_reports",
+            prefix="/api/v1/quality-reports",
+            tags=["Quality Reports"],
+            success=True
+        )
+        logger.info("✅ Quality Reports API registered: /api/v1/quality-reports")
+    except ImportError as e:
+        _track_api_registration(
+            module_path="src.api.quality_reports",
+            prefix="/api/v1/quality-reports",
+            tags=["Quality Reports"],
+            success=False,
+            error=str(e)
+        )
+        logger.warning(f"⚠️ Quality Reports API not available: {e}")
+    except Exception as e:
+        _track_api_registration(
+            module_path="src.api.quality_reports",
+            prefix="/api/v1/quality-reports",
+            tags=["Quality Reports"],
+            success=False,
+            error=str(e)
+        )
+        logger.error(f"❌ Quality Reports API failed to load: {e}")
+
+    # Quality Workflow API
+    # Validates: Requirements 2.2 - 质量改进工单
+    try:
+        from src.api.quality_workflow import router as quality_workflow_router
+        app.include_router(quality_workflow_router)
+        _track_api_registration(
+            module_path="src.api.quality_workflow",
+            prefix="/api/v1/quality-workflow",
+            tags=["Quality Workflow"],
+            success=True
+        )
+        logger.info("✅ Quality Workflow API registered: /api/v1/quality-workflow")
+    except ImportError as e:
+        _track_api_registration(
+            module_path="src.api.quality_workflow",
+            prefix="/api/v1/quality-workflow",
+            tags=["Quality Workflow"],
+            success=False,
+            error=str(e)
+        )
+        logger.warning(f"⚠️ Quality Workflow API not available: {e}")
+    except Exception as e:
+        _track_api_registration(
+            module_path="src.api.quality_workflow",
+            prefix="/api/v1/quality-workflow",
+            tags=["Quality Workflow"],
+            success=False,
+            error=str(e)
+        )
+        logger.error(f"❌ Quality Workflow API failed to load: {e}")
+
+    # Augmentation API
+    # Validates: Requirements 2.3 - 数据增强功能
+    try:
+        from src.api.augmentation import router as augmentation_router
+        app.include_router(augmentation_router)
+        _track_api_registration(
+            module_path="src.api.augmentation",
+            prefix="/api/v1/augmentation",
+            tags=["Augmentation"],
+            success=True
+        )
+        logger.info("✅ Augmentation API registered: /api/v1/augmentation")
+    except ImportError as e:
+        _track_api_registration(
+            module_path="src.api.augmentation",
+            prefix="/api/v1/augmentation",
+            tags=["Augmentation"],
+            success=False,
+            error=str(e)
+        )
+        logger.warning(f"⚠️ Augmentation API not available: {e}")
+    except Exception as e:
+        _track_api_registration(
+            module_path="src.api.augmentation",
+            prefix="/api/v1/augmentation",
+            tags=["Augmentation"],
+            success=False,
+            error=str(e)
+        )
+        logger.error(f"❌ Augmentation API failed to load: {e}")
 
     # Ticket management router
     try:
         from src.api.ticket_api import router as ticket_router
         app.include_router(ticket_router)
-        logger.info("Ticket management API loaded successfully")
+        logger.info("✅ Ticket management API loaded successfully")
     except ImportError as e:
-        logger.warning(f"Ticket management API not available: {e}")
+        logger.warning(f"⚠️ Ticket management API not available: {e}")
     except Exception as e:
-        logger.warning(f"Ticket management API failed to load: {e}")
+        logger.error(f"❌ Ticket management API failed to load: {e}")
 
     # Performance evaluation router
     try:
         from src.api.evaluation_api import router as evaluation_router
         app.include_router(evaluation_router)
-        logger.info("Performance evaluation API loaded successfully")
+        logger.info("✅ Performance evaluation API loaded successfully")
     except ImportError as e:
-        logger.warning(f"Performance evaluation API not available: {e}")
+        logger.warning(f"⚠️ Performance evaluation API not available: {e}")
     except Exception as e:
-        logger.warning(f"Performance evaluation API failed to load: {e}")
+        logger.error(f"❌ Performance evaluation API failed to load: {e}")
 
     # Quality analysis router (trends, auto-retrain, pricing, incentives)
     try:
         from src.api.quality_api import router as quality_analysis_router
         app.include_router(quality_analysis_router)
-        logger.info("Quality analysis API loaded successfully")
+        logger.info("✅ Quality analysis API loaded successfully")
     except ImportError as e:
-        logger.warning(f"Quality analysis API not available: {e}")
+        logger.warning(f"⚠️ Quality analysis API not available: {e}")
     except Exception as e:
-        logger.warning(f"Quality analysis API failed to load: {e}")
+        logger.error(f"❌ Quality analysis API failed to load: {e}")
 
     # Quality monitoring router (dashboard, alerts, anomalies)
     try:
         from src.api.monitoring_api import router as monitoring_router
         app.include_router(monitoring_router)
-        logger.info("Quality monitoring API loaded successfully")
+        logger.info("✅ Quality monitoring API loaded successfully")
     except ImportError as e:
-        logger.warning(f"Quality monitoring API not available: {e}")
+        logger.warning(f"⚠️ Quality monitoring API not available: {e}")
     except Exception as e:
-        logger.warning(f"Quality monitoring API failed to load: {e}")
+        logger.error(f"❌ Quality monitoring API failed to load: {e}")
 
     # Enhancement router
     try:
         from src.api.enhancement import router as enhancement_router
         app.include_router(enhancement_router)
-        logger.info("Enhancement API loaded successfully")
+        logger.info("✅ Enhancement API loaded successfully")
     except ImportError as e:
-        logger.warning(f"Enhancement API not available: {e}")
+        logger.warning(f"⚠️ Enhancement API not available: {e}")
     except Exception as e:
-        logger.warning(f"Enhancement API failed to load: {e}")
+        logger.error(f"❌ Enhancement API failed to load: {e}")
     
     # Export router
     try:
         from src.api.export import router as export_router
         app.include_router(export_router)
-        logger.info("Export API loaded successfully")
+        logger.info("✅ Export API loaded successfully")
     except ImportError as e:
-        logger.warning(f"Export API not available: {e}")
+        logger.warning(f"⚠️ Export API not available: {e}")
     except Exception as e:
-        logger.warning(f"Export API failed to load: {e}")
+        logger.error(f"❌ Export API failed to load: {e}")
     
     # RAG Agent router
     try:
         from src.api.rag_agent import router as rag_router
         app.include_router(rag_router)
-        logger.info("RAG Agent API loaded successfully")
+        logger.info("✅ RAG Agent API loaded successfully")
     except ImportError as e:
-        logger.warning(f"RAG Agent API not available: {e}")
+        logger.warning(f"⚠️ RAG Agent API not available: {e}")
     except Exception as e:
-        logger.warning(f"RAG Agent API failed to load: {e}")
+        logger.error(f"❌ RAG Agent API failed to load: {e}")
     
     # Security router
     try:
         from src.api.security import router as security_router
         app.include_router(security_router)
-        logger.info("Security API loaded successfully")
+        logger.info("✅ Security API loaded successfully")
     except ImportError as e:
-        logger.warning(f"Security API not available: {e}")
+        logger.warning(f"⚠️ Security API not available: {e}")
     except Exception as e:
-        logger.warning(f"Security API failed to load: {e}")
+        logger.error(f"❌ Security API failed to load: {e}")
     
     # RBAC (Role-Based Access Control) API
     try:
         from src.api.rbac import router as rbac_router
         app.include_router(rbac_router)
+        _track_api_registration(
+            module_path="src.api.rbac",
+            prefix="/api/v1/rbac",
+            tags=["RBAC"],
+            success=True
+        )
         logger.info("✅ RBAC API registered: /api/v1/rbac")
     except ImportError as e:
+        _track_api_registration(
+            module_path="src.api.rbac",
+            prefix="/api/v1/rbac",
+            tags=["RBAC"],
+            success=False,
+            error=str(e)
+        )
         logger.warning(f"⚠️ RBAC API not available: {e}")
     except Exception as e:
+        _track_api_registration(
+            module_path="src.api.rbac",
+            prefix="/api/v1/rbac",
+            tags=["RBAC"],
+            success=False,
+            error=str(e)
+        )
         logger.error(f"❌ RBAC API failed to load: {e}")
     
     # SSO (Single Sign-On) API
     try:
         from src.api.sso import router as sso_router
         app.include_router(sso_router)
+        _track_api_registration(
+            module_path="src.api.sso",
+            prefix="/api/v1/sso",
+            tags=["SSO"],
+            success=True
+        )
         logger.info("✅ SSO API registered: /api/v1/sso")
     except ImportError as e:
+        _track_api_registration(
+            module_path="src.api.sso",
+            prefix="/api/v1/sso",
+            tags=["SSO"],
+            success=False,
+            error=str(e)
+        )
         logger.warning(f"⚠️ SSO API not available: {e}")
     except Exception as e:
+        _track_api_registration(
+            module_path="src.api.sso",
+            prefix="/api/v1/sso",
+            tags=["SSO"],
+            success=False,
+            error=str(e)
+        )
         logger.error(f"❌ SSO API failed to load: {e}")
     
     # Session Management API
     try:
         from src.api.sessions import router as sessions_router
         app.include_router(sessions_router)
+        _track_api_registration(
+            module_path="src.api.sessions",
+            prefix="/api/v1/sessions",
+            tags=["Sessions"],
+            success=True
+        )
         logger.info("✅ Sessions API registered: /api/v1/sessions")
     except ImportError as e:
+        _track_api_registration(
+            module_path="src.api.sessions",
+            prefix="/api/v1/sessions",
+            tags=["Sessions"],
+            success=False,
+            error=str(e)
+        )
         logger.warning(f"⚠️ Sessions API not available: {e}")
     except Exception as e:
+        _track_api_registration(
+            module_path="src.api.sessions",
+            prefix="/api/v1/sessions",
+            tags=["Sessions"],
+            success=False,
+            error=str(e)
+        )
         logger.error(f"❌ Sessions API failed to load: {e}")
     
     # Data Permissions API
     try:
         from src.api.data_permission_router import router as data_permission_router
         app.include_router(data_permission_router)
+        _track_api_registration(
+            module_path="src.api.data_permission_router",
+            prefix="/api/v1/data-permissions",
+            tags=["Data Permissions"],
+            success=True
+        )
         logger.info("✅ Data Permissions API registered: /api/v1/data-permissions")
     except ImportError as e:
+        _track_api_registration(
+            module_path="src.api.data_permission_router",
+            prefix="/api/v1/data-permissions",
+            tags=["Data Permissions"],
+            success=False,
+            error=str(e)
+        )
         logger.warning(f"⚠️ Data Permissions API not available: {e}")
     except Exception as e:
+        _track_api_registration(
+            module_path="src.api.data_permission_router",
+            prefix="/api/v1/data-permissions",
+            tags=["Data Permissions"],
+            success=False,
+            error=str(e)
+        )
         logger.error(f"❌ Data Permissions API failed to load: {e}")
     
     # Collaboration router
     try:
         from src.api.collaboration import router as collaboration_router
         app.include_router(collaboration_router)
-        logger.info("Collaboration API loaded successfully")
+        logger.info("✅ Collaboration API loaded successfully")
     except ImportError as e:
-        logger.warning(f"Collaboration API not available: {e}")
+        logger.warning(f"⚠️ Collaboration API not available: {e}")
     except Exception as e:
-        logger.warning(f"Collaboration API failed to load: {e}")
+        logger.error(f"❌ Collaboration API failed to load: {e}")
     
     # Business metrics router
     try:
         from src.api.business_metrics import router as business_metrics_router
         app.include_router(business_metrics_router)
-        logger.info("Business metrics API loaded successfully")
+        logger.info("✅ Business metrics API loaded successfully")
     except ImportError as e:
-        logger.warning(f"Business metrics API not available: {e}")
+        logger.warning(f"⚠️ Business metrics API not available: {e}")
     except Exception as e:
-        logger.warning(f"Business metrics API failed to load: {e}")
+        logger.error(f"❌ Business metrics API failed to load: {e}")
 
     # Text-to-SQL router
     try:
         from src.api.text_to_sql import router as text_to_sql_router
         app.include_router(text_to_sql_router)
-        logger.info("Text-to-SQL API loaded successfully")
+        logger.info("✅ Text-to-SQL API loaded successfully")
     except ImportError as e:
-        logger.warning(f"Text-to-SQL API not available: {e}")
+        logger.warning(f"⚠️ Text-to-SQL API not available: {e}")
     except Exception as e:
-        logger.warning(f"Text-to-SQL API failed to load: {e}")
+        logger.error(f"❌ Text-to-SQL API failed to load: {e}")
 
     # Knowledge Graph router
     try:
         from src.knowledge_graph.api.knowledge_graph_api import router as knowledge_graph_router
         app.include_router(knowledge_graph_router)
-        logger.info("Knowledge Graph API loaded successfully")
+        logger.info("✅ Knowledge Graph API loaded successfully")
     except ImportError as e:
-        logger.warning(f"Knowledge Graph API not available: {e}")
+        logger.warning(f"⚠️ Knowledge Graph API not available: {e}")
     except Exception as e:
-        logger.warning(f"Knowledge Graph API failed to load: {e}")
+        logger.error(f"❌ Knowledge Graph API failed to load: {e}")
 
     # i18n router
     try:
         from src.api.i18n import router as i18n_router
         app.include_router(i18n_router)
-        logger.info("i18n API loaded successfully")
+        logger.info("✅ i18n API loaded successfully")
     except ImportError as e:
-        logger.warning(f"i18n API not available: {e}")
+        logger.warning(f"⚠️ i18n API not available: {e}")
     except Exception as e:
-        logger.warning(f"i18n API failed to load: {e}")
+        logger.error(f"❌ i18n API failed to load: {e}")
 
     # Compliance Reports API
     try:
         from src.api.compliance_reports import router as compliance_router
         app.include_router(compliance_router)
-        logger.info("Compliance Reports API loaded successfully")
+        logger.info("✅ Compliance Reports API loaded successfully")
     except ImportError as e:
-        logger.warning(f"Compliance Reports API not available: {e}")
+        logger.warning(f"⚠️ Compliance Reports API not available: {e}")
     except Exception as e:
-        logger.warning(f"Compliance Reports API failed to load: {e}")
+        logger.error(f"❌ Compliance Reports API failed to load: {e}")
     
     # Data Sync API
     try:
         from src.api.data_sync import router as data_sync_router
         app.include_router(data_sync_router)
-        logger.info("Data Sync API loaded successfully")
+        logger.info("✅ Data Sync API loaded successfully")
     except ImportError as e:
-        logger.warning(f"Data Sync API not available: {e}")
+        logger.warning(f"⚠️ Data Sync API not available: {e}")
     except Exception as e:
-        logger.warning(f"Data Sync API failed to load: {e}")
+        logger.error(f"❌ Data Sync API failed to load: {e}")
     
     # SOX Compliance API - moved to main app setup for immediate availability
     # This is handled in the main app setup section below
@@ -912,243 +1807,367 @@ async def include_optional_routers():
     try:
         from src.api.desensitization import router as desensitization_router
         app.include_router(desensitization_router)
-        logger.info("Desensitization API loaded successfully")
+        logger.info("✅ Desensitization API loaded successfully")
     except ImportError as e:
-        logger.warning(f"Desensitization API not available: {e}")
+        logger.warning(f"⚠️ Desensitization API not available: {e}")
     except Exception as e:
-        logger.warning(f"Desensitization API failed to load: {e}")
+        logger.error(f"❌ Desensitization API failed to load: {e}")
 
     # Auto-Desensitization API
     try:
         from src.api.auto_desensitization import router as auto_desensitization_router
         app.include_router(auto_desensitization_router)
-        logger.info("Auto-Desensitization API loaded successfully")
+        logger.info("✅ Auto-Desensitization API loaded successfully")
     except ImportError as e:
-        logger.warning(f"Auto-Desensitization API not available: {e}")
+        logger.warning(f"⚠️ Auto-Desensitization API not available: {e}")
     except Exception as e:
-        logger.warning(f"Auto-Desensitization API failed to load: {e}")
+        logger.error(f"❌ Auto-Desensitization API failed to load: {e}")
 
     # Real-time Alert API
     try:
         from src.api.real_time_alert_api import router as real_time_alert_router
         app.include_router(real_time_alert_router)
-        logger.info("Real-time Alert API loaded successfully")
+        logger.info("✅ Real-time Alert API loaded successfully")
     except ImportError as e:
-        logger.warning(f"Real-time Alert API not available: {e}")
+        logger.warning(f"⚠️ Real-time Alert API not available: {e}")
     
     # Security Monitoring API (if not already included)
     try:
         from src.api.security_monitoring_api import router as security_monitoring_router
         app.include_router(security_monitoring_router)
-        logger.info("Security Monitoring API loaded successfully")
+        logger.info("✅ Security Monitoring API loaded successfully")
     except ImportError as e:
-        logger.warning(f"Security Monitoring API not available: {e}")
+        logger.warning(f"⚠️ Security Monitoring API not available: {e}")
     except Exception as e:
-        logger.warning(f"Security Monitoring API failed to load: {e}")
+        logger.error(f"❌ Security Monitoring API failed to load: {e}")
 
     # Permission Monitoring API (if not already included)
     try:
         from src.api.permission_monitoring import router as permission_monitoring_router
         app.include_router(permission_monitoring_router)
-        logger.info("Permission Monitoring API loaded successfully")
+        logger.info("✅ Permission Monitoring API loaded successfully")
     except ImportError as e:
-        logger.warning(f"Permission Monitoring API not available: {e}")
+        logger.warning(f"⚠️ Permission Monitoring API not available: {e}")
     except Exception as e:
-        logger.warning(f"Permission Monitoring API failed to load: {e}")
+        logger.error(f"❌ Permission Monitoring API failed to load: {e}")
 
     # Cache Management API (if not already included)
     try:
         from src.api.cache_management import router as cache_management_router
         app.include_router(cache_management_router)
-        logger.info("Cache Management API loaded successfully")
+        logger.info("✅ Cache Management API loaded successfully")
     except ImportError as e:
-        logger.warning(f"Cache Management API not available: {e}")
+        logger.warning(f"⚠️ Cache Management API not available: {e}")
     except Exception as e:
-        logger.warning(f"Cache Management API failed to load: {e}")
+        logger.error(f"❌ Cache Management API failed to load: {e}")
 
     # Security Dashboard API (if not already included)
     try:
         from src.api.security_dashboard_api import router as security_dashboard_router
         app.include_router(security_dashboard_router)
-        logger.info("Security Dashboard API loaded successfully")
+        logger.info("✅ Security Dashboard API loaded successfully")
     except ImportError as e:
-        logger.warning(f"Security Dashboard API not available: {e}")
+        logger.warning(f"⚠️ Security Dashboard API not available: {e}")
     except Exception as e:
-        logger.warning(f"Security Dashboard API failed to load: {e}")
+        logger.error(f"❌ Security Dashboard API failed to load: {e}")
     
     # Zero Leakage Prevention API
     try:
         from src.api.zero_leakage_api import router as zero_leakage_router
         app.include_router(zero_leakage_router)
-        logger.info("Zero Leakage Prevention API loaded successfully")
+        logger.info("✅ Zero Leakage Prevention API loaded successfully")
     except ImportError as e:
-        logger.warning(f"Zero Leakage Prevention API not available: {e}")
+        logger.warning(f"⚠️ Zero Leakage Prevention API not available: {e}")
     except Exception as e:
-        logger.warning(f"Zero Leakage Prevention API failed to load: {e}")
+        logger.error(f"❌ Zero Leakage Prevention API failed to load: {e}")
     
     # Compliance Performance API (< 30 seconds target)
     try:
         from src.api.compliance_performance_api import router as compliance_performance_router
         app.include_router(compliance_performance_router)
-        logger.info("Compliance Performance API loaded successfully")
+        logger.info("✅ Compliance Performance API loaded successfully")
     except ImportError as e:
-        logger.warning(f"Compliance Performance API not available: {e}")
+        logger.warning(f"⚠️ Compliance Performance API not available: {e}")
     except Exception as e:
-        logger.warning(f"Compliance Performance API failed to load: {e}")
+        logger.error(f"❌ Compliance Performance API failed to load: {e}")
     
     # Complete Event Capture API (100% Security Event Capture)
     try:
         from src.api.complete_event_capture_api import router as complete_capture_router
         app.include_router(complete_capture_router)
-        logger.info("Complete Event Capture API loaded successfully")
+        logger.info("✅ Complete Event Capture API loaded successfully")
     except ImportError as e:
-        logger.warning(f"Complete Event Capture API not available: {e}")
+        logger.warning(f"⚠️ Complete Event Capture API not available: {e}")
     except Exception as e:
-        logger.warning(f"Complete Event Capture API failed to load: {e}")
+        logger.error(f"❌ Complete Event Capture API failed to load: {e}")
     
     # GDPR Compliance Verification API
     try:
         from src.api.gdpr_verification_api import router as gdpr_verification_router
         app.include_router(gdpr_verification_router)
-        logger.info("GDPR Compliance Verification API loaded successfully")
+        logger.info("✅ GDPR Compliance Verification API loaded successfully")
     except ImportError as e:
-        logger.warning(f"GDPR Compliance Verification API not available: {e}")
+        logger.warning(f"⚠️ GDPR Compliance Verification API not available: {e}")
     except Exception as e:
-        logger.warning(f"GDPR Compliance Verification API failed to load: {e}")
+        logger.error(f"❌ GDPR Compliance Verification API failed to load: {e}")
 
     # Quality Governance API (Quality Workflow Module)
     try:
         from src.api.quality_governance_api import router as quality_governance_router
         app.include_router(quality_governance_router)
-        logger.info("Quality Governance API loaded successfully")
+        logger.info("✅ Quality Governance API loaded successfully")
     except ImportError as e:
-        logger.warning(f"Quality Governance API not available: {e}")
+        logger.warning(f"⚠️ Quality Governance API not available: {e}")
     except Exception as e:
-        logger.warning(f"Quality Governance API failed to load: {e}")
+        logger.error(f"❌ Quality Governance API failed to load: {e}")
+
+    # Versioning API
+    # Validates: 数据版本管理功能
+    try:
+        from src.api.versioning import router as versioning_router
+        app.include_router(versioning_router)
+        _track_api_registration(
+            module_path="src.api.versioning",
+            prefix="/api/v1/versioning",
+            tags=["Versioning"],
+            success=True
+        )
+        logger.info("✅ Versioning API registered: /api/v1/versioning")
+    except ImportError as e:
+        _track_api_registration(
+            module_path="src.api.versioning",
+            prefix="/api/v1/versioning",
+            tags=["Versioning"],
+            success=False,
+            error=str(e)
+        )
+        logger.warning(f"⚠️ Versioning API not available: {e}")
+    except Exception as e:
+        _track_api_registration(
+            module_path="src.api.versioning",
+            prefix="/api/v1/versioning",
+            tags=["Versioning"],
+            success=False,
+            error=str(e)
+        )
+        logger.error(f"❌ Versioning API failed to load: {e}")
+
+    # Output API registration summary
+    # Validates: Requirements 3.2 - 详细的日志记录每个 API 的注册状态
+    _log_api_registration_summary()
 
 # Include ISO 27001 Compliance API router - comprehensive information security management
 try:
     from src.api.iso27001_compliance_api import router as iso27001_compliance_router
     app.include_router(iso27001_compliance_router)
-    logger.info("ISO 27001 Compliance API loaded successfully")
+    logger.info("✅ ISO 27001 Compliance API loaded successfully")
 except ImportError as e:
-    logger.warning(f"ISO 27001 Compliance API not available: {e}")
+    logger.warning(f"⚠️ ISO 27001 Compliance API not available: {e}")
 except Exception as e:
-    logger.warning(f"ISO 27001 Compliance API failed to load: {e}")
+    logger.error(f"❌ ISO 27001 Compliance API failed to load: {e}")
 
 # Include Data Protection Compliance API router - multi-regulation data protection compliance
 try:
     from src.api.data_protection_compliance_api import router as data_protection_compliance_router
     app.include_router(data_protection_compliance_router)
-    logger.info("Data Protection Compliance API loaded successfully")
+    logger.info("✅ Data Protection Compliance API loaded successfully")
 except ImportError as e:
-    logger.warning(f"Data Protection Compliance API not available: {e}")
+    logger.warning(f"⚠️ Data Protection Compliance API not available: {e}")
 except Exception as e:
-    logger.warning(f"Data Protection Compliance API failed to load: {e}")
+    logger.error(f"❌ Data Protection Compliance API failed to load: {e}")
 
 # Include Industry-Specific Compliance API router - HIPAA, PCI-DSS, PIPL, etc.
 try:
     from src.api.industry_compliance_api import router as industry_compliance_router
     app.include_router(industry_compliance_router)
-    logger.info("Industry-Specific Compliance API loaded successfully")
+    logger.info("✅ Industry-Specific Compliance API loaded successfully")
 except ImportError as e:
-    logger.warning(f"Industry-Specific Compliance API not available: {e}")
+    logger.warning(f"⚠️ Industry-Specific Compliance API not available: {e}")
 except Exception as e:
-    logger.warning(f"Industry-Specific Compliance API failed to load: {e}")
+    logger.error(f"❌ Industry-Specific Compliance API failed to load: {e}")
 
 # Include Version Control API router - data version management
 try:
     from src.api.version_api import router as version_router
     app.include_router(version_router)
-    logger.info("Version Control API loaded successfully")
+    logger.info("✅ Version Control API loaded successfully")
 except ImportError as e:
-    logger.warning(f"Version Control API not available: {e}")
+    logger.warning(f"⚠️ Version Control API not available: {e}")
 except Exception as e:
-    logger.warning(f"Version Control API failed to load: {e}")
+    logger.error(f"❌ Version Control API failed to load: {e}")
 
 # Include Data Lineage API router - lineage tracking and impact analysis
 try:
     from src.api.lineage_api import router as lineage_router
     app.include_router(lineage_router)
-    logger.info("Data Lineage API loaded successfully")
+    logger.info("✅ Data Lineage API loaded successfully")
 except ImportError as e:
-    logger.warning(f"Data Lineage API not available: {e}")
+    logger.warning(f"⚠️ Data Lineage API not available: {e}")
 except Exception as e:
-    logger.warning(f"Data Lineage API failed to load: {e}")
+    logger.error(f"❌ Data Lineage API failed to load: {e}")
 
 # LLM Integration API
 try:
     from src.api.llm import router as llm_router
     app.include_router(llm_router)
-    logger.info("LLM Integration API loaded successfully")
+    logger.info("✅ LLM Integration API loaded successfully")
 except ImportError as e:
-    logger.warning(f"LLM Integration API not available: {e}")
+    logger.warning(f"⚠️ LLM Integration API not available: {e}")
 except Exception as e:
-    logger.warning(f"LLM Integration API failed to load: {e}")
+    logger.error(f"❌ LLM Integration API failed to load: {e}")
 
 # Multi-Tenant Workspace API
 try:
     from src.api.multi_tenant import router as multi_tenant_router
     app.include_router(multi_tenant_router)
-    logger.info("Multi-Tenant Workspace API loaded successfully")
+    logger.info("✅ Multi-Tenant Workspace API loaded successfully")
 except ImportError as e:
-    logger.warning(f"Multi-Tenant Workspace API not available: {e}")
+    logger.warning(f"⚠️ Multi-Tenant Workspace API not available: {e}")
 except Exception as e:
-    logger.warning(f"Multi-Tenant Workspace API failed to load: {e}")
+    logger.error(f"❌ Multi-Tenant Workspace API failed to load: {e}")
 
 
 # Include optional routers synchronously at module load time
 def _include_optional_routers_sync():
-    """Include optional API routers synchronously."""
+    """Include optional API routers synchronously.
+    
+    Registers API routers at module load time with proper error handling.
+    Uses emoji format for clear status indication:
+    - ✅ Success
+    - ⚠️ Warning (module not available)
+    - ❌ Error (registration failed)
+    
+    Validates: Requirements 3.2 - 详细的日志记录每个 API 的注册状态
+    """
     
     # Billing router - load synchronously
     try:
         from src.api.billing import router as billing_router
         app.include_router(billing_router)
-        logger.info("Billing API loaded successfully")
+        logger.info("✅ Billing API loaded successfully")
     except ImportError as e:
-        logger.warning(f"Billing API not available: {e}")
+        logger.warning(f"⚠️ Billing API not available: {e}")
     except Exception as e:
-        logger.warning(f"Billing API failed to load: {e}")
+        logger.error(f"❌ Billing API failed to load: {e}")
     
     # RBAC (Role-Based Access Control) API
     try:
         from src.api.rbac import router as rbac_router
         app.include_router(rbac_router)
+        _track_api_registration(
+            module_path="src.api.rbac",
+            prefix="/api/v1/rbac",
+            tags=["RBAC"],
+            success=True
+        )
         logger.info("✅ RBAC API registered: /api/v1/rbac")
     except ImportError as e:
+        _track_api_registration(
+            module_path="src.api.rbac",
+            prefix="/api/v1/rbac",
+            tags=["RBAC"],
+            success=False,
+            error=str(e)
+        )
         logger.warning(f"⚠️ RBAC API not available: {e}")
     except Exception as e:
+        _track_api_registration(
+            module_path="src.api.rbac",
+            prefix="/api/v1/rbac",
+            tags=["RBAC"],
+            success=False,
+            error=str(e)
+        )
         logger.error(f"❌ RBAC API failed to load: {e}")
     
     # SSO (Single Sign-On) API
     try:
         from src.api.sso import router as sso_router
         app.include_router(sso_router)
+        _track_api_registration(
+            module_path="src.api.sso",
+            prefix="/api/v1/sso",
+            tags=["SSO"],
+            success=True
+        )
         logger.info("✅ SSO API registered: /api/v1/sso")
     except ImportError as e:
+        _track_api_registration(
+            module_path="src.api.sso",
+            prefix="/api/v1/sso",
+            tags=["SSO"],
+            success=False,
+            error=str(e)
+        )
         logger.warning(f"⚠️ SSO API not available: {e}")
     except Exception as e:
+        _track_api_registration(
+            module_path="src.api.sso",
+            prefix="/api/v1/sso",
+            tags=["SSO"],
+            success=False,
+            error=str(e)
+        )
         logger.error(f"❌ SSO API failed to load: {e}")
     
     # Session Management API
     try:
         from src.api.sessions import router as sessions_router
         app.include_router(sessions_router)
+        _track_api_registration(
+            module_path="src.api.sessions",
+            prefix="/api/v1/sessions",
+            tags=["Sessions"],
+            success=True
+        )
         logger.info("✅ Sessions API registered: /api/v1/sessions")
     except ImportError as e:
+        _track_api_registration(
+            module_path="src.api.sessions",
+            prefix="/api/v1/sessions",
+            tags=["Sessions"],
+            success=False,
+            error=str(e)
+        )
         logger.warning(f"⚠️ Sessions API not available: {e}")
     except Exception as e:
+        _track_api_registration(
+            module_path="src.api.sessions",
+            prefix="/api/v1/sessions",
+            tags=["Sessions"],
+            success=False,
+            error=str(e)
+        )
         logger.error(f"❌ Sessions API failed to load: {e}")
     
     # Data Permissions API
     try:
         from src.api.data_permission_router import router as data_permission_router
         app.include_router(data_permission_router)
+        _track_api_registration(
+            module_path="src.api.data_permission_router",
+            prefix="/api/v1/data-permissions",
+            tags=["Data Permissions"],
+            success=True
+        )
         logger.info("✅ Data Permissions API registered: /api/v1/data-permissions")
     except ImportError as e:
+        _track_api_registration(
+            module_path="src.api.data_permission_router",
+            prefix="/api/v1/data-permissions",
+            tags=["Data Permissions"],
+            success=False,
+            error=str(e)
+        )
         logger.warning(f"⚠️ Data Permissions API not available: {e}")
     except Exception as e:
+        _track_api_registration(
+            module_path="src.api.data_permission_router",
+            prefix="/api/v1/data-permissions",
+            tags=["Data Permissions"],
+            success=False,
+            error=str(e)
+        )
         logger.error(f"❌ Data Permissions API failed to load: {e}")
 
 # Call synchronously at module load
@@ -1160,6 +2179,43 @@ async def startup_event():
     """Application startup event."""
     logger.info("Starting SuperInsight application...")
     await include_optional_routers()
+    
+    # Initialize LLM Integration Module
+    # Requirements: All backend requirements from LLM Integration spec
+    try:
+        from src.ai.llm_switcher import get_initialized_switcher
+        from src.ai.llm.health_monitor import get_initialized_health_monitor
+        
+        # Initialize LLM Switcher with cache client
+        logger.info("Initializing LLM Switcher...")
+        llm_switcher = await get_initialized_switcher()
+        
+        # Try to set up Redis cache client for response caching (Requirement 10.2)
+        try:
+            import redis.asyncio as redis
+            from src.config.settings import settings
+            
+            redis_url = getattr(settings, 'redis_url', None) or "redis://localhost:6379"
+            cache_client = redis.from_url(redis_url, decode_responses=True)
+            llm_switcher.set_cache_client(cache_client)
+            logger.info("LLM response caching enabled with Redis")
+        except Exception as cache_error:
+            logger.warning(f"Redis cache not available for LLM, using in-memory cache: {cache_error}")
+        
+        # Start Health Monitor background task (Requirements 5.1-5.5)
+        logger.info("Starting LLM Health Monitor...")
+        health_monitor = await get_initialized_health_monitor(switcher=llm_switcher)
+        logger.info("LLM Health Monitor started successfully")
+        
+        logger.info("LLM Integration Module initialized successfully")
+        
+    except ImportError as e:
+        logger.warning(f"LLM Integration Module not available: {e}")
+    except Exception as e:
+        logger.error(f"Failed to initialize LLM Integration Module: {e}")
+        import traceback
+        traceback.print_exc()
+    
     logger.info("SuperInsight application startup completed")
 
 
@@ -1167,6 +2223,16 @@ async def startup_event():
 async def shutdown_event():
     """Application shutdown event."""
     logger.info("Shutting down SuperInsight application...")
+    
+    # Shutdown LLM Health Monitor
+    try:
+        from src.ai.llm.health_monitor import get_health_monitor
+        health_monitor = get_health_monitor()
+        if health_monitor and health_monitor.is_running:
+            await health_monitor.stop()
+            logger.info("LLM Health Monitor shutdown successfully")
+    except Exception as e:
+        logger.error(f"Failed to shutdown LLM Health Monitor: {e}")
     
     # Shutdown real-time alert system
     try:
@@ -1185,10 +2251,56 @@ async def shutdown_event():
 # Additional API information
 @app.get("/api/info")
 async def api_info():
-    """API information endpoint."""
+    """API information endpoint.
+    
+    Returns comprehensive API information including:
+    - Application name and version
+    - Available endpoints
+    - Features list
+    - Deployment modes
+    - System status
+    - API registration status (registered_count, failed_count, validation)
+    
+    Validates: Requirements 2.5 - 清晰的 API 注册状态
+    Validates: Requirements 8.5 - /api/info 端点返回完整的 API 列表
+    """
+    # Get API registration status
+    registration_status = get_api_registration_status()
+    
+    # Build endpoints_summary for high priority APIs
+    # Validates: Requirements 2.5 - 清晰的 API 注册状态
+    endpoints_summary = {
+        # License module
+        "license": "/api/v1/license",
+        "license_usage": "/api/v1/usage",
+        "license_activation": "/api/v1/activation",
+        # Quality module
+        "quality_rules": "/api/v1/quality-rules",
+        "quality_reports": "/api/v1/quality-reports",
+        "quality_workflow": "/api/v1/quality-workflow",
+        # Augmentation module
+        "augmentation": "/api/v1/augmentation",
+        # Versioning module
+        "versioning": "/api/v1/versioning",
+        # Security module
+        "security_sessions": "/api/v1/sessions",
+        "security_sso": "/api/v1/sso",
+        "security_rbac": "/api/v1/rbac",
+        "security_data_permissions": "/api/v1/data-permissions",
+    }
+    
     return {
         "name": settings.app.app_name,
         "version": settings.app.app_version,
+        # API Registration Status
+        "total": registration_status["registered_count"] + registration_status["failed_count"],
+        "registered_count": registration_status["registered_count"],
+        "failed_count": registration_status["failed_count"],
+        "registered": registration_status["registered"],
+        "failed": registration_status["failed"],
+        "validation": registration_status["validation"],
+        # High priority endpoints summary
+        "endpoints_summary": endpoints_summary,
         "endpoints": {
             "extraction": "/api/v1/extraction",
             "quality": "/api/quality",

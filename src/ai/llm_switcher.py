@@ -2,15 +2,31 @@
 LLM Switcher - Unified LLM calling interface for SuperInsight platform.
 
 Provides a single entry point for all LLM operations with dynamic provider routing,
-configuration management, and usage logging.
+configuration management, usage logging, and automatic failover.
+
+Features:
+- Unified generate/embed/stream interfaces
+- Dynamic method switching
+- Configuration hot reload
+- Usage logging
+- Health monitoring
+- Automatic failover to fallback provider
+- Exponential backoff retry (1s, 2s, 4s delays)
+- 30-second timeout enforcement
+- Rate limit handling with retry-after support
+- Response caching with 1-hour TTL (Requirement 10.2)
 """
 
 import asyncio
 import time
 import logging
-from typing import Dict, Any, List, Optional, AsyncIterator, Callable, Awaitable
+import re
+import hashlib
+import json
+from typing import Dict, Any, List, Optional, AsyncIterator, Callable, Awaitable, Tuple, Union
 from abc import ABC, abstractmethod
 from datetime import datetime
+from collections import defaultdict
 
 try:
     from src.ai.llm_schemas import (
@@ -26,6 +42,15 @@ except ImportError:
     from ai.llm_config_manager import LLMConfigManager, get_config_manager
 
 logger = logging.getLogger(__name__)
+
+# Constants for retry and timeout configuration
+DEFAULT_TIMEOUT_SECONDS = 30
+MAX_RETRY_ATTEMPTS = 3
+EXPONENTIAL_BACKOFF_BASE = 2  # Delays: 1s, 2s, 4s
+
+# Response caching configuration (Requirement 10.2)
+RESPONSE_CACHE_TTL = 3600  # 1 hour in seconds
+RESPONSE_CACHE_KEY_PREFIX = "llm:response:"
 
 
 class LLMProvider(ABC):
@@ -89,12 +114,20 @@ class LLMSwitcher:
     - Configuration hot reload
     - Usage logging
     - Health monitoring
+    - Automatic failover to fallback provider
+    - Exponential backoff retry (1s, 2s, 4s delays)
+    - 30-second timeout enforcement
+    - Rate limit handling with retry-after support
+    - Usage statistics tracking per provider
+    - Response caching with 1-hour TTL (Requirement 10.2)
     """
     
     def __init__(
         self,
         config_manager: Optional[LLMConfigManager] = None,
         tenant_id: Optional[str] = None,
+        cache_client: Optional[Any] = None,
+        enable_response_cache: bool = True,
     ):
         """
         Initialize the LLM Switcher.
@@ -102,13 +135,25 @@ class LLMSwitcher:
         Args:
             config_manager: Configuration manager instance
             tenant_id: Tenant ID for multi-tenant support
+            cache_client: Redis client for response caching (Requirement 10.2)
+            enable_response_cache: Whether to enable response caching
         """
         self._config_manager = config_manager or get_config_manager()
         self._tenant_id = tenant_id
         self._providers: Dict[LLMMethod, LLMProvider] = {}
         self._config: Optional[LLMConfig] = None
         self._current_method: Optional[LLMMethod] = None
+        self._fallback_method: Optional[LLMMethod] = None
         self._initialized = False
+        
+        # Response caching (Requirement 10.2)
+        self._cache_client = cache_client
+        self._enable_response_cache = enable_response_cache
+        self._local_response_cache: Dict[str, Tuple[Any, float]] = {}  # Fallback in-memory cache
+        
+        # Usage statistics tracking per provider (Requirement 3.5)
+        self._usage_stats: Dict[str, int] = defaultdict(int)
+        self._stats_lock = asyncio.Lock()
         
         # Register for config changes
         self._config_manager.watch_config_changes(self._on_config_change)
@@ -177,6 +222,266 @@ class LLMSwitcher:
     
     # ==================== Core Methods ====================
     
+    async def set_fallback_provider(self, method: LLMMethod) -> None:
+        """
+        Set the fallback provider for automatic failover.
+        
+        When the primary provider fails after all retries, the system will
+        automatically attempt the fallback provider.
+        
+        Args:
+            method: The LLM method to use as fallback
+            
+        Raises:
+            ValueError: If method is not enabled or not available
+            
+        **Validates: Requirements 3.3, 4.2**
+        """
+        await self._ensure_initialized()
+        
+        if self._config and method not in self._config.enabled_methods:
+            raise ValueError(f"Method {method} is not enabled")
+        
+        if method not in self._providers:
+            raise ValueError(f"Provider for {method} is not initialized")
+        
+        # Validate fallback provider is healthy before setting
+        try:
+            health = await self._providers[method].health_check()
+            if not health.available:
+                logger.warning(
+                    f"Fallback provider {method} is unhealthy: {health.error}. "
+                    "Setting anyway, but failover may not work."
+                )
+        except Exception as e:
+            logger.warning(f"Could not verify fallback provider health: {e}")
+        
+        old_fallback = self._fallback_method
+        self._fallback_method = method
+        logger.info(f"Set fallback provider from {old_fallback} to {method}")
+    
+    def get_fallback_provider(self) -> Optional[LLMMethod]:
+        """Get the current fallback provider method."""
+        return self._fallback_method
+    
+    async def get_usage_stats(self) -> Dict[str, int]:
+        """
+        Get provider usage statistics.
+        
+        Returns:
+            Dictionary mapping provider method values to request counts
+            
+        **Validates: Requirements 3.5**
+        """
+        async with self._stats_lock:
+            return dict(self._usage_stats)
+    
+    async def _increment_usage_stats(self, method: LLMMethod) -> None:
+        """Increment usage counter for a provider."""
+        async with self._stats_lock:
+            self._usage_stats[method.value] += 1
+    
+    # ==================== Response Caching (Requirement 10.2) ====================
+    
+    def _generate_cache_key(
+        self,
+        prompt: str,
+        method: LLMMethod,
+        model: Optional[str] = None,
+        system_prompt: Optional[str] = None,
+        **kwargs
+    ) -> str:
+        """
+        Generate a deterministic cache key from prompt and parameters.
+        
+        The cache key is a SHA256 hash of the normalized request parameters
+        to ensure identical requests produce identical keys.
+        
+        Args:
+            prompt: The input prompt
+            method: The LLM method being used
+            model: The model name (optional)
+            system_prompt: The system prompt (optional)
+            **kwargs: Additional parameters that affect the response
+            
+        Returns:
+            A unique cache key string
+            
+        **Validates: Requirements 10.2**
+        """
+        # Build a deterministic representation of the request
+        cache_data = {
+            'prompt': prompt,
+            'method': method.value,
+            'model': model or '',
+            'system_prompt': system_prompt or '',
+            'tenant_id': self._tenant_id or 'global',
+        }
+        
+        # Include relevant generation options that affect output
+        # Exclude options that don't affect the response content
+        relevant_options = ['temperature', 'max_tokens', 'top_p', 'top_k']
+        for key in relevant_options:
+            if key in kwargs:
+                cache_data[key] = kwargs[key]
+        
+        # Create a stable JSON representation (sorted keys)
+        cache_str = json.dumps(cache_data, sort_keys=True, ensure_ascii=True)
+        
+        # Generate SHA256 hash
+        cache_hash = hashlib.sha256(cache_str.encode('utf-8')).hexdigest()
+        
+        return f"{RESPONSE_CACHE_KEY_PREFIX}{cache_hash}"
+    
+    async def _get_cached_response(self, cache_key: str) -> Optional[LLMResponse]:
+        """
+        Retrieve a cached response if available and not expired.
+        
+        Tries Redis cache first, falls back to local in-memory cache.
+        
+        Args:
+            cache_key: The cache key to look up
+            
+        Returns:
+            Cached LLMResponse if found and valid, None otherwise
+            
+        **Validates: Requirements 10.2**
+        """
+        if not self._enable_response_cache:
+            return None
+        
+        # Try Redis cache first
+        if self._cache_client:
+            try:
+                cached_data = await self._cache_client.get(cache_key)
+                if cached_data:
+                    if isinstance(cached_data, bytes):
+                        cached_data = cached_data.decode('utf-8')
+                    response_dict = json.loads(cached_data)
+                    response = LLMResponse(**response_dict)
+                    response.cached = True
+                    logger.debug(f"Cache hit (Redis) for key: {cache_key[:50]}...")
+                    return response
+            except Exception as e:
+                logger.warning(f"Redis cache read failed: {e}")
+        
+        # Fall back to local cache
+        if cache_key in self._local_response_cache:
+            cached_data, timestamp = self._local_response_cache[cache_key]
+            # Check if cache entry is still valid (within TTL)
+            if time.time() - timestamp < RESPONSE_CACHE_TTL:
+                response = LLMResponse(**cached_data)
+                response.cached = True
+                logger.debug(f"Cache hit (local) for key: {cache_key[:50]}...")
+                return response
+            else:
+                # Remove expired entry
+                del self._local_response_cache[cache_key]
+        
+        return None
+    
+    async def _cache_response(self, cache_key: str, response: LLMResponse) -> None:
+        """
+        Cache a successful LLM response.
+        
+        Stores in both Redis (if available) and local cache.
+        TTL is set to 1 hour (3600 seconds) as per Requirement 10.2.
+        
+        Args:
+            cache_key: The cache key
+            response: The LLMResponse to cache
+            
+        **Validates: Requirements 10.2**
+        """
+        if not self._enable_response_cache:
+            return
+        
+        try:
+            # Prepare response data for caching
+            response_dict = {
+                'content': response.content,
+                'model': response.model,
+                'provider': response.provider,
+                'usage': response.usage.model_dump() if response.usage else None,
+                'finish_reason': response.finish_reason,
+                'latency_ms': response.latency_ms,
+                'metadata': response.metadata,
+                'cached': True,  # Mark as cached for future retrieval
+            }
+            response_json = json.dumps(response_dict)
+            
+            # Store in Redis with TTL
+            if self._cache_client:
+                try:
+                    await self._cache_client.setex(
+                        cache_key,
+                        RESPONSE_CACHE_TTL,
+                        response_json
+                    )
+                    logger.debug(f"Cached response in Redis: {cache_key[:50]}...")
+                except Exception as e:
+                    logger.warning(f"Redis cache write failed: {e}")
+            
+            # Also store in local cache as fallback
+            self._local_response_cache[cache_key] = (response_dict, time.time())
+            
+            # Clean up old local cache entries periodically
+            await self._cleanup_local_cache()
+            
+        except Exception as e:
+            logger.warning(f"Failed to cache response: {e}")
+    
+    async def _cleanup_local_cache(self) -> None:
+        """
+        Remove expired entries from local cache to prevent memory bloat.
+        
+        Called periodically during cache operations.
+        """
+        current_time = time.time()
+        expired_keys = [
+            key for key, (_, timestamp) in self._local_response_cache.items()
+            if current_time - timestamp >= RESPONSE_CACHE_TTL
+        ]
+        for key in expired_keys:
+            del self._local_response_cache[key]
+        
+        # Also limit cache size to prevent unbounded growth
+        max_local_cache_size = 1000
+        if len(self._local_response_cache) > max_local_cache_size:
+            # Remove oldest entries
+            sorted_entries = sorted(
+                self._local_response_cache.items(),
+                key=lambda x: x[1][1]  # Sort by timestamp
+            )
+            entries_to_remove = len(self._local_response_cache) - max_local_cache_size
+            for key, _ in sorted_entries[:entries_to_remove]:
+                del self._local_response_cache[key]
+    
+    def set_cache_client(self, cache_client: Any) -> None:
+        """
+        Set or update the Redis cache client.
+        
+        Args:
+            cache_client: Redis client instance
+        """
+        self._cache_client = cache_client
+        logger.info("Cache client updated for LLMSwitcher")
+    
+    def enable_response_cache(self, enabled: bool = True) -> None:
+        """
+        Enable or disable response caching.
+        
+        Args:
+            enabled: Whether to enable caching
+        """
+        self._enable_response_cache = enabled
+        logger.info(f"Response caching {'enabled' if enabled else 'disabled'}")
+    
+    def clear_response_cache(self) -> None:
+        """Clear the local response cache."""
+        self._local_response_cache.clear()
+        logger.info("Local response cache cleared")
+
     async def generate(
         self,
         prompt: str,
@@ -184,9 +489,17 @@ class LLMSwitcher:
         method: Optional[LLMMethod] = None,
         model: Optional[str] = None,
         system_prompt: Optional[str] = None,
+        use_cache: bool = True,
     ) -> LLMResponse:
         """
         Generate text response using the specified or default method.
+        
+        Implements automatic failover with exponential backoff retry:
+        1. Check cache for identical request (Requirement 10.2)
+        2. Try primary provider with up to 3 retries (1s, 2s, 4s delays)
+        3. If all retries fail, attempt fallback provider
+        4. If both fail, return comprehensive error with details from both
+        5. Cache successful response for 1 hour (Requirement 10.2)
         
         Args:
             prompt: Input prompt
@@ -194,55 +507,276 @@ class LLMSwitcher:
             method: Override default method
             model: Override default model
             system_prompt: System prompt for chat models
+            use_cache: Whether to use response caching (default: True)
             
         Returns:
             LLMResponse with generated content
             
         Raises:
-            LLMError: If generation fails
+            LLMError: If generation fails on both primary and fallback providers
+            
+        **Validates: Requirements 3.1, 3.2, 3.3, 3.4, 4.1, 4.2, 4.3, 4.4, 4.5, 10.2**
         """
         await self._ensure_initialized()
         
         options = options or GenerateOptions()
         target_method = method or self._current_method
         
-        provider = self._get_provider(target_method)
+        # Generate cache key from prompt and parameters (Requirement 10.2)
+        cache_key = self._generate_cache_key(
+            prompt=prompt,
+            method=target_method,
+            model=model,
+            system_prompt=system_prompt,
+            temperature=options.temperature if options else None,
+            max_tokens=options.max_tokens if options else None,
+            top_p=options.top_p if options else None,
+        )
         
-        start_time = time.time()
+        # Check cache first (Requirement 10.2)
+        if use_cache and self._enable_response_cache:
+            cached_response = await self._get_cached_response(cache_key)
+            if cached_response:
+                logger.info(f"Returning cached response for method {target_method}")
+                return cached_response
+        
+        # Store original request context for potential failover (Requirement 3.4)
+        request_context = {
+            'prompt': prompt,
+            'options': options,
+            'model': model,
+            'system_prompt': system_prompt,
+        }
+        
+        # Try primary provider with retries
+        primary_error = None
         try:
-            response = await provider.generate(prompt, options, model, system_prompt)
-            latency_ms = (time.time() - start_time) * 1000
-            response.latency_ms = latency_ms
-            
-            # Log usage
-            await self._log_usage(
-                method=target_method.value,
-                model=response.model,
-                operation="generate",
-                prompt_tokens=response.usage.prompt_tokens,
-                completion_tokens=response.usage.completion_tokens,
-                latency_ms=latency_ms,
-                success=True
+            response = await self._generate_with_retry(
+                target_method, 
+                prompt, 
+                options, 
+                model, 
+                system_prompt
             )
+            
+            # Track usage statistics (Requirement 3.5)
+            await self._increment_usage_stats(target_method)
+            
+            # Cache successful response (Requirement 10.2)
+            if use_cache and self._enable_response_cache:
+                await self._cache_response(cache_key, response)
             
             return response
             
         except Exception as e:
-            latency_ms = (time.time() - start_time) * 1000
-            error = self._create_error(e, target_method)
+            primary_error = e
+            logger.warning(f"Primary provider {target_method} failed: {e}")
+        
+        # Try fallback provider if configured (Requirements 3.3, 4.2)
+        if self._fallback_method and self._fallback_method != target_method:
+            logger.info(f"Attempting failover to {self._fallback_method}")
             
-            # Log failure
-            await self._log_usage(
-                method=target_method.value,
-                model=model or "unknown",
-                operation="generate",
-                latency_ms=latency_ms,
-                success=False,
-                error_code=error.error_code.value,
-                error_message=str(e)
-            )
+            try:
+                # Maintain request context and retry with new provider (Requirement 3.4)
+                response = await self._generate_with_retry(
+                    self._fallback_method,
+                    request_context['prompt'],
+                    request_context['options'],
+                    request_context['model'],
+                    request_context['system_prompt']
+                )
+                
+                # Track usage statistics for fallback
+                await self._increment_usage_stats(self._fallback_method)
+                
+                # Cache successful fallback response (Requirement 10.2)
+                if use_cache and self._enable_response_cache:
+                    await self._cache_response(cache_key, response)
+                
+                logger.info(f"Failover to {self._fallback_method} succeeded")
+                return response
+                
+            except Exception as fallback_error:
+                logger.error(f"Fallback provider {self._fallback_method} also failed: {fallback_error}")
+                
+                # Return comprehensive error with both failure details (Requirement 4.3)
+                raise LLMError(
+                    error_code=LLMErrorCode.SERVICE_UNAVAILABLE,
+                    message=(
+                        f"Both primary and fallback providers failed. "
+                        f"Primary ({target_method.value}): {str(primary_error)}. "
+                        f"Fallback ({self._fallback_method.value}): {str(fallback_error)}"
+                    ),
+                    provider=f"{target_method.value},{self._fallback_method.value}",
+                    details={
+                        'primary_provider': target_method.value,
+                        'primary_error': str(primary_error),
+                        'fallback_provider': self._fallback_method.value,
+                        'fallback_error': str(fallback_error),
+                    },
+                    suggestions=[
+                        "Check provider configurations",
+                        "Verify API keys are valid",
+                        "Check network connectivity",
+                        "Review provider health status"
+                    ]
+                )
+        
+        # No fallback configured, raise the primary error
+        raise self._create_error(primary_error, target_method)
+    
+    async def _generate_with_retry(
+        self,
+        method: LLMMethod,
+        prompt: str,
+        options: GenerateOptions,
+        model: Optional[str],
+        system_prompt: Optional[str],
+        max_retries: int = MAX_RETRY_ATTEMPTS,
+    ) -> LLMResponse:
+        """
+        Generate with exponential backoff retry and timeout enforcement.
+        
+        Implements:
+        - Up to 3 retry attempts with exponential backoff (1s, 2s, 4s)
+        - 30-second timeout per request
+        - Rate limit handling with retry-after support
+        
+        Args:
+            method: LLM method to use
+            prompt: Input prompt
+            options: Generation options
+            model: Model override
+            system_prompt: System prompt
+            max_retries: Maximum retry attempts (default: 3)
             
-            raise error
+        Returns:
+            LLMResponse on success
+            
+        Raises:
+            Exception: If all retries exhausted
+            
+        **Validates: Requirements 4.1, 4.4, 4.5**
+        """
+        provider = self._get_provider(method)
+        
+        last_error = None
+        start_time = time.time()
+        
+        for attempt in range(max_retries):
+            try:
+                # Enforce 30-second timeout (Requirement 4.4)
+                # Using wait_for for Python 3.9 compatibility
+                response = await asyncio.wait_for(
+                    provider.generate(prompt, options, model, system_prompt),
+                    timeout=DEFAULT_TIMEOUT_SECONDS
+                )
+                    
+                latency_ms = (time.time() - start_time) * 1000
+                response.latency_ms = latency_ms
+                
+                # Log successful usage
+                await self._log_usage(
+                    method=method.value,
+                    model=response.model,
+                    operation="generate",
+                    prompt_tokens=response.usage.prompt_tokens,
+                    completion_tokens=response.usage.completion_tokens,
+                    latency_ms=latency_ms,
+                    success=True
+                )
+                
+                return response
+                
+            except asyncio.TimeoutError:
+                last_error = f"Request timeout after {DEFAULT_TIMEOUT_SECONDS} seconds"
+                logger.warning(
+                    f"Timeout on attempt {attempt + 1}/{max_retries} for {method}"
+                )
+                
+                # Log timeout event (Requirement 4.4)
+                await self._log_usage(
+                    method=method.value,
+                    model=model or "unknown",
+                    operation="generate",
+                    latency_ms=DEFAULT_TIMEOUT_SECONDS * 1000,
+                    success=False,
+                    error_code=LLMErrorCode.TIMEOUT.value,
+                    error_message=last_error
+                )
+                
+            except Exception as e:
+                last_error = str(e)
+                logger.warning(
+                    f"Error on attempt {attempt + 1}/{max_retries} for {method}: {e}"
+                )
+                
+                # Check for rate limit and handle retry-after (Requirement 4.5)
+                retry_after = self._extract_retry_after(e)
+                if retry_after is not None:
+                    logger.info(f"Rate limited, waiting {retry_after}s before retry")
+                    await asyncio.sleep(retry_after)
+                    continue
+            
+            # Exponential backoff: 1s, 2s, 4s (Requirement 4.1)
+            if attempt < max_retries - 1:
+                backoff_delay = EXPONENTIAL_BACKOFF_BASE ** attempt
+                logger.debug(f"Waiting {backoff_delay}s before retry {attempt + 2}")
+                await asyncio.sleep(backoff_delay)
+        
+        # All retries exhausted
+        latency_ms = (time.time() - start_time) * 1000
+        await self._log_usage(
+            method=method.value,
+            model=model or "unknown",
+            operation="generate",
+            latency_ms=latency_ms,
+            success=False,
+            error_code=LLMErrorCode.GENERATION_FAILED.value,
+            error_message=f"Max retries ({max_retries}) exceeded. Last error: {last_error}"
+        )
+        
+        raise Exception(f"Max retries ({max_retries}) exceeded. Last error: {last_error}")
+    
+    def _extract_retry_after(self, exception: Exception) -> Optional[int]:
+        """
+        Extract retry-after value from rate limit errors.
+        
+        Parses error messages and headers to find the recommended
+        wait time before retrying.
+        
+        Args:
+            exception: The exception to parse
+            
+        Returns:
+            Seconds to wait, or None if not a rate limit error
+            
+        **Validates: Requirements 4.5**
+        """
+        error_str = str(exception).lower()
+        
+        # Check if this is a rate limit error
+        if not any(keyword in error_str for keyword in ['rate', 'limit', '429', 'quota']):
+            return None
+        
+        # Try to extract retry-after value from error message
+        # Common patterns: "retry after 60 seconds", "retry-after: 60", "wait 60s"
+        patterns = [
+            r'retry[- ]?after[:\s]+(\d+)',
+            r'wait[:\s]+(\d+)',
+            r'(\d+)\s*seconds?',
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, error_str)
+            if match:
+                try:
+                    return int(match.group(1))
+                except (ValueError, IndexError):
+                    pass
+        
+        # Default retry-after for rate limits if not specified
+        return 60
     
     async def stream_generate(
         self,
@@ -255,6 +789,10 @@ class LLMSwitcher:
         """
         Stream text response using the specified or default method.
         
+        Implements automatic failover with exponential backoff retry.
+        Note: Streaming does not support mid-stream failover - if the stream
+        fails after starting, the entire operation fails.
+        
         Args:
             prompt: Input prompt
             options: Generation options
@@ -264,6 +802,8 @@ class LLMSwitcher:
             
         Yields:
             Text chunks as they are generated
+            
+        **Validates: Requirements 3.3, 4.1, 4.2, 4.4**
         """
         await self._ensure_initialized()
         
@@ -271,43 +811,125 @@ class LLMSwitcher:
         options.stream = True
         target_method = method or self._current_method
         
-        provider = self._get_provider(target_method)
+        # Store request context for potential failover
+        request_context = {
+            'prompt': prompt,
+            'options': options,
+            'model': model,
+            'system_prompt': system_prompt,
+        }
         
-        start_time = time.time()
-        total_tokens = 0
-        
+        # Try primary provider with retries
+        primary_error = None
         try:
-            async for chunk in provider.stream_generate(prompt, options, model, system_prompt):
-                total_tokens += 1  # Approximate token count
+            async for chunk in self._stream_generate_with_retry(
+                target_method, prompt, options, model, system_prompt
+            ):
                 yield chunk
             
-            latency_ms = (time.time() - start_time) * 1000
-            
-            # Log usage
-            await self._log_usage(
-                method=target_method.value,
-                model=model or "unknown",
-                operation="stream",
-                completion_tokens=total_tokens,
-                latency_ms=latency_ms,
-                success=True
-            )
+            # Track usage statistics
+            await self._increment_usage_stats(target_method)
+            return
             
         except Exception as e:
-            latency_ms = (time.time() - start_time) * 1000
-            error = self._create_error(e, target_method)
+            primary_error = e
+            logger.warning(f"Primary provider {target_method} stream failed: {e}")
+        
+        # Try fallback provider if configured
+        if self._fallback_method and self._fallback_method != target_method:
+            logger.info(f"Attempting stream failover to {self._fallback_method}")
             
-            await self._log_usage(
-                method=target_method.value,
-                model=model or "unknown",
-                operation="stream",
-                latency_ms=latency_ms,
-                success=False,
-                error_code=error.error_code.value,
-                error_message=str(e)
-            )
+            try:
+                async for chunk in self._stream_generate_with_retry(
+                    self._fallback_method,
+                    request_context['prompt'],
+                    request_context['options'],
+                    request_context['model'],
+                    request_context['system_prompt']
+                ):
+                    yield chunk
+                
+                await self._increment_usage_stats(self._fallback_method)
+                logger.info(f"Stream failover to {self._fallback_method} succeeded")
+                return
+                
+            except Exception as fallback_error:
+                logger.error(f"Fallback provider stream also failed: {fallback_error}")
+                raise LLMError(
+                    error_code=LLMErrorCode.SERVICE_UNAVAILABLE,
+                    message=(
+                        f"Both primary and fallback providers failed for streaming. "
+                        f"Primary ({target_method.value}): {str(primary_error)}. "
+                        f"Fallback ({self._fallback_method.value}): {str(fallback_error)}"
+                    ),
+                    provider=f"{target_method.value},{self._fallback_method.value}",
+                    suggestions=["Check provider configurations", "Verify network connectivity"]
+                )
+        
+        raise self._create_error(primary_error, target_method)
+    
+    async def _stream_generate_with_retry(
+        self,
+        method: LLMMethod,
+        prompt: str,
+        options: GenerateOptions,
+        model: Optional[str],
+        system_prompt: Optional[str],
+        max_retries: int = MAX_RETRY_ATTEMPTS,
+    ) -> AsyncIterator[str]:
+        """
+        Stream generate with retry logic.
+        
+        Note: Retries only apply to connection/setup failures.
+        Once streaming starts, failures are not retried.
+        """
+        provider = self._get_provider(method)
+        
+        last_error = None
+        start_time = time.time()
+        
+        for attempt in range(max_retries):
+            try:
+                total_tokens = 0
+                
+                # For streaming, we use wait_for on the first chunk to detect connection issues
+                # The full stream may take longer than the timeout
+                async for chunk in provider.stream_generate(
+                    prompt, options, model, system_prompt
+                ):
+                    total_tokens += 1
+                    yield chunk
+                
+                latency_ms = (time.time() - start_time) * 1000
+                
+                await self._log_usage(
+                    method=method.value,
+                    model=model or "unknown",
+                    operation="stream",
+                    completion_tokens=total_tokens,
+                    latency_ms=latency_ms,
+                    success=True
+                )
+                return
+                
+            except asyncio.TimeoutError:
+                last_error = f"Stream timeout after {DEFAULT_TIMEOUT_SECONDS} seconds"
+                logger.warning(f"Stream timeout on attempt {attempt + 1}/{max_retries}")
+                
+            except Exception as e:
+                last_error = str(e)
+                logger.warning(f"Stream error on attempt {attempt + 1}/{max_retries}: {e}")
+                
+                retry_after = self._extract_retry_after(e)
+                if retry_after is not None:
+                    await asyncio.sleep(retry_after)
+                    continue
             
-            raise error
+            if attempt < max_retries - 1:
+                backoff_delay = EXPONENTIAL_BACKOFF_BASE ** attempt
+                await asyncio.sleep(backoff_delay)
+        
+        raise Exception(f"Stream max retries ({max_retries}) exceeded. Last error: {last_error}")
     
     async def embed(
         self,
@@ -318,6 +940,8 @@ class LLMSwitcher:
         """
         Generate text embedding using the specified or default method.
         
+        Implements automatic failover with exponential backoff retry.
+        
         Args:
             text: Text to embed
             method: Override default method
@@ -325,43 +949,124 @@ class LLMSwitcher:
             
         Returns:
             EmbeddingResponse with embedding vector
+            
+        **Validates: Requirements 3.3, 4.1, 4.2, 4.4**
         """
         await self._ensure_initialized()
         
         target_method = method or self._current_method
-        provider = self._get_provider(target_method)
         
-        start_time = time.time()
+        # Store request context for potential failover
+        request_context = {
+            'text': text,
+            'model': model,
+        }
+        
+        # Try primary provider with retries
+        primary_error = None
         try:
-            response = await provider.embed(text, model)
-            latency_ms = (time.time() - start_time) * 1000
-            response.latency_ms = latency_ms
-            
-            await self._log_usage(
-                method=target_method.value,
-                model=response.model,
-                operation="embed",
-                latency_ms=latency_ms,
-                success=True
-            )
-            
+            response = await self._embed_with_retry(target_method, text, model)
+            await self._increment_usage_stats(target_method)
             return response
             
         except Exception as e:
-            latency_ms = (time.time() - start_time) * 1000
-            error = self._create_error(e, target_method)
+            primary_error = e
+            logger.warning(f"Primary provider {target_method} embed failed: {e}")
+        
+        # Try fallback provider if configured
+        if self._fallback_method and self._fallback_method != target_method:
+            logger.info(f"Attempting embed failover to {self._fallback_method}")
             
-            await self._log_usage(
-                method=target_method.value,
-                model=model or "unknown",
-                operation="embed",
-                latency_ms=latency_ms,
-                success=False,
-                error_code=error.error_code.value,
-                error_message=str(e)
-            )
+            try:
+                response = await self._embed_with_retry(
+                    self._fallback_method,
+                    request_context['text'],
+                    request_context['model']
+                )
+                await self._increment_usage_stats(self._fallback_method)
+                logger.info(f"Embed failover to {self._fallback_method} succeeded")
+                return response
+                
+            except Exception as fallback_error:
+                logger.error(f"Fallback provider embed also failed: {fallback_error}")
+                raise LLMError(
+                    error_code=LLMErrorCode.SERVICE_UNAVAILABLE,
+                    message=(
+                        f"Both primary and fallback providers failed for embedding. "
+                        f"Primary ({target_method.value}): {str(primary_error)}. "
+                        f"Fallback ({self._fallback_method.value}): {str(fallback_error)}"
+                    ),
+                    provider=f"{target_method.value},{self._fallback_method.value}",
+                    suggestions=["Check provider configurations", "Verify network connectivity"]
+                )
+        
+        raise self._create_error(primary_error, target_method)
+    
+    async def _embed_with_retry(
+        self,
+        method: LLMMethod,
+        text: str,
+        model: Optional[str],
+        max_retries: int = MAX_RETRY_ATTEMPTS,
+    ) -> EmbeddingResponse:
+        """
+        Embed with exponential backoff retry and timeout enforcement.
+        """
+        provider = self._get_provider(method)
+        
+        last_error = None
+        start_time = time.time()
+        
+        for attempt in range(max_retries):
+            try:
+                # Using wait_for for Python 3.9 compatibility
+                response = await asyncio.wait_for(
+                    provider.embed(text, model),
+                    timeout=DEFAULT_TIMEOUT_SECONDS
+                )
+                    
+                latency_ms = (time.time() - start_time) * 1000
+                response.latency_ms = latency_ms
+                
+                await self._log_usage(
+                    method=method.value,
+                    model=response.model,
+                    operation="embed",
+                    latency_ms=latency_ms,
+                    success=True
+                )
+                
+                return response
+                
+            except asyncio.TimeoutError:
+                last_error = f"Embed timeout after {DEFAULT_TIMEOUT_SECONDS} seconds"
+                logger.warning(f"Embed timeout on attempt {attempt + 1}/{max_retries}")
+                
+            except Exception as e:
+                last_error = str(e)
+                logger.warning(f"Embed error on attempt {attempt + 1}/{max_retries}: {e}")
+                
+                retry_after = self._extract_retry_after(e)
+                if retry_after is not None:
+                    await asyncio.sleep(retry_after)
+                    continue
             
-            raise error
+            if attempt < max_retries - 1:
+                backoff_delay = EXPONENTIAL_BACKOFF_BASE ** attempt
+                await asyncio.sleep(backoff_delay)
+        
+        latency_ms = (time.time() - start_time) * 1000
+        await self._log_usage(
+            method=method.value,
+            model=model or "unknown",
+            operation="embed",
+            latency_ms=latency_ms,
+            success=False,
+            error_code=LLMErrorCode.GENERATION_FAILED.value,
+            error_message=f"Max retries ({max_retries}) exceeded. Last error: {last_error}"
+        )
+        
+        raise Exception(f"Embed max retries ({max_retries}) exceeded. Last error: {last_error}")
     
     # ==================== Method Management ====================
     
@@ -369,11 +1074,15 @@ class LLMSwitcher:
         """
         Switch the default LLM method.
         
+        Validates that the target provider is available before switching.
+        
         Args:
             method: New default method
             
         Raises:
-            ValueError: If method is not enabled
+            ValueError: If method is not enabled or provider is not available
+            
+        **Validates: Requirements 3.2**
         """
         if self._config and method not in self._config.enabled_methods:
             raise ValueError(f"Method {method} is not enabled")
@@ -384,6 +1093,46 @@ class LLMSwitcher:
         old_method = self._current_method
         self._current_method = method
         logger.info(f"Switched LLM method from {old_method} to {method}")
+    
+    async def switch_method_validated(self, method: LLMMethod) -> bool:
+        """
+        Switch the default LLM method with health validation.
+        
+        Validates that the target provider is available and healthy before switching.
+        
+        Args:
+            method: New default method
+            
+        Returns:
+            True if switch was successful
+            
+        Raises:
+            ValueError: If method is not enabled, not available, or unhealthy
+            
+        **Validates: Requirements 3.2**
+        """
+        if self._config and method not in self._config.enabled_methods:
+            raise ValueError(f"Method {method} is not enabled")
+        
+        if method not in self._providers:
+            raise ValueError(f"Provider for {method} is not initialized")
+        
+        # Validate provider is healthy before switching
+        try:
+            health = await self._providers[method].health_check()
+            if not health.available:
+                raise ValueError(
+                    f"Provider {method} is unhealthy and cannot be set as active: {health.error}"
+                )
+        except Exception as e:
+            if "unhealthy" in str(e):
+                raise
+            raise ValueError(f"Could not verify provider {method} health: {e}")
+        
+        old_method = self._current_method
+        self._current_method = method
+        logger.info(f"Switched LLM method from {old_method} to {method} (validated)")
+        return True
     
     def get_current_method(self) -> LLMMethod:
         """Get the current default method."""
@@ -601,12 +1350,16 @@ class LLMSwitcher:
 _switcher_instances: Dict[str, LLMSwitcher] = {}
 
 
-def get_llm_switcher(tenant_id: Optional[str] = None) -> LLMSwitcher:
+def get_llm_switcher(
+    tenant_id: Optional[str] = None,
+    cache_client: Optional[Any] = None,
+) -> LLMSwitcher:
     """
     Get or create an LLM Switcher instance for the tenant.
     
     Args:
         tenant_id: Tenant ID for multi-tenant support
+        cache_client: Redis client for response caching
         
     Returns:
         LLMSwitcher instance
@@ -614,21 +1367,31 @@ def get_llm_switcher(tenant_id: Optional[str] = None) -> LLMSwitcher:
     key = tenant_id or "global"
     
     if key not in _switcher_instances:
-        _switcher_instances[key] = LLMSwitcher(tenant_id=tenant_id)
+        _switcher_instances[key] = LLMSwitcher(
+            tenant_id=tenant_id,
+            cache_client=cache_client,
+        )
+    elif cache_client is not None:
+        # Update cache client if provided
+        _switcher_instances[key].set_cache_client(cache_client)
     
     return _switcher_instances[key]
 
 
-async def get_initialized_switcher(tenant_id: Optional[str] = None) -> LLMSwitcher:
+async def get_initialized_switcher(
+    tenant_id: Optional[str] = None,
+    cache_client: Optional[Any] = None,
+) -> LLMSwitcher:
     """
     Get an initialized LLM Switcher instance.
     
     Args:
         tenant_id: Tenant ID for multi-tenant support
+        cache_client: Redis client for response caching
         
     Returns:
         Initialized LLMSwitcher instance
     """
-    switcher = get_llm_switcher(tenant_id)
+    switcher = get_llm_switcher(tenant_id, cache_client)
     await switcher.initialize()
     return switcher

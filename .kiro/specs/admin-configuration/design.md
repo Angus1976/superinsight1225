@@ -1,574 +1,1096 @@
-# Design Document: Admin Configuration (管理员配置)
+# Design Document - Admin Configuration Module
 
 ## Overview
 
-本设计文档描述 Admin Configuration 模块的架构设计，该模块实现平台管理员的可视化配置界面，包括仪表盘、LLM 配置、数据库连接、同步策略、SQL 构建器等功能。
+The Admin Configuration Module provides a comprehensive web-based interface for system administrators to manage LLM integrations, database connections, and data synchronization strategies. The design follows a layered architecture with clear separation between presentation (React frontend), business logic (FastAPI backend), and data persistence (PostgreSQL with Redis caching).
 
-设计原则：
-- **统一入口**：通过管理员仪表盘提供所有配置功能的统一入口
-- **实时验证**：配置修改时实时验证有效性，减少错误
-- **安全优先**：敏感信息加密存储和脱敏显示
-- **可追溯**：所有配置变更记录历史，支持回滚
+### Key Design Goals
+
+1. **User-Friendly Interface**: Intuitive configuration wizards with inline validation and contextual help
+2. **Security-First**: All sensitive data encrypted at rest and in transit, with comprehensive audit logging
+3. **Multi-Tenant Isolation**: Complete configuration isolation between tenants with inheritance support
+4. **Extensibility**: Plugin architecture for adding new LLM providers and database types
+5. **Reliability**: Configuration validation, testing, and rollback capabilities to prevent service disruptions
+6. **Internationalization**: Full i18n support for Chinese and English with extensible translation framework
 
 ## Architecture
 
+### High-Level Architecture
+
 ```mermaid
 graph TB
-    subgraph Frontend["前端层"]
-        Dashboard[Admin Dashboard]
-        LLMConfig[LLM Config Panel]
-        DBConfig[DB Config Panel]
-        SyncConfig[Sync Strategy Panel]
-        SQLBuilder[SQL Builder]
-        History[Config History]
-        ThirdParty[Third Party Config]
+    subgraph "Frontend Layer"
+        UI[Admin UI - React]
+        LLMConfig[LLM Config Page]
+        DBConfig[DB Config Page]
+        SyncConfig[Sync Strategy Page]
     end
     
-    subgraph API["API 层"]
-        AdminRouter[/api/v1/admin]
-        ConfigAPI[Config API]
-        HistoryAPI[History API]
-        ValidationAPI[Validation API]
+    subgraph "API Layer"
+        ConfigAPI[Configuration API]
+        ValidationService[Validation Service]
+        TestService[Connection Test Service]
     end
     
-    subgraph Core["核心层"]
-        ConfigManager[Config Manager]
-        Validator[Config Validator]
-        HistoryTracker[History Tracker]
-        Encryptor[Credential Encryptor]
+    subgraph "Business Logic Layer"
+        ConfigManager[Configuration Manager]
+        LLMManager[LLM Provider Manager]
+        DBManager[Database Connection Manager]
+        SyncManager[Sync Strategy Manager]
+        HistoryManager[Configuration History Manager]
     end
     
-    subgraph Storage["存储层"]
-        DB[(PostgreSQL)]
-        Cache[(Redis)]
-        Secrets[Secrets Store]
+    subgraph "Data Layer"
+        PostgreSQL[(PostgreSQL)]
+        Redis[(Redis Cache)]
+        Vault[Encryption Vault]
     end
     
-    Dashboard --> AdminRouter
-    LLMConfig --> AdminRouter
-    DBConfig --> AdminRouter
-    SyncConfig --> AdminRouter
-    SQLBuilder --> AdminRouter
-    History --> AdminRouter
-    ThirdParty --> AdminRouter
+    UI --> ConfigAPI
+    LLMConfig --> ConfigAPI
+    DBConfig --> ConfigAPI
+    SyncConfig --> ConfigAPI
     
-    AdminRouter --> ConfigAPI
-    AdminRouter --> HistoryAPI
-    AdminRouter --> ValidationAPI
-    
+    ConfigAPI --> ValidationService
+    ConfigAPI --> TestService
     ConfigAPI --> ConfigManager
-    HistoryAPI --> HistoryTracker
-    ValidationAPI --> Validator
     
-    ConfigManager --> DB
-    ConfigManager --> Cache
-    ConfigManager --> Encryptor
-    Encryptor --> Secrets
-    HistoryTracker --> DB
+    ConfigManager --> LLMManager
+    ConfigManager --> DBManager
+    ConfigManager --> SyncManager
+    ConfigManager --> HistoryManager
+    
+    ConfigManager --> PostgreSQL
+    ConfigManager --> Redis
+    ConfigManager --> Vault
 ```
+
+### Component Interaction Flow
+
+```mermaid
+sequenceDiagram
+    participant Admin
+    participant UI
+    participant API
+    participant Validator
+    participant Manager
+    participant DB
+    participant Cache
+    
+    Admin->>UI: Configure LLM Provider
+    UI->>API: POST /api/admin/llm-config
+    API->>Validator: Validate Configuration
+    Validator-->>API: Validation Result
+    
+    alt Validation Success
+        API->>Manager: Save Configuration
+        Manager->>DB: Encrypt & Store
+        Manager->>Cache: Update Cache
+        Manager-->>API: Success Response
+        API-->>UI: Configuration Saved
+        UI-->>Admin: Success Message
+    else Validation Failure
+        API-->>UI: Validation Errors
+        UI-->>Admin: Error Messages
+    end
+```
+
 
 
 ## Components and Interfaces
 
-### 1. Config Manager (配置管理器)
+### Frontend Components
 
-**文件**: `src/admin/config_manager.py`
+#### 1. LLMConfigPage Component
 
-**职责**: 统一管理所有配置的 CRUD 操作
+**Location**: `frontend/src/pages/admin/LLMConfig.tsx`
 
-```python
-class ConfigManager:
-    """配置管理器"""
-    
-    def __init__(self, db: AsyncSession, cache: Redis, encryptor: CredentialEncryptor):
-        self.db = db
-        self.cache = cache
-        self.encryptor = encryptor
-    
-    async def get_config(self, config_type: ConfigType, tenant_id: str = None) -> Dict:
-        """获取配置"""
-        pass
-    
-    async def save_config(self, config_type: ConfigType, config: Dict, user_id: str) -> Dict:
-        """保存配置（自动记录历史）"""
-        pass
-    
-    async def validate_config(self, config_type: ConfigType, config: Dict) -> ValidationResult:
-        """验证配置"""
-        pass
-    
-    async def test_connection(self, config_type: ConfigType, config: Dict) -> ConnectionTestResult:
-        """测试连接"""
-        pass
+**Responsibilities**:
+- Render LLM provider configuration form
+- Handle provider selection (Global/Chinese)
+- Manage form state and validation
+- Execute connection tests
+- Display test results and error messages
 
-class ConfigType(str, Enum):
-    LLM = "llm"
-    DATABASE = "database"
-    SYNC_STRATEGY = "sync_strategy"
-    THIRD_PARTY = "third_party"
+**Key Interfaces**:
+```typescript
+interface LLMConfig {
+  id?: string;
+  tenantId: string;
+  providerType: 'global' | 'chinese';
+  providerName: string;
+  apiKey: string;
+  endpoint: string;
+  modelName: string;
+  maxTokens?: number;
+  temperature?: number;
+  timeout?: number;
+  isActive: boolean;
+}
+
+interface LLMConfigFormProps {
+  initialConfig?: LLMConfig;
+  onSave: (config: LLMConfig) => Promise<void>;
+  onTest: (config: LLMConfig) => Promise<TestResult>;
+}
 ```
 
-### 2. Config Validator (配置验证器)
+#### 2. DBConfigPage Component
 
-**文件**: `src/admin/config_validator.py`
+**Location**: `frontend/src/pages/admin/DBConfig.tsx`
 
-**职责**: 验证各类配置的有效性
+**Responsibilities**:
+- Render database connection configuration form
+- Support multiple database types (MySQL, PostgreSQL, Oracle, SQL Server)
+- Handle connection parameter validation
+- Execute connection tests
+- Manage SSL/TLS configuration
 
-```python
-class ConfigValidator:
-    """配置验证器"""
-    
-    def validate_llm_config(self, config: LLMConfig) -> ValidationResult:
-        """验证 LLM 配置"""
-        pass
-    
-    def validate_db_config(self, config: DBConfig) -> ValidationResult:
-        """验证数据库配置"""
-        pass
-    
-    def validate_sync_config(self, config: SyncConfig) -> ValidationResult:
-        """验证同步策略配置"""
-        pass
-    
-    async def test_db_connection(self, config: DBConfig) -> ConnectionTestResult:
-        """测试数据库连接"""
-        pass
-    
-    async def verify_readonly_permission(self, config: DBConfig) -> bool:
-        """验证只读权限"""
-        pass
+**Key Interfaces**:
+```typescript
+interface DBConfig {
+  id?: string;
+  tenantId: string;
+  dbType: 'mysql' | 'postgresql' | 'oracle' | 'sqlserver';
+  host: string;
+  port: number;
+  database: string;
+  username: string;
+  password: string;
+  sslEnabled: boolean;
+  sslCert?: string;
+  readOnly: boolean;
+  connectionPool: {
+    minSize: number;
+    maxSize: number;
+    timeout: number;
+  };
+}
 
-class ValidationResult(BaseModel):
-    is_valid: bool
-    errors: List[ValidationError] = []
-    warnings: List[str] = []
-
-class ConnectionTestResult(BaseModel):
-    success: bool
-    latency_ms: float
-    error_message: Optional[str] = None
+interface DBConfigFormProps {
+  initialConfig?: DBConfig;
+  onSave: (config: DBConfig) => Promise<void>;
+  onTest: (config: DBConfig) => Promise<TestResult>;
+}
 ```
 
-### 3. History Tracker (历史追踪器)
+#### 3. SyncStrategyPage Component
 
-**文件**: `src/admin/history_tracker.py`
+**Location**: `frontend/src/pages/admin/SyncStrategy.tsx`
 
-**职责**: 记录配置变更历史，支持回滚
+**Responsibilities**:
+- Configure synchronization mode (poll/webhook)
+- Set up scheduling for poll mode
+- Generate webhook URLs
+- Configure desensitization rules
+- Manage sync filters and transformations
 
-```python
-class HistoryTracker:
-    """配置历史追踪器"""
-    
-    async def record_change(
-        self,
-        config_type: ConfigType,
-        old_value: Dict,
-        new_value: Dict,
-        user_id: str,
-        tenant_id: str = None
-    ) -> ConfigHistory:
-        """记录配置变更"""
-        pass
-    
-    async def get_history(
-        self,
-        config_type: ConfigType = None,
-        start_time: datetime = None,
-        end_time: datetime = None,
-        user_id: str = None
-    ) -> List[ConfigHistory]:
-        """获取变更历史"""
-        pass
-    
-    async def get_diff(self, history_id: str) -> ConfigDiff:
-        """获取配置差异"""
-        pass
-    
-    async def rollback(self, history_id: str, user_id: str) -> Dict:
-        """回滚到指定版本"""
-        pass
+**Key Interfaces**:
+```typescript
+interface SyncStrategy {
+  id?: string;
+  tenantId: string;
+  dataSourceId: string;
+  syncMode: 'poll' | 'webhook';
+  pollConfig?: {
+    interval: number;
+    cronExpression?: string;
+    timeWindow?: { start: string; end: string };
+  };
+  webhookConfig?: {
+    url: string;
+    secret: string;
+    retryPolicy: { maxRetries: number; backoffMs: number };
+  };
+  desensitizationRules: DesensitizationRule[];
+  filters: DataFilter[];
+  isActive: boolean;
+}
 
-class ConfigHistory(BaseModel):
-    id: str
-    config_type: ConfigType
-    old_value: Dict
-    new_value: Dict
-    user_id: str
-    user_name: str
-    tenant_id: Optional[str]
-    created_at: datetime
-
-class ConfigDiff(BaseModel):
-    added: Dict
-    removed: Dict
-    modified: Dict
+interface DesensitizationRule {
+  fieldName: string;
+  method: 'mask' | 'hash' | 'encrypt' | 'redact';
+  pattern?: string;
+}
 ```
 
-### 4. Credential Encryptor (凭证加密器)
+### Backend Services
 
-**文件**: `src/admin/credential_encryptor.py`
+#### 1. Configuration API Router
 
-**职责**: 加密存储和脱敏显示敏感信息
+**Location**: `src/api/admin_config.py`
 
+**Endpoints**:
 ```python
-class CredentialEncryptor:
-    """凭证加密器"""
-    
-    def __init__(self, encryption_key: str):
-        self.fernet = Fernet(encryption_key)
-    
-    def encrypt(self, plaintext: str) -> str:
-        """加密"""
-        pass
-    
-    def decrypt(self, ciphertext: str) -> str:
-        """解密"""
-        pass
-    
-    def mask(self, value: str, visible_chars: int = 4) -> str:
-        """脱敏显示（只显示前后 N 位）"""
-        if len(value) <= visible_chars * 2:
-            return '*' * len(value)
-        return value[:visible_chars] + '*' * (len(value) - visible_chars * 2) + value[-visible_chars:]
-    
-    def is_encrypted(self, value: str) -> bool:
-        """检查是否已加密"""
-        pass
+# LLM Configuration
+POST   /api/admin/llm-config          # Create LLM configuration
+GET    /api/admin/llm-config          # List LLM configurations
+GET    /api/admin/llm-config/{id}     # Get specific configuration
+PUT    /api/admin/llm-config/{id}     # Update configuration
+DELETE /api/admin/llm-config/{id}     # Delete configuration
+POST   /api/admin/llm-config/{id}/test # Test connection
+
+# Database Configuration
+POST   /api/admin/db-config           # Create DB configuration
+GET    /api/admin/db-config           # List DB configurations
+GET    /api/admin/db-config/{id}      # Get specific configuration
+PUT    /api/admin/db-config/{id}      # Update configuration
+DELETE /api/admin/db-config/{id}      # Delete configuration
+POST   /api/admin/db-config/{id}/test # Test connection
+
+# Sync Strategy
+POST   /api/admin/sync-strategy       # Create sync strategy
+GET    /api/admin/sync-strategy       # List sync strategies
+GET    /api/admin/sync-strategy/{id}  # Get specific strategy
+PUT    /api/admin/sync-strategy/{id}  # Update strategy
+DELETE /api/admin/sync-strategy/{id}  # Delete strategy
+POST   /api/admin/sync-strategy/{id}/dry-run # Test sync without execution
+
+# Configuration History
+GET    /api/admin/config-history/{type}/{id} # Get configuration history
+POST   /api/admin/config-history/{type}/{id}/rollback/{version} # Rollback
 ```
 
-### 5. SQL Builder Service (SQL 构建服务)
+#### 2. Configuration Manager Service
 
-**文件**: `src/admin/sql_builder.py`
+**Location**: `src/admin/config_manager.py`
 
-**职责**: 可视化 SQL 构建
+**Responsibilities**:
+- Centralized configuration management
+- Configuration validation and sanitization
+- Encryption/decryption of sensitive data
+- Configuration versioning and history tracking
+- Cache management for configuration data
 
+**Key Methods**:
 ```python
-class SQLBuilderService:
-    """SQL 构建服务"""
+class ConfigurationManager:
+    async def create_config(
+        self, 
+        config_type: ConfigType, 
+        config_data: dict, 
+        tenant_id: str
+    ) -> ConfigModel
     
-    async def get_schema(self, db_config_id: str) -> DatabaseSchema:
-        """获取数据库 Schema"""
-        pass
+    async def update_config(
+        self, 
+        config_id: str, 
+        config_data: dict, 
+        tenant_id: str
+    ) -> ConfigModel
     
-    def build_sql(self, query_config: QueryConfig) -> str:
-        """根据配置构建 SQL"""
-        pass
+    async def get_config(
+        self, 
+        config_id: str, 
+        tenant_id: str
+    ) -> ConfigModel
     
-    def validate_sql(self, sql: str, db_type: str) -> ValidationResult:
-        """验证 SQL 语法"""
-        pass
+    async def delete_config(
+        self, 
+        config_id: str, 
+        tenant_id: str
+    ) -> bool
     
-    async def execute_preview(self, db_config_id: str, sql: str, limit: int = 100) -> QueryResult:
-        """执行查询预览"""
-        pass
+    async def list_configs(
+        self, 
+        config_type: ConfigType, 
+        tenant_id: str
+    ) -> List[ConfigModel]
     
-    async def save_template(self, template: QueryTemplate) -> QueryTemplate:
-        """保存查询模板"""
-        pass
+    async def get_config_history(
+        self, 
+        config_id: str, 
+        tenant_id: str
+    ) -> List[ConfigVersion]
     
-    async def list_templates(self, tenant_id: str = None) -> List[QueryTemplate]:
-        """列出查询模板"""
-        pass
-
-class QueryConfig(BaseModel):
-    tables: List[str]
-    columns: List[str]
-    where_conditions: List[WhereCondition] = []
-    order_by: List[OrderByClause] = []
-    group_by: List[str] = []
-    limit: Optional[int] = None
-
-class QueryTemplate(BaseModel):
-    id: str
-    name: str
-    description: str
-    query_config: QueryConfig
-    sql: str
-    created_by: str
-    created_at: datetime
+    async def rollback_config(
+        self, 
+        config_id: str, 
+        version: int, 
+        tenant_id: str
+    ) -> ConfigModel
 ```
 
-### 6. Sync Strategy Service (同步策略服务)
 
-**文件**: `src/admin/sync_strategy.py`
 
-**职责**: 管理数据同步策略
+#### 3. LLM Provider Manager
 
+**Location**: `src/admin/llm_provider_manager.py`
+
+**Responsibilities**:
+- Manage LLM provider configurations
+- Test LLM connections
+- Handle provider-specific authentication
+- Monitor API quota usage
+- Support multiple concurrent providers per tenant
+
+**Key Methods**:
 ```python
-class SyncStrategyService:
-    """同步策略服务"""
+class LLMProviderManager:
+    async def test_connection(
+        self, 
+        config: LLMConfig
+    ) -> TestResult
     
-    async def get_strategy(self, db_config_id: str) -> SyncStrategy:
-        """获取同步策略"""
-        pass
+    async def get_available_models(
+        self, 
+        provider: str
+    ) -> List[str]
     
-    async def save_strategy(self, strategy: SyncStrategy) -> SyncStrategy:
-        """保存同步策略"""
-        pass
+    async def validate_api_key(
+        self, 
+        provider: str, 
+        api_key: str
+    ) -> bool
     
-    async def validate_strategy(self, strategy: SyncStrategy) -> ValidationResult:
-        """验证同步策略"""
-        pass
-    
-    async def get_sync_history(self, db_config_id: str) -> List[SyncHistory]:
-        """获取同步历史"""
-        pass
-    
-    async def trigger_sync(self, db_config_id: str) -> SyncJob:
-        """触发同步"""
-        pass
-    
-    async def retry_sync(self, sync_job_id: str) -> SyncJob:
-        """重试同步"""
-        pass
-
-class SyncStrategy(BaseModel):
-    id: str
-    db_config_id: str
-    mode: SyncMode  # full/incremental/realtime
-    incremental_field: Optional[str] = None
-    schedule: Optional[str] = None  # Cron 表达式
-    filter_conditions: List[FilterCondition] = []
-    enabled: bool = True
-
-class SyncMode(str, Enum):
-    FULL = "full"
-    INCREMENTAL = "incremental"
-    REALTIME = "realtime"
+    async def get_quota_usage(
+        self, 
+        config_id: str
+    ) -> QuotaInfo
 ```
 
-### 7. API Router (API 路由)
+#### 4. Database Connection Manager
 
-**文件**: `src/api/admin.py`
+**Location**: `src/admin/db_connection_manager.py`
 
+**Responsibilities**:
+- Manage database connection configurations
+- Test database connections
+- Handle connection pooling
+- Support multiple database types
+- Enforce read-only mode
+
+**Key Methods**:
 ```python
-router = APIRouter(prefix="/api/v1/admin", tags=["Admin"])
+class DBConnectionManager:
+    async def test_connection(
+        self, 
+        config: DBConfig
+    ) -> TestResult
+    
+    async def get_connection(
+        self, 
+        config_id: str
+    ) -> AsyncConnection
+    
+    async def execute_test_query(
+        self, 
+        config: DBConfig, 
+        query: str
+    ) -> QueryResult
+    
+    async def validate_schema(
+        self, 
+        config: DBConfig
+    ) -> SchemaInfo
+```
 
-# 仪表盘
-@router.get("/dashboard")
-async def get_dashboard() -> DashboardData:
-    """获取仪表盘数据"""
-    pass
+#### 5. Sync Strategy Manager
 
-# LLM 配置
-@router.get("/config/llm")
-async def get_llm_config() -> LLMConfig:
-    pass
+**Location**: `src/admin/sync_strategy_manager.py`
 
-@router.put("/config/llm")
-async def update_llm_config(config: LLMConfig) -> LLMConfig:
-    pass
+**Responsibilities**:
+- Manage synchronization strategies
+- Schedule poll-based synchronization
+- Handle webhook registration
+- Apply desensitization rules
+- Monitor sync performance
 
-# 数据库配置
-@router.get("/config/databases")
-async def list_db_configs() -> List[DBConfig]:
-    pass
+**Key Methods**:
+```python
+class SyncStrategyManager:
+    async def activate_strategy(
+        self, 
+        strategy_id: str
+    ) -> bool
+    
+    async def deactivate_strategy(
+        self, 
+        strategy_id: str
+    ) -> bool
+    
+    async def execute_dry_run(
+        self, 
+        strategy: SyncStrategy
+    ) -> DryRunResult
+    
+    async def generate_webhook_url(
+        self, 
+        strategy_id: str
+    ) -> str
+    
+    async def apply_desensitization(
+        self, 
+        data: dict, 
+        rules: List[DesensitizationRule]
+    ) -> dict
+```
 
-@router.post("/config/databases")
-async def create_db_config(config: DBConfig) -> DBConfig:
-    pass
+#### 6. Validation Service
 
-@router.put("/config/databases/{id}")
-async def update_db_config(id: str, config: DBConfig) -> DBConfig:
-    pass
+**Location**: `src/admin/validation_service.py`
 
-@router.delete("/config/databases/{id}")
-async def delete_db_config(id: str) -> None:
-    pass
+**Responsibilities**:
+- Validate configuration data
+- Check for conflicts and duplicates
+- Verify tenant permissions
+- Sanitize input data
+- Provide detailed validation error messages
 
-@router.post("/config/databases/{id}/test")
-async def test_db_connection(id: str) -> ConnectionTestResult:
-    pass
-
-# 同步策略
-@router.get("/config/sync/{db_config_id}")
-async def get_sync_strategy(db_config_id: str) -> SyncStrategy:
-    pass
-
-@router.put("/config/sync/{db_config_id}")
-async def update_sync_strategy(db_config_id: str, strategy: SyncStrategy) -> SyncStrategy:
-    pass
-
-@router.post("/config/sync/{db_config_id}/trigger")
-async def trigger_sync(db_config_id: str) -> SyncJob:
-    pass
-
-# SQL 构建器
-@router.get("/sql-builder/schema/{db_config_id}")
-async def get_db_schema(db_config_id: str) -> DatabaseSchema:
-    pass
-
-@router.post("/sql-builder/build")
-async def build_sql(query_config: QueryConfig) -> str:
-    pass
-
-@router.post("/sql-builder/execute")
-async def execute_sql(request: ExecuteSQLRequest) -> QueryResult:
-    pass
-
-# 配置历史
-@router.get("/config/history")
-async def get_config_history(
-    config_type: ConfigType = None,
-    start_time: datetime = None,
-    end_time: datetime = None
-) -> List[ConfigHistory]:
-    pass
-
-@router.post("/config/history/{id}/rollback")
-async def rollback_config(id: str) -> Dict:
-    pass
-
-# 第三方工具
-@router.get("/config/third-party")
-async def list_third_party_configs() -> List[ThirdPartyConfig]:
-    pass
-
-@router.post("/config/third-party")
-async def create_third_party_config(config: ThirdPartyConfig) -> ThirdPartyConfig:
-    pass
+**Key Methods**:
+```python
+class ValidationService:
+    async def validate_llm_config(
+        self, 
+        config: LLMConfig
+    ) -> ValidationResult
+    
+    async def validate_db_config(
+        self, 
+        config: DBConfig
+    ) -> ValidationResult
+    
+    async def validate_sync_strategy(
+        self, 
+        strategy: SyncStrategy
+    ) -> ValidationResult
+    
+    async def check_conflicts(
+        self, 
+        config_type: ConfigType, 
+        config_data: dict, 
+        tenant_id: str
+    ) -> List[Conflict]
 ```
 
 ## Data Models
 
-### 数据库模型
+### Configuration Tables
 
-```python
-class AdminConfiguration(Base):
-    """管理员配置表"""
-    __tablename__ = "admin_configurations"
-    
-    id = Column(UUID, primary_key=True, default=uuid4)
-    tenant_id = Column(UUID, ForeignKey("tenants.id"), nullable=True)
-    config_type = Column(String(50), nullable=False)
-    config_data = Column(JSONB, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+#### llm_configurations Table
 
-class DatabaseConnection(Base):
-    """数据库连接配置表"""
-    __tablename__ = "database_connections"
-    
-    id = Column(UUID, primary_key=True, default=uuid4)
-    tenant_id = Column(UUID, ForeignKey("tenants.id"), nullable=True)
-    name = Column(String(100), nullable=False)
-    db_type = Column(String(50), nullable=False)
-    host = Column(String(255), nullable=False)
-    port = Column(Integer, nullable=False)
-    database = Column(String(100), nullable=False)
-    username = Column(String(100), nullable=False)
-    password_encrypted = Column(Text, nullable=False)
-    is_readonly = Column(Boolean, default=True)
-    extra_config = Column(JSONB, default={})
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+```sql
+CREATE TABLE llm_configurations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    provider_type VARCHAR(20) NOT NULL CHECK (provider_type IN ('global', 'chinese')),
+    provider_name VARCHAR(100) NOT NULL,
+    api_key_encrypted TEXT NOT NULL,
+    endpoint VARCHAR(500) NOT NULL,
+    model_name VARCHAR(100) NOT NULL,
+    max_tokens INTEGER,
+    temperature DECIMAL(3,2),
+    timeout INTEGER DEFAULT 30,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    created_by UUID REFERENCES users(id),
+    updated_by UUID REFERENCES users(id),
+    UNIQUE(tenant_id, provider_name)
+);
 
-class ConfigChangeHistory(Base):
-    """配置变更历史表"""
-    __tablename__ = "config_change_history"
-    
-    id = Column(UUID, primary_key=True, default=uuid4)
-    tenant_id = Column(UUID, ForeignKey("tenants.id"), nullable=True)
-    config_type = Column(String(50), nullable=False)
-    old_value = Column(JSONB, nullable=True)
-    new_value = Column(JSONB, nullable=False)
-    user_id = Column(UUID, ForeignKey("users.id"), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-class QueryTemplate(Base):
-    """查询模板表"""
-    __tablename__ = "query_templates"
-    
-    id = Column(UUID, primary_key=True, default=uuid4)
-    tenant_id = Column(UUID, ForeignKey("tenants.id"), nullable=True)
-    name = Column(String(100), nullable=False)
-    description = Column(Text, nullable=True)
-    query_config = Column(JSONB, nullable=False)
-    sql = Column(Text, nullable=False)
-    created_by = Column(UUID, ForeignKey("users.id"), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+CREATE INDEX idx_llm_config_tenant ON llm_configurations(tenant_id);
+CREATE INDEX idx_llm_config_active ON llm_configurations(is_active);
 ```
 
-## Correctness Properties
+#### db_configurations Table
 
-*A property is a characteristic or behavior that should hold true across all valid executions of a system.*
+```sql
+CREATE TABLE db_configurations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    name VARCHAR(200) NOT NULL,
+    db_type VARCHAR(20) NOT NULL CHECK (db_type IN ('mysql', 'postgresql', 'oracle', 'sqlserver')),
+    host VARCHAR(500) NOT NULL,
+    port INTEGER NOT NULL,
+    database_name VARCHAR(200) NOT NULL,
+    username VARCHAR(200) NOT NULL,
+    password_encrypted TEXT NOT NULL,
+    ssl_enabled BOOLEAN DEFAULT false,
+    ssl_cert_encrypted TEXT,
+    read_only BOOLEAN DEFAULT true,
+    connection_pool_config JSONB,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    created_by UUID REFERENCES users(id),
+    updated_by UUID REFERENCES users(id),
+    UNIQUE(tenant_id, name)
+);
 
-### Property 1: 敏感信息脱敏
+CREATE INDEX idx_db_config_tenant ON db_configurations(tenant_id);
+CREATE INDEX idx_db_config_type ON db_configurations(db_type);
+```
 
-*For any* 包含敏感信息（API Key、密码）的配置，在 API 响应和前端显示中，敏感信息应被脱敏处理（只显示前后 4 位）。
+#### sync_strategies Table
 
-**Validates: Requirements 2.6, 3.6**
+```sql
+CREATE TABLE sync_strategies (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    name VARCHAR(200) NOT NULL,
+    data_source_id UUID NOT NULL REFERENCES db_configurations(id) ON DELETE CASCADE,
+    sync_mode VARCHAR(20) NOT NULL CHECK (sync_mode IN ('poll', 'webhook')),
+    poll_config JSONB,
+    webhook_config JSONB,
+    desensitization_rules JSONB NOT NULL DEFAULT '[]',
+    filters JSONB NOT NULL DEFAULT '[]',
+    is_active BOOLEAN DEFAULT false,
+    last_sync_at TIMESTAMP WITH TIME ZONE,
+    last_sync_status VARCHAR(20),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    created_by UUID REFERENCES users(id),
+    updated_by UUID REFERENCES users(id),
+    UNIQUE(tenant_id, name)
+);
 
-### Property 2: 数据库连接验证
+CREATE INDEX idx_sync_strategy_tenant ON sync_strategies(tenant_id);
+CREATE INDEX idx_sync_strategy_source ON sync_strategies(data_source_id);
+CREATE INDEX idx_sync_strategy_active ON sync_strategies(is_active);
+```
 
-*For any* 数据库连接配置，保存前应验证连接有效性，且只读连接应验证权限为只读。
+#### configuration_history Table
 
-**Validates: Requirements 3.4, 3.7**
+```sql
+CREATE TABLE configuration_history (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    config_type VARCHAR(50) NOT NULL,
+    config_id UUID NOT NULL,
+    version INTEGER NOT NULL,
+    config_data JSONB NOT NULL,
+    change_type VARCHAR(20) NOT NULL CHECK (change_type IN ('create', 'update', 'delete', 'rollback')),
+    changed_by UUID REFERENCES users(id),
+    changed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    change_reason TEXT,
+    UNIQUE(config_type, config_id, version)
+);
 
-### Property 3: SQL 构建正确性
+CREATE INDEX idx_config_history_tenant ON configuration_history(tenant_id);
+CREATE INDEX idx_config_history_config ON configuration_history(config_type, config_id);
+CREATE INDEX idx_config_history_time ON configuration_history(changed_at DESC);
+```
 
-*For any* 通过 SQL Builder 构建的查询配置，生成的 SQL 应通过语法验证，且执行结果应与配置一致。
 
-**Validates: Requirements 5.4, 5.5**
 
-### Property 4: 配置回滚一致性
+## Technical Decisions
 
-*For any* 配置回滚操作，回滚后的配置应与历史记录中的旧值完全一致。
+### Decision 1: Use PostgreSQL JSONB for Flexible Configuration Storage
 
-**Validates: Requirements 6.4**
+**Rationale**: Configuration structures vary significantly between providers and database types. JSONB provides flexibility while maintaining queryability and validation through JSON Schema.
 
-### Property 5: 配置历史完整性
+**Alternatives Considered**:
+- Separate tables for each configuration type: Too rigid, difficult to extend
+- Plain JSON text: No indexing or query capabilities
+- NoSQL database: Adds complexity, PostgreSQL JSONB provides sufficient flexibility
 
-*For any* 配置变更，系统应记录完整的变更历史，包括变更时间、变更人、变更前后值。
+**Trade-offs**: JSONB queries are slightly slower than normalized tables, but the flexibility and ease of extension outweigh this minor performance cost.
 
-**Validates: Requirements 6.2**
+### Decision 2: Encrypt Sensitive Data at Application Layer
 
-### Property 6: 第三方工具启用/禁用即时生效
+**Rationale**: Application-layer encryption provides fine-grained control over encryption keys and allows for key rotation without database migration.
 
-*For any* 第三方工具的启用/禁用操作，应立即生效且不影响其他功能。
+**Implementation**: Use `cryptography` library with Fernet symmetric encryption. Store encryption keys in environment variables or dedicated key management service.
 
-**Validates: Requirements 7.5**
+**Alternatives Considered**:
+- Database-level encryption: Less flexible, harder to rotate keys
+- HashiCorp Vault: Adds infrastructure complexity for initial deployment
+- AWS KMS: Vendor lock-in, not suitable for private deployment
+
+### Decision 3: Use Redis for Configuration Caching
+
+**Rationale**: Configuration data is read frequently but updated infrequently. Redis caching reduces database load and improves API response times.
+
+**Cache Strategy**:
+- Cache TTL: 5 minutes for active configurations
+- Cache invalidation: Immediate on configuration updates
+- Cache key pattern: `config:{type}:{tenant_id}:{config_id}`
+
+**Alternatives Considered**:
+- In-memory caching: Doesn't scale across multiple API instances
+- No caching: Unnecessary database load for frequently accessed data
+
+### Decision 4: Async-First Architecture
+
+**Rationale**: Configuration operations often involve external I/O (testing connections, calling LLM APIs). Async architecture prevents blocking and improves throughput.
+
+**Implementation**:
+- Use `asyncio` for all I/O operations
+- Use `asyncio.Lock()` for thread-safe operations (NOT `threading.Lock`)
+- Use `aiohttp` for external HTTP calls
+- Use async database drivers (asyncpg, aiomysql)
+
+**Reference**: See `.kiro/steering/async-sync-safety.md` for detailed async safety rules.
+
+### Decision 5: Configuration Validation Pipeline
+
+**Rationale**: Multi-stage validation catches errors early and provides specific feedback to administrators.
+
+**Validation Stages**:
+1. **Schema Validation**: Pydantic models validate data types and required fields
+2. **Business Logic Validation**: Check for conflicts, duplicates, and tenant permissions
+3. **Connection Testing**: Verify external connectivity (optional, user-initiated)
+4. **Dry Run**: Test configuration in isolated environment before activation
+
+### Decision 6: Webhook Security Model
+
+**Rationale**: Webhooks expose endpoints to external systems, requiring strong authentication and replay protection.
+
+**Security Measures**:
+- Generate unique webhook URLs with cryptographically secure tokens
+- Require HMAC signature verification for webhook payloads
+- Implement replay protection with timestamp validation
+- Rate limit webhook endpoints (100 requests/minute per webhook)
 
 ## Error Handling
 
-### 错误分类
+### Error Categories
 
-| 错误类型 | 错误码 | 处理策略 |
-|---------|--------|---------|
-| 配置验证失败 | ADMIN_VALIDATION_ERROR | 返回详细验证错误 |
-| 连接测试失败 | ADMIN_CONNECTION_ERROR | 返回连接错误详情 |
-| 权限不足 | ADMIN_PERMISSION_DENIED | 返回权限错误 |
-| 配置不存在 | ADMIN_CONFIG_NOT_FOUND | 返回 404 |
-| 回滚失败 | ADMIN_ROLLBACK_ERROR | 返回回滚错误详情 |
+#### 1. Validation Errors
+
+**HTTP Status**: 400 Bad Request
+
+**Response Format**:
+```json
+{
+  "error": "validation_error",
+  "message": "Configuration validation failed",
+  "details": [
+    {
+      "field": "api_key",
+      "error": "API key format is invalid",
+      "code": "INVALID_FORMAT"
+    }
+  ]
+}
+```
+
+#### 2. Connection Test Failures
+
+**HTTP Status**: 200 OK (test result, not API error)
+
+**Response Format**:
+```json
+{
+  "success": false,
+  "error": "connection_failed",
+  "message": "Failed to connect to database",
+  "details": {
+    "error_code": "CONN_TIMEOUT",
+    "error_message": "Connection timeout after 15 seconds",
+    "suggestions": [
+      "Check if host is reachable",
+      "Verify firewall rules allow connection",
+      "Confirm database is running"
+    ]
+  }
+}
+```
+
+#### 3. Permission Errors
+
+**HTTP Status**: 403 Forbidden
+
+**Response Format**:
+```json
+{
+  "error": "permission_denied",
+  "message": "Insufficient permissions to modify configuration",
+  "required_permission": "admin:config:write"
+}
+```
+
+#### 4. Conflict Errors
+
+**HTTP Status**: 409 Conflict
+
+**Response Format**:
+```json
+{
+  "error": "conflict",
+  "message": "Configuration with this name already exists",
+  "conflicting_resource": {
+    "id": "uuid",
+    "name": "existing-config"
+  }
+}
+```
+
+### Error Recovery Strategies
+
+#### Connection Test Failures
+- Provide detailed error messages with troubleshooting steps
+- Log full error details for administrator review
+- Allow retry without re-entering all configuration data
+
+#### Configuration Save Failures
+- Use database transactions to ensure atomicity
+- Rollback on any failure during multi-step operations
+- Preserve user input in UI for correction
+
+#### Sync Pipeline Failures
+- Implement exponential backoff retry (3 attempts)
+- Alert administrators after consecutive failures
+- Provide detailed logs for debugging
+- Allow manual retry from admin UI
+
+
+
+## Correctness Properties
+
+A property is a characteristic or behavior that should hold true across all valid executions of a system—essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.
+
+### Property Reflection Analysis
+
+After analyzing all acceptance criteria, several properties can be consolidated:
+- Properties 1.2, 2.2, and 3.2 all test conditional UI rendering and can be combined
+- Properties 1.4 and 2.5 both test configuration persistence with encryption
+- Properties 1.7 and 2.5 both verify encryption of sensitive data
+- Properties 2.7, 5.6, and 4.6 all test audit logging and can be combined
+- Properties 7.1, 7.2, and 7.3 all test tenant isolation from different angles
+
+### Configuration Persistence and Encryption Properties
+
+Property 1: Configuration Round-Trip with Encryption
+*For any* valid configuration (LLM, database, or sync strategy), saving the configuration and then retrieving it should return equivalent data, and all sensitive fields (API keys, passwords, secrets) should be encrypted in storage (not plaintext).
+**Validates: Requirements 1.4, 1.7, 2.5**
+
+Property 2: Multi-Tenant Configuration Isolation
+*For any* two different tenants, configurations created by one tenant should not be visible or accessible to the other tenant, even with direct API calls attempting cross-tenant access.
+**Validates: Requirements 1.6, 7.1, 7.2, 7.3**
+
+### Validation and Error Handling Properties
+
+Property 3: Validation Before Persistence
+*For any* invalid configuration submission, the system should reject the configuration with specific error messages before any database write operation occurs.
+**Validates: Requirements 2.3, 5.1, 5.2**
+
+Property 4: Localized Error Messages
+*For any* validation error and any supported language preference (Chinese/English), the system should return error messages in the administrator's preferred language.
+**Validates: Requirements 8.4**
+
+Property 5: Input Validation Consistency
+*For any* configuration data submitted via UI or API, the same validation rules should be applied and produce identical validation results.
+**Validates: Requirements 9.2**
+
+### Connection Testing Properties
+
+Property 6: Connection Test Timeout Enforcement
+*For any* connection test (LLM or database), the system should return a result (success or timeout error) within the specified timeout period (10 seconds for LLM, 15 seconds for database).
+**Validates: Requirements 1.3, 2.4**
+
+Property 7: Connection Test Isolation
+*For any* connection test execution, the test should not affect production data, connections, or services, and should execute in an isolated environment.
+**Validates: Requirements 5.3**
+
+Property 8: Connection Failure Logging
+*For any* connection failure (LLM or database), the system should log detailed error information including error code, message, and timestamp for troubleshooting.
+**Validates: Requirements 2.7**
+
+### Conditional Rendering Properties
+
+Property 9: Provider-Specific Options Display
+*For any* provider type selection (Global/Chinese LLM providers, or MySQL/PostgreSQL/Oracle/SQL Server database types), the UI should display only the configuration options specific to that provider/database type.
+**Validates: Requirements 1.2, 2.2, 3.2**
+
+### Permission and Access Control Properties
+
+Property 10: Read-Only Mode Enforcement
+*For any* database configuration with read-only mode enabled, all write operations (INSERT, UPDATE, DELETE) should be rejected, while read operations (SELECT) should be allowed.
+**Validates: Requirements 2.6**
+
+Property 11: Query-Only Mode Enforcement
+*For any* data source with query-only mode enabled, only SQL query interface access should be allowed, and all other data access methods should be rejected.
+**Validates: Requirements 4.2**
+
+Property 12: Permission Immediate Effect
+*For any* permission configuration change, the new permissions should be enforced immediately on the next API request without requiring service restart.
+**Validates: Requirements 4.5**
+
+Property 13: Permission Enforcement at API Level
+*For any* API request attempting unauthorized access based on configured permissions, the system should reject the request with a 403 Forbidden response.
+**Validates: Requirements 4.4**
+
+### Synchronization Properties
+
+Property 14: Webhook URL Uniqueness
+*For any* two sync strategies configured with webhook mode, the generated webhook URLs should be unique and cryptographically secure.
+**Validates: Requirements 3.3**
+
+Property 15: Incremental Synchronization
+*For any* sync strategy execution, only new or modified data since the last successful sync should be transferred, not all data.
+**Validates: Requirements 3.6**
+
+Property 16: Sync Retry with Exponential Backoff
+*For any* sync operation that fails, the system should retry with exponential backoff, and after 3 consecutive failures, should alert administrators.
+**Validates: Requirements 3.7**
+
+Property 17: Dry-Run Non-Modification
+*For any* sync strategy dry-run execution, no data should be modified in either source or destination, but preview results should be returned.
+**Validates: Requirements 5.4**
+
+### Configuration History Properties
+
+Property 18: Configuration History Completeness
+*For any* configuration change (create, update, delete, rollback), a history entry should be created with timestamp, author, change type, and full configuration data.
+**Validates: Requirements 6.1, 6.5, 4.6, 5.6**
+
+Property 19: Configuration Rollback Round-Trip
+*For any* configuration at version N, rolling back to version N-1 and then rolling back again should restore the configuration to version N state.
+**Validates: Requirements 6.3**
+
+Property 20: Configuration History Retention
+*For any* configuration history entry, it should be retained for at least 90 days from creation.
+**Validates: Requirements 6.4**
+
+Property 21: Rollback Compatibility Check
+*For any* rollback attempt to a historical configuration that is incompatible with the current system version, the system should reject the rollback with a specific error message.
+**Validates: Requirements 6.6**
+
+### Tenant Management Properties
+
+Property 22: Tenant Default Initialization
+*For any* newly created tenant, the system should automatically initialize default configuration templates for LLM providers, database connections, and sync strategies.
+**Validates: Requirements 7.4**
+
+Property 23: Configuration Inheritance
+*For any* tenant configuration that doesn't override a global default, the tenant should inherit the global default value, and overridden values should take precedence.
+**Validates: Requirements 7.5**
+
+Property 24: Tenant Deletion Archival
+*For any* deleted tenant, all tenant-specific configurations should be archived (not permanently deleted) for compliance retention.
+**Validates: Requirements 7.6**
+
+### Internationalization Properties
+
+Property 25: Language Switching Completeness
+*For any* language preference change (Chinese to English or vice versa), all UI text labels, messages, help content, and error messages should update immediately to the selected language.
+**Validates: Requirements 8.2**
+
+Property 26: No Hardcoded UI Strings
+*For any* user-facing text in the Admin UI components, the text should use i18n translation keys rather than hardcoded strings.
+**Validates: Requirements 8.5**
+
+Property 27: Language Extensibility
+*For any* new language added through translation file updates, the system should support the new language without requiring code changes or redeployment.
+**Validates: Requirements 8.6**
+
+### API Properties
+
+Property 28: Bulk Import/Export Round-Trip
+*For any* set of configurations exported in JSON format, importing the exported data should recreate equivalent configurations with the same settings.
+**Validates: Requirements 9.3**
+
+Property 29: API Authentication Enforcement
+*For any* configuration API endpoint, requests without valid authentication tokens should be rejected with 401 Unauthorized response.
+**Validates: Requirements 9.4**
+
+Property 30: API Response Format Consistency
+*For any* successful API operation (create, update, delete), the response should follow a standardized format including operation status, resource ID, and timestamp.
+**Validates: Requirements 9.5**
+
+Property 31: API Rate Limiting
+*For any* API client making more than 100 requests per minute, subsequent requests should be rejected with 429 Too Many Requests response until the rate limit window resets.
+**Validates: Requirements 9.7**
+
+### Monitoring and Alerting Properties
+
+Property 32: Alert Threshold Validation
+*For any* alert threshold configuration, the system should validate that threshold values are within acceptable ranges (e.g., percentages between 0-100, timeouts > 0).
+**Validates: Requirements 10.2**
+
+Property 33: Threshold Violation Alerting
+*For any* monitored metric that exceeds configured thresholds, the system should send alerts through all configured channels (email, webhook, SMS).
+**Validates: Requirements 10.3**
+
+Property 34: Connection Failure Alert Timing
+*For any* database connection failure, the system should send an alert to administrators within 1 minute of detecting the failure.
+**Validates: Requirements 10.5**
+
+Property 35: Real-Time Dashboard Status
+*For any* configured connection or sync pipeline, the admin dashboard should display current health status that reflects the actual state within 30 seconds of any status change.
+**Validates: Requirements 10.6**
+
+
 
 ## Testing Strategy
 
-### 单元测试
+### Dual Testing Approach
 
-- 测试配置验证逻辑
-- 测试敏感信息加密/脱敏
-- 测试 SQL 构建逻辑
-- 测试历史记录和回滚
+The testing strategy employs both unit tests and property-based tests to ensure comprehensive coverage:
 
-### 属性测试
+- **Unit Tests**: Verify specific examples, edge cases, error conditions, and integration points
+- **Property Tests**: Verify universal properties across all inputs through randomized testing
 
+Both approaches are complementary and necessary for comprehensive validation.
+
+### Unit Testing Focus Areas
+
+Unit tests should focus on:
+
+1. **Specific Examples**
+   - Valid LLM configuration with OpenAI provider
+   - Valid database configuration with PostgreSQL
+   - Valid sync strategy with poll mode
+   - Webhook URL generation format
+
+2. **Edge Cases**
+   - Empty configuration fields
+   - Maximum length strings
+   - Special characters in passwords
+   - Boundary values for timeouts and thresholds
+
+3. **Error Conditions**
+   - Invalid API key format
+   - Unreachable database host
+   - Malformed JSON in configuration
+   - Expired authentication tokens
+
+4. **Integration Points**
+   - Configuration API to database persistence
+   - UI form submission to API endpoint
+   - Cache invalidation on configuration update
+   - Audit log creation on configuration change
+
+### Property-Based Testing Configuration
+
+All property tests must:
+- Run minimum 100 iterations per test (due to randomization)
+- Reference the design document property number
+- Use tag format: **Feature: admin-configuration, Property {number}: {property_text}**
+
+### Property Test Implementation
+
+Each correctness property will be implemented as a property-based test using an appropriate testing library:
+
+**For Python Backend** (pytest with Hypothesis):
 ```python
-@given(st.text(min_size=8))
-def test_credential_masking(credential: str):
-    """Property 1: 敏感信息脱敏"""
-    masked = encryptor.mask(credential)
-    assert '*' in masked
-    assert masked[:4] == credential[:4] if len(credential) > 8 else True
+from hypothesis import given, strategies as st
+import pytest
 
-@given(query_config_strategy())
-def test_sql_build_validity(query_config: QueryConfig):
-    """Property 3: SQL 构建正确性"""
-    sql = sql_builder.build_sql(query_config)
-    assert sql_builder.validate_sql(sql, "postgresql").is_valid
+@given(
+    config=st.builds(LLMConfig, 
+        provider_name=st.sampled_from(['openai', 'anthropic', 'alibaba']),
+        api_key=st.text(min_size=20, max_size=100),
+        endpoint=st.from_regex(r'https://[a-z0-9\-\.]+\.[a-z]{2,}', fullmatch=True)
+    )
+)
+@pytest.mark.property_test
+def test_property_1_config_round_trip_with_encryption(config):
+    """
+    Feature: admin-configuration, Property 1: Configuration Round-Trip with Encryption
+    
+    For any valid configuration, saving and retrieving should return equivalent data,
+    and sensitive fields should be encrypted in storage.
+    """
+    # Save configuration
+    saved_id = config_manager.save(config)
+    
+    # Verify encryption in database
+    raw_db_record = db.execute(f"SELECT api_key_encrypted FROM llm_configurations WHERE id = '{saved_id}'")
+    assert raw_db_record['api_key_encrypted'] != config.api_key  # Not plaintext
+    
+    # Retrieve configuration
+    retrieved = config_manager.get(saved_id)
+    
+    # Verify equivalence (decrypted)
+    assert retrieved.api_key == config.api_key
+    assert retrieved.provider_name == config.provider_name
+    assert retrieved.endpoint == config.endpoint
 ```
 
-### 集成测试
+**For TypeScript Frontend** (Vitest with fast-check):
+```typescript
+import { test } from 'vitest';
+import * as fc from 'fast-check';
 
-- 测试完整的配置保存和加载流程
-- 测试数据库连接测试功能
-- 测试配置历史和回滚
+test('Property 9: Provider-Specific Options Display', () => {
+  /**
+   * Feature: admin-configuration, Property 9: Provider-Specific Options Display
+   * 
+   * For any provider type selection, the UI should display only the configuration
+   * options specific to that provider type.
+   */
+  fc.assert(
+    fc.property(
+      fc.constantFrom('global', 'chinese'),
+      (providerType) => {
+        const { getByTestId } = render(<LLMConfigForm providerType={providerType} />);
+        
+        if (providerType === 'global') {
+          expect(getByTestId('openai-options')).toBeInTheDocument();
+          expect(() => getByTestId('alibaba-options')).toThrow();
+        } else {
+          expect(getByTestId('alibaba-options')).toBeInTheDocument();
+          expect(() => getByTestId('openai-options')).toThrow();
+        }
+      }
+    ),
+    { numRuns: 100 }
+  );
+});
+```
+
+### Test Organization
+
+```
+tests/
+├── unit/
+│   ├── test_config_manager.py
+│   ├── test_llm_provider_manager.py
+│   ├── test_db_connection_manager.py
+│   ├── test_sync_strategy_manager.py
+│   └── test_validation_service.py
+├── property/
+│   ├── test_config_persistence_properties.py
+│   ├── test_tenant_isolation_properties.py
+│   ├── test_validation_properties.py
+│   ├── test_connection_test_properties.py
+│   ├── test_permission_properties.py
+│   ├── test_sync_properties.py
+│   ├── test_history_properties.py
+│   ├── test_i18n_properties.py
+│   └── test_api_properties.py
+├── integration/
+│   ├── test_config_api_integration.py
+│   ├── test_ui_to_api_flow.py
+│   └── test_sync_pipeline_integration.py
+└── e2e/
+    ├── test_llm_config_workflow.spec.ts
+    ├── test_db_config_workflow.spec.ts
+    └── test_sync_strategy_workflow.spec.ts
+```
+
+### Testing Libraries
+
+- **Backend**: pytest, Hypothesis (property-based testing), pytest-asyncio
+- **Frontend**: Vitest, fast-check (property-based testing), Playwright (E2E)
+- **API Testing**: httpx (async HTTP client), pytest-mock
+- **Database Testing**: pytest-postgresql, fakeredis
+
+### Continuous Integration
+
+All tests must pass before merging:
+```yaml
+# .github/workflows/test.yml
+- name: Run Unit Tests
+  run: pytest tests/unit/ -v --cov=src
+
+- name: Run Property Tests
+  run: pytest tests/property/ -v --hypothesis-show-statistics
+
+- name: Run Integration Tests
+  run: pytest tests/integration/ -v
+
+- name: Run E2E Tests
+  run: npm run test:e2e
+```
+
+### Test Coverage Requirements
+
+- Unit test coverage: Minimum 80% for all modules
+- Property test coverage: All 35 correctness properties must have corresponding tests
+- Integration test coverage: All API endpoints must have integration tests
+- E2E test coverage: All critical user workflows must have E2E tests
+

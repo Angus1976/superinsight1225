@@ -56,3 +56,18 @@ export * from './useResponsive';
 export * from './useAccessibility';
 export * from './useErrorHandler';
 export * from './useTypedStore';
+// Export LLM hooks
+export {
+  useLLMConfig,
+  useLLMMethods,
+  useLLMHealth,
+  useLLMProviders,
+  useLLMProvider,
+  useTestLLMConnection,
+  useUpdateLLMConfig,
+  useHotReloadLLMConfig,
+  useSwitchLLMMethod,
+  useLLMGenerate,
+  useLLMConfigPage,
+  LLM_QUERY_KEYS,
+} from './useLLMProviders';

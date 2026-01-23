@@ -1480,6 +1480,28 @@
       "model": "Default Model",
       "modelPlaceholder": "hunyuan-lite",
       "modelRequired": "Please enter default model"
+    },
+    "help": {
+      "ollama": "Ensure Ollama service is running locally, default port is 11434.",
+      "openai": "Requires a valid OpenAI API Key, available at platform.openai.com.",
+      "qianwen": "Requires Alibaba Cloud Qwen API Key, available in Alibaba Cloud Console.",
+      "zhipu": "Requires Zhipu AI API Key, available at open.bigmodel.cn.",
+      "hunyuan": "Requires Tencent Cloud Hunyuan API Key, available in Tencent Cloud Console.",
+      "custom": "Custom provider requires an endpoint compatible with OpenAI API format."
+    },
+    "error": {
+      "providerUnavailable": "Provider unavailable",
+      "rateLimitExceeded": "Rate limit exceeded",
+      "timeout": "Request timeout",
+      "invalidConfig": "Invalid configuration",
+      "authenticationFailed": "Authentication failed",
+      "connectionFailed": "Connection failed",
+      "invalidResponse": "Invalid response format",
+      "modelNotFound": "Model not found",
+      "quotaExceeded": "Quota exceeded",
+      "serverError": "Server error",
+      "networkError": "Network error",
+      "unknownError": "Unknown error"
     }
   },
   "textToSql": {

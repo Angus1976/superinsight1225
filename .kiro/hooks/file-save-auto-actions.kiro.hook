@@ -1,10 +1,10 @@
 {
   "enabled": true,
-  "name": "File Save Auto Actions",
-  "description": "Auto-actions on file save with 'Waiting on your input' detection",
+  "name": "保存文件自动执行",
+  "description": "保存文件时自动执行测试/检查，自动确认输入",
   "version": "5",
   "when": {
-    "type": "fileSaved",
+    "type": "fileEdited",
     "patterns": ["**/*.py", "**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"]
   },
   "then": {

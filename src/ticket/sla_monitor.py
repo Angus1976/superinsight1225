@@ -6,6 +6,7 @@ Provides:
 - Automatic escalation
 - Alert notifications
 - SLA compliance reporting
+- 集成 NotificationManager 进行多渠道通知
 """
 
 import logging
@@ -24,6 +25,14 @@ from src.ticket.models import (
     TicketStatus,
     TicketPriority,
     SLAConfig,
+)
+from src.ticket.notification_service import (
+    NotificationManager,
+    NotificationConfig,
+    NotificationChannel,
+    NotificationPriority,
+    NotificationResult,
+    SLANotificationI18nKeys,
 )
 
 logger = logging.getLogger(__name__)
@@ -109,10 +118,64 @@ class SLAMonitor:
         TicketPriority.LOW: 2 * 60 * 60,     # 2 hours
     }
 
-    def __init__(self):
-        """Initialize the SLA monitor."""
+    def __init__(self, notification_config: Optional[NotificationConfig] = None):
+        """Initialize the SLA monitor.
+        
+        Args:
+            notification_config: 通知服务配置 (可选)
+        """
         self._alerts: List[SLAAlert] = []
         self._last_check: Optional[datetime] = None
+        
+        # 初始化通知管理器
+        self._notification_manager = NotificationManager(notification_config)
+        
+        # 配置优先级对应的通知渠道
+        self._configure_priority_channels()
+    
+    def _configure_priority_channels(self):
+        """配置工单优先级对应的通知渠道"""
+        # CRITICAL 优先级: 邮件 + 企业微信
+        self._notification_manager.configure_priority_channels(
+            NotificationPriority.CRITICAL,
+            [NotificationChannel.EMAIL, NotificationChannel.WECHAT_WORK]
+        )
+        
+        # HIGH 优先级: 邮件 + 企业微信
+        self._notification_manager.configure_priority_channels(
+            NotificationPriority.HIGH,
+            [NotificationChannel.EMAIL, NotificationChannel.WECHAT_WORK]
+        )
+        
+        # MEDIUM 优先级: 仅邮件
+        self._notification_manager.configure_priority_channels(
+            NotificationPriority.MEDIUM,
+            [NotificationChannel.EMAIL]
+        )
+        
+        # LOW 优先级: 仅邮件
+        self._notification_manager.configure_priority_channels(
+            NotificationPriority.LOW,
+            [NotificationChannel.EMAIL]
+        )
+    
+    def _ticket_priority_to_notification_priority(
+        self,
+        ticket_priority: TicketPriority
+    ) -> NotificationPriority:
+        """将工单优先级转换为通知优先级"""
+        mapping = {
+            TicketPriority.CRITICAL: NotificationPriority.CRITICAL,
+            TicketPriority.HIGH: NotificationPriority.HIGH,
+            TicketPriority.MEDIUM: NotificationPriority.MEDIUM,
+            TicketPriority.LOW: NotificationPriority.LOW,
+        }
+        return mapping.get(ticket_priority, NotificationPriority.MEDIUM)
+    
+    @property
+    def notification_manager(self) -> NotificationManager:
+        """获取通知管理器"""
+        return self._notification_manager
 
     async def check_sla_violations(
         self,
@@ -497,20 +560,270 @@ class SLAMonitor:
         ticket: TicketModel,
         subject: str,
         message: str
-    ) -> None:
-        """Send email notification (placeholder)."""
-        # TODO: Integrate with email service
-        logger.info(f"[Email] {subject}: {message}")
+    ) -> bool:
+        """
+        发送邮件通知
+        
+        使用 NotificationManager 的 EmailNotificationService 发送邮件。
+        支持指数退避重试 (1s, 2s, 4s)，最多重试 3 次。
+        
+        Args:
+            ticket: 工单模型
+            subject: 邮件主题
+            message: 邮件内容
+            
+        Returns:
+            发送是否成功
+        """
+        try:
+            # 获取收件人列表
+            recipients = self._get_notification_recipients(ticket)
+            
+            if not recipients:
+                logger.warning(f"No recipients found for ticket {ticket.id}")
+                return False
+            
+            # 构建 HTML 邮件内容
+            html_message = self._build_html_email(ticket, subject, message)
+            
+            # 获取通知优先级
+            priority = self._ticket_priority_to_notification_priority(ticket.priority)
+            
+            # 构建元数据
+            metadata = {
+                "ticket_id": str(ticket.id),
+                "ticket_title": ticket.title,
+                "priority": ticket.priority.value,
+                "sla_deadline": ticket.sla_deadline.isoformat() if ticket.sla_deadline else None,
+                "assigned_to": ticket.assigned_to,
+            }
+            
+            # 使用 NotificationManager 发送
+            results = await self._notification_manager.notify(
+                recipients=recipients,
+                subject=subject,
+                message=html_message,
+                priority=priority,
+                metadata=metadata,
+                channels=[NotificationChannel.EMAIL]
+            )
+            
+            # 检查发送结果
+            email_results = results.get(NotificationChannel.EMAIL, [])
+            success_count = sum(1 for r in email_results if r.success)
+            
+            if success_count > 0:
+                logger.info(
+                    f"Email alert sent for ticket {ticket.id}: "
+                    f"{success_count}/{len(email_results)} successful"
+                )
+                return True
+            else:
+                logger.error(f"All email sends failed for ticket {ticket.id}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Error sending email alert for ticket {ticket.id}: {e}")
+            return False
 
     async def _send_wechat_alert(
         self,
         ticket: TicketModel,
         subject: str,
         message: str
-    ) -> None:
-        """Send WeChat Work notification (placeholder)."""
-        # TODO: Integrate with WeChat Work API
-        logger.info(f"[WeChat] {subject}: {message}")
+    ) -> bool:
+        """
+        发送企业微信通知
+        
+        使用 NotificationManager 的 WeChatWorkNotificationService 发送通知。
+        支持 webhook 和应用消息两种方式。
+        
+        Args:
+            ticket: 工单模型
+            subject: 通知主题
+            message: 通知内容
+            
+        Returns:
+            发送是否成功
+        """
+        try:
+            # 获取收件人列表 (企业微信用户ID)
+            recipients = self._get_wechat_recipients(ticket)
+            
+            if not recipients:
+                # 如果没有指定收件人，使用 @all 或 webhook
+                recipients = ["@all"]
+            
+            # 获取通知优先级
+            priority = self._ticket_priority_to_notification_priority(ticket.priority)
+            
+            # 构建元数据
+            metadata = {
+                "ticket_id": str(ticket.id),
+                "ticket_title": ticket.title,
+                "priority": ticket.priority.value,
+                "sla_deadline": ticket.sla_deadline.isoformat() if ticket.sla_deadline else None,
+                "assigned_to": ticket.assigned_to,
+                "url": f"/tickets/{ticket.id}",  # 工单详情链接
+            }
+            
+            # 使用 NotificationManager 发送
+            results = await self._notification_manager.notify(
+                recipients=recipients,
+                subject=subject,
+                message=message,
+                priority=priority,
+                metadata=metadata,
+                channels=[NotificationChannel.WECHAT_WORK]
+            )
+            
+            # 检查发送结果
+            wechat_results = results.get(NotificationChannel.WECHAT_WORK, [])
+            success_count = sum(1 for r in wechat_results if r.success)
+            
+            if success_count > 0:
+                logger.info(
+                    f"WeChat alert sent for ticket {ticket.id}: "
+                    f"{success_count}/{len(wechat_results)} successful"
+                )
+                return True
+            else:
+                logger.error(f"All WeChat sends failed for ticket {ticket.id}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Error sending WeChat alert for ticket {ticket.id}: {e}")
+            return False
+    
+    def _get_notification_recipients(self, ticket: TicketModel) -> List[str]:
+        """
+        获取通知收件人列表
+        
+        Args:
+            ticket: 工单模型
+            
+        Returns:
+            收件人邮箱列表
+        """
+        recipients = []
+        
+        # 添加工单负责人
+        if ticket.assigned_to:
+            # 假设 assigned_to 是用户ID，需要查询用户邮箱
+            # 这里简化处理，假设 assigned_to 就是邮箱
+            if "@" in str(ticket.assigned_to):
+                recipients.append(ticket.assigned_to)
+        
+        # 添加工单创建者
+        if ticket.created_by:
+            if "@" in str(ticket.created_by):
+                recipients.append(ticket.created_by)
+        
+        # 如果没有收件人，使用默认管理员邮箱
+        if not recipients:
+            recipients = ["admin@superinsight.ai"]
+        
+        return list(set(recipients))  # 去重
+    
+    def _get_wechat_recipients(self, ticket: TicketModel) -> List[str]:
+        """
+        获取企业微信收件人列表
+        
+        Args:
+            ticket: 工单模型
+            
+        Returns:
+            企业微信用户ID列表
+        """
+        recipients = []
+        
+        # 添加工单负责人
+        if ticket.assigned_to:
+            recipients.append(str(ticket.assigned_to))
+        
+        return recipients
+    
+    def _build_html_email(
+        self,
+        ticket: TicketModel,
+        subject: str,
+        message: str
+    ) -> str:
+        """
+        构建 HTML 邮件内容
+        
+        Args:
+            ticket: 工单模型
+            subject: 邮件主题
+            message: 邮件内容
+            
+        Returns:
+            HTML 格式的邮件内容
+        """
+        # 根据优先级设置颜色
+        priority_colors = {
+            TicketPriority.CRITICAL: "#dc3545",  # 红色
+            TicketPriority.HIGH: "#fd7e14",      # 橙色
+            TicketPriority.MEDIUM: "#ffc107",    # 黄色
+            TicketPriority.LOW: "#28a745",       # 绿色
+        }
+        color = priority_colors.get(ticket.priority, "#6c757d")
+        
+        html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <style>
+                body {{ font-family: Arial, sans-serif; line-height: 1.6; }}
+                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                .header {{ background-color: {color}; color: white; padding: 15px; border-radius: 5px 5px 0 0; }}
+                .content {{ background-color: #f8f9fa; padding: 20px; border: 1px solid #dee2e6; }}
+                .footer {{ background-color: #e9ecef; padding: 10px; text-align: center; font-size: 12px; }}
+                .info-table {{ width: 100%; border-collapse: collapse; margin: 15px 0; }}
+                .info-table td {{ padding: 8px; border-bottom: 1px solid #dee2e6; }}
+                .info-table td:first-child {{ font-weight: bold; width: 120px; }}
+                .priority-badge {{ display: inline-block; padding: 3px 8px; border-radius: 3px; color: white; background-color: {color}; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h2 style="margin: 0;">{subject}</h2>
+                </div>
+                <div class="content">
+                    <p>{message}</p>
+                    <table class="info-table">
+                        <tr>
+                            <td>工单ID</td>
+                            <td>{ticket.id}</td>
+                        </tr>
+                        <tr>
+                            <td>工单标题</td>
+                            <td>{ticket.title}</td>
+                        </tr>
+                        <tr>
+                            <td>优先级</td>
+                            <td><span class="priority-badge">{ticket.priority.value}</span></td>
+                        </tr>
+                        <tr>
+                            <td>SLA截止时间</td>
+                            <td>{ticket.sla_deadline.strftime('%Y-%m-%d %H:%M:%S') if ticket.sla_deadline else 'N/A'}</td>
+                        </tr>
+                        <tr>
+                            <td>负责人</td>
+                            <td>{ticket.assigned_to or '未分配'}</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="footer">
+                    <p>此邮件由 SuperInsight SLA 监控系统自动发送</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        return html
 
     async def get_sla_compliance_report(
         self,

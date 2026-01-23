@@ -130,5 +130,166 @@
     "noData": "暂无数据",
     "error": "发生错误",
     "success": "操作成功"
+  },
+  "error": {
+    "validation": {
+      "invalidInput": "输入数据无效",
+      "missingField": "缺少必填字段",
+      "invalidFormat": "格式无效",
+      "invalidValue": "值无效",
+      "fieldTooLong": "字段过长",
+      "fieldTooShort": "字段过短",
+      "invalidType": "类型无效",
+      "invalidRange": "值超出范围",
+      "invalidEnum": "枚举值无效",
+      "invalidJson": "JSON格式无效"
+    },
+    "auth": {
+      "invalidCredentials": "用户名或密码错误",
+      "tokenExpired": "令牌已过期",
+      "tokenInvalid": "令牌无效",
+      "tokenMissing": "缺少认证令牌",
+      "sessionExpired": "会话已过期",
+      "accountLocked": "账户已锁定",
+      "accountDisabled": "账户已禁用"
+    },
+    "permission": {
+      "accessDenied": "访问被拒绝",
+      "insufficientRole": "权限不足",
+      "resourceForbidden": "禁止访问该资源",
+      "operationForbidden": "禁止执行该操作",
+      "tenantMismatch": "租户不匹配"
+    },
+    "notFound": {
+      "resource": "资源未找到",
+      "user": "用户未找到",
+      "task": "任务未找到",
+      "project": "项目未找到",
+      "annotation": "标注未找到",
+      "dataSource": "数据源未找到",
+      "evaluation": "评估结果未找到",
+      "rule": "规则未找到",
+      "endpoint": "端点未找到"
+    },
+    "conflict": {
+      "resourceExists": "资源已存在",
+      "versionMismatch": "版本不匹配",
+      "stateInvalid": "状态无效",
+      "duplicateKey": "键值重复",
+      "concurrentUpdate": "并发更新冲突"
+    },
+    "rateLimit": {
+      "exceeded": "请求频率超限",
+      "apiQuota": "API配额已用尽",
+      "userQuota": "用户配额已用尽"
+    },
+    "internal": {
+      "serverError": "服务器内部错误",
+      "databaseError": "数据库错误",
+      "cacheError": "缓存错误",
+      "processingError": "处理错误",
+      "configurationError": "配置错误",
+      "unexpectedError": "未知错误"
+    },
+    "service": {
+      "unavailable": "服务不可用",
+      "maintenance": "服务维护中",
+      "overloaded": "服务过载",
+      "dependencyFailed": "依赖服务失败",
+      "timeout": "服务超时"
+    }
+  },
+  "cache": {
+    "strategy": {
+      "cacheHit": "缓存命中",
+      "cacheMiss": "缓存未命中",
+      "cacheSet": "缓存已设置",
+      "cacheInvalidated": "缓存已失效",
+      "batchInvalidated": "批量缓存已失效"
+    },
+    "warmup": {
+      "started": "缓存预热开始",
+      "completed": "缓存预热完成",
+      "failed": "缓存预热失败"
+    },
+    "monitor": {
+      "hitRateLow": "缓存命中率过低",
+      "statsReset": "缓存统计已重置"
+    },
+    "error": {
+      "connectionFailed": "缓存连接失败",
+      "serializationFailed": "序列化失败",
+      "deserializationFailed": "反序列化失败",
+      "operationFailed": "缓存操作失败"
+    }
+  },
+  "database": {
+    "batch": {
+      "insertStarted": "批量插入开始: {{count}} 条记录",
+      "insertCompleted": "批量插入完成: {{count}} 条记录, 耗时 {{duration}}ms",
+      "updateStarted": "批量更新开始: {{count}} 条记录",
+      "updateCompleted": "批量更新完成: {{count}} 条记录, 耗时 {{duration}}ms",
+      "upsertStarted": "批量插入或更新开始: {{count}} 条记录",
+      "upsertCompleted": "批量插入或更新完成: {{count}} 条记录, 耗时 {{duration}}ms",
+      "batchFailed": "批量操作失败: {{error}}"
+    },
+    "pagination": {
+      "invalidPage": "无效的页码: {{page}}",
+      "invalidSize": "无效的页大小: {{size}}",
+      "queryStarted": "分页查询开始: page={{page}}, size={{size}}",
+      "queryCompleted": "分页查询完成: 返回 {{count}} 条记录"
+    },
+    "monitor": {
+      "slowQueryDetected": "检测到慢查询: {{duration}}ms",
+      "statsReset": "慢查询统计已重置",
+      "thresholdUpdated": "慢查询阈值已更新: {{threshold}}ms",
+      "queryRecorded": "查询已记录: {{duration}}ms"
+    },
+    "error": {
+      "queryFailed": "查询失败: {{error}}"
+    }
+  },
+  "notification": {
+    "sla": {
+      "emailSubjectBreach": "SLA 违规告警: {{ticketTitle}}",
+      "emailSubjectWarning": "SLA 预警: {{ticketTitle}}",
+      "emailSubjectEscalation": "SLA 升级告警: {{ticketTitle}}",
+      "breachMessage": "工单 {{ticketId}} 已违反 SLA，请立即处理",
+      "warningMessage": "工单 {{ticketId}} 即将违反 SLA，请尽快处理",
+      "escalationMessage": "工单 {{ticketId}} SLA 违规已升级",
+      "sendFailed": "通知发送失败: {{error}}",
+      "channelUnavailable": "通知渠道不可用: {{channel}}",
+      "retryAttempt": "正在重试发送通知 (第 {{attempt}} 次)",
+      "allChannelsFailed": "所有通知渠道均失败",
+      "sendSuccess": "通知发送成功: {{channel}}",
+      "wechatCardTitle": "SLA 告警通知",
+      "wechatCardDescription": "工单 {{ticketId}} 需要您的关注"
+    },
+    "email": {
+      "sendStarted": "邮件发送开始: {{recipient}}",
+      "sendCompleted": "邮件发送完成: {{recipient}}",
+      "sendFailed": "邮件发送失败: {{error}}",
+      "retryAttempt": "邮件发送重试 (第 {{attempt}} 次)"
+    }
+  },
+  "compliance": {
+    "scheduler": {
+      "jobAdded": "合规报告任务已添加: {{reportType}}",
+      "jobRemoved": "合规报告任务已移除: {{reportType}}",
+      "jobExecuted": "合规报告任务已执行: {{reportType}}",
+      "jobFailed": "合规报告任务执行失败: {{error}}",
+      "invalidCron": "无效的 cron 表达式: {{expression}}",
+      "invalidReportType": "无效的报告类型: {{reportType}}",
+      "nextRun": "下次执行时间: {{nextRun}}"
+    }
+  },
+  "sync": {
+    "manager": {
+      "syncStarted": "同步开始",
+      "syncCompleted": "同步完成: {{count}} 条记录",
+      "syncFailed": "同步失败: {{error}}",
+      "conflictResolved": "冲突已解决: {{itemId}}",
+      "modelDownloaded": "模型已下载: {{modelName}}"
+    }
   }
 }

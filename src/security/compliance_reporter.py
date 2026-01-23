@@ -663,42 +663,95 @@ class ComplianceReporter:
         report_type: str,
         schedule: str,
         recipients: List[str],
-        config: Optional[Dict[str, Any]] = None
+        config: Optional[Dict[str, Any]] = None,
+        scheduler: Optional['ComplianceScheduler'] = None
     ) -> Dict[str, Any]:
         """
         Schedule automatic report generation.
         
+        集成 ComplianceScheduler 实现自动报告生成和发送。
+        
         Args:
             report_type: Type of report (GDPR, SOC2, ACCESS, PERMISSION_CHANGES)
-            schedule: Cron expression for scheduling
+            schedule: Cron expression for scheduling (分 时 日 月 周)
             recipients: List of email recipients
             config: Additional configuration
+            scheduler: ComplianceScheduler 实例（可选）
             
         Returns:
             Schedule configuration
+            
+        Raises:
+            ValueError: 无效的 cron 表达式或报告类型
+            
+        **Feature: system-optimization**
+        **Validates: Requirements 7.1, 7.2, 7.3**
         """
-        # In a real implementation, this would integrate with a job scheduler
-        # like Celery, APScheduler, or cloud-based schedulers
+        # 生成任务 ID
+        job_id = str(uuid4())
+        
+        # 验证 cron 表达式
+        parse_result = ComplianceScheduler.parse_cron_expression(schedule)
+        if not parse_result.is_valid:
+            error_msg = (
+                f"[{ComplianceSchedulerI18nKeys.INVALID_CRON}] "
+                f"Invalid cron expression: {schedule}. "
+                f"Error: {parse_result.error_message}"
+            )
+            self.logger.error(error_msg)
+            raise ValueError(error_msg)
+        
+        # 验证报告类型
+        if report_type not in ComplianceScheduler.SUPPORTED_REPORT_TYPES:
+            error_msg = (
+                f"[{ComplianceSchedulerI18nKeys.INVALID_REPORT_TYPE}] "
+                f"Invalid report type: {report_type}. "
+                f"Supported types: {ComplianceScheduler.SUPPORTED_REPORT_TYPES}"
+            )
+            self.logger.error(error_msg)
+            raise ValueError(error_msg)
         
         schedule_config = {
-            "id": str(uuid4()),
+            "id": job_id,
             "report_type": report_type,
             "schedule": schedule,
             "recipients": recipients,
             "config": config or {},
             "created_at": datetime.utcnow().isoformat(),
-            "enabled": True
+            "enabled": True,
+            "cron_parsed": parse_result.to_dict()
         }
         
-        self.logger.info(f"Scheduled {report_type} report with schedule: {schedule}")
-        
-        # TODO: Integrate with actual job scheduler
-        # scheduler.add_job(
-        #     func=self._generate_scheduled_report,
-        #     trigger=CronTrigger.from_crontab(schedule),
-        #     args=[schedule_config],
-        #     id=schedule_config["id"]
-        # )
+        # 如果提供了调度器，则添加到调度器
+        if scheduler:
+            try:
+                job = scheduler.add_job(
+                    job_id=job_id,
+                    report_type=report_type,
+                    cron_expression=schedule,
+                    recipients=recipients,
+                    config=config
+                )
+                
+                schedule_config["next_run"] = job.next_run.isoformat() if job.next_run else None
+                schedule_config["scheduler_integrated"] = True
+                
+                self.logger.info(
+                    f"[{ComplianceSchedulerI18nKeys.JOB_ADDED}] "
+                    f"Scheduled {report_type} report with schedule: {schedule}"
+                )
+                
+            except Exception as e:
+                self.logger.error(f"Failed to add job to scheduler: {e}")
+                schedule_config["scheduler_integrated"] = False
+                schedule_config["scheduler_error"] = str(e)
+        else:
+            # 没有调度器时，仅返回配置信息
+            schedule_config["scheduler_integrated"] = False
+            self.logger.info(
+                f"Scheduled {report_type} report configuration created "
+                f"(scheduler not provided): {schedule}"
+            )
         
         return schedule_config
     
@@ -976,3 +1029,777 @@ class ComplianceReporter:
         stmt = select(ComplianceReportModel).where(ComplianceReportModel.id == report_id)
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
+
+
+# ============================================================================
+# i18n 翻译键定义
+# ============================================================================
+
+class ComplianceSchedulerI18nKeys:
+    """合规报告调度器相关的 i18n 翻译键"""
+    
+    # 调度相关
+    JOB_ADDED = "compliance.scheduler.job_added"
+    JOB_REMOVED = "compliance.scheduler.job_removed"
+    JOB_PAUSED = "compliance.scheduler.job_paused"
+    JOB_RESUMED = "compliance.scheduler.job_resumed"
+    JOB_NOT_FOUND = "compliance.scheduler.job_not_found"
+    
+    # 报告相关
+    GENERATION_STARTED = "compliance.report.generation_started"
+    GENERATION_COMPLETED = "compliance.report.generation_completed"
+    SEND_SUCCESS = "compliance.report.send_success"
+    SEND_FAILED = "compliance.report.send_failed"
+    
+    # 错误消息
+    INVALID_CRON = "compliance.scheduler.invalid_cron"
+    INVALID_REPORT_TYPE = "compliance.scheduler.invalid_report_type"
+    SCHEDULER_NOT_RUNNING = "compliance.scheduler.not_running"
+    SCHEDULER_ALREADY_RUNNING = "compliance.scheduler.already_running"
+
+
+# ============================================================================
+# 调度任务数据类
+# ============================================================================
+
+@dataclass
+class ScheduledJob:
+    """调度任务信息"""
+    job_id: str
+    report_type: str
+    cron_expression: str
+    recipients: List[str]
+    config: Dict[str, Any] = field(default_factory=dict)
+    is_paused: bool = False
+    created_at: datetime = field(default_factory=datetime.utcnow)
+    last_run: Optional[datetime] = None
+    next_run: Optional[datetime] = None
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """转换为字典"""
+        return {
+            "job_id": self.job_id,
+            "report_type": self.report_type,
+            "cron_expression": self.cron_expression,
+            "recipients": self.recipients,
+            "config": self.config,
+            "is_paused": self.is_paused,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "last_run": self.last_run.isoformat() if self.last_run else None,
+            "next_run": self.next_run.isoformat() if self.next_run else None
+        }
+
+
+@dataclass
+class CronParseResult:
+    """Cron 表达式解析结果"""
+    is_valid: bool
+    minute: Optional[str] = None
+    hour: Optional[str] = None
+    day: Optional[str] = None
+    month: Optional[str] = None
+    day_of_week: Optional[str] = None
+    error_message: Optional[str] = None
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """转换为字典"""
+        return {
+            "is_valid": self.is_valid,
+            "minute": self.minute,
+            "hour": self.hour,
+            "day": self.day,
+            "month": self.month,
+            "day_of_week": self.day_of_week,
+            "error_message": self.error_message
+        }
+
+
+# ============================================================================
+# ComplianceScheduler - 合规报告调度器
+# ============================================================================
+
+class ComplianceScheduler:
+    """
+    合规报告调度器
+    
+    集成 APScheduler，实现:
+    - cron 表达式解析
+    - 添加、删除、暂停、恢复调度任务
+    - 自动报告生成和发送
+    - i18n 翻译键支持
+    
+    **Feature: system-optimization**
+    **Validates: Requirements 7.1, 7.2, 7.3**
+    """
+    
+    # 支持的报告类型
+    SUPPORTED_REPORT_TYPES = ["GDPR", "SOC2", "ACCESS", "PERMISSION_CHANGES"]
+    
+    def __init__(
+        self,
+        reporter: 'ComplianceReporter',
+        notification_manager: Optional[Any] = None
+    ):
+        """
+        初始化合规报告调度器
+        
+        Args:
+            reporter: ComplianceReporter 实例
+            notification_manager: NotificationManager 实例（可选）
+        """
+        self.reporter = reporter
+        self.notification_manager = notification_manager
+        self._scheduler = None
+        self._jobs: Dict[str, ScheduledJob] = {}
+        self._is_running = False
+        self.logger = logging.getLogger(__name__)
+    
+    @property
+    def is_running(self) -> bool:
+        """返回调度器是否正在运行"""
+        return self._is_running
+    
+    async def start(self) -> bool:
+        """
+        启动调度器
+        
+        Returns:
+            是否成功启动
+        """
+        if self._is_running:
+            self.logger.warning(
+                f"[{ComplianceSchedulerI18nKeys.SCHEDULER_ALREADY_RUNNING}] "
+                "Compliance scheduler is already running"
+            )
+            return False
+        
+        try:
+            from apscheduler.schedulers.asyncio import AsyncIOScheduler
+            
+            self._scheduler = AsyncIOScheduler()
+            self._scheduler.start()
+            self._is_running = True
+            
+            self.logger.info("Compliance scheduler started successfully")
+            return True
+            
+        except ImportError:
+            self.logger.warning(
+                "APScheduler not installed, using mock scheduler mode"
+            )
+            self._is_running = True
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Failed to start compliance scheduler: {e}")
+            return False
+    
+    async def stop(self) -> bool:
+        """
+        停止调度器
+        
+        Returns:
+            是否成功停止
+        """
+        if not self._is_running:
+            self.logger.warning(
+                f"[{ComplianceSchedulerI18nKeys.SCHEDULER_NOT_RUNNING}] "
+                "Compliance scheduler is not running"
+            )
+            return False
+        
+        try:
+            if self._scheduler:
+                self._scheduler.shutdown(wait=True)
+                self._scheduler = None
+            
+            self._is_running = False
+            self.logger.info("Compliance scheduler stopped successfully")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Failed to stop compliance scheduler: {e}")
+            return False
+    
+    def add_job(
+        self,
+        job_id: str,
+        report_type: str,
+        cron_expression: str,
+        recipients: List[str],
+        config: Optional[Dict[str, Any]] = None
+    ) -> ScheduledJob:
+        """
+        添加调度任务
+        
+        Args:
+            job_id: 任务 ID
+            report_type: 报告类型 (GDPR, SOC2, ACCESS, PERMISSION_CHANGES)
+            cron_expression: cron 表达式 (分 时 日 月 周)
+            recipients: 收件人列表
+            config: 额外配置
+            
+        Returns:
+            ScheduledJob 实例
+            
+        Raises:
+            ValueError: 无效的 cron 表达式或报告类型
+        """
+        # 验证报告类型
+        if report_type not in self.SUPPORTED_REPORT_TYPES:
+            error_msg = (
+                f"[{ComplianceSchedulerI18nKeys.INVALID_REPORT_TYPE}] "
+                f"Invalid report type: {report_type}. "
+                f"Supported types: {self.SUPPORTED_REPORT_TYPES}"
+            )
+            self.logger.error(error_msg)
+            raise ValueError(error_msg)
+        
+        # 解析并验证 cron 表达式
+        parse_result = self.parse_cron_expression(cron_expression)
+        if not parse_result.is_valid:
+            error_msg = (
+                f"[{ComplianceSchedulerI18nKeys.INVALID_CRON}] "
+                f"Invalid cron expression: {cron_expression}. "
+                f"Error: {parse_result.error_message}"
+            )
+            self.logger.error(error_msg)
+            raise ValueError(error_msg)
+        
+        # 创建调度任务
+        job = ScheduledJob(
+            job_id=job_id,
+            report_type=report_type,
+            cron_expression=cron_expression,
+            recipients=recipients,
+            config=config or {},
+            created_at=datetime.utcnow()
+        )
+        
+        # 添加到 APScheduler
+        if self._scheduler:
+            try:
+                from apscheduler.triggers.cron import CronTrigger
+                
+                trigger = CronTrigger.from_crontab(cron_expression)
+                
+                self._scheduler.add_job(
+                    self._execute_scheduled_report,
+                    trigger=trigger,
+                    args=[job_id, report_type, recipients, config or {}],
+                    id=job_id,
+                    name=f"Compliance Report: {report_type}",
+                    max_instances=1,
+                    coalesce=True
+                )
+                
+                # 获取下次运行时间
+                apscheduler_job = self._scheduler.get_job(job_id)
+                if apscheduler_job and apscheduler_job.next_run_time:
+                    job.next_run = apscheduler_job.next_run_time
+                    
+            except Exception as e:
+                self.logger.error(f"Failed to add job to APScheduler: {e}")
+        
+        # 保存任务
+        self._jobs[job_id] = job
+        
+        self.logger.info(
+            f"[{ComplianceSchedulerI18nKeys.JOB_ADDED}] "
+            f"Compliance report job added: {job_id} ({report_type})"
+        )
+        
+        return job
+    
+    def remove_job(self, job_id: str) -> bool:
+        """
+        删除调度任务
+        
+        Args:
+            job_id: 任务 ID
+            
+        Returns:
+            是否成功删除
+        """
+        if job_id not in self._jobs:
+            self.logger.warning(
+                f"[{ComplianceSchedulerI18nKeys.JOB_NOT_FOUND}] "
+                f"Job not found: {job_id}"
+            )
+            return False
+        
+        # 从 APScheduler 删除
+        if self._scheduler:
+            try:
+                self._scheduler.remove_job(job_id)
+            except Exception as e:
+                self.logger.warning(f"Failed to remove job from APScheduler: {e}")
+        
+        # 从内部存储删除
+        del self._jobs[job_id]
+        
+        self.logger.info(
+            f"[{ComplianceSchedulerI18nKeys.JOB_REMOVED}] "
+            f"Compliance report job removed: {job_id}"
+        )
+        
+        return True
+    
+    def pause_job(self, job_id: str) -> bool:
+        """
+        暂停调度任务
+        
+        Args:
+            job_id: 任务 ID
+            
+        Returns:
+            是否成功暂停
+        """
+        if job_id not in self._jobs:
+            self.logger.warning(
+                f"[{ComplianceSchedulerI18nKeys.JOB_NOT_FOUND}] "
+                f"Job not found: {job_id}"
+            )
+            return False
+        
+        # 从 APScheduler 暂停
+        if self._scheduler:
+            try:
+                self._scheduler.pause_job(job_id)
+            except Exception as e:
+                self.logger.warning(f"Failed to pause job in APScheduler: {e}")
+        
+        # 更新状态
+        self._jobs[job_id].is_paused = True
+        
+        self.logger.info(
+            f"[{ComplianceSchedulerI18nKeys.JOB_PAUSED}] "
+            f"Compliance report job paused: {job_id}"
+        )
+        
+        return True
+    
+    def resume_job(self, job_id: str) -> bool:
+        """
+        恢复调度任务
+        
+        Args:
+            job_id: 任务 ID
+            
+        Returns:
+            是否成功恢复
+        """
+        if job_id not in self._jobs:
+            self.logger.warning(
+                f"[{ComplianceSchedulerI18nKeys.JOB_NOT_FOUND}] "
+                f"Job not found: {job_id}"
+            )
+            return False
+        
+        # 从 APScheduler 恢复
+        if self._scheduler:
+            try:
+                self._scheduler.resume_job(job_id)
+            except Exception as e:
+                self.logger.warning(f"Failed to resume job in APScheduler: {e}")
+        
+        # 更新状态
+        self._jobs[job_id].is_paused = False
+        
+        # 更新下次运行时间
+        if self._scheduler:
+            apscheduler_job = self._scheduler.get_job(job_id)
+            if apscheduler_job and apscheduler_job.next_run_time:
+                self._jobs[job_id].next_run = apscheduler_job.next_run_time
+        
+        self.logger.info(
+            f"[{ComplianceSchedulerI18nKeys.JOB_RESUMED}] "
+            f"Compliance report job resumed: {job_id}"
+        )
+        
+        return True
+    
+    def get_job(self, job_id: str) -> Optional[ScheduledJob]:
+        """
+        获取调度任务
+        
+        Args:
+            job_id: 任务 ID
+            
+        Returns:
+            ScheduledJob 实例或 None
+        """
+        return self._jobs.get(job_id)
+    
+    def list_jobs(self) -> List[ScheduledJob]:
+        """
+        列出所有调度任务
+        
+        Returns:
+            ScheduledJob 列表
+        """
+        # 更新所有任务的下次运行时间
+        if self._scheduler:
+            for job_id, job in self._jobs.items():
+                apscheduler_job = self._scheduler.get_job(job_id)
+                if apscheduler_job and apscheduler_job.next_run_time:
+                    job.next_run = apscheduler_job.next_run_time
+        
+        return list(self._jobs.values())
+    
+    @staticmethod
+    def parse_cron_expression(expression: str) -> CronParseResult:
+        """
+        解析 cron 表达式
+        
+        支持标准 5 字段 cron 格式: 分 时 日 月 周
+        
+        Args:
+            expression: cron 表达式
+            
+        Returns:
+            CronParseResult 解析结果
+            
+        **Validates: Requirements 7.2**
+        """
+        if not expression or not isinstance(expression, str):
+            return CronParseResult(
+                is_valid=False,
+                error_message="Cron expression cannot be empty"
+            )
+        
+        # 分割表达式
+        parts = expression.strip().split()
+        
+        if len(parts) != 5:
+            return CronParseResult(
+                is_valid=False,
+                error_message=f"Cron expression must have 5 fields, got {len(parts)}"
+            )
+        
+        minute, hour, day, month, day_of_week = parts
+        
+        # 验证各字段
+        try:
+            # 验证分钟 (0-59)
+            if not ComplianceScheduler._validate_cron_field(minute, 0, 59):
+                return CronParseResult(
+                    is_valid=False,
+                    error_message=f"Invalid minute field: {minute}"
+                )
+            
+            # 验证小时 (0-23)
+            if not ComplianceScheduler._validate_cron_field(hour, 0, 23):
+                return CronParseResult(
+                    is_valid=False,
+                    error_message=f"Invalid hour field: {hour}"
+                )
+            
+            # 验证日 (1-31)
+            if not ComplianceScheduler._validate_cron_field(day, 1, 31):
+                return CronParseResult(
+                    is_valid=False,
+                    error_message=f"Invalid day field: {day}"
+                )
+            
+            # 验证月 (1-12)
+            if not ComplianceScheduler._validate_cron_field(month, 1, 12):
+                return CronParseResult(
+                    is_valid=False,
+                    error_message=f"Invalid month field: {month}"
+                )
+            
+            # 验证星期 (0-6, 0=Sunday)
+            if not ComplianceScheduler._validate_cron_field(day_of_week, 0, 6):
+                return CronParseResult(
+                    is_valid=False,
+                    error_message=f"Invalid day_of_week field: {day_of_week}"
+                )
+            
+            return CronParseResult(
+                is_valid=True,
+                minute=minute,
+                hour=hour,
+                day=day,
+                month=month,
+                day_of_week=day_of_week
+            )
+            
+        except Exception as e:
+            return CronParseResult(
+                is_valid=False,
+                error_message=f"Failed to parse cron expression: {str(e)}"
+            )
+    
+    @staticmethod
+    def _validate_cron_field(field: str, min_val: int, max_val: int) -> bool:
+        """
+        验证单个 cron 字段
+        
+        支持:
+        - * (任意值)
+        - 数字 (如 5)
+        - 范围 (如 1-5)
+        - 列表 (如 1,3,5)
+        - 步长 (如 */5, 1-10/2)
+        
+        Args:
+            field: 字段值
+            min_val: 最小允许值
+            max_val: 最大允许值
+            
+        Returns:
+            是否有效
+        """
+        if field == "*":
+            return True
+        
+        # 处理步长 (*/n 或 range/n)
+        if "/" in field:
+            parts = field.split("/")
+            if len(parts) != 2:
+                return False
+            
+            base, step = parts
+            
+            # 验证步长
+            try:
+                step_val = int(step)
+                if step_val <= 0:
+                    return False
+            except ValueError:
+                return False
+            
+            # 验证基础部分
+            if base == "*":
+                return True
+            
+            # 基础部分是范围
+            if "-" in base:
+                return ComplianceScheduler._validate_cron_range(base, min_val, max_val)
+            
+            # 基础部分是数字
+            try:
+                val = int(base)
+                return min_val <= val <= max_val
+            except ValueError:
+                return False
+        
+        # 处理列表 (1,3,5)
+        if "," in field:
+            parts = field.split(",")
+            for part in parts:
+                part = part.strip()
+                if "-" in part:
+                    if not ComplianceScheduler._validate_cron_range(part, min_val, max_val):
+                        return False
+                else:
+                    try:
+                        val = int(part)
+                        if not (min_val <= val <= max_val):
+                            return False
+                    except ValueError:
+                        return False
+            return True
+        
+        # 处理范围 (1-5)
+        if "-" in field:
+            return ComplianceScheduler._validate_cron_range(field, min_val, max_val)
+        
+        # 单个数字
+        try:
+            val = int(field)
+            return min_val <= val <= max_val
+        except ValueError:
+            return False
+    
+    @staticmethod
+    def _validate_cron_range(range_str: str, min_val: int, max_val: int) -> bool:
+        """验证 cron 范围字段"""
+        parts = range_str.split("-")
+        if len(parts) != 2:
+            return False
+        
+        try:
+            start = int(parts[0])
+            end = int(parts[1])
+            
+            if start > end:
+                return False
+            
+            return min_val <= start <= max_val and min_val <= end <= max_val
+            
+        except ValueError:
+            return False
+    
+    async def _execute_scheduled_report(
+        self,
+        job_id: str,
+        report_type: str,
+        recipients: List[str],
+        config: Dict[str, Any]
+    ):
+        """
+        执行调度的报告生成
+        
+        Args:
+            job_id: 任务 ID
+            report_type: 报告类型
+            recipients: 收件人列表
+            config: 配置参数
+        """
+        self.logger.info(
+            f"[{ComplianceSchedulerI18nKeys.GENERATION_STARTED}] "
+            f"Starting scheduled report generation: {report_type}"
+        )
+        
+        try:
+            # 计算报告周期
+            end_date = datetime.utcnow()
+            period_days = config.get("period_days", 30)
+            start_date = end_date - timedelta(days=period_days)
+            
+            # 生成报告
+            report = None
+            if report_type == "GDPR":
+                report = await self.reporter.generate_gdpr_report(
+                    start_date=start_date,
+                    end_date=end_date,
+                    include_details=config.get("include_details", True),
+                    save_to_db=True
+                )
+            elif report_type == "SOC2":
+                report = await self.reporter.generate_soc2_report(
+                    start_date=start_date,
+                    end_date=end_date,
+                    include_details=config.get("include_details", True),
+                    save_to_db=True
+                )
+            elif report_type == "ACCESS":
+                report = await self.reporter.generate_access_report(
+                    start_date=start_date,
+                    end_date=end_date,
+                    save_to_db=True
+                )
+            elif report_type == "PERMISSION_CHANGES":
+                report = await self.reporter.generate_permission_change_report(
+                    start_date=start_date,
+                    end_date=end_date,
+                    save_to_db=True
+                )
+            
+            # 更新任务的最后运行时间
+            if job_id in self._jobs:
+                self._jobs[job_id].last_run = datetime.utcnow()
+            
+            self.logger.info(
+                f"[{ComplianceSchedulerI18nKeys.GENERATION_COMPLETED}] "
+                f"{report_type} compliance report generated successfully"
+            )
+            
+            # 发送通知
+            if report and recipients and self.notification_manager:
+                await self._send_report_notification(
+                    report_type=report_type,
+                    report=report,
+                    recipients=recipients
+                )
+                
+        except Exception as e:
+            self.logger.error(
+                f"[{ComplianceSchedulerI18nKeys.SEND_FAILED}] "
+                f"Failed to generate scheduled report {report_type}: {e}"
+            )
+    
+    async def _send_report_notification(
+        self,
+        report_type: str,
+        report: Any,
+        recipients: List[str]
+    ):
+        """
+        发送报告通知
+        
+        Args:
+            report_type: 报告类型
+            report: 报告对象
+            recipients: 收件人列表
+        """
+        if not self.notification_manager:
+            self.logger.warning("NotificationManager not configured, skipping notification")
+            return
+        
+        try:
+            # 构建通知内容
+            subject = f"合规报告: {report_type} - {datetime.utcnow().strftime('%Y-%m-%d')}"
+            
+            # 获取报告摘要
+            if hasattr(report, 'summary'):
+                summary = report.summary
+            elif hasattr(report, 'to_dict'):
+                summary = report.to_dict().get('summary', {})
+            else:
+                summary = {}
+            
+            message = f"""
+            <h2>{report_type} 合规报告</h2>
+            <p>报告生成时间: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC</p>
+            <h3>摘要</h3>
+            <ul>
+            """
+            
+            for key, value in summary.items():
+                message += f"<li><strong>{key}</strong>: {value}</li>"
+            
+            message += "</ul>"
+            
+            # 发送通知
+            from src.ticket.notification_service import NotificationPriority
+            
+            await self.notification_manager.notify(
+                recipients=recipients,
+                subject=subject,
+                message=message,
+                priority=NotificationPriority.MEDIUM,
+                metadata={
+                    "report_type": report_type,
+                    "generated_at": datetime.utcnow().isoformat()
+                }
+            )
+            
+            self.logger.info(
+                f"[{ComplianceSchedulerI18nKeys.SEND_SUCCESS}] "
+                f"Compliance report notification sent to: {recipients}"
+            )
+            
+        except Exception as e:
+            self.logger.error(
+                f"[{ComplianceSchedulerI18nKeys.SEND_FAILED}] "
+                f"Failed to send report notification: {e}"
+            )
+    
+    def get_status(self) -> Dict[str, Any]:
+        """
+        获取调度器状态
+        
+        Returns:
+            状态信息字典
+        """
+        jobs_info = []
+        for job in self._jobs.values():
+            job_info = job.to_dict()
+            
+            # 从 APScheduler 获取最新的下次运行时间
+            if self._scheduler:
+                apscheduler_job = self._scheduler.get_job(job.job_id)
+                if apscheduler_job and apscheduler_job.next_run_time:
+                    job_info["next_run"] = apscheduler_job.next_run_time.isoformat()
+            
+            jobs_info.append(job_info)
+        
+        return {
+            "is_running": self._is_running,
+            "jobs_count": len(self._jobs),
+            "jobs": jobs_info,
+            "supported_report_types": self.SUPPORTED_REPORT_TYPES
+        }

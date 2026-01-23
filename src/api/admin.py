@@ -791,3 +791,519 @@ async def validate_sync_config(config: SyncStrategyCreate) -> ValidationResult:
     """
     service = get_sync_strategy_service()
     return service.validate_strategy(config)
+
+
+# ========== Bulk Import/Export ==========
+
+class ExportConfigsRequest(BaseModel):
+    """Request for exporting configurations."""
+    config_types: Optional[List[str]] = None  # ["llm", "database", "sync"]
+    include_sensitive: bool = False
+
+
+class ExportConfigsResponse(BaseModel):
+    """Response with exported configurations."""
+    version: str = "1.0"
+    exported_at: datetime
+    tenant_id: Optional[str]
+    configs: Dict[str, List[Dict[str, Any]]]
+    metadata: Dict[str, Any]
+
+
+class ImportConfigsRequest(BaseModel):
+    """Request for importing configurations."""
+    version: str
+    configs: Dict[str, List[Dict[str, Any]]]
+    overwrite_existing: bool = False
+    dry_run: bool = False
+
+
+class ImportResult(BaseModel):
+    """Result of a single import operation."""
+    config_type: str
+    config_name: str
+    status: str  # "created", "updated", "skipped", "error"
+    message: Optional[str] = None
+    config_id: Optional[str] = None
+
+
+class ImportConfigsResponse(BaseModel):
+    """Response from importing configurations."""
+    success: bool
+    dry_run: bool
+    total_processed: int
+    created: int
+    updated: int
+    skipped: int
+    errors: int
+    results: List[ImportResult]
+
+
+@router.get("/config-export", response_model=ExportConfigsResponse)
+async def export_configs(
+    config_types: Optional[str] = Query(
+        None,
+        description="Comma-separated config types to export (llm,database,sync). If not specified, exports all."
+    ),
+    include_sensitive: bool = Query(
+        False,
+        description="Include sensitive fields (API keys, passwords) - redacted by default"
+    ),
+    tenant_id: Optional[str] = Query(None),
+) -> ExportConfigsResponse:
+    """
+    Export configurations for backup or migration.
+
+    Exports LLM configurations, database connections, and sync strategies
+    in a structured JSON format that can be imported later.
+
+    **Requirement 9.3: Bulk Import/Export**
+    """
+    manager = get_config_manager()
+    sync_service = get_sync_strategy_service()
+
+    # Parse config types
+    types_to_export = []
+    if config_types:
+        types_to_export = [t.strip().lower() for t in config_types.split(",")]
+    else:
+        types_to_export = ["llm", "database", "sync"]
+
+    exported_configs: Dict[str, List[Dict[str, Any]]] = {}
+    metadata = {
+        "config_counts": {},
+        "export_options": {
+            "include_sensitive": include_sensitive,
+            "config_types": types_to_export
+        }
+    }
+
+    # Export LLM configurations
+    if "llm" in types_to_export:
+        llm_configs = await manager.list_llm_configs(tenant_id=tenant_id, active_only=False)
+        llm_export = []
+        for config in llm_configs:
+            config_dict = config.model_dump()
+            # Redact sensitive fields unless explicitly requested
+            if not include_sensitive:
+                if "api_key" in config_dict:
+                    config_dict["api_key"] = "***REDACTED***"
+                if "config_data" in config_dict and isinstance(config_dict["config_data"], dict):
+                    for key in ["api_key", "secret_key", "password", "token"]:
+                        if key in config_dict["config_data"]:
+                            config_dict["config_data"][key] = "***REDACTED***"
+            # Remove internal fields
+            config_dict.pop("created_at", None)
+            config_dict.pop("updated_at", None)
+            llm_export.append(config_dict)
+        exported_configs["llm"] = llm_export
+        metadata["config_counts"]["llm"] = len(llm_export)
+
+    # Export database configurations
+    if "database" in types_to_export:
+        db_configs = await manager.list_db_configs(tenant_id=tenant_id, active_only=False)
+        db_export = []
+        for config in db_configs:
+            config_dict = config.model_dump()
+            # Redact sensitive fields
+            if not include_sensitive:
+                if "password" in config_dict:
+                    config_dict["password"] = "***REDACTED***"
+                if "connection_string" in config_dict:
+                    config_dict["connection_string"] = "***REDACTED***"
+            # Remove internal fields
+            config_dict.pop("created_at", None)
+            config_dict.pop("updated_at", None)
+            db_export.append(config_dict)
+        exported_configs["database"] = db_export
+        metadata["config_counts"]["database"] = len(db_export)
+
+    # Export sync strategies
+    if "sync" in types_to_export:
+        sync_strategies = await sync_service.list_strategies(tenant_id=tenant_id, enabled_only=False)
+        sync_export = []
+        for strategy in sync_strategies:
+            strategy_dict = strategy.model_dump()
+            # Remove internal fields
+            strategy_dict.pop("created_at", None)
+            strategy_dict.pop("updated_at", None)
+            strategy_dict.pop("last_sync_at", None)
+            sync_export.append(strategy_dict)
+        exported_configs["sync"] = sync_export
+        metadata["config_counts"]["sync"] = len(sync_export)
+
+    return ExportConfigsResponse(
+        version="1.0",
+        exported_at=datetime.utcnow(),
+        tenant_id=tenant_id,
+        configs=exported_configs,
+        metadata=metadata
+    )
+
+
+@router.post("/config-import", response_model=ImportConfigsResponse)
+async def import_configs(
+    request: ImportConfigsRequest,
+    user_id: str = Query(..., description="User ID performing the import"),
+    user_name: str = Query("Unknown", description="User name"),
+    tenant_id: Optional[str] = Query(None),
+) -> ImportConfigsResponse:
+    """
+    Import configurations from a backup or migration file.
+
+    Imports LLM configurations, database connections, and sync strategies
+    from a structured JSON format previously exported.
+
+    Use dry_run=true to preview what would be imported without making changes.
+
+    **Requirement 9.3: Bulk Import/Export**
+    """
+    manager = get_config_manager()
+    sync_service = get_sync_strategy_service()
+
+    results: List[ImportResult] = []
+    created = 0
+    updated = 0
+    skipped = 0
+    errors = 0
+
+    # Validate version
+    if request.version not in ["1.0"]:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported import version: {request.version}. Supported versions: 1.0"
+        )
+
+    # Import LLM configurations
+    llm_configs = request.configs.get("llm", [])
+    for config_data in llm_configs:
+        try:
+            config_name = config_data.get("name", "Unknown")
+            config_id = config_data.get("id")
+
+            # Check for redacted values
+            if "***REDACTED***" in str(config_data):
+                results.append(ImportResult(
+                    config_type="llm",
+                    config_name=config_name,
+                    status="error",
+                    message="Cannot import config with redacted sensitive values. Export with include_sensitive=true."
+                ))
+                errors += 1
+                continue
+
+            # Check if exists
+            existing = None
+            if config_id:
+                existing = await manager.get_llm_config(config_id, tenant_id)
+
+            if existing and not request.overwrite_existing:
+                results.append(ImportResult(
+                    config_type="llm",
+                    config_name=config_name,
+                    status="skipped",
+                    message="Config already exists and overwrite_existing=false",
+                    config_id=config_id
+                ))
+                skipped += 1
+                continue
+
+            if not request.dry_run:
+                # Create or update config
+                llm_create = LLMConfigCreate(**{
+                    k: v for k, v in config_data.items()
+                    if k not in ["id", "tenant_id", "created_at", "updated_at"]
+                })
+
+                if existing:
+                    await manager.save_llm_config(
+                        config=LLMConfigUpdate(**llm_create.model_dump()),
+                        user_id=user_id,
+                        user_name=user_name,
+                        config_id=config_id,
+                        tenant_id=tenant_id
+                    )
+                    results.append(ImportResult(
+                        config_type="llm",
+                        config_name=config_name,
+                        status="updated",
+                        config_id=config_id
+                    ))
+                    updated += 1
+                else:
+                    result = await manager.save_llm_config(
+                        config=llm_create,
+                        user_id=user_id,
+                        user_name=user_name,
+                        tenant_id=tenant_id
+                    )
+                    results.append(ImportResult(
+                        config_type="llm",
+                        config_name=config_name,
+                        status="created",
+                        config_id=result.id
+                    ))
+                    created += 1
+            else:
+                # Dry run
+                status = "updated" if existing else "created"
+                results.append(ImportResult(
+                    config_type="llm",
+                    config_name=config_name,
+                    status=f"would_be_{status}",
+                    config_id=config_id
+                ))
+                if existing:
+                    updated += 1
+                else:
+                    created += 1
+
+        except Exception as e:
+            results.append(ImportResult(
+                config_type="llm",
+                config_name=config_data.get("name", "Unknown"),
+                status="error",
+                message=str(e)
+            ))
+            errors += 1
+
+    # Import database configurations
+    db_configs = request.configs.get("database", [])
+    for config_data in db_configs:
+        try:
+            config_name = config_data.get("name", "Unknown")
+            config_id = config_data.get("id")
+
+            # Check for redacted values
+            if "***REDACTED***" in str(config_data):
+                results.append(ImportResult(
+                    config_type="database",
+                    config_name=config_name,
+                    status="error",
+                    message="Cannot import config with redacted sensitive values. Export with include_sensitive=true."
+                ))
+                errors += 1
+                continue
+
+            # Check if exists
+            existing = None
+            if config_id:
+                existing = await manager.get_db_config(config_id, tenant_id)
+
+            if existing and not request.overwrite_existing:
+                results.append(ImportResult(
+                    config_type="database",
+                    config_name=config_name,
+                    status="skipped",
+                    message="Config already exists and overwrite_existing=false",
+                    config_id=config_id
+                ))
+                skipped += 1
+                continue
+
+            if not request.dry_run:
+                db_create = DBConfigCreate(**{
+                    k: v for k, v in config_data.items()
+                    if k not in ["id", "tenant_id", "created_at", "updated_at"]
+                })
+
+                if existing:
+                    await manager.save_db_config(
+                        config=DBConfigUpdate(**db_create.model_dump()),
+                        user_id=user_id,
+                        user_name=user_name,
+                        config_id=config_id,
+                        tenant_id=tenant_id
+                    )
+                    results.append(ImportResult(
+                        config_type="database",
+                        config_name=config_name,
+                        status="updated",
+                        config_id=config_id
+                    ))
+                    updated += 1
+                else:
+                    result = await manager.save_db_config(
+                        config=db_create,
+                        user_id=user_id,
+                        user_name=user_name,
+                        tenant_id=tenant_id
+                    )
+                    results.append(ImportResult(
+                        config_type="database",
+                        config_name=config_name,
+                        status="created",
+                        config_id=result.id
+                    ))
+                    created += 1
+            else:
+                status = "updated" if existing else "created"
+                results.append(ImportResult(
+                    config_type="database",
+                    config_name=config_name,
+                    status=f"would_be_{status}",
+                    config_id=config_id
+                ))
+                if existing:
+                    updated += 1
+                else:
+                    created += 1
+
+        except Exception as e:
+            results.append(ImportResult(
+                config_type="database",
+                config_name=config_data.get("name", "Unknown"),
+                status="error",
+                message=str(e)
+            ))
+            errors += 1
+
+    # Import sync strategies
+    sync_configs = request.configs.get("sync", [])
+    for config_data in sync_configs:
+        try:
+            config_name = config_data.get("name", "Unknown")
+            strategy_id = config_data.get("id")
+
+            # Check if exists
+            existing = None
+            if strategy_id:
+                existing = await sync_service.get_strategy(strategy_id, tenant_id)
+
+            if existing and not request.overwrite_existing:
+                results.append(ImportResult(
+                    config_type="sync",
+                    config_name=config_name,
+                    status="skipped",
+                    message="Strategy already exists and overwrite_existing=false",
+                    config_id=strategy_id
+                ))
+                skipped += 1
+                continue
+
+            if not request.dry_run:
+                sync_create = SyncStrategyCreate(**{
+                    k: v for k, v in config_data.items()
+                    if k not in ["id", "tenant_id", "created_at", "updated_at", "last_sync_at"]
+                })
+
+                if existing:
+                    await sync_service.save_strategy(
+                        strategy=SyncStrategyUpdate(**sync_create.model_dump()),
+                        user_id=user_id,
+                        user_name=user_name,
+                        strategy_id=strategy_id,
+                        tenant_id=tenant_id
+                    )
+                    results.append(ImportResult(
+                        config_type="sync",
+                        config_name=config_name,
+                        status="updated",
+                        config_id=strategy_id
+                    ))
+                    updated += 1
+                else:
+                    result = await sync_service.save_strategy(
+                        strategy=sync_create,
+                        user_id=user_id,
+                        user_name=user_name,
+                        tenant_id=tenant_id
+                    )
+                    results.append(ImportResult(
+                        config_type="sync",
+                        config_name=config_name,
+                        status="created",
+                        config_id=result.id
+                    ))
+                    created += 1
+            else:
+                status = "updated" if existing else "created"
+                results.append(ImportResult(
+                    config_type="sync",
+                    config_name=config_name,
+                    status=f"would_be_{status}",
+                    config_id=strategy_id
+                ))
+                if existing:
+                    updated += 1
+                else:
+                    created += 1
+
+        except Exception as e:
+            results.append(ImportResult(
+                config_type="sync",
+                config_name=config_data.get("name", "Unknown"),
+                status="error",
+                message=str(e)
+            ))
+            errors += 1
+
+    return ImportConfigsResponse(
+        success=errors == 0,
+        dry_run=request.dry_run,
+        total_processed=len(results),
+        created=created,
+        updated=updated,
+        skipped=skipped,
+        errors=errors,
+        results=results
+    )
+
+
+@router.post("/config-import/validate", response_model=ValidationResult)
+async def validate_import_file(
+    request: ImportConfigsRequest,
+) -> ValidationResult:
+    """
+    Validate an import file without importing.
+
+    Checks the structure and content of the import file and returns
+    validation errors if any.
+
+    **Requirement 9.3: Bulk Import/Export**
+    """
+    errors: List[str] = []
+    warnings: List[str] = []
+
+    # Validate version
+    if request.version not in ["1.0"]:
+        errors.append(f"Unsupported version: {request.version}")
+
+    # Validate configs structure
+    valid_types = ["llm", "database", "sync"]
+    for config_type in request.configs.keys():
+        if config_type not in valid_types:
+            warnings.append(f"Unknown config type: {config_type}")
+
+    # Validate LLM configs
+    for i, config in enumerate(request.configs.get("llm", [])):
+        if not config.get("name"):
+            errors.append(f"LLM config [{i}]: missing required field 'name'")
+        if not config.get("provider"):
+            errors.append(f"LLM config [{i}]: missing required field 'provider'")
+        if "***REDACTED***" in str(config):
+            warnings.append(f"LLM config [{i}]: contains redacted values - cannot import")
+
+    # Validate database configs
+    for i, config in enumerate(request.configs.get("database", [])):
+        if not config.get("name"):
+            errors.append(f"Database config [{i}]: missing required field 'name'")
+        if not config.get("db_type"):
+            errors.append(f"Database config [{i}]: missing required field 'db_type'")
+        if not config.get("host"):
+            errors.append(f"Database config [{i}]: missing required field 'host'")
+        if "***REDACTED***" in str(config):
+            warnings.append(f"Database config [{i}]: contains redacted values - cannot import")
+
+    # Validate sync configs
+    for i, config in enumerate(request.configs.get("sync", [])):
+        if not config.get("name"):
+            errors.append(f"Sync config [{i}]: missing required field 'name'")
+        if not config.get("db_config_id"):
+            errors.append(f"Sync config [{i}]: missing required field 'db_config_id'")
+
+    return ValidationResult(
+        valid=len(errors) == 0,
+        errors=errors,
+        warnings=warnings
+    )

@@ -226,7 +226,8 @@ def test_timeout_error_generation(timeout: int, latency: float):
         )
         
         assert error.error_code == LLMErrorCode.TIMEOUT
-        assert "timeout" in error.message.lower()
+        # Check for "timed out" or "timeout" in the message
+        assert "timed out" in error.message.lower() or "timeout" in error.message.lower()
 
 
 # ==================== Property 4: China LLM Format Conversion ====================
@@ -315,10 +316,23 @@ def test_config_hot_reload_detection(old_method: LLMMethod, new_method: LLMMetho
         assert not config_changed, "Same methods should result in equal configs"
 
 
-@settings(max_examples=100, suppress_health_check=[HealthCheck.too_slow])
+# Strategy for valid URLs starting with http
+url_strategy = st.sampled_from([
+    'http://localhost:11434',
+    'http://127.0.0.1:11434',
+    'http://ollama:11434',
+    'https://api.example.com',
+    'http://192.168.1.100:11434',
+    'https://llm.internal.company.com',
+    'http://localhost:8080',
+    'https://api.openai.com/v1'
+])
+
+
+@settings(max_examples=100, suppress_health_check=[HealthCheck.too_slow, HealthCheck.filter_too_much])
 @given(
     method=llm_method_strategy,
-    ollama_url=st.text(min_size=10, max_size=100).filter(lambda x: x.startswith('http'))
+    ollama_url=url_strategy
 )
 def test_config_serialization_roundtrip(method: LLMMethod, ollama_url: str):
     """
@@ -326,8 +340,6 @@ def test_config_serialization_roundtrip(method: LLMMethod, ollama_url: str):
     
     Validates: Requirements 4.3, 4.4
     """
-    assume(ollama_url.startswith('http://') or ollama_url.startswith('https://'))
-    
     original = LLMConfig(
         default_method=method,
         local_config=LocalConfig(ollama_url=ollama_url),

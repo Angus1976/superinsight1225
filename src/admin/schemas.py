@@ -260,7 +260,9 @@ class SyncJobResponse(BaseModel):
     strategy_id: str
     status: str
     started_at: datetime
+    completed_at: Optional[datetime] = None
     message: str
+    error_message: Optional[str] = None
 
 
 # ============== SQL Builder ==============

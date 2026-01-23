@@ -1,17 +1,10 @@
 #!/bin/bash
 
 # SuperInsight 部署到 cloud2 环境
-# 自动化部署脚本
+# 使用 TCB 云端构建功能
 
 set -e
 
-# 配置
-ENV_ID="cloud2-3gegxdemf86cb89a"
-IMAGE_NAME="superinsight-api"
-SERVICE_NAME="superinsight-api"
-DOCKERFILE="deploy/tcb/Dockerfile.api"
-
-# 颜色
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
@@ -19,138 +12,134 @@ RED='\033[0;31m'
 NC='\033[0m'
 
 echo -e "${BLUE}╔═══════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║     SuperInsight 部署到 cloud2 环境                       ║${NC}"
-echo -e "${BLUE}╚═══════════════════════════════════════════════════════════╝${NC}"
+echo -e "${BLUE}║         SuperInsight 部署到 TCB Cloud2                    ║${NC}"
+echo -e "${BLUE}╚C}"
 echo ""
 
-echo -e "${GREEN}✓ 目标环境: $ENV_ID${NC}"
+# 环境配置
+ENV_ID="cloud2-3gegxdemf86cb89a"
+SERVICE_NAME="superinsight-api"
+REGION="ap-shanghai"
+
+echo -eV_ID${NC}"
 echo -e "${GREEN}✓ 服务名称: $SERVICE_NAME${NC}"
-echo -e "${GREEN}✓ 镜像名称: $IMAGE_NAME${NC}"
+echo -e "${GREEN}✓ 地域: $REGION${NC}"
 echo ""
 
-# 确认部署
-read -p "是否继续部署到 cloud2？(y/n) " -n 1 -r
-echo ""
-
-if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    echo "已取消部署"
-    exit 0
-fi
-
-# 步骤 1: 构建镜像
-echo ""
-echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${BLUE}[1/4] 构建 Docker 镜像${NC}"
-echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo ""
-
-if docker build -t "$IMAGE_NAME:latest" -f "$DOCKERFILE" .; then
-    echo -e "${GREEN}✓ 镜像构建成功${NC}"
-else
-    echo -e "${RED}✗ 镜像构建失败${NC}"
+# 检查 TCB CLI
+if ! command -v tcb &> /dev/null; then
+    echo -e "${RED}✗ TCB CLI 未安装${NC}"
     exit 1
 fi
 
-# 步骤 2: 登录 TCB
-echo ""
-echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${BLUE}[2/4] 登录 TCB 容器镜像仓库${NC}"
-echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${BLUE}[1/5] 准备部署文件...${NC}"
+
+# 创建临时部署目录
+DEPLOY_DIR="/tmp/superinsight-deploy-$(date +%s)"
+mkdir -p "$DEPLOY_DIR"
+
+# 复制必要文件
+echo "复制源代码..."
+cp -r src "$DEPLOY_DIR/"
+cp main.py "$DEPLOY_DIR/"
+cp requ_DIR/"
+_DIR/" 2>/dev/null || true
+cp alembic.ini "$DEPLOY_DIR/" 2>/dev/null || true
+cp deploy/tcb/Dockerfile.api "$DEPLOY_DIR/Dockerfile"
+
+echo -e "${GREEN}✓ 文件准备完成${NC}"
 echo ""
 
-if tcb cloudrun:login; then
-    echo -e "${GREEN}✓ 登录成功${NC}"
+echo -e "${BLUE}[2/5] 创建 cloudbaserc.json 配置...${NC}"
+
+# 创建 TCB 配置文件
+cat > "$DEPLOY_DIR/cloudbaserc.json" << EOF
+{
+  "envId": "$ENV_ID",
+  "region": "$REGION",
+  "functionRoot": "./functions",
+  "functions": [],
+  "framework": {
+    "name": "superinsight-api",
+    "plugins": {
+      "container": {
+        "use": "@cloudbase/framework-plugin-container",
+        "inputs": {
+          "serviceName": "$SERVICE_NAME",
+          "servicePath": "/",
+          "dockerfilePath": "./Dockerfile",
+          "containerPort": 8000,
+          "cpu": 2,
+          "mem": 4,
+          "minNum": 1,
+          "maxNum": 5,
+          "policyType": "cpu",
+          "policyThreshold": 70,
+          "envVariables": {
+            "ENVIRONMENT": "production",
+            "LOG_LEVEL": "INFO",
+     "PYTHONUNBUFFERED": "1"
+          },
+          "customLogs": "stdout"
+        }
+      }
+    }
+  }
+}
+EOF
+
+echo -e "${GREEN}✓ 配置文件创建完成${NC}"
+echo ""
+
+echo -e "${BLUE}[3/5] 使用 TCB Framework 部署...${NC}"
+echo "这将使用云端构建，无需本地 Docker"
+echo ""
+
+cd "$DEPLOY_DIR"
+
+# 使用 TCB Framework 部署
+tcb framework:deploy --verbose
+
+if [ $? -eq 0 ]; then
+    echo ""
+    echo -e "${GREEN}✓ 部署成功！${NC}"
 else
-    echo -e "${RED}✗ 登录失败${NC}"
+    echo ""
+    echo -e "${RED}✗ 部署失败${NC}"
     exit 1
 fi
 
-# 步骤 3: 推送镜像
 echo ""
-echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${BLUE}[3/4] 推送镜像到 TCB（这可能需要几分钟）${NC}"
-echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${BLUE}[4/5] 查看服务状态...${NC}"
+tcb cloudrun:service:describe --service-name "$SERVICE_NAME" --env-id "$ENV_ID"
+
 echo ""
+echo -e "${BLUE}[5/5] 获取访问地址...${NC}"
 
-TCB_REGISTRY="ccr.ccs.tencentyun.com"
-TCB_NAMESPACE="tcb_${ENV_ID}"
-REMOTE_IMAGE="${TCB_REGISTRY}/${TCB_NAMESPACE}/${IMAGE_NAME}:latest"
+# 获取服务访问地址
+SERVICE_INFO=$(tcb cloudrun:service:describe --service-name "$SERVICE_NAME" --env-id "$ENV_ID" 2>/dev/null)
 
-echo "标记镜像: $REMOTE_IMAGE"
-docker tag "${IMAGE_NAME}:latest" "$REMOTE_IMAGE"
-
-echo "推送镜像..."
-if docker push "$REMOTE_IMAGE"; then
-    echo -e "${GREEN}✓ 镜像推送成功${NC}"
-else
-    echo -e "${RED}✗ 镜像推送失败${NC}"
-    exit 1
-fi
-
-# 步骤 4: 部署服务
-echo ""
-echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${BLUE}[4/4] 部署服务到 CloudRun${NC}"
-echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo ""
-
-# 检查服务是否存在
-if tcb cloudrun:service:describe --service-name "$SERVICE_NAME" --env-id "$ENV_ID" &> /dev/null; then
-    echo "服务已存在，更新服务..."
-    if tcb cloudrun:service:update \
-        --env-id "$ENV_ID" \
-        --service-name "$SERVICE_NAME" \
-        --image "$REMOTE_IMAGE"; then
-        echo -e "${GREEN}✓ 服务更新成功${NC}"
-    else
-        echo -e "${RED}✗ 服务更新失败${NC}"
-        exit 1
-    fi
-else
-    echo "创建新服务..."
-    if tcb cloudrun:service:create \
-        --env-id "$ENV_ID" \
-        --service-name "$SERVICE_NAME" \
-        --image "$REMOTE_IMAGE" \
-        --cpu 2 \
-        --mem 4 \
-        --min-num 1 \
-        --max-num 5 \
-        --container-port 8000; then
-        echo -e "${GREEN}✓ 服务创建成功${NC}"
-    else
-        echo -e "${RED}✗ 服务创建失败${NC}"
-        exit 1
-    fi
-fi
-
-# 完成
 echo ""
 echo -e "${GREEN}╔═══════════════════════════════════════════════════════════╗${NC}"
-echo -e "${GREEN}║                  🎉 部署成功！                            ║${NC}"
+echo -e "${GREEN}║                  🎉 部署完成！                            ║${NC}"
 echo -e "${GREEN}╚═══════════════════════════════════════════════════════════╝${NC}"
 echo ""
 echo -e "${BLUE}📍 部署信息：${NC}"
-echo ""
-echo "  环境 ID:    $ENV_ID"
-echo "  服务名称:   $SERVICE_NAME"
-echo "  镜像地址:   $REMOTE_IMAGE"
+echo "  环境 ID: $ENV_ID"
+echo "  服务名称: $SERVICE_NAME"
+echo "  地域: $REGION"
 echo ""
 echo -e "${BLUE}🔧 常用命令：${NC}"
+echo "  查看服务: tcb cloudrun:service:describe --service-name $SERVICE_NAME --env-id $ENV_ID"
+echo "  查看日志: tcb cloudrun:service:log --service-name $SERVICE_NAME --env-id $ENV_ID --follow"
+echo "  更新服务: cd $DEPLOY_DIR && tcb framework:deploy"
 echo ""
-echo "  查看服务详情:"
-echo "    tcb cloudrun:service:describe --service-name $SERVICE_NAME --env-id $ENV_ID"
+echo -e "${BLUE}📝 访问地址：${NC}"
+echo "  请在 TCB 控制台查看服务访问地址"
+echo "  https://console.cloud.tencent.com/tcb/env/index?envId=$ENV_ID"
 echo ""
-echo "  查看实时日志:"
-echo "    tcb cloudrun:service:log --service-name $SERVICE_NAME --env-id $ENV_ID --follow"
-echo ""
-echo "  查看服务列表:"
-echo "    tcb cloudrun:service:list --env-id $ENV_ID"
-echo ""
-echo -e "${BLUE}📝 下一步：${NC}"
-echo ""
-echo "  1. 等待服务启动（约 2-3 分钟）"
-echo "  2. 查看服务日志确认启动成功"
-echo "  3. 在 TCB 控制台配置自定义域名"
-echo "  4. 配置环境变量（如需要）"
+
+# 清理临时文件（可选）
+# rm -rf "$DEPLOY_DIR"
+echo -e "${YELLOW}临时文件保存在: $DEPLOY_DIR${NC}"
 echo ""

@@ -5,7 +5,7 @@ Provides REST API endpoints for Ragas evaluation, trend analysis,
 and quality monitoring functionality.
 """
 
-from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
+from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks, Query
 from fastapi.responses import JSONResponse
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timedelta
@@ -19,6 +19,10 @@ from src.ragas_integration import (
     MonitoringConfig
 )
 from src.models.annotation import Annotation
+from src.database.connection import get_db_session
+from src.api.ragas_repository import EvaluationResultRepository, SyncEvaluationResultRepository
+from src.i18n import get_translation
+from sqlalchemy.orm import Session
 
 
 logger = logging.getLogger(__name__)
@@ -28,6 +32,11 @@ router = APIRouter(prefix="/api/ragas", tags=["ragas"])
 ragas_evaluator = RagasEvaluator()
 trend_analyzer = QualityTrendAnalyzer()
 quality_monitor = QualityMonitor()
+
+
+def get_repository(db: Session = Depends(get_db_session)) -> SyncEvaluationResultRepository:
+    """Dependency to get evaluation result repository."""
+    return SyncEvaluationResultRepository(db)
 
 
 # =============================================================================
@@ -74,21 +83,35 @@ class AlertAcknowledgeRequest(BaseModel):
     alert_id: str = Field(..., description="ID of the alert to acknowledge")
 
 
+class EvaluationListResponse(BaseModel):
+    """Response model for listing evaluation results."""
+    
+    success: bool = Field(default=True, description="Whether the request was successful")
+    evaluations: List[Dict[str, Any]] = Field(default_factory=list, description="List of evaluation results")
+    total_count: int = Field(default=0, description="Total number of matching results")
+    skip: int = Field(default=0, description="Number of records skipped")
+    limit: int = Field(default=100, description="Maximum number of records returned")
+
+
 # =============================================================================
 # Evaluation Endpoints
 # =============================================================================
 
 
 @router.post("/evaluate")
-async def evaluate_annotations(request: EvaluationRequest) -> JSONResponse:
+async def evaluate_annotations(
+    request: EvaluationRequest,
+    repository: SyncEvaluationResultRepository = Depends(get_repository)
+) -> JSONResponse:
     """
     Evaluate annotations using Ragas metrics.
     
     Args:
         request: Evaluation request containing annotation IDs and options
+        repository: Evaluation result repository for persistence
         
     Returns:
-        Ragas evaluation results
+        Ragas evaluation results with evaluation_id for retrieval
     """
     try:
         # TODO: In production, fetch annotations from database
@@ -117,44 +140,134 @@ async def evaluate_annotations(request: EvaluationRequest) -> JSONResponse:
         trend_analyzer.add_evaluation_result(result)
         quality_monitor.add_evaluation_result(result)
         
+        # Save result to database
+        try:
+            result_dict = result.to_dict()
+            result_dict['annotation_ids'] = request.annotation_ids
+            evaluation_id = repository.save(result_dict)
+            
+            logger.info(
+                get_translation("ragas.api.evaluate_saved", default="Evaluation result saved"),
+                extra={"evaluation_id": evaluation_id}
+            )
+        except Exception as save_error:
+            # Log error but don't fail the request - evaluation was successful
+            logger.error(
+                get_translation("ragas.api.save_failed", default="Failed to save evaluation result"),
+                extra={"error": str(save_error)}
+            )
+        
         return JSONResponse(
             status_code=200,
             content={
                 "success": True,
                 "evaluation_result": result.to_dict(),
-                "message": "Evaluation completed successfully"
+                "message": get_translation("ragas.api.evaluate_success", default="Evaluation completed successfully")
             }
         )
         
     except Exception as e:
         logger.error(f"Evaluation failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Evaluation failed: {str(e)}")
+        raise HTTPException(
+            status_code=500, 
+            detail=get_translation("ragas.api.evaluate_error", default=f"Evaluation failed: {str(e)}")
+        )
 
 
 @router.get("/evaluate/{evaluation_id}")
-async def get_evaluation_result(evaluation_id: str) -> JSONResponse:
+async def get_evaluation_result(
+    evaluation_id: str,
+    repository: SyncEvaluationResultRepository = Depends(get_repository)
+) -> JSONResponse:
     """
     Get evaluation result by ID.
     
     Args:
         evaluation_id: ID of the evaluation result
+        repository: Evaluation result repository for retrieval
         
     Returns:
         Evaluation result details
     """
     try:
-        # TODO: Implement evaluation result storage and retrieval
+        result = repository.get_by_id(evaluation_id)
+        
+        if result:
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "success": True,
+                    "evaluation_result": result,
+                    "message": get_translation("ragas.api.get_success", default="Evaluation result retrieved successfully")
+                }
+            )
+        else:
+            return JSONResponse(
+                status_code=404,
+                content={
+                    "success": False,
+                    "message": get_translation("ragas.api.not_found", default="Evaluation result not found")
+                }
+            )
+        
+    except Exception as e:
+        logger.error(f"Failed to get evaluation result: {e}")
+        raise HTTPException(
+            status_code=500, 
+            detail=get_translation("ragas.api.get_error", default=f"Failed to get evaluation result: {str(e)}")
+        )
+
+
+@router.get("/evaluations")
+async def list_evaluation_results(
+    skip: int = Query(default=0, ge=0, description="Number of records to skip"),
+    limit: int = Query(default=100, ge=1, le=1000, description="Maximum number of records to return"),
+    start_date: Optional[datetime] = Query(default=None, description="Start date for filtering (ISO format)"),
+    end_date: Optional[datetime] = Query(default=None, description="End date for filtering (ISO format)"),
+    task_id: Optional[str] = Query(default=None, description="Filter by task ID"),
+    repository: SyncEvaluationResultRepository = Depends(get_repository)
+) -> JSONResponse:
+    """
+    List evaluation results with pagination and optional date filtering.
+    
+    Args:
+        skip: Number of records to skip (for pagination)
+        limit: Maximum number of records to return
+        start_date: Optional start date for filtering (inclusive)
+        end_date: Optional end date for filtering (inclusive)
+        task_id: Optional task ID for filtering
+        repository: Evaluation result repository
+        
+    Returns:
+        List of evaluation results with pagination info
+    """
+    try:
+        results = repository.list(
+            skip=skip,
+            limit=limit,
+            start_date=start_date,
+            end_date=end_date,
+            task_id=task_id
+        )
+        
         return JSONResponse(
-            status_code=404,
+            status_code=200,
             content={
-                "success": False,
-                "message": "Evaluation result not found"
+                "success": True,
+                "evaluations": results,
+                "total_count": len(results),
+                "skip": skip,
+                "limit": limit,
+                "message": get_translation("ragas.api.list_success", default="Evaluation results retrieved successfully")
             }
         )
         
     except Exception as e:
-        logger.error(f"Failed to get evaluation result: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to get evaluation result: {str(e)}")
+        logger.error(f"Failed to list evaluation results: {e}")
+        raise HTTPException(
+            status_code=500, 
+            detail=get_translation("ragas.api.list_error", default=f"Failed to list evaluation results: {str(e)}")
+        )
 
 
 @router.get("/metrics/available")

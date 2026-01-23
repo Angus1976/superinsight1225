@@ -244,6 +244,484 @@ TRANSLATIONS: Dict[str, Dict[str, Any]] = {
         'repair_executed': '修复 {repair_id} 执行成功',
         'job_cancelled': '任务 {job_id} 已取消',
         'quality_check_triggered': '任务 {task_id} 的质量检查已触发',
+        
+        # ============================================================================
+        # 系统优化模块 i18n 翻译键 (System Optimization Module)
+        # ============================================================================
+        
+        # 错误响应 (Error Response) - error.*
+        'error.validation.invalid_input': '输入数据无效',
+        'error.validation.missing_field': '缺少必填字段',
+        'error.validation.invalid_format': '格式无效',
+        'error.validation.invalid_value': '值无效',
+        'error.validation.field_too_long': '字段过长',
+        'error.validation.field_too_short': '字段过短',
+        'error.validation.invalid_type': '类型无效',
+        'error.validation.invalid_range': '值超出范围',
+        'error.validation.invalid_enum': '枚举值无效',
+        'error.validation.invalid_json': 'JSON格式无效',
+        
+        'error.auth.invalid_credentials': '用户名或密码错误',
+        'error.auth.token_expired': '令牌已过期',
+        'error.auth.token_invalid': '令牌无效',
+        'error.auth.token_missing': '缺少认证令牌',
+        'error.auth.session_expired': '会话已过期',
+        'error.auth.account_locked': '账户已锁定',
+        'error.auth.account_disabled': '账户已禁用',
+        
+        'error.permission.access_denied': '访问被拒绝',
+        'error.permission.insufficient_role': '权限不足',
+        'error.permission.resource_forbidden': '禁止访问该资源',
+        'error.permission.operation_forbidden': '禁止执行该操作',
+        'error.permission.tenant_mismatch': '租户不匹配',
+        
+        'error.not_found.resource': '资源未找到',
+        'error.not_found.user': '用户未找到',
+        'error.not_found.task': '任务未找到',
+        'error.not_found.project': '项目未找到',
+        'error.not_found.annotation': '标注未找到',
+        'error.not_found.data_source': '数据源未找到',
+        'error.not_found.evaluation': '评估结果未找到',
+        'error.not_found.rule': '规则未找到',
+        'error.not_found.endpoint': '端点未找到',
+        
+        'error.conflict.resource_exists': '资源已存在',
+        'error.conflict.version_mismatch': '版本不匹配',
+        'error.conflict.state_invalid': '状态无效',
+        'error.conflict.duplicate_key': '键值重复',
+        'error.conflict.concurrent_update': '并发更新冲突',
+        
+        'error.rate_limit.exceeded': '请求频率超限',
+        'error.rate_limit.api_quota': 'API配额已用尽',
+        'error.rate_limit.user_quota': '用户配额已用尽',
+        
+        'error.internal.server_error': '服务器内部错误',
+        'error.internal.database_error': '数据库错误',
+        'error.internal.cache_error': '缓存错误',
+        'error.internal.processing_error': '处理错误',
+        'error.internal.configuration_error': '配置错误',
+        'error.internal.unexpected_error': '未知错误',
+        
+        'error.service.unavailable': '服务不可用',
+        'error.service.maintenance': '服务维护中',
+        'error.service.overloaded': '服务过载',
+        'error.service.dependency_failed': '依赖服务失败',
+        'error.service.timeout': '服务超时',
+        
+        # 缓存策略 (Cache Strategy) - cache.*
+        'cache.strategy.cache_hit': '缓存命中',
+        'cache.strategy.cache_miss': '缓存未命中',
+        'cache.strategy.cache_set': '缓存已设置',
+        'cache.strategy.cache_invalidated': '缓存已失效',
+        'cache.strategy.batch_invalidated': '批量缓存已失效',
+        
+        'cache.warmup.started': '缓存预热开始',
+        'cache.warmup.completed': '缓存预热完成',
+        'cache.warmup.failed': '缓存预热失败',
+        
+        'cache.monitor.hit_rate_low': '缓存命中率过低',
+        'cache.monitor.stats_reset': '缓存统计已重置',
+        
+        'cache.error.connection_failed': '缓存连接失败',
+        'cache.error.serialization_failed': '序列化失败',
+        'cache.error.deserialization_failed': '反序列化失败',
+        'cache.error.operation_failed': '缓存操作失败',
+        
+        # 数据库操作 (Database Operations) - database.*
+        'database.batch.insert_started': '批量插入开始: {count} 条记录',
+        'database.batch.insert_completed': '批量插入完成: {count} 条记录, 耗时 {duration}ms',
+        'database.batch.update_started': '批量更新开始: {count} 条记录',
+        'database.batch.update_completed': '批量更新完成: {count} 条记录, 耗时 {duration}ms',
+        'database.batch.upsert_started': '批量插入或更新开始: {count} 条记录',
+        'database.batch.upsert_completed': '批量插入或更新完成: {count} 条记录, 耗时 {duration}ms',
+        'database.error.batch_failed': '批量操作失败: {error}',
+        
+        'database.pagination.invalid_page': '无效的页码: {page}',
+        'database.pagination.invalid_size': '无效的页大小: {size}',
+        'database.pagination.query_started': '分页查询开始: page={page}, size={size}',
+        'database.pagination.query_completed': '分页查询完成: 返回 {count} 条记录',
+        'database.error.query_failed': '查询失败: {error}',
+        
+        'database.monitor.slow_query_detected': '检测到慢查询: {duration}ms, SQL: {sql}',
+        'database.monitor.stats_reset': '慢查询统计已重置',
+        'database.monitor.threshold_updated': '慢查询阈值已更新: {threshold}ms',
+        'database.monitor.query_recorded': '查询已记录: {duration}ms',
+        
+        # SLA 通知 (SLA Notification) - sla_monitor.*
+        'sla_monitor.notification.email_subject_breach': 'SLA 违规告警: {ticket_title}',
+        'sla_monitor.notification.email_subject_warning': 'SLA 预警: {ticket_title}',
+        'sla_monitor.notification.email_subject_escalation': 'SLA 升级告警: {ticket_title}',
+        
+        'sla_monitor.notification.breach_message': '工单 {ticket_id} 已违反 SLA，请立即处理',
+        'sla_monitor.notification.warning_message': '工单 {ticket_id} 即将违反 SLA，请尽快处理',
+        'sla_monitor.notification.escalation_message': '工单 {ticket_id} SLA 违规已升级',
+        
+        'sla_monitor.notification.send_failed': '通知发送失败: {error}',
+        'sla_monitor.notification.channel_unavailable': '通知渠道不可用: {channel}',
+        'sla_monitor.notification.retry_attempt': '正在重试发送通知 (第 {attempt} 次)',
+        'sla_monitor.notification.all_channels_failed': '所有通知渠道均失败',
+        'sla_monitor.notification.send_success': '通知发送成功: {channel}',
+        
+        'sla_monitor.notification.wechat_card_title': 'SLA 告警通知',
+        'sla_monitor.notification.wechat_card_description': '工单 {ticket_id} 需要您的关注',
+        
+        # 合规报告调度 (Compliance Scheduler) - compliance.*
+        'compliance.scheduler.job_added': '合规报告任务已添加: {report_type}',
+        'compliance.scheduler.job_removed': '合规报告任务已移除: {report_type}',
+        'compliance.scheduler.job_executed': '合规报告任务已执行: {report_type}',
+        'compliance.scheduler.job_failed': '合规报告任务执行失败: {error}',
+        'compliance.scheduler.invalid_cron': '无效的 cron 表达式: {expression}',
+        'compliance.scheduler.invalid_report_type': '无效的报告类型: {report_type}',
+        'compliance.scheduler.next_run': '下次执行时间: {next_run}',
+        
+        # 同步管理器 (Sync Manager) - sync.*
+        'sync.manager.sync_started': '同步开始',
+        'sync.manager.sync_completed': '同步完成: {count} 条记录',
+        'sync.manager.sync_failed': '同步失败: {error}',
+        'sync.manager.conflict_resolved': '冲突已解决: {item_id}',
+        'sync.manager.model_downloaded': '模型已下载: {model_name}',
+        
+        # 报告服务 (Report Service) - report.*
+        'report.email.send_started': '邮件发送开始: {recipient}',
+        'report.email.send_completed': '邮件发送完成: {recipient}',
+        'report.email.send_failed': '邮件发送失败: {error}',
+        'report.email.retry_attempt': '邮件发送重试 (第 {attempt} 次)',
+        
+        # ============================================================================
+        # 安全控制模块 (Security Control Module)
+        # ============================================================================
+        
+        # 加密服务 (Encryption Service) - security.encryption.*
+        'security.encryption.empty_plaintext': '明文不能为空',
+        'security.encryption.empty_ciphertext': '密文不能为空',
+        'security.encryption.invalid_ciphertext': '无效的密文格式',
+        'security.encryption.invalid_key': '无效的加密密钥',
+        'security.encryption.no_key': '未提供加密密钥',
+        'security.encryption.encrypt_success': '加密成功',
+        'security.encryption.encrypt_failed': '加密失败',
+        'security.encryption.decrypt_success': '解密成功',
+        'security.encryption.decrypt_failed': '解密失败',
+        'security.encryption.key_generated': '密钥已生成',
+        'security.encryption.key_derived': '密钥已派生',
+        
+        # 速率限制 (Rate Limiting) - security.rate_limit.*
+        'security.rate_limit.exceeded': '请求频率超限，请稍后重试',
+        'security.rate_limit.limit_info': '限制: {limit} 次/{window}秒',
+        'security.rate_limit.remaining': '剩余请求次数: {remaining}',
+        'security.rate_limit.reset_time': '重置时间: {reset_time}',
+        'security.rate_limit.blocked': '请求已被阻止',
+        'security.rate_limit.config_updated': '速率限制配置已更新',
+        
+        # 输入验证 (Input Validation) - security.validation.*
+        'security.validation.invalid_email': '无效的邮箱格式',
+        'security.validation.invalid_phone': '无效的电话号码格式',
+        'security.validation.invalid_url': '无效的URL格式',
+        'security.validation.invalid_ip': '无效的IP地址格式',
+        'security.validation.invalid_uuid': '无效的UUID格式',
+        'security.validation.xss_detected': '检测到潜在的XSS攻击',
+        'security.validation.sql_injection_detected': '检测到潜在的SQL注入',
+        'security.validation.path_traversal_detected': '检测到路径遍历攻击',
+        'security.validation.field_required': '字段 {field} 是必填的',
+        'security.validation.field_too_long': '字段 {field} 超过最大长度 {max_length}',
+        'security.validation.field_too_short': '字段 {field} 少于最小长度 {min_length}',
+        'security.validation.field_invalid_pattern': '字段 {field} 格式不正确',
+        
+        # 审计日志 (Audit Logging) - security.audit.*
+        'security.audit.event_logged': '审计事件已记录',
+        'security.audit.login_success': '用户 {username} 登录成功',
+        'security.audit.login_failed': '用户 {username} 登录失败',
+        'security.audit.logout': '用户 {username} 已登出',
+        'security.audit.password_changed': '用户 {username} 密码已更改',
+        'security.audit.permission_changed': '用户 {username} 权限已更改',
+        'security.audit.resource_accessed': '资源 {resource} 被访问',
+        'security.audit.resource_created': '资源 {resource} 已创建',
+        'security.audit.resource_updated': '资源 {resource} 已更新',
+        'security.audit.resource_deleted': '资源 {resource} 已删除',
+        'security.audit.sensitive_operation': '敏感操作: {operation}',
+        'security.audit.suspicious_activity': '可疑活动: {activity}',
+        'security.audit.ip_blocked': 'IP {ip} 已被阻止',
+        'security.audit.rate_limit_exceeded': '用户 {username} 超过速率限制',
+        
+        # ============================================================================
+        # 监控和告警模块 (Monitoring and Alerting Module)
+        # ============================================================================
+        
+        # Prometheus 指标 - monitoring.metrics.*
+        'monitoring.metrics.counter_negative_value': '计数器值不能为负数',
+        'monitoring.metrics.metric_already_registered': '指标已注册: {name}',
+        'monitoring.metrics.metric_registered': '指标已注册: {name}',
+        'monitoring.metrics.metric_unregistered': '指标已取消注册: {name}',
+        
+        # 告警配置 - monitoring.alert.*
+        'monitoring.alert.invalid_duration': '无效的持续时间',
+        'monitoring.alert.invalid_value': '无效的阈值',
+        'monitoring.alert.invalid_cooldown': '无效的冷却时间',
+        'monitoring.alert.invalid_max_alerts': '无效的最大告警数',
+        'monitoring.alert.threshold_added': '告警阈值已添加: {id}',
+        'monitoring.alert.threshold_updated': '告警阈值已更新: {id}',
+        'monitoring.alert.threshold_removed': '告警阈值已移除: {id}',
+        'monitoring.alert.threshold_not_found': '告警阈值未找到: {id}',
+        'monitoring.alert.hourly_limit_reached': '每小时告警限制已达到',
+        'monitoring.alert.callback_error': '告警回调错误: {error}',
+        'monitoring.alert.config_updated': '告警配置已更新',
+        'monitoring.alert.cooldown_updated': '冷却时间已更新: {seconds}秒',
+        'monitoring.alert.max_alerts_updated': '每小时最大告警数已更新: {max_alerts}',
+        'monitoring.alert.channel_added': '通知渠道已添加: {channel}',
+        'monitoring.alert.channel_removed': '通知渠道已移除: {channel}',
+        'monitoring.alert.acknowledged': '告警已确认: {id}',
+        'monitoring.alert.resolved': '告警已解决: {id}',
+        
+        # 健康检查 - monitoring.health.*
+        'monitoring.health.timeout': '服务 {service} 健康检查超时',
+        'monitoring.health.database_connected': '数据库连接正常',
+        'monitoring.health.database_not_configured': '数据库未配置',
+        'monitoring.health.redis_connected': 'Redis 连接正常',
+        'monitoring.health.redis_not_installed': 'Redis 客户端未安装',
+        'monitoring.health.neo4j_connected': 'Neo4j 连接正常',
+        'monitoring.health.neo4j_not_configured': 'Neo4j 未配置',
+        'monitoring.health.label_studio_connected': 'Label Studio 连接正常',
+        'monitoring.health.label_studio_not_configured': 'Label Studio 未配置',
+        'monitoring.health.label_studio_error': 'Label Studio 错误: {code}',
+        'monitoring.health.api_connected': '{name} API 连接正常',
+        'monitoring.health.api_error': '{name} API 错误: {code}',
+        'monitoring.health.checker_registered': '健康检查器已注册: {name}',
+        'monitoring.health.checker_unregistered': '健康检查器已取消注册: {name}',
+        
+        # 服务告警 - monitoring.service_alert.*
+        'monitoring.service_alert.already_monitoring': '监控已在运行中',
+        'monitoring.service_alert.monitoring_started': '服务监控已启动',
+        'monitoring.service_alert.monitoring_stopped': '服务监控已停止',
+        'monitoring.service_alert.monitoring_error': '监控错误: {error}',
+        'monitoring.service_alert.alert_triggered': '服务告警触发: {service} 状态={status} 严重程度={severity}',
+        'monitoring.service_alert.recovery_triggered': '服务恢复通知: {service} 状态={status}',
+        'monitoring.service_alert.callback_error': '回调错误: {error}',
+        'monitoring.service_alert.config_updated': '服务告警配置已更新',
+        
+        # ============================================================================
+        # 企业本体模块 (Enterprise Ontology Module)
+        # ============================================================================
+        
+        # 本体管理器 - ontology.manager.*
+        'ontology.manager.initialized': '企业本体管理器已初始化',
+        'ontology.manager.entity_created': '本体实体已创建: {name}',
+        'ontology.manager.entity_updated': '本体实体已更新: {name}',
+        'ontology.manager.entity_deleted': '本体实体已删除: {id}',
+        'ontology.manager.relation_created': '本体关系已创建: {type}',
+        'ontology.manager.relation_updated': '本体关系已更新: {id}',
+        'ontology.manager.relation_deleted': '本体关系已删除: {id}',
+        'ontology.manager.cache_cleared': '本体缓存已清除',
+        'ontology.manager.lineage_tracked': '数据血缘已追踪: {entity_id}',
+        
+        # AI 数据转换器 - ontology.converter.*
+        'ontology.converter.initialized': 'AI 数据转换器已初始化',
+        'ontology.converter.conversion_started': '数据转换已开始: {format}',
+        'ontology.converter.conversion_completed': '数据转换已完成: {count} 条记录',
+        'ontology.converter.conversion_failed': '数据转换失败: {error}',
+        'ontology.converter.validation_passed': '数据验证通过',
+        'ontology.converter.validation_failed': '数据验证失败: {count} 条记录无效',
+        'ontology.converter.missing_question': '缺少问题/指令字段',
+        'ontology.converter.missing_answer': '缺少回答/输出字段',
+        
+        # 合规验证 - ontology.compliance.*
+        'ontology.compliance.check_started': '合规检查已开始',
+        'ontology.compliance.check_completed': '合规检查已完成',
+        'ontology.compliance.compliant': '实体合规',
+        'ontology.compliance.non_compliant': '实体不合规',
+        'ontology.compliance.missing_classification': '缺少数据分类等级',
+        'ontology.compliance.cross_border_violation': '数据不允许跨境传输到 {target}',
+        'ontology.compliance.pii_sensitivity_mismatch': '包含个人信息但敏感度等级不是高',
+        'ontology.compliance.pii_classification_mismatch': '包含个人信息但数据分类等级过低',
+        'ontology.compliance.missing_retention_period': '包含个人信息但未设置保留期限',
+        
+        # 实体类型 - ontology.entity_type.*
+        'ontology.entity_type.person': '人员',
+        'ontology.entity_type.organization': '组织',
+        'ontology.entity_type.document': '文档',
+        'ontology.entity_type.location': '位置',
+        'ontology.entity_type.department': '部门',
+        'ontology.entity_type.business_unit': '业务单元',
+        'ontology.entity_type.regulation': '法规政策',
+        'ontology.entity_type.contract': '合同',
+        'ontology.entity_type.approval': '审批流程',
+        'ontology.entity_type.seal': '印章',
+        'ontology.entity_type.invoice': '发票',
+        'ontology.entity_type.certificate': '资质证书',
+        'ontology.entity_type.budget': '预算',
+        'ontology.entity_type.project': '项目',
+        'ontology.entity_type.meeting': '会议',
+        'ontology.entity_type.policy': '内部政策',
+        
+        # 关系类型 - ontology.relation_type.*
+        'ontology.relation_type.belongs_to': '属于',
+        'ontology.relation_type.created_by': '创建者',
+        'ontology.relation_type.related_to': '关联',
+        'ontology.relation_type.reports_to': '汇报给',
+        'ontology.relation_type.approves': '审批',
+        'ontology.relation_type.seals': '用印',
+        'ontology.relation_type.complies_with': '合规于',
+        'ontology.relation_type.supervises': '监管',
+        'ontology.relation_type.delegates_to': '授权给',
+        'ontology.relation_type.manages': '管理',
+        'ontology.relation_type.participates_in': '参与',
+        'ontology.relation_type.signs': '签署',
+        'ontology.relation_type.reviews': '审核',
+        'ontology.relation_type.issues': '开具',
+        'ontology.relation_type.holds': '持有',
+        
+        # 数据分类 - ontology.classification.*
+        'ontology.classification.public': '公开',
+        'ontology.classification.internal': '内部',
+        'ontology.classification.confidential': '机密',
+        'ontology.classification.secret': '秘密',
+        'ontology.classification.top_secret': '绝密',
+        
+        # 敏感度等级 - ontology.sensitivity.*
+        'ontology.sensitivity.low': '低',
+        'ontology.sensitivity.medium': '中',
+        'ontology.sensitivity.high': '高',
+        'ontology.sensitivity.critical': '极高',
+        
+        # AI 数据格式 - ontology.format.*
+        'ontology.format.alpaca': 'Alpaca 格式',
+        'ontology.format.sharegpt': 'ShareGPT 格式',
+        'ontology.format.openai': 'OpenAI 微调格式',
+        'ontology.format.llama_factory': 'LLaMA-Factory 格式',
+        'ontology.format.fastchat': 'FastChat 格式',
+        'ontology.format.belle': 'BELLE 格式',
+        'ontology.format.custom': '自定义格式',
+        
+        # ============================================================================
+        # LLM 集成模块 (LLM Integration Module)
+        # ============================================================================
+        
+        # LLM 提供商类型 - llm.provider.*
+        'llm.provider.openai': 'OpenAI',
+        'llm.provider.groq': 'Groq',
+        'llm.provider.anthropic': 'Anthropic',
+        'llm.provider.qwen': '通义千问',
+        'llm.provider.zhipu': '智谱AI',
+        'llm.provider.baidu': '百度文心',
+        'llm.provider.tencent': '腾讯混元',
+        'llm.provider.ollama': 'Ollama',
+        'llm.provider.docker': 'Docker',
+        'llm.provider.azure': 'Azure OpenAI',
+        
+        # LLM 配置页面标签 - llm.config.*
+        'llm.config.title': 'LLM 配置',
+        'llm.config.subtitle': '配置和管理大语言模型提供商',
+        'llm.config.add_provider': '添加提供商',
+        'llm.config.edit_provider': '编辑提供商',
+        'llm.config.delete_provider': '删除提供商',
+        'llm.config.test_connection': '测试连接',
+        'llm.config.set_active': '设为活跃',
+        'llm.config.set_fallback': '设为备用',
+        'llm.config.provider_name': '提供商名称',
+        'llm.config.provider_type': '提供商类型',
+        'llm.config.deployment_mode': '部署模式',
+        'llm.config.api_endpoint': 'API 端点',
+        'llm.config.api_key': 'API 密钥',
+        'llm.config.model_name': '模型名称',
+        'llm.config.max_tokens': '最大 Token 数',
+        'llm.config.timeout': '超时时间（秒）',
+        'llm.config.max_retries': '最大重试次数',
+        'llm.config.local_mode': '本地模式',
+        'llm.config.cloud_mode': '云端模式',
+        
+        # LLM 错误消息 - llm.error.*
+        'llm.error.provider_unavailable': '提供商不可用',
+        'llm.error.rate_limit': '请求频率超限',
+        'llm.error.timeout': '请求超时',
+        'llm.error.invalid_config': '配置无效',
+        'llm.error.invalid_api_key': 'API 密钥无效',
+        'llm.error.invalid_endpoint': 'API 端点无效',
+        'llm.error.connection_failed': '连接失败',
+        'llm.error.authentication_failed': '认证失败',
+        'llm.error.model_not_found': '模型未找到',
+        'llm.error.quota_exceeded': '配额已用尽',
+        'llm.error.invalid_response': '响应格式无效',
+        'llm.error.provider_not_found': '提供商未找到',
+        'llm.error.cannot_delete_active': '无法删除活跃提供商',
+        'llm.error.failover_failed': '故障转移失败',
+        'llm.error.all_providers_failed': '所有提供商均失败',
+        'llm.error.max_retries_exceeded': '已超过最大重试次数',
+        
+        # LLM 状态消息 - llm.status.*
+        'llm.status.healthy': '健康',
+        'llm.status.unhealthy': '不健康',
+        'llm.status.connecting': '连接中',
+        'llm.status.connected': '已连接',
+        'llm.status.disconnected': '已断开',
+        'llm.status.active': '活跃',
+        'llm.status.inactive': '非活跃',
+        'llm.status.fallback': '备用',
+        'llm.status.checking': '检查中',
+        
+        # LLM 操作消息 - llm.action.*
+        'llm.action.add': '添加',
+        'llm.action.edit': '编辑',
+        'llm.action.delete': '删除',
+        'llm.action.test': '测试',
+        'llm.action.activate': '激活',
+        'llm.action.deactivate': '停用',
+        'llm.action.save': '保存',
+        'llm.action.cancel': '取消',
+        'llm.action.refresh': '刷新',
+        'llm.action.retry': '重试',
+        
+        # LLM 成功消息 - llm.success.*
+        'llm.success.provider_added': '提供商添加成功',
+        'llm.success.provider_updated': '提供商更新成功',
+        'llm.success.provider_deleted': '提供商删除成功',
+        'llm.success.connection_test': '连接测试成功',
+        'llm.success.provider_activated': '提供商已激活',
+        'llm.success.config_saved': '配置保存成功',
+        
+        # LLM 预标注 - llm.preannotation.*
+        'llm.preannotation.title': 'AI 预标注',
+        'llm.preannotation.start': '开始预标注',
+        'llm.preannotation.in_progress': '预标注进行中',
+        'llm.preannotation.completed': '预标注完成',
+        'llm.preannotation.failed': '预标注失败',
+        'llm.preannotation.confidence': '置信度',
+        'llm.preannotation.review_required': '需要审核',
+        
+        # LLM 健康监控 - llm.health.*
+        'llm.health.title': '健康监控',
+        'llm.health.check_started': '健康检查已启动',
+        'llm.health.check_completed': '健康检查完成',
+        'llm.health.check_failed': '健康检查失败',
+        'llm.health.provider_recovered': '提供商 {provider_id} 已恢复',
+        'llm.health.provider_unhealthy': '提供商 {provider_id} 不健康',
+        'llm.health.all_healthy': '所有提供商健康',
+        'llm.health.some_unhealthy': '{count} 个提供商不健康',
+        
+        # LLM 批处理 - llm.batch.*
+        'llm.batch.title': '批量处理',
+        'llm.batch.started': '批处理已启动',
+        'llm.batch.progress': '处理进度: {current}/{total}',
+        'llm.batch.completed': '批处理完成',
+        'llm.batch.failed': '批处理失败',
+        'llm.batch.cancelled': '批处理已取消',
+        
+        # LLM 缓存 - llm.cache.*
+        'llm.cache.hit': '缓存命中',
+        'llm.cache.miss': '缓存未命中',
+        'llm.cache.stored': '响应已缓存',
+        'llm.cache.expired': '缓存已过期',
+        'llm.cache.cleared': '缓存已清除',
+        
+        # LLM 速率限制 - llm.rate_limit.*
+        'llm.rate_limit.exceeded': '速率限制已超过',
+        'llm.rate_limit.waiting': '等待速率限制重置',
+        'llm.rate_limit.reset_at': '重置时间: {reset_time}',
+        'llm.rate_limit.remaining': '剩余请求: {remaining}',
+        
+        # LLM 审计 - llm.audit.*
+        'llm.audit.config_created': 'LLM 配置已创建',
+        'llm.audit.config_updated': 'LLM 配置已更新',
+        'llm.audit.config_deleted': 'LLM 配置已删除',
+        'llm.audit.provider_switched': '提供商已切换',
+        'llm.audit.request_logged': 'LLM 请求已记录',
     },
     'en': {
         # General
@@ -460,6 +938,484 @@ TRANSLATIONS: Dict[str, Dict[str, Any]] = {
         'repair_executed': 'Repair {repair_id} executed successfully',
         'job_cancelled': 'Job {job_id} cancelled successfully',
         'quality_check_triggered': 'Quality check triggered for task {task_id}',
+        
+        # ============================================================================
+        # System Optimization Module i18n Translation Keys
+        # ============================================================================
+        
+        # Error Response - error.*
+        'error.validation.invalid_input': 'Invalid input data',
+        'error.validation.missing_field': 'Missing required field',
+        'error.validation.invalid_format': 'Invalid format',
+        'error.validation.invalid_value': 'Invalid value',
+        'error.validation.field_too_long': 'Field too long',
+        'error.validation.field_too_short': 'Field too short',
+        'error.validation.invalid_type': 'Invalid type',
+        'error.validation.invalid_range': 'Value out of range',
+        'error.validation.invalid_enum': 'Invalid enum value',
+        'error.validation.invalid_json': 'Invalid JSON format',
+        
+        'error.auth.invalid_credentials': 'Invalid username or password',
+        'error.auth.token_expired': 'Token expired',
+        'error.auth.token_invalid': 'Invalid token',
+        'error.auth.token_missing': 'Missing authentication token',
+        'error.auth.session_expired': 'Session expired',
+        'error.auth.account_locked': 'Account locked',
+        'error.auth.account_disabled': 'Account disabled',
+        
+        'error.permission.access_denied': 'Access denied',
+        'error.permission.insufficient_role': 'Insufficient permissions',
+        'error.permission.resource_forbidden': 'Access to this resource is forbidden',
+        'error.permission.operation_forbidden': 'This operation is forbidden',
+        'error.permission.tenant_mismatch': 'Tenant mismatch',
+        
+        'error.not_found.resource': 'Resource not found',
+        'error.not_found.user': 'User not found',
+        'error.not_found.task': 'Task not found',
+        'error.not_found.project': 'Project not found',
+        'error.not_found.annotation': 'Annotation not found',
+        'error.not_found.data_source': 'Data source not found',
+        'error.not_found.evaluation': 'Evaluation result not found',
+        'error.not_found.rule': 'Rule not found',
+        'error.not_found.endpoint': 'Endpoint not found',
+        
+        'error.conflict.resource_exists': 'Resource already exists',
+        'error.conflict.version_mismatch': 'Version mismatch',
+        'error.conflict.state_invalid': 'Invalid state',
+        'error.conflict.duplicate_key': 'Duplicate key',
+        'error.conflict.concurrent_update': 'Concurrent update conflict',
+        
+        'error.rate_limit.exceeded': 'Rate limit exceeded',
+        'error.rate_limit.api_quota': 'API quota exhausted',
+        'error.rate_limit.user_quota': 'User quota exhausted',
+        
+        'error.internal.server_error': 'Internal server error',
+        'error.internal.database_error': 'Database error',
+        'error.internal.cache_error': 'Cache error',
+        'error.internal.processing_error': 'Processing error',
+        'error.internal.configuration_error': 'Configuration error',
+        'error.internal.unexpected_error': 'Unexpected error',
+        
+        'error.service.unavailable': 'Service unavailable',
+        'error.service.maintenance': 'Service under maintenance',
+        'error.service.overloaded': 'Service overloaded',
+        'error.service.dependency_failed': 'Dependency service failed',
+        'error.service.timeout': 'Service timeout',
+        
+        # Cache Strategy - cache.*
+        'cache.strategy.cache_hit': 'Cache hit',
+        'cache.strategy.cache_miss': 'Cache miss',
+        'cache.strategy.cache_set': 'Cache set',
+        'cache.strategy.cache_invalidated': 'Cache invalidated',
+        'cache.strategy.batch_invalidated': 'Batch cache invalidated',
+        
+        'cache.warmup.started': 'Cache warmup started',
+        'cache.warmup.completed': 'Cache warmup completed',
+        'cache.warmup.failed': 'Cache warmup failed',
+        
+        'cache.monitor.hit_rate_low': 'Cache hit rate too low',
+        'cache.monitor.stats_reset': 'Cache statistics reset',
+        
+        'cache.error.connection_failed': 'Cache connection failed',
+        'cache.error.serialization_failed': 'Serialization failed',
+        'cache.error.deserialization_failed': 'Deserialization failed',
+        'cache.error.operation_failed': 'Cache operation failed',
+        
+        # Database Operations - database.*
+        'database.batch.insert_started': 'Batch insert started: {count} records',
+        'database.batch.insert_completed': 'Batch insert completed: {count} records, duration {duration}ms',
+        'database.batch.update_started': 'Batch update started: {count} records',
+        'database.batch.update_completed': 'Batch update completed: {count} records, duration {duration}ms',
+        'database.batch.upsert_started': 'Batch upsert started: {count} records',
+        'database.batch.upsert_completed': 'Batch upsert completed: {count} records, duration {duration}ms',
+        'database.error.batch_failed': 'Batch operation failed: {error}',
+        
+        'database.pagination.invalid_page': 'Invalid page number: {page}',
+        'database.pagination.invalid_size': 'Invalid page size: {size}',
+        'database.pagination.query_started': 'Pagination query started: page={page}, size={size}',
+        'database.pagination.query_completed': 'Pagination query completed: returned {count} records',
+        'database.error.query_failed': 'Query failed: {error}',
+        
+        'database.monitor.slow_query_detected': 'Slow query detected: {duration}ms, SQL: {sql}',
+        'database.monitor.stats_reset': 'Slow query statistics reset',
+        'database.monitor.threshold_updated': 'Slow query threshold updated: {threshold}ms',
+        'database.monitor.query_recorded': 'Query recorded: {duration}ms',
+        
+        # SLA Notification - sla_monitor.*
+        'sla_monitor.notification.email_subject_breach': 'SLA Breach Alert: {ticket_title}',
+        'sla_monitor.notification.email_subject_warning': 'SLA Warning: {ticket_title}',
+        'sla_monitor.notification.email_subject_escalation': 'SLA Escalation Alert: {ticket_title}',
+        
+        'sla_monitor.notification.breach_message': 'Ticket {ticket_id} has breached SLA, please handle immediately',
+        'sla_monitor.notification.warning_message': 'Ticket {ticket_id} is about to breach SLA, please handle soon',
+        'sla_monitor.notification.escalation_message': 'Ticket {ticket_id} SLA breach has been escalated',
+        
+        'sla_monitor.notification.send_failed': 'Notification send failed: {error}',
+        'sla_monitor.notification.channel_unavailable': 'Notification channel unavailable: {channel}',
+        'sla_monitor.notification.retry_attempt': 'Retrying notification send (attempt {attempt})',
+        'sla_monitor.notification.all_channels_failed': 'All notification channels failed',
+        'sla_monitor.notification.send_success': 'Notification sent successfully: {channel}',
+        
+        'sla_monitor.notification.wechat_card_title': 'SLA Alert Notification',
+        'sla_monitor.notification.wechat_card_description': 'Ticket {ticket_id} requires your attention',
+        
+        # Compliance Scheduler - compliance.*
+        'compliance.scheduler.job_added': 'Compliance report job added: {report_type}',
+        'compliance.scheduler.job_removed': 'Compliance report job removed: {report_type}',
+        'compliance.scheduler.job_executed': 'Compliance report job executed: {report_type}',
+        'compliance.scheduler.job_failed': 'Compliance report job failed: {error}',
+        'compliance.scheduler.invalid_cron': 'Invalid cron expression: {expression}',
+        'compliance.scheduler.invalid_report_type': 'Invalid report type: {report_type}',
+        'compliance.scheduler.next_run': 'Next run time: {next_run}',
+        
+        # Sync Manager - sync.*
+        'sync.manager.sync_started': 'Sync started',
+        'sync.manager.sync_completed': 'Sync completed: {count} records',
+        'sync.manager.sync_failed': 'Sync failed: {error}',
+        'sync.manager.conflict_resolved': 'Conflict resolved: {item_id}',
+        'sync.manager.model_downloaded': 'Model downloaded: {model_name}',
+        
+        # Report Service - report.*
+        'report.email.send_started': 'Email send started: {recipient}',
+        'report.email.send_completed': 'Email send completed: {recipient}',
+        'report.email.send_failed': 'Email send failed: {error}',
+        'report.email.retry_attempt': 'Email send retry (attempt {attempt})',
+        
+        # ============================================================================
+        # Security Control Module
+        # ============================================================================
+        
+        # Encryption Service - security.encryption.*
+        'security.encryption.empty_plaintext': 'Plaintext cannot be empty',
+        'security.encryption.empty_ciphertext': 'Ciphertext cannot be empty',
+        'security.encryption.invalid_ciphertext': 'Invalid ciphertext format',
+        'security.encryption.invalid_key': 'Invalid encryption key',
+        'security.encryption.no_key': 'No encryption key provided',
+        'security.encryption.encrypt_success': 'Encryption successful',
+        'security.encryption.encrypt_failed': 'Encryption failed',
+        'security.encryption.decrypt_success': 'Decryption successful',
+        'security.encryption.decrypt_failed': 'Decryption failed',
+        'security.encryption.key_generated': 'Key generated',
+        'security.encryption.key_derived': 'Key derived',
+        
+        # Rate Limiting - security.rate_limit.*
+        'security.rate_limit.exceeded': 'Rate limit exceeded, please try again later',
+        'security.rate_limit.limit_info': 'Limit: {limit} requests/{window} seconds',
+        'security.rate_limit.remaining': 'Remaining requests: {remaining}',
+        'security.rate_limit.reset_time': 'Reset time: {reset_time}',
+        'security.rate_limit.blocked': 'Request blocked',
+        'security.rate_limit.config_updated': 'Rate limit configuration updated',
+        
+        # Input Validation - security.validation.*
+        'security.validation.invalid_email': 'Invalid email format',
+        'security.validation.invalid_phone': 'Invalid phone number format',
+        'security.validation.invalid_url': 'Invalid URL format',
+        'security.validation.invalid_ip': 'Invalid IP address format',
+        'security.validation.invalid_uuid': 'Invalid UUID format',
+        'security.validation.xss_detected': 'Potential XSS attack detected',
+        'security.validation.sql_injection_detected': 'Potential SQL injection detected',
+        'security.validation.path_traversal_detected': 'Path traversal attack detected',
+        'security.validation.field_required': 'Field {field} is required',
+        'security.validation.field_too_long': 'Field {field} exceeds maximum length {max_length}',
+        'security.validation.field_too_short': 'Field {field} is shorter than minimum length {min_length}',
+        'security.validation.field_invalid_pattern': 'Field {field} has invalid format',
+        
+        # Audit Logging - security.audit.*
+        'security.audit.event_logged': 'Audit event logged',
+        'security.audit.login_success': 'User {username} logged in successfully',
+        'security.audit.login_failed': 'User {username} login failed',
+        'security.audit.logout': 'User {username} logged out',
+        'security.audit.password_changed': 'User {username} password changed',
+        'security.audit.permission_changed': 'User {username} permissions changed',
+        'security.audit.resource_accessed': 'Resource {resource} accessed',
+        'security.audit.resource_created': 'Resource {resource} created',
+        'security.audit.resource_updated': 'Resource {resource} updated',
+        'security.audit.resource_deleted': 'Resource {resource} deleted',
+        'security.audit.sensitive_operation': 'Sensitive operation: {operation}',
+        'security.audit.suspicious_activity': 'Suspicious activity: {activity}',
+        'security.audit.ip_blocked': 'IP {ip} blocked',
+        'security.audit.rate_limit_exceeded': 'User {username} exceeded rate limit',
+        
+        # ============================================================================
+        # Monitoring and Alerting Module
+        # ============================================================================
+        
+        # Prometheus Metrics - monitoring.metrics.*
+        'monitoring.metrics.counter_negative_value': 'Counter value cannot be negative',
+        'monitoring.metrics.metric_already_registered': 'Metric already registered: {name}',
+        'monitoring.metrics.metric_registered': 'Metric registered: {name}',
+        'monitoring.metrics.metric_unregistered': 'Metric unregistered: {name}',
+        
+        # Alert Configuration - monitoring.alert.*
+        'monitoring.alert.invalid_duration': 'Invalid duration',
+        'monitoring.alert.invalid_value': 'Invalid threshold value',
+        'monitoring.alert.invalid_cooldown': 'Invalid cooldown time',
+        'monitoring.alert.invalid_max_alerts': 'Invalid max alerts count',
+        'monitoring.alert.threshold_added': 'Alert threshold added: {id}',
+        'monitoring.alert.threshold_updated': 'Alert threshold updated: {id}',
+        'monitoring.alert.threshold_removed': 'Alert threshold removed: {id}',
+        'monitoring.alert.threshold_not_found': 'Alert threshold not found: {id}',
+        'monitoring.alert.hourly_limit_reached': 'Hourly alert limit reached',
+        'monitoring.alert.callback_error': 'Alert callback error: {error}',
+        'monitoring.alert.config_updated': 'Alert configuration updated',
+        'monitoring.alert.cooldown_updated': 'Cooldown updated: {seconds} seconds',
+        'monitoring.alert.max_alerts_updated': 'Max alerts per hour updated: {max_alerts}',
+        'monitoring.alert.channel_added': 'Notification channel added: {channel}',
+        'monitoring.alert.channel_removed': 'Notification channel removed: {channel}',
+        'monitoring.alert.acknowledged': 'Alert acknowledged: {id}',
+        'monitoring.alert.resolved': 'Alert resolved: {id}',
+        
+        # Health Check - monitoring.health.*
+        'monitoring.health.timeout': 'Service {service} health check timeout',
+        'monitoring.health.database_connected': 'Database connection healthy',
+        'monitoring.health.database_not_configured': 'Database not configured',
+        'monitoring.health.redis_connected': 'Redis connection healthy',
+        'monitoring.health.redis_not_installed': 'Redis client not installed',
+        'monitoring.health.neo4j_connected': 'Neo4j connection healthy',
+        'monitoring.health.neo4j_not_configured': 'Neo4j not configured',
+        'monitoring.health.label_studio_connected': 'Label Studio connection healthy',
+        'monitoring.health.label_studio_not_configured': 'Label Studio not configured',
+        'monitoring.health.label_studio_error': 'Label Studio error: {code}',
+        'monitoring.health.api_connected': '{name} API connection healthy',
+        'monitoring.health.api_error': '{name} API error: {code}',
+        'monitoring.health.checker_registered': 'Health checker registered: {name}',
+        'monitoring.health.checker_unregistered': 'Health checker unregistered: {name}',
+        
+        # Service Alert - monitoring.service_alert.*
+        'monitoring.service_alert.already_monitoring': 'Monitoring already running',
+        'monitoring.service_alert.monitoring_started': 'Service monitoring started',
+        'monitoring.service_alert.monitoring_stopped': 'Service monitoring stopped',
+        'monitoring.service_alert.monitoring_error': 'Monitoring error: {error}',
+        'monitoring.service_alert.alert_triggered': 'Service alert triggered: {service} status={status} severity={severity}',
+        'monitoring.service_alert.recovery_triggered': 'Service recovery notification: {service} status={status}',
+        'monitoring.service_alert.callback_error': 'Callback error: {error}',
+        'monitoring.service_alert.config_updated': 'Service alert configuration updated',
+        
+        # ============================================================================
+        # Enterprise Ontology Module
+        # ============================================================================
+        
+        # Ontology Manager - ontology.manager.*
+        'ontology.manager.initialized': 'Enterprise ontology manager initialized',
+        'ontology.manager.entity_created': 'Ontology entity created: {name}',
+        'ontology.manager.entity_updated': 'Ontology entity updated: {name}',
+        'ontology.manager.entity_deleted': 'Ontology entity deleted: {id}',
+        'ontology.manager.relation_created': 'Ontology relation created: {type}',
+        'ontology.manager.relation_updated': 'Ontology relation updated: {id}',
+        'ontology.manager.relation_deleted': 'Ontology relation deleted: {id}',
+        'ontology.manager.cache_cleared': 'Ontology cache cleared',
+        'ontology.manager.lineage_tracked': 'Data lineage tracked: {entity_id}',
+        
+        # AI Data Converter - ontology.converter.*
+        'ontology.converter.initialized': 'AI data converter initialized',
+        'ontology.converter.conversion_started': 'Data conversion started: {format}',
+        'ontology.converter.conversion_completed': 'Data conversion completed: {count} records',
+        'ontology.converter.conversion_failed': 'Data conversion failed: {error}',
+        'ontology.converter.validation_passed': 'Data validation passed',
+        'ontology.converter.validation_failed': 'Data validation failed: {count} invalid records',
+        'ontology.converter.missing_question': 'Missing question/instruction field',
+        'ontology.converter.missing_answer': 'Missing answer/output field',
+        
+        # Compliance Validation - ontology.compliance.*
+        'ontology.compliance.check_started': 'Compliance check started',
+        'ontology.compliance.check_completed': 'Compliance check completed',
+        'ontology.compliance.compliant': 'Entity is compliant',
+        'ontology.compliance.non_compliant': 'Entity is non-compliant',
+        'ontology.compliance.missing_classification': 'Missing data classification level',
+        'ontology.compliance.cross_border_violation': 'Data not allowed for cross-border transfer to {target}',
+        'ontology.compliance.pii_sensitivity_mismatch': 'Contains PII but sensitivity level is not high',
+        'ontology.compliance.pii_classification_mismatch': 'Contains PII but data classification level is too low',
+        'ontology.compliance.missing_retention_period': 'Contains PII but no retention period is set',
+        
+        # Entity Types - ontology.entity_type.*
+        'ontology.entity_type.person': 'Person',
+        'ontology.entity_type.organization': 'Organization',
+        'ontology.entity_type.document': 'Document',
+        'ontology.entity_type.location': 'Location',
+        'ontology.entity_type.department': 'Department',
+        'ontology.entity_type.business_unit': 'Business Unit',
+        'ontology.entity_type.regulation': 'Regulation',
+        'ontology.entity_type.contract': 'Contract',
+        'ontology.entity_type.approval': 'Approval',
+        'ontology.entity_type.seal': 'Seal',
+        'ontology.entity_type.invoice': 'Invoice',
+        'ontology.entity_type.certificate': 'Certificate',
+        'ontology.entity_type.budget': 'Budget',
+        'ontology.entity_type.project': 'Project',
+        'ontology.entity_type.meeting': 'Meeting',
+        'ontology.entity_type.policy': 'Policy',
+        
+        # Relation Types - ontology.relation_type.*
+        'ontology.relation_type.belongs_to': 'Belongs To',
+        'ontology.relation_type.created_by': 'Created By',
+        'ontology.relation_type.related_to': 'Related To',
+        'ontology.relation_type.reports_to': 'Reports To',
+        'ontology.relation_type.approves': 'Approves',
+        'ontology.relation_type.seals': 'Seals',
+        'ontology.relation_type.complies_with': 'Complies With',
+        'ontology.relation_type.supervises': 'Supervises',
+        'ontology.relation_type.delegates_to': 'Delegates To',
+        'ontology.relation_type.manages': 'Manages',
+        'ontology.relation_type.participates_in': 'Participates In',
+        'ontology.relation_type.signs': 'Signs',
+        'ontology.relation_type.reviews': 'Reviews',
+        'ontology.relation_type.issues': 'Issues',
+        'ontology.relation_type.holds': 'Holds',
+        
+        # Data Classification - ontology.classification.*
+        'ontology.classification.public': 'Public',
+        'ontology.classification.internal': 'Internal',
+        'ontology.classification.confidential': 'Confidential',
+        'ontology.classification.secret': 'Secret',
+        'ontology.classification.top_secret': 'Top Secret',
+        
+        # Sensitivity Level - ontology.sensitivity.*
+        'ontology.sensitivity.low': 'Low',
+        'ontology.sensitivity.medium': 'Medium',
+        'ontology.sensitivity.high': 'High',
+        'ontology.sensitivity.critical': 'Critical',
+        
+        # AI Data Format - ontology.format.*
+        'ontology.format.alpaca': 'Alpaca Format',
+        'ontology.format.sharegpt': 'ShareGPT Format',
+        'ontology.format.openai': 'OpenAI Fine-tuning Format',
+        'ontology.format.llama_factory': 'LLaMA-Factory Format',
+        'ontology.format.fastchat': 'FastChat Format',
+        'ontology.format.belle': 'BELLE Format',
+        'ontology.format.custom': 'Custom Format',
+        
+        # ============================================================================
+        # LLM Integration Module
+        # ============================================================================
+        
+        # LLM Provider Types - llm.provider.*
+        'llm.provider.openai': 'OpenAI',
+        'llm.provider.groq': 'Groq',
+        'llm.provider.anthropic': 'Anthropic',
+        'llm.provider.qwen': 'Qwen',
+        'llm.provider.zhipu': 'Zhipu AI',
+        'llm.provider.baidu': 'Baidu Ernie',
+        'llm.provider.tencent': 'Tencent Hunyuan',
+        'llm.provider.ollama': 'Ollama',
+        'llm.provider.docker': 'Docker',
+        'llm.provider.azure': 'Azure OpenAI',
+        
+        # LLM Configuration Labels - llm.config.*
+        'llm.config.title': 'LLM Configuration',
+        'llm.config.subtitle': 'Configure and manage LLM providers',
+        'llm.config.add_provider': 'Add Provider',
+        'llm.config.edit_provider': 'Edit Provider',
+        'llm.config.delete_provider': 'Delete Provider',
+        'llm.config.test_connection': 'Test Connection',
+        'llm.config.set_active': 'Set Active',
+        'llm.config.set_fallback': 'Set Fallback',
+        'llm.config.provider_name': 'Provider Name',
+        'llm.config.provider_type': 'Provider Type',
+        'llm.config.deployment_mode': 'Deployment Mode',
+        'llm.config.api_endpoint': 'API Endpoint',
+        'llm.config.api_key': 'API Key',
+        'llm.config.model_name': 'Model Name',
+        'llm.config.max_tokens': 'Max Tokens',
+        'llm.config.timeout': 'Timeout (seconds)',
+        'llm.config.max_retries': 'Max Retries',
+        'llm.config.local_mode': 'Local Mode',
+        'llm.config.cloud_mode': 'Cloud Mode',
+        
+        # LLM Error Messages - llm.error.*
+        'llm.error.provider_unavailable': 'Provider unavailable',
+        'llm.error.rate_limit': 'Rate limit exceeded',
+        'llm.error.timeout': 'Request timeout',
+        'llm.error.invalid_config': 'Invalid configuration',
+        'llm.error.invalid_api_key': 'Invalid API key',
+        'llm.error.invalid_endpoint': 'Invalid API endpoint',
+        'llm.error.connection_failed': 'Connection failed',
+        'llm.error.authentication_failed': 'Authentication failed',
+        'llm.error.model_not_found': 'Model not found',
+        'llm.error.quota_exceeded': 'Quota exceeded',
+        'llm.error.invalid_response': 'Invalid response format',
+        'llm.error.provider_not_found': 'Provider not found',
+        'llm.error.cannot_delete_active': 'Cannot delete active provider',
+        'llm.error.failover_failed': 'Failover failed',
+        'llm.error.all_providers_failed': 'All providers failed',
+        'llm.error.max_retries_exceeded': 'Max retries exceeded',
+        
+        # LLM Status Messages - llm.status.*
+        'llm.status.healthy': 'Healthy',
+        'llm.status.unhealthy': 'Unhealthy',
+        'llm.status.connecting': 'Connecting',
+        'llm.status.connected': 'Connected',
+        'llm.status.disconnected': 'Disconnected',
+        'llm.status.active': 'Active',
+        'llm.status.inactive': 'Inactive',
+        'llm.status.fallback': 'Fallback',
+        'llm.status.checking': 'Checking',
+        
+        # LLM Action Messages - llm.action.*
+        'llm.action.add': 'Add',
+        'llm.action.edit': 'Edit',
+        'llm.action.delete': 'Delete',
+        'llm.action.test': 'Test',
+        'llm.action.activate': 'Activate',
+        'llm.action.deactivate': 'Deactivate',
+        'llm.action.save': 'Save',
+        'llm.action.cancel': 'Cancel',
+        'llm.action.refresh': 'Refresh',
+        'llm.action.retry': 'Retry',
+        
+        # LLM Success Messages - llm.success.*
+        'llm.success.provider_added': 'Provider added successfully',
+        'llm.success.provider_updated': 'Provider updated successfully',
+        'llm.success.provider_deleted': 'Provider deleted successfully',
+        'llm.success.connection_test': 'Connection test successful',
+        'llm.success.provider_activated': 'Provider activated',
+        'llm.success.config_saved': 'Configuration saved successfully',
+        
+        # LLM Pre-annotation - llm.preannotation.*
+        'llm.preannotation.title': 'AI Pre-annotation',
+        'llm.preannotation.start': 'Start Pre-annotation',
+        'llm.preannotation.in_progress': 'Pre-annotation in progress',
+        'llm.preannotation.completed': 'Pre-annotation completed',
+        'llm.preannotation.failed': 'Pre-annotation failed',
+        'llm.preannotation.confidence': 'Confidence',
+        'llm.preannotation.review_required': 'Review required',
+        
+        # LLM Health Monitoring - llm.health.*
+        'llm.health.title': 'Health Monitoring',
+        'llm.health.check_started': 'Health check started',
+        'llm.health.check_completed': 'Health check completed',
+        'llm.health.check_failed': 'Health check failed',
+        'llm.health.provider_recovered': 'Provider {provider_id} recovered',
+        'llm.health.provider_unhealthy': 'Provider {provider_id} unhealthy',
+        'llm.health.all_healthy': 'All providers healthy',
+        'llm.health.some_unhealthy': '{count} providers unhealthy',
+        
+        # LLM Batch Processing - llm.batch.*
+        'llm.batch.title': 'Batch Processing',
+        'llm.batch.started': 'Batch processing started',
+        'llm.batch.progress': 'Progress: {current}/{total}',
+        'llm.batch.completed': 'Batch processing completed',
+        'llm.batch.failed': 'Batch processing failed',
+        'llm.batch.cancelled': 'Batch processing cancelled',
+        
+        # LLM Cache - llm.cache.*
+        'llm.cache.hit': 'Cache hit',
+        'llm.cache.miss': 'Cache miss',
+        'llm.cache.stored': 'Response cached',
+        'llm.cache.expired': 'Cache expired',
+        'llm.cache.cleared': 'Cache cleared',
+        
+        # LLM Rate Limiting - llm.rate_limit.*
+        'llm.rate_limit.exceeded': 'Rate limit exceeded',
+        'llm.rate_limit.waiting': 'Waiting for rate limit reset',
+        'llm.rate_limit.reset_at': 'Reset at: {reset_time}',
+        'llm.rate_limit.remaining': 'Remaining requests: {remaining}',
+        
+        # LLM Audit - llm.audit.*
+        'llm.audit.config_created': 'LLM configuration created',
+        'llm.audit.config_updated': 'LLM configuration updated',
+        'llm.audit.config_deleted': 'LLM configuration deleted',
+        'llm.audit.provider_switched': 'Provider switched',
+        'llm.audit.request_logged': 'LLM request logged',
     }
 }
 

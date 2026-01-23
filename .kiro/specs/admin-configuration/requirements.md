@@ -1,109 +1,206 @@
-# Requirements Document: Admin Configuration (管理员配置)
+# Requirements Document - Admin Configuration Module
 
 ## Introduction
 
-本模块实现平台管理员的可视化配置界面，支持 LLM 配置、数据库连接配置、同步策略配置、SQL 构建器等功能。核心目标是让管理员无需修改代码即可完成系统配置，提升运维效率。
+The Admin Configuration Module provides a comprehensive visual interface for system administrators to configure LLM integrations, database connections, and data synchronization strategies. This module replaces the command-line interface (admin_cli.py) with a user-friendly web-based configuration system that supports both global and Chinese LLM providers, multiple database types, and flexible synchronization policies.
 
 ## Glossary
 
-- **Admin_Dashboard**: 管理员仪表盘，提供系统概览和快捷操作入口
-- **LLM_Config_Panel**: LLM 配置面板，管理 LLM 服务配置
-- **DB_Config_Panel**: 数据库配置面板，管理客户数据库连接
-- **Sync_Strategy_Panel**: 同步策略面板，配置数据同步规则
-- **SQL_Builder**: SQL 构建器，可视化构建 SQL 查询
-- **Config_Validator**: 配置验证器，验证配置有效性
-- **Config_History**: 配置历史，记录配置变更
+- **System**: The SuperInsight AI Data Governance Platform
+- **Admin_UI**: The frontend administrative configuration interface
+- **LLM_Provider**: Large Language Model service provider (e.g., OpenAI, Anthropic, Alibaba Cloud)
+- **Data_Source**: External database system to be synchronized (MySQL, PostgreSQL, Oracle, SQL Server)
+- **Sync_Strategy**: Configuration defining how data is synchronized between Data_Source and System
+- **Configuration_API**: Backend RESTful API for managing configuration settings
+- **Desensitization_Rule**: Privacy protection rule for masking sensitive data
+- **Connection_Test**: Validation process to verify configuration correctness
+- **Webhook**: HTTP callback mechanism for real-time data push notifications
+- **Poll_Mode**: Periodic data retrieval mechanism using scheduled queries
+- **Tenant**: Isolated organizational unit in multi-tenant architecture
 
 ## Requirements
 
-### Requirement 1: 管理员仪表盘
+### Requirement 1: LLM Provider Configuration
 
-**User Story:** 作为系统管理员，我希望有一个统一的仪表盘，以便快速了解系统状态和进行常用操作。
-
-#### Acceptance Criteria
-
-1. WHEN 管理员登录后访问仪表盘 THEN THE Admin_Dashboard SHALL 显示系统健康状态概览
-2. THE Admin_Dashboard SHALL 显示以下关键指标：活跃用户数、任务数、标注进度、系统资源使用
-3. WHEN 管理员点击快捷操作 THEN THE Admin_Dashboard SHALL 跳转到对应配置页面
-4. THE Admin_Dashboard SHALL 显示最近的系统告警和通知
-5. WHEN 系统状态异常 THEN THE Admin_Dashboard SHALL 高亮显示异常指标
-
-### Requirement 2: LLM 配置管理
-
-**User Story:** 作为系统管理员，我希望通过可视化界面配置 LLM 服务，以便无需修改配置文件即可管理 AI 能力。
+**User Story:** As a system administrator, I want to configure LLM provider connections through a visual interface, so that I can easily integrate AI capabilities without editing configuration files.
 
 #### Acceptance Criteria
 
-1. WHEN 管理员访问 LLM 配置页面 THEN THE LLM_Config_Panel SHALL 显示当前 LLM 配置状态
-2. THE LLM_Config_Panel SHALL 支持配置以下 LLM 类型：本地 Ollama、云端 OpenAI、中国 LLM（千问、智谱）
-3. WHEN 管理员修改 LLM 配置 THEN THE Config_Validator SHALL 实时验证配置有效性
-4. WHEN 管理员保存配置 THEN THE LLM_Config_Panel SHALL 调用后端 API 持久化配置
-5. THE LLM_Config_Panel SHALL 提供连接测试功能，验证 LLM 服务可用性
-6. THE LLM_Config_Panel SHALL 对 API Key 等敏感信息进行脱敏显示
+1. WHEN an administrator accesses the LLM configuration page, THE Admin_UI SHALL display a form with fields for provider selection, API key, endpoint URL, and model parameters
+2. WHEN an administrator selects a provider type (Global/Chinese), THE Admin_UI SHALL display provider-specific configuration options
+3. WHEN an administrator clicks the connection test button, THE System SHALL validate the configuration and return connection status within 10 seconds
+4. WHEN an administrator saves valid LLM configuration, THE System SHALL persist the configuration and make it available for AI services
+5. WHEN an administrator enters invalid credentials, THE System SHALL display specific error messages indicating the validation failure reason
+6. THE System SHALL support multiple concurrent LLM provider configurations for different tenants
+7. THE System SHALL encrypt API keys and sensitive credentials before storage
 
-### Requirement 3: 数据库连接配置
+### Requirement 2: Database Connection Configuration
 
-**User Story:** 作为系统管理员，我希望配置客户数据库连接，以便系统能够读取客户数据进行标注。
-
-#### Acceptance Criteria
-
-1. WHEN 管理员访问数据库配置页面 THEN THE DB_Config_Panel SHALL 显示已配置的数据库连接列表
-2. THE DB_Config_Panel SHALL 支持以下数据库类型：PostgreSQL、MySQL、SQLite、Oracle、SQL Server
-3. WHEN 管理员添加数据库连接 THEN THE DB_Config_Panel SHALL 提供连接参数表单（主机、端口、用户名、密码、数据库名）
-4. WHEN 管理员保存连接配置 THEN THE Config_Validator SHALL 验证连接有效性
-5. THE DB_Config_Panel SHALL 提供连接测试功能，显示连接状态和延迟
-6. THE DB_Config_Panel SHALL 对密码等敏感信息进行加密存储和脱敏显示
-7. WHEN 管理员配置只读连接 THEN THE DB_Config_Panel SHALL 验证连接权限为只读
-
-### Requirement 4: 同步策略配置
-
-**User Story:** 作为系统管理员，我希望配置数据同步策略，以便控制数据如何从客户数据库同步到标注系统。
+**User Story:** As a system administrator, I want to configure external database connections visually, so that I can integrate various data sources without manual configuration file editing.
 
 #### Acceptance Criteria
 
-1. WHEN 管理员访问同步策略页面 THEN THE Sync_Strategy_Panel SHALL 显示当前同步策略配置
-2. THE Sync_Strategy_Panel SHALL 支持以下同步模式：全量同步、增量同步、实时同步
-3. WHEN 管理员配置增量同步 THEN THE Sync_Strategy_Panel SHALL 要求指定增量字段（时间戳/版本号）
-4. THE Sync_Strategy_Panel SHALL 支持配置同步频率：手动、定时（Cron 表达式）、实时（Webhook）
-5. WHEN 管理员配置同步策略 THEN THE Sync_Strategy_Panel SHALL 支持数据过滤条件配置
-6. THE Sync_Strategy_Panel SHALL 显示同步历史和状态（成功/失败/进行中）
-7. WHEN 同步失败 THEN THE Sync_Strategy_Panel SHALL 显示错误详情和重试选项
+1. WHEN an administrator accesses the database configuration page, THE Admin_UI SHALL display options for selecting database type (MySQL, PostgreSQL, Oracle, SQL Server)
+2. WHEN an administrator selects a database type, THE Admin_UI SHALL display type-specific connection parameters (host, port, database name, credentials, SSL options)
+3. WHEN an administrator configures connection parameters, THE System SHALL validate parameter format before allowing submission
+4. WHEN an administrator clicks test connection, THE System SHALL attempt connection and return detailed status (success/failure with error details) within 15 seconds
+5. WHEN an administrator saves a valid database configuration, THE System SHALL store the configuration with encrypted credentials
+6. THE System SHALL support read-only connection mode to prevent accidental data modification in source databases
+7. WHEN a database connection fails, THE System SHALL log detailed error information for troubleshooting
 
-### Requirement 5: SQL 构建器
+### Requirement 3: Data Synchronization Strategy Configuration
 
-**User Story:** 作为系统管理员，我希望使用可视化 SQL 构建器，以便无需编写 SQL 即可定义数据查询。
-
-#### Acceptance Criteria
-
-1. WHEN 管理员访问 SQL 构建器 THEN THE SQL_Builder SHALL 显示可用的表和字段列表
-2. THE SQL_Builder SHALL 支持拖拽方式选择表和字段
-3. THE SQL_Builder SHALL 支持可视化配置 WHERE 条件、ORDER BY、GROUP BY、LIMIT
-4. WHEN 管理员构建查询 THEN THE SQL_Builder SHALL 实时生成对应的 SQL 语句
-5. THE SQL_Builder SHALL 提供 SQL 预览和语法高亮
-6. WHEN 管理员执行查询 THEN THE SQL_Builder SHALL 显示查询结果预览（限制 100 行）
-7. THE SQL_Builder SHALL 支持保存常用查询为模板
-
-### Requirement 6: 配置历史和回滚
-
-**User Story:** 作为系统管理员，我希望查看配置变更历史，以便追踪变更和在需要时回滚。
+**User Story:** As a system administrator, I want to configure data synchronization strategies through a visual interface, so that I can control how data flows between external sources and the platform.
 
 #### Acceptance Criteria
 
-1. WHEN 管理员访问配置历史页面 THEN THE Config_History SHALL 显示所有配置变更记录
-2. THE Config_History SHALL 记录以下信息：变更时间、变更人、变更类型、变更前后值
-3. WHEN 管理员查看变更详情 THEN THE Config_History SHALL 显示配置差异对比
-4. WHEN 管理员选择回滚 THEN THE Config_History SHALL 恢复到指定版本的配置
-5. THE Config_History SHALL 支持按时间范围、配置类型、变更人筛选
+1. WHEN an administrator accesses sync strategy configuration, THE Admin_UI SHALL display options for sync mode (real-time/scheduled), frequency, and data filters
+2. WHEN an administrator selects poll mode, THE Admin_UI SHALL display scheduling options (interval, cron expression, time windows)
+3. WHEN an administrator selects webhook mode, THE System SHALL generate a unique webhook URL and display setup instructions
+4. WHEN an administrator configures desensitization rules, THE Admin_UI SHALL provide a rule builder with field selection and masking method options
+5. WHEN an administrator saves sync strategy, THE System SHALL validate the configuration and activate the synchronization pipeline
+6. THE System SHALL support incremental synchronization to avoid redundant data transfer
+7. WHEN synchronization encounters errors, THE System SHALL retry with exponential backoff and alert administrators after 3 consecutive failures
 
-### Requirement 7: 第三方工具配置
+### Requirement 4: Permission and Access Control Configuration
 
-**User Story:** 作为系统管理员，我希望配置第三方工具集成，以便扩展系统能力。
+**User Story:** As a system administrator, I want to configure granular access permissions for data sources, so that I can enforce security policies and compliance requirements.
 
 #### Acceptance Criteria
 
-1. WHEN 管理员访问第三方工具配置页面 THEN THE Config_Panel SHALL 显示已集成的工具列表
-2. THE Config_Panel SHALL 支持配置以下工具类型：Text-to-SQL 工具、AI 标注工具、数据处理工具
-3. WHEN 管理员添加第三方工具 THEN THE Config_Panel SHALL 提供连接配置表单（端点、API Key、超时等）
-4. THE Config_Panel SHALL 提供工具健康检查功能
-5. WHEN 管理员启用/禁用工具 THEN THE Config_Panel SHALL 立即生效且不影响其他功能
-6. THE Config_Panel SHALL 显示工具调用统计（调用次数、成功率、平均延迟）
+1. WHEN an administrator configures a data source, THE Admin_UI SHALL display permission options (read-only, query-only, no-export)
+2. WHEN an administrator enables query-only mode, THE System SHALL restrict data access to SQL query interface only
+3. WHEN an administrator configures field-level permissions, THE Admin_UI SHALL allow selection of visible/hidden fields per user role
+4. THE System SHALL enforce configured permissions at the API level and reject unauthorized access attempts
+5. WHEN permission changes are saved, THE System SHALL apply them immediately without requiring service restart
+6. THE System SHALL audit all permission configuration changes with timestamp and administrator identity
+
+### Requirement 5: Configuration Validation and Testing
+
+**User Story:** As a system administrator, I want to test configurations before activation, so that I can prevent service disruptions caused by incorrect settings.
+
+#### Acceptance Criteria
+
+1. WHEN an administrator submits any configuration, THE System SHALL perform comprehensive validation before persistence
+2. WHEN validation fails, THE System SHALL return specific error messages with remediation suggestions
+3. WHEN an administrator requests connection test, THE System SHALL execute test in isolated environment without affecting production
+4. THE System SHALL provide a dry-run mode for sync strategies to preview data flow without actual synchronization
+5. WHEN configuration test succeeds, THE Admin_UI SHALL display success confirmation with test results summary
+6. THE System SHALL log all configuration test attempts with results for audit purposes
+
+### Requirement 6: Configuration History and Rollback
+
+**User Story:** As a system administrator, I want to view configuration history and rollback to previous versions, so that I can recover from configuration errors quickly.
+
+#### Acceptance Criteria
+
+1. WHEN an administrator views configuration history, THE Admin_UI SHALL display a timeline of all configuration changes with timestamps and authors
+2. WHEN an administrator selects a historical configuration, THE Admin_UI SHALL display a diff view comparing it with current configuration
+3. WHEN an administrator initiates rollback, THE System SHALL restore the selected historical configuration and notify affected services
+4. THE System SHALL retain configuration history for at least 90 days
+5. WHEN rollback completes, THE System SHALL create a new history entry documenting the rollback action
+6. THE System SHALL prevent rollback if the historical configuration is incompatible with current system version
+
+### Requirement 7: Multi-Tenant Configuration Isolation
+
+**User Story:** As a system administrator, I want tenant-specific configurations to be isolated, so that different organizations can have independent settings without interference.
+
+#### Acceptance Criteria
+
+1. WHEN an administrator configures settings for a tenant, THE System SHALL isolate the configuration from other tenants
+2. WHEN a tenant user accesses configuration, THE Admin_UI SHALL display only configurations belonging to their tenant
+3. THE System SHALL prevent cross-tenant configuration access even with direct API calls
+4. WHEN an administrator creates a new tenant, THE System SHALL initialize default configuration templates
+5. THE System SHALL support configuration inheritance where tenants can override global defaults
+6. WHEN tenant is deleted, THE System SHALL archive tenant-specific configurations for compliance retention
+
+### Requirement 8: Internationalization Support
+
+**User Story:** As a system administrator, I want the configuration interface available in multiple languages, so that administrators worldwide can use the system effectively.
+
+#### Acceptance Criteria
+
+1. THE Admin_UI SHALL support Chinese (Simplified) and English languages
+2. WHEN an administrator changes language preference, THE Admin_UI SHALL update all text labels, messages, and help content immediately
+3. THE System SHALL store configuration field descriptions in both Chinese and English
+4. WHEN validation errors occur, THE System SHALL return error messages in the administrator's preferred language
+5. THE Admin_UI SHALL use i18n keys for all user-facing text without hardcoded strings
+6. THE System SHALL support adding additional languages through translation file updates without code changes
+
+### Requirement 9: Configuration API for Automation
+
+**User Story:** As a DevOps engineer, I want RESTful APIs for configuration management, so that I can automate deployment and configuration through CI/CD pipelines.
+
+#### Acceptance Criteria
+
+1. THE Configuration_API SHALL provide endpoints for CRUD operations on all configuration types
+2. WHEN API client submits configuration via API, THE System SHALL apply the same validation rules as the UI
+3. THE Configuration_API SHALL support bulk configuration import/export in JSON format
+4. THE Configuration_API SHALL require authentication and authorization for all configuration operations
+5. WHEN API operations succeed, THE System SHALL return standardized response format with operation details
+6. THE Configuration_API SHALL provide OpenAPI/Swagger documentation for all endpoints
+7. THE System SHALL rate-limit configuration API calls to prevent abuse (100 requests per minute per client)
+
+### Requirement 10: Monitoring and Alerting Configuration
+
+**User Story:** As a system administrator, I want to configure monitoring thresholds and alert channels, so that I can be notified of configuration-related issues proactively.
+
+#### Acceptance Criteria
+
+1. WHEN an administrator configures monitoring, THE Admin_UI SHALL display options for connection health checks, sync performance metrics, and error rate thresholds
+2. WHEN an administrator sets alert thresholds, THE System SHALL validate threshold values are within acceptable ranges
+3. WHEN configured thresholds are exceeded, THE System SHALL send alerts through configured channels (email, webhook, SMS)
+4. THE System SHALL monitor LLM API quota usage and alert when approaching limits
+5. WHEN database connection fails, THE System SHALL alert administrators within 1 minute
+6. THE Admin_UI SHALL display real-time status dashboard showing health of all configured connections and sync pipelines
+
+## Non-Functional Requirements
+
+### Performance
+- Configuration API responses SHALL complete within 2 seconds for 95% of requests
+- Connection tests SHALL timeout after 15 seconds maximum
+- Configuration changes SHALL propagate to all services within 30 seconds
+- The system SHALL support at least 100 concurrent administrators without performance degradation
+
+### Security
+- All sensitive configuration data (API keys, passwords) SHALL be encrypted at rest using AES-256
+- Configuration API SHALL use JWT authentication with token expiration
+- The system SHALL enforce HTTPS for all configuration operations
+- Configuration changes SHALL be logged in tamper-proof audit trail
+
+### Scalability
+- The system SHALL support configuration for at least 1000 tenants
+- The system SHALL support at least 100 LLM provider configurations per tenant
+- The system SHALL support at least 50 database connections per tenant
+- Configuration storage SHALL scale horizontally with database sharding
+
+### Reliability
+- Configuration service SHALL maintain 99.9% uptime
+- Configuration data SHALL be backed up every 6 hours
+- The system SHALL recover from configuration service failure within 5 minutes
+- Failed configuration operations SHALL be retryable without data loss
+
+### Usability
+- Configuration forms SHALL provide inline validation with immediate feedback
+- The Admin_UI SHALL provide contextual help for all configuration options
+- Configuration wizards SHALL guide administrators through complex setup processes
+- The system SHALL provide configuration templates for common scenarios
+
+## Dependencies
+
+### Internal Dependencies
+- Authentication and authorization system (src/security/)
+- Multi-tenant architecture (src/multi_tenant/)
+- Database connection pool management (src/database/)
+- Encryption services (src/security/encryption.py)
+- Audit logging system (src/security/enhanced_audit.py)
+- Internationalization framework (src/i18n/)
+
+### External Dependencies
+- Frontend framework: React 19 with TypeScript
+- UI component library: Ant Design 5+
+- Backend framework: FastAPI
+- Database: PostgreSQL 15+ with JSONB support
+- Cache: Redis 7+ for configuration caching
+- LLM providers: OpenAI, Anthropic, Alibaba Cloud, etc.
+- Database drivers: psycopg2, pymysql, cx_Oracle, pyodbc

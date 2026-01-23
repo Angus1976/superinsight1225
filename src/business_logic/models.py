@@ -98,7 +98,7 @@ class AnnotationExample(BaseModel):
 class BusinessRule(BaseModel):
     """业务规则API模型"""
     id: str
-    tenant_id: str
+    tenant_id: str = "default"
     project_id: str
     name: str
     description: Optional[str] = None
@@ -106,7 +106,7 @@ class BusinessRule(BaseModel):
     rule_type: RuleTypeEnum
     confidence: float = 0.0
     frequency: int = 0
-    examples: List[AnnotationExample] = []
+    examples: List[Any] = []  # Changed from List[AnnotationExample] for flexibility
     is_active: bool = True
     created_at: datetime
     updated_at: datetime
@@ -117,7 +117,7 @@ class BusinessRule(BaseModel):
 class BusinessPattern(BaseModel):
     """业务模式API模型"""
     id: str
-    tenant_id: str
+    tenant_id: str = "default"
     project_id: str
     pattern_type: PatternTypeEnum
     description: Optional[str] = None
@@ -132,7 +132,7 @@ class BusinessPattern(BaseModel):
 class BusinessInsight(BaseModel):
     """业务洞察API模型"""
     id: str
-    tenant_id: str
+    tenant_id: str = "default"
     project_id: str
     insight_type: InsightTypeEnum
     title: str

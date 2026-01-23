@@ -678,11 +678,592 @@ class AnnotationMethodSwitcher:
     def get_all_stats(self) -> Dict[str, Dict[str, Any]]:
         """
         Get statistics for all methods.
-        
+
         Returns:
             Dictionary mapping method names to statistics
         """
         return {name: stats.to_dict() for name, stats in self._stats.items()}
+
+    # ========================================================================
+    # Engine Comparison (Task 11.5)
+    # ========================================================================
+
+    async def run_ab_test(
+        self,
+        tasks: List[AnnotationTask],
+        annotation_type: AnnotationType,
+        method_a: str,
+        method_b: str,
+        sample_size: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """
+        Run A/B test comparing two methods on sample data.
+
+        Args:
+            tasks: List of tasks to test
+            annotation_type: Type of annotation
+            method_a: First method name
+            method_b: Second method name
+            sample_size: Optional sample size (uses all if not specified)
+
+        Returns:
+            A/B test results with performance comparison
+        """
+        # Use sample of tasks if specified
+        test_tasks = tasks[:sample_size] if sample_size else tasks
+
+        results = {
+            "test_id": str(uuid4()),
+            "created_at": datetime.utcnow().isoformat(),
+            "sample_size": len(test_tasks),
+            "annotation_type": annotation_type.value,
+            "method_a": {"name": method_a},
+            "method_b": {"name": method_b},
+        }
+
+        # Test method A
+        try:
+            start_a = time.time()
+            results_a = await self.annotate(test_tasks, annotation_type, method=method_a)
+            latency_a = (time.time() - start_a) * 1000
+
+            avg_conf_a = sum(r.confidence for r in results_a) / len(results_a) if results_a else 0
+            results["method_a"].update({
+                "success": True,
+                "latency_ms": latency_a,
+                "avg_confidence": avg_conf_a,
+                "result_count": len(results_a),
+            })
+        except Exception as e:
+            results["method_a"].update({
+                "success": False,
+                "error": str(e),
+            })
+
+        # Test method B
+        try:
+            start_b = time.time()
+            results_b = await self.annotate(test_tasks, annotation_type, method=method_b)
+            latency_b = (time.time() - start_b) * 1000
+
+            avg_conf_b = sum(r.confidence for r in results_b) / len(results_b) if results_b else 0
+            results["method_b"].update({
+                "success": True,
+                "latency_ms": latency_b,
+                "avg_confidence": avg_conf_b,
+                "result_count": len(results_b),
+            })
+        except Exception as e:
+            results["method_b"].update({
+                "success": False,
+                "error": str(e),
+            })
+
+        # Determine winner
+        results["recommendation"] = self._determine_ab_winner(
+            results["method_a"], results["method_b"]
+        )
+
+        return results
+
+    def _determine_ab_winner(
+        self,
+        result_a: Dict[str, Any],
+        result_b: Dict[str, Any],
+    ) -> str:
+        """Determine A/B test winner based on results."""
+        if not result_a.get("success") and not result_b.get("success"):
+            return "neither"
+        if not result_a.get("success"):
+            return result_b.get("name", "method_b")
+        if not result_b.get("success"):
+            return result_a.get("name", "method_a")
+
+        # Score: 60% confidence, 40% latency (inverse)
+        score_a = result_a.get("avg_confidence", 0) * 0.6
+        score_b = result_b.get("avg_confidence", 0) * 0.6
+
+        # Normalize latency scores (lower is better)
+        lat_a = result_a.get("latency_ms", 1000)
+        lat_b = result_b.get("latency_ms", 1000)
+        max_lat = max(lat_a, lat_b, 1)
+        score_a += (1 - lat_a / max_lat) * 0.4
+        score_b += (1 - lat_b / max_lat) * 0.4
+
+        if score_a > score_b:
+            return result_a.get("name", "method_a")
+        elif score_b > score_a:
+            return result_b.get("name", "method_b")
+        return "tie"
+
+    def generate_performance_report(
+        self,
+        methods: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
+        """
+        Generate performance comparison report for methods.
+
+        Args:
+            methods: Optional list of methods (all if not specified)
+
+        Returns:
+            Performance comparison report
+        """
+        methods_to_report = methods or list(self._methods.keys())
+
+        report = {
+            "report_id": str(uuid4()),
+            "generated_at": datetime.utcnow().isoformat(),
+            "methods": {},
+            "ranking": [],
+        }
+
+        method_scores = []
+
+        for name in methods_to_report:
+            stats = self._stats.get(name)
+            info = self.get_method_info(name)
+
+            if stats and info:
+                method_data = {
+                    "name": name,
+                    "type": info.method_type.value,
+                    "stats": stats.to_dict(),
+                    "enabled": info.enabled,
+                    "supported_types": [t.value for t in info.supported_types],
+                }
+                report["methods"][name] = method_data
+
+                # Calculate score for ranking
+                score = stats.success_rate * 0.5
+                if stats.avg_latency_ms > 0:
+                    score += (1 - min(stats.avg_latency_ms, 1000) / 1000) * 0.3
+                score += min(stats.total_calls / 100, 1) * 0.2  # Experience factor
+                method_scores.append((name, score))
+
+        # Sort by score descending
+        method_scores.sort(key=lambda x: x[1], reverse=True)
+        report["ranking"] = [name for name, _ in method_scores]
+
+        return report
+
+    # ========================================================================
+    # Hot-Reload Support (Task 11.7)
+    # ========================================================================
+
+    async def hot_reload_method(
+        self,
+        name: str,
+        new_method: AnnotationMethod,
+    ) -> bool:
+        """
+        Hot-reload a method without service interruption.
+
+        Args:
+            name: Method name to reload
+            new_method: New method instance
+
+        Returns:
+            True if reload successful
+        """
+        async with self._lock:
+            if name not in self._methods:
+                logger.warning(f"Cannot hot-reload unknown method: {name}")
+                return False
+
+            old_method = self._methods[name]
+            old_info = old_method.get_info()
+            new_info = new_method.get_info()
+
+            # Preserve statistics
+            old_stats = self._stats.get(name)
+
+            # Replace method
+            self._methods[name] = new_method
+
+            # Log the reload
+            log = MethodSwitchLog(
+                f"{name}:v_old",
+                f"{name}:v_new",
+                reason="hot_reload"
+            )
+            self._switch_logs.append(log)
+
+            logger.info(f"Hot-reloaded method: {name}")
+            return True
+
+    async def add_method_dynamically(
+        self,
+        name: str,
+        method: AnnotationMethod,
+    ) -> bool:
+        """
+        Dynamically add a new method at runtime.
+
+        Args:
+            name: Method name
+            method: Method instance
+
+        Returns:
+            True if addition successful
+        """
+        async with self._lock:
+            if name in self._methods:
+                logger.warning(f"Method {name} already exists, use hot_reload instead")
+                return False
+
+            self._methods[name] = method
+            self._stats[name] = MethodStats(name)
+
+            logger.info(f"Dynamically added method: {name}")
+            return True
+
+    async def remove_method_dynamically(
+        self,
+        name: str,
+    ) -> bool:
+        """
+        Dynamically remove a method at runtime.
+
+        Args:
+            name: Method name
+
+        Returns:
+            True if removal successful
+        """
+        async with self._lock:
+            if name not in self._methods:
+                logger.warning(f"Method {name} does not exist")
+                return False
+
+            # Don't allow removing the default method
+            if name == self._default_method:
+                logger.warning(f"Cannot remove default method: {name}")
+                return False
+
+            del self._methods[name]
+            if name in self._stats:
+                del self._stats[name]
+
+            logger.info(f"Dynamically removed method: {name}")
+            return True
+
+    # ========================================================================
+    # Format Compatibility (Task 11.9)
+    # ========================================================================
+
+    def normalize_annotation_format(
+        self,
+        annotation_data: Dict[str, Any],
+        source_format: str,
+        target_format: str = "standard",
+    ) -> Dict[str, Any]:
+        """
+        Normalize annotation data from one format to another.
+
+        Supported formats:
+        - standard: SuperInsight internal format
+        - label_studio: Label Studio JSON format
+        - argilla: Argilla record format
+        - spacy: spaCy Doc format
+        - brat: BRAT standoff format
+
+        Args:
+            annotation_data: Input annotation data
+            source_format: Source format name
+            target_format: Target format name
+
+        Returns:
+            Normalized annotation data
+        """
+        # First convert to standard format if needed
+        if source_format != "standard":
+            annotation_data = self._convert_to_standard(annotation_data, source_format)
+
+        # Then convert to target format if needed
+        if target_format != "standard":
+            annotation_data = self._convert_from_standard(annotation_data, target_format)
+
+        return annotation_data
+
+    def _convert_to_standard(
+        self,
+        data: Dict[str, Any],
+        source_format: str,
+    ) -> Dict[str, Any]:
+        """Convert from source format to standard format."""
+        converters = {
+            "label_studio": self._from_label_studio,
+            "argilla": self._from_argilla,
+            "spacy": self._from_spacy,
+            "brat": self._from_brat,
+        }
+
+        converter = converters.get(source_format)
+        if converter:
+            return converter(data)
+
+        logger.warning(f"Unknown source format: {source_format}, returning as-is")
+        return data
+
+    def _convert_from_standard(
+        self,
+        data: Dict[str, Any],
+        target_format: str,
+    ) -> Dict[str, Any]:
+        """Convert from standard format to target format."""
+        converters = {
+            "label_studio": self._to_label_studio,
+            "argilla": self._to_argilla,
+            "spacy": self._to_spacy,
+            "brat": self._to_brat,
+        }
+
+        converter = converters.get(target_format)
+        if converter:
+            return converter(data)
+
+        logger.warning(f"Unknown target format: {target_format}, returning as-is")
+        return data
+
+    def _from_label_studio(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Convert Label Studio format to standard."""
+        result = {
+            "id": data.get("id", str(uuid4())),
+            "text": data.get("data", {}).get("text", ""),
+            "annotations": [],
+        }
+
+        for annotation in data.get("annotations", []):
+            for ann_result in annotation.get("result", []):
+                if ann_result.get("type") == "labels":
+                    value = ann_result.get("value", {})
+                    result["annotations"].append({
+                        "label": value.get("labels", [""])[0],
+                        "start": value.get("start", 0),
+                        "end": value.get("end", 0),
+                        "text": value.get("text", ""),
+                    })
+
+        return result
+
+    def _to_label_studio(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Convert standard format to Label Studio."""
+        result = {
+            "id": data.get("id"),
+            "data": {"text": data.get("text", "")},
+            "annotations": [{
+                "result": []
+            }]
+        }
+
+        for i, ann in enumerate(data.get("annotations", [])):
+            result["annotations"][0]["result"].append({
+                "id": f"result_{i}",
+                "type": "labels",
+                "value": {
+                    "start": ann.get("start", 0),
+                    "end": ann.get("end", 0),
+                    "text": ann.get("text", ""),
+                    "labels": [ann.get("label", "")],
+                },
+                "from_name": "label",
+                "to_name": "text",
+            })
+
+        return result
+
+    def _from_argilla(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Convert Argilla format to standard."""
+        result = {
+            "id": data.get("id", str(uuid4())),
+            "text": data.get("text", ""),
+            "annotations": [],
+        }
+
+        for entity in data.get("prediction", {}).get("entities", []):
+            result["annotations"].append({
+                "label": entity.get("label", ""),
+                "start": entity.get("start", 0),
+                "end": entity.get("end", 0),
+                "text": entity.get("text", ""),
+            })
+
+        return result
+
+    def _to_argilla(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Convert standard format to Argilla."""
+        result = {
+            "id": data.get("id"),
+            "text": data.get("text", ""),
+            "prediction": {
+                "entities": []
+            }
+        }
+
+        for ann in data.get("annotations", []):
+            result["prediction"]["entities"].append({
+                "label": ann.get("label", ""),
+                "start": ann.get("start", 0),
+                "end": ann.get("end", 0),
+                "text": ann.get("text", ""),
+            })
+
+        return result
+
+    def _from_spacy(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Convert spaCy format to standard."""
+        result = {
+            "id": data.get("id", str(uuid4())),
+            "text": data.get("text", ""),
+            "annotations": [],
+        }
+
+        for ent in data.get("ents", []):
+            text = data.get("text", "")[ent.get("start", 0):ent.get("end", 0)]
+            result["annotations"].append({
+                "label": ent.get("label", ""),
+                "start": ent.get("start", 0),
+                "end": ent.get("end", 0),
+                "text": text,
+            })
+
+        return result
+
+    def _to_spacy(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Convert standard format to spaCy."""
+        result = {
+            "text": data.get("text", ""),
+            "ents": []
+        }
+
+        for ann in data.get("annotations", []):
+            result["ents"].append({
+                "label": ann.get("label", ""),
+                "start": ann.get("start", 0),
+                "end": ann.get("end", 0),
+            })
+
+        return result
+
+    def _from_brat(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Convert BRAT format to standard."""
+        result = {
+            "id": data.get("id", str(uuid4())),
+            "text": data.get("text", ""),
+            "annotations": [],
+        }
+
+        for entity in data.get("entities", []):
+            # BRAT format: [[start, end], label, text]
+            spans = entity.get("spans", [[0, 0]])
+            result["annotations"].append({
+                "label": entity.get("label", ""),
+                "start": spans[0][0] if spans else 0,
+                "end": spans[0][1] if spans else 0,
+                "text": entity.get("text", ""),
+            })
+
+        return result
+
+    def _to_brat(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Convert standard format to BRAT."""
+        result = {
+            "text": data.get("text", ""),
+            "entities": []
+        }
+
+        for i, ann in enumerate(data.get("annotations", [])):
+            result["entities"].append({
+                "id": f"T{i+1}",
+                "label": ann.get("label", ""),
+                "spans": [[ann.get("start", 0), ann.get("end", 0)]],
+                "text": ann.get("text", ""),
+            })
+
+        return result
+
+    def migrate_annotations_on_switch(
+        self,
+        annotations: List[Dict[str, Any]],
+        from_method: str,
+        to_method: str,
+    ) -> List[Dict[str, Any]]:
+        """
+        Migrate annotations when switching between methods.
+
+        Args:
+            annotations: List of annotations to migrate
+            from_method: Source method name
+            to_method: Target method name
+
+        Returns:
+            Migrated annotations
+        """
+        # Determine source and target formats based on method type
+        format_map = {
+            "llm": "standard",
+            "ml_backend": "label_studio",
+            "argilla": "argilla",
+        }
+
+        source_format = format_map.get(from_method, "standard")
+        target_format = format_map.get(to_method, "standard")
+
+        if source_format == target_format:
+            return annotations
+
+        migrated = []
+        for ann in annotations:
+            migrated.append(
+                self.normalize_annotation_format(ann, source_format, target_format)
+            )
+
+        logger.info(
+            f"Migrated {len(annotations)} annotations from {from_method} to {to_method}"
+        )
+        return migrated
+
+    # ========================================================================
+    # Fallback Management
+    # ========================================================================
+
+    def get_fallback_method(
+        self,
+        failed_method: str,
+        annotation_type: AnnotationType,
+    ) -> Optional[str]:
+        """
+        Get fallback method when primary method fails.
+
+        Args:
+            failed_method: Method that failed
+            annotation_type: Annotation type being performed
+
+        Returns:
+            Fallback method name or None
+        """
+        # Priority order for fallbacks
+        fallback_priority = ["llm", "ml_backend", "argilla", "custom"]
+
+        for method_name in fallback_priority:
+            if method_name == failed_method:
+                continue
+
+            method = self._methods.get(method_name)
+            if method and method.supports_type(annotation_type):
+                info = method.get_info()
+                if info.enabled:
+                    return method_name
+
+        return None
+
+
+# ============================================================================
+# Alias for backward compatibility
+# ============================================================================
+
+AnnotationSwitcher = AnnotationMethodSwitcher
 
 
 # ============================================================================

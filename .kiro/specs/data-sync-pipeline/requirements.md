@@ -1,121 +1,141 @@
-# Requirements Document: Data Sync Pipeline (数据同步全流程)
+# Requirements Document - Data Sync Pipeline
 
 ## Introduction
 
-本模块优化 `src/extractors/` 和 `src/sync/`，实现客户数据库读取/拉取/接收的完整同步流程，支持保存/不保存策略、业务逻辑提炼（AI 语义增强）和 AI 友好数据输出。
+The Data Sync Pipeline module provides a comprehensive solution for extracting, processing, and outputting customer data in an AI-friendly format. It supports multiple data acquisition methods (read, pull, push), flexible storage strategies (async/real-time), business logic refinement through Label Studio and AI enhancement, and standardized output formats optimized for AI consumption.
 
 ## Glossary
 
-- **Data_Reader**: 数据读取器，支持 JDBC/ODBC 方式读取客户数据库
-- **Data_Puller**: 数据拉取器，支持定时轮询拉取数据
-- **Data_Receiver**: 数据接收器，支持 Webhook 接收推送数据
-- **Save_Strategy_Manager**: 保存策略管理器，管理数据保存/内存策略
-- **Semantic_Refiner**: 语义提炼器，使用 AI 增强数据语义可读性
-- **AI_Friendly_Exporter**: AI 友好导出器，导出适合 AI 处理的数据格式
-- **Sync_Scheduler**: 同步调度器，管理同步任务调度
+- **Data_Sync_Pipeline**: The complete system for data extraction, processing, and output
+- **Extractor**: Component responsible for acquiring data from customer sources
+- **Read_Mode**: Direct database query via JDBC/ODBC
+- **Pull_Mode**: Scheduled polling of data sources
+- **Push_Mode**: Webhook-based incremental data reception
+- **Async_Data**: Data that can be processed asynchronously and persisted to PostgreSQL
+- **Real_Time_Data**: Data that must be processed immediately in memory without persistence
+- **Semantic_Refiner**: Component that enhances data with business logic and AI insights
+- **AI_Friendly_Output**: Standardized export formats (JSON/CSV/COCO) optimized for AI model consumption
+- **Label_Studio**: The annotation engine used for data labeling and refinement
+- **Tenant**: A customer organization with isolated data and configuration
 
 ## Requirements
 
-### Requirement 1: 数据读取
+### Requirement 1: Data Acquisition Methods
 
-**User Story:** 作为系统管理员，我希望能够从客户数据库读取数据，以便将数据导入标注系统。
-
-#### Acceptance Criteria
-
-1. THE Data_Reader SHALL 支持以下数据库类型：PostgreSQL、MySQL、SQLite、Oracle、SQL Server
-2. WHEN 连接数据库 THEN THE Data_Reader SHALL 使用只读权限连接
-3. THE Data_Reader SHALL 支持 JDBC 和 ODBC 两种连接方式
-4. WHEN 读取数据 THEN THE Data_Reader SHALL 支持 SQL 查询和表名两种方式
-5. THE Data_Reader SHALL 支持分页读取，避免内存溢出
-6. WHEN 读取完成 THEN THE Data_Reader SHALL 返回数据统计（行数、列数、大小）
-
-### Requirement 2: 数据拉取
-
-**User Story:** 作为系统管理员，我希望系统能够定时拉取客户数据，以便保持数据同步。
+**User Story:** As a system administrator, I want to configure multiple data acquisition methods, so that I can connect to various customer data sources flexibly.
 
 #### Acceptance Criteria
 
-1. THE Data_Puller SHALL 支持定时轮询拉取（Cron 表达式）
-2. THE Data_Puller SHALL 支持增量拉取，基于时间戳或版本号
-3. WHEN 拉取数据 THEN THE Data_Puller SHALL 记录拉取位置，支持断点续传
-4. THE Data_Puller SHALL 支持配置拉取频率（最小 1 分钟）
-5. WHEN 拉取失败 THEN THE Data_Puller SHALL 自动重试（最多 3 次）
-6. THE Data_Puller SHALL 支持并行拉取多个数据源
+1. WHEN a Read_Mode connection is configured with JDBC/ODBC parameters, THE Data_Sync_Pipeline SHALL establish a direct database connection and execute queries
+2. WHEN a Pull_Mode schedule is configured, THE Data_Sync_Pipeline SHALL poll the data source at specified intervals and retrieve new records
+3. WHEN a Push_Mode webhook endpoint is registered, THE Data_Sync_Pipeline SHALL receive and validate incoming data payloads
+4. WHEN multiple acquisition methods are configured for a tenant, THE Data_Sync_Pipeline SHALL support concurrent operation of all methods
+5. WHEN a connection fails, THE Data_Sync_Pipeline SHALL log the error with correlation ID and retry according to configured policy
 
-### Requirement 3: 数据接收
+### Requirement 2: Connection Security and Validation
 
-**User Story:** 作为系统管理员，我希望系统能够接收客户推送的数据，以便实现实时数据同步。
-
-#### Acceptance Criteria
-
-1. THE Data_Receiver SHALL 提供 Webhook 端点接收推送数据
-2. THE Data_Receiver SHALL 支持 JSON 和 CSV 两种数据格式
-3. WHEN 接收数据 THEN THE Data_Receiver SHALL 验证数据格式和签名
-4. THE Data_Receiver SHALL 支持批量接收，单次最多 10000 条
-5. WHEN 接收成功 THEN THE Data_Receiver SHALL 返回确认响应
-6. THE Data_Receiver SHALL 支持幂等处理，避免重复数据
-
-### Requirement 4: 保存策略
-
-**User Story:** 作为系统管理员，我希望配置数据保存策略，以便根据场景选择保存到数据库或仅在内存处理。
+**User Story:** As a security officer, I want all data source connections to be secure and validated, so that customer data remains protected.
 
 #### Acceptance Criteria
 
-1. THE Save_Strategy_Manager SHALL 支持以下策略：持久化保存、内存处理、混合模式
-2. WHEN 选择持久化保存 THEN THE Save_Strategy_Manager SHALL 将数据存储到 PostgreSQL
-3. WHEN 选择内存处理 THEN THE Save_Strategy_Manager SHALL 仅在内存中处理数据，处理完成后释放
-4. WHEN 选择混合模式 THEN THE Save_Strategy_Manager SHALL 根据数据大小自动选择策略
-5. THE Save_Strategy_Manager SHALL 支持配置数据保留期限
-6. WHEN 数据过期 THEN THE Save_Strategy_Manager SHALL 自动清理过期数据
+1. WHEN database credentials are stored, THE Data_Sync_Pipeline SHALL encrypt them using the encryption service
+2. WHEN a connection is established, THE Data_Sync_Pipeline SHALL validate credentials and test connectivity before marking as active
+3. WHEN a webhook payload is received, THE Data_Sync_Pipeline SHALL verify the signature and reject unauthorized requests
+4. WHEN connection parameters are updated, THE Data_Sync_Pipeline SHALL re-validate the connection before applying changes
+5. THE Data_Sync_Pipeline SHALL enforce read-only permissions for all database connections
 
-### Requirement 5: 语义提炼
+### Requirement 3: Data Processing Strategy Configuration
 
-**User Story:** 作为数据分析师，我希望系统能够提炼数据的业务语义，以便提升数据的可读性和 AI 处理效果。
-
-#### Acceptance Criteria
-
-1. THE Semantic_Refiner SHALL 使用 LLM 分析数据的业务含义
-2. THE Semantic_Refiner SHALL 生成字段描述和数据字典
-3. THE Semantic_Refiner SHALL 识别数据中的实体和关系
-4. WHEN 提炼完成 THEN THE Semantic_Refiner SHALL 生成语义增强后的数据描述
-5. THE Semantic_Refiner SHALL 支持自定义提炼规则
-6. THE Semantic_Refiner SHALL 缓存提炼结果，避免重复计算
-
-### Requirement 6: AI 友好导出
-
-**User Story:** 作为 AI 工程师，我希望导出 AI 友好的数据格式，以便用于模型训练和推理。
+**User Story:** As a data engineer, I want to configure whether data is processed asynchronously or in real-time, so that I can optimize for different use cases.
 
 #### Acceptance Criteria
 
-1. THE AI_Friendly_Exporter SHALL 支持以下导出格式：JSON、CSV、JSONL、COCO、Pascal VOC
-2. THE AI_Friendly_Exporter SHALL 在导出数据中包含语义增强信息
-3. THE AI_Friendly_Exporter SHALL 支持数据分割（训练集/验证集/测试集）
-4. WHEN 导出数据 THEN THE AI_Friendly_Exporter SHALL 生成数据统计报告
-5. THE AI_Friendly_Exporter SHALL 支持增量导出
-6. THE AI_Friendly_Exporter SHALL 支持数据脱敏导出
+1. WHEN Async_Data mode is configured, THE Data_Sync_Pipeline SHALL persist incoming data to PostgreSQL with tenant isolation
+2. WHEN Real_Time_Data mode is configured, THE Data_Sync_Pipeline SHALL process data in memory and discard after output generation
+3. WHEN a hybrid mode is configured, THE Data_Sync_Pipeline SHALL route data based on configurable rules (e.g., data type, size, priority)
+4. WHEN data volume exceeds memory limits in Real_Time_Data mode, THE Data_Sync_Pipeline SHALL reject the request with a clear error message
+5. WHEN Async_Data is persisted, THE Data_Sync_Pipeline SHALL include metadata (source, timestamp, tenant_id, sync_method)
 
-### Requirement 7: 同步调度
+### Requirement 4: Business Logic Refinement
 
-**User Story:** 作为系统管理员，我希望管理同步任务的调度，以便控制数据同步的时机和频率。
-
-#### Acceptance Criteria
-
-1. THE Sync_Scheduler SHALL 支持 Cron 表达式配置调度
-2. THE Sync_Scheduler SHALL 支持手动触发同步
-3. THE Sync_Scheduler SHALL 显示同步任务状态（等待/运行/完成/失败）
-4. WHEN 同步失败 THEN THE Sync_Scheduler SHALL 发送告警通知
-5. THE Sync_Scheduler SHALL 支持同步任务优先级
-6. THE Sync_Scheduler SHALL 记录完整的同步历史
-
-### Requirement 8: 前端配置界面
-
-**User Story:** 作为系统管理员，我希望通过可视化界面配置数据同步，以便无需修改代码即可管理同步设置。
+**User Story:** As a data analyst, I want to refine raw data with business logic and AI insights, so that the output is meaningful and actionable.
 
 #### Acceptance Criteria
 
-1. THE Sync_Config_UI SHALL 显示所有数据源和同步状态
-2. THE Sync_Config_UI SHALL 支持配置读取/拉取/接收方式
-3. THE Sync_Config_UI SHALL 支持配置保存策略
-4. THE Sync_Config_UI SHALL 支持配置同步调度
-5. THE Sync_Config_UI SHALL 显示同步历史和统计
-6. THE Sync_Config_UI SHALL 支持手动触发同步和导出
+1. WHEN raw data is received, THE Semantic_Refiner SHALL send it to Label_Studio for annotation if configured
+2. WHEN Label_Studio annotations are completed, THE Semantic_Refiner SHALL merge annotations with original data
+3. WHEN AI enhancement is enabled, THE Semantic_Refiner SHALL invoke configured LLM services to add semantic context
+4. WHEN business rules are defined, THE Semantic_Refiner SHALL apply transformations (e.g., field mapping, value normalization, validation)
+5. WHEN refinement fails, THE Semantic_Refiner SHALL preserve original data and log the failure with details
+
+### Requirement 5: AI-Friendly Output Generation
+
+**User Story:** As an AI engineer, I want to export refined data in standardized formats, so that I can easily train and evaluate AI models.
+
+#### Acceptance Criteria
+
+1. WHEN JSON output is requested, THE AI_Friendly_Output SHALL generate valid JSON with consistent schema and UTF-8 encoding
+2. WHEN CSV output is requested, THE AI_Friendly_Output SHALL generate properly escaped CSV with headers and configurable delimiters
+3. WHEN COCO format is requested for image annotation data, THE AI_Friendly_Output SHALL generate valid COCO JSON with images, annotations, and categories
+4. WHEN semantic enhancement is applied, THE AI_Friendly_Output SHALL include both original and enhanced fields in the output
+5. WHEN export is requested, THE AI_Friendly_Output SHALL support pagination for large datasets and streaming for real-time data
+
+### Requirement 6: Synchronization Monitoring and Feedback
+
+**User Story:** As a system operator, I want to monitor synchronization status and receive feedback, so that I can ensure data pipeline health.
+
+#### Acceptance Criteria
+
+1. WHEN a sync operation starts, THE Data_Sync_Pipeline SHALL create a sync job record with status "running"
+2. WHEN a sync operation completes, THE Data_Sync_Pipeline SHALL update the job record with status "completed", record count, and duration
+3. WHEN a sync operation fails, THE Data_Sync_Pipeline SHALL update the job record with status "failed" and error details
+4. WHEN sync metrics are requested, THE Data_Sync_Pipeline SHALL provide statistics (success rate, average duration, error rate) per tenant and method
+5. WHEN sync errors exceed threshold, THE Data_Sync_Pipeline SHALL trigger alerts via the monitoring service
+
+### Requirement 7: Incremental and Full Synchronization
+
+**User Story:** As a data engineer, I want to perform both incremental and full synchronization, so that I can optimize data transfer and handle different scenarios.
+
+#### Acceptance Criteria
+
+1. WHEN incremental sync is configured, THE Data_Sync_Pipeline SHALL track the last sync timestamp and only retrieve new or modified records
+2. WHEN full sync is requested, THE Data_Sync_Pipeline SHALL retrieve all records regardless of previous sync state
+3. WHEN a sync method supports change tracking (e.g., database triggers, CDC), THE Data_Sync_Pipeline SHALL use it for incremental sync
+4. WHEN incremental sync detects data gaps or inconsistencies, THE Data_Sync_Pipeline SHALL log a warning and optionally trigger full sync
+5. WHEN sync state is persisted, THE Data_Sync_Pipeline SHALL store it per tenant and per data source
+
+### Requirement 8: Multi-Tenant Data Isolation
+
+**User Story:** As a platform administrator, I want complete data isolation between tenants, so that customer data remains secure and compliant.
+
+#### Acceptance Criteria
+
+1. WHEN data is extracted, THE Data_Sync_Pipeline SHALL tag all records with the tenant_id
+2. WHEN data is stored in PostgreSQL, THE Data_Sync_Pipeline SHALL enforce row-level security policies based on tenant_id
+3. WHEN data is processed, THE Data_Sync_Pipeline SHALL ensure no cross-tenant data leakage in memory or logs
+4. WHEN output is generated, THE Data_Sync_Pipeline SHALL filter results to only include the requesting tenant's data
+5. WHEN sync jobs are listed, THE Data_Sync_Pipeline SHALL only show jobs belonging to the requesting tenant
+
+### Requirement 9: Internationalization Support
+
+**User Story:** As a global user, I want all user-facing messages in my preferred language, so that I can use the system effectively.
+
+#### Acceptance Criteria
+
+1. WHEN API responses are generated, THE Data_Sync_Pipeline SHALL use i18n keys for all user-facing messages
+2. WHEN error messages are returned, THE Data_Sync_Pipeline SHALL provide localized messages in the user's language (zh-CN or en-US)
+3. WHEN configuration labels are displayed, THE Data_Sync_Pipeline SHALL translate them using the i18n service
+4. WHEN logs are written, THE Data_Sync_Pipeline SHALL use English for technical details and i18n keys for user-facing content
+5. THE Data_Sync_Pipeline SHALL support adding new languages without code changes
+
+### Requirement 10: Performance and Scalability
+
+**User Story:** As a system architect, I want the sync pipeline to handle large data volumes efficiently, so that it scales with customer growth.
+
+#### Acceptance Criteria
+
+1. WHEN processing large datasets, THE Data_Sync_Pipeline SHALL use batch operations with configurable batch size (default 1000 records)
+2. WHEN multiple sync jobs run concurrently, THE Data_Sync_Pipeline SHALL limit concurrent jobs per tenant to prevent resource exhaustion
+3. WHEN database queries are executed, THE Data_Sync_Pipeline SHALL use connection pooling and prepared statements
+4. WHEN data is transferred, THE Data_Sync_Pipeline SHALL support compression to reduce network overhead
+5. WHEN sync operations exceed timeout thresholds, THE Data_Sync_Pipeline SHALL cancel the operation and return a timeout error

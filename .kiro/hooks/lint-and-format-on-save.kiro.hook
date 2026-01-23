@@ -1,0 +1,19 @@
+{
+  "enabled": true,
+  "name": "保存时代码检查格式化",
+  "description": "保存文件时自动运行 Lint 和格式化",
+  "version": "1.0.0",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "**/*.ts",
+      "**/*.tsx",
+      "**/*.py",
+      "**/*.json"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A code file has been saved. Please:\n1. Run the appropriate linter (ESLint for JS/TS, flake8/pylint for Python)\n2. Run the appropriate formatter (Prettier for JS/TS, Black for Python)\n3. Fix any auto-fixable issues\n4. Report any remaining issues that need manual attention\n\nUse the project's existing configuration files (.eslintrc, .prettierrc, pyproject.toml, etc.) and follow the established coding standards."
+  }
+}

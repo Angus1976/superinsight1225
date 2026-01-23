@@ -1,1051 +1,1014 @@
-# Design Document: Data Sync Pipeline (数据同步全流程)
+# Design Document - Data Sync Pipeline
 
 ## Overview
 
-本设计文档描述 Data Sync Pipeline 模块的架构设计，该模块优化现有 `src/extractors/` 和 `src/sync/`，实现客户数据库读取/拉取/接收的完整同步流程，支持保存/不保存策略、业务逻辑提炼（AI 语义增强）和 AI 友好数据输出。
+The Data Sync Pipeline is a comprehensive data integration system that extracts data from customer sources, processes it through configurable strategies, refines it with business logic and AI enhancement, and outputs it in AI-friendly formats. The system supports three acquisition methods (Read, Pull, Push), two processing modes (Async, Real-time), and multiple output formats (JSON, CSV, COCO).
 
-设计原则：
-- **扩展现有**：基于现有 extractors 和 sync 模块扩展
-- **多模式支持**：读取/拉取/接收三种数据获取方式
-- **策略灵活**：支持持久化/内存/混合保存策略
-- **AI 增强**：语义提炼提升数据可读性和 AI 处理效果
-- **安全优先**：只读连接、数据脱敏、签名验证
+### Key Design Goals
+
+1. **Flexibility**: Support multiple data sources and acquisition methods
+2. **Security**: Encrypt credentials, validate connections, enforce read-only access
+3. **Scalability**: Handle large data volumes with batch processing and connection pooling
+4. **Multi-tenancy**: Complete data isolation between tenants
+5. **Observability**: Comprehensive monitoring, logging, and alerting
+6. **AI-Readiness**: Standardized output formats optimized for AI/ML workflows
 
 ## Architecture
 
+### High-Level Architecture
+
 ```mermaid
 graph TB
-    subgraph Frontend["前端层"]
-        SyncConfigUI[Sync Config UI]
-        DataSourceUI[Data Source UI]
-        SchedulerUI[Scheduler UI]
-        ExportUI[Export UI]
+    subgraph "Data Sources"
+        DB[(Customer Database)]
+        API[External API]
+        WH[Webhook]
     end
+    
+    subgraph "Extraction Layer"
+        RE[Read Extractor<br/>JDBC/ODBC]
+        PE[Pull Extractor<br/>Scheduled Poll]
+        PSE[Push Extractor<br/>Webhook Handler]
+    end
+    
+    subgraph "Processing Layer"
+        SM[Sync Manager]
+        AS[Async Strategy<br/>PostgreSQL]
+        RT[Real-time Strategy<br/>In-Memory]
+    end
+    
+    subgraph "Refinement Layer"
+        SR[Semantic Refiner]
+        LS[Label Studio]
+        AI[AI Enhancement<br/>LLM Services]
+    end
+    
+    subgraph "Output Layer"
+        EX[Export Service]
+        JSON[JSON Exporter]
+        CSV[CSV Exporter]
+        COCO[COCO Exporter]
+    end
+    
+    subgraph "Support Services"
+        MON[Monitoring Service]
+        ENC[Encryption Service]
+        I18N[i18n Service]
+        CACHE[Cache Strategy]
+    end
+    
+    DB -->|Query| RE
+    API -->|Poll| PE
+    WH -->|POST| PSE
+    
+    RE --> SM
+    PE --> SM
+    PSE --> SM
+    
+    SM -->|Async Mode| AS
+    SM -->|Real-time Mode| RT
+    
+    AS --> SR
+    RT --> SR
+    
+    SR -->|Annotate| LS
+    SR -->|Enhance| AI
+    
+    SR --> EX
+    
+    EX --> JSON
+    EX --> CSV
+    EX --> COCO
+    
+    SM -.->|Metrics| MON
+    SM -.->|Encrypt| ENC
+    EX -.->|Translate| I18N
+    SM -.->|Cache Config| CACHE
+```
 
-    subgraph API["API 层"]
-        SyncRouter[/api/v1/sync]
-        DataSourceAPI[Data Source API]
-        SchedulerAPI[Scheduler API]
-        ExportAPI[Export API]
+### Component Interaction Flow
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API
+    participant SyncManager
+    participant Extractor
+    participant Strategy
+    participant Refiner
+    participant Exporter
+    participant DB
+    
+    Client->>API: POST /api/sync/start
+    API->>SyncManager: create_sync_job(config)
+    SyncManager->>DB: Create sync_job record
+    
+    SyncManager->>Extractor: extract_data(source_config)
+    Extractor->>Extractor: Validate connection
+    Extractor->>Extractor: Execute extraction
+    Extractor-->>SyncManager: raw_data[]
+    
+    SyncManager->>Strategy: process_data(raw_data, mode)
+    
+    alt Async Mode
+        Strategy->>DB: Batch insert with tenant_id
+        Strategy-->>SyncManager: persisted_ids[]
+    else Real-time Mode
+        Strategy->>Strategy: Hold in memory
+        Strategy-->>SyncManager: in_memory_data[]
     end
     
-    subgraph Core["核心层"]
-        DataReader[Data Reader]
-        DataPuller[Data Puller]
-        DataReceiver[Data Receiver]
-        SaveStrategyManager[Save Strategy Manager]
-        SemanticRefiner[Semantic Refiner]
-        AIFriendlyExporter[AI Friendly Exporter]
-        SyncScheduler[Sync Scheduler]
+    SyncManager->>Refiner: refine_data(data, config)
+    
+    opt Label Studio enabled
+        Refiner->>Refiner: Send to Label Studio
+        Refiner->>Refiner: Wait for annotations
     end
     
-    subgraph Connectors["连接器层"]
-        PostgreSQLConn[PostgreSQL Connector]
-        MySQLConn[MySQL Connector]
-        SQLiteConn[SQLite Connector]
-        OracleConn[Oracle Connector]
-        SQLServerConn[SQL Server Connector]
+    opt AI enhancement enabled
+        Refiner->>Refiner: Call LLM service
+        Refiner->>Refiner: Merge AI insights
     end
     
-    subgraph External["外部服务"]
-        LLMService[LLM Service]
-        CustomerDB[(Customer DB)]
-        Webhook[Webhook Source]
-    end
+    Refiner-->>SyncManager: refined_data[]
     
-    subgraph Storage["存储层"]
-        DB[(PostgreSQL)]
-        Cache[(Redis)]
-    end
+    SyncManager->>Exporter: export_data(refined_data, format)
+    Exporter->>Exporter: Generate output
+    Exporter-->>SyncManager: output_file_path
     
-    SyncConfigUI --> SyncRouter
-    DataSourceUI --> SyncRouter
-    SchedulerUI --> SyncRouter
-    ExportUI --> SyncRouter
-    
-    SyncRouter --> DataSourceAPI
-    SyncRouter --> SchedulerAPI
-    SyncRouter --> ExportAPI
-    
-    DataSourceAPI --> DataReader
-    DataSourceAPI --> DataPuller
-    DataSourceAPI --> DataReceiver
-    
-    DataReader --> PostgreSQLConn
-    DataReader --> MySQLConn
-    DataReader --> SQLiteConn
-    DataReader --> OracleConn
-    DataReader --> SQLServerConn
-    
-    PostgreSQLConn --> CustomerDB
-    MySQLConn --> CustomerDB
-    SQLiteConn --> CustomerDB
-    OracleConn --> CustomerDB
-    SQLServerConn --> CustomerDB
-    
-    DataPuller --> DataReader
-    DataReceiver --> Webhook
-    
-    DataReader --> SaveStrategyManager
-    DataPuller --> SaveStrategyManager
-    DataReceiver --> SaveStrategyManager
-    
-    SaveStrategyManager --> DB
-    SaveStrategyManager --> Cache
-    
-    SemanticRefiner --> LLMService
-    SemanticRefiner --> Cache
-    
-    AIFriendlyExporter --> SemanticRefiner
-    AIFriendlyExporter --> DB
-    
-    SchedulerAPI --> SyncScheduler
-    SyncScheduler --> DataPuller
+    SyncManager->>DB: Update sync_job (completed)
+    SyncManager-->>API: sync_result
+    API-->>Client: 200 OK + result
 ```
 
 ## Components and Interfaces
 
-### 1. Data Reader (数据读取器)
+### 1. Extractor Components
 
-**文件**: `src/sync/data_reader.py`
-
-**职责**: 支持 JDBC/ODBC 方式读取客户数据库，只读权限连接
+#### 1.1 Base Extractor Interface
 
 ```python
-class DataReader:
-    """数据读取器"""
-    
-    def __init__(self, connector_factory: ConnectorFactory):
-        self.connector_factory = connector_factory
-    
-    async def connect(
-        self,
-        config: DataSourceConfig,
-        connection_method: ConnectionMethod = ConnectionMethod.JDBC
-    ) -> Connection:
-        """建立只读连接"""
-        pass
-    
-    async def read_by_query(
-        self,
-        connection: Connection,
-        query: str,
-        page_size: int = 1000
-    ) -> AsyncIterator[DataPage]:
-        """通过 SQL 查询读取数据（分页）"""
-        pass
-    
-    async def read_by_table(
-        self,
-        connection: Connection,
-        table_name: str,
-        columns: List[str] = None,
-        page_size: int = 1000
-    ) -> AsyncIterator[DataPage]:
-        """通过表名读取数据（分页）"""
-        pass
-    
-    def get_statistics(self, pages: List[DataPage]) -> ReadStatistics:
-        """获取读取统计"""
-        pass
+from abc import ABC, abstractmethod
+from typing import List, Dict, Any, Optional
+from pydantic import BaseModel
 
-class ConnectionMethod(str, Enum):
-    JDBC = "jdbc"
-    ODBC = "odbc"
-
-class DataSourceConfig(BaseModel):
-    db_type: DatabaseType
-    host: str
-    port: int
-    database: str
-    username: str
-    password: str  # 加密存储
-    connection_method: ConnectionMethod = ConnectionMethod.JDBC
-    extra_params: Dict[str, Any] = {}
-
-class DatabaseType(str, Enum):
-    POSTGRESQL = "postgresql"
-    MYSQL = "mysql"
-    SQLITE = "sqlite"
-    ORACLE = "oracle"
-    SQLSERVER = "sqlserver"
-
-class DataPage(BaseModel):
-    page_number: int
-    rows: List[Dict[str, Any]]
-    row_count: int
-    has_more: bool
-
-class ReadStatistics(BaseModel):
-    total_rows: int
-    total_columns: int
-    total_size_bytes: int
-    read_duration_ms: float
-```
-
-### 2. Data Puller (数据拉取器)
-
-**文件**: `src/sync/data_puller.py`
-
-**职责**: 支持定时轮询拉取，增量拉取，断点续传
-
-```python
-class DataPuller:
-    """数据拉取器"""
-    
-    def __init__(self, data_reader: DataReader, checkpoint_store: CheckpointStore):
-        self.data_reader = data_reader
-        self.checkpoint_store = checkpoint_store
-    
-    async def pull(
-        self,
-        source_id: str,
-        config: PullConfig
-    ) -> PullResult:
-        """执行拉取"""
-        pass
-    
-    async def pull_incremental(
-        self,
-        source_id: str,
-        config: PullConfig,
-        checkpoint_field: str
-    ) -> PullResult:
-        """增量拉取"""
-        checkpoint = await self.checkpoint_store.get(source_id)
-        # 基于 checkpoint 构建增量查询
-        pass
-    
-    async def save_checkpoint(self, source_id: str, checkpoint: Checkpoint) -> None:
-        """保存检查点"""
-        pass
-    
-    async def resume_from_checkpoint(self, source_id: str) -> PullResult:
-        """从检查点恢复"""
-        pass
-    
-    async def pull_with_retry(
-        self,
-        source_id: str,
-        config: PullConfig,
-        max_retries: int = 3
-    ) -> PullResult:
-        """带重试的拉取"""
-        pass
-    
-    async def pull_parallel(
-        self,
-        source_configs: List[Tuple[str, PullConfig]]
-    ) -> List[PullResult]:
-        """并行拉取多个数据源"""
-        pass
-
-class PullConfig(BaseModel):
-    cron_expression: str
-    incremental: bool = True
-    checkpoint_field: str = "updated_at"
-    min_interval_minutes: int = 1  # 最小 1 分钟
-    query: Optional[str] = None
-    table_name: Optional[str] = None
-
-class Checkpoint(BaseModel):
+class ExtractionConfig(BaseModel):
+    """Configuration for data extraction"""
+    tenant_id: str
     source_id: str
-    last_value: Any
-    last_pull_at: datetime
-    rows_pulled: int
-
-class PullResult(BaseModel):
-    source_id: str
+    source_type: str  # "database", "api", "webhook"
+    connection_params: Dict[str, Any]
+    extraction_params: Dict[str, Any]
+    
+class ExtractionResult(BaseModel):
+    """Result of data extraction"""
     success: bool
-    rows_pulled: int
-    checkpoint: Checkpoint
-    error_message: Optional[str] = None
-    retries_used: int = 0
+    record_count: int
+    data: List[Dict[str, Any]]
+    metadata: Dict[str, Any]
+    errors: Optional[List[str]] = None
+
+class BaseExtractor(ABC):
+    """Base class for all extractors"""
+    
+    @abstractmethod
+    async def validate_connection(self, config: ExtractionConfig) -> bool:
+        """Validate connection to data source"""
+        pass
+    
+    @abstractmethod
+    async def extract(self, config: ExtractionConfig) -> ExtractionResult:
+        """Extract data from source"""
+        pass
+    
+    @abstractmethod
+    async def test_connection(self, config: ExtractionConfig) -> Dict[str, Any]:
+        """Test connection and return diagnostics"""
+        pass
 ```
 
-### 3. Data Receiver (数据接收器)
-
-**文件**: `src/sync/data_receiver.py`
-
-**职责**: 提供 Webhook 端点接收推送数据，支持签名验证和幂等处理
+#### 1.2 Read Extractor (JDBC/ODBC)
 
 ```python
-class DataReceiver:
-    """数据接收器"""
+class ReadExtractor(BaseExtractor):
+    """Direct database query extractor"""
     
-    def __init__(self, idempotency_store: IdempotencyStore):
-        self.idempotency_store = idempotency_store
+    def __init__(self, encryption_service, connection_pool):
+        self.encryption_service = encryption_service
+        self.connection_pool = connection_pool
     
-    async def receive(
-        self,
-        data: Union[str, bytes],
-        format: DataFormat,
+    async def validate_connection(self, config: ExtractionConfig) -> bool:
+        """Validate database connection with encrypted credentials"""
+        decrypted_params = await self.encryption_service.decrypt_dict(
+            config.connection_params
+        )
+        # Test connection with read-only user
+        # Return True if successful
+        pass
+    
+    async def extract(self, config: ExtractionConfig) -> ExtractionResult:
+        """Execute SQL query and return results"""
+        # Use prepared statements
+        # Enforce read-only mode
+        # Apply row limits
+        pass
+```
+
+#### 1.3 Pull Extractor (Scheduled Polling)
+
+```python
+class PullExtractor(BaseExtractor):
+    """Scheduled polling extractor"""
+    
+    def __init__(self, scheduler, state_manager):
+        self.scheduler = scheduler
+        self.state_manager = state_manager
+    
+    async def schedule_pull(
+        self, 
+        config: ExtractionConfig, 
+        cron_expression: str
+    ) -> str:
+        """Schedule periodic data pull"""
+        # Create scheduled job
+        # Store last_sync_timestamp
+        # Return job_id
+        pass
+    
+    async def extract(self, config: ExtractionConfig) -> ExtractionResult:
+        """Pull data since last sync"""
+        last_sync = await self.state_manager.get_last_sync(
+            config.tenant_id, 
+            config.source_id
+        )
+        # Query data where modified_at > last_sync
+        # Update last_sync_timestamp
+        pass
+```
+
+#### 1.4 Push Extractor (Webhook Handler)
+
+```python
+class PushExtractor(BaseExtractor):
+    """Webhook-based push extractor"""
+    
+    def __init__(self, signature_validator):
+        self.signature_validator = signature_validator
+    
+    async def validate_webhook(
+        self, 
+        payload: Dict[str, Any], 
         signature: str,
-        idempotency_key: str
-    ) -> ReceiveResult:
-        """接收数据"""
-        # 验证签名
-        if not self.verify_signature(data, signature):
-            raise InvalidSignatureError()
-        
-        # 幂等检查
-        if await self.idempotency_store.exists(idempotency_key):
-            return ReceiveResult(success=True, duplicate=True, rows_received=0)
-        
-        # 解析数据
-        parsed = self.parse_data(data, format)
-        
-        # 验证批量大小
-        if len(parsed) > 10000:
-            raise BatchSizeLimitExceededError()
-        
-        # 保存幂等键
-        await self.idempotency_store.save(idempotency_key)
-        
-        return ReceiveResult(success=True, duplicate=False, rows_received=len(parsed))
-    
-    def verify_signature(self, data: Union[str, bytes], signature: str) -> bool:
-        """验证签名"""
+        config: ExtractionConfig
+    ) -> bool:
+        """Validate webhook signature"""
+        # Verify HMAC signature
+        # Check timestamp freshness
         pass
     
-    def parse_data(self, data: Union[str, bytes], format: DataFormat) -> List[Dict]:
-        """解析数据"""
+    async def extract(self, config: ExtractionConfig) -> ExtractionResult:
+        """Process webhook payload"""
+        # Validate payload schema
+        # Extract incremental data
+        # Return normalized result
         pass
-
-class DataFormat(str, Enum):
-    JSON = "json"
-    CSV = "csv"
-
-class ReceiveResult(BaseModel):
-    success: bool
-    duplicate: bool
-    rows_received: int
-    error_message: Optional[str] = None
 ```
 
-### 4. Save Strategy Manager (保存策略管理器)
-
-**文件**: `src/sync/save_strategy.py`
-
-**职责**: 管理数据保存策略（持久化/内存/混合）
+### 2. Sync Manager
 
 ```python
-class SaveStrategyManager:
-    """保存策略管理器"""
-    
-    def __init__(self, db: AsyncSession, cache: Redis):
-        self.db = db
-        self.cache = cache
-    
-    async def save(
-        self,
-        data: List[Dict],
-        strategy: SaveStrategy,
-        config: SaveConfig
-    ) -> SaveResult:
-        """根据策略保存数据"""
-        if strategy == SaveStrategy.PERSISTENT:
-            return await self.save_to_db(data, config)
-        elif strategy == SaveStrategy.MEMORY:
-            return await self.save_to_memory(data, config)
-        else:  # HYBRID
-            return await self.save_hybrid(data, config)
-    
-    async def save_to_db(self, data: List[Dict], config: SaveConfig) -> SaveResult:
-        """持久化保存到 PostgreSQL"""
-        pass
-    
-    async def save_to_memory(self, data: List[Dict], config: SaveConfig) -> SaveResult:
-        """仅内存处理"""
-        # 处理完成后自动释放
-        pass
-    
-    async def save_hybrid(self, data: List[Dict], config: SaveConfig) -> SaveResult:
-        """混合模式：根据数据大小自动选择"""
-        threshold = config.hybrid_threshold_bytes or 1024 * 1024  # 1MB
-        data_size = self.calculate_size(data)
-        
-        if data_size > threshold:
-            return await self.save_to_db(data, config)
-        else:
-            return await self.save_to_memory(data, config)
-    
-    async def cleanup_expired(self, retention_days: int) -> int:
-        """清理过期数据"""
-        pass
-    
-    def calculate_size(self, data: List[Dict]) -> int:
-        """计算数据大小"""
-        pass
-
-class SaveStrategy(str, Enum):
-    PERSISTENT = "persistent"
-    MEMORY = "memory"
+class SyncMode(str, Enum):
+    ASYNC = "async"
+    REALTIME = "realtime"
     HYBRID = "hybrid"
 
-class SaveConfig(BaseModel):
-    strategy: SaveStrategy = SaveStrategy.PERSISTENT
-    retention_days: int = 30
-    hybrid_threshold_bytes: int = 1024 * 1024  # 1MB
-    table_name: Optional[str] = None
+class SyncConfig(BaseModel):
+    tenant_id: str
+    source_id: str
+    mode: SyncMode
+    extraction_config: ExtractionConfig
+    processing_rules: Optional[Dict[str, Any]] = None
+    refinement_config: Optional[Dict[str, Any]] = None
+    output_format: str = "json"
 
-class SaveResult(BaseModel):
-    success: bool
-    strategy_used: SaveStrategy
-    rows_saved: int
-    storage_location: str  # "database" or "memory"
+class SyncManager:
+    """Orchestrates the entire sync pipeline"""
+    
+    def __init__(
+        self,
+        extractors: Dict[str, BaseExtractor],
+        async_strategy: AsyncStrategy,
+        realtime_strategy: RealtimeStrategy,
+        semantic_refiner: SemanticRefiner,
+        export_service: ExportService,
+        db_session: AsyncSession
+    ):
+        self.extractors = extractors
+        self.async_strategy = async_strategy
+        self.realtime_strategy = realtime_strategy
+        self.semantic_refiner = semantic_refiner
+        self.export_service = export_service
+        self.db = db_session
+    
+    async def create_sync_job(self, config: SyncConfig) -> str:
+        """Create and start a sync job"""
+        # 1. Create sync_job record
+        # 2. Select appropriate extractor
+        # 3. Extract data
+        # 4. Route to processing strategy
+        # 5. Refine data
+        # 6. Export output
+        # 7. Update sync_job status
+        # 8. Return job_id
+        pass
+    
+    async def get_sync_status(self, job_id: str, tenant_id: str) -> Dict[str, Any]:
+        """Get sync job status"""
+        pass
+    
+    async def cancel_sync_job(self, job_id: str, tenant_id: str) -> bool:
+        """Cancel running sync job"""
+        pass
 ```
 
-### 5. Semantic Refiner (语义提炼器)
+### 3. Processing Strategies
 
-**文件**: `src/sync/semantic_refiner.py`
-
-**职责**: 使用 LLM 分析数据业务含义，生成语义增强描述
+#### 3.1 Async Strategy
 
 ```python
-class SemanticRefiner:
-    """语义提炼器"""
+class AsyncStrategy:
+    """Persist data to PostgreSQL for async processing"""
     
-    def __init__(self, llm_service: LLMService, cache: Redis):
-        self.llm = llm_service
-        self.cache = cache
+    def __init__(self, db_session: AsyncSession, batch_size: int = 1000):
+        self.db = db_session
+        self.batch_size = batch_size
+    
+    async def process(
+        self, 
+        data: List[Dict[str, Any]], 
+        tenant_id: str,
+        metadata: Dict[str, Any]
+    ) -> List[str]:
+        """Persist data with tenant isolation"""
+        # Batch insert into sync_data table
+        # Include tenant_id, source_id, sync_timestamp
+        # Return list of record IDs
+        pass
+    
+    async def retrieve(
+        self, 
+        record_ids: List[str], 
+        tenant_id: str
+    ) -> List[Dict[str, Any]]:
+        """Retrieve persisted data"""
+        # Query with tenant_id filter
+        # Apply row-level security
+        pass
+```
+
+#### 3.2 Real-time Strategy
+
+```python
+class RealtimeStrategy:
+    """Process data in memory without persistence"""
+    
+    def __init__(self, max_memory_mb: int = 100):
+        self.max_memory_mb = max_memory_mb
+        self._memory_cache: Dict[str, List[Dict[str, Any]]] = {}
+    
+    async def process(
+        self, 
+        data: List[Dict[str, Any]], 
+        tenant_id: str,
+        metadata: Dict[str, Any]
+    ) -> str:
+        """Hold data in memory temporarily"""
+        # Check memory limit
+        # Store in memory with TTL
+        # Return cache_key
+        pass
+    
+    async def retrieve(self, cache_key: str, tenant_id: str) -> List[Dict[str, Any]]:
+        """Retrieve from memory cache"""
+        pass
+    
+    async def clear(self, cache_key: str):
+        """Clear memory after processing"""
+        pass
+```
+
+### 4. Semantic Refiner
+
+```python
+class RefinementConfig(BaseModel):
+    enable_label_studio: bool = False
+    label_studio_project_id: Optional[str] = None
+    enable_ai_enhancement: bool = False
+    ai_model: Optional[str] = None
+    business_rules: Optional[List[Dict[str, Any]]] = None
+
+class SemanticRefiner:
+    """Refine data with business logic and AI"""
+    
+    def __init__(
+        self,
+        label_studio_client,
+        ai_service,
+        rule_engine
+    ):
+        self.label_studio = label_studio_client
+        self.ai_service = ai_service
+        self.rule_engine = rule_engine
     
     async def refine(
-        self,
-        data: List[Dict],
-        config: RefineConfig
-    ) -> RefinementResult:
-        """执行语义提炼"""
-        # 检查缓存
-        cache_key = self.generate_cache_key(data, config)
-        cached = await self.cache.get(cache_key)
-        if cached:
-            return RefinementResult.parse_raw(cached)
+        self, 
+        data: List[Dict[str, Any]], 
+        config: RefinementConfig
+    ) -> List[Dict[str, Any]]:
+        """Apply refinement pipeline"""
+        refined = data
         
-        # 执行提炼
-        result = await self._do_refine(data, config)
+        # Step 1: Apply business rules
+        if config.business_rules:
+            refined = await self.rule_engine.apply_rules(
+                refined, 
+                config.business_rules
+            )
         
-        # 缓存结果
-        await self.cache.set(cache_key, result.json(), ex=config.cache_ttl)
+        # Step 2: Label Studio annotation
+        if config.enable_label_studio:
+            refined = await self._annotate_with_label_studio(
+                refined, 
+                config.label_studio_project_id
+            )
         
-        return result
+        # Step 3: AI enhancement
+        if config.enable_ai_enhancement:
+            refined = await self._enhance_with_ai(
+                refined, 
+                config.ai_model
+            )
+        
+        return refined
     
-    async def generate_field_descriptions(self, data: List[Dict]) -> Dict[str, str]:
-        """生成字段描述"""
+    async def _annotate_with_label_studio(
+        self, 
+        data: List[Dict[str, Any]], 
+        project_id: str
+    ) -> List[Dict[str, Any]]:
+        """Send to Label Studio and merge annotations"""
+        # Create tasks in Label Studio
+        # Wait for completion or timeout
+        # Merge annotations back to data
         pass
     
-    async def generate_data_dictionary(self, data: List[Dict]) -> DataDictionary:
-        """生成数据字典"""
+    async def _enhance_with_ai(
+        self, 
+        data: List[Dict[str, Any]], 
+        model: str
+    ) -> List[Dict[str, Any]]:
+        """Add AI-generated semantic context"""
+        # Call LLM service for each record
+        # Add semantic fields (summary, entities, sentiment, etc.)
         pass
-    
-    async def extract_entities(self, data: List[Dict]) -> List[Entity]:
-        """识别实体"""
-        pass
-    
-    async def extract_relations(self, entities: List[Entity]) -> List[Relation]:
-        """识别关系"""
-        pass
-    
-    async def apply_custom_rules(
-        self,
-        data: List[Dict],
-        rules: List[RefineRule]
-    ) -> List[Dict]:
-        """应用自定义提炼规则"""
-        pass
-
-class RefineConfig(BaseModel):
-    generate_descriptions: bool = True
-    generate_dictionary: bool = True
-    extract_entities: bool = True
-    extract_relations: bool = True
-    custom_rules: List[RefineRule] = []
-    cache_ttl: int = 3600  # 1 hour
-
-class RefinementResult(BaseModel):
-    field_descriptions: Dict[str, str]
-    data_dictionary: DataDictionary
-    entities: List[Entity]
-    relations: List[Relation]
-    enhanced_description: str
-
-class DataDictionary(BaseModel):
-    fields: List[FieldDefinition]
-    table_description: str
-    business_context: str
-
-class Entity(BaseModel):
-    name: str
-    type: str
-    source_field: str
-    confidence: float
-
-class Relation(BaseModel):
-    source_entity: str
-    target_entity: str
-    relation_type: str
-    confidence: float
 ```
 
-### 6. AI Friendly Exporter (AI 友好导出器)
-
-**文件**: `src/sync/ai_exporter.py`
-
-**职责**: 导出适合 AI 处理的数据格式
+### 5. Export Service
 
 ```python
-class AIFriendlyExporter:
-    """AI 友好导出器"""
-    
-    def __init__(self, semantic_refiner: SemanticRefiner, desensitizer: Desensitizer):
-        self.semantic_refiner = semantic_refiner
-        self.desensitizer = desensitizer
-    
-    async def export(
-        self,
-        data: List[Dict],
-        format: ExportFormat,
-        config: ExportConfig
-    ) -> ExportResult:
-        """导出数据"""
-        # 语义增强
-        if config.include_semantics:
-            refinement = await self.semantic_refiner.refine(data, RefineConfig())
-            data = self.enrich_with_semantics(data, refinement)
-        
-        # 数据脱敏
-        if config.desensitize:
-            data = await self.desensitizer.desensitize(data)
-        
-        # 数据分割
-        if config.split_config:
-            splits = self.split_data(data, config.split_config)
-        else:
-            splits = {"all": data}
-        
-        # 导出
-        exported_files = await self.export_splits(splits, format)
-        
-        # 生成统计报告
-        report = self.generate_statistics_report(data, exported_files)
-        
-        return ExportResult(files=exported_files, statistics=report)
-    
-    async def export_incremental(
-        self,
-        source_id: str,
-        format: ExportFormat,
-        config: ExportConfig
-    ) -> ExportResult:
-        """增量导出"""
-        pass
-    
-    def split_data(
-        self,
-        data: List[Dict],
-        split_config: SplitConfig
-    ) -> Dict[str, List[Dict]]:
-        """分割数据集"""
-        pass
-    
-    def generate_statistics_report(
-        self,
-        data: List[Dict],
-        files: List[ExportedFile]
-    ) -> StatisticsReport:
-        """生成统计报告"""
-        pass
-
 class ExportFormat(str, Enum):
     JSON = "json"
     CSV = "csv"
-    JSONL = "jsonl"
     COCO = "coco"
-    PASCAL_VOC = "pascal_voc"
 
 class ExportConfig(BaseModel):
-    include_semantics: bool = True
-    desensitize: bool = False
-    split_config: Optional[SplitConfig] = None
-    incremental: bool = False
-    last_export_id: Optional[str] = None
+    format: ExportFormat
+    include_metadata: bool = True
+    include_original: bool = True
+    include_enhanced: bool = True
+    pagination: Optional[Dict[str, int]] = None
 
-class SplitConfig(BaseModel):
-    train_ratio: float = 0.8
-    val_ratio: float = 0.1
-    test_ratio: float = 0.1
-    shuffle: bool = True
-    seed: int = 42
-
-class ExportResult(BaseModel):
-    files: List[ExportedFile]
-    statistics: StatisticsReport
-
-class StatisticsReport(BaseModel):
-    total_rows: int
-    total_size_bytes: int
-    split_counts: Dict[str, int]
-    field_statistics: Dict[str, FieldStats]
-    export_duration_ms: float
-```
-
-### 7. Sync Scheduler (同步调度器)
-
-**文件**: `src/sync/scheduler.py`
-
-**职责**: 管理同步任务调度
-
-```python
-class SyncScheduler:
-    """同步调度器"""
+class ExportService:
+    """Generate AI-friendly output formats"""
     
-    def __init__(self, data_puller: DataPuller, notification_service: NotificationService):
-        self.data_puller = data_puller
-        self.notification_service = notification_service
-        self.jobs: Dict[str, ScheduledJob] = {}
+    def __init__(self, i18n_service, storage_service):
+        self.i18n = i18n_service
+        self.storage = storage_service
     
-    async def schedule(
-        self,
-        job_id: str,
-        source_id: str,
-        config: ScheduleConfig
-    ) -> ScheduledJob:
-        """创建调度任务"""
+    async def export(
+        self, 
+        data: List[Dict[str, Any]], 
+        config: ExportConfig,
+        tenant_id: str
+    ) -> str:
+        """Export data in specified format"""
+        if config.format == ExportFormat.JSON:
+            return await self._export_json(data, config, tenant_id)
+        elif config.format == ExportFormat.CSV:
+            return await self._export_csv(data, config, tenant_id)
+        elif config.format == ExportFormat.COCO:
+            return await self._export_coco(data, config, tenant_id)
+    
+    async def _export_json(
+        self, 
+        data: List[Dict[str, Any]], 
+        config: ExportConfig,
+        tenant_id: str
+    ) -> str:
+        """Generate JSON output"""
+        # Create consistent schema
+        # Apply pagination if configured
+        # Save to storage
+        # Return file path
         pass
     
-    async def trigger_manual(self, job_id: str) -> SyncResult:
-        """手动触发同步"""
+    async def _export_csv(
+        self, 
+        data: List[Dict[str, Any]], 
+        config: ExportConfig,
+        tenant_id: str
+    ) -> str:
+        """Generate CSV output"""
+        # Flatten nested structures
+        # Escape special characters
+        # Add headers
         pass
     
-    async def get_status(self, job_id: str) -> JobStatus:
-        """获取任务状态"""
+    async def _export_coco(
+        self, 
+        data: List[Dict[str, Any]], 
+        config: ExportConfig,
+        tenant_id: str
+    ) -> str:
+        """Generate COCO format for image annotations"""
+        # Validate image annotation data
+        # Generate COCO JSON structure
+        # Include images, annotations, categories
         pass
-    
-    async def update_status(self, job_id: str, status: JobStatus) -> None:
-        """更新任务状态"""
-        pass
-    
-    async def on_failure(self, job_id: str, error: Exception) -> None:
-        """同步失败处理"""
-        await self.notification_service.send_alert(
-            AlertType.SYNC_FAILURE,
-            {"job_id": job_id, "error": str(error)}
-        )
-    
-    async def set_priority(self, job_id: str, priority: int) -> None:
-        """设置任务优先级"""
-        pass
-    
-    async def get_history(self, job_id: str, limit: int = 100) -> List[SyncHistoryRecord]:
-        """获取同步历史"""
-        pass
-    
-    async def list_jobs(self, status: JobStatus = None) -> List[ScheduledJob]:
-        """列出所有任务"""
-        pass
-
-class ScheduleConfig(BaseModel):
-    cron_expression: str
-    priority: int = 0
-    enabled: bool = True
-    pull_config: PullConfig
-
-class JobStatus(str, Enum):
-    PENDING = "pending"
-    RUNNING = "running"
-    COMPLETED = "completed"
-    FAILED = "failed"
-
-class ScheduledJob(BaseModel):
-    job_id: str
-    source_id: str
-    config: ScheduleConfig
-    status: JobStatus
-    last_run_at: Optional[datetime]
-    next_run_at: Optional[datetime]
-    created_at: datetime
-
-class SyncHistoryRecord(BaseModel):
-    job_id: str
-    started_at: datetime
-    completed_at: Optional[datetime]
-    status: JobStatus
-    rows_synced: int
-    error_message: Optional[str]
-```
-
-### 8. API Router (API 路由)
-
-**文件**: `src/api/sync_pipeline.py`
-
-```python
-router = APIRouter(prefix="/api/v1/sync", tags=["Data Sync"])
-
-# 数据源管理
-@router.post("/sources")
-async def create_data_source(request: CreateDataSourceRequest) -> DataSource:
-    """创建数据源"""
-    pass
-
-@router.get("/sources")
-async def list_data_sources() -> List[DataSource]:
-    """列出数据源"""
-    pass
-
-@router.get("/sources/{source_id}")
-async def get_data_source(source_id: str) -> DataSource:
-    """获取数据源详情"""
-    pass
-
-@router.delete("/sources/{source_id}")
-async def delete_data_source(source_id: str) -> None:
-    """删除数据源"""
-    pass
-
-# 数据读取
-@router.post("/sources/{source_id}/read")
-async def read_data(source_id: str, request: ReadRequest) -> ReadResult:
-    """读取数据"""
-    pass
-
-@router.post("/sources/{source_id}/test-connection")
-async def test_connection(source_id: str) -> ConnectionTestResult:
-    """测试连接"""
-    pass
-
-# 数据拉取
-@router.post("/sources/{source_id}/pull")
-async def pull_data(source_id: str, request: PullRequest) -> PullResult:
-    """拉取数据"""
-    pass
-
-@router.get("/sources/{source_id}/checkpoint")
-async def get_checkpoint(source_id: str) -> Checkpoint:
-    """获取检查点"""
-    pass
-
-# Webhook 接收
-@router.post("/webhook/{source_id}")
-async def receive_webhook(
-    source_id: str,
-    request: Request,
-    x_signature: str = Header(...),
-    x_idempotency_key: str = Header(...)
-) -> ReceiveResult:
-    """接收 Webhook 数据"""
-    pass
-
-# 保存策略
-@router.put("/sources/{source_id}/save-strategy")
-async def set_save_strategy(source_id: str, request: SaveStrategyRequest) -> None:
-    """设置保存策略"""
-    pass
-
-# 语义提炼
-@router.post("/sources/{source_id}/refine")
-async def refine_semantics(source_id: str, request: RefineRequest) -> RefinementResult:
-    """执行语义提炼"""
-    pass
-
-# 导出
-@router.post("/export")
-async def export_data(request: ExportRequest) -> ExportResult:
-    """导出数据"""
-    pass
-
-@router.get("/export/{export_id}/status")
-async def get_export_status(export_id: str) -> ExportStatus:
-    """获取导出状态"""
-    pass
-
-@router.get("/export/{export_id}/download")
-async def download_export(export_id: str) -> FileResponse:
-    """下载导出文件"""
-    pass
-
-# 调度管理
-@router.post("/schedules")
-async def create_schedule(request: CreateScheduleRequest) -> ScheduledJob:
-    """创建调度任务"""
-    pass
-
-@router.get("/schedules")
-async def list_schedules(status: JobStatus = None) -> List[ScheduledJob]:
-    """列出调度任务"""
-    pass
-
-@router.post("/schedules/{job_id}/trigger")
-async def trigger_schedule(job_id: str) -> SyncResult:
-    """手动触发同步"""
-    pass
-
-@router.get("/schedules/{job_id}/history")
-async def get_schedule_history(job_id: str, limit: int = 100) -> List[SyncHistoryRecord]:
-    """获取同步历史"""
-    pass
-
-@router.put("/schedules/{job_id}/priority")
-async def set_schedule_priority(job_id: str, priority: int) -> None:
-    """设置任务优先级"""
-    pass
 ```
 
 ## Data Models
 
-### 数据库模型
+### Database Schema
 
 ```python
-class DataSource(Base):
-    """数据源表"""
-    __tablename__ = "data_sources"
-    
-    id = Column(UUID, primary_key=True, default=uuid4)
-    tenant_id = Column(UUID, ForeignKey("tenants.id"), nullable=True)
-    name = Column(String(200), nullable=False)
-    db_type = Column(String(50), nullable=False)
-    host = Column(String(500), nullable=False)
-    port = Column(Integer, nullable=False)
-    database = Column(String(200), nullable=False)
-    username = Column(String(200), nullable=False)
-    password_encrypted = Column(Text, nullable=False)
-    connection_method = Column(String(20), default="jdbc")
-    extra_params = Column(JSONB, default={})
-    save_strategy = Column(String(20), default="persistent")
-    save_config = Column(JSONB, default={})
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-class SyncCheckpoint(Base):
-    """同步检查点表"""
-    __tablename__ = "sync_checkpoints"
-    
-    id = Column(UUID, primary_key=True, default=uuid4)
-    source_id = Column(UUID, ForeignKey("data_sources.id"), nullable=False)
-    checkpoint_field = Column(String(200), nullable=False)
-    last_value = Column(Text, nullable=True)
-    last_pull_at = Column(DateTime, nullable=True)
-    rows_pulled = Column(Integer, default=0)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+from sqlalchemy import Column, String, Integer, DateTime, JSON, Text, Enum, Index
+from sqlalchemy.dialects.postgresql import UUID
+from src.database import Base
+import uuid
+from datetime import datetime
 
 class SyncJob(Base):
-    """同步任务表"""
+    """Sync job tracking"""
     __tablename__ = "sync_jobs"
     
-    id = Column(UUID, primary_key=True, default=uuid4)
-    source_id = Column(UUID, ForeignKey("data_sources.id"), nullable=False)
-    cron_expression = Column(String(100), nullable=False)
-    priority = Column(Integer, default=0)
-    enabled = Column(Boolean, default=True)
-    status = Column(String(20), default="pending")
-    last_run_at = Column(DateTime, nullable=True)
-    next_run_at = Column(DateTime, nullable=True)
-    pull_config = Column(JSONB, default={})
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(String(255), nullable=False, index=True)
+    source_id = Column(String(255), nullable=False)
+    source_type = Column(String(50), nullable=False)  # read, pull, push
+    mode = Column(String(20), nullable=False)  # async, realtime, hybrid
+    status = Column(String(20), nullable=False)  # running, completed, failed
+    
+    record_count = Column(Integer, default=0)
+    error_count = Column(Integer, default=0)
+    
+    config = Column(JSON, nullable=False)
+    result = Column(JSON)
+    error_details = Column(Text)
+    
+    started_at = Column(DateTime, default=datetime.utcnow)
+    completed_at = Column(DateTime)
+    
+    created_by = Column(String(255))
+    
+    __table_args__ = (
+        Index('idx_sync_jobs_tenant_status', 'tenant_id', 'status'),
+        Index('idx_sync_jobs_tenant_source', 'tenant_id', 'source_id'),
+    )
+
+class SyncData(Base):
+    """Async data storage"""
+    __tablename__ = "sync_data"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(String(255), nullable=False, index=True)
+    job_id = Column(UUID(as_uuid=True), nullable=False)
+    source_id = Column(String(255), nullable=False)
+    
+    raw_data = Column(JSON, nullable=False)
+    refined_data = Column(JSON)
+    metadata = Column(JSON)
+    
+    sync_timestamp = Column(DateTime, default=datetime.utcnow)
+    processed_at = Column(DateTime)
+    
+    __table_args__ = (
+        Index('idx_sync_data_tenant_job', 'tenant_id', 'job_id'),
+        Index('idx_sync_data_tenant_source', 'tenant_id', 'source_id'),
+    )
+
+class SyncState(Base):
+    """Track sync state for incremental sync"""
+    __tablename__ = "sync_state"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(String(255), nullable=False)
+    source_id = Column(String(255), nullable=False)
+    
+    last_sync_timestamp = Column(DateTime, nullable=False)
+    last_sync_job_id = Column(UUID(as_uuid=True))
+    last_record_id = Column(String(255))
+    
+    state_data = Column(JSON)  # Additional state info
+    
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    __table_args__ = (
+        Index('idx_sync_state_tenant_source', 'tenant_id', 'source_id', unique=True),
+    )
+
+class DataSourceConfig(Base):
+    """Data source configuration"""
+    __tablename__ = "data_source_configs"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id = Column(String(255), nullable=False, index=True)
+    source_id = Column(String(255), nullable=False)
+    source_name = Column(String(255), nullable=False)
+    source_type = Column(String(50), nullable=False)
+    
+    connection_params = Column(JSON, nullable=False)  # Encrypted
+    extraction_params = Column(JSON)
+    
+    is_active = Column(Boolean, default=True)
+    
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-class SyncHistory(Base):
-    """同步历史表"""
-    __tablename__ = "sync_history"
+    created_by = Column(String(255))
     
-    id = Column(UUID, primary_key=True, default=uuid4)
-    job_id = Column(UUID, ForeignKey("sync_jobs.id"), nullable=False)
-    started_at = Column(DateTime, nullable=False)
-    completed_at = Column(DateTime, nullable=True)
-    status = Column(String(20), nullable=False)
-    rows_synced = Column(Integer, default=0)
-    error_message = Column(Text, nullable=True)
-
-class SemanticCache(Base):
-    """语义缓存表"""
-    __tablename__ = "semantic_cache"
-    
-    id = Column(UUID, primary_key=True, default=uuid4)
-    cache_key = Column(String(64), nullable=False, unique=True)
-    refinement_result = Column(JSONB, nullable=False)
-    expires_at = Column(DateTime, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-class ExportRecord(Base):
-    """导出记录表"""
-    __tablename__ = "export_records"
-    
-    id = Column(UUID, primary_key=True, default=uuid4)
-    source_id = Column(UUID, ForeignKey("data_sources.id"), nullable=True)
-    format = Column(String(20), nullable=False)
-    config = Column(JSONB, default={})
-    status = Column(String(20), default="pending")
-    file_paths = Column(JSONB, default=[])
-    statistics = Column(JSONB, default={})
-    created_at = Column(DateTime, default=datetime.utcnow)
-    completed_at = Column(DateTime, nullable=True)
+    __table_args__ = (
+        Index('idx_data_source_tenant_id', 'tenant_id', 'source_id', unique=True),
+    )
 ```
 
 ## Correctness Properties
 
-*A property is a characteristic or behavior that should hold true across all valid executions of a system.*
+*A property is a characteristic or behavior that should hold true across all valid executions of a system—essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
 
-### Property 1: 只读连接验证
 
-*For any* 数据库连接，Data Reader 应使用只读权限连接，任何写操作尝试应被拒绝。
+### Property Reflection
 
-**Validates: Requirements 1.2**
+After analyzing all 50 acceptance criteria, I've identified the following consolidations to eliminate redundancy:
 
-### Property 2: 分页读取内存安全
+**Consolidation 1**: Properties 1.1, 1.2, 1.3 (connection establishment for Read/Pull/Push) can be combined into a single property about extractor connection validation across all types.
 
-*For any* 数据读取操作，当数据量超过页大小时，Data Reader 应返回分页迭代器，单次内存占用不超过页大小限制。
+**Consolidation 2**: Properties 2.1, 2.2, 2.4 (credential encryption, validation, re-validation) can be combined into a comprehensive security property about credential handling.
 
+**Consolidation 3**: Properties 6.1, 6.2, 6.3 (job status tracking for running/completed/failed) can be combined into a single property about job lifecycle tracking.
+
+**Consolidation 4**: Properties 8.1, 8.2, 8.3, 8.4, 8.5 (tenant isolation in extraction, storage, processing, output, listing) can be combined into a comprehensive tenant isolation property.
+
+**Consolidation 5**: Properties 9.1, 9.2, 9.3, 9.4 (i18n in responses, errors, labels, logs) can be combined into a single i18n property.
+
+**Consolidation 6**: Properties 10.1, 10.3 (batching and connection pooling) are both database optimization techniques and can be combined.
+
+After consolidation, we have **38 unique properties** instead of 50.
+
+### Correctness Properties
+
+Property 1: Extractor Connection Validation
+*For any* data source configuration (Read/Pull/Push mode), when a connection is attempted, the system should validate the connection parameters and successfully establish a connection if parameters are valid, or return a specific error if invalid.
+**Validates: Requirements 1.1, 1.2, 1.3**
+
+Property 2: Concurrent Extractor Operation
+*For any* tenant with multiple configured data sources, running extractors concurrently should not cause data corruption, conflicts, or failures in any individual extractor.
+**Validates: Requirements 1.4**
+
+Property 3: Connection Failure Retry
+*For any* connection failure, the system should log the error with a correlation ID and retry according to the configured retry policy (exponential backoff, max attempts).
 **Validates: Requirements 1.5**
 
-### Property 3: 读取统计完整性
+Property 4: Credential Security Round-Trip
+*For any* database credentials, encrypting then decrypting should produce equivalent credentials, and stored credentials should never be readable in plaintext from the database.
+**Validates: Requirements 2.1, 2.2, 2.4**
 
-*For any* 完成的读取操作，返回的统计信息应包含准确的行数、列数和数据大小。
+Property 5: Webhook Signature Verification
+*For any* webhook payload, if the signature is invalid or missing, the system should reject the request with a 401 error, and if valid, should process the payload.
+**Validates: Requirements 2.3**
 
-**Validates: Requirements 1.6**
-
-### Property 4: 增量拉取检查点持久化
-
-*For any* 增量拉取操作，完成后应保存检查点，下次拉取应从检查点位置继续，不重复拉取已处理数据。
-
-**Validates: Requirements 2.2, 2.3**
-
-### Property 5: 拉取重试机制
-
-*For any* 失败的拉取操作，系统应自动重试最多 3 次，重试次数应记录在结果中。
-
+Property 6: Read-Only Database Enforcement
+*For any* database connection, attempting to execute write operations (INSERT, UPDATE, DELETE, DROP) should fail with a permission error.
 **Validates: Requirements 2.5**
 
-### Property 6: Webhook 幂等处理
+Property 7: Async Data Persistence
+*For any* data processed in async mode, the data should be persisted to PostgreSQL with tenant_id, and querying by that tenant_id should retrieve the same data.
+**Validates: Requirements 3.1, 3.5**
 
-*For any* 相同幂等键的 Webhook 请求，系统应识别为重复请求并返回成功，不创建重复数据。
+Property 8: Real-Time Memory Processing
+*For any* data processed in real-time mode, the data should never be written to PostgreSQL, and should be cleared from memory after export.
+**Validates: Requirements 3.2**
 
-**Validates: Requirements 3.6**
+Property 9: Hybrid Mode Routing
+*For any* data processed in hybrid mode with routing rules, each record should be routed to either async or real-time strategy based on the rule evaluation, and no record should be lost or duplicated.
+**Validates: Requirements 3.3**
 
-### Property 7: 批量大小限制
+Property 10: Memory Limit Enforcement
+*For any* real-time data that exceeds the configured memory limit, the system should reject the request before processing and return a clear error message indicating the limit.
+**Validates: Requirements 3.4** (edge case)
 
-*For any* Webhook 接收请求，当数据条数超过 10000 时，系统应拒绝请求并返回错误。
+Property 11: Label Studio Integration
+*For any* data with Label Studio enabled, the data should be sent to Label Studio, and when annotations are completed, the merged result should contain both original data and annotations.
+**Validates: Requirements 4.1, 4.2**
 
-**Validates: Requirements 3.4**
+Property 12: AI Enhancement Integration
+*For any* data with AI enhancement enabled, the system should invoke the configured LLM service, and the result should contain both original data and AI-generated semantic fields.
+**Validates: Requirements 4.3**
 
-### Property 8: 保存策略正确性
-
-*For any* 持久化保存操作，数据应可从数据库检索；对于内存处理操作，处理完成后数据应不可检索。
-
-**Validates: Requirements 4.2, 4.3**
-
-### Property 9: 混合模式自动选择
-
-*For any* 混合模式保存操作，数据大小超过阈值时应使用持久化，否则使用内存处理。
-
+Property 13: Business Rule Application
+*For any* data with business rules defined, applying the rules should transform the data according to the rule definitions, and invalid data should be rejected with specific error messages.
 **Validates: Requirements 4.4**
 
-### Property 10: 语义提炼缓存命中
+Property 14: Refinement Error Preservation
+*For any* refinement operation that fails, the original data should remain unchanged and accessible, and the error should be logged with full details.
+**Validates: Requirements 4.5**
 
-*For any* 相同输入的语义提炼请求，第二次请求应返回缓存结果，不重复调用 LLM。
+Property 15: JSON Export Round-Trip
+*For any* data exported to JSON format, parsing the JSON output should produce a valid data structure with consistent schema, and all UTF-8 characters should be preserved.
+**Validates: Requirements 5.1**
 
-**Validates: Requirements 5.6**
+Property 16: CSV Export Format Validation
+*For any* data exported to CSV format, the output should have headers, properly escaped values, and be parseable by standard CSV libraries.
+**Validates: Requirements 5.2**
 
-### Property 11: 导出格式正确性
+Property 17: COCO Format Validation
+*For any* image annotation data exported to COCO format, the output should conform to the COCO JSON schema with valid images, annotations, and categories sections.
+**Validates: Requirements 5.3**
 
-*For any* 导出操作，输出文件应符合指定格式规范（JSON/CSV/JSONL/COCO/Pascal VOC）。
+Property 18: Enhanced Data Completeness
+*For any* data with semantic enhancement applied, the export output should contain both original fields and enhanced fields, and no original data should be lost.
+**Validates: Requirements 5.4**
 
-**Validates: Requirements 6.1**
+Property 19: Export Pagination
+*For any* large dataset export, the system should support pagination with configurable page size, and iterating through all pages should return all records exactly once.
+**Validates: Requirements 5.5**
 
-### Property 12: 数据分割比例准确性
+Property 20: Sync Job Lifecycle Tracking
+*For any* sync job, the job record should transition through states (running → completed/failed), and the final state should include record count, duration, and error details if failed.
+**Validates: Requirements 6.1, 6.2, 6.3**
 
-*For any* 带分割配置的导出操作，训练集/验证集/测试集的实际比例应与配置比例一致（允许 1% 误差）。
+Property 21: Tenant-Isolated Metrics
+*For any* tenant requesting sync metrics, the returned statistics should only include data from that tenant's sync jobs, and should accurately reflect success rate, average duration, and error rate.
+**Validates: Requirements 6.4**
 
-**Validates: Requirements 6.3**
+Property 22: Alert Threshold Triggering
+*For any* sync error rate that exceeds the configured threshold within a time window, the system should trigger an alert via the monitoring service exactly once per threshold breach.
+**Validates: Requirements 6.5**
 
-### Property 13: 调度任务状态追踪
+Property 23: Incremental Sync State Tracking
+*For any* incremental sync operation, the system should update the last_sync_timestamp after successful completion, and the next incremental sync should only retrieve records modified after that timestamp.
+**Validates: Requirements 7.1, 7.5**
 
-*For any* 同步任务，其状态应准确反映实际执行状态（等待/运行/完成/失败）。
+Property 24: Full Sync Completeness
+*For any* full sync operation, the system should retrieve all records from the source regardless of sync state, and the record count should match the source record count.
+**Validates: Requirements 7.2**
 
+Property 25: Change Tracking Optimization
+*For any* data source that supports change tracking (CDC, triggers), the system should use it for incremental sync instead of timestamp-based queries.
 **Validates: Requirements 7.3**
 
-### Property 14: 同步历史完整性
+Property 26: Sync Gap Detection
+*For any* incremental sync that detects a gap (missing records between syncs), the system should log a warning and optionally trigger a full sync based on configuration.
+**Validates: Requirements 7.4**
 
-*For any* 执行的同步操作，应在历史记录中保存完整信息（开始时间、结束时间、状态、同步行数）。
+Property 27: Comprehensive Tenant Isolation
+*For any* operation (extraction, storage, processing, export, listing), all data should be tagged with tenant_id, and cross-tenant data access should be impossible through any API or query.
+**Validates: Requirements 8.1, 8.2, 8.3, 8.4, 8.5**
 
-**Validates: Requirements 7.6**
+Property 28: Internationalization Consistency
+*For any* user-facing message (API response, error, label), the system should use i18n keys and return localized text in the user's preferred language (zh-CN or en-US).
+**Validates: Requirements 9.1, 9.2, 9.3, 9.4**
+
+Property 29: Language Extensibility
+*For any* new language file added to the i18n system, the system should support that language without code changes, and all i18n keys should be translatable.
+**Validates: Requirements 9.5**
+
+Property 30: Batch Processing Optimization
+*For any* dataset larger than the batch size, the system should process it in batches, and the total processed count should equal the input count with no data loss.
+**Validates: Requirements 10.1**
+
+Property 31: Concurrent Job Limiting
+*For any* tenant attempting to run more than the configured maximum concurrent jobs, the system should queue or reject additional jobs until running jobs complete.
+**Validates: Requirements 10.2**
+
+Property 32: Database Connection Optimization
+*For any* database operation, the system should use connection pooling and prepared statements, and connections should be reused across operations.
+**Validates: Requirements 10.3**
+
+Property 33: Data Compression
+*For any* data transfer with compression enabled, the compressed size should be smaller than the original size, and decompressing should produce the original data.
+**Validates: Requirements 10.4**
+
+Property 34: Timeout Enforcement
+*For any* sync operation that exceeds the configured timeout, the system should cancel the operation, release resources, and return a timeout error.
+**Validates: Requirements 10.5**
 
 ## Error Handling
 
-### 错误分类
+### Error Categories
 
-| 错误类型 | 错误码 | 处理策略 |
-|---------|--------|---------|
-| 连接失败 | SYNC_CONNECTION_ERROR | 返回连接错误详情 |
-| 只读违规 | SYNC_READONLY_VIOLATION | 拒绝操作，记录日志 |
-| 签名无效 | SYNC_INVALID_SIGNATURE | 拒绝请求，返回 401 |
-| 批量超限 | SYNC_BATCH_LIMIT_EXCEEDED | 拒绝请求，返回 413 |
-| 拉取失败 | SYNC_PULL_ERROR | 重试最多 3 次 |
-| 导出失败 | SYNC_EXPORT_ERROR | 记录错误，通知用户 |
-| 调度失败 | SYNC_SCHEDULE_ERROR | 发送告警通知 |
-| LLM 调用失败 | SYNC_LLM_ERROR | 返回未增强数据 |
+1. **Connection Errors**: Database unreachable, invalid credentials, network timeout
+2. **Validation Errors**: Invalid configuration, malformed data, schema mismatch
+3. **Processing Errors**: Memory limit exceeded, refinement failure, export failure
+4. **Security Errors**: Unauthorized access, signature verification failure, tenant isolation violation
+5. **Resource Errors**: Concurrent job limit exceeded, timeout, disk space full
+
+### Error Response Format
+
+```python
+class SyncError(BaseModel):
+    """Standardized error response"""
+    error_code: str  # e.g., "SYNC_001"
+    error_type: str  # e.g., "ConnectionError"
+    message: str  # i18n key
+    message_params: Dict[str, Any]  # Parameters for i18n
+    details: Optional[Dict[str, Any]] = None
+    correlation_id: str
+    timestamp: datetime
+    tenant_id: str
+```
+
+### Error Handling Strategy
+
+1. **Transient Errors**: Retry with exponential backoff (connection failures, timeouts)
+2. **Permanent Errors**: Fail immediately and log (invalid credentials, schema mismatch)
+3. **Partial Failures**: Continue processing remaining records, log failures
+4. **Critical Errors**: Stop processing, rollback if possible, alert administrators
+
+### Retry Policy
+
+```python
+class RetryPolicy(BaseModel):
+    max_attempts: int = 3
+    initial_delay_seconds: int = 1
+    max_delay_seconds: int = 60
+    exponential_base: float = 2.0
+    jitter: bool = True
+```
 
 ## Testing Strategy
 
-### 单元测试
+### Dual Testing Approach
 
-- 测试各数据库连接器
-- 测试分页读取逻辑
-- 测试检查点保存/恢复
-- 测试签名验证
-- 测试幂等处理
-- 测试保存策略选择
-- 测试数据分割算法
+The Data Sync Pipeline requires both unit tests and property-based tests for comprehensive coverage:
 
-### 属性测试
+**Unit Tests** focus on:
+- Specific examples of valid and invalid configurations
+- Edge cases (empty data, null values, special characters)
+- Error conditions (connection failures, timeouts, validation errors)
+- Integration points (Label Studio, LLM services, database)
+
+**Property-Based Tests** focus on:
+- Universal properties across all inputs (tenant isolation, data integrity)
+- Round-trip properties (encryption/decryption, export/import)
+- Invariants (batch processing preserves count, pagination returns all records)
+- Metamorphic properties (incremental + incremental = full sync)
+
+### Property-Based Testing Configuration
+
+- **Library**: Hypothesis for Python
+- **Iterations**: Minimum 100 per property test
+- **Tagging**: Each test references its design property
+- **Tag Format**: `# Feature: data-sync-pipeline, Property {N}: {property_text}`
+
+### Test Data Generators
 
 ```python
 from hypothesis import given, strategies as st
 
-@given(st.integers(min_value=1, max_value=100000))
-def test_pagination_memory_safety(total_rows: int):
-    """Property 2: 分页读取内存安全"""
-    page_size = 1000
-    reader = DataReader(connector_factory)
-    pages = list(reader.read_by_query(conn, query, page_size))
-    for page in pages:
-        assert len(page.rows) <= page_size
+# Generate random tenant IDs
+tenant_ids = st.text(min_size=1, max_size=255, alphabet=st.characters(blacklist_characters='\x00'))
 
-@given(st.text(min_size=1), st.text(min_size=1))
-def test_idempotency_handling(data: str, idempotency_key: str):
-    """Property 6: Webhook 幂等处理"""
-    receiver = DataReceiver(idempotency_store)
-    result1 = await receiver.receive(data, DataFormat.JSON, sig, idempotency_key)
-    result2 = await receiver.receive(data, DataFormat.JSON, sig, idempotency_key)
-    assert result1.success == True
-    assert result2.success == True
-    assert result2.duplicate == True
+# Generate random sync configurations
+sync_configs = st.builds(
+    SyncConfig,
+    tenant_id=tenant_ids,
+    source_id=st.text(min_size=1, max_size=255),
+    mode=st.sampled_from([SyncMode.ASYNC, SyncMode.REALTIME, SyncMode.HYBRID]),
+    # ... other fields
+)
 
-@given(st.floats(min_value=0, max_value=1), st.floats(min_value=0, max_value=1), st.floats(min_value=0, max_value=1))
-def test_split_ratio_accuracy(train: float, val: float, test: float):
-    """Property 12: 数据分割比例准确性"""
-    # 归一化比例
-    total = train + val + test
-    if total == 0:
-        return
-    train, val, test = train/total, val/total, test/total
-    
-    config = SplitConfig(train_ratio=train, val_ratio=val, test_ratio=test)
-    data = [{"id": i} for i in range(1000)]
-    splits = exporter.split_data(data, config)
-    
-    actual_train = len(splits.get("train", [])) / 1000
-    actual_val = len(splits.get("val", [])) / 1000
-    actual_test = len(splits.get("test", [])) / 1000
-    
-    assert abs(actual_train - train) < 0.01
-    assert abs(actual_val - val) < 0.01
-    assert abs(actual_test - test) < 0.01
+# Generate random data records
+data_records = st.lists(
+    st.dictionaries(
+        keys=st.text(min_size=1, max_size=50),
+        values=st.one_of(st.text(), st.integers(), st.floats(), st.booleans())
+    ),
+    min_size=0,
+    max_size=1000
+)
 ```
 
-### 集成测试
+### Integration Testing
 
-- 测试完整的读取 → 保存 → 导出流程
-- 测试定时拉取调度
-- 测试 Webhook 接收流程
-- 测试语义提炼与缓存
-- 测试多数据源并行拉取
+Integration tests should cover:
+1. End-to-end sync pipeline (extract → process → refine → export)
+2. Multi-tenant scenarios with concurrent operations
+3. Label Studio integration with real annotation workflows
+4. LLM service integration with mock responses
+5. Database persistence and retrieval with PostgreSQL
+6. Export format validation with real parsers
+
+### Performance Testing
+
+Performance tests should validate:
+1. Batch processing handles 10,000+ records efficiently
+2. Concurrent jobs don't cause resource exhaustion
+3. Memory usage stays within limits for real-time mode
+4. Database queries use indexes and complete within SLA
+5. Export generation completes within timeout thresholds
+
+## Deployment Considerations
+
+### Environment Variables
+
+```bash
+# Data Sync Configuration
+SYNC_MAX_CONCURRENT_JOBS_PER_TENANT=5
+SYNC_DEFAULT_BATCH_SIZE=1000
+SYNC_REALTIME_MAX_MEMORY_MB=100
+SYNC_DEFAULT_TIMEOUT_SECONDS=300
+
+# Retry Configuration
+SYNC_RETRY_MAX_ATTEMPTS=3
+SYNC_RETRY_INITIAL_DELAY_SECONDS=1
+SYNC_RETRY_MAX_DELAY_SECONDS=60
+
+# Label Studio Integration
+LABEL_STUDIO_URL=http://label-studio:8080
+LABEL_STUDIO_API_KEY=${LABEL_STUDIO_API_KEY}
+
+# LLM Service Configuration
+AI_ENHANCEMENT_ENABLED=true
+AI_ENHANCEMENT_MODEL=gpt-4
+AI_ENHANCEMENT_TIMEOUT_SECONDS=30
+```
+
+### Database Migrations
+
+Required Alembic migrations:
+1. Create `sync_jobs` table with indexes
+2. Create `sync_data` table with tenant isolation
+3. Create `sync_state` table for incremental sync tracking
+4. Create `data_source_configs` table with encrypted credentials
+5. Add row-level security policies for tenant isolation
+
+### Monitoring and Alerting
+
+Key metrics to monitor:
+- Sync job success rate (target: >95%)
+- Average sync duration (target: <5 minutes)
+- Error rate by error type
+- Concurrent jobs per tenant
+- Memory usage for real-time mode
+- Database connection pool utilization
+
+Alert conditions:
+- Error rate exceeds 10% in 5-minute window
+- Sync duration exceeds 15 minutes
+- Memory usage exceeds 80% of limit
+- Database connection pool exhausted
+- Tenant isolation violation detected
+
+## Security Considerations
+
+### Data Protection
+
+1. **Encryption at Rest**: All credentials encrypted using AES-256
+2. **Encryption in Transit**: TLS 1.3 for all external connections
+3. **Credential Rotation**: Support for credential updates without downtime
+4. **Audit Logging**: All sync operations logged with correlation IDs
+
+### Access Control
+
+1. **API Authentication**: JWT tokens with tenant claims
+2. **Row-Level Security**: PostgreSQL RLS policies enforce tenant isolation
+3. **Read-Only Enforcement**: Database users have SELECT-only permissions
+4. **Webhook Validation**: HMAC signature verification for push mode
+
+### Compliance
+
+1. **GDPR**: Support for data deletion and export
+2. **SOC 2**: Comprehensive audit trails
+3. **HIPAA**: Encryption and access controls for healthcare data
+4. **Data Residency**: Support for region-specific data storage
+
+## Future Enhancements
+
+1. **Streaming Support**: Real-time streaming for high-volume data sources
+2. **Schema Evolution**: Automatic schema detection and adaptation
+3. **Data Quality**: Built-in data quality checks and validation rules
+4. **ML Integration**: Automatic feature extraction for ML pipelines
+5. **Multi-Region**: Cross-region data replication and sync
+6. **GraphQL Support**: GraphQL API for flexible data queries
+7. **Data Lineage**: Track data provenance and transformations
+8. **Cost Optimization**: Intelligent caching and query optimization

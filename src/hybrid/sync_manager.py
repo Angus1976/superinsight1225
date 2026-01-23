@@ -6,20 +6,26 @@ import os
 import json
 import logging
 import asyncio
+import aiohttp
+import aiofiles
 from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime, timedelta
 from enum import Enum
 import hashlib
 from dataclasses import dataclass
 from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
 import yaml
-from sqlalchemy import select
+from sqlalchemy import select, update, insert
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from uuid import UUID
 
 from .data_proxy import DataProxy
 from .secure_channel import SecureChannel
-from ..database.connection import get_database_session
+from ..database.connection import get_database_session, db_manager
 from ..models.annotation import Annotation
 from ..models.quality_issue import QualityIssue
+from ..sync.pipeline.models import SyncedData
 
 logger = logging.getLogger(__name__)
 
@@ -162,6 +168,270 @@ class SyncManager:
             logger.warning(f"数据冲突需要手动解决: {local_item.get('id')}")
             return local_item
     
+    def _update_annotation_in_db(self, session, annotation_data: Dict) -> bool:
+        """
+        更新数据库中的标注记录
+        
+        Args:
+            session: SQLAlchemy 数据库会话
+            annotation_data: 标注数据字典，包含 id 和其他字段
+            
+        Returns:
+            bool: 更新是否成功
+        """
+        try:
+            annotation_id = annotation_data.get('id')
+            if not annotation_id:
+                logger.error("标注数据缺少 id 字段")
+                return False
+            
+            # 准备更新数据，移除 id 字段
+            update_data = {k: v for k, v in annotation_data.items() if k != 'id'}
+            
+            # 添加更新时间
+            update_data['updated_at'] = datetime.now()
+            
+            # 使用 SyncedData 模型存储同步的标注数据
+            # 查找现有记录
+            stmt = select(SyncedData).where(
+                SyncedData.data['id'].astext == str(annotation_id)
+            )
+            existing = session.execute(stmt).scalar_one_or_none()
+            
+            if existing:
+                # 更新现有记录
+                existing.data = annotation_data
+                existing.is_refined = False
+                session.add(existing)
+                logger.debug(f"更新标注记录: {annotation_id}")
+                return True
+            else:
+                logger.warning(f"未找到要更新的标注记录: {annotation_id}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"更新标注记录失败 {annotation_data.get('id')}: {e}")
+            return False
+    
+    def _insert_annotation_to_db(self, session, annotation_data: Dict, source_id: Optional[str] = None) -> bool:
+        """
+        插入新的标注记录到数据库
+        
+        Args:
+            session: SQLAlchemy 数据库会话
+            annotation_data: 标注数据字典
+            source_id: 数据源 ID（可选）
+            
+        Returns:
+            bool: 插入是否成功
+        """
+        try:
+            annotation_id = annotation_data.get('id')
+            if not annotation_id:
+                logger.error("标注数据缺少 id 字段")
+                return False
+            
+            # 检查记录是否已存在
+            stmt = select(SyncedData).where(
+                SyncedData.data['id'].astext == str(annotation_id)
+            )
+            existing = session.execute(stmt).scalar_one_or_none()
+            
+            if existing:
+                logger.debug(f"标注记录已存在，跳过插入: {annotation_id}")
+                return False
+            
+            # 生成批次 ID
+            batch_id = hashlib.md5(
+                f"annotation_sync_{datetime.now().isoformat()}".encode()
+            ).hexdigest()
+            
+            # 创建新记录
+            synced_data = SyncedData(
+                source_id=UUID(source_id) if source_id else None,
+                batch_id=batch_id,
+                batch_sequence=0,
+                data=annotation_data,
+                row_count=1,
+                sync_type='pull',
+                checkpoint_value=annotation_data.get('updated_at') or annotation_data.get('created_at'),
+                is_refined=False
+            )
+            
+            session.add(synced_data)
+            logger.debug(f"插入标注记录: {annotation_id}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"插入标注记录失败 {annotation_data.get('id')}: {e}")
+            return False
+    
+    def _batch_insert_annotations(self, session, annotations: List[Dict], source_id: Optional[str] = None) -> Tuple[int, int]:
+        """
+        批量插入标注记录
+        
+        当记录数超过 10 条时使用批量插入优化性能
+        
+        Args:
+            session: SQLAlchemy 数据库会话
+            annotations: 标注数据列表
+            source_id: 数据源 ID（可选）
+            
+        Returns:
+            Tuple[int, int]: (成功插入数, 失败数)
+        """
+        if not annotations:
+            return 0, 0
+        
+        batch_threshold = 10
+        success_count = 0
+        failure_count = 0
+        
+        try:
+            if len(annotations) < batch_threshold:
+                # 少量数据，逐条插入
+                for annotation in annotations:
+                    try:
+                        if self._insert_annotation_to_db(session, annotation, source_id):
+                            success_count += 1
+                        else:
+                            failure_count += 1
+                    except Exception as e:
+                        logger.error(f"插入标注失败: {e}")
+                        failure_count += 1
+            else:
+                # 大量数据，使用批量插入
+                batch_id = hashlib.md5(
+                    f"annotation_batch_{datetime.now().isoformat()}".encode()
+                ).hexdigest()
+                
+                # 获取已存在的 ID 列表
+                existing_ids = set()
+                for annotation in annotations:
+                    ann_id = annotation.get('id')
+                    if ann_id:
+                        stmt = select(SyncedData.id).where(
+                            SyncedData.data['id'].astext == str(ann_id)
+                        )
+                        if session.execute(stmt).scalar_one_or_none():
+                            existing_ids.add(str(ann_id))
+                
+                # 准备批量插入数据
+                records_to_insert = []
+                for idx, annotation in enumerate(annotations):
+                    ann_id = str(annotation.get('id', ''))
+                    if ann_id in existing_ids:
+                        logger.debug(f"跳过已存在的标注: {ann_id}")
+                        failure_count += 1
+                        continue
+                    
+                    records_to_insert.append({
+                        'source_id': UUID(source_id) if source_id else None,
+                        'batch_id': batch_id,
+                        'batch_sequence': idx,
+                        'data': annotation,
+                        'row_count': 1,
+                        'sync_type': 'pull',
+                        'checkpoint_value': annotation.get('updated_at') or annotation.get('created_at'),
+                        'is_refined': False
+                    })
+                
+                if records_to_insert:
+                    # 使用 bulk_insert_mappings 进行批量插入
+                    session.bulk_insert_mappings(SyncedData, records_to_insert)
+                    success_count = len(records_to_insert)
+                    logger.info(f"批量插入 {success_count} 条标注记录")
+                
+        except Exception as e:
+            logger.error(f"批量插入标注失败: {e}")
+            failure_count = len(annotations) - success_count
+        
+        return success_count, failure_count
+    
+    async def _download_and_save_model(self, model_info: Dict) -> bool:
+        """
+        从云端下载并保存 AI 模型
+        
+        Args:
+            model_info: 模型信息字典，包含 model_name, download_url, checksum 等
+            
+        Returns:
+            bool: 下载和保存是否成功
+        """
+        model_name = model_info.get('model_name')
+        download_url = model_info.get('download_url')
+        expected_checksum = model_info.get('checksum')
+        
+        if not model_name or not download_url:
+            logger.error("模型信息不完整，缺少 model_name 或 download_url")
+            return False
+        
+        # 获取模型存储路径
+        models_dir = Path(self.config.get('models', {}).get('storage_path', 'data/models'))
+        models_dir.mkdir(parents=True, exist_ok=True)
+        
+        model_path = models_dir / f"{model_name}.bin"
+        temp_path = models_dir / f"{model_name}.tmp"
+        
+        try:
+            logger.info(f"开始下载模型: {model_name} 从 {download_url}")
+            
+            # 使用 aiohttp 异步下载
+            async with aiohttp.ClientSession() as session:
+                async with session.get(download_url, timeout=aiohttp.ClientTimeout(total=3600)) as response:
+                    if response.status != 200:
+                        logger.error(f"模型下载失败，HTTP 状态码: {response.status}")
+                        return False
+                    
+                    # 流式写入临时文件
+                    hasher = hashlib.sha256()
+                    total_size = 0
+                    
+                    async with aiofiles.open(temp_path, 'wb') as f:
+                        async for chunk in response.content.iter_chunked(8192):
+                            await f.write(chunk)
+                            hasher.update(chunk)
+                            total_size += len(chunk)
+            
+            # 验证校验和
+            actual_checksum = hasher.hexdigest()
+            if expected_checksum and actual_checksum != expected_checksum:
+                logger.error(f"模型校验和不匹配: 期望 {expected_checksum}, 实际 {actual_checksum}")
+                temp_path.unlink(missing_ok=True)
+                return False
+            
+            # 移动临时文件到最终位置
+            if model_path.exists():
+                model_path.unlink()
+            temp_path.rename(model_path)
+            
+            logger.info(f"模型下载完成: {model_name}, 大小: {total_size / 1024 / 1024:.2f} MB")
+            
+            # 记录模型元数据
+            metadata_path = models_dir / f"{model_name}.meta.json"
+            metadata = {
+                'model_name': model_name,
+                'download_url': download_url,
+                'checksum': actual_checksum,
+                'size_bytes': total_size,
+                'downloaded_at': datetime.now().isoformat(),
+                'version': model_info.get('version', '1.0.0')
+            }
+            
+            async with aiofiles.open(metadata_path, 'w') as f:
+                await f.write(json.dumps(metadata, indent=2, ensure_ascii=False))
+            
+            return True
+            
+        except asyncio.TimeoutError:
+            logger.error(f"模型下载超时: {model_name}")
+            temp_path.unlink(missing_ok=True)
+            return False
+        except Exception as e:
+            logger.error(f"模型下载失败 {model_name}: {e}")
+            temp_path.unlink(missing_ok=True)
+            return False
+    
     async def sync_annotations(self) -> SyncResult:
         """同步标注数据"""
         start_time = datetime.now()
@@ -212,25 +482,36 @@ class SyncManager:
                 conflicts = len(conflicts_list)
                 
                 # 解决冲突并更新本地数据
-                with get_database_session() as session:
+                synced_count = 0
+                with db_manager.get_session() as session:
+                    # 处理冲突数据
+                    conflict_ids = {pair[1]['id'] for pair in conflicts_list}
+                    
                     for cloud_item in cloud_data:
-                        # 查找冲突
-                        conflict_pair = next(
-                            (pair for pair in conflicts_list if pair[1]['id'] == cloud_item['id']),
-                            None
-                        )
-                        
-                        if conflict_pair:
-                            # 解决冲突
-                            resolved_item = self._resolve_conflict(conflict_pair[0], conflict_pair[1])
-                            # 更新数据库
-                            # TODO: 实现数据库更新逻辑
-                        else:
-                            # 新数据，直接插入
-                            # TODO: 实现数据库插入逻辑
-                            pass
+                        try:
+                            item_id = cloud_item.get('id')
+                            
+                            if item_id in conflict_ids:
+                                # 查找对应的冲突对
+                                conflict_pair = next(
+                                    (pair for pair in conflicts_list if pair[1]['id'] == item_id),
+                                    None
+                                )
+                                if conflict_pair:
+                                    # 解决冲突
+                                    resolved_item = self._resolve_conflict(conflict_pair[0], conflict_pair[1])
+                                    # 更新数据库
+                                    if self._update_annotation_in_db(session, resolved_item):
+                                        synced_count += 1
+                            else:
+                                # 新数据，直接插入
+                                if self._insert_annotation_to_db(session, cloud_item):
+                                    synced_count += 1
+                        except Exception as e:
+                            logger.error(f"处理云端标注数据失败 {cloud_item.get('id')}: {e}")
+                            errors.append(f"处理标注 {cloud_item.get('id')} 失败: {str(e)}")
                 
-                logger.info(f"从云端同步标注数据: {len(cloud_data)} 条，冲突: {conflicts} 个")
+                logger.info(f"从云端同步标注数据: {len(cloud_data)} 条，成功: {synced_count}，冲突: {conflicts} 个")
             
             return SyncResult(
                 success=True,
@@ -353,13 +634,21 @@ class SyncManager:
             
             # 下载并更新模型
             updated_models = 0
-            for update in model_updates:
+            for model_update in model_updates:
                 try:
-                    # TODO: 实现模型下载和更新逻辑
-                    logger.info(f"更新模型: {update.get('model_name')}")
-                    updated_models += 1
+                    model_name = model_update.get('model_name', 'unknown')
+                    logger.info(f"开始更新模型: {model_name}")
+                    
+                    # 使用异步方法下载和保存模型
+                    if await self._download_and_save_model(model_update):
+                        updated_models += 1
+                        logger.info(f"模型更新成功: {model_name}")
+                    else:
+                        errors.append(f"模型更新失败: {model_name}")
                 except Exception as e:
-                    errors.append(f"模型更新失败 {update.get('model_name')}: {e}")
+                    error_msg = f"模型更新失败 {model_update.get('model_name', 'unknown')}: {e}"
+                    logger.error(error_msg)
+                    errors.append(error_msg)
             
             return SyncResult(
                 success=len(errors) == 0,

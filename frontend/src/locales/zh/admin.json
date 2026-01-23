@@ -1480,6 +1480,28 @@
       "model": "默认模型",
       "modelPlaceholder": "hunyuan-lite",
       "modelRequired": "请输入默认模型"
+    },
+    "help": {
+      "ollama": "确保 Ollama 服务已在本地运行，默认端口为 11434。",
+      "openai": "需要有效的 OpenAI API Key，可在 platform.openai.com 获取。",
+      "qianwen": "需要阿里云通义千问 API Key，可在阿里云控制台获取。",
+      "zhipu": "需要智谱 AI API Key，可在 open.bigmodel.cn 获取。",
+      "hunyuan": "需要腾讯云混元 API Key，可在腾讯云控制台获取。",
+      "custom": "自定义提供商需要配置兼容 OpenAI API 格式的端点。"
+    },
+    "error": {
+      "providerUnavailable": "提供商不可用",
+      "rateLimitExceeded": "请求频率超限",
+      "timeout": "请求超时",
+      "invalidConfig": "配置无效",
+      "authenticationFailed": "认证失败",
+      "connectionFailed": "连接失败",
+      "invalidResponse": "响应格式无效",
+      "modelNotFound": "模型不存在",
+      "quotaExceeded": "配额已用尽",
+      "serverError": "服务器错误",
+      "networkError": "网络错误",
+      "unknownError": "未知错误"
     }
   },
   "textToSql": {

@@ -347,6 +347,8 @@ async def get_api_info() -> Dict[str, Any]:
     """
     获取所有已注册的 API 信息
     
+    Validates: Requirements 8.5 - /api/info 端点返回完整的 API 列表
+    
     Returns:
         {
             "total": 60,
@@ -364,7 +366,31 @@ async def get_api_info() -> Dict[str, Any]:
                     "path": "/api/v1/module",
                     "error": "ImportError: ..."
                 }
-            ]
+            ],
+            "validation": {
+                "high_priority_complete": true,
+                "missing_count": 0
+            }
+        }
+    """
+    pass
+```
+
+#### 5.1.2 获取 Versioning 状态
+
+```python
+@app.get("/api/v1/versioning", tags=["versioning"])
+async def get_versioning_info() -> Dict[str, Any]:
+    """
+    获取数据版本管理信息
+    
+    Validates: Requirements 8.5 - 系统级验收
+    
+    Returns:
+        {
+            "enabled": true,
+            "current_version": "1.0.0",
+            "features": ["create", "query", "rollback"]
         }
     """
     pass
@@ -437,6 +463,49 @@ async def health_check() -> Dict[str, Any]:
 2. **详细日志**: 记录失败原因便于调试
 3. **状态报告**: 提供 `/api/info` 端点查看注册状态
 4. **重试机制**: 对于临时失败的 API，提供手动重试接口
+
+### 6.4 自动化检查机制
+
+**决策**: 在应用启动时自动检查 API 注册状态
+
+**理由**: 满足 Requirements 2.5 - 部署新版本时应有自动化检查确保所有 API 已注册
+
+**实现**:
+```python
+def validate_api_registration():
+    """
+    验证所有高优先级 API 是否已注册
+    在启动完成后调用，如果有缺失则发出警告
+    """
+    missing_apis = []
+    for api_config in HIGH_PRIORITY_APIS:
+        if api_config.module_path not in registered_apis:
+            missing_apis.append(api_config)
+    
+    if missing_apis:
+        logger.warning(f"⚠️ Missing API registrations: {len(missing_apis)}")
+        for api in missing_apis:
+            logger.warning(f"  - {api.module_path} ({api.prefix})")
+    else:
+        logger.info("✅ All high-priority APIs registered successfully")
+    
+    return len(missing_apis) == 0
+```
+
+**启动时检查**:
+```python
+@app.on_event("startup")
+async def startup_validation():
+    """启动时验证 API 注册完整性"""
+    # 注册所有 API
+    await include_optional_routers()
+    
+    # 验证注册状态
+    is_complete = validate_api_registration()
+    
+    if not is_complete:
+        logger.error("❌ API registration incomplete - some features may be unavailable")
+```
 
 ## 7. 测试策略
 
@@ -570,6 +639,59 @@ async def test_quality_rules_api_accessible():
 - API 响应时间 > 1秒
 - 错误率 > 1%
 
+**自动化验证脚本**:
+```bash
+#!/bin/bash
+# scripts/validate_api_registration.sh
+# 部署后自动验证 API 注册状态
+
+echo "=== API Registration Validation ==="
+
+# 检查 /api/info 端点
+API_INFO=$(curl -s http://localhost:8000/api/info)
+REGISTERED_COUNT=$(echo $API_INFO | jq '.total')
+FAILED_COUNT=$(echo $API_INFO | jq '.failed | length')
+
+echo "Registered APIs: $REGISTERED_COUNT"
+echo "Failed APIs: $FAILED_COUNT"
+
+# 验证高优先级 API
+HIGH_PRIORITY_COMPLETE=$(echo $API_INFO | jq '.validation.high_priority_complete')
+if [ "$HIGH_PRIORITY_COMPLETE" != "true" ]; then
+    echo "❌ High priority APIs incomplete!"
+    exit 1
+fi
+
+# 验证各模块端点
+ENDPOINTS=(
+    "/api/v1/license"
+    "/api/v1/license/usage"
+    "/api/v1/license/activation"
+    "/api/v1/quality/rules"
+    "/api/v1/quality/reports"
+    "/api/v1/quality/workflow"
+    "/api/v1/augmentation"
+    "/api/v1/security/sessions"
+    "/api/v1/security/sso"
+    "/api/v1/security/rbac"
+    "/api/v1/security/data-permissions"
+    "/api/v1/versioning"
+)
+
+for endpoint in "${ENDPOINTS[@]}"; do
+    STATUS=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:8000$endpoint")
+    if [ "$STATUS" == "200" ] || [ "$STATUS" == "401" ]; then
+        echo "✅ $endpoint: $STATUS"
+    else
+        echo "❌ $endpoint: $STATUS"
+    fi
+done
+
+echo "=== Validation Complete ==="
+```
+
+**Validates**: Requirements 2.5 - 部署新版本时应有自动化检查确保所有 API 已注册
+
 ## 9. 安全考虑
 
 ### 9.1 认证和授权
@@ -641,6 +763,8 @@ async def get_license(
 
 **规范**: 所有高优先级 API 必须成功注册
 
+**Validates**: Requirements 7.1 - 所有高优先级 API（12个）成功注册
+
 **形式化**:
 ```
 ∀ api ∈ HIGH_PRIORITY_APIS:
@@ -658,6 +782,8 @@ def test_high_priority_api_registered(api_config):
 ### 12.2 Property 2: 错误隔离
 
 **规范**: 单个 API 注册失败不影响其他 API
+
+**Validates**: Requirements 3.1 - 失败的 API 注册不应阻塞其他 API 的加载; Requirements 3.2 - 单个 API 注册失败不应导致整个应用崩溃
 
 **形式化**:
 ```
@@ -678,6 +804,8 @@ def test_api_failure_isolation():
 
 **规范**: 所有 API 路由前缀必须唯一
 
+**Validates**: Requirements 3.4 - 新注册的 API 应该与现有 API 路由不冲突
+
 **形式化**:
 ```
 ∀ api1, api2 ∈ REGISTERED_APIS, api1 ≠ api2:
@@ -692,8 +820,63 @@ def test_route_uniqueness():
     assert len(prefixes) == len(set(prefixes))
 ```
 
+### 12.4 Property 4: 启动时间约束
+
+**规范**: API 注册不应显著增加应用启动时间
+
+**Validates**: Requirements 3.1 - API 注册不应显著增加应用启动时间（< 2秒增量）
+
+**形式化**:
+```
+startup_time_with_registration - startup_time_baseline < 2000ms
+```
+
+**测试方法**: Performance testing
+```python
+def test_startup_time_constraint():
+    """测试启动时间约束"""
+    import time
+    start = time.time()
+    # 执行 API 注册
+    register_all_apis()
+    duration = time.time() - start
+    assert duration < 2.0, f"Registration took {duration}s, exceeds 2s limit"
+```
+
+### 12.5 Property 5: 日志完整性
+
+**规范**: 每个 API 注册都必须有对应的日志记录
+
+**Validates**: Requirements 3.2 - 应该有详细的日志记录每个 API 的注册状态
+
+**形式化**:
+```
+∀ api ∈ ALL_APIS:
+    ∃ log_entry: log_entry.api = api ∧ log_entry.status ∈ {SUCCESS, FAILED, SKIPPED}
+```
+
+**测试方法**: Log verification
+```python
+def test_log_completeness(caplog):
+    """测试日志完整性"""
+    with caplog.at_level(logging.INFO):
+        register_all_apis()
+    
+    for api in HIGH_PRIORITY_APIS:
+        assert any(api.prefix in record.message for record in caplog.records), \
+            f"No log entry for {api.prefix}"
+```
+
 ---
 
-**文档版本**: 1.0  
+**文档版本**: 1.1  
 **创建日期**: 2026-01-19  
+**更新日期**: 2026-01-22  
 **状态**: 待审批
+
+## 变更记录
+
+| 版本 | 日期 | 变更内容 |
+|-----|------|---------|
+| 1.0 | 2026-01-19 | 初始版本 |
+| 1.1 | 2026-01-22 | 添加自动化检查机制 (Section 6.4)；添加 Versioning API 端点定义 (Section 5.1.2)；添加部署验证脚本 (Section 8.3)；扩展正确性属性 (Section 12.4, 12.5)；添加 Validates 引用到各属性 |

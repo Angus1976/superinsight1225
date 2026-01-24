@@ -128,15 +128,19 @@ class LLMSwitcher:
         tenant_id: Optional[str] = None,
         cache_client: Optional[Any] = None,
         enable_response_cache: bool = True,
+        rate_limiter: Optional[Any] = None,
+        enable_rate_limiting: bool = True,
     ):
         """
         Initialize the LLM Switcher.
-        
+
         Args:
             config_manager: Configuration manager instance
             tenant_id: Tenant ID for multi-tenant support
             cache_client: Redis client for response caching (Requirement 10.2)
             enable_response_cache: Whether to enable response caching
+            rate_limiter: Rate limiter instance for quota management (Requirement 10.3)
+            enable_rate_limiting: Whether to enable rate limiting
         """
         self._config_manager = config_manager or get_config_manager()
         self._tenant_id = tenant_id
@@ -145,16 +149,29 @@ class LLMSwitcher:
         self._current_method: Optional[LLMMethod] = None
         self._fallback_method: Optional[LLMMethod] = None
         self._initialized = False
-        
+
         # Response caching (Requirement 10.2)
         self._cache_client = cache_client
         self._enable_response_cache = enable_response_cache
         self._local_response_cache: Dict[str, Tuple[Any, float]] = {}  # Fallback in-memory cache
-        
+
+        # Rate limiting (Requirement 10.3)
+        self._rate_limiter = rate_limiter
+        self._enable_rate_limiting = enable_rate_limiting
+        if self._rate_limiter is None and self._enable_rate_limiting:
+            # Create default rate limiter if enabled but not provided
+            try:
+                from src.ai.llm.rate_limiter import get_rate_limiter
+                self._rate_limiter = get_rate_limiter()
+                logger.debug("Created default rate limiter")
+            except ImportError:
+                logger.warning("Rate limiter not available, rate limiting disabled")
+                self._enable_rate_limiting = False
+
         # Usage statistics tracking per provider (Requirement 3.5)
         self._usage_stats: Dict[str, int] = defaultdict(int)
         self._stats_lock = asyncio.Lock()
-        
+
         # Register for config changes
         self._config_manager.watch_config_changes(self._on_config_change)
     
@@ -665,6 +682,23 @@ class LLMSwitcher:
         
         for attempt in range(max_retries):
             try:
+                # Apply rate limiting (Requirement 10.3)
+                if self._enable_rate_limiting and self._rate_limiter:
+                    try:
+                        # Acquire rate limit token before making request
+                        # Use wait=True to wait for tokens to become available
+                        await self._rate_limiter.acquire(
+                            method=method,
+                            wait=True,
+                            max_wait=30.0  # Wait up to 30 seconds for rate limit
+                        )
+                    except Exception as rate_limit_error:
+                        # Rate limit exceeded - treat as retryable error
+                        logger.warning(f"Rate limit exceeded for {method}: {rate_limit_error}")
+                        last_error = str(rate_limit_error)
+                        # Continue to retry logic below
+                        raise
+
                 # Enforce 30-second timeout (Requirement 4.4)
                 # Using wait_for for Python 3.9 compatibility
                 response = await asyncio.wait_for(

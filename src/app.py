@@ -809,7 +809,10 @@ async def lifespan(app: FastAPI):
     """Application lifespan manager with system integration."""
     # Startup
     logger.info(f"Starting {settings.app.app_name} v{settings.app.app_version}")
-    
+
+    # Initialize LLM Health Monitor reference (will be populated if available)
+    llm_health_monitor = None
+
     try:
         # Simplified startup - skip service orchestration for now
         # Just initialize database connection
@@ -818,20 +821,59 @@ async def lifespan(app: FastAPI):
             logger.info("Database connection established")
         else:
             logger.warning("Database connection test failed")
-        
+
+        # Initialize LLM Health Monitor (if LLM integration is available)
+        try:
+            from src.ai.llm_switcher import get_llm_switcher
+            from src.ai.llm.health_monitor import get_initialized_health_monitor
+            from src.database.connection import get_db_session
+
+            # Get LLM Switcher instance
+            llm_switcher = get_llm_switcher()
+
+            # Get database session for health status persistence
+            db_session = None
+            try:
+                db_session = await anext(get_db_session())
+            except Exception as e:
+                logger.warning(f"Could not get database session for health monitor: {e}")
+
+            # Initialize and start Health Monitor
+            llm_health_monitor = await get_initialized_health_monitor(
+                switcher=llm_switcher,
+                db_session=db_session,
+                metrics_collector=metrics_collector
+            )
+
+            logger.info("✅ LLM Health Monitor started successfully")
+
+        except ImportError as e:
+            logger.info("LLM Health Monitor not available (LLM integration not installed)")
+        except Exception as e:
+            logger.warning(f"Failed to start LLM Health Monitor: {e}")
+
         # Include optional routers
         await include_optional_routers()
-        
+
         logger.info("Application startup completed (simplified mode)")
-        
+
         yield
-        
+
     except Exception as e:
         logger.error(f"Failed to initialize application: {e}")
         raise
     finally:
         # Shutdown
         logger.info("Shutting down application")
+
+        # Stop LLM Health Monitor if it was started
+        if llm_health_monitor is not None:
+            try:
+                await llm_health_monitor.stop()
+                logger.info("✅ LLM Health Monitor stopped successfully")
+            except Exception as e:
+                logger.error(f"Error stopping LLM Health Monitor: {e}")
+
         close_database()
 
 # Create FastAPI application

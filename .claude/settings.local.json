@@ -4,7 +4,9 @@
       "Bash(find:*)",
       "Read(//c/**)",
       "Bash(grep:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(fi)",
+      "Bash(done)"
     ]
   }
 }

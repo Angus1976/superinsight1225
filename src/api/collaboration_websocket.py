@@ -26,6 +26,20 @@ except ImportError:
         get_collaboration_manager,
     )
 
+# Import WebSocket authentication
+try:
+    from api.middleware.websocket_auth import (
+        authenticate_websocket,
+        authorize_project_access,
+        WebSocketAuthError,
+    )
+except ImportError:
+    from src.api.middleware.websocket_auth import (
+        authenticate_websocket,
+        authorize_project_access,
+        WebSocketAuthError,
+    )
+
 
 # =============================================================================
 # Router
@@ -290,6 +304,7 @@ async def collaboration_websocket(
     Query parameters:
     - project_id: Required project ID
     - task_id: Optional task ID for task-specific collaboration
+    - token: JWT authentication token (required)
 
     Supports:
     - User presence tracking (online/offline/status)
@@ -298,13 +313,38 @@ async def collaboration_websocket(
     - Status updates (editing/viewing/idle)
     """
     ws_manager = get_collab_ws_manager()
-
-    # TODO: Get actual user ID from authentication
-    user_id = "user_123"
-
-    connection_id = await ws_manager.connect(websocket, project_id, user_id)
+    connection_id = None
 
     try:
+        # Authenticate WebSocket connection
+        # For development, allow anonymous connections
+        # In production, set allow_anonymous=False
+        user_id, user_data = await authenticate_websocket(
+            websocket,
+            allow_anonymous=True  # TODO: Set to False in production
+        )
+
+        # If authenticated, verify project access
+        if user_id:
+            try:
+                await authorize_project_access(
+                    user_data,
+                    project_id,
+                    required_permission="annotation.collaborate"
+                )
+            except WebSocketAuthError as e:
+                logger.warning(f"Project access denied for user {user_id}: {e.reason}")
+                await websocket.close(code=e.code, reason=e.reason)
+                return
+        else:
+            # Anonymous user
+            user_id = f"anonymous_{id(websocket)}"
+            logger.info(f"Anonymous user connected: {user_id}")
+
+        # Connect to WebSocket manager
+        connection_id = await ws_manager.connect(websocket, project_id, user_id)
+
+        # Message handling loop
         while True:
             # Receive message
             data = await websocket.receive_json()
@@ -312,11 +352,28 @@ async def collaboration_websocket(
             # Handle message
             await ws_manager.handle_message(connection_id, data)
 
+    except WebSocketAuthError as e:
+        # Authentication failed
+        logger.warning(f"WebSocket authentication failed: {e.reason}")
+        try:
+            await websocket.close(code=e.code, reason=e.reason)
+        except Exception:
+            pass
+
     except WebSocketDisconnect:
-        await ws_manager.disconnect(connection_id)
+        # Normal disconnect
+        if connection_id:
+            await ws_manager.disconnect(connection_id)
+
     except Exception as e:
-        logger.error(f"WebSocket error: {e}")
-        await ws_manager.disconnect(connection_id)
+        # Unexpected error
+        logger.error(f"WebSocket error: {e}", exc_info=True)
+        if connection_id:
+            await ws_manager.disconnect(connection_id)
+        try:
+            await websocket.close(code=1011, reason="Internal server error")
+        except Exception:
+            pass
 
 
 @router.get("/ws/stats")

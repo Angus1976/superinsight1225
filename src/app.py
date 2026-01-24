@@ -26,6 +26,9 @@ from src.system.health import health_checker
 # Import API routers
 from src.api.extraction import router as extraction_router
 
+# Import startup services for AI Annotation and Text-to-SQL integration
+from src.startup import initialize_services, shutdown_services, health_router
+
 logger = logging.getLogger(__name__)
 
 
@@ -855,7 +858,10 @@ async def lifespan(app: FastAPI):
         # Include optional routers
         await include_optional_routers()
 
-        logger.info("Application startup completed (simplified mode)")
+        # Initialize AI Annotation and Text-to-SQL services
+        await initialize_services(app)
+
+        logger.info("Application startup completed")
 
         yield
 
@@ -873,6 +879,9 @@ async def lifespan(app: FastAPI):
                 logger.info("✅ LLM Health Monitor stopped successfully")
             except Exception as e:
                 logger.error(f"Error stopping LLM Health Monitor: {e}")
+
+        # Shutdown AI Annotation and Text-to-SQL services
+        await shutdown_services(app)
 
         close_database()
 
@@ -1140,6 +1149,9 @@ async def root():
 
 # Include routers
 app.include_router(extraction_router)
+
+# Include health check endpoints
+app.include_router(health_router)
 
 # Include tasks API router
 try:

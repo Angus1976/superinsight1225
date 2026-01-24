@@ -1356,6 +1356,27 @@ async def include_optional_routers():
         logger.warning(f"⚠️ Annotation Workflow API not available: {e}")
     except Exception as e:
         logger.error(f"❌ Annotation Workflow API failed to load: {e}")
+
+    # AI Annotation Collaboration API (pre-annotation, mid-coverage, post-validation)
+    # Requirements: AI Annotation Methods implementation
+    try:
+        from src.api.annotation_collaboration import router as annotation_collaboration_router
+        app.include_router(annotation_collaboration_router)
+        logger.info("✅ AI Annotation Collaboration API loaded successfully")
+    except ImportError as e:
+        logger.warning(f"⚠️ AI Annotation Collaboration API not available: {e}")
+    except Exception as e:
+        logger.error(f"❌ AI Annotation Collaboration API failed to load: {e}")
+
+    # Collaboration WebSocket API (real-time presence and conflict detection)
+    try:
+        from src.api.collaboration_websocket import router as collaboration_websocket_router
+        app.include_router(collaboration_websocket_router)
+        logger.info("✅ Collaboration WebSocket API loaded successfully")
+    except ImportError as e:
+        logger.warning(f"⚠️ Collaboration WebSocket API not available: {e}")
+    except Exception as e:
+        logger.error(f"❌ Collaboration WebSocket API failed to load: {e}")
     
     # Billing router
     try:

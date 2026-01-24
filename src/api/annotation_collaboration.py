@@ -924,3 +924,282 @@ async def get_websocket_stats(
 ):
     """Get WebSocket connection statistics."""
     return ws_manager.get_stats()
+
+
+# =============================================================================
+# Additional Endpoints for Frontend Integration
+# =============================================================================
+
+class TaskListResponse(BaseModel):
+    """List of annotation tasks."""
+    tasks: List[Dict[str, Any]]
+    total_count: int
+    page: int
+    page_size: int
+
+
+class AIMetricsResponse(BaseModel):
+    """AI metrics for a project."""
+    total_annotations: int
+    human_annotations: int
+    ai_pre_annotations: int
+    ai_suggestions: int
+    ai_acceptance_rate: float
+    time_saved_hours: float
+    quality_score: float
+
+
+class QualityMetricsResponse(BaseModel):
+    """Detailed quality metrics for AI dashboard."""
+    overview: Dict[str, Any]
+    accuracy_trend: List[Dict[str, Any]]
+    confidence_distribution: List[Dict[str, Any]]
+    engine_performance: List[Dict[str, Any]]
+    degradation_alerts: List[Dict[str, Any]]
+
+
+class RoutingConfigRequest(BaseModel):
+    """AI routing configuration."""
+    low_confidence_threshold: float = Field(ge=0, le=1)
+    high_confidence_threshold: float = Field(ge=0, le=1)
+    auto_assign_high_confidence: bool = False
+    skill_based_routing: bool = True
+    workload_balancing: bool = True
+    review_levels: int = Field(ge=1, le=3, default=2)
+
+
+class RoutingConfigResponse(BaseModel):
+    """Routing configuration response."""
+    config: Dict[str, Any]
+    status: str
+    message: str
+
+
+@router.get("/tasks", response_model=TaskListResponse)
+async def list_tasks(
+    project_id: Optional[str] = Query(None, description="Filter by project ID"),
+    status: Optional[str] = Query(None, description="Filter by status"),
+    assigned_to: Optional[str] = Query(None, description="Filter by assignee"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=100),
+    collab_manager: CollaborationManager = Depends(get_collab_manager),
+):
+    """
+    List annotation tasks with filters.
+
+    Returns tasks that match the specified filters, with pagination support.
+    """
+    try:
+        # TODO: Implement actual database query with filters
+        # For now, return mock data
+        mock_tasks = [
+            {
+                "task_id": f"task_{i}",
+                "title": f"Annotation Task {i}",
+                "project_id": project_id or "default_project",
+                "project_name": "Default Project",
+                "assigned_to": "user1" if i % 2 == 0 else None,
+                "assigned_by": "manual" if i % 2 == 0 else "ai",
+                "status": "in_progress" if i % 3 == 0 else "pending",
+                "priority": "high" if i % 4 == 0 else "medium",
+                "metrics": {
+                    "total_items": 100,
+                    "human_annotated": 40 + i,
+                    "ai_pre_annotated": 30,
+                    "ai_suggested": 10,
+                    "review_required": 5,
+                },
+                "created_at": datetime.utcnow().isoformat(),
+            }
+            for i in range(10)
+        ]
+
+        return TaskListResponse(
+            tasks=mock_tasks,
+            total_count=len(mock_tasks),
+            page=page,
+            page_size=page_size,
+        )
+
+    except Exception as e:
+        logger.error(f"Task listing failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/metrics", response_model=AIMetricsResponse)
+async def get_ai_metrics(
+    project_id: Optional[str] = Query(None, description="Filter by project ID"),
+):
+    """
+    Get AI annotation metrics.
+
+    Returns overall metrics about AI assistance including:
+    - Total annotations
+    - Human vs AI annotation counts
+    - Acceptance rates
+    - Time saved
+    - Quality scores
+    """
+    try:
+        # TODO: Implement actual metrics calculation from database
+        # For now, return mock data
+        return AIMetricsResponse(
+            total_annotations=1500,
+            human_annotations=900,
+            ai_pre_annotations=500,
+            ai_suggestions=100,
+            ai_acceptance_rate=0.85,
+            time_saved_hours=45.5,
+            quality_score=0.92,
+        )
+
+    except Exception as e:
+        logger.error(f"Metrics retrieval failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/quality-metrics", response_model=QualityMetricsResponse)
+async def get_quality_metrics(
+    project_id: str = Query(..., description="Project ID"),
+    date_range: str = Query("last_30_days", description="Date range filter"),
+    engine_id: Optional[str] = Query(None, description="Filter by engine"),
+):
+    """
+    Get detailed quality metrics for AI quality dashboard.
+
+    Returns comprehensive quality metrics including:
+    - Accuracy trends
+    - Confidence distributions
+    - Engine performance comparisons
+    - Quality degradation alerts
+    """
+    try:
+        # TODO: Implement actual quality metrics calculation
+        # For now, return mock data
+        from datetime import timedelta
+
+        # Generate mock accuracy trend
+        accuracy_trend = []
+        for i in range(7):
+            date = datetime.utcnow() - timedelta(days=6-i)
+            accuracy_trend.append({
+                "date": date.strftime("%Y-%m-%d"),
+                "ai_accuracy": 0.88 + (i * 0.01),
+                "human_accuracy": 0.92 + (i * 0.005),
+                "agreement_rate": 0.85 + (i * 0.008),
+                "sample_count": 200 + (i * 10),
+            })
+
+        return QualityMetricsResponse(
+            overview={
+                "ai_accuracy": 0.92,
+                "agreement_rate": 0.88,
+                "total_samples": 1500,
+                "active_alerts": 2,
+            },
+            accuracy_trend=accuracy_trend,
+            confidence_distribution=[
+                {"range": "0.9-1.0", "count": 800, "acceptance_rate": 0.95},
+                {"range": "0.7-0.9", "count": 500, "acceptance_rate": 0.85},
+                {"range": "0.5-0.7", "count": 150, "acceptance_rate": 0.60},
+                {"range": "0.0-0.5", "count": 50, "acceptance_rate": 0.30},
+            ],
+            engine_performance=[
+                {
+                    "engine_id": "pre-annotation",
+                    "engine_name": "Pre-annotation Engine",
+                    "accuracy": 0.94,
+                    "confidence": 0.91,
+                    "samples": 600,
+                    "suggestions": 580,
+                    "acceptance_rate": 0.92,
+                },
+                {
+                    "engine_id": "mid-coverage",
+                    "engine_name": "Mid-coverage Engine",
+                    "accuracy": 0.90,
+                    "confidence": 0.85,
+                    "samples": 500,
+                    "suggestions": 450,
+                    "acceptance_rate": 0.88,
+                },
+            ],
+            degradation_alerts=[
+                {
+                    "alert_id": "alert_1",
+                    "metric": "AI Accuracy",
+                    "current_value": 0.92,
+                    "previous_value": 0.95,
+                    "degradation_rate": -0.03,
+                    "severity": "warning",
+                    "recommendation": "Review recent model changes",
+                    "timestamp": datetime.utcnow().isoformat(),
+                }
+            ],
+        )
+
+    except Exception as e:
+        logger.error(f"Quality metrics retrieval failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/routing/config", response_model=RoutingConfigResponse)
+async def get_routing_config():
+    """Get current AI routing configuration."""
+    try:
+        # TODO: Retrieve from database/config store
+        config = {
+            "low_confidence_threshold": 0.5,
+            "high_confidence_threshold": 0.9,
+            "auto_assign_high_confidence": False,
+            "skill_based_routing": True,
+            "workload_balancing": True,
+            "review_levels": 2,
+        }
+
+        return RoutingConfigResponse(
+            config=config,
+            status="success",
+            message="Routing configuration retrieved successfully",
+        )
+
+    except Exception as e:
+        logger.error(f"Routing config retrieval failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.put("/routing/config", response_model=RoutingConfigResponse)
+async def update_routing_config(request: RoutingConfigRequest):
+    """
+    Update AI routing configuration.
+
+    Configures how AI suggestions are routed based on:
+    - Confidence thresholds
+    - Auto-assignment rules
+    - Skill-based routing
+    - Workload balancing
+    """
+    try:
+        # Validate thresholds
+        if request.low_confidence_threshold >= request.high_confidence_threshold:
+            raise HTTPException(
+                status_code=400,
+                detail="Low confidence threshold must be less than high confidence threshold",
+            )
+
+        # TODO: Save to database/config store
+        config = request.dict()
+
+        logger.info(f"Routing config updated: {config}")
+
+        return RoutingConfigResponse(
+            config=config,
+            status="success",
+            message="Routing configuration updated successfully",
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Routing config update failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

@@ -8,7 +8,10 @@
       "Bash(fi)",
       "Bash(done)",
       "Bash(ls:*)",
-      "Bash(pip install:*)"
+      "Bash(pip install:*)",
+      "Bash(git commit:*)",
+      "Bash(git add:*)",
+      "Bash(pytest:*)"
     ]
   }
 }

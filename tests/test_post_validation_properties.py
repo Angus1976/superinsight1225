@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pytest
 from hypothesis import given, strategies as st, settings, assume
 from typing import List, Dict, Any, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from pydantic import BaseModel, Field
 from enum import Enum
 from uuid import uuid4
@@ -45,7 +45,7 @@ class ValidationReport(BaseModel):
     issues: List[ValidationIssue] = Field(default_factory=list, description="Validation issues")
     recommendations: List[str] = Field(default_factory=list, description="Recommendations")
     total_annotations: int = Field(default=0, ge=0, description="Total annotations validated")
-    created_at: datetime = Field(default_factory=datetime.utcnow, description="Creation time")
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="Creation time")
 
 
 class ValidationConfig(BaseModel):
@@ -116,7 +116,7 @@ def validation_report_strategy(draw):
         issues=issues,
         recommendations=draw(st.lists(st.text(min_size=1, max_size=200), max_size=5)),
         total_annotations=draw(st.integers(min_value=0, max_value=10000)),
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
     )
 
 

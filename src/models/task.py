@@ -3,8 +3,13 @@
 from enum import Enum
 from pydantic import BaseModel, Field
 from uuid import UUID, uuid4
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Dict, Any
+
+
+def get_utc_now() -> datetime:
+    """Get current UTC time as timezone-aware datetime."""
+    return datetime.now(timezone.utc)
 
 
 class TaskStatus(str, Enum):
@@ -26,8 +31,8 @@ class Task(BaseModel):
     description: Optional[str] = None
     assigned_to: Optional[UUID] = None
     status: str = "pending"
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=get_utc_now)
+    updated_at: datetime = Field(default_factory=get_utc_now)
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
     class Config:

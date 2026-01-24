@@ -44,6 +44,28 @@ from .thread_safety import (
     run_thread_safety_benchmark,
     get_context_variable_info
 )
+from .formatters import (
+    DateTimeFormatter,
+    NumberFormatter,
+    CurrencyFormatter,
+    format_date,
+    format_time,
+    format_datetime,
+    format_relative_time,
+    format_number,
+    format_percent,
+    format_currency
+)
+from .hot_reload import (
+    TranslationHotReloader,
+    get_hot_reloader,
+    reload_translations,
+    register_reload_callback,
+    unregister_reload_callback,
+    start_hot_reload_watching,
+    stop_hot_reload_watching,
+    get_hot_reload_status
+)
 
 __all__ = [
     'get_translation',
@@ -77,5 +99,25 @@ __all__ = [
     'get_thread_safety_validator',
     'validate_thread_safety',
     'run_thread_safety_benchmark',
-    'get_context_variable_info'
+    'get_context_variable_info',
+    # Formatters
+    'DateTimeFormatter',
+    'NumberFormatter',
+    'CurrencyFormatter',
+    'format_date',
+    'format_time',
+    'format_datetime',
+    'format_relative_time',
+    'format_number',
+    'format_percent',
+    'format_currency',
+    # Hot Reload
+    'TranslationHotReloader',
+    'get_hot_reloader',
+    'reload_translations',
+    'register_reload_callback',
+    'unregister_reload_callback',
+    'start_hot_reload_watching',
+    'stop_hot_reload_watching',
+    'get_hot_reload_status'
 ]

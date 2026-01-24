@@ -1234,7 +1234,7 @@ class TestEngineHotReload:
     """
 
     @given(
-        num_engines=st.integers(min_value=1, max_size=5),
+        num_engines=st.integers(min_value=1, max_value=5),
         num_reloads=st.integers(min_value=1, max_value=10)
     )
     @settings(max_examples=30)

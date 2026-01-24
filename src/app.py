@@ -1815,6 +1815,68 @@ async def include_optional_routers():
     except Exception as e:
         logger.error(f"❌ Collaboration API failed to load: {e}")
     
+    # Ontology Expert Collaboration router
+    # Requirements: Ontology Expert Collaboration spec - Tasks 15.1-15.7
+    try:
+        from src.api.ontology_expert_collaboration import router as ontology_collab_router
+        app.include_router(ontology_collab_router)
+        _track_api_registration(
+            module_path="src.api.ontology_expert_collaboration",
+            prefix="/api/v1/ontology-collaboration",
+            tags=["Ontology Expert Collaboration"],
+            success=True
+        )
+        logger.info("✅ Ontology Expert Collaboration API registered: /api/v1/ontology-collaboration")
+    except ImportError as e:
+        _track_api_registration(
+            module_path="src.api.ontology_expert_collaboration",
+            prefix="/api/v1/ontology-collaboration",
+            tags=["Ontology Expert Collaboration"],
+            success=False,
+            error=str(e)
+        )
+        logger.warning(f"⚠️ Ontology Expert Collaboration API not available: {e}")
+    except Exception as e:
+        _track_api_registration(
+            module_path="src.api.ontology_expert_collaboration",
+            prefix="/api/v1/ontology-collaboration",
+            tags=["Ontology Expert Collaboration"],
+            success=False,
+            error=str(e)
+        )
+        logger.error(f"❌ Ontology Expert Collaboration API failed to load: {e}")
+    
+    # Ontology Expert Collaboration WebSocket router
+    # Requirements: Ontology Expert Collaboration spec - Task 16
+    try:
+        from src.api.ontology_collaboration_websocket import router as ontology_ws_router
+        app.include_router(ontology_ws_router)
+        _track_api_registration(
+            module_path="src.api.ontology_collaboration_websocket",
+            prefix="/api/v1/ontology-collaboration/ws",
+            tags=["Ontology Expert Collaboration WebSocket"],
+            success=True
+        )
+        logger.info("✅ Ontology Expert Collaboration WebSocket API registered")
+    except ImportError as e:
+        _track_api_registration(
+            module_path="src.api.ontology_collaboration_websocket",
+            prefix="/api/v1/ontology-collaboration/ws",
+            tags=["Ontology Expert Collaboration WebSocket"],
+            success=False,
+            error=str(e)
+        )
+        logger.warning(f"⚠️ Ontology Expert Collaboration WebSocket API not available: {e}")
+    except Exception as e:
+        _track_api_registration(
+            module_path="src.api.ontology_collaboration_websocket",
+            prefix="/api/v1/ontology-collaboration/ws",
+            tags=["Ontology Expert Collaboration WebSocket"],
+            success=False,
+            error=str(e)
+        )
+        logger.error(f"❌ Ontology Expert Collaboration WebSocket API failed to load: {e}")
+    
     # Business metrics router
     try:
         from src.api.business_metrics import router as business_metrics_router

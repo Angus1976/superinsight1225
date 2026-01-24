@@ -66,6 +66,11 @@ from .hot_reload import (
     stop_hot_reload_watching,
     get_hot_reload_status
 )
+from .ontology_collaboration_i18n import (
+    ONTOLOGY_COLLABORATION_TRANSLATIONS,
+    register_ontology_collaboration_translations,
+    get_ontology_translation,
+)
 
 __all__ = [
     'get_translation',
@@ -119,5 +124,9 @@ __all__ = [
     'unregister_reload_callback',
     'start_hot_reload_watching',
     'stop_hot_reload_watching',
-    'get_hot_reload_status'
+    'get_hot_reload_status',
+    # Ontology Collaboration I18n
+    'ONTOLOGY_COLLABORATION_TRANSLATIONS',
+    'register_ontology_collaboration_translations',
+    'get_ontology_translation',
 ]

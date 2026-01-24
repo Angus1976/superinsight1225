@@ -6,6 +6,35 @@
 @import './interactions.scss';
 @import './accessibility.scss';
 
+// Brand Identity System CSS Variables
+:root {
+  // Brand Colors - Default Theme
+  --brand-primary: #1890ff;
+  --brand-primary-hover: #40a9ff;
+  --brand-primary-active: #096dd9;
+  --brand-primary-light: #e6f7ff;
+  --brand-secondary: #52c41a;
+  --brand-secondary-hover: #73d13d;
+  --brand-secondary-active: #389e0d;
+  --brand-accent: #722ed1;
+  --brand-background: #ffffff;
+  --brand-surface: #fafafa;
+  --brand-text: rgba(0, 0, 0, 0.88);
+  --brand-text-secondary: rgba(0, 0, 0, 0.65);
+  
+  // Brand Animation
+  --brand-animation-duration: 0.3s;
+  --brand-animation-easing: cubic-bezier(0.645, 0.045, 0.355, 1);
+}
+
+// Dark theme brand colors
+[data-theme='dark'] {
+  --brand-background: #141414;
+  --brand-surface: #1f1f1f;
+  --brand-text: rgba(255, 255, 255, 0.88);
+  --brand-text-secondary: rgba(255, 255, 255, 0.65);
+}
+
 * {
   box-sizing: border-box;
   margin: 0;

@@ -56,3 +56,6 @@ export * from './error';
 export * from './components';
 export * from './guards';
 export * from './label-studio';
+
+// Brand Identity System types
+export * from './brand';

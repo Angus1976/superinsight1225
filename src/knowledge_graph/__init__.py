@@ -31,6 +31,11 @@ from .update import (
     UpdateResult,
     UpdateStrategy,
 )
+from .collaboration_integration import (
+    CollaborationGraphIntegration,
+    get_collaboration_graph,
+    init_collaboration_graph,
+)
 
 __all__ = [
     # Models
@@ -56,6 +61,10 @@ __all__ = [
     "IncrementalUpdater",
     "UpdateResult",
     "UpdateStrategy",
+    # Collaboration Integration
+    "CollaborationGraphIntegration",
+    "get_collaboration_graph",
+    "init_collaboration_graph",
 ]
 
 __version__ = "1.1.0"

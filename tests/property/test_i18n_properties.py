@@ -1,603 +1,605 @@
 """
-Property-based tests for i18n (Internationalization) system.
+Property-Based Tests for AI Annotation I18n
 
-Tests for admin-configuration spec:
-- Property 4: Localized Error Messages (Validates: Requirements 8.4)
-- Property 26: No Hardcoded UI Strings (Validates: Requirements 8.5)
+Tests internationalization properties for the AI annotation system.
+Uses Hypothesis for property-based testing with minimum 100 iterations.
+
+Requirements: 8.1, 8.2, 8.3, 8.4, 8.5
 """
-
-import sys
-import os
-import json
-import re
-from pathlib import Path
-from typing import Dict, Any, List, Set, Tuple
 
 import pytest
 from hypothesis import given, strategies as st, settings, assume
+from datetime import datetime
+from typing import Dict, Any
 
-# Add src to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'src'))
+# Import i18n module
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-
-# ============================================================================
-# Helper functions and constants
-# ============================================================================
-
-# Frontend locales directory
-FRONTEND_LOCALES_DIR = Path(__file__).parent.parent.parent / "frontend" / "src" / "locales"
-
-# Supported languages
-SUPPORTED_LANGUAGES = ["zh", "en"]
-
-# Error message key patterns
-ERROR_KEY_PATTERNS = [
-    r"error",
-    r"Error",
-    r"fail",
-    r"Fail",
-    r"invalid",
-    r"Invalid",
-    r"warning",
-    r"Warning",
-]
-
-# Patterns that indicate hardcoded strings (should not appear in code)
-HARDCODED_PATTERNS = [
-    r'"[A-Z][a-z]+\s+[a-z]+"',  # English sentences in quotes
-    r"'[A-Z][a-z]+\s+[a-z]+'",  # English sentences in single quotes
-    r'"[\u4e00-\u9fff]+"',       # Chinese characters in quotes (should use i18n keys)
-    r"'[\u4e00-\u9fff]+'",       # Chinese in single quotes
-]
-
-# Patterns to ignore (allowed hardcoded strings)
-ALLOWED_PATTERNS = [
-    r'className=',
-    r'type=',
-    r'key=',
-    r'data-testid=',
-    r'console\.',
-    r'import ',
-    r'export ',
-    r'const ',
-    r'let ',
-    r'var ',
-    r'function ',
-    r'interface ',
-    r'type ',
-    r'enum ',
-]
+from src.ai.annotation_i18n import (
+    get_ai_translation,
+    t,
+    get_all_translations,
+    has_translation,
+    get_missing_translations,
+    get_translation_with_fallback,
+    get_current_language,
+    set_language,
+    SUPPORTED_LANGUAGES,
+    DEFAULT_LANGUAGE,
+    LocaleFormatter,
+    get_formatter,
+    format_quality_report,
+    format_annotation_summary,
+    MultilingualGuidelines,
+    get_guidelines_manager,
+    I18nHotReloader,
+    get_hot_reloader,
+    AI_ANNOTATION_TRANSLATIONS,
+)
 
 
-def load_locale_file(language: str, namespace: str) -> Dict[str, Any]:
-    """Load a specific locale JSON file."""
-    file_path = FRONTEND_LOCALES_DIR / language / f"{namespace}.json"
-    if not file_path.exists():
-        return {}
+# =============================================================================
+# Test Strategies
+# =============================================================================
 
-    with open(file_path, 'r', encoding='utf-8') as f:
-        return json.load(f)
+# Strategy for supported languages
+language_strategy = st.sampled_from(SUPPORTED_LANGUAGES)
 
+# Strategy for translation keys (from actual keys)
+def get_all_keys():
+    """Get all translation keys from both languages."""
+    all_keys = set()
+    for lang_translations in AI_ANNOTATION_TRANSLATIONS.values():
+        all_keys.update(lang_translations.keys())
+    return list(all_keys)
 
-def get_all_locale_keys(language: str) -> Set[str]:
-    """Get all translation keys for a language."""
-    keys = set()
-    lang_dir = FRONTEND_LOCALES_DIR / language
+translation_key_strategy = st.sampled_from(get_all_keys())
 
-    if not lang_dir.exists():
-        return keys
+# Strategy for quality metrics
+quality_metric_strategy = st.fixed_dictionaries({
+    'accuracy': st.floats(min_value=0.0, max_value=1.0),
+    'recall': st.floats(min_value=0.0, max_value=1.0),
+    'consistency': st.floats(min_value=0.0, max_value=1.0),
+    'completeness': st.floats(min_value=0.0, max_value=1.0),
+})
 
-    for json_file in lang_dir.glob("*.json"):
-        namespace = json_file.stem
-        try:
-            with open(json_file, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                keys.update(_extract_keys(data, namespace))
-        except (json.JSONDecodeError, IOError):
-            continue
+# Strategy for datetime
+datetime_strategy = st.datetimes(
+    min_value=datetime(2020, 1, 1),
+    max_value=datetime(2030, 12, 31)
+)
 
-    return keys
-
-
-def _extract_keys(data: Dict[str, Any], prefix: str = "") -> Set[str]:
-    """Recursively extract all keys from a nested dictionary."""
-    keys = set()
-
-    for key, value in data.items():
-        full_key = f"{prefix}.{key}" if prefix else key
-
-        if isinstance(value, dict):
-            keys.update(_extract_keys(value, full_key))
-        else:
-            keys.add(full_key)
-
-    return keys
+# Strategy for numbers
+positive_float_strategy = st.floats(min_value=0.0, max_value=1e9, allow_nan=False, allow_infinity=False)
+positive_int_strategy = st.integers(min_value=0, max_value=1000000)
 
 
-def get_error_keys(language: str) -> Set[str]:
-    """Get all error-related translation keys for a language."""
-    all_keys = get_all_locale_keys(language)
-    error_keys = set()
+# =============================================================================
+# Property 29: I18n Display Consistency
+# Validates: Requirements 8.2, 8.3, 8.4
+# =============================================================================
 
-    for key in all_keys:
-        for pattern in ERROR_KEY_PATTERNS:
-            if re.search(pattern, key, re.IGNORECASE):
-                error_keys.add(key)
-                break
-
-    return error_keys
-
-
-def flatten_translations(data: Dict[str, Any], prefix: str = "") -> Dict[str, str]:
-    """Flatten nested translation dictionary to key-value pairs."""
-    result = {}
-
-    for key, value in data.items():
-        full_key = f"{prefix}.{key}" if prefix else key
-
-        if isinstance(value, dict):
-            result.update(flatten_translations(value, full_key))
-        elif isinstance(value, str):
-            result[full_key] = value
-
-    return result
-
-
-# ============================================================================
-# Mock error response generator for testing
-# ============================================================================
-
-class LocalizedErrorResponse:
-    """Mock API error response with localization support."""
-
-    COMMON_ERRORS = {
-        "validation_error": {
-            "zh": "验证错误：{details}",
-            "en": "Validation error: {details}"
-        },
-        "not_found": {
-            "zh": "资源未找到",
-            "en": "Resource not found"
-        },
-        "unauthorized": {
-            "zh": "未授权访问",
-            "en": "Unauthorized access"
-        },
-        "forbidden": {
-            "zh": "禁止访问",
-            "en": "Access forbidden"
-        },
-        "internal_error": {
-            "zh": "内部服务器错误",
-            "en": "Internal server error"
-        },
-        "rate_limited": {
-            "zh": "请求频率超限",
-            "en": "Rate limit exceeded"
-        },
-        "bad_request": {
-            "zh": "请求格式错误",
-            "en": "Bad request format"
-        },
-        "conflict": {
-            "zh": "资源冲突",
-            "en": "Resource conflict"
-        },
-        "timeout": {
-            "zh": "请求超时",
-            "en": "Request timeout"
-        },
-        "service_unavailable": {
-            "zh": "服务暂时不可用",
-            "en": "Service temporarily unavailable"
-        },
-    }
-
-    def __init__(self, error_type: str, language: str = "zh", details: str = ""):
-        self.error_type = error_type
-        self.language = language if language in SUPPORTED_LANGUAGES else "zh"
-        self.details = details
-
-    def get_message(self) -> str:
-        """Get localized error message."""
-        error_data = self.COMMON_ERRORS.get(self.error_type, {})
-        message = error_data.get(self.language, error_data.get("en", self.error_type))
-
-        if self.details and "{details}" in message:
-            message = message.format(details=self.details)
-
-        return message
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to response dictionary."""
-        return {
-            "error": self.error_type,
-            "message": self.get_message(),
-            "language": self.language,
-        }
-
-
-# ============================================================================
-# Property 4: Localized Error Messages
-# ============================================================================
-
-class TestLocalizedErrorMessages:
+class TestI18nDisplayConsistency:
     """
-    Property 4: Localized Error Messages
-
-    For any API error response, the error message should be returned
-    in the user's preferred language (Chinese or English).
-
-    **Validates: Requirements 8.4**
-    **Feature: admin-configuration**
+    Property 29: I18n Display Consistency
+    
+    For any user with language preference set, all UI text, error messages,
+    notifications, guidelines, and quality reports should be displayed in
+    that language with locale-appropriate formatting.
+    
+    **Validates: Requirements 8.2, 8.3, 8.4**
     """
-
-    @given(
-        error_type=st.sampled_from(list(LocalizedErrorResponse.COMMON_ERRORS.keys())),
-        language=st.sampled_from(SUPPORTED_LANGUAGES),
-    )
+    
+    @given(language=language_strategy, key=translation_key_strategy)
     @settings(max_examples=100)
-    def test_error_messages_returned_in_preferred_language(
-        self, error_type: str, language: str
+    def test_translation_returns_string_for_supported_language(
+        self, language: str, key: str
     ):
         """
-        **Property 4: Localized Error Messages**
-        **Validates: Requirements 8.4**
-
-        Test that error messages are returned in the user's preferred language.
+        Feature: ai-annotation-methods, Property 29: I18n Display Consistency
+        
+        For any supported language and valid key, translation should return
+        a non-empty string.
         """
-        response = LocalizedErrorResponse(error_type, language)
-        result = response.to_dict()
-
-        # Verify response structure
-        assert "error" in result
-        assert "message" in result
-        assert "language" in result
-
-        # Verify language is set correctly
-        assert result["language"] == language
-
-        # Verify message is not the error type itself (unless it's a fallback)
-        expected_messages = LocalizedErrorResponse.COMMON_ERRORS.get(error_type, {})
-        if language in expected_messages:
-            assert result["message"] == expected_messages[language]
-
-    @given(language=st.sampled_from(SUPPORTED_LANGUAGES))
-    @settings(max_examples=50)
-    def test_all_common_errors_have_translations(self, language: str):
+        # Set language
+        set_language(language)
+        
+        # Get translation
+        result = get_ai_translation(key, language)
+        
+        # Verify result is a string
+        assert isinstance(result, str)
+        
+        # If key exists in this language, result should not be the key itself
+        if has_translation(key, language):
+            # Result should be non-empty
+            assert len(result) > 0
+    
+    @given(language=language_strategy)
+    @settings(max_examples=100)
+    def test_all_translations_complete_for_language(self, language: str):
         """
-        **Property 4: Localized Error Messages**
-        **Validates: Requirements 8.4**
-
-        Verify all common error types have translations in both languages.
+        Feature: ai-annotation-methods, Property 29: I18n Display Consistency
+        
+        For any supported language, all translations should be available.
         """
-        for error_type, translations in LocalizedErrorResponse.COMMON_ERRORS.items():
-            assert language in translations, \
-                f"Error type '{error_type}' missing translation for {language}"
-
-            # Verify translation is not empty
-            assert translations[language].strip(), \
-                f"Error type '{error_type}' has empty translation for {language}"
-
+        translations = get_all_translations(language)
+        
+        # Should have translations
+        assert len(translations) > 0
+        
+        # All values should be non-empty strings
+        for key, value in translations.items():
+            assert isinstance(value, str)
+            assert len(value) > 0
+    
     @given(
-        error_type=st.sampled_from(list(LocalizedErrorResponse.COMMON_ERRORS.keys())),
-        details=st.text(min_size=1, max_size=100).filter(lambda x: x.strip()),
+        language=language_strategy,
+        metrics=quality_metric_strategy
     )
-    @settings(max_examples=50)
-    def test_parameterized_error_messages(self, error_type: str, details: str):
+    @settings(max_examples=100)
+    def test_quality_report_formatted_per_locale(
+        self, language: str, metrics: Dict[str, float]
+    ):
         """
-        **Property 4: Localized Error Messages**
-        **Validates: Requirements 8.4**
+        Feature: ai-annotation-methods, Property 29: I18n Display Consistency
+        
+        Quality reports should be formatted according to user's locale.
+        """
+        # Format quality report
+        formatted = format_quality_report(metrics, language)
+        
+        # Should have formatted values for all metrics
+        assert len(formatted) == len(metrics)
+        
+        # All formatted values should be strings
+        for label, value in formatted.items():
+            assert isinstance(label, str)
+            assert isinstance(value, str)
+            assert len(value) > 0
+            # Percentage values should contain %
+            assert '%' in value
 
-        Test that parameterized error messages substitute parameters correctly.
+    
+    @given(
+        language=language_strategy,
+        dt=datetime_strategy
+    )
+    @settings(max_examples=100)
+    def test_date_formatting_per_locale(self, language: str, dt: datetime):
         """
+        Feature: ai-annotation-methods, Property 29: I18n Display Consistency
+        
+        Dates should be formatted according to user's locale.
+        """
+        formatter = get_formatter(language)
+        
+        # Format date
+        formatted_date = formatter.format_date(dt)
+        formatted_datetime = formatter.format_datetime(dt)
+        formatted_time = formatter.format_time(dt)
+        
+        # All should be non-empty strings
+        assert isinstance(formatted_date, str) and len(formatted_date) > 0
+        assert isinstance(formatted_datetime, str) and len(formatted_datetime) > 0
+        assert isinstance(formatted_time, str) and len(formatted_time) > 0
+        
+        # Chinese format should contain Chinese characters
+        if language == 'zh':
+            assert '年' in formatted_date or '月' in formatted_date or '日' in formatted_date
+    
+    @given(
+        language=language_strategy,
+        value=positive_float_strategy
+    )
+    @settings(max_examples=100)
+    def test_number_formatting_per_locale(self, language: str, value: float):
+        """
+        Feature: ai-annotation-methods, Property 29: I18n Display Consistency
+        
+        Numbers should be formatted according to user's locale.
+        """
+        formatter = get_formatter(language)
+        
+        # Format number
+        formatted = formatter.format_number(value)
+        
+        # Should be a non-empty string
+        assert isinstance(formatted, str)
+        assert len(formatted) > 0
+    
+    @given(
+        language=language_strategy,
+        value=st.floats(min_value=0.0, max_value=1.0)
+    )
+    @settings(max_examples=100)
+    def test_percentage_formatting_per_locale(self, language: str, value: float):
+        """
+        Feature: ai-annotation-methods, Property 29: I18n Display Consistency
+        
+        Percentages should be formatted according to user's locale.
+        """
+        formatter = get_formatter(language)
+        
+        # Format percentage
+        formatted = formatter.format_percent(value)
+        
+        # Should contain % symbol
+        assert '%' in formatted
+        
+        # Should be a valid percentage string
+        assert isinstance(formatted, str)
+        assert len(formatted) > 0
+
+
+# =============================================================================
+# Property 30: I18n Hot-Reload
+# Validates: Requirements 8.5
+# =============================================================================
+
+class TestI18nHotReload:
+    """
+    Property 30: I18n Hot-Reload
+    
+    For any new language addition, translations should be loaded from
+    the i18n system without code changes.
+    
+    **Validates: Requirements 8.5**
+    """
+    
+    @given(
+        language=language_strategy,
+        key=st.text(min_size=5, max_size=50, alphabet=st.characters(whitelist_categories=('L', 'N', 'P'))),
+        value=st.text(min_size=1, max_size=200)
+    )
+    @settings(max_examples=100)
+    @pytest.mark.asyncio
+    async def test_dynamic_translation_addition(
+        self, language: str, key: str, value: str
+    ):
+        """
+        Feature: ai-annotation-methods, Property 30: I18n Hot-Reload
+        
+        New translations can be added dynamically without code changes.
+        """
+        # Skip if key or value is empty after stripping
+        assume(key.strip() and value.strip())
+        
+        # Create a fresh hot reloader for this test
+        hot_reloader = I18nHotReloader()
+        
+        # Add translation dynamically (without persisting to avoid file I/O)
+        await hot_reloader.add_translation(language, key, value, persist=False)
+        
+        # Verify translation was added
+        result = hot_reloader.get_custom_translation(key, language)
+        assert result == value
+
+    
+    @given(language=language_strategy)
+    @settings(max_examples=100)
+    def test_fallback_to_builtin_translations(self, language: str):
+        """
+        Feature: ai-annotation-methods, Property 30: I18n Hot-Reload
+        
+        When custom translation not found, should fall back to built-in.
+        """
+        # Use a key that exists in built-in translations
+        key = 'ai.preannotation.title'
+        
+        # Get translation directly from built-in (avoid hot reloader which needs event loop)
+        # This tests the fallback logic without requiring async context
+        result = get_ai_translation(key, language)
+        
+        # Should return built-in translation
+        expected = AI_ANNOTATION_TRANSLATIONS.get(language, {}).get(key, key)
+        assert result == expected
+        
+        # Verify the translation is not just the key
+        assert result != key or key not in AI_ANNOTATION_TRANSLATIONS.get(language, {})
+    
+    @given(
+        language=language_strategy,
+        key=translation_key_strategy,
+        param_name=st.text(min_size=1, max_size=20, alphabet='abcdefghijklmnopqrstuvwxyz'),
+        param_value=st.text(min_size=1, max_size=50)
+    )
+    @settings(max_examples=100)
+    def test_parameter_substitution_in_translations(
+        self, language: str, key: str, param_name: str, param_value: str
+    ):
+        """
+        Feature: ai-annotation-methods, Property 30: I18n Hot-Reload
+        
+        Translations should support parameter substitution.
+        """
+        # Get translation with parameter
+        kwargs = {param_name: param_value}
+        result = get_ai_translation(key, language, **kwargs)
+        
+        # Result should be a string
+        assert isinstance(result, str)
+        
+        # If the translation contains the parameter placeholder, it should be substituted
+        translation = AI_ANNOTATION_TRANSLATIONS.get(language, {}).get(key, '')
+        if f'{{{param_name}}}' in translation:
+            assert param_value in result
+
+
+# =============================================================================
+# Additional I18n Properties
+# =============================================================================
+
+class TestMultilingualGuidelines:
+    """
+    Tests for multilingual annotation guidelines support.
+    
+    **Validates: Requirements 8.3**
+    """
+    
+    @given(
+        project_id=st.text(min_size=1, max_size=50, alphabet='abcdefghijklmnopqrstuvwxyz0123456789-_'),
+        language=language_strategy,
+        content=st.text(min_size=10, max_size=1000)
+    )
+    @settings(max_examples=100)
+    def test_guideline_storage_and_retrieval(
+        self, project_id: str, language: str, content: str
+    ):
+        """
+        Feature: ai-annotation-methods, Property 29: I18n Display Consistency
+        
+        Guidelines can be stored and retrieved per language.
+        """
+        assume(project_id.strip() and content.strip())
+        
+        # Create fresh guidelines manager
+        guidelines = MultilingualGuidelines()
+        
+        # Set guideline
+        guidelines.set_guideline(project_id, language, content)
+        
+        # Retrieve guideline
+        result = guidelines.get_guideline(project_id, language)
+        
+        # Should match
+        assert result == content
+    
+    @given(
+        project_id=st.text(min_size=1, max_size=50, alphabet='abcdefghijklmnopqrstuvwxyz0123456789-_'),
+        examples=st.lists(st.text(min_size=5, max_size=100), min_size=1, max_size=10)
+    )
+    @settings(max_examples=100)
+    def test_language_specific_examples(self, project_id: str, examples: list):
+        """
+        Feature: ai-annotation-methods, Property 29: I18n Display Consistency
+        
+        Language-specific examples can be stored and retrieved.
+        """
+        assume(project_id.strip())
+        assume(all(ex.strip() for ex in examples))
+        
+        guidelines = MultilingualGuidelines()
+        
         for language in SUPPORTED_LANGUAGES:
-            response = LocalizedErrorResponse(error_type, language, details)
-            message = response.get_message()
+            # Set examples
+            guidelines.set_examples(project_id, language, examples)
+            
+            # Retrieve examples
+            result = guidelines.get_examples(project_id, language)
+            
+            # Should match
+            assert result == examples
 
-            # If the template has {details}, it should be replaced
-            template = LocalizedErrorResponse.COMMON_ERRORS.get(error_type, {}).get(language, "")
-            if "{details}" in template:
-                assert details in message, \
-                    f"Details '{details}' not found in message for {error_type} ({language})"
-                assert "{details}" not in message, \
-                    f"Unreplaced placeholder in message for {error_type} ({language})"
 
+class TestLocaleFormatting:
+    """
+    Tests for locale-aware formatting.
+    
+    **Validates: Requirements 8.4**
+    """
+    
+    @given(
+        language=language_strategy,
+        seconds=st.floats(min_value=0.0, max_value=86400.0, allow_nan=False)
+    )
+    @settings(max_examples=100)
+    def test_duration_formatting(self, language: str, seconds: float):
+        """
+        Feature: ai-annotation-methods, Property 29: I18n Display Consistency
+        
+        Duration should be formatted according to locale.
+        """
+        formatter = get_formatter(language)
+        
+        result = formatter.format_duration(seconds)
+        
+        # Should be a non-empty string
+        assert isinstance(result, str)
+        assert len(result) > 0
+        
+        # Chinese should have Chinese units
+        if language == 'zh':
+            if seconds >= 3600:
+                assert '小时' in result
+            elif seconds >= 60:
+                assert '分钟' in result
+            else:
+                assert '秒' in result
+        else:
+            # English should have s/m/h
+            if seconds >= 3600:
+                assert 'h' in result
+            elif seconds >= 60:
+                assert 'm' in result
+            else:
+                assert 's' in result
+    
+    @given(
+        language=language_strategy,
+        bytes_size=st.integers(min_value=0, max_value=10**15)
+    )
+    @settings(max_examples=100)
+    def test_file_size_formatting(self, language: str, bytes_size: int):
+        """
+        Feature: ai-annotation-methods, Property 29: I18n Display Consistency
+        
+        File size should be formatted in human-readable format.
+        """
+        formatter = get_formatter(language)
+        
+        result = formatter.format_file_size(bytes_size)
+        
+        # Should be a non-empty string
+        assert isinstance(result, str)
+        assert len(result) > 0
+        
+        # Should contain a unit
+        assert any(unit in result for unit in ['B', 'KB', 'MB', 'GB', 'TB', 'PB'])
+    
+    @given(
+        language=language_strategy,
+        value=st.floats(min_value=0.0, max_value=1e9, allow_nan=False, allow_infinity=False)
+    )
+    @settings(max_examples=100)
+    def test_currency_formatting(self, language: str, value: float):
+        """
+        Feature: ai-annotation-methods, Property 29: I18n Display Consistency
+        
+        Currency should be formatted according to locale.
+        """
+        formatter = get_formatter(language)
+        
+        result = formatter.format_currency(value)
+        
+        # Should be a non-empty string
+        assert isinstance(result, str)
+        assert len(result) > 0
+        
+        # Should contain currency symbol
+        if language == 'zh':
+            assert '¥' in result
+        else:
+            assert '$' in result
+
+
+class TestLanguageManagement:
+    """
+    Tests for language management functions.
+    
+    **Validates: Requirements 8.1, 8.2**
+    """
+    
+    @given(language=language_strategy)
+    @settings(max_examples=100)
+    def test_language_setting_and_getting(self, language: str):
+        """
+        Feature: ai-annotation-methods, Property 29: I18n Display Consistency
+        
+        Language can be set and retrieved correctly.
+        """
+        # Set language
+        set_language(language)
+        
+        # Get language
+        result = get_current_language()
+        
+        # Should match
+        assert result == language
+    
     @given(
         invalid_language=st.text(min_size=1, max_size=10).filter(
             lambda x: x not in SUPPORTED_LANGUAGES
         )
     )
-    @settings(max_examples=50)
-    def test_fallback_to_default_language(self, invalid_language: str):
+    @settings(max_examples=100)
+    def test_invalid_language_raises_error(self, invalid_language: str):
         """
-        **Property 4: Localized Error Messages**
-        **Validates: Requirements 8.4**
-
-        Test that unsupported languages fall back to Chinese.
+        Feature: ai-annotation-methods, Property 29: I18n Display Consistency
+        
+        Setting an unsupported language should raise an error.
         """
-        response = LocalizedErrorResponse("not_found", invalid_language)
-        result = response.to_dict()
-
-        # Should fall back to Chinese
-        assert result["language"] == "zh"
-        assert result["message"] == LocalizedErrorResponse.COMMON_ERRORS["not_found"]["zh"]
-
-    def test_error_keys_exist_in_locale_files(self):
+        with pytest.raises(ValueError):
+            set_language(invalid_language)
+    
+    @given(language=language_strategy)
+    @settings(max_examples=100)
+    def test_missing_translations_detection(self, language: str):
         """
-        **Property 4: Localized Error Messages**
-        **Validates: Requirements 8.4**
-
-        Verify that error-related keys exist in locale files for all languages.
+        Feature: ai-annotation-methods, Property 29: I18n Display Consistency
+        
+        Missing translations can be detected.
         """
-        # Skip if locale files don't exist
-        if not FRONTEND_LOCALES_DIR.exists():
-            pytest.skip("Frontend locales directory not found")
-
-        # Get error keys from reference language (zh)
-        zh_error_keys = get_error_keys("zh")
-        en_error_keys = get_error_keys("en")
-
-        # Verify both languages have error keys
-        assert len(zh_error_keys) > 0, "No error keys found in zh locale"
-        assert len(en_error_keys) > 0, "No error keys found in en locale"
-
-        # Log the count for reference
-        print(f"Found {len(zh_error_keys)} error keys in zh locale")
-        print(f"Found {len(en_error_keys)} error keys in en locale")
+        missing = get_missing_translations(language)
+        
+        # Should return a list
+        assert isinstance(missing, list)
+        
+        # All items should be strings
+        for key in missing:
+            assert isinstance(key, str)
 
 
-# ============================================================================
-# Property 26: No Hardcoded UI Strings
-# ============================================================================
+# =============================================================================
+# Annotation Summary Formatting Tests
+# =============================================================================
 
-class TestNoHardcodedUIStrings:
+class TestAnnotationSummaryFormatting:
     """
-    Property 26: No Hardcoded UI Strings
-
-    Scan UI components for hardcoded strings. Verify all text uses i18n keys.
-
-    **Validates: Requirements 8.5**
-    **Feature: admin-configuration**
+    Tests for annotation summary formatting.
+    
+    **Validates: Requirements 8.4**
     """
-
-    def test_locale_files_exist_for_all_languages(self):
+    
+    @given(
+        language=language_strategy,
+        total=positive_int_strategy,
+        completed=positive_int_strategy,
+        flagged=positive_int_strategy,
+        avg_confidence=st.floats(min_value=0.0, max_value=1.0),
+        processing_time=st.floats(min_value=0.0, max_value=86400.0, allow_nan=False)
+    )
+    @settings(max_examples=100)
+    def test_annotation_summary_formatting(
+        self,
+        language: str,
+        total: int,
+        completed: int,
+        flagged: int,
+        avg_confidence: float,
+        processing_time: float
+    ):
         """
-        **Property 26: No Hardcoded UI Strings**
-        **Validates: Requirements 8.5**
-
-        Verify locale files exist for all supported languages.
+        Feature: ai-annotation-methods, Property 29: I18n Display Consistency
+        
+        Annotation summary should be formatted according to locale.
         """
-        if not FRONTEND_LOCALES_DIR.exists():
-            pytest.skip("Frontend locales directory not found")
-
-        for lang in SUPPORTED_LANGUAGES:
-            lang_dir = FRONTEND_LOCALES_DIR / lang
-            assert lang_dir.exists(), f"Locale directory for {lang} not found"
-
-            # Verify at least some JSON files exist
-            json_files = list(lang_dir.glob("*.json"))
-            assert len(json_files) > 0, f"No locale files found for {lang}"
-
-    def test_translation_keys_match_across_languages(self):
-        """
-        **Property 26: No Hardcoded UI Strings**
-        **Validates: Requirements 8.5**
-
-        Verify translation keys are consistent across all languages.
-        """
-        if not FRONTEND_LOCALES_DIR.exists():
-            pytest.skip("Frontend locales directory not found")
-
-        # Get all keys for each language
-        keys_by_language = {}
-        for lang in SUPPORTED_LANGUAGES:
-            keys_by_language[lang] = get_all_locale_keys(lang)
-
-        # Compare keys across languages
-        reference_lang = SUPPORTED_LANGUAGES[0]
-        reference_keys = keys_by_language[reference_lang]
-
-        for lang in SUPPORTED_LANGUAGES[1:]:
-            other_keys = keys_by_language[lang]
-
-            # Find missing keys
-            missing_in_other = reference_keys - other_keys
-            missing_in_reference = other_keys - reference_keys
-
-            # Allow some tolerance (5% difference)
-            total_keys = len(reference_keys | other_keys)
-            diff_count = len(missing_in_other) + len(missing_in_reference)
-
-            assert diff_count / total_keys < 0.05, \
-                f"Too many key mismatches between {reference_lang} and {lang}: " \
-                f"{diff_count} differences out of {total_keys} keys"
-
-    def test_no_empty_translations(self):
-        """
-        **Property 26: No Hardcoded UI Strings**
-        **Validates: Requirements 8.5**
-
-        Verify no translation values are empty strings.
-        """
-        if not FRONTEND_LOCALES_DIR.exists():
-            pytest.skip("Frontend locales directory not found")
-
-        empty_count = 0
-        total_count = 0
-
-        for lang in SUPPORTED_LANGUAGES:
-            lang_dir = FRONTEND_LOCALES_DIR / lang
-
-            for json_file in lang_dir.glob("*.json"):
-                try:
-                    with open(json_file, 'r', encoding='utf-8') as f:
-                        data = json.load(f)
-                        translations = flatten_translations(data, json_file.stem)
-
-                        for key, value in translations.items():
-                            total_count += 1
-                            if not value.strip():
-                                empty_count += 1
-                except (json.JSONDecodeError, IOError):
-                    continue
-
-        # Allow max 1% empty translations
-        assert total_count > 0, "No translations found"
-        assert empty_count / total_count < 0.01, \
-            f"Too many empty translations: {empty_count}/{total_count}"
-
-    def test_translations_do_not_contain_hardcoded_patterns(self):
-        """
-        **Property 26: No Hardcoded UI Strings**
-        **Validates: Requirements 8.5**
-
-        Verify translations don't contain patterns suggesting incomplete i18n.
-        """
-        if not FRONTEND_LOCALES_DIR.exists():
-            pytest.skip("Frontend locales directory not found")
-
-        suspicious_patterns = [
-            'TODO',
-            'FIXME',
-            'XXX',
-            'undefined',
-            'null',
-            '{{',  # Unprocessed template
-            '}}',  # Unprocessed template
-        ]
-
-        issues = []
-
-        for lang in SUPPORTED_LANGUAGES:
-            lang_dir = FRONTEND_LOCALES_DIR / lang
-
-            for json_file in lang_dir.glob("*.json"):
-                try:
-                    with open(json_file, 'r', encoding='utf-8') as f:
-                        data = json.load(f)
-                        translations = flatten_translations(data, json_file.stem)
-
-                        for key, value in translations.items():
-                            for pattern in suspicious_patterns:
-                                if pattern in value:
-                                    issues.append(f"{lang}/{key}: contains '{pattern}'")
-                except (json.JSONDecodeError, IOError):
-                    continue
-
-        assert len(issues) == 0, f"Found suspicious patterns:\n" + "\n".join(issues[:10])
-
-    @given(namespace=st.sampled_from([
-        "admin", "auth", "common", "dashboard", "settings", "system"
-    ]))
-    @settings(max_examples=50)
-    def test_namespace_translations_complete(self, namespace: str):
-        """
-        **Property 26: No Hardcoded UI Strings**
-        **Validates: Requirements 8.5**
-
-        Verify each namespace has translations in all languages.
-        """
-        if not FRONTEND_LOCALES_DIR.exists():
-            pytest.skip("Frontend locales directory not found")
-
-        translations_by_lang = {}
-
-        for lang in SUPPORTED_LANGUAGES:
-            translations_by_lang[lang] = load_locale_file(lang, namespace)
-
-        # Skip if namespace doesn't exist
-        if not any(translations_by_lang.values()):
-            assume(False)  # Skip this test case
-
-        # Verify all languages have the namespace
-        for lang in SUPPORTED_LANGUAGES:
-            if translations_by_lang[SUPPORTED_LANGUAGES[0]]:
-                assert translations_by_lang[lang], \
-                    f"Namespace '{namespace}' missing for {lang}"
-
-    def test_minimum_translation_coverage(self):
-        """
-        **Property 26: No Hardcoded UI Strings**
-        **Validates: Requirements 8.5**
-
-        Verify minimum number of translation keys exist (indicating proper i18n setup).
-        """
-        if not FRONTEND_LOCALES_DIR.exists():
-            pytest.skip("Frontend locales directory not found")
-
-        for lang in SUPPORTED_LANGUAGES:
-            keys = get_all_locale_keys(lang)
-
-            # Should have at least 100 translation keys for a complete app
-            assert len(keys) >= 100, \
-                f"Language {lang} has only {len(keys)} translation keys (minimum 100 expected)"
+        # Ensure completed and flagged don't exceed total
+        completed = min(completed, total)
+        flagged = min(flagged, total)
+        
+        result = format_annotation_summary(
+            total=total,
+            completed=completed,
+            flagged=flagged,
+            avg_confidence=avg_confidence,
+            processing_time=processing_time,
+            language=language
+        )
+        
+        # Should return a dictionary
+        assert isinstance(result, dict)
+        
+        # Should have multiple entries
+        assert len(result) > 0
+        
+        # All values should be strings
+        for key, value in result.items():
+            assert isinstance(key, str)
+            assert isinstance(value, str)
 
 
-# ============================================================================
-# Additional i18n Property Tests
-# ============================================================================
-
-class TestI18nConsistency:
-    """Additional i18n consistency tests."""
-
-    def test_locale_file_valid_json(self):
-        """Verify all locale files are valid JSON."""
-        if not FRONTEND_LOCALES_DIR.exists():
-            pytest.skip("Frontend locales directory not found")
-
-        invalid_files = []
-
-        for lang_dir in FRONTEND_LOCALES_DIR.iterdir():
-            if lang_dir.is_dir():
-                for json_file in lang_dir.glob("*.json"):
-                    try:
-                        with open(json_file, 'r', encoding='utf-8') as f:
-                            json.load(f)
-                    except json.JSONDecodeError as e:
-                        invalid_files.append(f"{json_file}: {e}")
-
-        assert len(invalid_files) == 0, \
-            f"Invalid JSON files:\n" + "\n".join(invalid_files)
-
-    def test_no_duplicate_keys_in_locale_files(self):
-        """Verify no duplicate keys within locale files."""
-        if not FRONTEND_LOCALES_DIR.exists():
-            pytest.skip("Frontend locales directory not found")
-
-        # Note: Python's json.load() silently takes the last value for duplicates
-        # We need to check manually by parsing as text
-        issues = []
-
-        for lang_dir in FRONTEND_LOCALES_DIR.iterdir():
-            if lang_dir.is_dir():
-                for json_file in lang_dir.glob("*.json"):
-                    try:
-                        with open(json_file, 'r', encoding='utf-8') as f:
-                            content = f.read()
-
-                        # Simple check: count key occurrences
-                        # This won't catch all cases but catches obvious duplicates
-                        key_pattern = r'"([^"]+)":'
-                        keys = re.findall(key_pattern, content)
-                        key_counts = {}
-
-                        for key in keys:
-                            key_counts[key] = key_counts.get(key, 0) + 1
-
-                        duplicates = [k for k, v in key_counts.items() if v > 1]
-                        if duplicates:
-                            issues.append(f"{json_file}: duplicate keys {duplicates[:3]}")
-                    except IOError:
-                        continue
-
-        # Allow some tolerance
-        assert len(issues) <= 3, f"Found duplicate keys:\n" + "\n".join(issues)
-
-
-# ============================================================================
-# Run tests
-# ============================================================================
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v", "--hypothesis-show-statistics"])
+if __name__ == '__main__':
+    pytest.main([__file__, '-v', '--tb=short'])

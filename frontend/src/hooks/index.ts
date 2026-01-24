@@ -71,3 +71,9 @@ export {
   useLLMConfigPage,
   LLM_QUERY_KEYS,
 } from './useLLMProviders';
+
+// Brand Identity System hooks
+export * from './useBrandTheme';
+export * from './useBrandCache';
+export * from './useBrandAnalytics';
+export * from './useBrandABTest';

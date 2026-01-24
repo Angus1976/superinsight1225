@@ -94,6 +94,9 @@ const AdminSQLBuilderPage = lazyWithPreload(() => import('@/pages/Admin/SQLBuild
 const AdminConfigHistoryPage = lazyWithPreload(() => import('@/pages/Admin/ConfigHistory'));
 const AdminThirdPartyConfigPage = lazyWithPreload(() => import('@/pages/Admin/ThirdPartyConfig'));
 
+// AI Annotation pages
+const AIAnnotationPage = lazyWithPreload(() => import('@/pages/AIAnnotation'));
+
 // Workspace pages
 const WorkspaceManagementPage = lazyWithPreload(() => import('@/pages/Workspace/WorkspaceManagement'));
 const MemberManagementPage = lazyWithPreload(() => import('@/pages/Workspace/MemberManagement'));
@@ -422,6 +425,10 @@ export const routes: RouteObject[] = [
             element: withSuspense(DataSyncExportPage, 'table'),
           },
         ],
+      },
+      {
+        path: 'ai-annotation/*',
+        element: withSuspense(AIAnnotationPage, 'dashboard'),
       },
     ],
   },

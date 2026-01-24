@@ -19,8 +19,13 @@ from typing import Optional, List, Dict, Any
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
+from src.database.connection import get_db_session
+from src.models.user import User as UserModel
+from src.security.security_controller import security_controller
 from src.admin.schemas import (
     ConfigType,
     ValidationResult,
@@ -58,6 +63,56 @@ from src.admin.history_tracker import get_history_tracker
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/admin", tags=["Admin Configuration"])
+
+# Security setup
+security = HTTPBearer()
+
+
+# ========== Dependencies ==========
+
+async def get_admin_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db_session)
+) -> UserModel:
+    """
+    Get current authenticated admin user from JWT token.
+    
+    Validates that the user has admin privileges.
+    """
+    token = credentials.credentials
+    payload = security_controller.verify_token(token)
+    
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    user_id = payload.get("user_id")
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token payload",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    user = db.query(UserModel).filter(UserModel.id == user_id).first()
+    if not user or not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found or inactive",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Check if user has admin role
+    if not hasattr(user, 'role') or user.role != 'admin':
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin privileges required",
+        )
+    
+    return user
 
 
 # ========== Dashboard ==========

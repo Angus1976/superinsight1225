@@ -15,10 +15,11 @@ if TYPE_CHECKING:
 class CollaborationEngine:
     """协作引擎 - 支持多人同时协作标注"""
     
-    def __init__(self, db: "AsyncSession" = None, cache=None, ws_manager=None):
+    def __init__(self, db: "AsyncSession" = None, cache=None, ws_manager=None, notification_service=None):
         self.db = db
         self.cache = cache
         self.ws_manager = ws_manager
+        self.notification_service = notification_service
         self._locks: Dict[str, str] = {}  # task_id -> annotator_id (in-memory fallback)
         self._versions: Dict[str, List[dict]] = {}  # task_id -> versions (in-memory fallback)
     

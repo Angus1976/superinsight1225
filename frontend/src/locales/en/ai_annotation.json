@@ -1,0 +1,323 @@
+{
+  "page_title": "AI Annotation Engine Configuration",
+  "page_description": "Configure and manage AI annotation engines, quality thresholds, and A/B testing",
+
+  "tabs": {
+    "engines": "Engines",
+    "llm_configuration": "LLM Configuration",
+    "quality_thresholds": "Quality Thresholds",
+    "ab_testing": "A/B Testing",
+    "performance": "Performance"
+  },
+
+  "sections": {
+    "select_engine": "Select Engine",
+    "engine_configuration": "Engine Configuration",
+    "provider_configuration": "Provider Configuration",
+    "quality_thresholds": "Quality Thresholds",
+    "core_metrics": "Core Metrics",
+    "additional_metrics": "Additional Metrics",
+    "threshold_impact_analysis": "Threshold Impact Analysis",
+    "threshold_configuration": "Threshold Configuration",
+    "quality_summary": "Quality Summary",
+    "advanced_settings": "Advanced Settings",
+    "performance_settings": "Performance Settings",
+    "detailed_metrics": "Detailed Metrics",
+    "cost_vs_accuracy": "Cost vs Accuracy Analysis"
+  },
+
+  "columns": {
+    "engine_name": "Engine Name",
+    "provider": "Provider",
+    "confidence_threshold": "Confidence Threshold",
+    "status": "Status",
+    "enabled": "Enabled",
+    "actions": "Actions",
+    "metric": "Metric",
+    "current_value": "Current Value",
+    "threshold": "Threshold",
+    "impact": "Impact",
+    "test_name": "Test Name",
+    "engines": "Engines",
+    "traffic_split": "Traffic Split",
+    "progress": "Progress",
+    "winner": "Winner",
+    "engine": "Engine",
+    "difference": "Difference"
+  },
+
+  "fields": {
+    "engine_type": "Engine Type",
+    "llm_provider": "LLM Provider",
+    "model_name": "Model Name",
+    "confidence_threshold": "Confidence Threshold",
+    "accuracy_threshold": "Accuracy Threshold",
+    "consistency_threshold": "Consistency Threshold",
+    "completeness_threshold": "Completeness Threshold",
+    "recall_threshold": "Recall Threshold",
+    "batch_size": "Batch Size",
+    "max_workers": "Max Workers",
+    "timeout_seconds": "Timeout (seconds)",
+    "enable_caching": "Enable Caching",
+    "enable_engine": "Enable Engine",
+    "ollama_endpoint": "Ollama Endpoint",
+    "api_key": "API Key",
+    "organization_id": "Organization ID",
+    "temperature": "Temperature",
+    "max_tokens": "Max Tokens",
+    "azure_endpoint": "Azure Endpoint",
+    "deployment_name": "Deployment Name",
+    "api_version": "API Version",
+    "secret_key": "Secret Key",
+    "secret_key_hunyuan": "Secret Key (Hunyuan)",
+    "request_timeout": "Request Timeout",
+    "max_retries": "Max Retries",
+    "enable_streaming": "Enable Streaming",
+    "enable_response_cache": "Enable Response Cache",
+    "test_name": "Test Name",
+    "engine_a": "Engine A",
+    "engine_b": "Engine B",
+    "traffic_split": "Traffic Split",
+    "sample_size": "Sample Size",
+    "metrics_to_track": "Metrics to Track"
+  },
+
+  "engine_types": {
+    "pre_annotation": "Pre-Annotation",
+    "mid_coverage": "Mid-Coverage",
+    "post_validation": "Post-Validation"
+  },
+
+  "providers": {
+    "ollama_desc": "Local LLM Server",
+    "openai_desc": "OpenAI API",
+    "azure_desc": "Azure OpenAI Service",
+    "qwen_desc": "Alibaba Qwen",
+    "zhipu_desc": "Zhipu AI",
+    "baidu_desc": "Baidu ERNIE",
+    "hunyuan_desc": "Tencent Hunyuan"
+  },
+
+  "metrics": {
+    "accuracy": "Accuracy",
+    "consistency": "Consistency",
+    "completeness": "Completeness",
+    "recall": "Recall",
+    "f1_score": "F1 Score",
+    "precision": "Precision",
+    "latency": "Latency",
+    "avg_latency": "Avg Latency",
+    "p95_latency": "P95 Latency",
+    "p99_latency": "P99 Latency",
+    "throughput": "Throughput",
+    "error_rate": "Error Rate",
+    "cost": "Cost",
+    "cost_per_1k": "Cost per 1K Samples",
+    "total_cost": "Total Cost",
+    "success_rate": "Success Rate",
+    "quality_score": "Quality Score",
+    "cost_efficiency": "Cost Efficiency"
+  },
+
+  "stats": {
+    "total_engines": "Total Engines",
+    "healthy_engines": "Healthy Engines",
+    "degraded_engines": "Degraded Engines",
+    "enabled_engines": "Enabled Engines",
+    "overall_quality": "Overall Quality",
+    "passing_metrics": "Passing Metrics",
+    "warning_metrics": "Warning Metrics",
+    "failing_metrics": "Failing Metrics",
+    "total_tests": "Total Tests",
+    "running_tests": "Running Tests",
+    "completed_tests": "Completed Tests",
+    "winner": "Winner",
+    "confidence": "Confidence",
+    "p_value": "P-Value",
+    "engine_a_wins": "Engine A Wins",
+    "engine_b_wins": "Engine B Wins",
+    "ties": "Ties"
+  },
+
+  "status": {
+    "pass": "Pass",
+    "warning": "Warning",
+    "fail": "Fail"
+  },
+
+  "test_status": {
+    "draft": "Draft",
+    "running": "Running",
+    "paused": "Paused",
+    "completed": "Completed",
+    "stopped": "Stopped"
+  },
+
+  "impact": {
+    "meeting_expectations": "Meeting Expectations",
+    "needs_improvement": "Needs Improvement"
+  },
+
+  "labels": {
+    "deterministic": "Deterministic",
+    "balanced": "Balanced",
+    "creative": "Creative",
+    "current": "Current",
+    "current_provider": "Current Provider",
+    "current_model": "Current Model",
+    "latency": "Latency",
+    "detected_model": "Detected Model",
+    "samples": "Samples",
+    "pending": "Pending",
+    "tie": "Tie",
+    "all_a": "All A",
+    "all_b": "All B",
+    "equal": "Equal",
+    "engine_a": "Engine A",
+    "engine_b": "Engine B"
+  },
+
+  "actions": {
+    "add_engine": "Add Engine",
+    "edit_engine": "Edit Engine",
+    "hot_reload": "Hot Reload",
+    "test_connection": "Test Connection",
+    "compare_engines": "Compare Engines",
+    "create_test": "Create Test",
+    "start": "Start",
+    "pause": "Pause",
+    "resume": "Resume",
+    "stop": "Stop",
+    "view_results": "View Results",
+    "refresh_metrics": "Refresh Metrics"
+  },
+
+  "modals": {
+    "edit_engine": "Edit Engine",
+    "add_engine": "Add Engine",
+    "performance_comparison": "Performance Comparison",
+    "create_test": "Create A/B Test",
+    "edit_test": "Edit A/B Test",
+    "test_results": "A/B Test Results"
+  },
+
+  "placeholders": {
+    "select_model": "Select Model",
+    "select_engine": "Select Engine",
+    "test_name": "Enter Test Name"
+  },
+
+  "tooltips": {
+    "response_time": "Response Time",
+    "last_check": "Last Check",
+    "no_status": "No status available",
+    "confidence_threshold": "Minimum confidence score to accept annotations",
+    "accuracy": "Percentage of correct predictions",
+    "consistency": "Consistency across similar samples",
+    "completeness": "Coverage of all required fields",
+    "recall": "Percentage of true positives identified",
+    "ollama_endpoint": "URL of your Ollama server",
+    "openai_api_key": "Your OpenAI API key from platform.openai.com",
+    "openai_org": "Optional organization ID",
+    "azure_endpoint": "Your Azure OpenAI resource endpoint",
+    "azure_deployment": "Deployment name in Azure",
+    "qwen_api_key": "Qwen API key from dashscope.aliyun.com",
+    "zhipu_api_key": "Zhipu API key from open.bigmodel.cn",
+    "baidu_api_key": "Baidu ERNIE API Access Key",
+    "hunyuan_secret_id": "Tencent Cloud SecretId",
+    "temperature": "Controls randomness (0-2). Higher = more creative.",
+    "max_tokens": "Maximum number of tokens to generate",
+    "request_timeout": "Maximum time to wait for LLM response",
+    "max_retries": "Number of retries on failure",
+    "enable_streaming": "Stream responses for better UX",
+    "enable_cache": "Cache responses to reduce cost and latency",
+    "traffic_split": "Percentage of traffic to route to each engine",
+    "sample_size": "Total number of samples to collect",
+    "metrics_to_track": "Metrics to compare between engines"
+  },
+
+  "info": {
+    "ollama_local": "Local Model Server",
+    "ollama_local_desc": "Ollama runs LLMs locally on your machine. No API keys needed.",
+    "qwen_notice": "Get your API key from DashScope (dashscope.aliyun.com)",
+    "zhipu_notice": "Get your API key from Zhipu AI Open Platform (open.bigmodel.cn)",
+    "baidu_notice": "Get your Access Key and Secret Key from Baidu AI Cloud",
+    "hunyuan_notice": "Get your SecretId and SecretKey from Tencent Cloud Console",
+    "threshold_recommendations": "Recommended Thresholds",
+    "accuracy_recommendation": "Accuracy: 85%+ for production use",
+    "consistency_recommendation": "Consistency: 80%+ to ensure reliable outputs",
+    "completeness_recommendation": "Completeness: 90%+ to avoid missing data",
+    "recall_recommendation": "Recall: 75%+ to capture sufficient samples",
+    "ranking_mode": "Ranking Mode",
+    "ranking_mode_desc": "Compare all engines side-by-side across all metrics"
+  },
+
+  "view_modes": {
+    "comparison": "Comparison",
+    "ranking": "Ranking"
+  },
+
+  "messages": {
+    "engine_saved": "Engine configuration saved successfully",
+    "engine_deleted": "Engine deleted successfully",
+    "engine_enabled": "Engine enabled successfully",
+    "engine_disabled": "Engine disabled successfully",
+    "engine_reloaded": "Engine reloaded successfully",
+    "connection_success": "Connection successful",
+    "config_saved": "Configuration saved successfully",
+    "thresholds_saved": "Quality thresholds saved successfully",
+    "test_saved": "A/B test saved successfully",
+    "test_started": "A/B test started successfully",
+    "test_paused": "A/B test paused successfully",
+    "test_stopped": "A/B test stopped successfully",
+    "test_deleted": "A/B test deleted successfully"
+  },
+
+  "errors": {
+    "load_engines_failed": "Failed to load engines",
+    "save_engine_failed": "Failed to save engine configuration",
+    "delete_engine_failed": "Failed to delete engine",
+    "toggle_engine_failed": "Failed to toggle engine status",
+    "reload_engine_failed": "Failed to reload engine",
+    "connection_failed": "Connection failed",
+    "connection_test_failed": "Connection test failed",
+    "no_engine_selected": "No engine selected",
+    "save_test_failed": "Failed to save A/B test",
+    "start_test_failed": "Failed to start A/B test",
+    "pause_test_failed": "Failed to pause A/B test",
+    "stop_test_failed": "Failed to stop A/B test",
+    "delete_test_failed": "Failed to delete A/B test"
+  },
+
+  "alerts": {
+    "unhealthy_engines_title": "Unhealthy Engines Detected",
+    "unhealthy_engines_description": "{{count}} engine(s) are not healthy. Check configuration and connectivity.",
+    "quality_below_threshold_title": "Quality Below Threshold",
+    "quality_below_threshold_desc": "{{count}} metric(s) are below the configured thresholds",
+    "quality_warning_title": "Quality Warning",
+    "quality_warning_desc": "{{count}} metric(s) are close to threshold limits",
+    "quality_excellent_title": "Excellent Quality",
+    "quality_excellent_desc": "All quality metrics are meeting or exceeding thresholds",
+    "tests_running_title": "A/B Tests in Progress",
+    "tests_running_desc": "{{count}} A/B test(s) are currently running",
+    "not_statistically_significant_title": "Not Statistically Significant",
+    "not_statistically_significant_desc": "P-value >= 0.05. Results may not be reliable. Consider increasing sample size.",
+    "select_engines_title": "Select Engines to Compare",
+    "select_engines_desc": "Choose two engines from the dropdowns above to view comparison",
+    "engine_a_better_title": "Engine A Performs Better",
+    "engine_a_better_desc": "{{name}} wins in {{wins}} out of {{total}} metrics",
+    "engine_b_better_title": "Engine B Performs Better",
+    "engine_b_better_desc": "{{name}} wins in {{wins}} out of {{total}} metrics",
+    "engines_equal_title": "Engines Perform Equally",
+    "engines_equal_desc": "Both engines show similar performance across metrics"
+  },
+
+  "confirm": {
+    "delete_engine_title": "Delete Engine?",
+    "delete_engine_content": "This action cannot be undone. All associated data will be deleted.",
+    "stop_test_title": "Stop A/B Test?",
+    "stop_test_content": "Stopping will finalize the test with current results.",
+    "delete_test_title": "Delete A/B Test?",
+    "delete_test_content": "This action cannot be undone."
+  }
+}

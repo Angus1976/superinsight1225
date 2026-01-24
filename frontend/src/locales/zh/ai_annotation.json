@@ -1,0 +1,323 @@
+{
+  "page_title": "AI 标注引擎配置",
+  "page_description": "配置和管理 AI 标注引擎、质量阈值和 A/B 测试",
+
+  "tabs": {
+    "engines": "引擎",
+    "llm_configuration": "LLM 配置",
+    "quality_thresholds": "质量阈值",
+    "ab_testing": "A/B 测试",
+    "performance": "性能"
+  },
+
+  "sections": {
+    "select_engine": "选择引擎",
+    "engine_configuration": "引擎配置",
+    "provider_configuration": "提供商配置",
+    "quality_thresholds": "质量阈值",
+    "core_metrics": "核心指标",
+    "additional_metrics": "附加指标",
+    "threshold_impact_analysis": "阈值影响分析",
+    "threshold_configuration": "阈值配置",
+    "quality_summary": "质量摘要",
+    "advanced_settings": "高级设置",
+    "performance_settings": "性能设置",
+    "detailed_metrics": "详细指标",
+    "cost_vs_accuracy": "成本与准确率分析"
+  },
+
+  "columns": {
+    "engine_name": "引擎名称",
+    "provider": "提供商",
+    "confidence_threshold": "置信度阈值",
+    "status": "状态",
+    "enabled": "启用",
+    "actions": "操作",
+    "metric": "指标",
+    "current_value": "当前值",
+    "threshold": "阈值",
+    "impact": "影响",
+    "test_name": "测试名称",
+    "engines": "引擎",
+    "traffic_split": "流量分配",
+    "progress": "进度",
+    "winner": "胜出者",
+    "engine": "引擎",
+    "difference": "差异"
+  },
+
+  "fields": {
+    "engine_type": "引擎类型",
+    "llm_provider": "LLM 提供商",
+    "model_name": "模型名称",
+    "confidence_threshold": "置信度阈值",
+    "accuracy_threshold": "准确率阈值",
+    "consistency_threshold": "一致性阈值",
+    "completeness_threshold": "完整性阈值",
+    "recall_threshold": "召回率阈值",
+    "batch_size": "批次大小",
+    "max_workers": "最大工作线程",
+    "timeout_seconds": "超时时间（秒）",
+    "enable_caching": "启用缓存",
+    "enable_engine": "启用引擎",
+    "ollama_endpoint": "Ollama 端点",
+    "api_key": "API 密钥",
+    "organization_id": "组织 ID",
+    "temperature": "温度参数",
+    "max_tokens": "最大令牌数",
+    "azure_endpoint": "Azure 端点",
+    "deployment_name": "部署名称",
+    "api_version": "API 版本",
+    "secret_key": "密钥",
+    "secret_key_hunyuan": "密钥（混元）",
+    "request_timeout": "请求超时",
+    "max_retries": "最大重试次数",
+    "enable_streaming": "启用流式传输",
+    "enable_response_cache": "启用响应缓存",
+    "test_name": "测试名称",
+    "engine_a": "引擎 A",
+    "engine_b": "引擎 B",
+    "traffic_split": "流量分配",
+    "sample_size": "样本大小",
+    "metrics_to_track": "跟踪指标"
+  },
+
+  "engine_types": {
+    "pre_annotation": "预标注",
+    "mid_coverage": "中期覆盖",
+    "post_validation": "后期验证"
+  },
+
+  "providers": {
+    "ollama_desc": "本地 LLM 服务器",
+    "openai_desc": "OpenAI API",
+    "azure_desc": "Azure OpenAI 服务",
+    "qwen_desc": "阿里巴巴通义千问",
+    "zhipu_desc": "智谱 AI",
+    "baidu_desc": "百度文心一言",
+    "hunyuan_desc": "腾讯混元"
+  },
+
+  "metrics": {
+    "accuracy": "准确率",
+    "consistency": "一致性",
+    "completeness": "完整性",
+    "recall": "召回率",
+    "f1_score": "F1 分数",
+    "precision": "精确率",
+    "latency": "延迟",
+    "avg_latency": "平均延迟",
+    "p95_latency": "P95 延迟",
+    "p99_latency": "P99 延迟",
+    "throughput": "吞吐量",
+    "error_rate": "错误率",
+    "cost": "成本",
+    "cost_per_1k": "每千次成本",
+    "total_cost": "总成本",
+    "success_rate": "成功率",
+    "quality_score": "质量分数",
+    "cost_efficiency": "成本效率"
+  },
+
+  "stats": {
+    "total_engines": "总引擎数",
+    "healthy_engines": "健康引擎",
+    "degraded_engines": "降级引擎",
+    "enabled_engines": "已启用引擎",
+    "overall_quality": "总体质量",
+    "passing_metrics": "通过指标",
+    "warning_metrics": "警告指标",
+    "failing_metrics": "失败指标",
+    "total_tests": "总测试数",
+    "running_tests": "运行中测试",
+    "completed_tests": "已完成测试",
+    "winner": "胜出者",
+    "confidence": "置信度",
+    "p_value": "P 值",
+    "engine_a_wins": "引擎 A 胜出",
+    "engine_b_wins": "引擎 B 胜出",
+    "ties": "平局"
+  },
+
+  "status": {
+    "pass": "通过",
+    "warning": "警告",
+    "fail": "失败"
+  },
+
+  "test_status": {
+    "draft": "草稿",
+    "running": "运行中",
+    "paused": "已暂停",
+    "completed": "已完成",
+    "stopped": "已停止"
+  },
+
+  "impact": {
+    "meeting_expectations": "符合预期",
+    "needs_improvement": "需要改进"
+  },
+
+  "labels": {
+    "deterministic": "确定性",
+    "balanced": "平衡",
+    "creative": "创造性",
+    "current": "当前",
+    "current_provider": "当前提供商",
+    "current_model": "当前模型",
+    "latency": "延迟",
+    "detected_model": "检测到的模型",
+    "samples": "样本",
+    "pending": "待处理",
+    "tie": "平局",
+    "all_a": "全部 A",
+    "all_b": "全部 B",
+    "equal": "相等",
+    "engine_a": "引擎 A",
+    "engine_b": "引擎 B"
+  },
+
+  "actions": {
+    "add_engine": "添加引擎",
+    "edit_engine": "编辑引擎",
+    "hot_reload": "热重载",
+    "test_connection": "测试连接",
+    "compare_engines": "比较引擎",
+    "create_test": "创建测试",
+    "start": "开始",
+    "pause": "暂停",
+    "resume": "恢复",
+    "stop": "停止",
+    "view_results": "查看结果",
+    "refresh_metrics": "刷新指标"
+  },
+
+  "modals": {
+    "edit_engine": "编辑引擎",
+    "add_engine": "添加引擎",
+    "performance_comparison": "性能对比",
+    "create_test": "创建 A/B 测试",
+    "edit_test": "编辑 A/B 测试",
+    "test_results": "A/B 测试结果"
+  },
+
+  "placeholders": {
+    "select_model": "选择模型",
+    "select_engine": "选择引擎",
+    "test_name": "输入测试名称"
+  },
+
+  "tooltips": {
+    "response_time": "响应时间",
+    "last_check": "最后检查时间",
+    "no_status": "无状态信息",
+    "confidence_threshold": "接受标注所需的最低置信度分数",
+    "accuracy": "正确预测的百分比",
+    "consistency": "类似样本间的一致性",
+    "completeness": "所有必填字段的覆盖率",
+    "recall": "识别出的真阳性百分比",
+    "ollama_endpoint": "您的 Ollama 服务器 URL",
+    "openai_api_key": "从 platform.openai.com 获取的 OpenAI API 密钥",
+    "openai_org": "可选的组织 ID",
+    "azure_endpoint": "您的 Azure OpenAI 资源端点",
+    "azure_deployment": "Azure 中的部署名称",
+    "qwen_api_key": "从 dashscope.aliyun.com 获取的通义千问 API 密钥",
+    "zhipu_api_key": "从 open.bigmodel.cn 获取的智谱 API 密钥",
+    "baidu_api_key": "百度文心一言 API Access Key",
+    "hunyuan_secret_id": "腾讯云 SecretId",
+    "temperature": "控制随机性（0-2）。值越高越有创造性。",
+    "max_tokens": "生成的最大令牌数",
+    "request_timeout": "等待 LLM 响应的最长时间",
+    "max_retries": "失败时的重试次数",
+    "enable_streaming": "流式传输响应以改善用户体验",
+    "enable_cache": "缓存响应以降低成本和延迟",
+    "traffic_split": "路由到每个引擎的流量百分比",
+    "sample_size": "要收集的样本总数",
+    "metrics_to_track": "在引擎间比较的指标"
+  },
+
+  "info": {
+    "ollama_local": "本地模型服务器",
+    "ollama_local_desc": "Ollama 在您的机器上本地运行 LLM。无需 API 密钥。",
+    "qwen_notice": "从 DashScope (dashscope.aliyun.com) 获取您的 API 密钥",
+    "zhipu_notice": "从智谱 AI 开放平台 (open.bigmodel.cn) 获取您的 API 密钥",
+    "baidu_notice": "从百度智能云获取您的 Access Key 和 Secret Key",
+    "hunyuan_notice": "从腾讯云控制台获取您的 SecretId 和 SecretKey",
+    "threshold_recommendations": "推荐阈值",
+    "accuracy_recommendation": "准确率：生产环境建议 85% 以上",
+    "consistency_recommendation": "一致性：建议 80% 以上以确保可靠输出",
+    "completeness_recommendation": "完整性：建议 90% 以上以避免数据缺失",
+    "recall_recommendation": "召回率：建议 75% 以上以捕获足够样本",
+    "ranking_mode": "排名模式",
+    "ranking_mode_desc": "在所有指标上并排比较所有引擎"
+  },
+
+  "view_modes": {
+    "comparison": "对比",
+    "ranking": "排名"
+  },
+
+  "messages": {
+    "engine_saved": "引擎配置保存成功",
+    "engine_deleted": "引擎删除成功",
+    "engine_enabled": "引擎启用成功",
+    "engine_disabled": "引擎禁用成功",
+    "engine_reloaded": "引擎重载成功",
+    "connection_success": "连接成功",
+    "config_saved": "配置保存成功",
+    "thresholds_saved": "质量阈值保存成功",
+    "test_saved": "A/B 测试保存成功",
+    "test_started": "A/B 测试启动成功",
+    "test_paused": "A/B 测试暂停成功",
+    "test_stopped": "A/B 测试停止成功",
+    "test_deleted": "A/B 测试删除成功"
+  },
+
+  "errors": {
+    "load_engines_failed": "加载引擎失败",
+    "save_engine_failed": "保存引擎配置失败",
+    "delete_engine_failed": "删除引擎失败",
+    "toggle_engine_failed": "切换引擎状态失败",
+    "reload_engine_failed": "重载引擎失败",
+    "connection_failed": "连接失败",
+    "connection_test_failed": "连接测试失败",
+    "no_engine_selected": "未选择引擎",
+    "save_test_failed": "保存 A/B 测试失败",
+    "start_test_failed": "启动 A/B 测试失败",
+    "pause_test_failed": "暂停 A/B 测试失败",
+    "stop_test_failed": "停止 A/B 测试失败",
+    "delete_test_failed": "删除 A/B 测试失败"
+  },
+
+  "alerts": {
+    "unhealthy_engines_title": "检测到不健康引擎",
+    "unhealthy_engines_description": "{{count}} 个引擎不健康。请检查配置和连接性。",
+    "quality_below_threshold_title": "质量低于阈值",
+    "quality_below_threshold_desc": "{{count}} 个指标低于配置的阈值",
+    "quality_warning_title": "质量警告",
+    "quality_warning_desc": "{{count}} 个指标接近阈值限制",
+    "quality_excellent_title": "质量优秀",
+    "quality_excellent_desc": "所有质量指标都达到或超过阈值",
+    "tests_running_title": "A/B 测试进行中",
+    "tests_running_desc": "{{count}} 个 A/B 测试当前正在运行",
+    "not_statistically_significant_title": "统计不显著",
+    "not_statistically_significant_desc": "P 值 >= 0.05。结果可能不可靠。考虑增加样本量。",
+    "select_engines_title": "选择要比较的引擎",
+    "select_engines_desc": "从上方下拉菜单中选择两个引擎以查看对比",
+    "engine_a_better_title": "引擎 A 表现更好",
+    "engine_a_better_desc": "{{name}} 在 {{total}} 个指标中的 {{wins}} 个胜出",
+    "engine_b_better_title": "引擎 B 表现更好",
+    "engine_b_better_desc": "{{name}} 在 {{total}} 个指标中的 {{wins}} 个胜出",
+    "engines_equal_title": "引擎表现相当",
+    "engines_equal_desc": "两个引擎在指标上显示相似的性能"
+  },
+
+  "confirm": {
+    "delete_engine_title": "删除引擎？",
+    "delete_engine_content": "此操作无法撤消。所有相关数据将被删除。",
+    "stop_test_title": "停止 A/B 测试？",
+    "stop_test_content": "停止将使用当前结果完成测试。",
+    "delete_test_title": "删除 A/B 测试？",
+    "delete_test_content": "此操作无法撤消。"
+  }
+}

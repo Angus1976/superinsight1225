@@ -6,7 +6,9 @@
       "Bash(grep:*)",
       "Bash(npx tsc:*)",
       "Bash(fi)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(ls:*)",
+      "Bash(pip install:*)"
     ]
   }
 }

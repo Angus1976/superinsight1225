@@ -722,6 +722,96 @@ TRANSLATIONS: Dict[str, Dict[str, Any]] = {
         'llm.audit.config_deleted': 'LLM 配置已删除',
         'llm.audit.provider_switched': '提供商已切换',
         'llm.audit.request_logged': 'LLM 请求已记录',
+
+        # ============================================================================
+        # Text-to-SQL 模块 (Text-to-SQL Module)
+        # ============================================================================
+
+        # Text-to-SQL 通用 - text_to_sql.*
+        'text_to_sql.title': 'Text-to-SQL',
+        'text_to_sql.subtitle': '自然语言转SQL查询',
+        'text_to_sql.generate': '生成SQL',
+        'text_to_sql.execute': '执行查询',
+        'text_to_sql.validate': '验证SQL',
+        'text_to_sql.format': '格式化SQL',
+
+        # Text-to-SQL 成功消息 - text_to_sql.success.*
+        'text_to_sql.success.generated': 'SQL查询生成成功',
+        'text_to_sql.success.executed': 'SQL查询执行成功',
+        'text_to_sql.success.validated': 'SQL查询验证成功',
+        'text_to_sql.success.formatted': 'SQL格式化成功',
+        'text_to_sql.success.schema_loaded': '数据库架构加载成功',
+        'text_to_sql.success.connection_established': '数据库连接建立成功',
+
+        # Text-to-SQL 错误消息 - text_to_sql.error.*
+        'text_to_sql.error.generation_failed': 'SQL生成失败',
+        'text_to_sql.error.execution_failed': 'SQL执行失败',
+        'text_to_sql.error.validation_failed': 'SQL验证失败',
+        'text_to_sql.error.invalid_query': '无效的查询请求',
+        'text_to_sql.error.empty_query': '查询内容不能为空',
+        'text_to_sql.error.query_too_long': '查询内容过长',
+        'text_to_sql.error.invalid_sql': '生成的SQL无效',
+        'text_to_sql.error.syntax_error': 'SQL语法错误',
+        'text_to_sql.error.forbidden_operation': '禁止的SQL操作',
+        'text_to_sql.error.only_select_allowed': '仅允许SELECT查询',
+        'text_to_sql.error.dangerous_keyword': '检测到危险的SQL关键字',
+        'text_to_sql.error.connection_failed': '数据库连接失败',
+        'text_to_sql.error.connection_string_invalid': '数据库连接字符串无效',
+        'text_to_sql.error.database_not_found': '数据库未找到',
+        'text_to_sql.error.table_not_found': '表未找到',
+        'text_to_sql.error.column_not_found': '列未找到',
+        'text_to_sql.error.schema_load_failed': '数据库架构加载失败',
+        'text_to_sql.error.timeout': 'SQL查询超时',
+        'text_to_sql.error.execution_timeout': 'SQL执行超时',
+        'text_to_sql.error.max_rows_exceeded': '超过最大行数限制',
+        'text_to_sql.error.insufficient_permissions': '权限不足',
+        'text_to_sql.error.dialect_not_supported': '不支持的SQL方言',
+        'text_to_sql.error.model_not_available': 'AI模型不可用',
+        'text_to_sql.error.low_confidence': 'SQL生成置信度过低',
+
+        # Text-to-SQL 警告消息 - text_to_sql.warning.*
+        'text_to_sql.warning.ambiguous_query': '查询可能存在歧义',
+        'text_to_sql.warning.complex_query': '查询较为复杂，建议审查',
+        'text_to_sql.warning.performance_impact': '查询可能影响性能',
+        'text_to_sql.warning.large_result_set': '可能返回大量结果',
+        'text_to_sql.warning.deprecated_syntax': '使用了已弃用的SQL语法',
+
+        # Text-to-SQL 方法类型 - text_to_sql.method.*
+        'text_to_sql.method.template': '模板方法',
+        'text_to_sql.method.llm': 'LLM方法',
+        'text_to_sql.method.hybrid': '混合方法',
+        'text_to_sql.method.third_party': '第三方工具',
+
+        # Text-to-SQL 插件 - text_to_sql.plugin.*
+        'text_to_sql.plugin.registered': '插件注册成功',
+        'text_to_sql.plugin.unregistered': '插件注销成功',
+        'text_to_sql.plugin.enabled': '插件已启用',
+        'text_to_sql.plugin.disabled': '插件已禁用',
+        'text_to_sql.plugin.not_found': '插件未找到',
+        'text_to_sql.plugin.already_exists': '插件已存在',
+        'text_to_sql.plugin.connection_failed': '插件连接失败',
+
+        # Text-to-SQL 配置 - text_to_sql.config.*
+        'text_to_sql.config.updated': '配置更新成功',
+        'text_to_sql.config.invalid': '配置无效',
+        'text_to_sql.config.method_changed': '生成方法已更改',
+        'text_to_sql.config.auto_select_enabled': '自动方法选择已启用',
+        'text_to_sql.config.auto_select_disabled': '自动方法选择已禁用',
+        'text_to_sql.config.fallback_enabled': '故障转移已启用',
+        'text_to_sql.config.fallback_disabled': '故障转移已禁用',
+
+        # Text-to-SQL 参数化错误 - text_to_sql.error.param.*
+        'text_to_sql.error.param.query_empty': '查询参数 {param} 不能为空',
+        'text_to_sql.error.param.invalid_dialect': '不支持的SQL方言: {dialect}',
+        'text_to_sql.error.param.invalid_max_results': '无效的最大结果数: {max_results}',
+        'text_to_sql.error.param.keyword_detected': '检测到禁止的SQL关键字: {keyword}',
+        'text_to_sql.error.param.timeout_value': 'SQL查询超时 (限制: {timeout}秒)',
+        'text_to_sql.error.param.rows_exceeded': '返回行数 {actual} 超过限制 {limit}',
+        'text_to_sql.error.param.table_missing': '表 {table} 在数据库中不存在',
+        'text_to_sql.error.param.column_missing': '列 {column} 在表 {table} 中不存在',
+        'text_to_sql.error.param.method_not_found': '生成方法 {method} 未找到',
+        'text_to_sql.error.param.plugin_error': '插件 {plugin} 错误: {error}',
+        'text_to_sql.error.param.model_error': 'AI模型 {model} 错误: {error}',
     },
     'en': {
         # General
@@ -1416,6 +1506,96 @@ TRANSLATIONS: Dict[str, Dict[str, Any]] = {
         'llm.audit.config_deleted': 'LLM configuration deleted',
         'llm.audit.provider_switched': 'Provider switched',
         'llm.audit.request_logged': 'LLM request logged',
+
+        # ============================================================================
+        # Text-to-SQL Module
+        # ============================================================================
+
+        # Text-to-SQL General - text_to_sql.*
+        'text_to_sql.title': 'Text-to-SQL',
+        'text_to_sql.subtitle': 'Natural Language to SQL Query',
+        'text_to_sql.generate': 'Generate SQL',
+        'text_to_sql.execute': 'Execute Query',
+        'text_to_sql.validate': 'Validate SQL',
+        'text_to_sql.format': 'Format SQL',
+
+        # Text-to-SQL Success Messages - text_to_sql.success.*
+        'text_to_sql.success.generated': 'SQL query generated successfully',
+        'text_to_sql.success.executed': 'SQL query executed successfully',
+        'text_to_sql.success.validated': 'SQL query validated successfully',
+        'text_to_sql.success.formatted': 'SQL formatted successfully',
+        'text_to_sql.success.schema_loaded': 'Database schema loaded successfully',
+        'text_to_sql.success.connection_established': 'Database connection established successfully',
+
+        # Text-to-SQL Error Messages - text_to_sql.error.*
+        'text_to_sql.error.generation_failed': 'SQL generation failed',
+        'text_to_sql.error.execution_failed': 'SQL execution failed',
+        'text_to_sql.error.validation_failed': 'SQL validation failed',
+        'text_to_sql.error.invalid_query': 'Invalid query request',
+        'text_to_sql.error.empty_query': 'Query content cannot be empty',
+        'text_to_sql.error.query_too_long': 'Query content too long',
+        'text_to_sql.error.invalid_sql': 'Generated SQL is invalid',
+        'text_to_sql.error.syntax_error': 'SQL syntax error',
+        'text_to_sql.error.forbidden_operation': 'Forbidden SQL operation',
+        'text_to_sql.error.only_select_allowed': 'Only SELECT queries are allowed',
+        'text_to_sql.error.dangerous_keyword': 'Dangerous SQL keyword detected',
+        'text_to_sql.error.connection_failed': 'Database connection failed',
+        'text_to_sql.error.connection_string_invalid': 'Invalid database connection string',
+        'text_to_sql.error.database_not_found': 'Database not found',
+        'text_to_sql.error.table_not_found': 'Table not found',
+        'text_to_sql.error.column_not_found': 'Column not found',
+        'text_to_sql.error.schema_load_failed': 'Database schema load failed',
+        'text_to_sql.error.timeout': 'SQL query timeout',
+        'text_to_sql.error.execution_timeout': 'SQL execution timeout',
+        'text_to_sql.error.max_rows_exceeded': 'Maximum rows limit exceeded',
+        'text_to_sql.error.insufficient_permissions': 'Insufficient permissions',
+        'text_to_sql.error.dialect_not_supported': 'SQL dialect not supported',
+        'text_to_sql.error.model_not_available': 'AI model not available',
+        'text_to_sql.error.low_confidence': 'SQL generation confidence too low',
+
+        # Text-to-SQL Warning Messages - text_to_sql.warning.*
+        'text_to_sql.warning.ambiguous_query': 'Query may be ambiguous',
+        'text_to_sql.warning.complex_query': 'Query is complex, review recommended',
+        'text_to_sql.warning.performance_impact': 'Query may impact performance',
+        'text_to_sql.warning.large_result_set': 'May return large result set',
+        'text_to_sql.warning.deprecated_syntax': 'Deprecated SQL syntax used',
+
+        # Text-to-SQL Method Types - text_to_sql.method.*
+        'text_to_sql.method.template': 'Template Method',
+        'text_to_sql.method.llm': 'LLM Method',
+        'text_to_sql.method.hybrid': 'Hybrid Method',
+        'text_to_sql.method.third_party': 'Third-party Tool',
+
+        # Text-to-SQL Plugins - text_to_sql.plugin.*
+        'text_to_sql.plugin.registered': 'Plugin registered successfully',
+        'text_to_sql.plugin.unregistered': 'Plugin unregistered successfully',
+        'text_to_sql.plugin.enabled': 'Plugin enabled',
+        'text_to_sql.plugin.disabled': 'Plugin disabled',
+        'text_to_sql.plugin.not_found': 'Plugin not found',
+        'text_to_sql.plugin.already_exists': 'Plugin already exists',
+        'text_to_sql.plugin.connection_failed': 'Plugin connection failed',
+
+        # Text-to-SQL Configuration - text_to_sql.config.*
+        'text_to_sql.config.updated': 'Configuration updated successfully',
+        'text_to_sql.config.invalid': 'Invalid configuration',
+        'text_to_sql.config.method_changed': 'Generation method changed',
+        'text_to_sql.config.auto_select_enabled': 'Auto method selection enabled',
+        'text_to_sql.config.auto_select_disabled': 'Auto method selection disabled',
+        'text_to_sql.config.fallback_enabled': 'Fallback enabled',
+        'text_to_sql.config.fallback_disabled': 'Fallback disabled',
+
+        # Text-to-SQL Parameterized Errors - text_to_sql.error.param.*
+        'text_to_sql.error.param.query_empty': 'Query parameter {param} cannot be empty',
+        'text_to_sql.error.param.invalid_dialect': 'Unsupported SQL dialect: {dialect}',
+        'text_to_sql.error.param.invalid_max_results': 'Invalid maximum results: {max_results}',
+        'text_to_sql.error.param.keyword_detected': 'Forbidden SQL keyword detected: {keyword}',
+        'text_to_sql.error.param.timeout_value': 'SQL query timeout (limit: {timeout}s)',
+        'text_to_sql.error.param.rows_exceeded': 'Returned rows {actual} exceeds limit {limit}',
+        'text_to_sql.error.param.table_missing': 'Table {table} does not exist in database',
+        'text_to_sql.error.param.column_missing': 'Column {column} does not exist in table {table}',
+        'text_to_sql.error.param.method_not_found': 'Generation method {method} not found',
+        'text_to_sql.error.param.plugin_error': 'Plugin {plugin} error: {error}',
+        'text_to_sql.error.param.model_error': 'AI model {model} error: {error}',
     }
 }
 

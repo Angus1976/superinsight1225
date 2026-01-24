@@ -39,6 +39,20 @@ from src.text_to_sql import (
 )
 from src.text_to_sql.schema_analyzer import DatabaseSchema
 
+# Import i18n error handling
+from src.text_to_sql.text_to_sql_error_handler import (
+    validate_query_input,
+    validate_sql_safety,
+    handle_text_to_sql_exception,
+    log_text_to_sql_success,
+    EmptyQueryError,
+    ForbiddenSQLOperationError,
+    SQLGenerationError,
+    SQLExecutionError,
+    SQLTimeoutError,
+)
+from src.i18n.translations import get_translation
+
 logger = logging.getLogger(__name__)
 
 # Create router
@@ -202,10 +216,15 @@ async def generate_sql(request: GenerateSQLRequest) -> GenerateSQLResponse:
     Generate SQL from natural language query.
 
     Converts a natural language query into SQL using AI models.
+    Provides internationalized error messages.
     """
+    start_time = time.time()
+
     try:
         logger.info(f"Generating SQL for query: {request.query[:50]}...")
-        start_time = time.time()
+
+        # Validate query input using i18n validation
+        validate_query_input(request.query)
 
         # Get appropriate generator
         if request.use_advanced:
@@ -230,6 +249,24 @@ async def generate_sql(request: GenerateSQLRequest) -> GenerateSQLResponse:
         # Generate SQL
         response = await generator.generate_sql(gen_request)
 
+        # Validate generated SQL safety
+        if response.sql and request.validate_sql:
+            try:
+                validate_sql_safety(response.sql)
+            except ForbiddenSQLOperationError:
+                # Re-raise to be caught by outer handler
+                raise
+
+        # Log success
+        log_text_to_sql_success(
+            'generate',
+            {
+                'query_length': len(request.query),
+                'confidence': response.confidence,
+                'processing_time': response.processing_time
+            }
+        )
+
         return GenerateSQLResponse(
             success=bool(response.sql),
             sql=response.sql,
@@ -243,14 +280,25 @@ async def generate_sql(request: GenerateSQLRequest) -> GenerateSQLResponse:
             metadata=response.metadata
         )
 
+    except (EmptyQueryError, ForbiddenSQLOperationError) as e:
+        # Known validation errors - raise as HTTPException
+        raise handle_text_to_sql_exception(
+            e,
+            operation='generate',
+            context={'query_length': len(request.query) if request.query else 0}
+        )
+
     except Exception as e:
+        # Unknown error - wrap in SQLGenerationError
         logger.error(f"SQL generation failed: {e}")
-        return GenerateSQLResponse(
-            success=False,
-            sql="",
-            confidence=0.0,
-            processing_time=time.time() - start_time,
-            metadata={"error": str(e)}
+        error = SQLGenerationError(reason=str(e))
+        raise handle_text_to_sql_exception(
+            error,
+            operation='generate',
+            context={
+                'query_length': len(request.query) if request.query else 0,
+                'processing_time': time.time() - start_time
+            }
         )
 
 
@@ -261,61 +309,71 @@ async def execute_sql(request: ExecuteSQLRequest) -> ExecuteSQLResponse:
 
     Executes the provided SQL query against the specified database.
     Only SELECT queries are allowed for security.
+    Provides internationalized error messages.
     """
+    start_time = time.time()
+
     try:
         logger.info(f"Executing SQL query: {request.sql[:50]}...")
-        start_time = time.time()
 
-        # Validate SQL is SELECT only
-        sql_upper = request.sql.upper().strip()
-        if not (sql_upper.startswith("SELECT") or sql_upper.startswith("WITH")):
-            return ExecuteSQLResponse(
-                success=False,
-                error="Only SELECT queries are allowed",
-                execution_time=time.time() - start_time
-            )
+        # Validate SQL input
+        validate_query_input(request.sql)
 
-        # Check for dangerous operations
-        forbidden = ["INSERT", "UPDATE", "DELETE", "DROP", "CREATE", "ALTER", "TRUNCATE"]
-        for keyword in forbidden:
-            if keyword in sql_upper:
-                return ExecuteSQLResponse(
-                    success=False,
-                    error=f"Forbidden operation: {keyword}",
-                    execution_time=time.time() - start_time
-                )
+        # Validate SQL safety - this will raise ForbiddenSQLOperationError if unsafe
+        validate_sql_safety(request.sql)
 
         # Execute query using schema manager
         manager = get_manager()
         engine = manager.get_engine(request.connection_string)
 
         from sqlalchemy import text
+        import sqlalchemy.exc
 
         data = []
         column_names = []
         warnings = []
 
-        with engine.connect() as conn:
-            # Set timeout (PostgreSQL specific)
-            try:
-                conn.execute(text(f"SET statement_timeout = {request.timeout * 1000}"))
-            except Exception:
-                pass  # Not all databases support this
+        try:
+            with engine.connect() as conn:
+                # Set timeout (PostgreSQL specific)
+                try:
+                    conn.execute(text(f"SET statement_timeout = {request.timeout * 1000}"))
+                except Exception:
+                    pass  # Not all databases support this
 
-            result = conn.execute(text(request.sql))
+                result = conn.execute(text(request.sql))
 
-            # Get column names
-            column_names = list(result.keys())
+                # Get column names
+                column_names = list(result.keys())
 
-            # Fetch rows
-            rows = result.fetchmany(request.max_rows)
-            data = [dict(zip(column_names, row)) for row in rows]
+                # Fetch rows
+                rows = result.fetchmany(request.max_rows)
+                data = [dict(zip(column_names, row)) for row in rows]
 
-            # Check if more rows available
-            if result.fetchone() is not None:
-                warnings.append(f"Result truncated to {request.max_rows} rows")
+                # Check if more rows available
+                if result.fetchone() is not None:
+                    warnings.append(
+                        get_translation("text_to_sql.warning.large_result_set")
+                    )
+
+        except sqlalchemy.exc.OperationalError as e:
+            # Timeout or connection error
+            if "timeout" in str(e).lower():
+                raise SQLTimeoutError(timeout=request.timeout)
+            else:
+                raise SQLExecutionError(reason=str(e))
 
         execution_time = time.time() - start_time
+
+        # Log success
+        log_text_to_sql_success(
+            'execute',
+            {
+                'row_count': len(data),
+                'execution_time': execution_time,
+                'warnings': len(warnings)
+            }
+        )
 
         return ExecuteSQLResponse(
             success=True,
@@ -326,12 +384,25 @@ async def execute_sql(request: ExecuteSQLRequest) -> ExecuteSQLResponse:
             warnings=warnings
         )
 
+    except (EmptyQueryError, ForbiddenSQLOperationError, SQLTimeoutError) as e:
+        # Known errors - raise as HTTPException
+        raise handle_text_to_sql_exception(
+            e,
+            operation='execute',
+            context={'sql_length': len(request.sql) if request.sql else 0}
+        )
+
     except Exception as e:
+        # Unknown error - wrap in SQLExecutionError
         logger.error(f"SQL execution failed: {e}")
-        return ExecuteSQLResponse(
-            success=False,
-            error=str(e),
-            execution_time=time.time() - start_time
+        error = SQLExecutionError(reason=str(e))
+        raise handle_text_to_sql_exception(
+            error,
+            operation='execute',
+            context={
+                'sql_length': len(request.sql) if request.sql else 0,
+                'execution_time': time.time() - start_time
+            }
         )
 
 

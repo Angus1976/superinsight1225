@@ -50,5 +50,53 @@
       "saveSuccess": "Annotation saved",
       "saveError": "Failed to save annotation"
     }
+  },
+  "titles": {
+    "ai_assistance": "AI Assistance"
+  },
+  "sections": {
+    "quality_alerts": "Quality Alerts",
+    "ai_suggestions": "AI Suggestions"
+  },
+  "labels": {
+    "confidence": "Confidence",
+    "details": "Details",
+    "reasoning": "Reasoning",
+    "patterns": "Patterns",
+    "context": "Context"
+  },
+  "actions": {
+    "refresh_suggestions": "Refresh Suggestions",
+    "request_suggestions": "Request Suggestions",
+    "accept": "Accept",
+    "reject": "Reject"
+  },
+  "modals": {
+    "reject_suggestion": "Reject Suggestion"
+  },
+  "placeholders": {
+    "reject_reason": "Optional: Enter reason for rejection..."
+  },
+  "tooltips": {
+    "similar_examples": "{{count}} similar examples found"
+  },
+  "messages": {
+    "ai_connected": "AI assistance connected",
+    "ai_disconnected": "AI assistance disconnected",
+    "ai_suggestions_received": "Received {{count}} AI suggestion(s)",
+    "ai_suggestions_loaded": "Loaded {{count}} AI suggestion(s)",
+    "no_suggestions": "No AI suggestions available",
+    "loading_suggestions": "Loading AI suggestions...",
+    "suggestion_accepted": "Suggestion accepted",
+    "suggestion_rejected": "Suggestion rejected",
+    "reject_reason_prompt": "Optionally provide a reason for rejecting this suggestion (helps improve AI accuracy)"
+  },
+  "errors": {
+    "ai_suggestions_failed": "Failed to load AI suggestions",
+    "suggestion_feedback_failed": "Failed to submit feedback"
+  },
+  "tips": {
+    "ai_suggestions": "AI Suggestions Available",
+    "ai_suggestions_desc": "Review AI-generated suggestions and accept or reject them to help improve accuracy"
   }
 }

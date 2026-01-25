@@ -42,6 +42,8 @@ import {
   Pie,
   Cell,
 } from 'recharts';
+import dayjs from 'dayjs';
+import { useTranslation } from 'react-i18next';
 import {
   useSystemMetrics,
   useSystemHealth,
@@ -56,9 +58,10 @@ const { RangePicker } = DatePicker;
 const { Text } = Typography;
 
 const SystemMonitoring: React.FC = () => {
+  const { t } = useTranslation('admin');
   const [timeRange, setTimeRange] = useState<[string, string]>([
-    new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-    new Date().toISOString(),
+    dayjs().subtract(24, 'hour').toISOString(),
+    dayjs().toISOString(),
   ]);
   const [refreshInterval, setRefreshInterval] = useState(30);
 
@@ -112,7 +115,7 @@ const SystemMonitoring: React.FC = () => {
   // Service health columns
   const serviceColumns: ColumnsType<ServiceHealth> = [
     {
-      title: 'Service',
+      title: t('systemMonitoring.services.name'),
       dataIndex: 'name',
       key: 'name',
       render: (name) => (
@@ -123,25 +126,25 @@ const SystemMonitoring: React.FC = () => {
       ),
     },
     {
-      title: 'Status',
+      title: t('systemMonitoring.services.status'),
       dataIndex: 'status',
       key: 'status',
       render: (status) => {
         const statusConfig = {
-          healthy: { color: 'success', icon: <CheckCircleOutlined /> },
-          degraded: { color: 'warning', icon: <ExclamationCircleOutlined /> },
-          unhealthy: { color: 'error', icon: <CloseCircleOutlined /> },
+          healthy: { color: 'success', icon: <CheckCircleOutlined />, text: t('systemMonitoring.services.healthy') },
+          degraded: { color: 'warning', icon: <ExclamationCircleOutlined />, text: t('systemMonitoring.services.degraded') },
+          unhealthy: { color: 'error', icon: <CloseCircleOutlined />, text: t('systemMonitoring.services.unhealthy') },
         };
         const config = statusConfig[status as keyof typeof statusConfig];
         return (
           <Tag color={config.color} icon={config.icon}>
-            {status.toUpperCase()}
+            {config.text.toUpperCase()}
           </Tag>
         );
       },
     },
     {
-      title: 'Uptime',
+      title: t('systemMonitoring.services.uptime'),
       dataIndex: 'uptime',
       key: 'uptime',
       render: (uptime) => {
@@ -151,13 +154,13 @@ const SystemMonitoring: React.FC = () => {
       },
     },
     {
-      title: 'Response Time',
+      title: t('systemMonitoring.services.responseTime'),
       dataIndex: 'response_time',
       key: 'response_time',
       render: (time) => `${time}ms`,
     },
     {
-      title: 'Error Rate',
+      title: t('systemMonitoring.services.errorRate'),
       dataIndex: 'error_rate',
       key: 'error_rate',
       render: (rate) => (
@@ -170,11 +173,11 @@ const SystemMonitoring: React.FC = () => {
       ),
     },
     {
-      title: 'Actions',
+      title: t('systemMonitoring.services.actions'),
       key: 'actions',
       render: (_, record) => (
         <Space>
-          <Tooltip title="Restart Service">
+          <Tooltip title={t('systemMonitoring.services.restartService')}>
             <Button
               type="link"
               icon={<ReloadOutlined />}
@@ -183,7 +186,7 @@ const SystemMonitoring: React.FC = () => {
               loading={restartServiceMutation.isPending}
             />
           </Tooltip>
-          <Tooltip title="Service Settings">
+          <Tooltip title={t('systemMonitoring.services.serviceSettings')}>
             <Button
               type="link"
               icon={<SettingOutlined />}
@@ -198,56 +201,56 @@ const SystemMonitoring: React.FC = () => {
   // Alert columns
   const alertColumns: ColumnsType<SystemAlert> = [
     {
-      title: 'Type',
+      title: t('systemMonitoring.alerts.type'),
       dataIndex: 'type',
       key: 'type',
       render: (type) => {
         const typeConfig = {
-          info: { color: 'blue', icon: <ExclamationCircleOutlined /> },
-          warning: { color: 'orange', icon: <WarningOutlined /> },
-          error: { color: 'red', icon: <CloseCircleOutlined /> },
-          critical: { color: 'red', icon: <ExclamationCircleOutlined /> },
+          info: { color: 'blue', icon: <ExclamationCircleOutlined />, text: t('systemMonitoring.alerts.types.info') },
+          warning: { color: 'orange', icon: <WarningOutlined />, text: t('systemMonitoring.alerts.types.warning') },
+          error: { color: 'red', icon: <CloseCircleOutlined />, text: t('systemMonitoring.alerts.types.error') },
+          critical: { color: 'red', icon: <ExclamationCircleOutlined />, text: t('systemMonitoring.alerts.types.critical') },
         };
         const config = typeConfig[type as keyof typeof typeConfig];
         return (
           <Tag color={config.color} icon={config.icon}>
-            {type.toUpperCase()}
+            {config.text.toUpperCase()}
           </Tag>
         );
       },
     },
     {
-      title: 'Message',
+      title: t('systemMonitoring.alerts.message'),
       dataIndex: 'message',
       key: 'message',
       ellipsis: true,
     },
     {
-      title: 'Source',
+      title: t('systemMonitoring.alerts.source'),
       dataIndex: 'source',
       key: 'source',
     },
     {
-      title: 'Time',
+      title: t('systemMonitoring.alerts.time'),
       dataIndex: 'created_at',
       key: 'created_at',
       render: (time) => new Date(time).toLocaleString(),
     },
     {
-      title: 'Status',
+      title: t('systemMonitoring.alerts.status'),
       key: 'status',
       render: (_, record) => {
         if (record.resolved) {
-          return <Tag color="success">Resolved</Tag>;
+          return <Tag color="success">{t('systemMonitoring.alerts.statuses.resolved')}</Tag>;
         }
         if (record.acknowledged) {
-          return <Tag color="processing">Acknowledged</Tag>;
+          return <Tag color="processing">{t('systemMonitoring.alerts.statuses.acknowledged')}</Tag>;
         }
-        return <Tag color="error">New</Tag>;
+        return <Tag color="error">{t('systemMonitoring.alerts.statuses.new')}</Tag>;
       },
     },
     {
-      title: 'Actions',
+      title: t('systemMonitoring.alerts.actions'),
       key: 'actions',
       render: (_, record) => (
         <Space>
@@ -258,7 +261,7 @@ const SystemMonitoring: React.FC = () => {
               onClick={() => handleAcknowledgeAlert(record.id)}
               loading={acknowledgeAlertMutation.isPending}
             >
-              Acknowledge
+              {t('systemMonitoring.alerts.acknowledge')}
             </Button>
           )}
           {!record.resolved && (
@@ -268,7 +271,7 @@ const SystemMonitoring: React.FC = () => {
               onClick={() => handleResolveAlert(record.id)}
               loading={resolveAlertMutation.isPending}
             >
-              Resolve
+              {t('systemMonitoring.alerts.resolve')}
             </Button>
           )}
         </Space>
@@ -291,18 +294,18 @@ const SystemMonitoring: React.FC = () => {
         <Row gutter={16} align="middle">
           <Col>
             <Space>
-              <Text strong>Time Range:</Text>
+              <Text strong>{t('systemMonitoring.timeRange')}:</Text>
               <RangePicker
                 showTime
                 value={[
-                  new Date(timeRange[0]) as any,
-                  new Date(timeRange[1]) as any,
+                  dayjs(timeRange[0]),
+                  dayjs(timeRange[1]),
                 ]}
                 onChange={(dates) => {
-                  if (dates) {
+                  if (dates && dates[0] && dates[1]) {
                     setTimeRange([
-                      dates[0]!.toISOString(),
-                      dates[1]!.toISOString(),
+                      dates[0].toISOString(),
+                      dates[1].toISOString(),
                     ]);
                   }
                 }}
@@ -311,7 +314,7 @@ const SystemMonitoring: React.FC = () => {
           </Col>
           <Col>
             <Space>
-              <Text strong>Refresh:</Text>
+              <Text strong>{t('systemMonitoring.refresh')}:</Text>
               <Select
                 value={refreshInterval}
                 onChange={setRefreshInterval}
@@ -332,7 +335,7 @@ const SystemMonitoring: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="System Status"
+              title={t('systemMonitoring.overview.systemStatus')}
               value={systemHealth?.status || 'Unknown'}
               valueStyle={{
                 color: systemHealth?.status === 'healthy' ? '#52c41a' : '#f5222d',
@@ -344,9 +347,9 @@ const SystemMonitoring: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Uptime"
+              title={t('systemMonitoring.overview.uptime')}
               value={systemHealth?.uptime ? Math.floor(systemHealth.uptime / 3600) : 0}
-              suffix="hours"
+              suffix={t('systemMonitoring.overview.hours')}
               prefix={<DashboardOutlined />}
             />
           </Card>
@@ -355,7 +358,7 @@ const SystemMonitoring: React.FC = () => {
           <Card>
             <Badge count={criticalAlerts} offset={[10, 0]}>
               <Statistic
-                title="Critical Alerts"
+                title={t('systemMonitoring.overview.criticalAlerts')}
                 value={criticalAlerts}
                 valueStyle={{ color: criticalAlerts > 0 ? '#f5222d' : '#52c41a' }}
                 prefix={<WarningOutlined />}
@@ -367,7 +370,7 @@ const SystemMonitoring: React.FC = () => {
           <Card>
             <Badge count={warningAlerts} offset={[10, 0]}>
               <Statistic
-                title="Warnings"
+                title={t('systemMonitoring.overview.warnings')}
                 value={warningAlerts}
                 valueStyle={{ color: warningAlerts > 0 ? '#fa8c16' : '#52c41a' }}
                 prefix={<ExclamationCircleOutlined />}
@@ -380,7 +383,7 @@ const SystemMonitoring: React.FC = () => {
       {/* System Metrics Charts */}
       <Row gutter={16} style={{ marginBottom: 16 }}>
         <Col xs={24} lg={16}>
-          <Card title="System Performance" style={{ height: 400 }}>
+          <Card title={t('systemMonitoring.charts.systemPerformance')} style={{ height: 400 }}>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={metricsChartData}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -391,26 +394,26 @@ const SystemMonitoring: React.FC = () => {
                   type="monotone"
                   dataKey="cpu"
                   stroke="#8884d8"
-                  name="CPU %"
+                  name={t('systemMonitoring.charts.cpuUsage')}
                 />
                 <Line
                   type="monotone"
                   dataKey="memory"
                   stroke="#82ca9d"
-                  name="Memory %"
+                  name={t('systemMonitoring.charts.memoryUsage')}
                 />
                 <Line
                   type="monotone"
                   dataKey="disk"
                   stroke="#ffc658"
-                  name="Disk %"
+                  name={t('systemMonitoring.charts.diskUsage')}
                 />
               </LineChart>
             </ResponsiveContainer>
           </Card>
         </Col>
         <Col xs={24} lg={8}>
-          <Card title="Service Status" style={{ height: 400 }}>
+          <Card title={t('systemMonitoring.charts.serviceStatus')} style={{ height: 400 }}>
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
                 <Pie
@@ -458,7 +461,7 @@ const SystemMonitoring: React.FC = () => {
       </Row>
 
       {/* Service Health Table */}
-      <Card title="Service Health" style={{ marginBottom: 16 }}>
+      <Card title={t('systemMonitoring.services.title')} style={{ marginBottom: 16 }}>
         <Table
           columns={serviceColumns}
           dataSource={systemHealth?.services || []}
@@ -469,7 +472,7 @@ const SystemMonitoring: React.FC = () => {
       </Card>
 
       {/* System Alerts */}
-      <Card title="Recent Alerts">
+      <Card title={t('systemMonitoring.alerts.title')}>
         <Table
           columns={alertColumns}
           dataSource={systemAlerts}

@@ -165,6 +165,12 @@
     "recommendations": "建议",
     "noFindings": "无发现",
     "noRecommendations": "无建议",
+    "totalRecords": "总记录数",
+    "sensitiveRecords": "敏感记录数",
+    "accessCount": "访问次数",
+    "violations": "违规",
+    "score": "合规分数",
+    "occurrences": "次",
     "types": {
       "gdpr": "GDPR 合规报告",
       "soc2": "SOC 2 合规报告",

@@ -6,12 +6,14 @@ import {
   DashboardOutlined,
   SecurityScanOutlined,
 } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import TenantManager from '@/components/System/TenantManager';
 import SystemMonitoring from '@/components/System/SystemMonitoring';
 import SecurityAudit from '@/components/System/SecurityAudit';
 import { useAuthStore } from '@/stores/authStore';
 
 const SystemPage: React.FC = () => {
+  const { t } = useTranslation('admin');
   const { user } = useAuthStore();
 
   // Check admin access
@@ -29,7 +31,7 @@ const SystemPage: React.FC = () => {
 
   return (
     <div>
-      <h2 style={{ marginBottom: 24 }}>System Management</h2>
+      <h2 style={{ marginBottom: 24 }}>{t('systemManagement')}</h2>
       
       <Tabs
         defaultActiveKey="tenants"
@@ -40,7 +42,7 @@ const SystemPage: React.FC = () => {
             label: (
               <span>
                 <TeamOutlined />
-                Tenant Management
+                {t('tenantManagement')}
               </span>
             ),
             children: <TenantManager />,
@@ -50,7 +52,7 @@ const SystemPage: React.FC = () => {
             label: (
               <span>
                 <DashboardOutlined />
-                System Monitoring
+                {t('systemMonitoring.title')}
               </span>
             ),
             children: <SystemMonitoring />,
@@ -60,7 +62,7 @@ const SystemPage: React.FC = () => {
             label: (
               <span>
                 <SecurityScanOutlined />
-                Security & Audit
+                {t('securityAudit.title')}
               </span>
             ),
             children: <SecurityAudit />,

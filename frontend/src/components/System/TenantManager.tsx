@@ -31,6 +31,7 @@ import {
   ExclamationCircleOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
+import { useTranslation } from 'react-i18next';
 import { useTenants, useCreateTenant, useUpdateTenant, useDeleteTenant } from '@/hooks';
 import type { SystemTenant, CreateTenantRequest, UpdateTenantRequest } from '@/types';
 
@@ -49,6 +50,7 @@ const planColors = {
 } as const;
 
 const TenantManager: React.FC = () => {
+  const { t } = useTranslation('admin');
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
@@ -115,7 +117,7 @@ const TenantManager: React.FC = () => {
 
   const columns: ColumnsType<SystemTenant> = [
     {
-      title: 'Tenant Name',
+      title: t('tenants.columns.tenantInfo'),
       dataIndex: 'name',
       key: 'name',
       render: (name, record) => (
@@ -130,27 +132,27 @@ const TenantManager: React.FC = () => {
       ),
     },
     {
-      title: 'Status',
+      title: t('tenants.columns.status'),
       dataIndex: 'status',
       key: 'status',
       render: (status: keyof typeof statusColors) => (
-        <Tag color={statusColors[status]}>{status.toUpperCase()}</Tag>
+        <Tag color={statusColors[status]}>{t(`tenants.status.${status}`)}</Tag>
       ),
     },
     {
-      title: 'Plan',
+      title: t('tenants.columns.plan'),
       dataIndex: 'plan',
       key: 'plan',
       render: (plan: keyof typeof planColors) => (
-        <Tag color={planColors[plan]}>{plan.toUpperCase()}</Tag>
+        <Tag color={planColors[plan]}>{t(`tenants.plan.${plan}`)}</Tag>
       ),
     },
     {
-      title: 'Users',
+      title: t('tenants.columns.users'),
       dataIndex: 'users_count',
       key: 'users_count',
       render: (count) => (
-        <Tooltip title="Active users">
+        <Tooltip title={t('tenants.tooltips.activeUsers')}>
           <Space>
             <UserOutlined />
             {count}
@@ -159,7 +161,7 @@ const TenantManager: React.FC = () => {
       ),
     },
     {
-      title: 'Storage Usage',
+      title: t('tenants.columns.storageUsage'),
       key: 'storage',
       render: (_, record) => {
         const percentage = Math.round((record.storage_used / record.storage_limit) * 100);
@@ -178,17 +180,17 @@ const TenantManager: React.FC = () => {
       },
     },
     {
-      title: 'Resources',
+      title: t('tenants.columns.resources'),
       key: 'resources',
       render: (_, record) => (
         <Space direction="vertical" size="small">
-          <Tooltip title="CPU Quota">
+          <Tooltip title={t('tenants.tooltips.cpuQuota')}>
             <Space size="small">
               <CloudOutlined />
               {record.cpu_quota} cores
             </Space>
           </Tooltip>
-          <Tooltip title="Memory Quota">
+          <Tooltip title={t('tenants.tooltips.memoryQuota')}>
             <Space size="small">
               <DatabaseOutlined />
               {record.memory_quota}GB
@@ -198,17 +200,17 @@ const TenantManager: React.FC = () => {
       ),
     },
     {
-      title: 'Created',
+      title: t('tenants.columns.created'),
       dataIndex: 'created_at',
       key: 'created_at',
       render: (date) => new Date(date).toLocaleDateString(),
     },
     {
-      title: 'Actions',
+      title: t('tenants.columns.actions'),
       key: 'actions',
       render: (_, record) => (
         <Space>
-          <Tooltip title="Edit Tenant">
+          <Tooltip title={t('tenants.tooltips.editTenant')}>
             <Button
               type="link"
               icon={<EditOutlined />}
@@ -216,7 +218,7 @@ const TenantManager: React.FC = () => {
               onClick={() => openEditModal(record)}
             />
           </Tooltip>
-          <Tooltip title="Settings">
+          <Tooltip title={t('tenants.tooltips.settings')}>
             <Button
               type="link"
               icon={<SettingOutlined />}
@@ -225,15 +227,15 @@ const TenantManager: React.FC = () => {
             />
           </Tooltip>
           <Popconfirm
-            title="Delete Tenant"
-            description="Are you sure you want to delete this tenant? This action cannot be undone."
+            title={t('tenants.deleteTenant')}
+            description={t('tenants.deleteWarning')}
             icon={<ExclamationCircleOutlined style={{ color: 'red' }} />}
             onConfirm={() => handleDeleteTenant(record.id)}
-            okText="Delete"
-            cancelText="Cancel"
+            okText={t('common.delete')}
+            cancelText={t('common.cancel')}
             okType="danger"
           >
-            <Tooltip title="Delete Tenant">
+            <Tooltip title={t('tenants.tooltips.deleteTenant')}>
               <Button
                 type="link"
                 danger
@@ -262,7 +264,7 @@ const TenantManager: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Total Tenants"
+              title={t('tenants.stats.totalTenants')}
               value={stats.total}
               prefix={<UserOutlined />}
             />
@@ -271,7 +273,7 @@ const TenantManager: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Active Tenants"
+              title={t('tenants.stats.activeTenants')}
               value={stats.active}
               valueStyle={{ color: '#52c41a' }}
               prefix={<UserOutlined />}
@@ -281,7 +283,7 @@ const TenantManager: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Total Users"
+              title={t('tenants.stats.totalUsers')}
               value={stats.totalUsers}
               prefix={<UserOutlined />}
             />
@@ -290,7 +292,7 @@ const TenantManager: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Storage Used"
+              title={t('tenants.stats.storageUsed')}
               value={stats.totalStorage}
               suffix="GB"
               prefix={<DatabaseOutlined />}
@@ -301,14 +303,14 @@ const TenantManager: React.FC = () => {
 
       {/* Tenant Table */}
       <Card
-        title="Tenant Management"
+        title={t('tenants.title')}
         extra={
           <Button
             type="primary"
             icon={<PlusOutlined />}
             onClick={() => setCreateModalOpen(true)}
           >
-            Create Tenant
+            {t('tenants.createTenant')}
           </Button>
         }
       >
@@ -322,14 +324,14 @@ const TenantManager: React.FC = () => {
             showSizeChanger: true,
             showQuickJumper: true,
             showTotal: (total, range) =>
-              `${range[0]}-${range[1]} of ${total} tenants`,
+              t('tenants.pagination.range', { start: range[0], end: range[1], total }),
           }}
         />
       </Card>
 
       {/* Create Tenant Modal */}
       <Modal
-        title="Create New Tenant"
+        title={t('tenants.createTenant')}
         open={createModalOpen}
         onCancel={() => {
           setCreateModalOpen(false);
@@ -346,38 +348,38 @@ const TenantManager: React.FC = () => {
         >
           <Form.Item
             name="name"
-            label="Tenant Name"
-            rules={[{ required: true, message: 'Please enter tenant name' }]}
+            label={t('tenants.form.name')}
+            rules={[{ required: true, message: t('tenants.form.nameRequired') }]}
           >
-            <Input placeholder="Enter tenant name" />
+            <Input placeholder={t('tenants.form.namePlaceholder')} />
           </Form.Item>
           
           <Form.Item
             name="description"
-            label="Description"
+            label={t('tenants.form.description')}
           >
-            <TextArea rows={3} placeholder="Enter tenant description" />
+            <TextArea rows={3} placeholder={t('tenants.form.descriptionPlaceholder')} />
           </Form.Item>
 
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
                 name="plan"
-                label="Plan"
+                label={t('tenants.form.plan')}
                 rules={[{ required: true }]}
                 initialValue="free"
               >
                 <Select>
-                  <Select.Option value="free">Free</Select.Option>
-                  <Select.Option value="pro">Pro</Select.Option>
-                  <Select.Option value="enterprise">Enterprise</Select.Option>
+                  <Select.Option value="free">{t('tenants.plan.free')}</Select.Option>
+                  <Select.Option value="pro">{t('tenants.plan.pro')}</Select.Option>
+                  <Select.Option value="enterprise">{t('tenants.plan.enterprise')}</Select.Option>
                 </Select>
               </Form.Item>
             </Col>
             <Col span={12}>
               <Form.Item
                 name="storage_limit"
-                label="Storage Limit (GB)"
+                label={t('tenants.form.storageLimit')}
                 initialValue={10}
               >
                 <InputNumber min={1} max={1000} style={{ width: '100%' }} />
@@ -385,28 +387,28 @@ const TenantManager: React.FC = () => {
             </Col>
           </Row>
 
-          <Divider>Admin Account</Divider>
+          <Divider>{t('tenants.form.adminAccount')}</Divider>
 
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
                 name="admin_username"
-                label="Admin Username"
-                rules={[{ required: true, message: 'Please enter admin username' }]}
+                label={t('tenants.form.adminUsername')}
+                rules={[{ required: true, message: t('tenants.form.adminUsernameRequired') }]}
               >
-                <Input placeholder="Enter admin username" />
+                <Input placeholder={t('tenants.form.adminUsernamePlaceholder')} />
               </Form.Item>
             </Col>
             <Col span={12}>
               <Form.Item
                 name="admin_email"
-                label="Admin Email"
+                label={t('tenants.form.adminEmail')}
                 rules={[
-                  { required: true, message: 'Please enter admin email' },
-                  { type: 'email', message: 'Please enter a valid email' },
+                  { required: true, message: t('tenants.form.adminEmailRequired') },
+                  { type: 'email', message: t('tenants.form.adminEmailInvalid') },
                 ]}
               >
-                <Input placeholder="Enter admin email" />
+                <Input placeholder={t('tenants.form.adminEmailPlaceholder')} />
               </Form.Item>
             </Col>
           </Row>
@@ -415,7 +417,7 @@ const TenantManager: React.FC = () => {
 
       {/* Edit Tenant Modal */}
       <Modal
-        title="Edit Tenant"
+        title={t('tenants.editTenant')}
         open={editModalOpen}
         onCancel={() => {
           setEditModalOpen(false);
@@ -433,50 +435,50 @@ const TenantManager: React.FC = () => {
         >
           <Form.Item
             name="name"
-            label="Tenant Name"
-            rules={[{ required: true, message: 'Please enter tenant name' }]}
+            label={t('tenants.form.name')}
+            rules={[{ required: true, message: t('tenants.form.nameRequired') }]}
           >
-            <Input placeholder="Enter tenant name" />
+            <Input placeholder={t('tenants.form.namePlaceholder')} />
           </Form.Item>
           
           <Form.Item
             name="description"
-            label="Description"
+            label={t('tenants.form.description')}
           >
-            <TextArea rows={3} placeholder="Enter tenant description" />
+            <TextArea rows={3} placeholder={t('tenants.form.descriptionPlaceholder')} />
           </Form.Item>
 
           <Row gutter={16}>
             <Col span={8}>
               <Form.Item
                 name="status"
-                label="Status"
+                label={t('tenants.columns.status')}
                 rules={[{ required: true }]}
               >
                 <Select>
-                  <Select.Option value="active">Active</Select.Option>
-                  <Select.Option value="inactive">Inactive</Select.Option>
-                  <Select.Option value="suspended">Suspended</Select.Option>
+                  <Select.Option value="active">{t('tenants.status.active')}</Select.Option>
+                  <Select.Option value="inactive">{t('tenants.status.inactive')}</Select.Option>
+                  <Select.Option value="suspended">{t('tenants.status.suspended')}</Select.Option>
                 </Select>
               </Form.Item>
             </Col>
             <Col span={8}>
               <Form.Item
                 name="plan"
-                label="Plan"
+                label={t('tenants.form.plan')}
                 rules={[{ required: true }]}
               >
                 <Select>
-                  <Select.Option value="free">Free</Select.Option>
-                  <Select.Option value="pro">Pro</Select.Option>
-                  <Select.Option value="enterprise">Enterprise</Select.Option>
+                  <Select.Option value="free">{t('tenants.plan.free')}</Select.Option>
+                  <Select.Option value="pro">{t('tenants.plan.pro')}</Select.Option>
+                  <Select.Option value="enterprise">{t('tenants.plan.enterprise')}</Select.Option>
                 </Select>
               </Form.Item>
             </Col>
             <Col span={8}>
               <Form.Item
                 name="storage_limit"
-                label="Storage Limit (GB)"
+                label={t('tenants.form.storageLimit')}
               >
                 <InputNumber min={1} max={1000} style={{ width: '100%' }} />
               </Form.Item>
@@ -487,7 +489,7 @@ const TenantManager: React.FC = () => {
             <Col span={8}>
               <Form.Item
                 name="cpu_quota"
-                label="CPU Quota (cores)"
+                label={t('tenants.form.cpuQuota')}
               >
                 <InputNumber min={1} max={64} style={{ width: '100%' }} />
               </Form.Item>
@@ -495,7 +497,7 @@ const TenantManager: React.FC = () => {
             <Col span={8}>
               <Form.Item
                 name="memory_quota"
-                label="Memory Quota (GB)"
+                label={t('tenants.form.memoryQuota')}
               >
                 <InputNumber min={1} max={256} style={{ width: '100%' }} />
               </Form.Item>
@@ -503,7 +505,7 @@ const TenantManager: React.FC = () => {
             <Col span={8}>
               <Form.Item
                 name="api_rate_limit"
-                label="API Rate Limit (req/min)"
+                label={t('tenants.form.apiRateLimit')}
               >
                 <InputNumber min={100} max={10000} style={{ width: '100%' }} />
               </Form.Item>
@@ -514,7 +516,7 @@ const TenantManager: React.FC = () => {
 
       {/* Settings Modal */}
       <Modal
-        title="Tenant Settings"
+        title={t('tenants.tenantSettings')}
         open={settingsModalOpen}
         onCancel={() => {
           setSettingsModalOpen(false);
@@ -534,25 +536,25 @@ const TenantManager: React.FC = () => {
             <Col span={12}>
               <Form.Item
                 name="theme"
-                label="Theme"
+                label={t('tenants.settings.theme')}
                 initialValue="light"
               >
                 <Select>
-                  <Select.Option value="light">Light</Select.Option>
-                  <Select.Option value="dark">Dark</Select.Option>
-                  <Select.Option value="auto">Auto</Select.Option>
+                  <Select.Option value="light">{t('tenants.settings.themeLight')}</Select.Option>
+                  <Select.Option value="dark">{t('tenants.settings.themeDark')}</Select.Option>
+                  <Select.Option value="auto">{t('tenants.settings.themeAuto')}</Select.Option>
                 </Select>
               </Form.Item>
             </Col>
             <Col span={12}>
               <Form.Item
                 name="language"
-                label="Language"
+                label={t('tenants.settings.language')}
                 initialValue="en"
               >
                 <Select>
-                  <Select.Option value="en">English</Select.Option>
-                  <Select.Option value="zh">中文</Select.Option>
+                  <Select.Option value="en">{t('tenants.settings.languageEn')}</Select.Option>
+                  <Select.Option value="zh">{t('tenants.settings.languageZh')}</Select.Option>
                 </Select>
               </Form.Item>
             </Col>
@@ -562,7 +564,7 @@ const TenantManager: React.FC = () => {
             <Col span={12}>
               <Form.Item
                 name="timezone"
-                label="Timezone"
+                label={t('tenants.settings.timezone')}
                 initialValue="UTC"
               >
                 <Select>
@@ -576,7 +578,7 @@ const TenantManager: React.FC = () => {
             <Col span={12}>
               <Form.Item
                 name="audit_log_retention"
-                label="Audit Log Retention (days)"
+                label={t('tenants.settings.auditLogRetention')}
                 initialValue={90}
               >
                 <InputNumber min={30} max={365} style={{ width: '100%' }} />
@@ -588,7 +590,7 @@ const TenantManager: React.FC = () => {
             <Col span={12}>
               <Form.Item
                 name="notification_enabled"
-                label="Notifications"
+                label={t('tenants.settings.notifications')}
                 valuePropName="checked"
                 initialValue={true}
               >
@@ -598,7 +600,7 @@ const TenantManager: React.FC = () => {
             <Col span={12}>
               <Form.Item
                 name="backup_enabled"
-                label="Backup"
+                label={t('tenants.settings.backup')}
                 valuePropName="checked"
                 initialValue={true}
               >
@@ -609,13 +611,13 @@ const TenantManager: React.FC = () => {
 
           <Form.Item
             name="backup_frequency"
-            label="Backup Frequency"
+            label={t('tenants.settings.backupFrequency')}
             initialValue="daily"
           >
             <Select>
-              <Select.Option value="daily">Daily</Select.Option>
-              <Select.Option value="weekly">Weekly</Select.Option>
-              <Select.Option value="monthly">Monthly</Select.Option>
+              <Select.Option value="daily">{t('tenants.settings.backupDaily')}</Select.Option>
+              <Select.Option value="weekly">{t('tenants.settings.backupWeekly')}</Select.Option>
+              <Select.Option value="monthly">{t('tenants.settings.backupMonthly')}</Select.Option>
             </Select>
           </Form.Item>
         </Form>

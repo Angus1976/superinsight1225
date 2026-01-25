@@ -45,9 +45,9 @@ async def initialize_services(app: FastAPI):
     # Performance optimization
     if os.getenv("FEATURE_PERFORMANCE_OPTIMIZATION", "true").lower() == "true":
         logger.info("Initializing AI Annotation performance services...")
-        from src.ai.annotation_performance_optimizer import get_batch_processor
+        from src.ai.annotation_performance_optimizer import get_performance_optimizer
 
-        processor = await get_batch_processor()
+        processor = await get_performance_optimizer()
         logger.info(f"Batch processor initialized: "
                    f"batch_size={processor._config.batch_size}, "
                    f"concurrency={processor._config.max_concurrency}")

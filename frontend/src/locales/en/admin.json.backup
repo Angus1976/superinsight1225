@@ -1,0 +1,2050 @@
+{
+  "title": "Admin Console",
+  "systemManagement": "System Management",
+  "tenantManagement": "Tenant Management",
+  "systemMonitoring": "System Monitoring",
+  "securityAudit": "Security & Audit",
+  "nav": {
+    "overview": "Overview",
+    "console": "Console",
+    "tenants": "Tenants",
+    "workspaces": "Workspaces",
+    "members": "Members",
+    "permissions": "Permissions",
+    "quotas": "Quotas",
+    "billing": "Billing",
+    "system": "System",
+    "llm": "LLM",
+    "configManagement": "Config Management",
+    "configCenter": "Config Center",
+    "llmConfig": "LLM Config",
+    "databaseConfig": "Database Config",
+    "syncStrategy": "Sync Strategy",
+    "sqlBuilder": "SQL Builder",
+    "configHistory": "Config History",
+    "thirdPartyTools": "Third-party Tools"
+  },
+  "tenants": {
+    "title": "Tenant Management",
+    "createTenant": "Create Tenant",
+    "editTenant": "Edit Tenant",
+    "deleteTenant": "Delete Tenant",
+    "tenantSettings": "Tenant Settings",
+    "confirmDelete": "Are you sure you want to delete this tenant?",
+    "deleteWarning": "This action cannot be undone.",
+    "stats": {
+      "totalTenants": "Total Tenants",
+      "activeTenants": "Active Tenants",
+      "totalUsers": "Total Users",
+      "storageUsed": "Storage Used"
+    },
+    "columns": {
+      "tenantInfo": "Tenant Name",
+      "status": "Status",
+      "plan": "Plan",
+      "users": "Users",
+      "storageUsage": "Storage Usage",
+      "resources": "Resources",
+      "created": "Created",
+      "actions": "Actions"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "suspended": "Suspended"
+    },
+    "plan": {
+      "free": "Free",
+      "pro": "Pro",
+      "enterprise": "Enterprise"
+    },
+    "form": {
+      "name": "Tenant Name",
+      "namePlaceholder": "Enter tenant name",
+      "nameRequired": "Please enter tenant name",
+      "description": "Description",
+      "descriptionPlaceholder": "Enter tenant description",
+      "plan": "Plan",
+      "planRequired": "Please select a plan",
+      "storageLimit": "Storage Limit (GB)",
+      "cpuQuota": "CPU Quota (cores)",
+      "memoryQuota": "Memory Quota (GB)",
+      "apiRateLimit": "API Rate Limit (req/min)",
+      "adminAccount": "Admin Account",
+      "adminUsername": "Admin Username",
+      "adminUsernamePlaceholder": "Enter admin username",
+      "adminUsernameRequired": "Please enter admin username",
+      "adminEmail": "Admin Email",
+      "adminEmailPlaceholder": "Enter admin email",
+      "adminEmailRequired": "Please enter admin email",
+      "adminEmailInvalid": "Please enter a valid email"
+    },
+    "settings": {
+      "theme": "Theme",
+      "themeLight": "Light",
+      "themeDark": "Dark",
+      "themeAuto": "Auto",
+      "language": "Language",
+      "languageEn": "English",
+      "languageZh": "中文",
+      "timezone": "Timezone",
+      "auditLogRetention": "Audit Log Retention (days)",
+      "notifications": "Notifications",
+      "backup": "Backup",
+      "backupFrequency": "Backup Frequency",
+      "backupDaily": "Daily",
+      "backupWeekly": "Weekly",
+      "backupMonthly": "Monthly"
+    },
+    "tooltips": {
+      "activeUsers": "Active users",
+      "cpuQuota": "CPU Quota",
+      "memoryQuota": "Memory Quota",
+      "editTenant": "Edit Tenant",
+      "settings": "Settings",
+      "deleteTenant": "Delete Tenant"
+    },
+    "pagination": {
+      "total": "{{total}} tenants total",
+      "range": "{{start}}-{{end}} of {{total}}"
+    },
+    "createSuccess": "Tenant created successfully",
+    "createFailed": "Failed to create tenant",
+    "updateSuccess": "Tenant updated successfully",
+    "updateFailed": "Failed to update tenant",
+    "deleteSuccess": "Tenant deleted successfully",
+    "deleteFailed": "Failed to delete tenant",
+    "statusUpdateSuccess": "Tenant status updated successfully",
+    "statusUpdateFailed": "Failed to update tenant status",
+    "confirmSuspend": "Confirm Suspend",
+    "confirmSuspendMessage": "Are you sure you want to suspend tenant \"{{name}}\"?",
+    "confirmDeleteMessage": "Are you sure you want to delete tenant \"{{name}}\"? This action cannot be undone!",
+    "statusFilter": "Status Filter",
+    "tenantDetail": "Tenant Details",
+    "columns": {
+      "tenantInfo": "Tenant Info",
+      "status": "Status",
+      "plan": "Plan",
+      "users": "Users",
+      "storageUsage": "Storage Usage",
+      "resources": "Resources",
+      "created": "Created",
+      "actions": "Actions",
+      "adminEmail": "Admin Email",
+      "createdAt": "Created At",
+      "action": "Action"
+    },
+    "actions": {
+      "detail": "Details",
+      "edit": "Edit",
+      "suspend": "Suspend",
+      "activate": "Activate",
+      "delete": "Delete"
+    },
+    "plans": {
+      "free": "Free",
+      "basic": "Basic",
+      "professional": "Professional",
+      "enterprise": "Enterprise"
+    },
+    "detail": {
+      "basicInfo": "Basic Info",
+      "quotaUsage": "Quota Usage",
+      "config": "Configuration",
+      "tenantId": "Tenant ID",
+      "name": "Name",
+      "status": "Status",
+      "plan": "Plan",
+      "adminEmail": "Admin Email",
+      "createdAt": "Created At",
+      "description": "Description"
+    },
+    "quota": {
+      "storage": "Storage",
+      "projectCount": "Projects",
+      "userCount": "Users",
+      "apiCalls": "API Calls"
+    },
+    "config": {
+      "features": "Feature Configuration",
+      "security": "Security Configuration",
+      "mfa": "MFA",
+      "mfaRequired": "Required",
+      "mfaOptional": "Optional",
+      "sessionTimeout": "Session Timeout",
+      "minutes": "minutes",
+      "enabled": "Enabled",
+      "disabled": "Disabled"
+    },
+    "stats": {
+      "totalTenants": "Total Tenants",
+      "activeTenants": "Active Tenants",
+      "suspendedTenants": "Suspended Tenants",
+      "activeRate": "Active Rate"
+    }
+  },
+  "systemMonitoring": {
+    "title": "System Monitoring",
+    "timeRange": "Time Range",
+    "refresh": "Refresh",
+    "refreshInterval": "Refresh Interval",
+    "overview": {
+      "systemStatus": "System Status",
+      "uptime": "Uptime",
+      "criticalAlerts": "Critical Alerts",
+      "warnings": "Warnings",
+      "hours": "hours"
+    },
+    "charts": {
+      "systemPerformance": "System Performance",
+      "serviceStatus": "Service Status",
+      "cpuUsage": "CPU %",
+      "memoryUsage": "Memory %",
+      "diskUsage": "Disk %"
+    },
+    "services": {
+      "title": "Service Health",
+      "name": "Service",
+      "status": "Status",
+      "uptime": "Uptime",
+      "responseTime": "Response Time",
+      "errorRate": "Error Rate",
+      "actions": "Actions",
+      "healthy": "Healthy",
+      "degraded": "Degraded",
+      "unhealthy": "Unhealthy",
+      "restartService": "Restart Service",
+      "serviceSettings": "Service Settings"
+    },
+    "alerts": {
+      "title": "Recent Alerts",
+      "type": "Type",
+      "message": "Message",
+      "source": "Source",
+      "time": "Time",
+      "status": "Status",
+      "actions": "Actions",
+      "types": {
+        "info": "Info",
+        "warning": "Warning",
+        "error": "Error",
+        "critical": "Critical"
+      },
+      "statuses": {
+        "new": "New",
+        "acknowledged": "Acknowledged",
+        "resolved": "Resolved"
+      },
+      "acknowledge": "Acknowledge",
+      "resolve": "Resolve"
+    }
+  },
+  "securityAudit": {
+    "title": "Security Audit",
+    "auditLogs": "Audit Logs",
+    "systemLogs": "System Logs",
+    "export": "Export",
+    "overview": {
+      "totalAuditLogs": "Total Audit Logs",
+      "highRiskActions": "High Risk Actions",
+      "failedLogins": "Failed Logins",
+      "activeUsers": "Active Users"
+    },
+    "charts": {
+      "actionDistribution": "Action Distribution",
+      "hourlyActivity": "Hourly Activity",
+      "riskAssessment": "Risk Assessment"
+    },
+    "filters": {
+      "searchByUserId": "Search by user ID",
+      "action": "Action",
+      "service": "Service",
+      "logLevel": "Log Level"
+    },
+    "columns": {
+      "time": "Time",
+      "user": "User",
+      "action": "Action",
+      "resource": "Resource",
+      "ipAddress": "IP Address",
+      "status": "Status",
+      "actions": "Actions",
+      "level": "Level",
+      "service": "Service",
+      "message": "Message"
+    },
+    "actions": {
+      "login": "Login",
+      "logout": "Logout",
+      "create": "Create",
+      "update": "Update",
+      "delete": "Delete",
+      "view": "View",
+      "export": "Export"
+    },
+    "status": {
+      "success": "Success",
+      "failed": "Failed"
+    },
+    "logLevels": {
+      "debug": "Debug",
+      "info": "Info",
+      "warn": "Warning",
+      "error": "Error",
+      "fatal": "Fatal"
+    },
+    "services": {
+      "api": "API Server",
+      "database": "Database",
+      "auth": "Authentication",
+      "sync": "Data Sync"
+    },
+    "tabs": {
+      "audit": "Audit Logs",
+      "system": "System Logs"
+    },
+    "details": {
+      "title": "Audit Log Details",
+      "timestamp": "Timestamp",
+      "userId": "User ID",
+      "action": "Action",
+      "resourceType": "Resource Type",
+      "resourceId": "Resource ID",
+      "ipAddress": "IP Address",
+      "userAgent": "User Agent",
+      "details": "Details"
+    },
+    "tooltips": {
+      "viewDetails": "View Details"
+    },
+    "pagination": {
+      "total": "{{total}} logs total",
+      "range": "{{start}}-{{end}} of {{total}}"
+    }
+  },
+  "configSync": {
+    "title": "Sync Strategy Management",
+    "addStrategy": "Add Strategy",
+    "editStrategy": "Edit Sync Strategy",
+    "addStrategyTitle": "Add Sync Strategy",
+    "createSuccess": "Sync strategy created successfully",
+    "createFailed": "Creation failed: {{error}}",
+    "updateSuccess": "Sync strategy updated successfully",
+    "updateFailed": "Update failed: {{error}}",
+    "deleteSuccess": "Sync strategy deleted successfully",
+    "deleteFailed": "Deletion failed: {{error}}",
+    "triggerSuccess": "Sync job started: {{jobId}}",
+    "triggerFailed": "Failed to trigger sync: {{error}}",
+    "confirmDelete": "Are you sure you want to delete this sync strategy?",
+    "syncDescription": "Sync Description",
+    "syncDescriptionText": "Configure data sync strategies with support for full sync, incremental sync, and real-time sync modes. You can set Cron expressions for scheduled sync.",
+    "strategyPrefix": "Strategy",
+    "manualTrigger": "Manual Trigger",
+    "neverSynced": "Never Synced",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "noHistory": "No sync history",
+    "columns": {
+      "name": "Name",
+      "database": "Database",
+      "syncMode": "Sync Mode",
+      "schedule": "Schedule",
+      "lastSync": "Last Sync",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "actions": {
+      "syncNow": "Sync Now",
+      "syncHistory": "Sync History",
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "form": {
+      "strategyName": "Strategy Name",
+      "strategyNamePlaceholder": "e.g., Daily Full Sync",
+      "dbConnection": "Database Connection",
+      "dbConnectionRequired": "Please select a database connection",
+      "dbConnectionPlaceholder": "Select database connection",
+      "syncMode": "Sync Mode",
+      "syncModeRequired": "Please select a sync mode",
+      "syncModePlaceholder": "Select sync mode",
+      "incrementalField": "Incremental Field",
+      "incrementalFieldRequired": "Incremental sync requires specifying an incremental field",
+      "incrementalFieldPlaceholder": "e.g., updated_at, id",
+      "schedule": "Schedule Expression",
+      "scheduleExtra": "Cron expression, leave empty for manual trigger. e.g., 0 2 * * * (daily at 2 AM)",
+      "schedulePlaceholder": "e.g., 0 2 * * *",
+      "batchSize": "Batch Size",
+      "enableStrategy": "Enable Strategy"
+    },
+    "history": {
+      "title": "Sync History",
+      "status": "Status",
+      "startTime": "Start Time",
+      "endTime": "End Time",
+      "recordsSynced": "Records Synced",
+      "errorMessage": "Error Message"
+    }
+  },
+  "configDB": {
+    "title": "Database Configuration",
+    "addDatabase": "Add Database",
+    "addConfig": "Add Database Configuration",
+    "editConfig": "Edit Database Configuration",
+    "configDetail": "Database Configuration Details",
+    "createSuccess": "Database configuration created successfully",
+    "createFailed": "Creation failed: {{error}}",
+    "updateSuccess": "Database configuration updated successfully",
+    "updateFailed": "Update failed: {{error}}",
+    "deleteSuccess": "Database configuration deleted successfully",
+    "deleteFailed": "Deletion failed: {{error}}",
+    "testing": "Testing...",
+    "testFailed": "Test failed",
+    "testConnection": "Test Connection",
+    "connectionSuccess": "Connection successful ({{latency}}ms)",
+    "connectionFailed": "Connection failed: {{error}}",
+    "connectionNormal": "Connection OK ({{latency}}ms)",
+    "connectionFailedShort": "Connection failed",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "readonly": "Read-only",
+    "readwrite": "Read-write",
+    "sslEnabled": "Enabled",
+    "sslDisabled": "Disabled",
+    "securityTip": "Security Tip",
+    "securityTipDescription": "It is recommended to use a read-only database account for data extraction. Passwords will be encrypted and displayed with masking.",
+    "confirmDelete": "Delete this configuration?",
+    "confirmDeleteDescription": "Related sync strategies will also be invalidated after deletion",
+    "columns": {
+      "name": "Name",
+      "type": "Type",
+      "host": "Host",
+      "database": "Database",
+      "permission": "Permission",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "form": {
+      "connectionName": "Connection Name",
+      "connectionNameRequired": "Please enter connection name",
+      "connectionNamePlaceholder": "e.g., Production Database - Read Only",
+      "description": "Description",
+      "descriptionPlaceholder": "Connection description (optional)",
+      "dbType": "Database Type",
+      "dbTypeRequired": "Please select database type",
+      "dbTypePlaceholder": "Select database type",
+      "host": "Host Address",
+      "hostRequired": "Please enter host address",
+      "hostPlaceholder": "e.g., localhost or 192.168.1.100",
+      "port": "Port",
+      "portRequired": "Please enter port",
+      "databaseName": "Database Name",
+      "databaseNameRequired": "Please enter database name",
+      "databaseNamePlaceholder": "Database name",
+      "username": "Username",
+      "usernameRequired": "Please enter username",
+      "usernamePlaceholder": "Database username",
+      "password": "Password",
+      "passwordPlaceholder": "Database password (will be encrypted)",
+      "passwordKeepEmpty": "Leave empty to keep existing password",
+      "readonlyConnection": "Read-only Connection",
+      "enableSSL": "Enable SSL"
+    },
+    "detail": {
+      "name": "Name",
+      "type": "Type",
+      "status": "Status",
+      "host": "Host",
+      "port": "Port",
+      "database": "Database",
+      "username": "Username",
+      "password": "Password",
+      "permission": "Permission",
+      "createdAt": "Created At",
+      "updatedAt": "Updated At"
+    }
+  },
+  "configDashboard": {
+    "title": "Admin Configuration Center",
+    "loadingData": "Loading dashboard data...",
+    "loadFailed": "Load Failed",
+    "loadFailedDescription": "Unable to load dashboard data, please try again later.",
+    "retry": "Retry",
+    "refresh": "Refresh",
+    "systemHealth": "System Health Status",
+    "keyMetrics": "Key Metrics",
+    "totalAnnotations": "Total Annotations",
+    "activeUsers": "Active Users",
+    "pendingTasks": "Pending Tasks",
+    "todaySync": "Today's Sync",
+    "configOverview": "Configuration Overview",
+    "llmConfig": "LLM Config",
+    "dbConnections": "Database Connections",
+    "syncStrategies": "Sync Strategies",
+    "thirdPartyTools": "Third Party Tools",
+    "quickActions": "Quick Actions",
+    "recentAlerts": "Recent Alerts",
+    "unit": "",
+    "actions": {
+      "configureLLM": "Configure LLM",
+      "addDatabase": "Add Database",
+      "syncStrategy": "Sync Strategy",
+      "sqlBuilder": "SQL Builder",
+      "configHistory": "Config History",
+      "thirdPartyTools": "Third Party Tools"
+    }
+  },
+  "console": {
+    "title": "Admin Console",
+    "subtitle": "System overview and monitoring",
+    "systemConfig": "System Config",
+    "lastUpdated": "Last Updated",
+    "systemStatus": "System Status",
+    "healthy": "Healthy",
+    "unhealthy": "Unhealthy",
+    "database": "Database",
+    "cache": "Cache",
+    "storage": "Storage",
+    "normal": "Normal",
+    "abnormal": "Abnormal",
+    "tenantStats": "Tenant Statistics",
+    "totalTenants": "Total Tenants",
+    "activeTenants": "Active Tenants",
+    "suspendedTenants": "Suspended Tenants",
+    "disabledTenants": "Disabled Tenants",
+    "activeRate": "Active Rate",
+    "active": "Active",
+    "workspaceStats": "Workspace Statistics",
+    "totalWorkspaces": "Total Workspaces",
+    "activeWorkspaces": "Active Workspaces",
+    "archivedWorkspaces": "Archived",
+    "userStats": "User Statistics",
+    "totalUsers": "Total Users",
+    "activeToday": "Active Today",
+    "activeThisWeek": "Active This Week",
+    "serviceStatus": "Service Status",
+    "columns": {
+      "serviceName": "Service Name",
+      "status": "Status",
+      "version": "Version",
+      "uptime": "Uptime",
+      "lastCheck": "Last Check"
+    },
+    "status": {
+      "running": "Running",
+      "degraded": "Degraded",
+      "stopped": "Stopped"
+    }
+  },
+  "system": {
+    "title": "System Configuration",
+    "statusOverview": "System Status",
+    "configTitle": "System Configuration",
+    "saveConfig": "Save Config",
+    "configSaveSuccess": "System configuration saved successfully",
+    "configSaveFailed": "Failed to save system configuration",
+    "connectionTestSuccess": "{{type}} connection test successful",
+    "connectionTestFailed": "{{type}} connection test failed",
+    "testConnection": "Test Connection",
+    "testDatabaseConnection": "Test Database Connection",
+    "testCacheConnection": "Test Cache Connection",
+    "status": {
+      "healthy": "Healthy",
+      "warning": "Warning",
+      "error": "Error",
+      "unknown": "Unknown"
+    },
+    "database": {
+      "title": "Database",
+      "connections": "Connections",
+      "responseTime": "Response Time",
+      "host": "Host",
+      "port": "Port",
+      "name": "Database Name",
+      "maxConnections": "Max Connections",
+      "connectionTimeout": "Connection Timeout (seconds)",
+      "queryTimeout": "Query Timeout (seconds)",
+      "configWarning": "Modifying database configuration requires a system restart to take effect. Please proceed with caution."
+    },
+    "cache": {
+      "title": "Cache",
+      "memoryUsage": "Memory Usage",
+      "hitRate": "Hit Rate",
+      "enabled": "Enable Cache",
+      "type": "Cache Type",
+      "host": "Cache Host",
+      "port": "Cache Port",
+      "ttl": "Default TTL (seconds)",
+      "types": {
+        "redis": "Redis",
+        "memory": "Memory Cache"
+      }
+    },
+    "storage": {
+      "title": "Storage",
+      "type": "Storage Type",
+      "path": "Storage Path",
+      "maxFileSize": "Max File Size",
+      "allowedTypes": "Allowed File Types"
+    },
+    "general": {
+      "title": "General Settings",
+      "siteName": "Site Name",
+      "siteDescription": "Site Description",
+      "adminEmail": "Admin Email",
+      "timezone": "Timezone",
+      "language": "Default Language",
+      "maintenanceMode": "Maintenance Mode",
+      "timezones": {
+        "shanghai": "Asia/Shanghai (UTC+8)",
+        "utc": "UTC (UTC+0)",
+        "newYork": "America/New_York (UTC-5)"
+      },
+      "languages": {
+        "zhCN": "Simplified Chinese",
+        "enUS": "English"
+      }
+    },
+    "security": {
+      "title": "Security",
+      "sessionTimeout": "Session Timeout (minutes)",
+      "passwordMinLength": "Minimum Password Length",
+      "passwordRequireSpecialChars": "Require Special Characters in Password",
+      "maxLoginAttempts": "Max Login Attempts",
+      "lockoutDuration": "Lockout Duration (minutes)"
+    },
+    "systemLoad": "System Load",
+    "memory": "Memory",
+    "disk": "Disk"
+  },
+  "tenants": {
+    "title": "Tenant Management",
+    "createTenant": "Create Tenant",
+    "editTenant": "Edit Tenant",
+    "tenantDetail": "Tenant Details",
+    "createSuccess": "Tenant created successfully",
+    "createFailed": "Failed to create tenant",
+    "updateSuccess": "Tenant updated successfully",
+    "updateFailed": "Failed to update tenant",
+    "deleteSuccess": "Tenant deleted successfully",
+    "deleteFailed": "Failed to delete tenant",
+    "statusUpdateSuccess": "Tenant status updated successfully",
+    "statusUpdateFailed": "Failed to update tenant status",
+    "confirmSuspend": "Confirm Suspend",
+    "confirmSuspendMessage": "Are you sure you want to suspend tenant \"{{name}}\"?",
+    "confirmDelete": "Confirm Delete",
+    "confirmDeleteMessage": "Are you sure you want to delete tenant \"{{name}}\"? This action cannot be undone!",
+    "statusFilter": "Status Filter",
+    "columns": {
+      "tenantInfo": "Tenant Info",
+      "status": "Status",
+      "plan": "Plan",
+      "adminEmail": "Admin Email",
+      "createdAt": "Created At",
+      "action": "Action"
+    },
+    "status": {
+      "active": "Active",
+      "suspended": "Suspended",
+      "disabled": "Disabled"
+    },
+    "actions": {
+      "detail": "Details",
+      "edit": "Edit",
+      "suspend": "Suspend",
+      "activate": "Activate",
+      "delete": "Delete"
+    },
+    "plans": {
+      "free": "Free",
+      "basic": "Basic",
+      "professional": "Professional",
+      "enterprise": "Enterprise"
+    },
+    "form": {
+      "name": "Tenant Name",
+      "namePlaceholder": "Enter tenant name",
+      "nameRequired": "Please enter tenant name",
+      "description": "Description",
+      "descriptionPlaceholder": "Enter tenant description",
+      "adminEmail": "Admin Email",
+      "adminEmailPlaceholder": "admin@example.com",
+      "adminEmailRequired": "Please enter admin email",
+      "adminEmailInvalid": "Please enter a valid email address",
+      "plan": "Plan Type"
+    },
+    "detail": {
+      "basicInfo": "Basic Info",
+      "quotaUsage": "Quota Usage",
+      "config": "Configuration",
+      "tenantId": "Tenant ID",
+      "name": "Name",
+      "status": "Status",
+      "plan": "Plan",
+      "adminEmail": "Admin Email",
+      "createdAt": "Created At",
+      "description": "Description"
+    },
+    "quota": {
+      "storage": "Storage",
+      "projectCount": "Projects",
+      "userCount": "Users",
+      "apiCalls": "API Calls"
+    },
+    "config": {
+      "features": "Feature Configuration",
+      "security": "Security Configuration",
+      "mfa": "MFA",
+      "mfaRequired": "Required",
+      "mfaOptional": "Optional",
+      "sessionTimeout": "Session Timeout",
+      "minutes": "minutes",
+      "enabled": "Enabled",
+      "disabled": "Disabled"
+    },
+    "stats": {
+      "totalTenants": "Total Tenants",
+      "activeTenants": "Active Tenants",
+      "suspendedTenants": "Suspended Tenants",
+      "activeRate": "Active Rate"
+    },
+    "pagination": {
+      "total": "{{start}}-{{end}} of {{total}} items"
+    }
+  },
+  "users": {
+    "title": "User Management",
+    "createUser": "Create User",
+    "editUser": "Edit User",
+    "createSuccess": "User created successfully",
+    "createFailed": "Failed to create user",
+    "updateSuccess": "User updated successfully",
+    "updateFailed": "Failed to update user",
+    "deleteSuccess": "User deleted successfully",
+    "deleteFailed": "Failed to delete user",
+    "statusUpdateSuccess": "User status updated successfully",
+    "statusUpdateFailed": "Failed to update user status",
+    "passwordResetSent": "Password reset email sent",
+    "passwordResetFailed": "Failed to reset password",
+    "confirmResetPassword": "Confirm Password Reset",
+    "confirmResetPasswordMessage": "Are you sure you want to reset the password for user \"{{name}}\"? A reset link will be sent to the user's email.",
+    "confirmLock": "Confirm Lock User",
+    "confirmLockMessage": "Are you sure you want to lock user \"{{name}}\"?",
+    "confirmDelete": "Confirm Delete",
+    "confirmDeleteMessage": "Are you sure you want to delete user \"{{name}}\"? This action cannot be undone!",
+    "filters": {
+      "selectTenant": "Select Tenant",
+      "allTenants": "All Tenants",
+      "selectRole": "Select Role",
+      "allRoles": "All Roles",
+      "selectStatus": "Select Status",
+      "allStatus": "All Status"
+    },
+    "columns": {
+      "userInfo": "User Info",
+      "tenant": "Tenant",
+      "roles": "Roles",
+      "status": "Status",
+      "loginStats": "Login Stats",
+      "createdAt": "Created At",
+      "action": "Action"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "locked": "Locked",
+      "pending": "Pending"
+    },
+    "actions": {
+      "edit": "Edit User",
+      "resetPassword": "Reset Password",
+      "lock": "Lock User",
+      "unlock": "Unlock User",
+      "delete": "Delete User"
+    },
+    "info": {
+      "verified": "Verified",
+      "loginCount": "Login Count",
+      "lastLogin": "Last Login",
+      "neverLoggedIn": "Never logged in"
+    },
+    "form": {
+      "username": "Username",
+      "usernamePlaceholder": "Enter username",
+      "usernameRequired": "Please enter username",
+      "email": "Email",
+      "emailPlaceholder": "Enter email",
+      "emailRequired": "Please enter email",
+      "emailInvalid": "Please enter a valid email address",
+      "fullName": "Full Name",
+      "fullNamePlaceholder": "Enter full name",
+      "fullNameRequired": "Please enter full name",
+      "tenant": "Tenant",
+      "tenantPlaceholder": "Select tenant",
+      "tenantRequired": "Please select a tenant",
+      "roles": "Roles",
+      "rolesPlaceholder": "Select roles",
+      "rolesRequired": "Please select at least one role",
+      "password": "Initial Password",
+      "passwordPlaceholder": "Enter initial password",
+      "passwordRequired": "Please enter initial password",
+      "status": "Status",
+      "emailVerified": "Email Verified",
+      "emailVerifiedYes": "Verified",
+      "emailVerifiedNo": "Not Verified"
+    },
+    "pagination": {
+      "total": "{{start}}-{{end}} of {{total}} items"
+    }
+  },
+  "textToSql": {
+    "title": "Text-to-SQL Configuration",
+    "subtitle": "Configure and manage Text-to-SQL methods, test SQL generation, and third-party plugin management",
+    "loadConfigFailed": "Failed to load configuration",
+    "saveConfigSuccess": "Configuration saved successfully",
+    "saveConfigFailed": "Failed to save configuration",
+    "switchMethodFailed": "Failed to switch method",
+    "testQueryRequired": "Please enter a test query",
+    "sqlGenerationSuccess": "SQL generation successful",
+    "sqlGenerationFailed": "SQL generation failed",
+    "testGenerationFailed": "Test generation failed",
+    "deletePlugin": "Delete Plugin",
+    "confirmDeletePlugin": "Are you sure you want to delete the plugin \"{{name}}\"?",
+    "deletePluginSuccess": "Plugin deleted successfully",
+    "deletePluginFailed": "Failed to delete plugin",
+    "operationFailed": "Operation failed",
+    "pluginUpdateSuccess": "Plugin updated successfully",
+    "pluginRegisterSuccess": "Plugin registered successfully",
+    "savePluginFailed": "Failed to save plugin",
+    "healthCheckFailed": "Health check failed",
+    "methodsConfig": "Methods Configuration",
+    "refresh": "Refresh",
+    "defaultMethod": "Default Method",
+    "selectDefaultMethod": "Please select a default method",
+    "selectMethodPlaceholder": "Select default method",
+    "autoSelectEnabled": "Auto Method Selection",
+    "on": "On",
+    "off": "Off",
+    "fallbackEnabled": "Fallback Enabled",
+    "available": "Available",
+    "unavailable": "Unavailable",
+    "sqlGenerationTest": "SQL Generation Test",
+    "naturalLanguageQuery": "Natural Language Query",
+    "queryPlaceholder": "Enter natural language query, e.g., Query the order count for all users",
+    "testMethod": "Test Method",
+    "useDefaultMethod": "Use default method",
+    "generatedSql": "Generated SQL",
+    "noResult": "(No result)",
+    "methodUsed": "Method Used",
+    "confidence": "Confidence",
+    "executionTime": "Execution Time",
+    "pluginsTable": {
+      "name": "Plugin Name",
+      "connectionType": "Connection Type",
+      "supportedDbTypes": "Supported Databases",
+      "healthStatus": "Health Status",
+      "healthy": "Healthy",
+      "unhealthy": "Unhealthy",
+      "enabledStatus": "Enabled Status",
+      "actions": "Actions",
+      "healthCheck": "Health Check",
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "thirdPartyPlugins": "Third-party Plugin Management",
+    "noPlugins": "No plugins available",
+    "statistics": "Statistics",
+    "totalCalls": "Total Calls",
+    "currentMethod": "Current Method",
+    "averageSwitchTime": "Average Switch Time",
+    "maxSwitchTime": "Max Switch Time",
+    "methodUsage": "Method Usage Statistics",
+    "times": "times",
+    "addPlugin": "Add Plugin",
+    "editPlugin": "Edit Plugin",
+    "pluginName": "Plugin Name",
+    "pluginNameRequired": "Please enter plugin name",
+    "pluginNamePlaceholder": "e.g., vanna-ai",
+    "connectionType": "Connection Type",
+    "connectionTypeRequired": "Please select connection type",
+    "connectionTypePlaceholder": "Select connection type",
+    "restApi": "REST API",
+    "grpc": "gRPC",
+    "localSdk": "Local SDK",
+    "database": "Database",
+    "apiEndpoint": "API Endpoint",
+    "apiEndpointRequired": "Please enter API endpoint",
+    "apiEndpointPlaceholder": "e.g., http://localhost:8080/api/v1",
+    "apiKey": "API Key",
+    "apiKeyPlaceholder": "Optional, for authentication",
+    "timeout": "Timeout (seconds)",
+    "timeoutRequired": "Please enter timeout",
+    "enabled": "Enabled Status",
+    "enabledText": "Enabled",
+    "disabledText": "Disabled",
+    "save": "Save",
+    "cancel": "Cancel",
+    "switchMethodSuccess": "Switched to {{method}} method ({{time}}ms)",
+    "pluginHealthCheckSuccess": "Plugin \"{{name}}\" health status is normal",
+    "pluginHealthCheckFailed": "Plugin \"{{name}}\" health check failed",
+    "availableMethods": "Available Methods",
+    "testGenerate": "Test Generate",
+    "generationResult": "Generation Result",
+    "pluginName": "Plugin Name",
+    "connectionType": "Connection Type",
+    "supportedDatabases": "Supported Databases",
+    "healthStatus": "Health Status",
+    "enabledStatus": "Enabled Status",
+    "actions": "Actions",
+    "healthCheck": "Health Check",
+    "edit": "Edit",
+    "delete": "Delete",
+    "addPlugin": "Add Plugin",
+    "loadingConfig": "Loading configuration...",
+    "methodsTab": "Methods Config",
+    "testTab": "SQL Test",
+    "pluginsTab": "Third-party Plugins",
+    "saveConfig": "Save Configuration"
+  },
+  "console": {
+    "title": "Admin Console",
+    "subtitle": "System Overview and Monitoring",
+    "systemConfig": "System Configuration",
+    "systemStatus": "System Status",
+    "healthy": "Healthy",
+    "unhealthy": "Unhealthy",
+    "database": "Database",
+    "cache": "Cache",
+    "storage": "Storage",
+    "normal": "Normal",
+    "abnormal": "Abnormal",
+    "tenantStats": "Tenant Statistics",
+    "totalTenants": "Total Tenants",
+    "activeTenants": "Active Tenants",
+    "suspendedTenants": "Suspended Tenants",
+    "disabledTenants": "Disabled Tenants",
+    "active": "Active",
+    "workspaceStats": "Workspace Statistics",
+    "totalWorkspaces": "Total Workspaces",
+    "activeWorkspaces": "Active Workspaces",
+    "archivedWorkspaces": "Archived Workspaces",
+    "userStats": "User Statistics",
+    "totalUsers": "Total Users",
+    "activeToday": "Active Today",
+    "activeThisWeek": "Active This Week",
+    "serviceStatus": "Service Status",
+    "columns": {
+      "serviceName": "Service Name",
+      "status": "Status",
+      "version": "Version",
+      "uptime": "Uptime",
+      "lastCheck": "Last Check"
+    },
+    "status": {
+      "running": "Running",
+      "degraded": "Degraded",
+      "stopped": "Stopped"
+    },
+    "lastUpdated": "Last Updated"
+  },
+  "llm": {
+    "title": "LLM Configuration Management",
+    "subtitle": "Configure and manage Large Language Model providers, including local and cloud services",
+    "loadConfigFailed": "Failed to load configuration",
+    "refreshHealthFailed": "Failed to refresh health status",
+    "configValidationFailed": "Configuration validation failed",
+    "configSaveSuccess": "Configuration saved successfully",
+    "configSaveFailed": "Failed to save configuration",
+    "configReset": "Configuration reset",
+    "hotReloadSuccess": "Hot reload successful",
+    "hotReloadFailed": "Hot reload failed",
+    "actions": {
+      "confirmReset": "Confirm Reset",
+      "confirmResetMessage": "Are you sure you want to reset all configurations to default values?",
+      "testConnection": "Test Connection",
+      "save": "Save",
+      "reset": "Reset",
+      "hotReload": "Hot Reload"
+    },
+    "status": {
+      "connectionSuccess": "Connection successful",
+      "connectionFailed": "Connection failed",
+      "healthy": "Healthy",
+      "unhealthy": "Unhealthy",
+      "online": "Online",
+      "offline": "Offline"
+    },
+    "local": {
+      "title": "Local Configuration",
+      "endpoint": "Ollama Endpoint",
+      "endpointRequired": "Please enter Ollama endpoint",
+      "endpointPlaceholder": "e.g., http://localhost:11434",
+      "model": "Model Name",
+      "modelRequired": "Please enter model name",
+      "modelPlaceholder": "e.g., llama2:7b",
+      "timeout": "Timeout (seconds)",
+      "maxRetries": "Max Retries"
+    },
+    "cloud": {
+      "title": "Cloud Configuration",
+      "openai": {
+        "title": "OpenAI",
+        "apiKey": "API Key",
+        "apiKeyRequired": "Please enter OpenAI API Key",
+        "baseUrl": "Base URL",
+        "baseUrlRequired": "Please enter Base URL",
+        "baseUrlPlaceholder": "e.g., https://api.openai.com/v1",
+        "model": "Model",
+        "modelRequired": "Please enter model name",
+        "modelPlaceholder": "e.g., gpt-3.5-turbo"
+      },
+      "azure": {
+        "title": "Azure OpenAI",
+        "endpoint": "Endpoint",
+        "endpointPlaceholder": "e.g., https://your-resource.openai.azure.com/",
+        "apiKey": "API Key",
+        "deployment": "Deployment Name",
+        "deploymentRequired": "Please enter deployment name",
+        "deploymentPlaceholder": "e.g., gpt-35-turbo"
+      }
+    },
+    "china": {
+      "title": "Chinese Services",
+      "timeout": "Timeout (seconds)",
+      "qwen": {
+        "title": "Qwen (Alibaba)",
+        "apiKey": "API Key",
+        "apiKeyRequired": "Please enter Qwen API Key",
+        "model": "Model",
+        "modelRequired": "Please enter model name",
+        "modelPlaceholder": "e.g., qwen-turbo"
+      },
+      "zhipu": {
+        "title": "ZhiPu GLM",
+        "apiKey": "API Key",
+        "apiKeyRequired": "Please enter ZhiPu API Key",
+        "model": "Model",
+        "modelRequired": "Please enter model name",
+        "modelPlaceholder": "e.g., glm-3-turbo"
+      },
+      "baidu": {
+        "title": "Ernie (Baidu)",
+        "apiKey": "API Key",
+        "apiKeyRequired": "Please enter Baidu API Key",
+        "secretKey": "Secret Key",
+        "secretKeyRequired": "Please enter Baidu Secret Key",
+        "model": "Model",
+        "modelRequired": "Please enter model name",
+        "modelPlaceholder": "e.g., ernie-3.5-8k"
+      },
+      "hunyuan": {
+        "title": "Hunyuan (Tencent)",
+        "secretId": "Secret ID",
+        "secretIdRequired": "Please enter Tencent Secret ID",
+        "secretKey": "Secret Key",
+        "secretKeyRequired": "Please enter Tencent Secret Key",
+        "model": "Model",
+        "modelRequired": "Please enter model name",
+        "modelPlaceholder": "e.g., hunyuan-lite"
+      }
+    },
+    "form": {
+      "addConfig": "Add Configuration",
+      "editConfig": "Edit Configuration",
+      "configName": "Configuration Name",
+      "configNameRequired": "Please enter configuration name",
+      "configNamePlaceholder": "e.g., OpenAI GPT-4",
+      "descriptionPlaceholder": "Optional configuration description",
+      "llmType": "LLM Type",
+      "llmTypeRequired": "Please select LLM type",
+      "llmTypePlaceholder": "Select LLM type",
+      "modelName": "Model Name",
+      "modelNameRequired": "Please enter model name",
+      "modelNamePlaceholder": "e.g., gpt-4",
+      "apiEndpoint": "API Endpoint",
+      "apiEndpointPlaceholder": "e.g., https://api.openai.com/v1",
+      "apiKeyPlaceholder": "Enter API Key",
+      "apiKeyKeepEmpty": "Leave empty to keep original API Key",
+      "apiKeyMasked": "API Key is masked for security",
+      "notSet": "Not set",
+      "maxTokens": "Max Tokens",
+      "timeout": "Timeout (seconds)",
+      "setAsDefault": "Set as Default",
+      "enabled": "Enabled",
+      "confirmDelete": "Are you sure you want to delete this configuration?",
+      "configTip": "Configuration Tip",
+      "configTipDescription": "API Keys will be encrypted and stored securely. Please keep your original keys safe."
+    },
+    "local": {
+      "defaultModel": "Default Model"
+    }
+  },
+  "configDashboard": {
+    "title": "Configuration Management Console",
+    "refresh": "Refresh",
+    "loadingData": "Loading data...",
+    "loadFailed": "Load Failed",
+    "loadFailedDescription": "Unable to load configuration data, please check network connection",
+    "retry": "Retry",
+    "systemHealth": "System Health Status",
+    "keyMetrics": "Key Metrics",
+    "totalAnnotations": "Total Annotations",
+    "activeUsers": "Active Users",
+    "pendingTasks": "Pending Tasks",
+    "todaySync": "Today's Sync",
+    "configOverview": "Configuration Overview",
+    "llmConfig": "LLM Configuration",
+    "dbConnections": "Database Connections",
+    "syncStrategies": "Sync Strategies",
+    "thirdPartyTools": "Third-party Tools",
+    "unit": "items",
+    "quickActions": "Quick Actions",
+    "recentAlerts": "Recent Alerts",
+    "actions": {
+      "configureLLM": "Configure LLM",
+      "addDatabase": "Add Database",
+      "syncStrategy": "Sync Strategy",
+      "sqlBuilder": "SQL Builder",
+      "configHistory": "Config History",
+      "thirdPartyTools": "Third-party Tools"
+    }
+  },
+  "configDB": {
+    "title": "Database Configuration Management",
+    "addDatabase": "Add Database",
+    "addConfig": "Add Database Configuration",
+    "editConfig": "Edit Database Configuration",
+    "configDetail": "Database Configuration Details",
+    "createSuccess": "Database configuration created successfully",
+    "createFailed": "Creation failed: {{error}}",
+    "updateSuccess": "Database configuration updated successfully",
+    "updateFailed": "Update failed: {{error}}",
+    "deleteSuccess": "Database configuration deleted successfully",
+    "deleteFailed": "Deletion failed: {{error}}",
+    "testing": "Testing...",
+    "testFailed": "Test failed",
+    "testConnection": "Test Connection",
+    "connectionSuccess": "Connection successful ({{latency}}ms)",
+    "connectionFailed": "Connection failed: {{error}}",
+    "connectionNormal": "Connection normal ({{latency}}ms)",
+    "connectionFailedShort": "Connection failed",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "readonly": "Read-only",
+    "readwrite": "Read-write",
+    "sslEnabled": "Enabled",
+    "sslDisabled": "Disabled",
+    "securityTip": "Security Notice",
+    "securityTipDescription": "It is recommended to use database accounts with read-only permissions for data extraction. Passwords will be encrypted and displayed in masked form.",
+    "confirmDelete": "Are you sure you want to delete this configuration?",
+    "confirmDeleteDescription": "Related sync strategies will also become invalid after deletion",
+    "columns": {
+      "name": "Name",
+      "type": "Type",
+      "host": "Host",
+      "database": "Database",
+      "permission": "Permission",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "form": {
+      "connectionName": "Connection Name",
+      "connectionNameRequired": "Please enter connection name",
+      "connectionNamePlaceholder": "e.g., Production Database",
+      "description": "Description",
+      "descriptionPlaceholder": "Optional connection description",
+      "dbType": "Database Type",
+      "dbTypeRequired": "Please select database type",
+      "dbTypePlaceholder": "Select database type",
+      "host": "Host Address",
+      "hostRequired": "Please enter host address",
+      "hostPlaceholder": "e.g., localhost or 192.168.1.100",
+      "port": "Port Number",
+      "portRequired": "Please enter port number",
+      "databaseName": "Database Name",
+      "databaseNameRequired": "Please enter database name",
+      "databaseNamePlaceholder": "e.g., mydb",
+      "username": "Username",
+      "usernameRequired": "Please enter username",
+      "usernamePlaceholder": "Database username",
+      "password": "Password",
+      "passwordPlaceholder": "Database password",
+      "passwordKeepEmpty": "Leave empty to keep original password",
+      "readonlyConnection": "Read-only Connection",
+      "enableSSL": "Enable SSL"
+    },
+    "detail": {
+      "name": "Name",
+      "type": "Type",
+      "status": "Status",
+      "host": "Host",
+      "port": "Port",
+      "database": "Database",
+      "username": "Username",
+      "password": "Password",
+      "permission": "Permission",
+      "createdAt": "Created At",
+      "updatedAt": "Updated At"
+    }
+  },
+  "quotaManagement": {
+    "title": "Quota Management",
+    "subtitle": "Manage system resource usage quotas and limits",
+    "columns": {
+      "tenant": "Tenant",
+      "storage": "Storage",
+      "projects": "Projects",
+      "users": "Users",
+      "apiCalls": "API Calls",
+      "status": "Status"
+    },
+    "status": {
+      "notConfigured": "Not Configured",
+      "normal": "Normal",
+      "warning": "Warning",
+      "exceeded": "Exceeded"
+    },
+    "actions": {
+      "editQuota": "Edit Quota",
+      "viewDetails": "View Details"
+    },
+    "form": {
+      "storageQuota": "Storage Quota (GB)",
+      "storageQuotaRequired": "Please enter storage quota",
+      "projectQuota": "Project Quota",
+      "projectQuotaRequired": "Please enter project limit",
+      "userQuota": "User Quota",
+      "userQuotaRequired": "Please enter user limit",
+      "apiQuota": "API Call Quota",
+      "apiQuotaRequired": "Please enter API call limit",
+      "save": "Save Quota",
+      "cancel": "Cancel"
+    },
+    "updateSuccess": "Quota updated successfully",
+    "updateFailed": "Failed to update quota",
+    "statusTags": {
+      "quotaTight": "Quota Tight",
+      "approachingLimit": "Approaching Limit",
+      "normal": "Normal"
+    },
+    "actions": {
+      "adjustQuota": "Adjust Quota"
+    },
+    "statistics": {
+      "totalStorage": "Total Storage Usage",
+      "totalProjects": "Total Projects",
+      "totalUsers": "Total Users",
+      "totalApiCalls": "Total API Calls"
+    },
+    "alert": {
+      "quotaWarning": "{{count}} tenants have quota usage over 80%"
+    },
+    "buttons": {
+      "refresh": "Refresh"
+    },
+    "pagination": {
+      "total": "Total {{total}} tenants"
+    },
+    "modal": {
+      "adjustQuota": "Adjust Quota - {{name}}"
+    }
+  },
+  "sqlBuilder": {
+    "title": "SQL Builder",
+    "subtitle": "Visual SQL Query Builder Tool",
+    "selectDatabase": "Select Database",
+    "selectTables": "Select Tables",
+    "selectColumns": "Select Columns",
+    "addCondition": "Add Condition",
+    "buildSQL": "Build SQL",
+    "executeSQL": "Execute Query",
+    "saveTemplate": "Save Template",
+    "loadTemplate": "Load Template",
+    "sqlPreview": "SQL Preview",
+    "queryResult": "Query Result",
+    "validationWarning": "SQL generated successfully, but validation warnings exist",
+    "buildFailed": "SQL build failed",
+    "selectDbFirst": "Please select a database first",
+    "selectDbDescription": "Select a database connection to start building SQL queries",
+    "querySuccess": "Query successful, returned {{count}} records",
+    "executeFailed": "Execution failed",
+    "selectDbForTemplate": "Please select database first",
+    "templateSaved": "Template saved successfully",
+    "saveFailed": "Save failed",
+    "templateName": "Template Name",
+    "templateDescription": "Template Description",
+    "templateLoaded": "Template loaded: {{name}}",
+    "sqlCopied": "SQL copied to clipboard",
+    "noTables": "No tables available",
+    "noColumns": "No columns available",
+    "noTemplates": "No templates available",
+    "tableName": "Table Name",
+    "columnName": "Column Name",
+    "dataType": "Data Type",
+    "actions": "Actions",
+    "databaseStructure": "Database Structure",
+    "queryTemplates": "Query Templates",
+    "queryConfiguration": "Query Configuration",
+    "selectTablesPlaceholder": "Select tables to query",
+    "selectColumnsPlaceholder": "Select columns (leave empty for all)",
+    "whereConditions": "WHERE Conditions",
+    "field": "Field",
+    "operator": "Operator",
+    "value": "Value",
+    "orderBy": "Order By",
+    "addOrderBy": "Add Order By",
+    "limit": "Limit",
+    "limitRows": "Limit Rows",
+    "generatedSQL": "Generated SQL",
+    "copySQL": "Copy SQL",
+    "saveAsTemplate": "Save as Template",
+    "executeQuery": "Execute Query",
+    "resultTruncated": "Result truncated",
+    "templateNameRequired": "Template Name",
+    "templateNamePlaceholder": "Enter template name",
+    "description": "Description",
+    "descriptionPlaceholder": "Template description (optional)",
+    "rows": "{{count}} rows",
+    "sqlPlaceholder": "SQL will be displayed here...",
+    "queryResultTitle": "Query Result ({{count}} rows, {{time}}ms)"
+  },
+  "thirdPartyConfig": {
+    "title": "Third-Party Tools Configuration",
+    "subtitle": "Configure and manage third-party tool integrations",
+    "addTool": "Add Tool",
+    "editTool": "Edit Tool",
+    "toolName": "Tool Name",
+    "toolType": "Tool Type",
+    "toolTypes": {
+      "textToSql": "Text-to-SQL",
+      "aiAnnotation": "AI Annotation",
+      "dataProcessing": "Data Processing",
+      "custom": "Custom"
+    },
+    "apiEndpoint": "API Endpoint",
+    "status": "Status",
+    "actions": "Actions",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "enabledColumn": "Enabled",
+    "updateSuccess": "Third-party tool configuration updated successfully",
+    "updateFailed": "Update failed",
+    "deleteSuccess": "Third-party tool configuration deleted successfully",
+    "deleteFailed": "Delete failed",
+    "toolEnabled": "Tool enabled",
+    "toolDisabled": "Tool disabled",
+    "operationFailed": "Operation failed",
+    "checking": "Checking...",
+    "healthCheckSuccess": "Health check passed ({{latency}}ms)",
+    "healthCheckFailed": "Health check failed",
+    "checkFailed": "Check failed",
+    "confirmDelete": "Are you sure you want to delete this tool configuration?",
+    "configName": "Configuration Name",
+    "configNameRequired": "Please enter configuration name",
+    "configNamePlaceholder": "e.g., Custom Text-to-SQL Service",
+    "description": "Description",
+    "descriptionPlaceholder": "Tool description (optional)",
+    "toolTypeRequired": "Please select tool type",
+    "toolTypePlaceholder": "Select tool type",
+    "endpointRequired": "Please enter API endpoint",
+    "endpointInvalid": "Please enter a valid URL",
+    "endpointPlaceholder": "e.g., https://api.example.com/v1",
+    "apiKey": "API Key",
+    "apiKeyPlaceholder": "Enter API Key (will be encrypted)",
+    "apiKeyKeepEmpty": "Leave empty to keep existing API Key",
+    "timeout": "Timeout (seconds)",
+    "setEnabled": "Enable Tool",
+    "save": "Save",
+    "cancel": "Cancel",
+    "healthCheck": "Health Check",
+    "edit": "Edit",
+    "delete": "Delete",
+    "healthy": "Healthy",
+    "healthyWithLatency": "Healthy ({{latency}}ms)",
+    "unhealthy": "Unhealthy",
+    "notChecked": "Not Checked",
+    "callStats": "Call Statistics",
+    "calls": "Calls",
+    "infoTitle": "Third-Party Tools Info",
+    "infoDescription": "Configure and manage third-party tool integrations, including Text-to-SQL, AI annotation services. Enable/disable operations take effect immediately.",
+    "stats": {
+      "totalTools": "Total Tools",
+      "enabled": "Enabled",
+      "totalCalls": "Total Calls",
+      "avgSuccessRate": "Avg Success Rate"
+    }
+  },
+  "common": {
+    "refresh": "Refresh",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "ok": "OK",
+    "save": "Save",
+    "edit": "Edit",
+    "create": "Create",
+    "update": "Update",
+    "view": "View",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "import": "Import",
+    "download": "Download",
+    "upload": "Upload",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "submit": "Submit",
+    "reset": "Reset",
+    "clear": "Clear",
+    "confirm": "Confirm",
+    "loading": "Loading...",
+    "success": "Success",
+    "error": "Error",
+    "warning": "Warning",
+    "info": "Info"
+  },
+  "billingManagement": {
+    "title": "Billing Management",
+    "subtitle": "Manage system billing and revenue statistics",
+    "columns": {
+      "tenant": "Tenant",
+      "period": "Period",
+      "storage": "Storage Cost",
+      "api": "API Cost",
+      "user": "User Cost",
+      "total": "Total Cost",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "status": {
+      "pending": "Pending",
+      "paid": "Paid",
+      "overdue": "Overdue"
+    },
+    "actions": {
+      "details": "Details",
+      "download": "Download"
+    },
+    "summary": {
+      "monthlyRevenue": "Monthly Revenue",
+      "paid": "Paid",
+      "pending": "Pending",
+      "overdue": "Overdue"
+    },
+    "export": {
+      "exporting": "Exporting {{format}} format report...",
+      "csv": "CSV",
+      "excel": "Excel",
+      "pdf": "PDF"
+    },
+    "unit": {
+      "calls": "calls",
+      "users": "users",
+      "currency": "CNY"
+    },
+    "tabs": {
+      "all": "All Bills",
+      "pending": "Pending",
+      "paid": "Paid",
+      "overdue": "Overdue"
+    },
+    "charts": {
+      "storageDistribution": "Storage Cost Distribution",
+      "apiTrend": "API Call Trend",
+      "revenueTrend": "Revenue Trend"
+    },
+    "pagination": {
+      "total": "Total {{total}} bills"
+    },
+    "summary": {
+      "pageTotal": "Page Total"
+    }
+  },
+  "permissionConfig": {
+    "title": "Permission Configuration Management",
+    "subtitle": "Configure and manage system permissions, roles, and API access control",
+    "saveSuccess": "Permission configuration saved",
+    "resetSuccess": "Reset to default configuration",
+    "ownerPermissionImmutable": "Owner permissions cannot be modified",
+    "table": {
+      "permission": "Permission"
+    },
+    "roles": {
+      "owner": "Owner",
+      "admin": "Admin",
+      "member": "Member",
+      "guest": "Guest"
+    },
+    "permissions": {
+      "workspace": {
+        "title": "Workspace Permissions",
+        "create": "Create Workspace",
+        "createDesc": "Allow creating new workspaces",
+        "read": "View Workspace",
+        "readDesc": "Allow viewing workspace information",
+        "update": "Edit Workspace",
+        "updateDesc": "Allow editing workspace settings",
+        "delete": "Delete Workspace",
+        "deleteDesc": "Allow deleting workspaces",
+        "archive": "Archive Workspace",
+        "archiveDesc": "Allow archiving/restoring workspaces"
+      },
+      "member": {
+        "title": "Member Permissions",
+        "invite": "Invite Members",
+        "inviteDesc": "Allow inviting new members",
+        "add": "Add Members",
+        "addDesc": "Allow directly adding members",
+        "remove": "Remove Members",
+        "removeDesc": "Allow removing members",
+        "role": "Modify Roles",
+        "roleDesc": "Allow modifying member roles"
+      },
+      "project": {
+        "title": "Project Permissions",
+        "create": "Create Project",
+        "createDesc": "Allow creating new projects",
+        "read": "View Project",
+        "readDesc": "Allow viewing projects",
+        "update": "Edit Project",
+        "updateDesc": "Allow editing projects",
+        "delete": "Delete Project",
+        "deleteDesc": "Allow deleting projects",
+        "export": "Export Data",
+        "exportDesc": "Allow exporting project data"
+      },
+      "annotation": {
+        "title": "Annotation Permissions",
+        "create": "Create Annotation",
+        "createDesc": "Allow creating annotations",
+        "read": "View Annotation",
+        "readDesc": "Allow viewing annotations",
+        "update": "Edit Annotation",
+        "updateDesc": "Allow editing annotations",
+        "delete": "Delete Annotation",
+        "deleteDesc": "Allow deleting annotations",
+        "review": "Review Annotation",
+        "reviewDesc": "Allow reviewing annotations"
+      }
+    },
+    "apiPermissions": {
+      "tenants": "Tenant Management",
+      "workspaces": "Workspace Management",
+      "members": "Member Management",
+      "projects": "Project Management",
+      "annotations": "Annotation Management",
+      "quotas": "Quota Management",
+      "shares": "Share Management",
+      "admin": "Admin Functions"
+    },
+    "apiTable": {
+      "endpoint": "API Endpoint",
+      "description": "Description",
+      "methods": "Allowed Methods",
+      "roles": "Required Roles"
+    },
+    "tabs": {
+      "matrix": "Permission Matrix",
+      "api": "API Permissions",
+      "roles": "Role Overview"
+    },
+    "alert": {
+      "title": "Permission Notes",
+      "description": "Owner has all permissions and cannot be modified. Permissions for other roles can be configured as needed."
+    },
+    "buttons": {
+      "reset": "Reset",
+      "save": "Save Configuration"
+    },
+    "placeholders": {
+      "selectTenant": "Select Tenant"
+    },
+    "stats": {
+      "permissionCount": "Total {{count}} permissions"
+    }
+  },
+  "llm": {
+    "title": "LLM Configuration",
+    "subtitle": "Configure and manage various LLM providers, including local Ollama, cloud services, and Chinese LLM services.",
+    "form": {
+      "addConfig": "Add Configuration",
+      "editConfig": "Edit LLM Configuration",
+      "configName": "Configuration Name",
+      "configNameRequired": "Please enter configuration name",
+      "configNamePlaceholder": "e.g., Production OpenAI",
+      "descriptionPlaceholder": "Configuration description (optional)",
+      "llmType": "LLM Type",
+      "llmTypeRequired": "Please select LLM type",
+      "llmTypePlaceholder": "Select LLM provider",
+      "modelName": "Model Name",
+      "modelNameRequired": "Please enter model name",
+      "modelNamePlaceholder": "e.g., gpt-3.5-turbo, qwen-turbo",
+      "apiEndpoint": "API Endpoint",
+      "apiEndpointPlaceholder": "e.g., https://api.openai.com/v1",
+      "apiKeyPlaceholder": "Enter API Key (will be encrypted)",
+      "apiKeyKeepEmpty": "Leave empty to keep existing API Key",
+      "apiKeyMasked": "API Key is masked for security",
+      "notSet": "Not set",
+      "maxTokens": "Max Tokens",
+      "timeout": "Timeout (seconds)",
+      "setAsDefault": "Set as Default",
+      "enabled": "Enabled",
+      "confirmDelete": "Delete this configuration?",
+      "configTip": "Configuration Guide",
+      "configTipDescription": "Manage LLM provider configurations including local Ollama, OpenAI, Qwen, etc. API Keys will be encrypted and displayed with masking."
+    },
+    "loadConfigFailed": "Failed to load configuration",
+    "refreshHealthFailed": "Failed to refresh health status",
+    "configValidationFailed": "Configuration validation failed, please check the error messages",
+    "configSaveSuccess": "Configuration saved successfully",
+    "configSaveFailed": "Failed to save configuration",
+    "configReset": "Configuration has been reset",
+    "hotReloadSuccess": "Configuration hot reload successful",
+    "hotReloadFailed": "Hot reload failed",
+    "loadingConfig": "Loading configuration...",
+    "validationFailed": "Configuration Validation Failed",
+    "validationWarnings": "Configuration Warnings",
+    "tabs": {
+      "general": "General",
+      "local": "Local LLM",
+      "cloud": "Cloud LLM",
+      "china": "China LLM"
+    },
+    "actions": {
+      "saveConfig": "Save Config",
+      "reset": "Reset",
+      "hotReload": "Hot Reload",
+      "refreshStatus": "Refresh Status",
+      "testConnection": "Test Connection",
+      "confirmReset": "Reset Configuration",
+      "confirmResetMessage": "Are you sure you want to reset all configuration? Unsaved changes will be lost."
+    },
+    "status": {
+      "testing": "Testing...",
+      "connectionSuccess": "Connection successful",
+      "connectionFailed": "Connection failed",
+      "online": "Online",
+      "offline": "Offline",
+      "unknown": "Unknown",
+      "notConfigured": "Not Configured",
+      "disabled": "Disabled"
+    },
+    "general": {
+      "title": "General Configuration",
+      "defaultMethod": "Default LLM Method",
+      "defaultMethodPlaceholder": "Select default method",
+      "defaultMethodRequired": "Please select a default LLM method",
+      "enabledMethods": "Enabled Methods",
+      "enabledMethodsPlaceholder": "Select enabled methods",
+      "enabledMethodsRequired": "Please select at least one enabled method"
+    },
+    "local": {
+      "title": "Local Ollama Configuration",
+      "ollamaUrl": "Ollama Service URL",
+      "ollamaUrlPlaceholder": "http://localhost:11434",
+      "ollamaUrlRequired": "Please enter Ollama service URL",
+      "defaultModel": "Default Model",
+      "defaultModelPlaceholder": "llama2",
+      "defaultModelRequired": "Please enter default model name",
+      "timeout": "Timeout (seconds)",
+      "maxRetries": "Max Retries"
+    },
+    "cloud": {
+      "title": "Cloud LLM Configuration",
+      "openai": {
+        "title": "OpenAI",
+        "apiKey": "OpenAI API Key",
+        "baseUrl": "API Base URL",
+        "baseUrlPlaceholder": "https://api.openai.com/v1",
+        "baseUrlRequired": "Please enter API base URL",
+        "model": "Default Model",
+        "modelPlaceholder": "gpt-3.5-turbo",
+        "modelRequired": "Please enter default model"
+      },
+      "azure": {
+        "title": "Azure OpenAI",
+        "endpoint": "Azure Endpoint",
+        "endpointPlaceholder": "https://your-resource.openai.azure.com/",
+        "apiKey": "Azure API Key",
+        "deployment": "Deployment Name",
+        "deploymentPlaceholder": "gpt-35-turbo",
+        "apiVersion": "API Version",
+        "apiVersionPlaceholder": "2023-12-01-preview",
+        "apiVersionRequired": "Please enter API version"
+      },
+      "timeout": "Timeout (seconds)",
+      "maxRetries": "Max Retries"
+    },
+    "china": {
+      "title": "China LLM Configuration",
+      "timeout": "Timeout (seconds)",
+      "maxRetries": "Max Retries"
+    },
+    "providers": {
+      "localOllama": "Local Ollama",
+      "cloudOpenai": "OpenAI",
+      "cloudAzure": "Azure OpenAI",
+      "chinaQwen": "Qwen (Tongyi Qianwen)",
+      "chinaZhipu": "Zhipu GLM",
+      "chinaBaidu": "ERNIE Bot (Wenxin Yiyan)",
+      "chinaHunyuan": "Tencent Hunyuan"
+    },
+    "qwen": {
+      "title": "Qwen (Tongyi Qianwen)",
+      "apiKey": "Qwen API Key",
+      "model": "Default Model",
+      "modelPlaceholder": "qwen-turbo",
+      "modelRequired": "Please enter default model"
+    },
+    "zhipu": {
+      "title": "Zhipu GLM",
+      "apiKey": "Zhipu API Key",
+      "model": "Default Model",
+      "modelPlaceholder": "glm-4",
+      "modelRequired": "Please enter default model"
+    },
+    "baidu": {
+      "title": "ERNIE Bot (Wenxin Yiyan)",
+      "apiKey": "Baidu API Key",
+      "secretKey": "Baidu Secret Key",
+      "model": "Default Model",
+      "modelPlaceholder": "ernie-bot-turbo",
+      "modelRequired": "Please enter default model"
+    },
+    "hunyuan": {
+      "title": "Tencent Hunyuan",
+      "secretId": "Tencent Cloud Secret ID",
+      "secretKey": "Tencent Cloud Secret Key",
+      "model": "Default Model",
+      "modelPlaceholder": "hunyuan-lite",
+      "modelRequired": "Please enter default model"
+    },
+    "help": {
+      "ollama": "Ensure Ollama service is running locally, default port is 11434.",
+      "openai": "Requires a valid OpenAI API Key, available at platform.openai.com.",
+      "qianwen": "Requires Alibaba Cloud Qwen API Key, available in Alibaba Cloud Console.",
+      "zhipu": "Requires Zhipu AI API Key, available at open.bigmodel.cn.",
+      "hunyuan": "Requires Tencent Cloud Hunyuan API Key, available in Tencent Cloud Console.",
+      "custom": "Custom provider requires an endpoint compatible with OpenAI API format."
+    },
+    "error": {
+      "providerUnavailable": "Provider unavailable",
+      "rateLimitExceeded": "Rate limit exceeded",
+      "timeout": "Request timeout",
+      "invalidConfig": "Invalid configuration",
+      "authenticationFailed": "Authentication failed",
+      "connectionFailed": "Connection failed",
+      "invalidResponse": "Invalid response format",
+      "modelNotFound": "Model not found",
+      "quotaExceeded": "Quota exceeded",
+      "serverError": "Server error",
+      "networkError": "Network error",
+      "unknownError": "Unknown error"
+    }
+  },
+  "textToSql": {
+    "title": "Text-to-SQL Configuration",
+    "subtitle": "Configure and manage Text-to-SQL methods, supporting multiple conversion engines and plugins",
+    "loadConfigFailed": "Failed to load configuration",
+    "saveConfigSuccess": "Configuration saved successfully",
+    "saveConfigFailed": "Failed to save configuration",
+    "testGenerationFailed": "Test generation failed",
+    "deletePlugin": "Delete Plugin",
+    "confirmDeletePlugin": "Are you sure you want to delete plugin \"{{name}}\"?",
+    "deletePluginSuccess": "Plugin deleted successfully",
+    "deletePluginFailed": "Failed to delete plugin",
+    "pluginEnabled": "Plugin \"{{name}}\" has been enabled",
+    "pluginDisabled": "Plugin \"{{name}}\" has been disabled",
+    "operationFailed": "Operation failed",
+    "pluginUpdateSuccess": "Plugin updated successfully",
+    "pluginRegisterSuccess": "Plugin registered successfully",
+    "savePluginFailed": "Failed to save plugin",
+    "cancel": "Cancel",
+    "pluginsTable": {
+      "name": "Name",
+      "type": "Type",
+      "status": "Status",
+      "actions": "Actions",
+      "edit": "Edit",
+      "delete": "Delete",
+      "enable": "Enable",
+      "disable": "Disable",
+      "healthCheck": "Health Check"
+    },
+    "testSection": {
+      "title": "SQL Generation Test",
+      "inputPlaceholder": "Enter natural language query...",
+      "testButton": "Test Generation",
+      "resultTitle": "Generation Result",
+      "noResult": "No result yet"
+    },
+    "pluginsSection": {
+      "title": "Plugin Management",
+      "addPlugin": "Add Plugin",
+      "totalPlugins": "Total {{count}} plugins"
+    },
+    "statistics": {
+      "totalRequests": "Total Requests",
+      "successRate": "Success Rate",
+      "averageLatency": "Average Latency"
+    }
+  },
+  "system": {
+    "title": "System Configuration",
+    "statusOverview": "System Status",
+    "configTitle": "System Configuration",
+    "saveConfig": "Save Configuration",
+    "configSaveSuccess": "System configuration saved successfully",
+    "configSaveFailed": "Failed to save system configuration",
+    "connectionTestSuccess": "{{type}} connection test successful",
+    "connectionTestFailed": "{{type}} connection test failed",
+    "testConnection": "Test Connection",
+    "testDatabaseConnection": "Test Database Connection",
+    "testCacheConnection": "Test Cache Connection",
+    "refresh": "Refresh",
+    "status": {
+      "healthy": "Healthy",
+      "warning": "Warning",
+      "error": "Error",
+      "unknown": "Unknown"
+    },
+    "database": {
+      "title": "Database",
+      "connections": "Connections",
+      "responseTime": "Response Time",
+      "host": "Host Address",
+      "port": "Port",
+      "name": "Database Name",
+      "maxConnections": "Max Connections",
+      "connectionTimeout": "Connection Timeout (seconds)",
+      "queryTimeout": "Query Timeout (seconds)",
+      "configWarning": "Modifying database configuration requires a system restart to take effect. Please proceed with caution."
+    },
+    "cache": {
+      "title": "Cache",
+      "memoryUsage": "Memory Usage",
+      "hitRate": "Hit Rate",
+      "enabled": "Enable Cache",
+      "type": "Cache Type",
+      "host": "Cache Host",
+      "port": "Cache Port",
+      "ttl": "Default TTL (seconds)",
+      "types": {
+        "redis": "Redis",
+        "memory": "Memory Cache"
+      }
+    },
+    "storage": {
+      "title": "Storage",
+      "usedSpace": "Used Space",
+      "totalSpace": "Total Space"
+    },
+    "systemLoad": "System Load",
+    "memory": "Memory",
+    "disk": "Disk",
+    "tabs": {
+      "general": "General",
+      "database": "Database",
+      "cache": "Cache",
+      "security": "Security"
+    },
+    "general": {
+      "title": "General Settings",
+      "siteName": "Site Name",
+      "siteNameRequired": "Please enter site name",
+      "siteDescription": "Site Description",
+      "siteDescriptionPlaceholder": "AI Data Governance and Annotation Platform",
+      "adminEmail": "Admin Email",
+      "adminEmailRequired": "Please enter admin email",
+      "adminEmailInvalid": "Please enter a valid email address",
+      "timezone": "Timezone",
+      "timezoneRequired": "Please select timezone",
+      "timezonePlaceholder": "Please select timezone",
+      "language": "Default Language",
+      "languageRequired": "Please select default language",
+      "languagePlaceholder": "Please select default language",
+      "maintenanceMode": "Maintenance Mode",
+      "maintenanceModeOn": "On",
+      "maintenanceModeOff": "Off",
+      "timezones": {
+        "shanghai": "Asia/Shanghai (UTC+8)",
+        "utc": "UTC (UTC+0)",
+        "newYork": "America/New_York (UTC-5)"
+      },
+      "languages": {
+        "zhCN": "Simplified Chinese",
+        "enUS": "English"
+      }
+    },
+    "security": {
+      "title": "Security Settings",
+      "sessionTimeout": "Session Timeout (minutes)",
+      "passwordMinLength": "Minimum Password Length",
+      "passwordRequireSpecialChars": "Require Special Characters in Password",
+      "passwordRequireSpecialCharsOn": "Required",
+      "passwordRequireSpecialCharsOff": "Not Required",
+      "maxLoginAttempts": "Max Login Attempts",
+      "lockoutDuration": "Lockout Duration (minutes)"
+    }
+  },
+  "configHistory": {
+    "title": "Configuration Change History",
+    "refresh": "Refresh",
+    "loadDiffFailed": "Failed to load diff",
+    "rollbackSuccess": "Configuration rolled back successfully",
+    "rollbackFailed": "Rollback failed: {{error}}",
+    "rollbackConfirm": "No history record selected",
+    "unnamed": "Unnamed",
+    "columns": {
+      "time": "Time",
+      "configType": "Config Type",
+      "operationType": "Operation Type",
+      "operator": "Operator",
+      "summary": "Change Summary",
+      "actions": "Actions"
+    },
+    "operations": {
+      "create": "Create",
+      "modify": "Modify"
+    },
+    "tooltips": {
+      "viewDiff": "View Diff",
+      "rollback": "Rollback to this version"
+    },
+    "confirm": {
+      "rollback": "Rollback to this version?",
+      "rollbackDescription": "Rollback will overwrite current configuration",
+      "ok": "OK",
+      "cancel": "Cancel"
+    },
+    "alert": {
+      "description": "Configuration History",
+      "descriptionText": "All configuration changes are recorded. You can view change details and rollback to previous versions."
+    },
+    "filters": {
+      "configType": "Config Type",
+      "startTime": "Start Time",
+      "endTime": "End Time"
+    },
+    "modal": {
+      "diff": "Configuration Diff Comparison",
+      "close": "Close",
+      "rollback": "Confirm Rollback",
+      "rollbackWarning": "Rollback Warning",
+      "rollbackWarningText": "Rollback operation will use old values from history to overwrite current configuration. This action cannot be undone."
+    },
+    "diff": {
+      "added": "Added Fields",
+      "removed": "Removed Fields",
+      "modified": "Modified Fields",
+      "oldValue": "Old Value:",
+      "newValue": "New Value:",
+      "noDiff": "No differences",
+      "loading": "Loading..."
+    },
+    "rollbackInfo": {
+      "configType": "Config Type",
+      "changeTime": "Change Time",
+      "operator": "Operator",
+      "reasonPlaceholder": "Enter rollback reason (optional)"
+    }
+  },
+  "annotationPlugins": {
+    "title": "Annotation Plugin Management",
+    "loadPluginsFailed": "Failed to load plugin list",
+    "pluginUpdateSuccess": "Plugin updated successfully",
+    "pluginCreateSuccess": "Plugin created successfully",
+    "configJsonError": "Configuration JSON format error",
+    "pluginDeleted": "Plugin deleted",
+    "pluginEnabled": "Plugin enabled",
+    "pluginDisabled": "Plugin disabled",
+    "connectionTestSuccess": "Connection test successful",
+    "connectionTestFailed": "Connection test failed",
+    "connectionTestError": "Connection test error",
+    "priorityUpdated": "Priority updated",
+    "columns": {
+      "name": "Plugin Name",
+      "type": "Type",
+      "endpoint": "Endpoint",
+      "status": "Status",
+      "enabled": "Enabled",
+      "priority": "Priority",
+      "supportedTypes": "Supported Types",
+      "actions": "Actions"
+    },
+    "status": {
+      "running": "Running",
+      "error": "Error",
+      "inactive": "Inactive"
+    },
+    "tooltips": {
+      "testConnection": "Test Connection",
+      "viewStats": "View Statistics",
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "confirm": {
+      "deletePlugin": "Are you sure you want to delete this plugin?",
+      "ok": "OK",
+      "cancel": "Cancel"
+    },
+    "buttons": {
+      "addPlugin": "Add Plugin",
+      "save": "Save"
+    },
+    "statistics": {
+      "totalPlugins": "Total Plugins",
+      "enabled": "Enabled",
+      "healthy": "Healthy",
+      "totalCalls": "Total Calls"
+    },
+    "modal": {
+      "editPlugin": "Edit Plugin",
+      "addPlugin": "Add Plugin",
+      "pluginStats": "Plugin Statistics"
+    },
+    "form": {
+      "name": "Plugin Name",
+      "nameRequired": "Please enter plugin name",
+      "namePlaceholder": "e.g., Prodigy Adapter",
+      "type": "Connection Type",
+      "typeRequired": "Please select connection type",
+      "typePlaceholder": "Select connection type",
+      "endpoint": "Endpoint Address",
+      "endpointRequired": "Please enter endpoint address",
+      "endpointPlaceholder": "e.g., http://localhost:8080/api",
+      "priority": "Priority",
+      "priorityTooltip": "Higher values have higher priority",
+      "supportedTypes": "Supported Annotation Types",
+      "supportedTypesRequired": "Please select supported annotation types",
+      "supportedTypesPlaceholder": "Select supported annotation types",
+      "config": "Configuration (JSON)",
+      "configPlaceholder": "{\"apiKey\": \"xxx\", \"timeout\": 30000}"
+    },
+    "types": {
+      "restApi": "REST API",
+      "grpc": "gRPC",
+      "websocket": "WebSocket",
+      "sdk": "SDK"
+    },
+    "annotationTypes": {
+      "textClassification": "Text Classification",
+      "ner": "Named Entity Recognition",
+      "sentiment": "Sentiment Analysis",
+      "relationExtraction": "Relation Extraction",
+      "qa": "Question Answering"
+    },
+    "stats": {
+      "totalCalls": "Total Calls",
+      "successRate": "Success Rate",
+      "avgLatency": "Average Latency",
+      "totalCost": "Total Cost",
+      "errorCount": "Error Count",
+      "lastCall": "Last Call",
+      "successRateTrend": "Success Rate Trend",
+      "noData": "No statistics data",
+      "noDataDescription": "This plugin has not been called yet"
+    }
+  }
+}

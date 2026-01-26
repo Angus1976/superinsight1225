@@ -1,279 +1,79 @@
 {
-  "workspace": {
-    "title": "工作空间",
-    "name": "工作空间名称",
-    "description": "描述",
-    "owner": "所有者",
-    "members": "成员",
-    "projects": "项目",
-    "settings": "设置",
-    "create": "创建工作空间",
-    "edit": "编辑工作空间",
-    "delete": "删除工作空间",
-    "select": "选择工作空间",
-    "current": "当前工作空间",
-    "switch": "切换工作空间",
-    "noWorkspace": "暂无工作空间",
-    "createFirst": "创建您的第一个工作空间",
-    "list": {
-      "title": "工作空间列表",
-      "empty": "您还没有加入任何工作空间",
-      "createHint": "创建一个工作空间来组织您的标注项目"
-    },
-    "form": {
-      "nameLabel": "工作空间名称",
-      "namePlaceholder": "请输入工作空间名称",
-      "nameRequired": "工作空间名称不能为空",
-      "nameUnique": "工作空间名称已存在",
-      "descriptionLabel": "描述",
-      "descriptionPlaceholder": "请输入工作空间描述（可选）",
-      "settingsLabel": "设置",
-      "settingsPlaceholder": "工作空间设置（JSON 格式）"
-    },
-    "actions": {
-      "create": "创建",
-      "cancel": "取消",
-      "save": "保存",
-      "delete": "删除",
-      "edit": "编辑",
-      "view": "查看",
-      "manage": "管理",
-      "leave": "离开工作空间"
-    },
-    "status": {
-      "active": "活跃",
-      "inactive": "未激活",
-      "deleted": "已删除"
-    },
-    "messages": {
-      "createSuccess": "工作空间创建成功",
-      "createFailed": "工作空间创建失败",
-      "updateSuccess": "工作空间更新成功",
-      "updateFailed": "工作空间更新失败",
-      "deleteSuccess": "工作空间删除成功",
-      "deleteFailed": "工作空间删除失败",
-      "deleteConfirm": "确定要删除工作空间 \"{{name}}\" 吗？",
-      "deleteWarning": "删除后将无法恢复，所有关联的项目将被移除",
-      "leaveConfirm": "确定要离开工作空间 \"{{name}}\" 吗？",
-      "leaveWarning": "离开后您将无法访问该工作空间的项目",
-      "switchSuccess": "已切换到工作空间 \"{{name}}\"",
-      "switchFailed": "切换工作空间失败",
-      "loadFailed": "加载工作空间失败",
-      "notFound": "工作空间不存在",
-      "noPermission": "您没有权限访问此工作空间"
-    },
-    "members": {
-      "title": "成员管理",
-      "list": "成员列表",
-      "add": "添加成员",
-      "remove": "移除成员",
-      "invite": "邀请成员",
-      "role": "角色",
-      "status": "状态",
+  "member": {
+    "title": "成员管理",
+    "totalMembers": "总成员数",
+    "admins": "管理员",
+    "regularMembers": "普通成员",
+    "adminRatio": "管理员占比",
+    "selectWorkspace": "选择工作空间",
+    "invite": "邀请成员",
+    "addMember": "添加成员",
+    "inviteSent": "邀请已发送",
+    "inviteError": "邀请失败",
+    "addSuccess": "成员添加成功",
+    "addError": "添加成员失败",
+    "removeSuccess": "成员移除成功",
+    "removeError": "移除成员失败",
+    "roleUpdated": "角色已更新",
+    "roleUpdateError": "角色更新失败",
+    "customRoleCreated": "自定义角色创建成功",
+    "customRoleError": "自定义角色创建失败",
+    "cannotRemoveOwner": "无法移除所有者",
+    "removeMember": "移除成员",
+    "confirmRemove": "确认移除成员",
+    "confirmRemoveContent": "确定要移除此成员吗？此操作不可撤销。",
+    "totalMembersCount": "共 {{total}} 个成员",
+    "noMembers": "暂无成员",
+    "selectWorkspaceFirst": "请先选择工作空间",
+    "inviteMember": "邀请成员",
+    "columns": {
+      "member": "成员",
+      "userId": "用户ID",
       "joinedAt": "加入时间",
-      "actions": "操作",
-      "empty": "暂无成员",
-      "count": "{{count}} 名成员",
-      "form": {
-        "userLabel": "用户",
-        "userPlaceholder": "请选择用户",
-        "userRequired": "请选择要添加的用户",
-        "roleLabel": "角色",
-        "rolePlaceholder": "请选择角色",
-        "roleRequired": "请选择角色"
-      },
-      "messages": {
-        "addSuccess": "成员添加成功",
-        "addFailed": "成员添加失败",
-        "removeSuccess": "成员移除成功",
-        "removeFailed": "成员移除失败",
-        "removeConfirm": "确定要移除成员 \"{{name}}\" 吗？",
-        "updateRoleSuccess": "角色更新成功",
-        "updateRoleFailed": "角色更新失败",
-        "inviteSent": "邀请已发送",
-        "inviteFailed": "邀请发送失败",
-        "alreadyMember": "该用户已是工作空间成员"
-      }
+      "role": "角色",
+      "lastActive": "最后活跃",
+      "action": "操作"
     },
     "roles": {
       "owner": "所有者",
       "admin": "管理员",
-      "manager": "项目经理",
-      "reviewer": "审核员",
-      "annotator": "标注员",
-      "descriptions": {
-        "owner": "拥有工作空间的完全控制权",
-        "admin": "可以管理工作空间和所有项目",
-        "manager": "可以创建和管理项目",
-        "reviewer": "可以审核标注结果",
-        "annotator": "可以执行标注任务"
-      },
-      "permissions": {
-        "title": "权限说明",
-        "workspace": {
-          "title": "工作空间权限",
-          "view": "查看工作空间",
-          "edit": "编辑工作空间",
-          "delete": "删除工作空间",
-          "manageMembers": "管理成员"
-        },
-        "project": {
-          "title": "项目权限",
-          "view": "查看项目",
-          "create": "创建项目",
-          "edit": "编辑项目",
-          "delete": "删除项目",
-          "manageMembers": "管理项目成员"
-        },
-        "task": {
-          "title": "任务权限",
-          "view": "查看任务",
-          "annotate": "标注任务",
-          "review": "审核任务",
-          "assign": "分配任务"
-        },
-        "data": {
-          "title": "数据权限",
-          "export": "导出数据",
-          "import": "导入数据"
-        }
-      }
+      "member": "成员",
+      "guest": "访客"
     },
-    "projects": {
-      "title": "项目管理",
-      "list": "项目列表",
-      "create": "创建项目",
-      "empty": "暂无项目",
-      "createHint": "在此工作空间中创建您的第一个项目",
-      "count": "{{count}} 个项目",
-      "filter": {
-        "all": "全部项目",
-        "active": "活跃项目",
-        "archived": "已归档项目"
-      },
-      "table": {
-        "name": "项目名称",
-        "workspace": "工作空间",
-        "taskCount": "任务数",
-        "annotationCount": "标注数",
-        "progress": "进度",
-        "status": "状态",
-        "createdAt": "创建时间",
-        "actions": "操作"
-      },
-      "status": {
-        "active": "活跃",
-        "paused": "暂停",
-        "completed": "已完成",
-        "archived": "已归档"
-      },
-      "messages": {
-        "createSuccess": "项目创建成功",
-        "createFailed": "项目创建失败",
-        "updateSuccess": "项目更新成功",
-        "updateFailed": "项目更新失败",
-        "deleteSuccess": "项目删除成功",
-        "deleteFailed": "项目删除失败",
-        "deleteConfirm": "确定要删除项目 \"{{name}}\" 吗？",
-        "archiveSuccess": "项目已归档",
-        "archiveFailed": "项目归档失败",
-        "restoreSuccess": "项目已恢复",
-        "restoreFailed": "项目恢复失败"
-      }
+    "inviteForm": {
+      "email": "邮箱地址",
+      "emailRequired": "请输入邮箱地址",
+      "emailInvalid": "请输入有效的邮箱地址",
+      "emailPlaceholder": "请输入邀请成员的邮箱",
+      "role": "角色",
+      "message": "邀请消息",
+      "messagePlaceholder": "可选的邀请消息",
+      "expiresIn": "有效期",
+      "expires1Day": "1天",
+      "expires7Days": "7天",
+      "expires30Days": "30天"
     },
-    "settings": {
-      "title": "工作空间设置",
-      "general": {
-        "title": "常规设置",
-        "name": "工作空间名称",
-        "description": "描述",
-        "visibility": "可见性",
-        "visibilityPublic": "公开",
-        "visibilityPrivate": "私有"
-      },
-      "permissions": {
-        "title": "权限设置",
-        "defaultRole": "默认角色",
-        "allowSelfJoin": "允许自助加入",
-        "requireApproval": "需要审批"
-      },
-      "advanced": {
-        "title": "高级设置",
-        "customSettings": "自定义设置",
-        "customSettingsPlaceholder": "JSON 格式的自定义设置"
-      },
-      "danger": {
-        "title": "危险操作",
-        "deleteWorkspace": "删除工作空间",
-        "deleteWarning": "删除工作空间将永久删除所有数据，此操作不可恢复"
-      },
-      "messages": {
-        "saveSuccess": "设置保存成功",
-        "saveFailed": "设置保存失败"
-      }
+    "addForm": {
+      "userId": "用户ID",
+      "userIdRequired": "请输入用户ID",
+      "userIdPlaceholder": "请输入用户ID",
+      "role": "角色"
     },
-    "context": {
-      "title": "工作空间上下文",
-      "workspaceId": "工作空间 ID",
-      "workspaceName": "工作空间名称",
-      "userRole": "用户角色",
-      "permissions": "权限列表",
-      "projectId": "项目 ID",
-      "loading": "正在加载工作空间上下文...",
-      "loadFailed": "加载工作空间上下文失败",
-      "notAvailable": "工作空间上下文不可用"
-    },
-    "selector": {
-      "title": "选择工作空间",
-      "placeholder": "请选择工作空间",
-      "search": "搜索工作空间",
-      "noResults": "未找到匹配的工作空间",
-      "createNew": "创建新工作空间"
-    },
-    "stats": {
-      "title": "工作空间统计",
-      "totalProjects": "总项目数",
-      "totalTasks": "总任务数",
-      "totalMembers": "总成员数",
-      "activeProjects": "活跃项目",
-      "completedTasks": "已完成任务",
-      "pendingTasks": "待处理任务",
-      "annotationProgress": "标注进度",
-      "reviewProgress": "审核进度"
-    },
-    "audit": {
-      "title": "审计日志",
-      "action": "操作",
-      "user": "用户",
-      "resource": "资源",
-      "timestamp": "时间",
-      "result": "结果",
-      "details": "详情",
-      "actions": {
-        "create": "创建",
-        "update": "更新",
-        "delete": "删除",
-        "addMember": "添加成员",
-        "removeMember": "移除成员",
-        "updateRole": "更新角色"
-      },
-      "results": {
-        "success": "成功",
-        "failed": "失败"
-      }
-    },
-    "errors": {
-      "nameRequired": "工作空间名称不能为空",
-      "nameExists": "工作空间名称已存在",
-      "invalidName": "工作空间名称格式不正确",
-      "notFound": "工作空间不存在",
-      "noPermission": "您没有权限执行此操作",
-      "createFailed": "创建工作空间失败",
-      "updateFailed": "更新工作空间失败",
-      "deleteFailed": "删除工作空间失败",
-      "loadFailed": "加载工作空间失败",
-      "networkError": "网络错误，请稍后重试",
-      "unknownError": "未知错误"
+    "customRole": {
+      "title": "创建自定义角色",
+      "name": "角色名称",
+      "nameRequired": "请输入角色名称",
+      "namePlaceholder": "例如：项目经理",
+      "description": "角色描述",
+      "descriptionPlaceholder": "描述此角色的职责",
+      "permissions": "权限",
+      "permissionsRequired": "请选择至少一项权限",
+      "permissionsPlaceholder": "选择权限",
+      "permissionRead": "读取",
+      "permissionWrite": "写入",
+      "permissionDelete": "删除",
+      "permissionManageMembers": "管理成员",
+      "permissionManageSettings": "管理设置"
     }
   }
 }

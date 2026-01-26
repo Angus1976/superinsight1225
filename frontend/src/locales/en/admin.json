@@ -405,9 +405,12 @@
       "passwordPlaceholder": "Enter initial password",
       "passwordRequired": "Please enter initial password",
       "status": "Status",
+      "isEmailVerified": "Email Verified",
       "emailVerified": "Email Verified",
       "emailVerifiedYes": "Verified",
-      "emailVerifiedNo": "Not Verified"
+      "emailVerifiedNo": "Not Verified",
+      "verified": "Verified",
+      "unverified": "Not Verified"
     },
     "pagination": {
       "total": "{{start}}-{{end}} of {{total}} items"

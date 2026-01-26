@@ -652,9 +652,12 @@
       "passwordPlaceholder": "请输入初始密码",
       "passwordRequired": "请输入初始密码",
       "status": "状态",
+      "isEmailVerified": "邮箱验证",
       "emailVerified": "邮箱验证",
       "emailVerifiedYes": "已验证",
-      "emailVerifiedNo": "未验证"
+      "emailVerifiedNo": "未验证",
+      "verified": "已验证",
+      "unverified": "未验证"
     },
     "pagination": {
       "total": "第 {{start}}-{{end}} 条，共 {{total}} 条"

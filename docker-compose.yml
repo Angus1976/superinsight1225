@@ -102,9 +102,17 @@ services:
     ports:
       - "8080:8080"
     environment:
+      # Core configuration
       - LABEL_STUDIO_HOST=http://localhost:8080
       - LABEL_STUDIO_USERNAME=admin@example.com
       - LABEL_STUDIO_PASSWORD=admin
+      # Language configuration (Django i18n)
+      # Default language for Label Studio UI
+      - LANGUAGE_CODE=zh-hans
+      # Label Studio specific language setting
+      - LABEL_STUDIO_DEFAULT_LANGUAGE=zh
+      # Enable language URL parameter support
+      - LABEL_STUDIO_ENABLE_LANGUAGE_PARAM=true
     volumes:
       - label_studio_data:/label-studio/data
     healthcheck:

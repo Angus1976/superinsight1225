@@ -104,7 +104,13 @@ class TaskAdapter:
             "total_items": 1,
             "completed_items": 1 if task_model.status.value == "completed" else 0,
             "tenant_id": task_model.tenant_id or "default_tenant",
-            "label_studio_project_id": task_model.project_id,
+            "label_studio_project_id": task_model.label_studio_project_id or task_model.project_id,
+            # Label Studio sync tracking fields
+            "label_studio_project_created_at": task_model.label_studio_project_created_at,
+            "label_studio_sync_status": task_model.label_studio_sync_status.value if hasattr(task_model.label_studio_sync_status, 'value') else str(task_model.label_studio_sync_status) if task_model.label_studio_sync_status else "pending",
+            "label_studio_last_sync": task_model.label_studio_last_sync,
+            "label_studio_task_count": task_model.label_studio_task_count or 0,
+            "label_studio_annotation_count": task_model.label_studio_annotation_count or 0,
             "tags": []
         }
     
@@ -118,6 +124,7 @@ class TaskAdapter:
         statuses = ["pending", "in_progress", "completed", "cancelled"]
         priorities = ["low", "medium", "high", "urgent"]
         types = ["text_classification", "ner", "sentiment", "qa"]
+        label_studio_sync_statuses = ["pending", "synced", "failed"]
         
         for i in range(count):
             task_id = str(uuid4())
@@ -128,6 +135,13 @@ class TaskAdapter:
             
             total_items = random.randint(50, 1000)
             completed_items = int(total_items * progress / 100)
+            
+            # Label Studio sync tracking
+            ls_sync_status = random.choice(label_studio_sync_statuses)
+            ls_task_count = random.randint(10, 100) if ls_sync_status == "synced" else 0
+            ls_annotation_count = int(ls_task_count * progress / 100) if ls_sync_status == "synced" else 0
+            ls_project_created_at = datetime.utcnow() - timedelta(days=random.randint(1, 30)) if ls_sync_status != "pending" else None
+            ls_last_sync = datetime.utcnow() - timedelta(hours=random.randint(1, 24)) if ls_sync_status == "synced" else None
             
             mock_tasks.append({
                 "id": task_id,
@@ -147,6 +161,12 @@ class TaskAdapter:
                 "completed_items": completed_items,
                 "tenant_id": "default_tenant",
                 "label_studio_project_id": f"project_{i+1}",
+                # Label Studio sync tracking fields
+                "label_studio_project_created_at": ls_project_created_at,
+                "label_studio_sync_status": ls_sync_status,
+                "label_studio_last_sync": ls_last_sync,
+                "label_studio_task_count": ls_task_count,
+                "label_studio_annotation_count": ls_annotation_count,
                 "tags": random.sample(["urgent", "customer", "product", "support", "quality"], random.randint(0, 3))
             })
         

@@ -69,13 +69,17 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
     params.append('enable_postmessage', 'true');
     params.append('enable_hotkeys', 'true');
     
+    // Add language parameter for Label Studio localization
+    // Label Studio uses Django's i18n, supports 'zh' (Chinese) and 'en' (English)
+    params.append('lang', language);
+    
     let url = `${baseUrl}/projects/${projectId}/data`;
     if (params.toString()) {
       url += `?${params.toString()}`;
     }
     
     return url;
-  }, [baseUrl, projectId, taskId, token]);
+  }, [baseUrl, projectId, taskId, token, language]);
 
   // Enhanced message handling with better error handling and logging
   useEffect(() => {

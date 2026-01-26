@@ -65,6 +65,9 @@ export interface UpdateTaskPayload {
   assignee_id?: string;
   due_date?: string;
   tags?: string[];
+  label_studio_project_id?: string;
+  progress?: number;
+  completed_items?: number;
 }
 
 export interface TaskStats {

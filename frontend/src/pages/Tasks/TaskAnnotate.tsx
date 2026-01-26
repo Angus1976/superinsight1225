@@ -19,6 +19,7 @@ import {
   Badge,
   Dropdown,
   Modal,
+  Result,
 } from 'antd';
 import {
   ArrowLeftOutlined,
@@ -32,6 +33,8 @@ import {
   SyncOutlined,
   SettingOutlined,
   InfoCircleOutlined,
+  ExclamationCircleOutlined,
+  LoginOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { LabelStudioEmbed } from '@/components/LabelStudio';
@@ -41,6 +44,8 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { useTask, useUpdateTask } from '@/hooks/useTask';
 import { Permission } from '@/utils/permissions';
 import apiClient from '@/services/api/client';
+import { labelStudioService } from '@/services/labelStudioService';
+import type { AxiosError } from 'axios';
 
 const { Title, Text } = Typography;
 
@@ -96,46 +101,165 @@ const TaskAnnotatePage: React.FC = () => {
   const [fullscreen, setFullscreen] = useState(false);
   const [syncInProgress, setSyncInProgress] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
+  
+  // Error state for better error handling
+  const [error, setError] = useState<{
+    type: 'not_found' | 'auth' | 'network' | 'service' | 'unknown';
+    message: string;
+    details?: string;
+  } | null>(null);
 
   const { data: taskDetail } = useTask(id || '');
   const updateTask = useUpdateTask();
 
-  // 获取项目和任务数据
+  // 获取项目和任务数据 - Enhanced with better error handling
   const fetchData = useCallback(async () => {
     if (!id || !token) return;
 
     try {
       setLoading(true);
+      setError(null);
       
-      // 获取项目信息
-      const projectResponse = await apiClient.get(`/api/label-studio/projects/${id}`, {
+      // Step 1: Validate project exists
+      let projectId = taskDetail?.label_studio_project_id;
+      
+      // If no project ID, try to create project automatically
+      if (!projectId) {
+        try {
+          message.loading({ content: t('annotate.creatingProjectAuto'), key: 'project-creation' });
+          
+          const ensureResult = await labelStudioService.ensureProject({
+            task_id: id,
+            task_name: taskDetail?.name || 'Annotation Project',
+            annotation_type: taskDetail?.annotation_type || 'text_classification',
+          });
+          
+          projectId = ensureResult.project_id;
+          message.success({ content: t('annotate.projectCreatedSuccess'), key: 'project-creation' });
+          
+          // Update task with project ID if we have taskDetail
+          if (taskDetail) {
+            await updateTask.mutateAsync({
+              id: taskDetail.id,
+              payload: { label_studio_project_id: projectId }
+            });
+          }
+        } catch (createError) {
+          console.error('Failed to create project:', createError);
+          setError({
+            type: 'service',
+            message: t('annotate.projectCreationFailed'),
+            details: createError instanceof Error ? createError.message : undefined,
+          });
+          return;
+        }
+      }
+      
+      // Step 2: Fetch project info
+      const projectResponse = await apiClient.get(`/api/label-studio/projects/${projectId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setProject(projectResponse.data);
       
-      // 获取任务列表
-      const tasksResponse = await apiClient.get(`/api/label-studio/projects/${id}/tasks`, {
+      // Step 3: Fetch tasks
+      const tasksResponse = await apiClient.get(`/api/label-studio/projects/${projectId}/tasks`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setTasks(tasksResponse.data.results || []);
       
-      // 找到第一个未标注的任务
-      const unlabeledIndex = tasksResponse.data.results.findIndex((task: LabelStudioTask) => !task.is_labeled);
-      if (unlabeledIndex !== -1) {
-        setCurrentTaskIndex(unlabeledIndex);
+      const tasksList = tasksResponse.data.results || [];
+      
+      // If no tasks, try to import them
+      if (tasksList.length === 0 && id) {
+        try {
+          message.loading({ content: t('annotate.importingTasks'), key: 'task-import' });
+          
+          await labelStudioService.importTasks(projectId, id);
+          
+          // Refetch tasks after import
+          const refetchResponse = await apiClient.get(`/api/label-studio/projects/${projectId}/tasks`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          
+          const importedTasks = refetchResponse.data.results || [];
+          setTasks(importedTasks);
+          message.success({ content: t('annotate.tasksImportedSuccess'), key: 'task-import' });
+          
+          // Find first unlabeled task
+          const unlabeledIndex = importedTasks.findIndex((task: LabelStudioTask) => !task.is_labeled);
+          if (unlabeledIndex !== -1) {
+            setCurrentTaskIndex(unlabeledIndex);
+          }
+          
+          // Count labeled tasks
+          const labeled = importedTasks.filter((task: LabelStudioTask) => task.is_labeled).length;
+          setAnnotationCount(labeled);
+        } catch (importError) {
+          console.error('Failed to import tasks:', importError);
+          // Continue with empty task list - user can still see the project
+          setTasks([]);
+        }
+      } else {
+        setTasks(tasksList);
+        
+        // Find first unlabeled task
+        const unlabeledIndex = tasksList.findIndex((task: LabelStudioTask) => !task.is_labeled);
+        if (unlabeledIndex !== -1) {
+          setCurrentTaskIndex(unlabeledIndex);
+        }
+        
+        // Count labeled tasks
+        const labeled = tasksList.filter((task: LabelStudioTask) => task.is_labeled).length;
+        setAnnotationCount(labeled);
       }
       
-      // 统计已标注数量
-      const labeled = tasksResponse.data.results.filter((task: LabelStudioTask) => task.is_labeled).length;
-      setAnnotationCount(labeled);
+    } catch (err) {
+      console.error('Failed to fetch data:', err);
       
-    } catch (error) {
-      console.error('Failed to fetch data:', error);
-      message.error(t('annotate.loadDataFailed'));
+      // Handle specific error types
+      const axiosError = err as AxiosError<{ detail?: string; message?: string }>;
+      const status = axiosError.response?.status;
+      const errorDetail = axiosError.response?.data?.detail || axiosError.response?.data?.message;
+      
+      if (status === 404) {
+        // Project not found - offer to create it
+        setError({
+          type: 'not_found',
+          message: t('annotate.projectNotFound'),
+          details: t('annotate.projectNotFoundDescription'),
+        });
+      } else if (status === 401 || status === 403) {
+        // Authentication failed
+        setError({
+          type: 'auth',
+          message: t('annotate.authenticationFailed'),
+          details: errorDetail,
+        });
+      } else if (status === 503 || status === 502 || status === 504) {
+        // Service unavailable
+        setError({
+          type: 'service',
+          message: t('annotate.serviceUnavailable'),
+          details: errorDetail,
+        });
+      } else if (axiosError.code === 'ECONNABORTED' || axiosError.code === 'ERR_NETWORK') {
+        // Network error
+        setError({
+          type: 'network',
+          message: t('annotate.networkError'),
+          details: axiosError.message,
+        });
+      } else {
+        // Unknown error
+        setError({
+          type: 'unknown',
+          message: t('annotate.unexpectedError'),
+          details: errorDetail || (err instanceof Error ? err.message : undefined),
+        });
+      }
     } finally {
       setLoading(false);
     }
-  }, [id, token, t]);
+  }, [id, token, taskDetail, updateTask, t]);
 
   useEffect(() => {
     fetchData();
@@ -145,17 +269,20 @@ const TaskAnnotatePage: React.FC = () => {
   const progress = tasks.length > 0 ? Math.round((annotationCount / tasks.length) * 100) : 0;
 
   // 处理标注创建
-  const handleAnnotationCreate = useCallback(async (annotation: AnnotationResult) => {
+  const handleAnnotationCreate = useCallback(async (annotation: unknown) => {
     if (!annotationPerms.canCreate) {
       message.error(t('annotate.noCreatePermission'));
       return;
     }
 
+    // Type guard for annotation
+    const annotationData = annotation as AnnotationResult;
+
     try {
       setSyncInProgress(true);
       const response = await apiClient.post(
         `/api/label-studio/projects/${id}/tasks/${currentTask.id}/annotations`,
-        annotation,
+        annotationData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
@@ -195,17 +322,20 @@ const TaskAnnotatePage: React.FC = () => {
   }, [annotationPerms.canCreate, id, currentTask, token, tasks, currentTaskIndex, annotationCount, taskDetail, updateTask, t]);
 
   // 处理标注更新
-  const handleAnnotationUpdate = useCallback(async (annotation: AnnotationResult) => {
+  const handleAnnotationUpdate = useCallback(async (annotation: unknown) => {
     if (!annotationPerms.canEdit) {
       message.error(t('annotate.noEditPermission'));
       return;
     }
 
+    // Type guard for annotation
+    const annotationData = annotation as AnnotationResult;
+
     try {
       setSyncInProgress(true);
       await apiClient.patch(
         `/api/label-studio/annotations/${currentTask.annotations[0]?.id}`,
-        annotation,
+        annotationData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
@@ -215,7 +345,7 @@ const TaskAnnotatePage: React.FC = () => {
       const updatedTasks = [...tasks];
       updatedTasks[currentTaskIndex].annotations[0] = {
         ...updatedTasks[currentTaskIndex].annotations[0],
-        ...annotation
+        ...annotationData
       };
       setTasks(updatedTasks);
       setLastSyncTime(new Date());
@@ -265,15 +395,66 @@ const TaskAnnotatePage: React.FC = () => {
   const handleSyncProgress = useCallback(async () => {
     try {
       setSyncInProgress(true);
+      setError(null);
       await fetchData();
       setLastSyncTime(new Date());
       message.success(t('annotate.syncComplete'));
-    } catch (error) {
+    } catch (err) {
       message.error(t('annotate.syncFailed'));
     } finally {
       setSyncInProgress(false);
     }
   }, [fetchData, t]);
+
+  // Handle retry after error
+  const handleRetry = useCallback(async () => {
+    setError(null);
+    await fetchData();
+  }, [fetchData]);
+
+  // Handle re-login for auth errors
+  const handleReLogin = useCallback(() => {
+    // Navigate to login page
+    navigate('/login', { state: { from: `/tasks/${id}/annotate` } });
+  }, [navigate, id]);
+
+  // Handle create project for not found errors
+  const handleCreateProject = useCallback(async () => {
+    if (!id || !taskDetail) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
+      
+      message.loading({ content: t('annotate.creatingProjectAuto'), key: 'project-creation' });
+      
+      const ensureResult = await labelStudioService.ensureProject({
+        task_id: id,
+        task_name: taskDetail.name || 'Annotation Project',
+        annotation_type: taskDetail.annotation_type || 'text_classification',
+      });
+      
+      message.success({ content: t('annotate.projectCreatedSuccess'), key: 'project-creation' });
+      
+      // Update task with project ID
+      await updateTask.mutateAsync({
+        id: taskDetail.id,
+        payload: { label_studio_project_id: ensureResult.project_id }
+      });
+      
+      // Refetch data
+      await fetchData();
+    } catch (err) {
+      console.error('Failed to create project:', err);
+      setError({
+        type: 'service',
+        message: t('annotate.projectCreationFailed'),
+        details: err instanceof Error ? err.message : undefined,
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [id, taskDetail, updateTask, fetchData, t]);
 
   // 跳转到指定任务
   const handleJumpToTask = useCallback((taskIndex: number) => {
@@ -287,6 +468,99 @@ const TaskAnnotatePage: React.FC = () => {
       <div style={{ textAlign: 'center', padding: '50px' }}>
         <Spin size="large" />
         <p style={{ marginTop: 16 }}>{t('annotate.loadingTask')}</p>
+      </div>
+    );
+  }
+
+  // Error state with recovery options
+  if (error) {
+    const getErrorIcon = () => {
+      switch (error.type) {
+        case 'not_found':
+          return <ExclamationCircleOutlined style={{ color: '#faad14' }} />;
+        case 'auth':
+          return <LockOutlined style={{ color: '#ff4d4f' }} />;
+        case 'network':
+        case 'service':
+          return <ExclamationCircleOutlined style={{ color: '#ff4d4f' }} />;
+        default:
+          return <ExclamationCircleOutlined style={{ color: '#ff4d4f' }} />;
+      }
+    };
+
+    const getErrorActions = () => {
+      switch (error.type) {
+        case 'not_found':
+          return (
+            <Space>
+              <Button type="primary" onClick={handleCreateProject}>
+                {t('annotate.creatingProject')}
+              </Button>
+              <Button onClick={handleBackToTask}>
+                {t('annotate.backToTask')}
+              </Button>
+            </Space>
+          );
+        case 'auth':
+          return (
+            <Space>
+              <Button type="primary" icon={<LoginOutlined />} onClick={handleReLogin}>
+                {t('common:login')}
+              </Button>
+              <Button onClick={handleBackToTask}>
+                {t('annotate.backToTask')}
+              </Button>
+            </Space>
+          );
+        case 'network':
+        case 'service':
+          return (
+            <Space>
+              <Button type="primary" icon={<ReloadOutlined />} onClick={handleRetry}>
+                {t('annotate.retryLoading')}
+              </Button>
+              <Button onClick={handleBackToTask}>
+                {t('annotate.backToTask')}
+              </Button>
+            </Space>
+          );
+        default:
+          return (
+            <Space>
+              <Button type="primary" icon={<ReloadOutlined />} onClick={handleRetry}>
+                {t('annotate.retryLoading')}
+              </Button>
+              <Button onClick={handleBackToTask}>
+                {t('annotate.backToTask')}
+              </Button>
+            </Space>
+          );
+      }
+    };
+
+    return (
+      <div style={{ padding: '50px', maxWidth: '600px', margin: '0 auto' }}>
+        <Result
+          icon={getErrorIcon()}
+          title={error.message}
+          subTitle={error.details}
+          extra={getErrorActions()}
+        />
+        {error.details && error.type === 'unknown' && (
+          <Alert
+            type="info"
+            message={t('annotate.errorDetails')}
+            description={
+              <div>
+                <p>{error.details}</p>
+                <p style={{ marginTop: 8, color: '#666' }}>
+                  {t('annotate.contactSupport')}
+                </p>
+              </div>
+            }
+            style={{ marginTop: 16 }}
+          />
+        )}
       </div>
     );
   }
@@ -446,7 +720,7 @@ const TaskAnnotatePage: React.FC = () => {
                 <LabelStudioEmbed
                   projectId={project.id.toString()}
                   taskId={currentTask.id.toString()}
-                  token={token}
+                  token={token ?? undefined}
                   onAnnotationCreate={handleAnnotationCreate}
                   onAnnotationUpdate={handleAnnotationUpdate}
                   onTaskComplete={() => {

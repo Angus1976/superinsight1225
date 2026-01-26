@@ -74,6 +74,13 @@ class SyncStatus(str, enum.Enum):
     FAILED = "failed"
 
 
+class LabelStudioSyncStatus(str, enum.Enum):
+    """Label Studio synchronization status enumeration."""
+    PENDING = "pending"
+    SYNCED = "synced"
+    FAILED = "failed"
+
+
 class DocumentModel(Base):
     """
     Document table for storing source documents.
@@ -112,6 +119,7 @@ class TaskModel(Base):
 
     Links documents to annotation projects and tracks progress.
     Extended with sync-related fields for tracking synchronization status.
+    Extended with Label Studio integration fields for annotation workflow.
     """
     __tablename__ = "tasks"
 
@@ -132,6 +140,18 @@ class TaskModel(Base):
     sync_execution_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)  # UUID of sync execution
     is_from_sync: Mapped[bool] = mapped_column(Boolean, default=False)  # Whether task came from sync
     sync_metadata: Mapped[dict] = mapped_column(JSONB, default={})  # Additional sync-related metadata
+
+    # Label Studio integration fields (Annotation Workflow Fix)
+    label_studio_project_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)
+    label_studio_project_created_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    label_studio_sync_status: Mapped[Optional[LabelStudioSyncStatus]] = mapped_column(
+        SQLEnum(LabelStudioSyncStatus), 
+        default=LabelStudioSyncStatus.PENDING,
+        nullable=True
+    )
+    label_studio_last_sync: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    label_studio_task_count: Mapped[int] = mapped_column(Integer, default=0)
+    label_studio_annotation_count: Mapped[int] = mapped_column(Integer, default=0)
 
     # Relationships
     document: Mapped["DocumentModel"] = relationship("DocumentModel", back_populates="tasks")

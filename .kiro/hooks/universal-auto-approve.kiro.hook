@@ -9,5 +9,7 @@
   "then": {
     "type": "askAgent",
     "prompt": "启用自动确认模式。对以下命令自动确认执行：\n\n## 🚀 自动执行的命令\n- 测试: pytest, npm test, vitest\n- 构建: npm run build/lint/typecheck\n- 格式化: black, isort, prettier\n- 依赖: pip install, npm install\n- 数据库: alembic upgrade/revision\n- Docker: docker-compose up/logs/ps\n- 只读: cat, head, tail, ls, find, grep, git status/log/diff\n\n## ⚡ 自动确认的提示\n- 'Run tests?' → YES\n- 'Continue?' → YES\n- 'Proceed?' → YES\n- 'Execute?' → YES\n\n当前会话已启用自动确认模式。"
-  }
+  },
+  "workspaceFolderName": "superdata",
+  "shortName": "universal-auto-approve"
 }

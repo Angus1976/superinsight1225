@@ -20,6 +20,11 @@ export const API_ENDPOINTS = {
     TASKS: (projectId: string) => `/api/label-studio/projects/${projectId}/tasks`,
     ANNOTATIONS: (projectId: string, taskId: string) =>
       `/api/label-studio/projects/${projectId}/tasks/${taskId}/annotations`,
+    // New endpoints for annotation workflow fix
+    ENSURE_PROJECT: '/api/label-studio/projects/ensure',
+    VALIDATE_PROJECT: (id: string) => `/api/label-studio/projects/${id}/validate`,
+    IMPORT_TASKS: (projectId: string) => `/api/label-studio/projects/${projectId}/import-tasks`,
+    AUTH_URL: (projectId: string) => `/api/label-studio/projects/${projectId}/auth-url`,
   },
 
   // Users

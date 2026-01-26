@@ -68,6 +68,12 @@ class TaskResponse(BaseModel):
     completed_items: int
     tenant_id: str
     label_studio_project_id: Optional[str]
+    # Label Studio sync tracking fields
+    label_studio_project_created_at: Optional[datetime] = None
+    label_studio_sync_status: Optional[str] = None
+    label_studio_last_sync: Optional[datetime] = None
+    label_studio_task_count: int = 0
+    label_studio_annotation_count: int = 0
     tags: Optional[List[str]]
 
     class Config:
@@ -207,6 +213,12 @@ def create_task(
             "completed_items": 0,
             "tenant_id": current_user.tenant_id,
             "label_studio_project_id": None,
+            # Label Studio sync tracking fields
+            "label_studio_project_created_at": None,
+            "label_studio_sync_status": "pending",
+            "label_studio_last_sync": None,
+            "label_studio_task_count": 0,
+            "label_studio_annotation_count": 0,
             "tags": request.tags or []
         }
         

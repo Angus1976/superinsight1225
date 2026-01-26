@@ -199,6 +199,10 @@ export const routes: RouteObject[] = [
         element: withSuspense(TasksPage, 'table'),
       },
       {
+        path: 'tasks/create',
+        element: <Navigate to="/tasks" replace />,
+      },
+      {
         path: 'tasks/:id',
         element: withSuspense(TaskDetailPage, 'page'),
       },

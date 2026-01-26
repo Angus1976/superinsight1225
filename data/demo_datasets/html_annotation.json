@@ -1,0 +1,22 @@
+[
+  {
+    "html": "<div><h1>产品介绍</h1><p>这是一款<span class='highlight'>高性能</span>的智能手机，配备了最新的处理器和<span class='highlight'>AI相机</span>系统。</p><ul><li>6.5英寸OLED屏幕</li><li>5000mAh大电池</li><li>支持5G网络</li></ul></div>",
+    "title": "产品页面 1"
+  },
+  {
+    "html": "<article><h2>新闻标题</h2><p class='date'>2026-01-25</p><p>今天，科技公司发布了最新的<strong>人工智能</strong>产品，该产品采用了先进的<strong>深度学习</strong>技术。</p><p>据悉，这款产品将在下个月正式上市。</p></article>",
+    "title": "新闻文章 1"
+  },
+  {
+    "html": "<div class='review'><h3>用户评价</h3><div class='rating'>★★★★★</div><p>非常满意！<em>物流快</em>，<em>包装好</em>，产品质量也很棒。</p><p class='author'>- 张三</p></div>",
+    "title": "用户评论 1"
+  },
+  {
+    "html": "<section><h2>技术文档</h2><pre><code>function hello() {\n  console.log('Hello World');\n}</code></pre><p>这是一个简单的JavaScript函数示例。</p></section>",
+    "title": "代码文档 1"
+  },
+  {
+    "html": "<div class='email'><p>尊敬的客户：</p><p>您的订单<span class='order-id'>#12345</span>已经发货，预计<span class='date'>3天</span>内送达。</p><p>感谢您的购买！</p></div>",
+    "title": "邮件内容 1"
+  }
+]

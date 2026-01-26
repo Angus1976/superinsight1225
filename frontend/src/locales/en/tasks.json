@@ -141,7 +141,7 @@
   "annotationConfig": "Annotation Configuration",
   "assignment": "Assignment",
   "description": "Description",
-  "tags": "Tags",
+  "tagsLabel": "Tags",
   "taskNameRequired": "Please enter task name",
   "taskNameMaxLength": "Task name cannot exceed 100 characters",
   "taskNamePlaceholder": "Enter task name",

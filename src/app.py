@@ -837,7 +837,9 @@ async def lifespan(app: FastAPI):
             # Get database session for health status persistence
             db_session = None
             try:
-                db_session = await anext(get_db_session())
+                # Use next() instead of anext() for sync generator
+                db_gen = get_db_session()
+                db_session = next(db_gen)
             except Exception as e:
                 logger.warning(f"Could not get database session for health monitor: {e}")
 
@@ -1150,6 +1152,16 @@ except ImportError as e:
     logger.error(f"Tasks API not available: {e}")
 except Exception as e:
     logger.error(f"Tasks API failed to load: {e}")
+
+# Include Label Studio API router
+try:
+    from src.api.label_studio_api import router as label_studio_router
+    app.include_router(label_studio_router)
+    logger.info("Label Studio API loaded successfully")
+except ImportError as e:
+    logger.error(f"Label Studio API not available: {e}")
+except Exception as e:
+    logger.error(f"Label Studio API failed to load: {e}")
 
 # Include data sync API router
 try:

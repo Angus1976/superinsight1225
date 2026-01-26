@@ -10,7 +10,14 @@ const TaskEditPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation('tasks');
-  const { data: task, isLoading, error } = useTask(id || '');
+  
+  // Redirect if ID is invalid (e.g., "create")
+  if (id === 'create' || !id) {
+    navigate('/tasks', { replace: true });
+    return null;
+  }
+  
+  const { data: task, isLoading, error } = useTask(id);
   const updateTask = useUpdateTask();
 
   // Mock data for development

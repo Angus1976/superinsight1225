@@ -51,7 +51,7 @@ class UserResponse(BaseModel):
 
 
 # Dependency to get current user
-async def get_current_user(
+def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db_session)
 ) -> UserModel:
@@ -87,7 +87,7 @@ async def get_current_user(
 
 # Authentication endpoints
 @router.post("/login", response_model=LoginResponse)
-async def login(
+def login(
     request: LoginRequest,
     db: Session = Depends(get_db_session)
 ):
@@ -161,7 +161,7 @@ async def login(
 
 
 @router.post("/logout")
-async def logout(
+def logout(
     current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db_session)
 ):
@@ -189,7 +189,7 @@ async def logout(
 
 
 @router.get("/me", response_model=UserResponse)
-async def get_current_user_info(
+def get_current_user_info(
     current_user: UserModel = Depends(get_current_user)
 ):
     """Get current user information."""
@@ -206,7 +206,7 @@ async def get_current_user_info(
 
 
 @router.get("/tenants")
-async def get_tenants(db: Session = Depends(get_db_session)):
+def get_tenants(db: Session = Depends(get_db_session)):
     """Get available tenants for login."""
     try:
         from src.database.multi_tenant_models import TenantModel, TenantStatus

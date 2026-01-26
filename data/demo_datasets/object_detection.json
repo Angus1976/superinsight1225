@@ -1,0 +1,27 @@
+[
+  {
+    "image": "https://images.unsplash.com/photo-1544568100-847a948585b9?w=800",
+    "title": "街道场景 - 汽车检测",
+    "objects": ["car", "person", "traffic_light"]
+  },
+  {
+    "image": "https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800",
+    "title": "室内场景 - 家具检测",
+    "objects": ["chair", "table", "lamp"]
+  },
+  {
+    "image": "https://images.unsplash.com/photo-1542838132-92c53300491e?w=800",
+    "title": "办公场景 - 物品检测",
+    "objects": ["laptop", "phone", "cup"]
+  },
+  {
+    "image": "https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=800",
+    "title": "厨房场景 - 食材检测",
+    "objects": ["apple", "banana", "orange"]
+  },
+  {
+    "image": "https://images.unsplash.com/photo-1517849845537-4d257902454a?w=800",
+    "title": "宠物场景 - 动物检测",
+    "objects": ["dog", "cat"]
+  }
+]

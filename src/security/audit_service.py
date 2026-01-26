@@ -627,6 +627,17 @@ class EnhancedAuditService(AuditService):
     ) -> Dict[str, Any]:
         """记录增强的审计事件，包含风险评估"""
         
+        # Validate IP address - set to None if invalid
+        validated_ip = None
+        if ip_address:
+            try:
+                import ipaddress
+                ipaddress.ip_address(ip_address)
+                validated_ip = ip_address
+            except ValueError:
+                # Invalid IP address, set to None
+                validated_ip = None
+        
         # 基础审计日志记录
         audit_log = AuditLogModel(
             user_id=user_id,
@@ -634,7 +645,7 @@ class EnhancedAuditService(AuditService):
             action=action,
             resource_type=resource_type,
             resource_id=resource_id,
-            ip_address=ip_address,
+            ip_address=validated_ip,
             user_agent=user_agent,
             details=details or {},
             timestamp=datetime.utcnow()  # 显式设置时间戳

@@ -1,0 +1,32 @@
+[
+  {
+    "video": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    "title": "Big Buck Bunny",
+    "description": "开源动画短片",
+    "duration": "9:56"
+  },
+  {
+    "video": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+    "title": "Elephants Dream",
+    "description": "开源科幻动画",
+    "duration": "10:53"
+  },
+  {
+    "video": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+    "title": "For Bigger Blazes",
+    "description": "示例视频片段",
+    "duration": "0:15"
+  },
+  {
+    "video": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+    "title": "For Bigger Escapes",
+    "description": "旅行视频片段",
+    "duration": "0:15"
+  },
+  {
+    "video": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
+    "title": "For Bigger Fun",
+    "description": "娱乐视频片段",
+    "duration": "0:15"
+  }
+]

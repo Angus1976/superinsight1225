@@ -1,0 +1,62 @@
+[
+  {
+    "id": 1,
+    "audio": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+    "video": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+    "text": "这是一段充满活力的音乐视频，展示了现代科技产品的魅力。背景音乐节奏明快，画面色彩鲜艳。",
+    "html": "<div class='content'><h2>产品介绍</h2><p>这款产品采用了<strong>最新技术</strong>，具有<em>卓越性能</em>。</p><ul><li>高清显示</li><li>长续航</li><li>快速充电</li></ul></div>",
+    "metadata": {
+      "duration": "0:15",
+      "category": "广告",
+      "language": "中文"
+    }
+  },
+  {
+    "id": 2,
+    "audio": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+    "video": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+    "text": "旅行视频配上轻松的背景音乐，展现了世界各地的美丽风景。从雪山到海滩，从城市到乡村，每一帧都是一幅画。",
+    "html": "<article><h1>旅行日记</h1><p class='date'>2026-01-25</p><p>今天我们来到了<span class='location'>马尔代夫</span>，这里的海水清澈见底，沙滩洁白细腻。</p><blockquote>这是我见过最美的地方！</blockquote></article>",
+    "metadata": {
+      "duration": "0:15",
+      "category": "旅游",
+      "language": "中文"
+    }
+  },
+  {
+    "id": 3,
+    "audio": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
+    "video": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
+    "text": "娱乐节目片段，主持人正在介绍最新的游戏产品。现场气氛热烈，观众反应积极。音乐欢快，画面生动。",
+    "html": "<div class='review'><h3>用户评价</h3><div class='rating'>★★★★★</div><p>这个游戏太好玩了！<strong>画质精美</strong>，<strong>操作流畅</strong>，强烈推荐！</p><p class='author'>- 游戏玩家小王</p></div>",
+    "metadata": {
+      "duration": "0:15",
+      "category": "娱乐",
+      "language": "中文"
+    }
+  },
+  {
+    "id": 4,
+    "audio": "https://www2.cs.uic.edu/~i101/SoundFiles/StarWars60.wav",
+    "video": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+    "text": "经典动画短片《大雄兔》，讲述了一只可爱兔子的冒险故事。配乐史诗感十足，画面制作精良，适合全年龄观看。",
+    "html": "<section class='movie-info'><h2>电影信息</h2><table><tr><td>片名：</td><td>Big Buck Bunny</td></tr><tr><td>时长：</td><td>9分56秒</td></tr><tr><td>类型：</td><td>动画/冒险</td></tr><tr><td>评分：</td><td>9.2/10</td></tr></table></section>",
+    "metadata": {
+      "duration": "9:56",
+      "category": "动画",
+      "language": "英文"
+    }
+  },
+  {
+    "id": 5,
+    "audio": "https://www2.cs.uic.edu/~i101/SoundFiles/BabyElephantWalk60.wav",
+    "video": "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+    "text": "科幻动画《大象之梦》，探讨了虚拟现实与真实世界的界限。配乐神秘而富有张力，视觉效果令人印象深刻。",
+    "html": "<div class='synopsis'><h2>剧情简介</h2><p>在一个<em>虚拟世界</em>中，两个角色探索着<strong>现实与幻想</strong>的边界。</p><p class='warning'>本片包含一些<span class='highlight'>抽象概念</span>，建议成人观看。</p></div>",
+    "metadata": {
+      "duration": "10:53",
+      "category": "科幻",
+      "language": "英文"
+    }
+  }
+]

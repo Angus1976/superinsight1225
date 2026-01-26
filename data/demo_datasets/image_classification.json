@@ -1,0 +1,52 @@
+[
+  {
+    "image": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800",
+    "title": "山景",
+    "category": "自然风光"
+  },
+  {
+    "image": "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800",
+    "title": "森林",
+    "category": "自然风光"
+  },
+  {
+    "image": "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800",
+    "title": "星空",
+    "category": "自然风光"
+  },
+  {
+    "image": "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800",
+    "title": "城市夜景",
+    "category": "城市建筑"
+  },
+  {
+    "image": "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800",
+    "title": "现代建筑",
+    "category": "城市建筑"
+  },
+  {
+    "image": "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=800",
+    "title": "猫咪",
+    "category": "动物"
+  },
+  {
+    "image": "https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=800",
+    "title": "狗狗",
+    "category": "动物"
+  },
+  {
+    "image": "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800",
+    "title": "美食",
+    "category": "食物"
+  },
+  {
+    "image": "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800",
+    "title": "披萨",
+    "category": "食物"
+  },
+  {
+    "image": "https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=800",
+    "title": "自行车",
+    "category": "交通工具"
+  }
+]

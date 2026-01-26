@@ -38,7 +38,7 @@ services:
       - "8000:8000"
     environment:
       - APP_ENV=development
-      - DATABASE_URL=postgresql+asyncpg://superinsight:password@postgres:5432/superinsight
+      - DATABASE_URL=postgresql://superinsight:password@postgres:5432/superinsight
       - REDIS_URL=redis://redis:6379/0
       - LABEL_STUDIO_URL=http://label-studio:8080
       - ARGILLA_URL=http://argilla:6900

@@ -258,7 +258,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
               </Col>
             </Row>
 
-            <Form.Item name="tags" label={t('tags')}>
+            <Form.Item name="tags" label={t('tagsLabel')}>
               <Select
                 mode="tags"
                 placeholder={t('tagsPlaceholder')}

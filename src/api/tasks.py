@@ -20,7 +20,10 @@ from src.security.models import UserModel
 logger = logging.getLogger(__name__)
 
 # Create router
-router = APIRouter(prefix="/api/v1/tasks", tags=["Tasks"])
+router = APIRouter(prefix="/api/tasks", tags=["Tasks"])
+
+# In-memory storage for development (will be replaced with database later)
+_tasks_storage: Dict[str, Dict[str, Any]] = {}
 
 
 # Request/Response models
@@ -98,7 +101,11 @@ def get_task_or_404(task_id: str, db: Session, user: UserModel) -> Dict[str, Any
             detail="Invalid task ID format"
         )
     
-    # For now, use mock data since we're adapting the existing model
+    # Check in-memory storage first
+    if task_id in _tasks_storage:
+        return _tasks_storage[task_id]
+    
+    # Fall back to mock data
     mock_tasks = TaskAdapter.create_mock_tasks(10)
     for task in mock_tasks:
         if task["id"] == task_id:
@@ -117,7 +124,7 @@ def task_to_response(task: Dict[str, Any]) -> TaskResponse:
 
 # Task endpoints
 @router.get("", response_model=TaskListResponse)
-async def list_tasks(
+def list_tasks(
     page: int = Query(1, ge=1, description="Page number"),
     size: int = Query(10, ge=1, le=100, description="Page size"),
     status: Optional[str] = Query(None, description="Filter by status"),
@@ -129,8 +136,8 @@ async def list_tasks(
 ):
     """Get list of tasks with pagination and filtering."""
     try:
-        # For now, use mock data for development
-        all_tasks = TaskAdapter.create_mock_tasks(20)
+        # Combine in-memory tasks with mock data
+        all_tasks = list(_tasks_storage.values()) + TaskAdapter.create_mock_tasks(20)
         
         # Apply filters
         filtered_tasks = all_tasks
@@ -173,16 +180,17 @@ async def list_tasks(
 
 
 @router.post("", response_model=TaskResponse)
-async def create_task(
+def create_task(
     request: TaskCreateRequest,
     current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db_session)
 ):
     """Create a new task."""
     try:
-        # For now, create a mock task response
+        # Create new task
+        task_id = str(uuid4())
         new_task = {
-            "id": str(uuid4()),
+            "id": task_id,
             "name": request.name,
             "description": request.description,
             "status": "pending",
@@ -202,7 +210,10 @@ async def create_task(
             "tags": request.tags or []
         }
         
-        logger.info(f"Task created: {new_task['id']} by {current_user.username}")
+        # Store in memory
+        _tasks_storage[task_id] = new_task
+        
+        logger.info(f"Task created: {task_id} by {current_user.username}")
         
         return task_to_response(new_task)
         
@@ -215,7 +226,7 @@ async def create_task(
 
 
 @router.get("/{task_id}", response_model=TaskResponse)
-async def get_task(
+def get_task(
     task_id: str,
     current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db_session)
@@ -225,8 +236,8 @@ async def get_task(
     return task_to_response(task)
 
 
-@router.put("/{task_id}", response_model=TaskResponse)
-async def update_task(
+@router.patch("/{task_id}", response_model=TaskResponse)
+def update_task(
     task_id: str,
     request: TaskUpdateRequest,
     current_user: UserModel = Depends(get_current_user),
@@ -256,7 +267,7 @@ async def update_task(
 
 
 @router.delete("/{task_id}")
-async def delete_task(
+def delete_task(
     task_id: str,
     current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db_session)
@@ -264,6 +275,10 @@ async def delete_task(
     """Delete task."""
     try:
         task = get_task_or_404(task_id, db, current_user)
+        
+        # Remove from storage if it exists
+        if task_id in _tasks_storage:
+            del _tasks_storage[task_id]
         
         logger.info(f"Task deleted: {task_id} by {current_user.username}")
         
@@ -278,7 +293,7 @@ async def delete_task(
 
 
 @router.get("/stats", response_model=TaskStatsResponse)
-async def get_task_stats(
+def get_task_stats(
     current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db_session)
 ):
@@ -318,7 +333,7 @@ async def get_task_stats(
 
 
 @router.post("/batch/delete")
-async def batch_delete_tasks(
+def batch_delete_tasks(
     task_ids: List[str],
     current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db_session)

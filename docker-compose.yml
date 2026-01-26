@@ -126,13 +126,16 @@ services:
       - ARGILLA_HOME_PATH=/argilla
       - ARGILLA_ELASTICSEARCH=http://elasticsearch:9200
       - ARGILLA_DATABASE_URL=postgresql://superinsight:password@postgres:5432/argilla
+      - ARGILLA_REDIS_URL=redis://redis:6379/0
     depends_on:
       - elasticsearch
       - postgres
+      - redis
     volumes:
       - argilla_data:/argilla
+    user: "0:0"  # Run as root to fix permission issues
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:6900/api/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:6900/"]
       interval: 30s
       timeout: 10s
       retries: 3

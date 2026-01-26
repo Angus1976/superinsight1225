@@ -593,7 +593,10 @@ class SyncAuditLogModel(Base):
     tenant_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
 
     # Action identification
-    action: Mapped[AuditAction] = mapped_column(SQLEnum(AuditAction), nullable=False)
+    action: Mapped[AuditAction] = mapped_column(
+        SQLEnum(AuditAction, values_callable=lambda x: [e.value for e in x]),
+        nullable=False
+    )
 
     # Related entities
     job_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True, index=True)

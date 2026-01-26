@@ -1,4 +1,54 @@
 {
+  "hierarchy": "Workspace Hierarchy",
+  "selectTenant": "Select Tenant",
+  "selectTenantFirst": "Please select a tenant first",
+  "details": "Details",
+  "selectWorkspace": "Select Workspace",
+  "dragHint": "Drag workspace to move",
+  "create": "Create",
+  "noWorkspaces": "No workspaces",
+  "createSuccess": "Created successfully",
+  "createError": "Failed to create",
+  "updateSuccess": "Updated successfully",
+  "updateError": "Failed to update",
+  "deleteSuccess": "Deleted successfully",
+  "deleteError": "Failed to delete",
+  "archived": "Archived",
+  "restored": "Restored",
+  "moved": "Moved successfully",
+  "moveError": "Failed to move",
+  "statusArchived": "Archived",
+  "confirmArchive": "Confirm Archive",
+  "confirmArchiveContent": "Are you sure you want to archive workspace {{name}}?",
+  "confirmDelete": "Confirm Delete",
+  "confirmDeleteContent": "Are you sure you want to delete workspace {{name}}? This action cannot be undone.",
+  "templateInDev": "Template feature in development",
+  "createWorkspace": "Create Workspace",
+  "editWorkspace": "Edit Workspace",
+  "form": {
+    "name": "Name",
+    "nameRequired": "Please enter name",
+    "namePlaceholder": "Enter workspace name",
+    "description": "Description",
+    "descriptionPlaceholder": "Enter workspace description",
+    "parentWorkspace": "Parent Workspace"
+  },
+  "fields": {
+    "id": "ID",
+    "name": "Name",
+    "status": "Status",
+    "parent": "Parent Workspace",
+    "createdAt": "Created At",
+    "description": "Description"
+  },
+  "status": {
+    "active": "Active",
+    "archived": "Archived",
+    "root": "Root"
+  },
+  "actions": {
+    "delete": "Delete"
+  },
   "member": {
     "title": "Member Management",
     "totalMembers": "Total Members",

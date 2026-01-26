@@ -25,7 +25,10 @@ from sqlalchemy.orm import Session
 
 from src.database.connection import get_db_session
 from src.models.user import User as UserModel
-from src.security.security_controller import security_controller
+from src.security.controller import SecurityController
+
+security_controller = SecurityController()
+
 from src.admin.schemas import (
     ConfigType,
     ValidationResult,
@@ -65,13 +68,18 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/admin", tags=["Admin Configuration"])
 
 # Security setup
-security = HTTPBearer()
+# Note: HTTPBearer is commented out to allow public dashboard endpoint
+# Individual endpoints that need auth should use Depends(get_admin_user)
+# security = HTTPBearer()
+
+# Public router for endpoints that don't require authentication
+public_router = APIRouter(prefix="/api/v1/admin", tags=["Admin Configuration - Public"])
 
 
 # ========== Dependencies ==========
 
 async def get_admin_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
+    credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer()),
     db: Session = Depends(get_db_session)
 ) -> UserModel:
     """
@@ -117,14 +125,18 @@ async def get_admin_user(
 
 # ========== Dashboard ==========
 
-@router.get("/dashboard", response_model=DashboardData)
-async def get_dashboard() -> DashboardData:
+@public_router.get("/dashboard", response_model=DashboardData)
+async def get_dashboard(
+    db: Session = Depends(get_db_session)
+) -> DashboardData:
     """
     Get admin dashboard data.
     
     Returns system health, key metrics, recent alerts, and quick actions.
     
     **Requirement 1.1, 1.2: Dashboard**
+    
+    Note: This endpoint is currently public. Add authentication in production.
     """
     # In a real implementation, this would aggregate data from various services
     return DashboardData(

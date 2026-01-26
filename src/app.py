@@ -1207,8 +1207,9 @@ except Exception as e:
 
 # Include admin router
 try:
-    from src.api.admin import router as admin_router
+    from src.api.admin import router as admin_router, public_router as admin_public_router
     app.include_router(admin_router)
+    app.include_router(admin_public_router)
     logger.info("Admin API loaded successfully")
 except Exception as e:
     logger.error(f"Admin API failed to load: {e}")

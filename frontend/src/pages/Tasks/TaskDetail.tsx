@@ -16,6 +16,7 @@ import {
   Statistic,
   Tabs,
   Badge,
+  Tooltip,
 } from 'antd';
 import {
   ArrowLeftOutlined,
@@ -27,6 +28,7 @@ import {
   BarChartOutlined,
   TeamOutlined,
   FileTextOutlined,
+  ExportOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useTask, useUpdateTask, useDeleteTask } from '@/hooks/useTask';
@@ -196,22 +198,34 @@ const TaskDetailPage: React.FC = () => {
                           <Button 
                             type="primary" 
                             size="large"
-                            onClick={() => navigate(`/tasks/${id}/annotate`)}
+                            icon={<PlayCircleOutlined />}
+                            onClick={() => {
+                              // 导航到标注页面
+                              navigate(`/tasks/${id}/annotate`);
+                            }}
                           >
                             {t('startAnnotation')}
                           </Button>
                         ) : (
-                          <Button 
-                            type="primary" 
-                            size="large"
-                            disabled
-                            title={t('noAnnotationPermission')}
-                          >
-                            {t('startAnnotation')}
-                          </Button>
+                          <Tooltip title={t('noAnnotationPermission')}>
+                            <Button 
+                              type="primary" 
+                              size="large"
+                              icon={<PlayCircleOutlined />}
+                              disabled
+                            >
+                              {t('startAnnotation')}
+                            </Button>
+                          </Tooltip>
                         )}
                         <Button 
-                          onClick={() => window.open(`/api/label-studio/projects/${currentTask.label_studio_project_id}`, '_blank')}
+                          size="large"
+                          icon={<ExportOutlined />}
+                          onClick={() => {
+                            // 在新窗口中打开 Label Studio 项目
+                            const labelStudioUrl = `/label-studio/projects/${currentTask.label_studio_project_id}`;
+                            window.open(labelStudioUrl, '_blank', 'noopener,noreferrer');
+                          }}
                         >
                           {t('openInNewWindow')}
                         </Button>

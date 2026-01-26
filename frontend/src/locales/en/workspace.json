@@ -1,135 +1,279 @@
 {
-  "title": "Workspace Management",
-  "hierarchy": "Workspace Hierarchy",
-  "details": "Workspace Details",
-  "selectTenant": "Select Tenant",
-  "selectTenantFirst": "Please select a tenant first",
-  "selectWorkspace": "Please select a workspace on the left",
-  "noWorkspaces": "No workspaces",
-  "dragHint": "Drag to adjust hierarchy, right-click for more options",
-  "templateInDev": "Template feature is under development",
-  "create": "Create",
-  "createWorkspace": "Create Workspace",
-  "editWorkspace": "Edit Workspace",
-  "createSuccess": "Workspace created successfully",
-  "createError": "Failed to create workspace",
-  "updateSuccess": "Workspace updated successfully",
-  "updateError": "Failed to update workspace",
-  "deleteSuccess": "Workspace deleted successfully",
-  "deleteError": "Failed to delete workspace",
-  "archived": "Workspace archived",
-  "restored": "Workspace restored",
-  "moved": "Workspace moved",
-  "moveError": "Failed to move",
-  "statusArchived": "Archived",
-  "actions": {
-    "addChild": "Add Child Workspace",
-    "edit": "Edit",
-    "duplicate": "Duplicate as Template",
-    "archive": "Archive",
-    "restore": "Restore",
-    "delete": "Delete"
-  },
-  "confirmArchive": "Confirm Archive",
-  "confirmArchiveContent": "Are you sure you want to archive workspace \"{{name}}\"?",
-  "confirmDelete": "Confirm Delete",
-  "confirmDeleteContent": "Are you sure you want to delete workspace \"{{name}}\"? This action cannot be undone!",
-  "fields": {
-    "id": "ID",
-    "name": "Name",
-    "status": "Status",
-    "parent": "Parent",
-    "createdAt": "Created At",
-    "description": "Description"
-  },
-  "status": {
-    "active": "Active",
-    "archived": "Archived",
-    "root": "Root"
-  },
-  "form": {
+  "workspace": {
+    "title": "Workspace",
     "name": "Workspace Name",
-    "namePlaceholder": "Enter workspace name",
-    "nameRequired": "Please enter workspace name",
     "description": "Description",
-    "descriptionPlaceholder": "Enter description",
-    "parentWorkspace": "Parent Workspace"
-  },
-  "member": {
-    "title": "Member Management",
-    "totalMembers": "Total Members",
-    "admins": "Admins",
-    "regularMembers": "Regular Members",
-    "adminRatio": "Admin Ratio",
-    "selectWorkspace": "Select Workspace",
-    "selectWorkspaceFirst": "Please select a workspace first",
-    "noMembers": "No members",
-    "totalMembersCount": "Total {{total}} members",
-    "invite": "Invite",
-    "addMember": "Add Member",
-    "inviteMember": "Invite Member",
-    "inviteSent": "Invitation sent",
-    "inviteError": "Failed to send invitation",
-    "addSuccess": "Member added successfully",
-    "addError": "Failed to add member",
-    "removeSuccess": "Member removed",
-    "removeError": "Failed to remove",
-    "roleUpdated": "Role updated",
-    "roleUpdateError": "Failed to update role",
-    "customRoleCreated": "Custom role created successfully",
-    "customRoleError": "Failed to create role",
-    "confirmRemove": "Confirm Remove",
-    "confirmRemoveContent": "Are you sure you want to remove this member? All permissions will be revoked.",
-    "cannotRemoveOwner": "Cannot remove owner",
-    "removeMember": "Remove Member",
-    "columns": {
-      "member": "Member",
+    "owner": "Owner",
+    "members": "Members",
+    "projects": "Projects",
+    "settings": "Settings",
+    "create": "Create Workspace",
+    "edit": "Edit Workspace",
+    "delete": "Delete Workspace",
+    "select": "Select Workspace",
+    "current": "Current Workspace",
+    "switch": "Switch Workspace",
+    "noWorkspace": "No Workspace",
+    "createFirst": "Create your first workspace",
+    "list": {
+      "title": "Workspace List",
+      "empty": "You haven't joined any workspace yet",
+      "createHint": "Create a workspace to organize your annotation projects"
+    },
+    "form": {
+      "nameLabel": "Workspace Name",
+      "namePlaceholder": "Enter workspace name",
+      "nameRequired": "Workspace name is required",
+      "nameUnique": "Workspace name already exists",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Enter workspace description (optional)",
+      "settingsLabel": "Settings",
+      "settingsPlaceholder": "Workspace settings (JSON format)"
+    },
+    "actions": {
+      "create": "Create",
+      "cancel": "Cancel",
+      "save": "Save",
+      "delete": "Delete",
+      "edit": "Edit",
+      "view": "View",
+      "manage": "Manage",
+      "leave": "Leave Workspace"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "deleted": "Deleted"
+    },
+    "messages": {
+      "createSuccess": "Workspace created successfully",
+      "createFailed": "Failed to create workspace",
+      "updateSuccess": "Workspace updated successfully",
+      "updateFailed": "Failed to update workspace",
+      "deleteSuccess": "Workspace deleted successfully",
+      "deleteFailed": "Failed to delete workspace",
+      "deleteConfirm": "Are you sure you want to delete workspace \"{{name}}\"?",
+      "deleteWarning": "This action cannot be undone. All associated projects will be removed.",
+      "leaveConfirm": "Are you sure you want to leave workspace \"{{name}}\"?",
+      "leaveWarning": "You will no longer have access to projects in this workspace.",
+      "switchSuccess": "Switched to workspace \"{{name}}\"",
+      "switchFailed": "Failed to switch workspace",
+      "loadFailed": "Failed to load workspace",
+      "notFound": "Workspace not found",
+      "noPermission": "You don't have permission to access this workspace"
+    },
+    "members": {
+      "title": "Member Management",
+      "list": "Member List",
+      "add": "Add Member",
+      "remove": "Remove Member",
+      "invite": "Invite Member",
       "role": "Role",
-      "lastActive": "Last Active",
-      "action": "Action",
-      "userId": "User ID",
-      "joinedAt": "Joined At"
+      "status": "Status",
+      "joinedAt": "Joined At",
+      "actions": "Actions",
+      "empty": "No members",
+      "count": "{{count}} members",
+      "form": {
+        "userLabel": "User",
+        "userPlaceholder": "Select user",
+        "userRequired": "Please select a user to add",
+        "roleLabel": "Role",
+        "rolePlaceholder": "Select role",
+        "roleRequired": "Please select a role"
+      },
+      "messages": {
+        "addSuccess": "Member added successfully",
+        "addFailed": "Failed to add member",
+        "removeSuccess": "Member removed successfully",
+        "removeFailed": "Failed to remove member",
+        "removeConfirm": "Are you sure you want to remove member \"{{name}}\"?",
+        "updateRoleSuccess": "Role updated successfully",
+        "updateRoleFailed": "Failed to update role",
+        "inviteSent": "Invitation sent",
+        "inviteFailed": "Failed to send invitation",
+        "alreadyMember": "User is already a member of this workspace"
+      }
     },
     "roles": {
       "owner": "Owner",
       "admin": "Admin",
-      "member": "Member",
-      "guest": "Guest"
+      "manager": "Manager",
+      "reviewer": "Reviewer",
+      "annotator": "Annotator",
+      "descriptions": {
+        "owner": "Full control over the workspace",
+        "admin": "Can manage workspace and all projects",
+        "manager": "Can create and manage projects",
+        "reviewer": "Can review annotation results",
+        "annotator": "Can perform annotation tasks"
+      },
+      "permissions": {
+        "title": "Permission Details",
+        "workspace": {
+          "title": "Workspace Permissions",
+          "view": "View workspace",
+          "edit": "Edit workspace",
+          "delete": "Delete workspace",
+          "manageMembers": "Manage members"
+        },
+        "project": {
+          "title": "Project Permissions",
+          "view": "View projects",
+          "create": "Create projects",
+          "edit": "Edit projects",
+          "delete": "Delete projects",
+          "manageMembers": "Manage project members"
+        },
+        "task": {
+          "title": "Task Permissions",
+          "view": "View tasks",
+          "annotate": "Annotate tasks",
+          "review": "Review tasks",
+          "assign": "Assign tasks"
+        },
+        "data": {
+          "title": "Data Permissions",
+          "export": "Export data",
+          "import": "Import data"
+        }
+      }
     },
-    "inviteForm": {
-      "email": "Email Address",
-      "emailPlaceholder": "user@example.com",
-      "emailRequired": "Please enter email address",
-      "emailInvalid": "Please enter a valid email address",
-      "role": "Role",
-      "message": "Invitation Message",
-      "messagePlaceholder": "Optional: Add invitation message",
-      "expiresIn": "Expires In (Days)",
-      "expires1Day": "1 Day",
-      "expires7Days": "7 Days",
-      "expires30Days": "30 Days"
+    "projects": {
+      "title": "Project Management",
+      "list": "Project List",
+      "create": "Create Project",
+      "empty": "No projects",
+      "createHint": "Create your first project in this workspace",
+      "count": "{{count}} projects",
+      "filter": {
+        "all": "All Projects",
+        "active": "Active Projects",
+        "archived": "Archived Projects"
+      },
+      "table": {
+        "name": "Project Name",
+        "workspace": "Workspace",
+        "taskCount": "Tasks",
+        "annotationCount": "Annotations",
+        "progress": "Progress",
+        "status": "Status",
+        "createdAt": "Created At",
+        "actions": "Actions"
+      },
+      "status": {
+        "active": "Active",
+        "paused": "Paused",
+        "completed": "Completed",
+        "archived": "Archived"
+      },
+      "messages": {
+        "createSuccess": "Project created successfully",
+        "createFailed": "Failed to create project",
+        "updateSuccess": "Project updated successfully",
+        "updateFailed": "Failed to update project",
+        "deleteSuccess": "Project deleted successfully",
+        "deleteFailed": "Failed to delete project",
+        "deleteConfirm": "Are you sure you want to delete project \"{{name}}\"?",
+        "archiveSuccess": "Project archived successfully",
+        "archiveFailed": "Failed to archive project",
+        "restoreSuccess": "Project restored successfully",
+        "restoreFailed": "Failed to restore project"
+      }
     },
-    "addForm": {
-      "userId": "User ID",
-      "userIdPlaceholder": "Enter user ID",
-      "userIdRequired": "Please enter user ID",
-      "role": "Role"
+    "settings": {
+      "title": "Workspace Settings",
+      "general": {
+        "title": "General Settings",
+        "name": "Workspace Name",
+        "description": "Description",
+        "visibility": "Visibility",
+        "visibilityPublic": "Public",
+        "visibilityPrivate": "Private"
+      },
+      "permissions": {
+        "title": "Permission Settings",
+        "defaultRole": "Default Role",
+        "allowSelfJoin": "Allow Self Join",
+        "requireApproval": "Require Approval"
+      },
+      "advanced": {
+        "title": "Advanced Settings",
+        "customSettings": "Custom Settings",
+        "customSettingsPlaceholder": "Custom settings in JSON format"
+      },
+      "danger": {
+        "title": "Danger Zone",
+        "deleteWorkspace": "Delete Workspace",
+        "deleteWarning": "Deleting the workspace will permanently delete all data. This action cannot be undone."
+      },
+      "messages": {
+        "saveSuccess": "Settings saved successfully",
+        "saveFailed": "Failed to save settings"
+      }
     },
-    "customRole": {
-      "title": "Create Custom Role",
-      "name": "Role Name",
-      "namePlaceholder": "Enter role name",
-      "nameRequired": "Please enter role name",
-      "description": "Description",
-      "descriptionPlaceholder": "Role description",
+    "context": {
+      "title": "Workspace Context",
+      "workspaceId": "Workspace ID",
+      "workspaceName": "Workspace Name",
+      "userRole": "User Role",
       "permissions": "Permissions",
-      "permissionsRequired": "Please select permissions",
-      "permissionsPlaceholder": "Select permissions",
-      "permissionRead": "Read",
-      "permissionWrite": "Write",
-      "permissionDelete": "Delete",
-      "permissionManageMembers": "Manage Members",
-      "permissionManageSettings": "Manage Settings"
+      "projectId": "Project ID",
+      "loading": "Loading workspace context...",
+      "loadFailed": "Failed to load workspace context",
+      "notAvailable": "Workspace context not available"
+    },
+    "selector": {
+      "title": "Select Workspace",
+      "placeholder": "Please select a workspace",
+      "search": "Search workspace",
+      "noResults": "No matching workspace found",
+      "createNew": "Create New Workspace"
+    },
+    "stats": {
+      "title": "Workspace Statistics",
+      "totalProjects": "Total Projects",
+      "totalTasks": "Total Tasks",
+      "totalMembers": "Total Members",
+      "activeProjects": "Active Projects",
+      "completedTasks": "Completed Tasks",
+      "pendingTasks": "Pending Tasks",
+      "annotationProgress": "Annotation Progress",
+      "reviewProgress": "Review Progress"
+    },
+    "audit": {
+      "title": "Audit Log",
+      "action": "Action",
+      "user": "User",
+      "resource": "Resource",
+      "timestamp": "Timestamp",
+      "result": "Result",
+      "details": "Details",
+      "actions": {
+        "create": "Create",
+        "update": "Update",
+        "delete": "Delete",
+        "addMember": "Add Member",
+        "removeMember": "Remove Member",
+        "updateRole": "Update Role"
+      },
+      "results": {
+        "success": "Success",
+        "failed": "Failed"
+      }
+    },
+    "errors": {
+      "nameRequired": "Workspace name is required",
+      "nameExists": "Workspace name already exists",
+      "invalidName": "Invalid workspace name format",
+      "notFound": "Workspace not found",
+      "noPermission": "You don't have permission to perform this action",
+      "createFailed": "Failed to create workspace",
+      "updateFailed": "Failed to update workspace",
+      "deleteFailed": "Failed to delete workspace",
+      "loadFailed": "Failed to load workspace",
+      "networkError": "Network error, please try again later",
+      "unknownError": "Unknown error"
     }
   }
 }

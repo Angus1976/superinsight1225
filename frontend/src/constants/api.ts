@@ -3,14 +3,14 @@
 export const API_ENDPOINTS = {
   // Authentication
   AUTH: {
-    LOGIN: '/auth/login',
-    LOGOUT: '/auth/logout',
-    REGISTER: '/auth/register',
-    CURRENT_USER: '/auth/me',
-    REFRESH: '/auth/refresh',
-    SWITCH_TENANT: '/auth/switch-tenant',
-    FORGOT_PASSWORD: '/auth/forgot-password',
-    RESET_PASSWORD: '/auth/reset-password',
+    LOGIN: '/api/auth/login',
+    LOGOUT: '/api/auth/logout',
+    REGISTER: '/api/auth/register',
+    CURRENT_USER: '/api/auth/me',
+    REFRESH: '/api/auth/refresh',
+    SWITCH_TENANT: '/api/auth/switch-tenant',
+    FORGOT_PASSWORD: '/api/auth/forgot-password',
+    RESET_PASSWORD: '/api/auth/reset-password',
   },
 
   // Label Studio
@@ -45,8 +45,8 @@ export const API_ENDPOINTS = {
 
   // Admin
   ADMIN: {
-    TENANTS: '/auth/tenants',
-    TENANT_BY_ID: (id: string) => `/auth/tenants/${id}`,
+    TENANTS: '/api/auth/tenants',
+    TENANT_BY_ID: (id: string) => `/api/auth/tenants/${id}`,
   },
 
   // Workspaces

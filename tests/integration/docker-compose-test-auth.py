@@ -165,7 +165,7 @@ class TestSuite:
         try:
             response = await self.client.post(
                 f"{API_BASE_URL}/api/auth/login",
-                json={"username": TEST_USERNAME, "password": TEST_PASSWORD}
+                json={"email": "admin@superinsight.local", "password": "admin123"}
             )
             
             if response.status_code == 200:
@@ -180,11 +180,14 @@ class TestSuite:
                     await self.add_result("JWT login", False, "Token not found")
                     return False
             else:
-                self.log_fail(f"Login failed with status {response.status_code}")
+                error_detail = response.text if response.status_code != 200 else ""
+                self.log_fail(f"Login failed with status {response.status_code}: {error_detail}")
                 await self.add_result("JWT login", False, f"Status {response.status_code}")
                 return False
         except Exception as e:
+            import traceback
             self.log_fail(f"Login error: {str(e)}")
+            traceback.print_exc()
             await self.add_result("JWT login", False, str(e))
             return False
         

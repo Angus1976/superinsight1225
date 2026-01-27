@@ -176,6 +176,12 @@ class LabelStudioIntegration:
         self._jwt_auth_manager: Optional[JWTAuthManager] = None
         self._auth_method: str = 'api_token'  # Default to API token
         
+        # Personal Access Token (PAT) support
+        # PAT is a JWT refresh token that needs to be exchanged for an access token
+        self._personal_access_token: Optional[str] = None
+        self._access_token: Optional[str] = None
+        self._access_token_expires_at: Optional[datetime] = None
+        
         try:
             auth_method = self.config.get_auth_method()
             self._auth_method = auth_method
@@ -189,7 +195,14 @@ class LabelStudioIntegration:
                 )
                 logger.info("Label Studio integration initialized with JWT authentication")
             else:
-                logger.info("Label Studio integration initialized with API token authentication")
+                # Check if api_token is a Personal Access Token (JWT format)
+                if self.api_token and self._is_jwt_token(self.api_token):
+                    logger.info("Detected Personal Access Token (JWT refresh token)")
+                    self._personal_access_token = self.api_token
+                    self._auth_method = 'personal_access_token'
+                else:
+                    logger.info("Label Studio integration initialized with Legacy Token authentication")
+                    self._auth_method = 'legacy_token'
         except Exception as e:
             # If auth method detection fails, fall back to API token if available
             if self.api_token:
@@ -199,14 +212,35 @@ class LabelStudioIntegration:
                 raise LabelStudioIntegrationError(f"No valid authentication method available: {e}")
         
         # Legacy headers for backward compatibility (used when JWT is not available)
-        self.headers = {
-            'Authorization': f'Token {self.api_token}' if self.api_token else '',
-            'Content-Type': 'application/json'
-        }
+        # Note: Personal Access Tokens use "Bearer" prefix, Legacy Tokens use "Token" prefix
+        # See: https://api.labelstud.io/api-reference/introduction/getting-started
+        if self._auth_method == 'legacy_token':
+            self.headers = {
+                'Authorization': f'Token {self.api_token}',
+                'Content-Type': 'application/json'
+            }
+        else:
+            self.headers = {
+                'Authorization': '',
+                'Content-Type': 'application/json'
+            }
         
         # Validate configuration
         if not self.config.validate_config():
             raise LabelStudioIntegrationError("Invalid Label Studio configuration")
+    
+    def _is_jwt_token(self, token: str) -> bool:
+        """
+        Check if a token is in JWT format.
+        
+        Args:
+            token: Token string to check
+            
+        Returns:
+            bool: True if token is JWT format (has 3 parts separated by dots)
+        """
+        parts = token.split('.')
+        return len(parts) == 3
     
     async def _get_headers(self) -> Dict[str, str]:
         """
@@ -214,7 +248,8 @@ class LabelStudioIntegration:
         
         For JWT authentication, this method ensures the token is valid
         (refreshing if necessary) and returns Bearer token headers.
-        For API token authentication, returns Token headers.
+        For Personal Access Token (open source), uses Bearer directly without refresh.
+        For Legacy Token authentication, returns Token headers.
         
         This method is async because JWT authentication may require
         token refresh which involves network calls.
@@ -235,9 +270,102 @@ class LabelStudioIntegration:
             jwt_headers = self._jwt_auth_manager.get_auth_header()
             jwt_headers['Content-Type'] = 'application/json'
             return jwt_headers
+        elif self._auth_method == 'personal_access_token' and self._personal_access_token:
+            # Personal Access Token: exchange refresh token for access token
+            # Even in open source version, PAT is a refresh token that needs to be exchanged
+            await self._ensure_access_token()
+            
+            return {
+                'Authorization': f'Bearer {self._access_token}',
+                'Content-Type': 'application/json'
+            }
         else:
             # Use legacy API token headers
             return self.headers
+    
+    async def _ensure_access_token(self) -> None:
+        """
+        Ensure we have a valid access token for Personal Access Token authentication.
+        
+        Personal Access Tokens are JWT refresh tokens that need to be exchanged
+        for short-lived access tokens (~5 minutes). This method checks if we have
+        a valid access token and refreshes it if needed.
+        
+        Raises:
+            LabelStudioAuthenticationError: If token refresh fails
+            
+        Reference: https://labelstud.io/guide/access_tokens
+        """
+        # Check if we have a valid access token
+        if self._access_token and self._access_token_expires_at:
+            # Add 30 second buffer before expiration
+            if datetime.utcnow() < self._access_token_expires_at - timedelta(seconds=30):
+                # Token is still valid
+                return
+        
+        # Need to refresh access token
+        logger.info("[Label Studio] Refreshing Personal Access Token to get access token")
+        
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.post(
+                    f"{self.base_url}/api/token/refresh",
+                    headers={'Content-Type': 'application/json'},
+                    json={'refresh': self._personal_access_token}
+                )
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    self._access_token = data.get('access')
+                    
+                    if not self._access_token:
+                        raise LabelStudioAuthenticationError(
+                            "No access token in refresh response",
+                            status_code=200
+                        )
+                    
+                    # Decode JWT to get expiration time
+                    try:
+                        decoded = jwt.decode(
+                            self._access_token,
+                            options={"verify_signature": False}
+                        )
+                        exp_timestamp = decoded.get('exp')
+                        if exp_timestamp:
+                            self._access_token_expires_at = datetime.utcfromtimestamp(exp_timestamp)
+                            logger.info(
+                                f"[Label Studio] Access token refreshed, "
+                                f"expires at {self._access_token_expires_at.isoformat()}"
+                            )
+                        else:
+                            # Default to 5 minutes if no exp claim
+                            self._access_token_expires_at = datetime.utcnow() + timedelta(minutes=5)
+                            logger.warning(
+                                "[Label Studio] No exp claim in access token, "
+                                "assuming 5 minute expiration"
+                            )
+                    except jwt.DecodeError as e:
+                        # If we can't decode, assume 5 minutes
+                        self._access_token_expires_at = datetime.utcnow() + timedelta(minutes=5)
+                        logger.warning(
+                            f"[Label Studio] Could not decode access token ({e}), "
+                            "assuming 5 minute expiration"
+                        )
+                else:
+                    error_msg = f"Failed to refresh Personal Access Token: {response.status_code} - {response.text}"
+                    logger.error(f"[Label Studio] {error_msg}")
+                    raise LabelStudioAuthenticationError(error_msg, status_code=response.status_code)
+                    
+        except httpx.RequestError as e:
+            error_msg = f"Network error refreshing Personal Access Token: {str(e)}"
+            logger.error(f"[Label Studio] {error_msg}")
+            raise LabelStudioAuthenticationError(error_msg, status_code=0)
+        except LabelStudioAuthenticationError:
+            raise
+        except Exception as e:
+            error_msg = f"Unexpected error refreshing Personal Access Token: {str(e)}"
+            logger.error(f"[Label Studio] {error_msg}")
+            raise LabelStudioAuthenticationError(error_msg, status_code=0)
     
     def _check_https_security(self) -> bool:
         """

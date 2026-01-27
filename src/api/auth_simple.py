@@ -83,6 +83,71 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     return encoded_jwt
 
 
+async def get_current_user(
+    db: Session = Depends(get_db_session),
+    authorization: Optional[str] = Header(None)
+) -> SimpleUser:
+    """Dependency to get current authenticated user from Authorization header."""
+    if not authorization:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    # Extract token from "Bearer <token>"
+    try:
+        scheme, token = authorization.split()
+        if scheme.lower() != "bearer":
+            raise ValueError("Invalid authentication scheme")
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authorization header",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+    except jwt.InvalidTokenError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    result = db.execute(text(
+        "SELECT id, email, username, name, is_active, is_superuser FROM users WHERE id = :user_id"
+    ), {"user_id": user_id})
+    
+    user_row = result.fetchone()
+    
+    if not user_row:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    user_id, email, username, name, is_active, is_superuser = user_row
+    
+    return SimpleUser(
+        user_id=str(user_id),
+        email=email,
+        username=username,
+        name=name,
+        is_active=is_active,
+        is_superuser=is_superuser
+    )
+
+
 @router.post("/login", response_model=LoginResponse)
 def login(
     request: LoginRequest,
@@ -160,119 +225,15 @@ def login(
 
 
 @router.get("/me", response_model=UserResponse)
-def get_current_user_endpoint(
-    db: Session = Depends(get_db_session),
-    token: str = None
+async def get_current_user_endpoint(
+    current_user: SimpleUser = Depends(get_current_user)
 ):
     """Get current authenticated user."""
-    if not token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: str = payload.get("sub")
-        if user_id is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-    except jwt.InvalidTokenError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    result = db.execute(text(
-        "SELECT id, email, username, name, is_active, is_superuser FROM users WHERE id = :user_id"
-    ), {"user_id": user_id})
-    
-    user_row = result.fetchone()
-    
-    if not user_row:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    user_id, email, username, name, is_active, is_superuser = user_row
-    
     return UserResponse(
-        id=str(user_id),
-        email=email,
-        username=username,
-        name=name,
-        is_active=is_active,
-        is_superuser=is_superuser
-    )
-
-
-async def get_current_user(
-    db: Session = Depends(get_db_session),
-    authorization: Optional[str] = Header(None)
-) -> SimpleUser:
-    """Dependency to get current authenticated user from Authorization header."""
-    if not authorization:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    # Extract token from "Bearer <token>"
-    try:
-        scheme, token = authorization.split()
-        if scheme.lower() != "bearer":
-            raise ValueError("Invalid authentication scheme")
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authorization header",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: str = payload.get("sub")
-        if user_id is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-    except jwt.InvalidTokenError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    result = db.execute(text(
-        "SELECT id, email, username, name, is_active, is_superuser FROM users WHERE id = :user_id"
-    ), {"user_id": user_id})
-    
-    user_row = result.fetchone()
-    
-    if not user_row:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    user_id, email, username, name, is_active, is_superuser = user_row
-    
-    return SimpleUser(
-        user_id=str(user_id),
-        email=email,
-        username=username,
-        name=name,
-        is_active=is_active,
-        is_superuser=is_superuser
+        id=current_user.id,
+        email=current_user.email,
+        username=current_user.username,
+        name=current_user.name,
+        is_active=current_user.is_active,
+        is_superuser=current_user.is_superuser
     )

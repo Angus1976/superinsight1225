@@ -430,8 +430,16 @@ async def ensure_project_exists(
         ls = get_label_studio()
         
         # Create project configuration
+        # Label Studio has a 50 character limit for project titles
+        max_title_length = 50
+        task_name = request.task_name
+        
+        # Truncate task name if needed
+        if len(task_name) > max_title_length:
+            task_name = task_name[:max_title_length-3] + "..."
+        
         project_config = ProjectConfig(
-            title=request.task_name,
+            title=task_name,
             description=request.description or f"Annotation project for task {request.task_id}",
             annotation_type=request.annotation_type
         )

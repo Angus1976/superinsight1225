@@ -63,8 +63,22 @@ class LabelStudioSyncService:
             logger.info(f"Creating Label Studio project for task {task_id}")
             
             # Prepare project configuration
+            # Label Studio has a 50 character limit for project titles
+            max_title_length = 50
+            title_prefix = f"{task_name}"
+            title_suffix = f" ({task_id[:8]})"  # Use first 8 chars of UUID
+            
+            # Calculate available space for task name
+            available_length = max_title_length - len(title_suffix)
+            
+            # Truncate task name if needed
+            if len(title_prefix) > available_length:
+                title_prefix = title_prefix[:available_length-3] + "..."
+            
+            project_title = f"{title_prefix}{title_suffix}"
+            
             project_config = ProjectConfig(
-                title=f"{task_name} (Task: {task_id})",
+                title=project_title,
                 description=task_description or f"Annotation project for task {task_id}",
                 annotation_type=annotation_type
             )

@@ -192,9 +192,30 @@ export const MainLayout: React.FC = () => {
         path: '/',
         routes: transformMenuItems(filteredMenuItems),
       }}
-      menuItemRender={(item, dom) => (
-        <div onClick={() => item.path && navigate(item.path)}>{dom}</div>
-      )}
+      menuItemRender={(item, dom) => {
+        // For items with children, we need to handle navigation differently
+        // Check if this is a parent menu item (has children)
+        const hasChildren = item.children && item.children.length > 0;
+        
+        if (hasChildren && item.path) {
+          // For parent items, navigate on click
+          return (
+            <div onClick={(e) => {
+              e.stopPropagation();
+              item.path && navigate(item.path);
+            }}>
+              {dom}
+            </div>
+          );
+        }
+        
+        // For leaf items, use default behavior
+        return (
+          <div onClick={() => item.path && navigate(item.path)}>
+            {dom}
+          </div>
+        );
+      }}
       headerContentRender={() => <HeaderContent />}
       breadcrumbRender={(routers = []) => [
         {

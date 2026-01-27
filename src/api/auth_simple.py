@@ -241,3 +241,48 @@ async def get_current_user_endpoint(
         is_active=current_user.is_active,
         is_superuser=current_user.is_superuser
     )
+
+
+@router.get("/tenants")
+def get_tenants(db: Session = Depends(get_db_session)):
+    """Get available tenants for login."""
+    try:
+        # Try to query from multi_tenant_models if available
+        try:
+            from src.database.multi_tenant_models import TenantModel, TenantStatus
+            
+            # Query active tenants from database
+            tenants = db.query(TenantModel).filter(
+                TenantModel.status == TenantStatus.ACTIVE
+            ).all()
+            
+            if tenants:
+                return [
+                    {
+                        "id": tenant.id,
+                        "name": tenant.display_name or tenant.name,
+                        "logo": tenant.configuration.get("logo") if tenant.configuration else None
+                    }
+                    for tenant in tenants
+                ]
+        except (ImportError, Exception) as e:
+            logger.debug(f"Could not query from TenantModel: {e}")
+        
+        # Fallback to default tenant
+        return [
+            {
+                "id": "default_tenant",
+                "name": "Default Tenant",
+                "logo": None
+            }
+        ]
+    except Exception as e:
+        logger.warning(f"Failed to get tenants: {e}")
+        # Return default tenant on error
+        return [
+            {
+                "id": "default_tenant",
+                "name": "Default Tenant",
+                "logo": None
+            }
+        ]

@@ -1,6 +1,6 @@
 // Admin console page
 import React from 'react';
-import { Outlet, useLocation, Link } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Alert, Card, Menu, Dropdown, Space } from 'antd';
 import type { MenuProps } from 'antd';
 import { 
@@ -17,6 +17,7 @@ const AdminPage: React.FC = () => {
   const { t } = useTranslation();
   const { user } = useAuthStore();
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Check admin access
   if (user?.role !== 'admin') {
@@ -103,59 +104,67 @@ const AdminPage: React.FC = () => {
 
   // If on sub-route, render the child component
   if (isSubRoute) {
+    const handleMenuClick = (key: string) => {
+      const pathMap: Record<string, string> = {
+        'admin': '/admin',
+        'console': '/admin/console',
+        'tenants': '/admin/tenants',
+        'workspaces': '/admin/workspaces',
+        'members': '/admin/members',
+        'permissions': '/admin/permissions',
+        'quotas': '/admin/quotas',
+        'billing': '/admin/billing',
+        'users': '/admin/users',
+        'system': '/admin/system',
+        'llm-config': '/admin/llm-config',
+        'config': '/admin/config',
+        'config-llm': '/admin/config/llm',
+        'config-db': '/admin/config/databases',
+        'config-sync': '/admin/config/sync',
+        'config-sql': '/admin/config/sql-builder',
+        'config-history': '/admin/config/history',
+        'config-third-party': '/admin/config/third-party',
+      };
+      
+      const path = pathMap[key];
+      if (path && path !== location.pathname) {
+        navigate(path);
+      }
+    };
+
     return (
       <div>
         <Card style={{ marginBottom: 16 }}>
-          <Menu mode="horizontal" selectedKeys={[selectedKey]}>
+          <Menu mode="horizontal" selectedKeys={[selectedKey]} onClick={(info) => handleMenuClick(info.key)}>
             <Menu.Item key="admin">
-              <Link to="/admin">
-                <DashboardOutlined /> {t('admin:nav.overview')}
-              </Link>
+              <DashboardOutlined /> {t('admin:nav.overview')}
             </Menu.Item>
             <Menu.Item key="console">
-              <Link to="/admin/console">
-                <AppstoreOutlined /> {t('admin:nav.console')}
-              </Link>
+              <AppstoreOutlined /> {t('admin:nav.console')}
             </Menu.Item>
             <Menu.Item key="tenants">
-              <Link to="/admin/tenants">
-                <DatabaseOutlined /> {t('admin:nav.tenants')}
-              </Link>
+              <DatabaseOutlined /> {t('admin:nav.tenants')}
             </Menu.Item>
             <Menu.Item key="workspaces">
-              <Link to="/admin/workspaces">
-                <AppstoreOutlined /> {t('admin:nav.workspaces')}
-              </Link>
+              <AppstoreOutlined /> {t('admin:nav.workspaces')}
             </Menu.Item>
             <Menu.Item key="members">
-              <Link to="/admin/members">
-                <TeamOutlined /> {t('admin:nav.members')}
-              </Link>
+              <TeamOutlined /> {t('admin:nav.members')}
             </Menu.Item>
             <Menu.Item key="permissions">
-              <Link to="/admin/permissions">
-                <SafetyOutlined /> {t('admin:nav.permissions')}
-              </Link>
+              <SafetyOutlined /> {t('admin:nav.permissions')}
             </Menu.Item>
             <Menu.Item key="quotas">
-              <Link to="/admin/quotas">
-                <CloudOutlined /> {t('admin:nav.quotas')}
-              </Link>
+              <CloudOutlined /> {t('admin:nav.quotas')}
             </Menu.Item>
             <Menu.Item key="billing">
-              <Link to="/admin/billing">
-                <DollarOutlined /> {t('admin:nav.billing')}
-              </Link>
+              <DollarOutlined /> {t('admin:nav.billing')}
             </Menu.Item>
             <Menu.Item key="system">
-              <Link to="/admin/system">
-                <SettingOutlined /> {t('admin:nav.system')}
-              </Link>
+              <SettingOutlined /> {t('admin:nav.system')}
             </Menu.Item>
             <Menu.Item key="llm-config">
-              <Link to="/admin/llm-config">
-                <ApiOutlined /> {t('admin:nav.llm')}
-              </Link>
+              <ApiOutlined /> {t('admin:nav.llm')}
             </Menu.Item>
             <Menu.Item key="config-menu" style={{ padding: 0 }}>
               <Dropdown menu={{ items: configMenuItems, selectedKeys: isConfigSelected ? [selectedKey] : [] }} placement="bottomLeft">

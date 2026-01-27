@@ -189,7 +189,7 @@
     - **Note**: ✅ Language store already handles synchronization
     - **Reference**: CHINESE_SUPPORT_OPTIMIZATION.md - Testing
   
-  - [~] 11.3* (Optional) Setup custom translation override (Est: 0.5h)
+  - [ ] 11.3* (Optional) Setup custom translation override (Est: 0.5h)
     - **Validates**: Requirements 1.5
     - **Details**: 
       - Create custom-translations directory

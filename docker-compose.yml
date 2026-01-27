@@ -37,12 +37,13 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - APP_ENV=development
-      - DATABASE_URL=postgresql://superinsight:password@postgres:5432/superinsight
-      - REDIS_URL=redis://redis:6379/0
-      - LABEL_STUDIO_URL=http://label-studio:8080
-      - ARGILLA_URL=http://argilla:6900
-      - OLLAMA_BASE_URL=http://ollama:11434
+      - APP_ENV=${APP_ENV:-development}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://superinsight:password@postgres:5432/superinsight}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      - LABEL_STUDIO_URL=${LABEL_STUDIO_URL:-http://label-studio:8080}
+      - LABEL_STUDIO_API_TOKEN=${LABEL_STUDIO_API_TOKEN}
+      - ARGILLA_URL=${ARGILLA_URL:-http://argilla:6900}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama:11434}
     depends_on:
       - postgres
       - redis
@@ -113,6 +114,10 @@ services:
       - LABEL_STUDIO_DEFAULT_LANGUAGE=zh
       # Enable language URL parameter support
       - LABEL_STUDIO_ENABLE_LANGUAGE_PARAM=true
+      # Enable legacy token authentication
+      - LABEL_STUDIO_DISABLE_SIGNUP_WITHOUT_LINK=false
+      - LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED=true
+      - LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT=/label-studio/data
     volumes:
       - label_studio_data:/label-studio/data
     healthcheck:

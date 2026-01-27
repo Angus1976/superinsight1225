@@ -19,7 +19,13 @@ export interface SwitchWorkspaceResponse {
 
 export const authService = {
   async login(credentials: LoginCredentials): Promise<LoginResponse> {
-    const response = await apiClient.post<LoginResponse>(API_ENDPOINTS.AUTH.LOGIN, credentials);
+    // Backend expects 'email' field, but frontend uses 'username'
+    // Convert username to email for login request
+    const loginPayload = {
+      email: credentials.username, // Use username as email for login
+      password: credentials.password,
+    };
+    const response = await apiClient.post<LoginResponse>(API_ENDPOINTS.AUTH.LOGIN, loginPayload);
     return response.data;
   },
 

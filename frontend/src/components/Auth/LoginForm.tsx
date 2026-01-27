@@ -72,7 +72,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
         name="username"
         rules={[{ required: true, message: t('login.usernamePlaceholder') }]}
       >
-        <Input prefix={<UserOutlined />} placeholder={t('login.usernamePlaceholder')} />
+        <Input prefix={<UserOutlined />} placeholder="admin@superinsight.local" type="email" />
       </Form.Item>
 
       <Form.Item name="password" rules={[{ required: true, message: t('login.passwordPlaceholder') }]}>

@@ -1218,11 +1218,11 @@ except Exception as e:
 
 # Include auth router - CRITICAL for login functionality
 try:
-    from src.api.auth import router as auth_router
+    from src.api.auth_simple import router as auth_router
     app.include_router(auth_router)
-    logger.info("Auth API loaded successfully")
+    logger.info("✅ Simple Auth API loaded successfully")
 except Exception as e:
-    logger.error(f"Auth API failed to load: {e}")
+    logger.error(f"❌ Simple Auth API failed to load: {e}")
     import traceback
     traceback.print_exc()
 

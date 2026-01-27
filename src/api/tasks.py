@@ -13,10 +13,9 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from src.database.connection import get_db_session
-from src.api.auth import get_current_user
+from src.api.auth_simple import get_current_user, SimpleUser
 from src.database.models import TaskModel, TaskStatus
 from src.database.task_extensions import TaskPriority, AnnotationType, TaskAdapter
-from src.security.models import UserModel
 from src.api.label_studio_sync import label_studio_sync_service
 
 logger = logging.getLogger(__name__)
@@ -108,7 +107,7 @@ class TaskStatsResponse(BaseModel):
 
 
 # Helper functions
-def get_task_or_404(task_id: str, db: Session, user: UserModel) -> Dict[str, Any]:
+def get_task_or_404(task_id: str, db: Session, user: SimpleUser) -> Dict[str, Any]:
     """Get task by ID or raise 404 if not found or no access."""
     try:
         task_uuid = UUID(task_id)
@@ -148,7 +147,7 @@ def list_tasks(
     priority: Optional[str] = Query(None, description="Filter by priority"),
     assignee_id: Optional[str] = Query(None, description="Filter by assignee"),
     search: Optional[str] = Query(None, description="Search in name and description"),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUser = Depends(get_current_user),
     db: Session = Depends(get_db_session)
 ):
     """Get list of tasks with pagination and filtering."""
@@ -247,7 +246,7 @@ async def _sync_task_to_label_studio(task_id: str, task_data: Dict[str, Any]):
 async def create_task(
     request: TaskCreateRequest,
     background_tasks: BackgroundTasks,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUser = Depends(get_current_user),
     db: Session = Depends(get_db_session)
 ):
     """Create a new task and sync to Label Studio."""
@@ -303,7 +302,7 @@ async def create_task(
 
 @router.get("/stats", response_model=TaskStatsResponse)
 def get_task_stats(
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUser = Depends(get_current_user),
     db: Session = Depends(get_db_session)
 ):
     """Get task statistics."""
@@ -344,7 +343,7 @@ def get_task_stats(
 @router.get("/{task_id}", response_model=TaskResponse)
 def get_task(
     task_id: str,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUser = Depends(get_current_user),
     db: Session = Depends(get_db_session)
 ):
     """Get task by ID."""
@@ -356,7 +355,7 @@ def get_task(
 def update_task(
     task_id: str,
     request: TaskUpdateRequest,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUser = Depends(get_current_user),
     db: Session = Depends(get_db_session)
 ):
     """Update task."""
@@ -385,7 +384,7 @@ def update_task(
 @router.delete("/{task_id}")
 def delete_task(
     task_id: str,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUser = Depends(get_current_user),
     db: Session = Depends(get_db_session)
 ):
     """Delete task."""
@@ -411,7 +410,7 @@ def delete_task(
 @router.post("/batch/delete")
 def batch_delete_tasks(
     task_ids: List[str],
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUser = Depends(get_current_user),
     db: Session = Depends(get_db_session)
 ):
     """Delete multiple tasks."""
@@ -434,7 +433,7 @@ def batch_delete_tasks(
 @router.post("/{task_id}/sync-label-studio")
 async def sync_task_to_label_studio(
     task_id: str,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUser = Depends(get_current_user),
     db: Session = Depends(get_db_session)
 ):
     """
@@ -499,7 +498,7 @@ async def sync_task_to_label_studio(
 
 @router.get("/label-studio/test-connection")
 async def test_label_studio_connection(
-    current_user: UserModel = Depends(get_current_user)
+    current_user: SimpleUser = Depends(get_current_user)
 ):
     """
     Test Label Studio connection and authentication.

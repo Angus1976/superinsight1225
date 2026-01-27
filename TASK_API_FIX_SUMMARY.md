@@ -1,102 +1,102 @@
-# Task API Fix Summary
+# Task Creation/Editing API Fix Summary
 
-**Date**: 2026-01-26  
-**Issue**: Task edit/save not responding - 404 errors when creating/editing tasks  
-**Status**: ✅ FIXED
+**Date**: 2026-01-27  
+**Status**: ✅ Fixed - Awaiting Container Restart  
+**Issue**: Task creation and editing fail with 422 validation errors
 
-## Problem Description
+---
 
-When users tried to create or edit tasks in the SuperInsight frontend (http://localhost:5173/tasks/create/edit), they encountered 404 errors:
+## Problem Analysis
 
-- `GET /api/tasks/lists: 404`
-- `GET /api/label-studio/projects/lists: 404`
-- `PATCH /api/tasks/create: 404`
-- `POST /api/tasks/create: 404`
+### Root Cause
+The frontend was sending a `data_source` field in the task creation payload that the backend API did not accept, causing validation errors.
 
-## Root Causes
-
-### 1. API Endpoint Mismatch
-- **Frontend expected**: `/api/tasks`
-- **Backend provided**: `/api/v1/tasks`
-- **Impact**: All task API calls returned 404
-
-### 2. HTTP Method Mismatch
-- **Frontend used**: `PATCH` for updates
-- **Backend provided**: `PUT` for updates
-- **Impact**: Task updates failed
-
-### 3. Missing Label Studio API
-- **Frontend expected**: `/api/label-studio/projects`
-- **Backend**: No such endpoint existed
-- **Impact**: Could not list Label Studio projects
-
-### 4. Async/Sync Mismatch
-- **Backend**: Used `async def` for endpoints
-- **Database**: Uses synchronous SQLAlchemy
-- **Impact**: Potential blocking issues (following async-sync-safety.md rules)
-
-### 5. Mock Data Not Persisting
-- **Issue**: Created tasks were not stored, so updates failed with "Task not found"
-- **Impact**: Could create tasks but not update them
-
-## Solutions Implemented
-
-### 1. Fixed API Endpoint Prefix
-**File**: `src/api/tasks.py`
-
-```python
-# Before
-router = APIRouter(prefix="/api/v1/tasks", tags=["Tasks"])
-
-# After
-router = APIRouter(prefix="/api/tasks", tags=["Tasks"])
+**Frontend Payload Structure** (`CreateTaskPayload`):
+```typescript
+{
+  name: string;
+  description?: string;
+  priority: TaskPriority;
+  annotation_type: AnnotationType;
+  assignee_id?: string;
+  due_date?: string;
+  tags?: string[];
+  data_source?: {           // ❌ Backend didn't accept this
+    type: 'file' | 'api';
+    config: Record<string, unknown>;
+  };
+}
 ```
 
-### 2. Changed Update Method to PATCH
-**File**: `src/api/tasks.py`
-
+**Backend Expected Structure** (`TaskCreateRequest` - BEFORE FIX):
 ```python
-# Before
-@router.put("/{task_id}", response_model=TaskResponse)
-
-# After
-@router.patch("/{task_id}", response_model=TaskResponse)
+class TaskCreateRequest(BaseModel):
+    name: str
+    description: Optional[str]
+    annotation_type: str
+    priority: str
+    assignee_id: Optional[str]
+    due_date: Optional[datetime]
+    total_items: int
+    tags: Optional[List[str]]
+    # ❌ Missing data_source field
 ```
 
-### 3. Changed All Endpoints to Sync
+### Secondary Issue: Route Order
+The `/stats` endpoint was defined AFTER the `/{task_id}` parameterized route, causing FastAPI to try to match "stats" as a task ID, resulting in 404 errors.
+
+---
+
+## Fixes Applied
+
+### Fix 1: Added `data_source` Field to Backend Models
+
 **File**: `src/api/tasks.py`
 
-Following the async-sync-safety.md rules, changed all endpoints from `async def` to `def` since we're using synchronous database operations:
-
+#### 1.1 Created `DataSourceConfig` Model
 ```python
-# Before
-@router.get("", response_model=TaskListResponse)
-async def list_tasks(...):
-
-# After
-@router.get("", response_model=TaskListResponse)
-def list_tasks(...):
+class DataSourceConfig(BaseModel):
+    """Data source configuration for task"""
+    type: str = Field(..., description="Data source type: file, api, or database")
+    config: Dict[str, Any] = Field(default_factory=dict, description="Data source configuration")
 ```
 
-### 4. Added In-Memory Task Storage
-**File**: `src/api/tasks.py`
-
-Added simple in-memory storage to persist created tasks during development:
-
+#### 1.2 Updated `TaskCreateRequest`
 ```python
-# In-memory storage for development
-_tasks_storage: Dict[str, Dict[str, Any]] = {}
-
-# Store created tasks
-_tasks_storage[task_id] = new_task
-
-# Retrieve tasks
-if task_id in _tasks_storage:
-    return _tasks_storage[task_id]
+class TaskCreateRequest(BaseModel):
+    name: str = Field(..., description="Task name")
+    description: Optional[str] = Field(None, description="Task description")
+    annotation_type: str = Field("custom", description="Type of annotation")
+    priority: str = Field("medium", description="Task priority")
+    assignee_id: Optional[str] = Field(None, description="Assigned user ID")
+    due_date: Optional[datetime] = Field(None, description="Due date")
+    total_items: int = Field(1, description="Total items to annotate")
+    tags: Optional[List[str]] = Field(None, description="Task tags")
+    data_source: Optional[DataSourceConfig] = Field(None, description="Data source configuration")  # ✅ Added
 ```
 
-### 5. Created Label Studio API Module
-**File**: `src/api/label_studio_api.py` (NEW)
+#### 1.3 Updated `TaskUpdateRequest`
+```python
+class TaskUpdateRequest(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    status: Optional[str] = None
+    priority: Optional[str] = None
+    assignee_id: Optional[str] = None
+    due_date: Optional[datetime] = None
+    progress: Optional[int] = None
+    completed_items: Optional[int] = None
+    tags: Optional[List[str]] = None
+    data_source: Optional[DataSourceConfig] = None  # ✅ Added
+```
+
+#### 1.4 Updated `TaskResponse`
+```python
+class TaskResponse(BaseModel):
+    # ... existing fields ...
+    tags: Optional[List[str]]
+    data_source: Optional[DataSourceConfig] = None  # ✅ Added
+``File**: `src/api/label_studio_api.py` (NEW)
 
 Created new API module with endpoints:
 - `GET /api/label-studio/projects` - List Label Studio projects

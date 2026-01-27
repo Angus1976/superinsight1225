@@ -202,6 +202,9 @@ def login(
         
         logger.info(f"Successful login for user: {email}")
         
+        # Determine user role based on is_superuser flag
+        user_role = "admin" if is_superuser else "user"
+        
         return LoginResponse(
             access_token=access_token,
             user={
@@ -209,6 +212,7 @@ def login(
                 "email": email,
                 "username": username,
                 "name": name,
+                "role": user_role,  # Add role field for frontend
                 "is_active": is_active,
                 "is_superuser": is_superuser
             }

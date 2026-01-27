@@ -10,6 +10,11 @@ from src.config.settings import settings
 logger = logging.getLogger(__name__)
 
 
+class LabelStudioConfigError(Exception):
+    """Exception for Label Studio configuration errors."""
+    pass
+
+
 @dataclass
 class LabelStudioProject:
     """Label Studio project configuration"""
@@ -59,12 +64,58 @@ class LabelStudioProject:
 
 
 class LabelStudioConfig:
-    """Label Studio configuration manager"""
+    """
+    Label Studio configuration manager with JWT authentication support.
+    
+    This class manages Label Studio configuration including:
+    - Base URL and project ID
+    - Authentication method selection (JWT or API token)
+    - JWT credentials (username/password)
+    - Legacy API token authentication
+    
+    Authentication Method Priority:
+    1. JWT (if username and password are configured)
+    2. API Token (if api_token is configured)
+    3. Error (if neither is configured)
+    
+    Validates: Requirements 6.1, 6.2, 6.3, 6.4, 6.5
+    """
     
     def __init__(self):
         self.base_url = settings.label_studio.label_studio_url
         self.api_token = settings.label_studio.label_studio_api_token
         self.project_id = settings.label_studio.label_studio_project_id
+        
+        # JWT credentials (Label Studio 1.22.0+)
+        self.username = settings.label_studio.label_studio_username
+        self.password = settings.label_studio.label_studio_password
+    
+    def get_auth_method(self) -> str:
+        """
+        Determine which authentication method to use.
+        
+        Priority:
+        1. JWT (if username and password are configured)
+        2. API Token (if api_token is configured)
+        3. None (raise error)
+        
+        Returns:
+            str: 'jwt' or 'api_token'
+            
+        Raises:
+            LabelStudioIntegrationError: If no auth method is configured
+            
+        Validates: Requirements 6.3, 6.4
+        """
+        if self.username and self.password:
+            return 'jwt'
+        elif self.api_token:
+            return 'api_token'
+        else:
+            raise LabelStudioConfigError(
+                "No authentication method configured. "
+                "Please set either LABEL_STUDIO_USERNAME/PASSWORD or LABEL_STUDIO_API_TOKEN"
+            )
     
     def get_default_label_config(self, annotation_type: str = "text_classification") -> str:
         """Get default label configuration for different annotation types"""
@@ -204,15 +255,42 @@ class LabelStudioConfig:
         }
     
     def validate_config(self) -> bool:
-        """Validate Label Studio configuration"""
+        """
+        Validate Label Studio configuration with JWT support.
+        
+        Checks:
+        1. Base URL is configured
+        2. At least one authentication method is configured
+        3. Logs which authentication method will be used
+        
+        Returns:
+            bool: True if configuration is valid
+            
+        Validates: Requirements 6.5
+        """
         
         if not self.base_url:
             logger.error("Label Studio URL is not configured")
             return False
         
-        if not self.api_token:
-            logger.warning("Label Studio API token is not configured")
-            # API token might not be required for local development
+        # Check if at least one auth method is configured
+        has_jwt = self.username and self.password
+        has_token = self.api_token
+        
+        if not has_jwt and not has_token:
+            logger.error(
+                "No authentication method configured. "
+                "Please set either LABEL_STUDIO_USERNAME/PASSWORD or LABEL_STUDIO_API_TOKEN"
+            )
+            return False
+        
+        # Log which method will be used
+        try:
+            auth_method = self.get_auth_method()
+            logger.info(f"Using {auth_method} authentication for Label Studio")
+        except LabelStudioConfigError as e:
+            logger.error(str(e))
+            return False
         
         return True
 

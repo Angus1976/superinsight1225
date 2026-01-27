@@ -1,8 +1,13 @@
 # Label Studio integration module
 
+from .exceptions import (
+    LabelStudioIntegrationError,
+    LabelStudioAuthenticationError,
+    LabelStudioProjectNotFoundError,
+    LabelStudioNetworkError,
+)
 from .integration import (
     LabelStudioIntegration,
-    LabelStudioIntegrationError,
     ProjectConfig,
     ImportResult,
     ExportResult,
@@ -12,6 +17,7 @@ from .integration import (
 from .config import (
     LabelStudioConfig,
     LabelStudioProject,
+    LabelStudioConfigError,
     label_studio_config
 )
 from .collaboration import (
@@ -38,11 +44,18 @@ from .retry import (
     LABEL_STUDIO_RETRYABLE_EXCEPTIONS,
     LABEL_STUDIO_NON_RETRYABLE_EXCEPTIONS,
 )
+from .jwt_auth import (
+    JWTAuthManager,
+    JWTTokenResponse,
+)
 
 __all__ = [
     # Integration
     "LabelStudioIntegration",
-    "LabelStudioIntegrationError", 
+    "LabelStudioIntegrationError",
+    "LabelStudioAuthenticationError",
+    "LabelStudioProjectNotFoundError",
+    "LabelStudioNetworkError",
     "ProjectConfig",
     "ImportResult",
     "ExportResult",
@@ -51,6 +64,7 @@ __all__ = [
     # Config
     "LabelStudioConfig",
     "LabelStudioProject",
+    "LabelStudioConfigError",
     "label_studio_config",
     # Collaboration
     "CollaborationManager",
@@ -60,11 +74,14 @@ __all__ = [
     "TaskAssignment",
     "ProgressStats",
     "collaboration_manager",
-    # Auth
+    # Auth (SuperInsight user authentication)
     "AuthenticationManager",
     "AuthenticationError",
     "auth_manager",
     "create_demo_users",
+    # JWT Auth (Label Studio JWT authentication)
+    "JWTAuthManager",
+    "JWTTokenResponse",
     # Retry
     "LabelStudioRetryConfig",
     "LabelStudioRetryExecutor",

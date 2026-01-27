@@ -10,7 +10,7 @@ Validates: Requirements 1.5 - Error handling with retry for network errors, time
 import logging
 import json
 import asyncio
-from typing import Dict, Any, List, Optional, Union
+from typing import Dict, Any, List, Optional, Union, Callable
 from datetime import datetime, timedelta
 from uuid import UUID, uuid4
 import httpx
@@ -19,6 +19,14 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 
 from src.label_studio.config import LabelStudioConfig, LabelStudioProject
+from src.label_studio.jwt_auth import JWTAuthManager
+from src.label_studio.exceptions import (
+    LabelStudioIntegrationError,
+    LabelStudioAuthenticationError,
+    LabelStudioProjectNotFoundError,
+    LabelStudioNetworkError,
+    LabelStudioTokenExpiredError,
+)
 from src.label_studio.retry import (
     label_studio_retry,
     LabelStudioRetryConfig,
@@ -31,75 +39,6 @@ from src.models.document import Document
 from src.config.settings import settings
 
 logger = logging.getLogger(__name__)
-
-
-class LabelStudioIntegrationError(Exception):
-    """Custom exception for Label Studio integration errors"""
-    pass
-
-
-class LabelStudioAuthenticationError(LabelStudioIntegrationError):
-    """
-    Exception for Label Studio authentication failures.
-    
-    This exception is raised when authentication with Label Studio fails,
-    such as invalid API token, expired credentials, or unauthorized access.
-    
-    Authentication errors should NOT be retried as they require user intervention
-    (e.g., re-login, token refresh).
-    
-    Validates: Requirements 1.5 - Handle authentication failures with clear error messages (no retry)
-    """
-    
-    def __init__(self, message: str, status_code: int = 401):
-        super().__init__(message)
-        self.status_code = status_code
-        self.message = message
-    
-    def __str__(self) -> str:
-        return f"Authentication failed (HTTP {self.status_code}): {self.message}"
-
-
-class LabelStudioProjectNotFoundError(LabelStudioIntegrationError):
-    """
-    Exception for Label Studio project not found errors.
-    
-    This exception is raised when a requested project does not exist in Label Studio.
-    Project not found errors should NOT be retried as the project needs to be created.
-    
-    Validates: Requirements 1.5 - Handle project not found with appropriate error messages
-    """
-    
-    def __init__(self, project_id: str, message: Optional[str] = None):
-        self.project_id = project_id
-        self.message = message or f"Project {project_id} not found in Label Studio"
-        super().__init__(self.message)
-    
-    def __str__(self) -> str:
-        return self.message
-
-
-class LabelStudioNetworkError(LabelStudioIntegrationError):
-    """
-    Exception for Label Studio network errors.
-    
-    This exception wraps network-related errors (timeouts, connection errors)
-    for better error handling and logging.
-    
-    Network errors ARE retryable with exponential backoff.
-    
-    Validates: Requirements 1.5 - Handle network errors with retry
-    """
-    
-    def __init__(self, message: str, original_error: Optional[Exception] = None):
-        super().__init__(message)
-        self.original_error = original_error
-        self.message = message
-    
-    def __str__(self) -> str:
-        if self.original_error:
-            return f"Network error: {self.message} (caused by: {type(self.original_error).__name__})"
-        return f"Network error: {self.message}"
 
 
 class ProjectConfig:
@@ -203,13 +142,63 @@ class LabelStudioIntegration:
     
     Handles project creation, task management, webhook configuration,
     and data synchronization with PostgreSQL.
+    
+    Supports both JWT authentication (Label Studio 1.22.0+) and legacy
+    API token authentication. JWT is preferred when both username and
+    password are configured.
+    
+    Validates: Requirements 3.1, 3.2, 3.3, 3.4 - Backward compatibility with API token
     """
     
     def __init__(self, config: Optional[LabelStudioConfig] = None):
-        """Initialize Label Studio integration with configuration"""
+        """
+        Initialize Label Studio integration with configuration.
+        
+        Detects authentication method from config and initializes the
+        appropriate auth manager. JWT authentication is preferred when
+        both username and password are configured.
+        
+        Args:
+            config: Optional LabelStudioConfig. If not provided, creates
+                   a new config from environment variables.
+                   
+        Raises:
+            LabelStudioIntegrationError: If configuration is invalid
+            
+        Validates: Requirements 3.1, 3.2 - Detect auth method from config
+        """
         self.config = config or LabelStudioConfig()
         self.base_url = self.config.base_url.rstrip('/')
         self.api_token = self.config.api_token
+        
+        # Initialize JWT auth manager if JWT credentials are configured
+        # JWT authentication is preferred over API token when both are available
+        self._jwt_auth_manager: Optional[JWTAuthManager] = None
+        self._auth_method: str = 'api_token'  # Default to API token
+        
+        try:
+            auth_method = self.config.get_auth_method()
+            self._auth_method = auth_method
+            
+            if auth_method == 'jwt':
+                # Initialize JWT auth manager
+                self._jwt_auth_manager = JWTAuthManager(
+                    base_url=self.base_url,
+                    username=self.config.username,
+                    password=self.config.password
+                )
+                logger.info("Label Studio integration initialized with JWT authentication")
+            else:
+                logger.info("Label Studio integration initialized with API token authentication")
+        except Exception as e:
+            # If auth method detection fails, fall back to API token if available
+            if self.api_token:
+                logger.warning(f"Auth method detection failed ({e}), falling back to API token")
+                self._auth_method = 'api_token'
+            else:
+                raise LabelStudioIntegrationError(f"No valid authentication method available: {e}")
+        
+        # Legacy headers for backward compatibility (used when JWT is not available)
         self.headers = {
             'Authorization': f'Token {self.api_token}' if self.api_token else '',
             'Content-Type': 'application/json'
@@ -218,6 +207,271 @@ class LabelStudioIntegration:
         # Validate configuration
         if not self.config.validate_config():
             raise LabelStudioIntegrationError("Invalid Label Studio configuration")
+    
+    async def _get_headers(self) -> Dict[str, str]:
+        """
+        Get authentication headers for API requests.
+        
+        For JWT authentication, this method ensures the token is valid
+        (refreshing if necessary) and returns Bearer token headers.
+        For API token authentication, returns Token headers.
+        
+        This method is async because JWT authentication may require
+        token refresh which involves network calls.
+        
+        Returns:
+            Dict[str, str]: Headers dictionary with Authorization and Content-Type
+            
+        Raises:
+            LabelStudioAuthenticationError: If authentication fails
+            
+        Validates: Requirements 1.4, 3.3 - Return appropriate auth header format
+        """
+        if self._auth_method == 'jwt' and self._jwt_auth_manager:
+            # Ensure JWT token is valid (refresh if needed)
+            await self._jwt_auth_manager._ensure_authenticated()
+            
+            # Get JWT auth header
+            jwt_headers = self._jwt_auth_manager.get_auth_header()
+            jwt_headers['Content-Type'] = 'application/json'
+            return jwt_headers
+        else:
+            # Use legacy API token headers
+            return self.headers
+    
+    def _check_https_security(self) -> bool:
+        """
+        Check if the Label Studio URL uses HTTPS for secure token transmission.
+        
+        This method verifies that the base URL uses HTTPS protocol when
+        tokens will be transmitted. In production environments, using HTTP
+        with tokens is a security risk as tokens may be intercepted.
+        
+        Returns:
+            bool: True if URL uses HTTPS, False if HTTP
+            
+        Side Effects:
+            Logs a warning if HTTP is used in non-development environments
+            
+        Validates: Requirements 10.3 - HTTPS enforcement for token URLs
+        
+        Example:
+            >>> integration = LabelStudioIntegration()
+            >>> is_secure = integration._check_https_security()
+            >>> if not is_secure:
+            ...     print("Warning: Using HTTP for token transmission")
+        """
+        is_https = self.base_url.startswith('https://')
+        
+        if not is_https:
+            # Check if we're in development mode
+            is_development = getattr(settings, 'is_development', False) or \
+                             getattr(settings, 'debug', False) or \
+                             'localhost' in self.base_url or \
+                             '127.0.0.1' in self.base_url
+            
+            if not is_development:
+                logger.warning(
+                    "[Label Studio] SECURITY WARNING: Label Studio URL does not use HTTPS. "
+                    "Tokens transmitted over HTTP may be intercepted. "
+                    "Please configure LABEL_STUDIO_URL with an HTTPS URL for production use. "
+                    f"Current URL: {self.base_url}"
+                )
+            else:
+                logger.debug(
+                    "[Label Studio] Using HTTP for Label Studio URL in development mode. "
+                    "This is acceptable for local development but should use HTTPS in production."
+                )
+        
+        return is_https
+    
+    def _is_token_expired_response(self, response: httpx.Response) -> bool:
+        """
+        Check if an HTTP response indicates token expiration.
+        
+        This method examines a 401 response to determine if it's due to
+        token expiration (which can be recovered by refreshing the token)
+        versus invalid credentials (which cannot be recovered).
+        
+        Label Studio may return various messages indicating token expiration:
+        - "Token has expired"
+        - "token expired"
+        - "Signature has expired"
+        - "Token is expired"
+        - "JWT expired"
+        
+        Args:
+            response: The HTTP response to check
+            
+        Returns:
+            bool: True if the response indicates token expiration,
+                  False otherwise
+                  
+        Validates: Requirements 5.3, 8.1 - Detect token expiration from 401 response
+        """
+        if response.status_code != 401:
+            return False
+        
+        # Try to parse the response body for expiration indicators
+        try:
+            response_text = response.text.lower()
+            
+            # Common token expiration messages from Label Studio and JWT libraries
+            expiration_indicators = [
+                "token has expired",
+                "token expired",
+                "signature has expired",
+                "token is expired",
+                "jwt expired",
+                "expired token",
+                "access token expired",
+                "token_expired",
+                "exp claim",
+            ]
+            
+            for indicator in expiration_indicators:
+                if indicator in response_text:
+                    logger.debug(
+                        f"[Label Studio] Detected token expiration indicator: '{indicator}'"
+                    )
+                    return True
+            
+            # Also check JSON response if available
+            try:
+                response_json = response.json()
+                detail = str(response_json.get('detail', '')).lower()
+                message = str(response_json.get('message', '')).lower()
+                error = str(response_json.get('error', '')).lower()
+                
+                for field in [detail, message, error]:
+                    for indicator in expiration_indicators:
+                        if indicator in field:
+                            logger.debug(
+                                f"[Label Studio] Detected token expiration in JSON: '{indicator}'"
+                            )
+                            return True
+            except (ValueError, KeyError):
+                # JSON parsing failed, continue with text-based detection
+                pass
+                
+        except Exception as e:
+            logger.debug(f"[Label Studio] Error checking token expiration: {e}")
+        
+        return False
+    
+    async def _handle_token_expiration_and_retry(
+        self,
+        api_call: Callable,
+        *args,
+        **kwargs
+    ) -> Any:
+        """
+        Handle token expiration by refreshing and retrying the API call.
+        
+        This method wraps an API call and handles 401 token expiration errors
+        by automatically refreshing the JWT token and retrying the original
+        call with the new token.
+        
+        The flow is:
+        1. Execute the API call
+        2. If 401 with token expiration detected:
+           a. Refresh the JWT token
+           b. Retry the original API call with new token
+        3. If refresh fails, fall back to re-authentication
+        4. If re-authentication fails, raise LabelStudioAuthenticationError
+        
+        Args:
+            api_call: The async callable to execute (should return httpx.Response)
+            *args: Positional arguments for the API call
+            **kwargs: Keyword arguments for the API call
+            
+        Returns:
+            The result of the API call (httpx.Response)
+            
+        Raises:
+            LabelStudioAuthenticationError: If authentication cannot be recovered
+            
+        Validates: Requirements 5.3, 8.1, 8.2 - Token expiration detection and retry
+        """
+        # Only handle token expiration for JWT authentication
+        if self._auth_method != 'jwt' or not self._jwt_auth_manager:
+            return await api_call(*args, **kwargs)
+        
+        # First attempt
+        response = await api_call(*args, **kwargs)
+        
+        # Check if token expired
+        if self._is_token_expired_response(response):
+            logger.info(
+                "[Label Studio] Token expiration detected in API response, "
+                "attempting token refresh and retry"
+            )
+            
+            try:
+                # Refresh the token
+                await self._jwt_auth_manager.refresh_token()
+                logger.info("[Label Studio] Token refreshed successfully, retrying API call")
+                
+                # Retry the API call with new token
+                # Note: The caller should call _get_headers() again to get new headers
+                response = await api_call(*args, **kwargs)
+                
+                # Check if still getting token expiration after refresh
+                if self._is_token_expired_response(response):
+                    logger.warning(
+                        "[Label Studio] Token still expired after refresh, "
+                        "attempting re-authentication"
+                    )
+                    
+                    # Try re-authentication
+                    await self._jwt_auth_manager.login()
+                    logger.info(
+                        "[Label Studio] Re-authentication successful, retrying API call"
+                    )
+                    
+                    # Final retry after re-authentication
+                    response = await api_call(*args, **kwargs)
+                    
+                    if self._is_token_expired_response(response):
+                        # This shouldn't happen after fresh login
+                        error_msg = (
+                            "Token still expired after re-authentication. "
+                            "This may indicate a server-side issue."
+                        )
+                        logger.error(f"[Label Studio] {error_msg}")
+                        raise LabelStudioAuthenticationError(error_msg, status_code=401)
+                        
+            except LabelStudioAuthenticationError:
+                # Re-raise authentication errors
+                raise
+            except Exception as e:
+                error_msg = f"Failed to recover from token expiration: {str(e)}"
+                logger.error(f"[Label Studio] {error_msg}")
+                raise LabelStudioAuthenticationError(error_msg, status_code=401)
+        
+        return response
+    
+    @property
+    def auth_method(self) -> str:
+        """
+        Get the current authentication method.
+        
+        Returns:
+            str: 'jwt' or 'api_token'
+        """
+        return self._auth_method
+    
+    @property
+    def is_jwt_authenticated(self) -> bool:
+        """
+        Check if JWT authentication is being used and is authenticated.
+        
+        Returns:
+            bool: True if JWT auth is active and authenticated
+        """
+        if self._jwt_auth_manager:
+            return self._jwt_auth_manager.is_authenticated
+        return False
     
     @label_studio_retry(
         max_attempts=3,
@@ -242,6 +496,8 @@ class LabelStudioIntegration:
             LabelStudioIntegrationError: If project creation fails after retries
             
         Validates: Requirements 1.5 - Handle network errors, timeouts, authentication failures
+        Validates: Requirements 7.1 - Use JWT authentication for API calls
+        Validates: Requirements 5.3, 8.1, 8.2 - Token expiration detection and retry
         """
         # Prepare project data
         label_config = (project_config.label_config or 
@@ -265,38 +521,43 @@ class LabelStudioIntegration:
             "reveal_preannotations_interactively": True
         }
         
-        # Make API request - let network exceptions propagate for retry decorator
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(
-                f"{self.base_url}/api/projects/",
-                headers=self.headers,
-                json=project_data
-            )
+        async def make_api_call():
+            """Inner function to make the API call with fresh headers."""
+            headers = await self._get_headers()
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                return await client.post(
+                    f"{self.base_url}/api/projects/",
+                    headers=headers,
+                    json=project_data
+                )
+        
+        # Make API request with token expiration handling
+        response = await self._handle_token_expiration_and_retry(make_api_call)
+        
+        # Handle authentication errors (should not be retried)
+        if response.status_code == 401:
+            error_msg = "Invalid API token or unauthorized access"
+            logger.error(f"[Label Studio] Authentication failed: {error_msg}")
+            raise LabelStudioAuthenticationError(error_msg, status_code=401)
+        
+        if response.status_code == 403:
+            error_msg = "Access forbidden - insufficient permissions"
+            logger.error(f"[Label Studio] Authorization failed: {error_msg}")
+            raise LabelStudioAuthenticationError(error_msg, status_code=403)
+        
+        if response.status_code == 201:
+            project_info = response.json()
+            logger.info(f"Created Label Studio project: {project_info['id']}")
             
-            # Handle authentication errors (should not be retried)
-            if response.status_code == 401:
-                error_msg = "Invalid API token or unauthorized access"
-                logger.error(f"[Label Studio] Authentication failed: {error_msg}")
-                raise LabelStudioAuthenticationError(error_msg, status_code=401)
+            # Convert to LabelStudioProject - avoid duplicate parameters
+            project_kwargs = {k: v for k, v in project_info.items() 
+                            if k in LabelStudioProject.__dataclass_fields__}
             
-            if response.status_code == 403:
-                error_msg = "Access forbidden - insufficient permissions"
-                logger.error(f"[Label Studio] Authorization failed: {error_msg}")
-                raise LabelStudioAuthenticationError(error_msg, status_code=403)
-            
-            if response.status_code == 201:
-                project_info = response.json()
-                logger.info(f"Created Label Studio project: {project_info['id']}")
-                
-                # Convert to LabelStudioProject - avoid duplicate parameters
-                project_kwargs = {k: v for k, v in project_info.items() 
-                                if k in LabelStudioProject.__dataclass_fields__}
-                
-                return LabelStudioProject(**project_kwargs)
-            else:
-                error_msg = f"Failed to create project: {response.status_code} - {response.text}"
-                logger.error(error_msg)
-                raise LabelStudioIntegrationError(error_msg)
+            return LabelStudioProject(**project_kwargs)
+        else:
+            error_msg = f"Failed to create project: {response.status_code} - {response.text}"
+            logger.error(error_msg)
+            raise LabelStudioIntegrationError(error_msg)
     
     @label_studio_retry(
         max_attempts=3,
@@ -321,6 +582,7 @@ class LabelStudioIntegration:
             LabelStudioAuthenticationError: If authentication fails (not retried)
             
         Validates: Requirements 1.5 - Handle network errors, timeouts, authentication failures
+        Validates: Requirements 7.2 - Use JWT authentication for API calls
         """
         try:
             imported_count = 0
@@ -373,6 +635,9 @@ class LabelStudioIntegration:
                     errors.append(f"Error processing task {task.id}: {str(e)}")
                     failed_count += 1
             
+            # Get authentication headers (JWT or API token)
+            headers = await self._get_headers()
+            
             # Import tasks in batches
             batch_size = 100
             for i in range(0, len(ls_tasks), batch_size):
@@ -381,7 +646,7 @@ class LabelStudioIntegration:
                 async with httpx.AsyncClient(timeout=60.0) as client:
                     response = await client.post(
                         f"{self.base_url}/api/projects/{project_id}/import",
-                        headers=self.headers,
+                        headers=headers,
                         json=batch
                     )
                     
@@ -424,13 +689,18 @@ class LabelStudioIntegration:
             
         Returns:
             ExportResult: Export operation results
+            
+        Validates: Requirements 7.2 - Use JWT authentication for API calls
         """
         try:
+            # Get authentication headers (JWT or API token)
+            headers = await self._get_headers()
+            
             # Get annotations from Label Studio
             async with httpx.AsyncClient(timeout=60.0) as client:
                 response = await client.get(
                     f"{self.base_url}/api/projects/{project_id}/export",
-                    headers=self.headers,
+                    headers=headers,
                     params={"exportType": export_format}
                 )
                 
@@ -473,15 +743,20 @@ class LabelStudioIntegration:
             
         Returns:
             bool: True if webhooks were configured successfully
+            
+        Validates: Requirements 7.2 - Use JWT authentication for API calls
         """
         try:
+            # Get authentication headers (JWT or API token)
+            headers = await self._get_headers()
+            
             for webhook_url in webhook_urls:
                 webhook_config = self.config.get_webhook_config(webhook_url)
                 
                 async with httpx.AsyncClient(timeout=30.0) as client:
                     response = await client.post(
                         f"{self.base_url}/api/projects/{project_id}/webhooks/",
-                        headers=self.headers,
+                        headers=headers,
                         json=webhook_config
                     )
                     
@@ -507,14 +782,19 @@ class LabelStudioIntegration:
             
         Returns:
             bool: True if ML backend was configured successfully
+            
+        Validates: Requirements 7.2 - Use JWT authentication for API calls
         """
         try:
+            # Get authentication headers (JWT or API token)
+            headers = await self._get_headers()
+            
             ml_config = self.config.get_ml_backend_config(ml_backend_url)
             
             async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.post(
                     f"{self.base_url}/api/ml/",
-                    headers=self.headers,
+                    headers=headers,
                     json={**ml_config, "project": project_id}
                 )
                 
@@ -615,24 +895,32 @@ class LabelStudioIntegration:
 
         Returns:
             bool: True if connection is successful, False otherwise
+            
+        Validates: Requirements 7.5 - Use JWT authentication for API calls
+        Validates: Requirements 5.3, 8.1, 8.2 - Token expiration detection and retry
         """
         try:
-            async with httpx.AsyncClient(timeout=timeout) as client:
-                # Try to access the API health endpoint or user info
-                response = await client.get(
-                    f"{self.base_url}/api/current-user/whoami/",
-                    headers=self.headers
-                )
+            async def make_api_call():
+                """Inner function to make the API call with fresh headers."""
+                headers = await self._get_headers()
+                async with httpx.AsyncClient(timeout=timeout) as client:
+                    return await client.get(
+                        f"{self.base_url}/api/current-user/whoami/",
+                        headers=headers
+                    )
+            
+            # Make API request with token expiration handling
+            response = await self._handle_token_expiration_and_retry(make_api_call)
 
-                if response.status_code == 200:
-                    logger.info("Label Studio connection test successful")
-                    return True
-                elif response.status_code == 401:
-                    logger.warning("Label Studio authentication failed")
-                    return False
-                else:
-                    logger.warning(f"Label Studio returned status code: {response.status_code}")
-                    return False
+            if response.status_code == 200:
+                logger.info("Label Studio connection test successful")
+                return True
+            elif response.status_code == 401:
+                logger.warning("Label Studio authentication failed")
+                return False
+            else:
+                logger.warning(f"Label Studio returned status code: {response.status_code}")
+                return False
 
         except httpx.TimeoutException:
             logger.error("Label Studio connection timed out")
@@ -666,36 +954,43 @@ class LabelStudioIntegration:
             LabelStudioAuthenticationError: If authentication fails (not retried)
             
         Validates: Requirements 1.5 - Handle network errors, timeouts, authentication failures
+        Validates: Requirements 7.5 - Use JWT authentication for API calls
+        Validates: Requirements 5.3, 8.1, 8.2 - Token expiration detection and retry
         """
-        # Make API request - let network exceptions propagate for retry decorator
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.get(
-                f"{self.base_url}/api/projects/{project_id}/",
-                headers=self.headers
-            )
-            
-            # Handle authentication errors (should not be retried)
-            if response.status_code == 401:
-                error_msg = "Invalid API token or unauthorized access"
-                logger.error(f"[Label Studio] Authentication failed: {error_msg}")
-                raise LabelStudioAuthenticationError(error_msg, status_code=401)
-            
-            if response.status_code == 403:
-                error_msg = "Access forbidden - insufficient permissions"
-                logger.error(f"[Label Studio] Authorization failed: {error_msg}")
-                raise LabelStudioAuthenticationError(error_msg, status_code=403)
-            
-            # Handle project not found (should not be retried)
-            if response.status_code == 404:
-                logger.warning(f"Project {project_id} not found in Label Studio")
-                return None
-            
-            if response.status_code == 200:
-                project_data = response.json()
-                return LabelStudioProject(**project_data)
-            else:
-                logger.error(f"Failed to get project info: {response.status_code}")
-                return None
+        async def make_api_call():
+            """Inner function to make the API call with fresh headers."""
+            headers = await self._get_headers()
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                return await client.get(
+                    f"{self.base_url}/api/projects/{project_id}/",
+                    headers=headers
+                )
+        
+        # Make API request with token expiration handling
+        response = await self._handle_token_expiration_and_retry(make_api_call)
+        
+        # Handle authentication errors (should not be retried)
+        if response.status_code == 401:
+            error_msg = "Invalid API token or unauthorized access"
+            logger.error(f"[Label Studio] Authentication failed: {error_msg}")
+            raise LabelStudioAuthenticationError(error_msg, status_code=401)
+        
+        if response.status_code == 403:
+            error_msg = "Access forbidden - insufficient permissions"
+            logger.error(f"[Label Studio] Authorization failed: {error_msg}")
+            raise LabelStudioAuthenticationError(error_msg, status_code=403)
+        
+        # Handle project not found (should not be retried)
+        if response.status_code == 404:
+            logger.warning(f"Project {project_id} not found in Label Studio")
+            return None
+        
+        if response.status_code == 200:
+            project_data = response.json()
+            return LabelStudioProject(**project_data)
+        else:
+            logger.error(f"Failed to get project info: {response.status_code}")
+            return None
 
     @label_studio_retry(
         max_attempts=3,
@@ -903,6 +1198,11 @@ class LabelStudioIntegration:
         be used to open Label Studio in a new window with automatic authentication
         and the user's preferred language.
         
+        Security Note:
+            This method checks if the URL uses HTTPS when tokens are included.
+            In production environments, HTTP URLs will trigger a security warning
+            as tokens may be exposed in transit.
+        
         Args:
             project_id: Label Studio project ID to access
             user_id: User identifier for token generation
@@ -917,12 +1217,14 @@ class LabelStudioIntegration:
                 - expires_at: ISO format datetime when token expires
                 - project_id: The project ID
                 - language: The language parameter used
+                - is_secure: Whether the URL uses HTTPS
                 
         Raises:
             LabelStudioIntegrationError: If URL generation fails
             
         Validates: Requirements 1.2 - Language matches user preference
         Validates: Requirements 1.5 - Language preference included in authenticated URL
+        Validates: Requirements 10.3 - HTTPS enforcement for token URLs
         
         Example:
             >>> url_info = await integration.generate_authenticated_url(
@@ -931,9 +1233,11 @@ class LabelStudioIntegration:
             ...     language="zh"
             ... )
             >>> print(url_info['url'])
-            'http://label-studio:8080/projects/123?token=eyJ...&lang=zh'
+            'https://label-studio:8080/projects/123?token=eyJ...&lang=zh'
         """
         try:
+            # HTTPS Security Check (Requirement 10.3)
+            is_secure = self._check_https_security()
             # Validate language parameter - only 'zh' and 'en' are supported
             # Map common language codes to Label Studio supported codes
             language_map = {
@@ -993,7 +1297,8 @@ class LabelStudioIntegration:
                 "token": temp_token,
                 "expires_at": expires_at.isoformat() + "Z",
                 "project_id": project_id,
-                "language": normalized_language
+                "language": normalized_language,
+                "is_secure": is_secure
             }
             
         except jwt.PyJWTError as e:
@@ -1045,12 +1350,25 @@ class LabelStudioIntegration:
         )
 
     async def delete_project(self, project_id: str) -> bool:
-        """Delete a Label Studio project"""
+        """
+        Delete a Label Studio project.
+        
+        Args:
+            project_id: Label Studio project ID
+            
+        Returns:
+            bool: True if project was deleted successfully
+            
+        Validates: Requirements 7.2 - Use JWT authentication for API calls
+        """
         try:
+            # Get authentication headers (JWT or API token)
+            headers = await self._get_headers()
+            
             async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.delete(
                     f"{self.base_url}/api/projects/{project_id}/",
-                    headers=self.headers
+                    headers=headers
                 )
                 
                 if response.status_code == 204:

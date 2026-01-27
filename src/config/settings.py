@@ -58,6 +58,11 @@ class LabelStudioSettings:
     label_studio_url: str = field(default_factory=lambda: get_env("LABEL_STUDIO_URL", "http://localhost:8080"))
     label_studio_api_token: Optional[str] = field(default_factory=lambda: get_env("LABEL_STUDIO_API_TOKEN") or None)
     label_studio_project_id: int = field(default_factory=lambda: get_env_int("LABEL_STUDIO_PROJECT_ID", 1))
+    
+    # JWT Authentication credentials (Label Studio 1.22.0+)
+    # When both username and password are configured, JWT authentication is preferred
+    label_studio_username: Optional[str] = field(default_factory=lambda: get_env("LABEL_STUDIO_USERNAME") or None)
+    label_studio_password: Optional[str] = field(default_factory=lambda: get_env("LABEL_STUDIO_PASSWORD") or None)
 
 
 @dataclass

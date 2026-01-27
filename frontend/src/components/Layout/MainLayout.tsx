@@ -132,20 +132,6 @@ const menuItems = [
     name: 'admin',
     icon: <SafetyOutlined />,
     access: 'admin',
-    children: [
-      {
-        path: `${ROUTES.ADMIN}/tenants`,
-        name: 'tenants',
-      },
-      {
-        path: `${ROUTES.ADMIN}/users`,
-        name: 'users',
-      },
-      {
-        path: `${ROUTES.ADMIN}/system`,
-        name: 'system',
-      },
-    ],
   },
 ];
 

@@ -17,12 +17,18 @@ import '@/locales/config';
 // Import global styles
 import '@/styles/global.scss';
 
-// Create Query Client
+// Create Query Client with optimized cache settings
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
+      // Reduce stale time to ensure fresh data on navigation
+      staleTime: 30000, // 30 seconds
+      // Enable cache time but keep it short
+      gcTime: 5 * 60 * 1000, // 5 minutes (formerly cacheTime)
+      // Refetch on mount if data is stale
+      refetchOnMount: true,
     },
   },
 });

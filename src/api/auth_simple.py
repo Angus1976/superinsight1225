@@ -190,8 +190,9 @@ def login(
             )
         
         # Create access token
+        # Include both 'sub' (standard JWT claim) and 'user_id' (for compatibility with auth.py)
         access_token = create_access_token(
-            data={"sub": str(user_id), "email": email}
+            data={"sub": str(user_id), "user_id": str(user_id), "email": email}
         )
         
         # Update last login

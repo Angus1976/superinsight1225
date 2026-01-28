@@ -192,13 +192,6 @@ export const MainLayout: React.FC = () => {
         path: '/',
         routes: transformMenuItems(filteredMenuItems),
       }}
-      onMenuClick={(info) => {
-        // Handle menu click navigation
-        const path = info.key;
-        if (path && path !== location.pathname) {
-          navigate(path);
-        }
-      }}
       menuItemRender={(item, dom) => (
         <div onClick={() => item.path && navigate(item.path)}>{dom}</div>
       )}

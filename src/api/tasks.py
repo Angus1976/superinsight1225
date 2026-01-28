@@ -121,6 +121,41 @@ def get_task_or_404(task_id: str, db: Session, user: SimpleUser) -> Dict[str, An
     if task_id in _tasks_storage:
         return _tasks_storage[task_id]
     
+    # Try to get from database
+    try:
+        task_model = db.query(TaskModel).filter(TaskModel.id == task_uuid).first()
+        if task_model:
+            # Convert TaskModel to dict
+            task_dict = {
+                "id": str(task_model.id),
+                "name": task_model.name or f"Task {task_model.id}",
+                "description": task_model.description,
+                "status": task_model.status.value if hasattr(task_model.status, 'value') else str(task_model.status),
+                "priority": task_model.priority.value if hasattr(task_model.priority, 'value') else "medium",
+                "annotation_type": task_model.annotation_type.value if hasattr(task_model.annotation_type, 'value') else "custom",
+                "assignee_id": str(task_model.assignee_id) if task_model.assignee_id else None,
+                "assignee_name": None,  # Would need to join with users table
+                "created_by": str(task_model.created_by) if task_model.created_by else "system",
+                "created_at": task_model.created_at,
+                "updated_at": task_model.updated_at,
+                "due_date": task_model.due_date,
+                "progress": task_model.progress or 0,
+                "total_items": task_model.total_items or 1,
+                "completed_items": task_model.completed_items or 0,
+                "tenant_id": str(task_model.tenant_id) if task_model.tenant_id else user.tenant_id,
+                "label_studio_project_id": task_model.label_studio_project_id,
+                "label_studio_project_created_at": None,
+                "label_studio_sync_status": None,
+                "label_studio_last_sync": None,
+                "label_studio_task_count": 0,
+                "label_studio_annotation_count": 0,
+                "tags": task_model.tags or [],
+                "data_source": None
+            }
+            return task_dict
+    except Exception as e:
+        logger.error(f"Error querying database for task {task_id}: {e}")
+    
     # Fall back to mock data
     mock_tasks = TaskAdapter.create_mock_tasks(10)
     for task in mock_tasks:
@@ -152,17 +187,71 @@ def list_tasks(
 ):
     """Get list of tasks with pagination and filtering."""
     try:
-        # Combine in-memory tasks with mock data
-        all_tasks = list(_tasks_storage.values()) + TaskAdapter.create_mock_tasks(20)
+        # Get tasks from database
+        all_tasks = []
         
-        # Apply filters
+        try:
+            # Query database for tasks
+            query = db.query(TaskModel)
+            
+            # Apply filters
+            if status:
+                query = query.filter(TaskModel.status == status)
+            if assignee_id:
+                try:
+                    assignee_uuid = UUID(assignee_id)
+                    query = query.filter(TaskModel.assignee_id == assignee_uuid)
+                except ValueError:
+                    pass
+            
+            # Get all matching tasks
+            task_models = query.all()
+            
+            # Convert to dict format
+            for task_model in task_models:
+                task_dict = {
+                    "id": str(task_model.id),
+                    "name": task_model.name or f"Task {task_model.id}",
+                    "description": task_model.description,
+                    "status": task_model.status.value if hasattr(task_model.status, 'value') else str(task_model.status),
+                    "priority": task_model.priority.value if hasattr(task_model.priority, 'value') else "medium",
+                    "annotation_type": task_model.annotation_type.value if hasattr(task_model.annotation_type, 'value') else "custom",
+                    "assignee_id": str(task_model.assignee_id) if task_model.assignee_id else None,
+                    "assignee_name": None,
+                    "created_by": str(task_model.created_by) if task_model.created_by else "system",
+                    "created_at": task_model.created_at,
+                    "updated_at": task_model.updated_at,
+                    "due_date": task_model.due_date,
+                    "progress": task_model.progress or 0,
+                    "total_items": task_model.total_items or 1,
+                    "completed_items": task_model.completed_items or 0,
+                    "tenant_id": str(task_model.tenant_id) if task_model.tenant_id else current_user.tenant_id,
+                    "label_studio_project_id": task_model.label_studio_project_id,
+                    "label_studio_project_created_at": None,
+                    "label_studio_sync_status": None,
+                    "label_studio_last_sync": None,
+                    "label_studio_task_count": 0,
+                    "label_studio_annotation_count": 0,
+                    "tags": task_model.tags or [],
+                    "data_source": None
+                }
+                all_tasks.append(task_dict)
+                
+        except Exception as e:
+            logger.error(f"Error querying database for tasks: {e}")
+        
+        # If no database tasks, combine in-memory tasks with mock data
+        if len(all_tasks) == 0:
+            all_tasks = list(_tasks_storage.values())
+            if len(all_tasks) == 0:
+                # No in-memory tasks either, use mock data
+                all_tasks = TaskAdapter.create_mock_tasks(20)
+                logger.info(f"Using {len(all_tasks)} mock tasks for development")
+        
+        # Apply additional filters (priority, search)
         filtered_tasks = all_tasks
-        if status:
-            filtered_tasks = [t for t in filtered_tasks if t["status"] == status]
         if priority:
             filtered_tasks = [t for t in filtered_tasks if t["priority"] == priority]
-        if assignee_id:
-            filtered_tasks = [t for t in filtered_tasks if t["assignee_id"] == assignee_id]
         if search:
             search_lower = search.lower()
             filtered_tasks = [

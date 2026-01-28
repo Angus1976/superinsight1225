@@ -120,6 +120,14 @@
 - [设计文档](./license-management/design.md) - 并发控制 + 时间控制 + 远程激活
 - [任务文档](./license-management/tasks.md) - 16个实施任务
 
+#### 🐛 Bug 修复和优化
+
+**Label Studio 标注导航修复** - 修复"开始标注"和"在新窗口打开"按钮重定向问题
+- [README](./label-studio-annotation-navigation-fix/README.md) - 问题概述和快速开始
+- [需求文档](./label-studio-annotation-navigation-fix/requirements.md) - 问题描述和用户故事
+- [设计文档](./label-studio-annotation-navigation-fix/design.md) - 问题分析和解决方案
+- [任务文档](./label-studio-annotation-navigation-fix/tasks.md) - 5个 Phase 的实施任务
+
 ### 🔧 开发规范和工具
 
 - [开发流程规范](./DEVELOPMENT_PROCESS.md) - Spec-First 开发流程
@@ -133,9 +141,10 @@
 ### 文档数量
 - **总体规格**: 3个 (总体规格、路线图、索引)
 - **模块规格**: 19个模块 × 3个文档 = 57个
+- **Bug 修复规格**: 1个规范 × 4个文档 = 4个
 - **开发规范**: 3个 (流程规范、对齐报告、README)
 - **快速指南**: 1个
-- **总计**: 64个规格文档
+- **总计**: 68个规格文档
 
 ### Phase 4 企业版升级模块统计
 
@@ -338,7 +347,8 @@ grep "^\- \[" .kiro/specs/system-health-fixes/tasks.md
 SuperInsight 2.3 版本的完整规格文档已创建完成：
 
 ✅ **3个总体规格文档** - 总体规格、路线图、索引  
-✅ **17个模块规格** - 每个模块都有完整的需求、设计、任务  
+✅ **19个模块规格** - 每个模块都有完整的需求、设计、任务  
+✅ **1个 Bug 修复规格** - Label Studio 标注导航修复  
 ✅ **3个开发规范** - 流程规范、对齐报告、README  
 ✅ **1个快速指南** - 新开发者快速入门  
 
@@ -359,7 +369,7 @@ SuperInsight 2.3 版本的完整规格文档已创建完成：
 | data-permission-control | 数据权限控制 | ✅ 完成 |
 | license-management | 许可管理 | ✅ 完成 |
 
-**总计**: 64个规格文档  
+**总计**: 68个规格文档  
 **总工作量**: 2560小时  
 **预计完成**: 2026年Q2
 

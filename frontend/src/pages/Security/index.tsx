@@ -68,85 +68,13 @@ interface SecurityEvent {
   resolved: boolean;
 }
 
-// Mock data
-const mockAuditLogs: AuditLog[] = [
-  {
-    id: '1',
-    user_id: 'user1',
-    user_name: 'admin',
-    action: 'LOGIN',
-    resource: 'auth/login',
-    ip_address: '192.168.1.100',
-    user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-    status: 'success',
-    created_at: '2025-01-20T10:30:00Z',
-  },
-  {
-    id: '2',
-    user_id: 'user2',
-    user_name: 'john.doe',
-    action: 'CREATE',
-    resource: 'tasks/123',
-    ip_address: '192.168.1.101',
-    user_agent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',
-    status: 'success',
-    details: 'Created task "Customer Review Classification"',
-    created_at: '2025-01-20T09:45:00Z',
-  },
-  {
-    id: '3',
-    user_id: 'user3',
-    user_name: 'jane.smith',
-    action: 'DELETE',
-    resource: 'annotations/456',
-    ip_address: '192.168.1.102',
-    user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-    status: 'success',
-    created_at: '2025-01-20T09:30:00Z',
-  },
-  {
-    id: '4',
-    user_id: 'unknown',
-    user_name: 'unknown',
-    action: 'LOGIN',
-    resource: 'auth/login',
-    ip_address: '45.33.32.156',
-    user_agent: 'curl/7.64.1',
-    status: 'failed',
-    details: 'Invalid credentials - 3rd attempt',
-    created_at: '2025-01-20T08:15:00Z',
-  },
-];
+// TODO: Replace with real API calls
+// These should be fetched from backend APIs:
+// - Audit logs: GET /api/security/audit-logs
+// - Security events: GET /api/security/events
+const mockAuditLogs: AuditLog[] = [];
 
-const mockSecurityEvents: SecurityEvent[] = [
-  {
-    id: '1',
-    type: 'login_attempt',
-    severity: 'high',
-    description: 'Multiple failed login attempts detected from IP 45.33.32.156',
-    ip_address: '45.33.32.156',
-    created_at: '2025-01-20T08:20:00Z',
-    resolved: false,
-  },
-  {
-    id: '2',
-    type: 'permission_change',
-    severity: 'medium',
-    description: 'User role changed from annotator to manager',
-    user_name: 'jane.smith',
-    created_at: '2025-01-19T14:30:00Z',
-    resolved: true,
-  },
-  {
-    id: '3',
-    type: 'data_access',
-    severity: 'low',
-    description: 'Large data export initiated',
-    user_name: 'admin',
-    created_at: '2025-01-19T11:00:00Z',
-    resolved: true,
-  },
-];
+const mockSecurityEvents: SecurityEvent[] = [];
 
 const actionColors: Record<string, string> = {
   LOGIN: 'blue',

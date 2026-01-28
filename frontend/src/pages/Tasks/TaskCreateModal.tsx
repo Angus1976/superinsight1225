@@ -76,7 +76,10 @@ const annotationTypeOptions: {
   },
 ];
 
-// Mock data for development
+// Mock data for development - TODO: Replace with real API calls
+// These should be fetched from backend APIs:
+// - Data sources: GET /api/data-sources
+// - Users: GET /api/users (filtered by role/permissions)
 const mockDataSources: DataSource[] = [
   {
     id: 'ds1',

@@ -131,8 +131,13 @@ const TasksPage: React.FC = () => {
   const handleExportTasks = () => {
     // Export selected tasks or all tasks
     const tasksToExport = selectedRowKeys.length > 0 
-      ? (data?.items || mockTasks).filter(task => selectedRowKeys.includes(task.id))
-      : (data?.items || mockTasks);
+      ? (data?.items || []).filter(task => selectedRowKeys.includes(task.id))
+      : (data?.items || []);
+    
+    if (tasksToExport.length === 0) {
+      message.warning(t('noTasksToExport'));
+      return;
+    }
     
     const csvContent = [
       ['ID', 'Name', 'Status', 'Priority', 'Assignee', 'Progress', 'Created', 'Due Date'].join(','),
@@ -160,32 +165,6 @@ const TasksPage: React.FC = () => {
   };
 
   const columns: ProColumns<Task>[] = [
-    {
-      title: t('taskName'),
-      dataIndex: 'name',
-      key: 'name',
-      width: 200,
-      ellipsis: true,
-      render: (_, record) => (
-        <Space direction="vertical" size={0}>
-          <a onClick={() => navigate(`/tasks/${record.id}`)}>{record.name}</a>
-          {record.tags && record.tags.length > 0 && (
-            <Space size={4}>
-              {record.tags.slice(0, 2).map(tag => (
-                <Tag key={tag} size="small" icon={<TagOutlined />}>
-                  {tag}
-                </Tag>
-              ))}
-              {record.tags.length > 2 && (
-                <Tooltip title={record.tags.slice(2).join(', ')}>
-                  <Tag size="small">+{record.tags.length - 2}</Tag>
-                </Tooltip>
-              )}
-            </Space>
-          )}
-        </Space>
-      ),
-    },
     {
       title: t('status'),
       dataIndex: 'status',
@@ -436,63 +415,6 @@ const TasksPage: React.FC = () => {
     },
   ];
 
-  // Mock data for development
-  const mockTasks: Task[] = [
-    {
-      id: '1',
-      name: t('mockData.customerReviewClassification'),
-      description: t('mockData.customerReviewDescription'),
-      status: 'in_progress',
-      priority: 'high',
-      annotation_type: 'sentiment',
-      assignee_id: 'user1',
-      assignee_name: 'John Doe',
-      created_by: 'admin',
-      created_at: '2025-01-15T10:00:00Z',
-      updated_at: '2025-01-20T14:30:00Z',
-      due_date: '2025-02-01T00:00:00Z',
-      progress: 65,
-      total_items: 1000,
-      completed_items: 650,
-      tenant_id: 'tenant1',
-      tags: [t('tags.urgent'), t('tags.customer')],
-    },
-    {
-      id: '2',
-      name: t('mockData.productEntityRecognition'),
-      description: t('mockData.productEntityDescription'),
-      status: 'pending',
-      priority: 'medium',
-      annotation_type: 'ner',
-      created_by: 'admin',
-      created_at: '2025-01-18T09:00:00Z',
-      updated_at: '2025-01-18T09:00:00Z',
-      due_date: '2025-02-15T00:00:00Z',
-      progress: 0,
-      total_items: 500,
-      completed_items: 0,
-      tenant_id: 'tenant1',
-      tags: [t('tags.product')],
-    },
-    {
-      id: '3',
-      name: t('mockData.faqClassification'),
-      description: t('mockData.faqClassificationDescription'),
-      status: 'completed',
-      priority: 'low',
-      annotation_type: 'text_classification',
-      assignee_id: 'user2',
-      assignee_name: 'Jane Smith',
-      created_by: 'admin',
-      created_at: '2025-01-10T08:00:00Z',
-      updated_at: '2025-01-19T16:00:00Z',
-      progress: 100,
-      total_items: 200,
-      completed_items: 200,
-      tenant_id: 'tenant1',
-    },
-  ];
-
   return (
     <>
       {/* Statistics Cards */}
@@ -547,7 +469,7 @@ const TasksPage: React.FC = () => {
         rowKey="id"
         loading={isLoading}
         columns={columns}
-        dataSource={data?.items || mockTasks}
+        dataSource={data?.items || []}
         scroll={{ x: 1400 }}
         search={{
           labelWidth: 'auto',
@@ -573,7 +495,7 @@ const TasksPage: React.FC = () => {
               end: range[1], 
               total 
             }),
-          total: data?.total || mockTasks.length,
+          total: data?.total || 0,
         }}
         rowSelection={{
           selectedRowKeys,
@@ -583,14 +505,14 @@ const TasksPage: React.FC = () => {
               key: 'all',
               text: t('selectAll'),
               onSelect: () => {
-                setSelectedRowKeys((data?.items || mockTasks).map(item => item.id));
+                setSelectedRowKeys((data?.items || []).map(item => item.id));
               },
             },
             {
               key: 'invert',
               text: t('invertSelection'),
               onSelect: () => {
-                const allKeys = (data?.items || mockTasks).map(item => item.id);
+                const allKeys = (data?.items || []).map(item => item.id);
                 setSelectedRowKeys(allKeys.filter(key => !selectedRowKeys.includes(key)));
               },
             },

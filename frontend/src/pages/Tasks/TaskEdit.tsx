@@ -20,29 +20,6 @@ const TaskEditPage: React.FC = () => {
   const { data: task, isLoading, error } = useTask(id);
   const updateTask = useUpdateTask();
 
-  // Mock data for development
-  const mockTask = {
-    id: id || '1',
-    name: t('mockData.customerReviewClassification'),
-    description: t('mockData.customerReviewDescription'),
-    status: 'in_progress' as const,
-    priority: 'high' as const,
-    annotation_type: 'sentiment' as const,
-    assignee_id: 'user1',
-    assignee_name: 'John Doe',
-    created_by: 'admin',
-    created_at: '2025-01-15T10:00:00Z',
-    updated_at: '2025-01-20T14:30:00Z',
-    due_date: '2025-02-01T00:00:00Z',
-    progress: 65,
-    total_items: 1000,
-    completed_items: 650,
-    tenant_id: 'tenant1',
-    tags: [t('tags.urgent'), t('tags.customer')],
-  };
-
-  const currentTask = task || mockTask;
-
   const handleSave = async (values: any) => {
     if (!id) return;
     
@@ -63,13 +40,18 @@ const TaskEditPage: React.FC = () => {
     );
   }
 
-  if (error && !mockTask) {
+  if (error || !task) {
     return (
       <Alert
         type="error"
         message={t('failedToLoadTask')}
-        description={t('failedToLoadTaskDescription')}
+        description={error?.message || t('failedToLoadTaskDescription')}
         showIcon
+        action={
+          <Button type="primary" onClick={() => navigate('/tasks')}>
+            {t('backToTasks')}
+          </Button>
+        }
       />
     );
   }
@@ -82,12 +64,12 @@ const TaskEditPage: React.FC = () => {
             {t('backToDetail')}
           </Button>
         </Space>
-        <h2 style={{ marginTop: 16, marginBottom: 0 }}>{t('editTask')}: {currentTask.name}</h2>
+        <h2 style={{ marginTop: 16, marginBottom: 0 }}>{t('editTask')}: {task.name}</h2>
       </Card>
 
       <Card>
         <TaskEditForm
-          initialValues={currentTask}
+          initialValues={task}
           onSubmit={handleSave}
           onCancel={() => navigate(`/tasks/${id}`)}
           loading={updateTask.isPending}

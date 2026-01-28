@@ -1,6 +1,6 @@
 // Task detail page
 import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import {
   Card,
   Descriptions,
@@ -56,113 +56,44 @@ const priorityColorMap: Record<TaskPriority, string> = {
 };
 
 const TaskDetailPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const params = useParams<{ id: string }>();
+  const location = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation('tasks');
-  const { data: task, isLoading, error } = useTask(id || '');
+  
+  // Get ID with fallback to URL parsing
+  let id = params.id;
+  
+  // Debug logging
+  console.log('[TaskDetail] useParams:', params);
+  console.log('[TaskDetail] location.pathname:', location.pathname);
+  
+  // If useParams fails, parse from URL
+  if (!id) {
+    const pathParts = location.pathname.split('/');
+    const taskIndex = pathParts.indexOf('tasks');
+    if (taskIndex >= 0 && pathParts[taskIndex + 1]) {
+      id = pathParts[taskIndex + 1];
+      console.warn('[TaskDetail] useParams failed, using URL parsing. ID:', id);
+    }
+  }
+  
+  console.log('[TaskDetail] Final ID:', id);
+  
+  // If still no ID, redirect to tasks list
+  if (!id || id === 'undefined') {
+    console.error('[TaskDetail] No valid ID found, redirecting to tasks list');
+    return <Navigate to="/tasks" replace />;
+  }
+  
+  const { data: task, isLoading, error } = useTask(id);
   const { annotation: annotationPerms } = usePermissions();
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
 
-  // Mock data for development
-  const mockTask = {
-    id: id || '1',
-    name: t('mockData.customerReviewClassification'),
-    description: t('mockData.customerReviewDescription'),
-    status: 'in_progress' as TaskStatus,
-    priority: 'high' as TaskPriority,
-    annotation_type: 'sentiment' as const,
-    assignee_id: 'user1',
-    assignee_name: 'John Doe',
-    created_by: 'admin',
-    created_at: '2025-01-15T10:00:00Z',
-    updated_at: '2025-01-20T14:30:00Z',
-    due_date: '2025-02-01T00:00:00Z',
-    progress: 65,
-    total_items: 1000,
-    completed_items: 650,
-    tenant_id: 'tenant1',
-    label_studio_project_id: 'ls-project-123',
-    tags: [t('tags.urgent'), t('tags.customer'), t('tags.sentiment')],
-  };
-
-  const currentTask = task || mockTask;
-
   // Loading state for annotation operations
   const [annotationLoading, setAnnotationLoading] = useState(false);
-
-  /**
-   * Handle "开始标注" button click
-   * Validates project exists before navigation, creates if needed
-   * Validates: Requirements 1.1, 1.6
-   */
-  const handleStartAnnotation = async () => {
-    if (!id) return;
-    
-    try {
-      setAnnotationLoading(true);
-      
-      // Check if project ID exists in task
-      const projectId = currentTask.label_studio_project_id;
-      
-      if (projectId) {
-        // Validate project exists in Label Studio
-        const validation = await labelStudioService.validateProject(projectId);
-        
-        if (validation.exists && validation.accessible) {
-          // Project exists and is accessible, navigate directly
-          navigate(`/tasks/${id}/annotate`);
-          return;
-        }
-        
-        // Project doesn't exist or not accessible, need to create
-        if (!validation.exists) {
-          message.info(t('annotate.creatingProject'));
-        }
-      }
-      
-      // Create project automatically if needed
-      const result = await labelStudioService.ensureProject({
-        task_id: id,
-        task_name: currentTask.name,
-        annotation_type: currentTask.annotation_type,
-      });
-      
-      if (result.status === 'ready') {
-        // Update task with new project ID if it was created
-        if (result.created && result.project_id !== projectId) {
-          await updateTask.mutateAsync({
-            id,
-            payload: { label_studio_project_id: result.project_id },
-          });
-        }
-        
-        // Navigate to annotation page
-        navigate(`/tasks/${id}/annotate`);
-      } else {
-        message.error(t('annotate.projectCreationFailed'));
-      }
-    } catch (error) {
-      console.error('Failed to start annotation:', error);
-      
-      // Handle specific error types
-      if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as { response?: { status?: number; data?: { detail?: string } } };
-        if (axiosError.response?.status === 401) {
-          message.error(t('annotate.authenticationFailed'));
-        } else if (axiosError.response?.status === 503) {
-          message.error(t('annotate.serviceUnavailable'));
-        } else {
-          message.error(axiosError.response?.data?.detail || t('annotate.projectCreationFailed'));
-        }
-      } else {
-        message.error(t('annotate.projectCreationFailed'));
-      }
-    } finally {
-      setAnnotationLoading(false);
-    }
-  };
-
+  
   // Loading state for open in new window operation
   const [openWindowLoading, setOpenWindowLoading] = useState(false);
   
@@ -170,30 +101,159 @@ const TaskDetailPage: React.FC = () => {
   const { language } = useLanguageStore();
 
   /**
+   * Handle error with detailed logging and user-friendly messages
+   * Validates: Requirements 1.1, 1.6
+   */
+  const handleAnnotationError = (error: unknown, context: string) => {
+    console.error(`[${context}] Error:`, error);
+    
+    if (error && typeof error === 'object' && 'response' in error) {
+      const axiosError = error as { response?: { status?: number; data?: { detail?: string; message?: string } } };
+      const status = axiosError.response?.status;
+      const data = axiosError.response?.data as any;
+      
+      // Log detailed error information
+      console.error(`[${context}] Status: ${status}`);
+      console.error(`[${context}] Data:`, data);
+      
+      // Show user-friendly error message based on status code
+      switch (status) {
+        case 401:
+          console.error(`[${context}] Authentication failed - token may be expired`);
+          message.error(t('annotate.authenticationFailed'));
+          break;
+        case 403:
+          console.error(`[${context}] Permission denied`);
+          message.error(t('annotate.permissionDenied'));
+          break;
+        case 404:
+          console.error(`[${context}] Project not found`);
+          message.error(t('annotate.projectNotFound'));
+          break;
+        case 503:
+          console.error(`[${context}] Label Studio service unavailable`);
+          message.error(t('annotate.serviceUnavailable'));
+          break;
+        default:
+          console.error(`[${context}] API error: ${data?.detail || data?.message || 'Unknown error'}`);
+          message.error(data?.detail || data?.message || t('annotate.operationFailed'));
+      }
+    } else if (error instanceof Error) {
+      console.error(`[${context}] Error message: ${error.message}`);
+      message.error(error.message || t('annotate.operationFailed'));
+    } else {
+      console.error(`[${context}] Unknown error type`);
+      message.error(t('annotate.operationFailed'));
+    }
+  };
+
+  /**
+   * Handle "开始标注" button click
+   * Validates project exists before navigation, creates if needed
+   * Validates: Requirements 1.1, 1.6
+   */
+  const handleStartAnnotation = async () => {
+    if (!id || !task) {
+      console.error('[handleStartAnnotation] Task ID or task data is missing');
+      message.error('任务数据加载失败，请刷新页面重试');
+      return;
+    }
+    
+    try {
+      setAnnotationLoading(true);
+      console.log('[handleStartAnnotation] Starting...', { taskId: id, task });
+      
+      // Check if project ID exists in task
+      const projectId = task.label_studio_project_id;
+      console.log('[handleStartAnnotation] Current project ID:', projectId);
+      
+      if (projectId) {
+        // Validate project exists in Label Studio
+        console.log('[handleStartAnnotation] Validating project...');
+        const validation = await labelStudioService.validateProject(projectId);
+        console.log('[handleStartAnnotation] Validation result:', validation);
+        
+        if (validation.exists && validation.accessible) {
+          // Project exists and is accessible, navigate directly
+          console.log('[handleStartAnnotation] Project valid, navigating...');
+          navigate(`/tasks/${id}/annotate`);
+          return;
+        }
+        
+        // Project doesn't exist or not accessible, need to create
+        if (!validation.exists) {
+          console.log('[handleStartAnnotation] Project does not exist, creating...');
+          message.info(t('annotate.creatingProject'));
+        }
+      }
+      
+      // Create project automatically if needed
+      console.log('[handleStartAnnotation] Calling ensureProject...');
+      const result = await labelStudioService.ensureProject({
+        task_id: id,
+        task_name: task.name,
+        annotation_type: task.annotation_type,
+      });
+      console.log('[handleStartAnnotation] Ensure project result:', result);
+      
+      if (result.status === 'ready') {
+        // Update task with new project ID if it was created
+        if (result.created && result.project_id !== projectId) {
+          console.log('[handleStartAnnotation] Updating task with new project ID...');
+          await updateTask.mutateAsync({
+            id,
+            payload: { label_studio_project_id: result.project_id },
+          });
+        }
+        
+        // Navigate to annotation page
+        console.log('[handleStartAnnotation] Navigating to annotate page...');
+        navigate(`/tasks/${id}/annotate`);
+      } else {
+        console.error('[handleStartAnnotation] Project creation failed:', result);
+        message.error(t('annotate.projectCreationFailed'));
+      }
+    } catch (error) {
+      handleAnnotationError(error, 'handleStartAnnotation');
+    } finally {
+      setAnnotationLoading(false);
+    }
+  };
+
+  /**
    * Handle "在新窗口打开" button click
    * Gets authenticated URL with language preference and opens Label Studio in new window
    * Validates: Requirements 1.2, 1.5
    */
   const handleOpenInNewWindow = async () => {
-    if (!id) return;
+    if (!id || !task) {
+      console.error('[handleOpenInNewWindow] Task ID or task data is missing');
+      message.error('任务数据加载失败，请刷新页面重试');
+      return;
+    }
     
     try {
       setOpenWindowLoading(true);
+      console.log('[handleOpenInNewWindow] Starting...', { taskId: id, task });
       
       // Get project ID from task
-      let projectId = currentTask.label_studio_project_id;
+      let projectId = task.label_studio_project_id;
+      console.log('[handleOpenInNewWindow] Current project ID:', projectId);
       
       // If no project ID, ensure project exists first
       if (!projectId) {
+        console.log('[handleOpenInNewWindow] No project ID, creating project...');
         message.info(t('annotate.creatingProject'));
         
         const result = await labelStudioService.ensureProject({
           task_id: id,
-          task_name: currentTask.name,
-          annotation_type: currentTask.annotation_type,
+          task_name: task.name,
+          annotation_type: task.annotation_type,
         });
+        console.log('[handleOpenInNewWindow] Ensure project result:', result);
         
         if (result.status !== 'ready') {
+          console.error('[handleOpenInNewWindow] Project creation failed:', result);
           message.error(t('annotate.projectCreationFailed'));
           return;
         }
@@ -202,6 +262,7 @@ const TaskDetailPage: React.FC = () => {
         
         // Update task with new project ID if it was created
         if (result.created) {
+          console.log('[handleOpenInNewWindow] Updating task with new project ID...');
           await updateTask.mutateAsync({
             id,
             payload: { label_studio_project_id: projectId },
@@ -209,19 +270,24 @@ const TaskDetailPage: React.FC = () => {
         }
       } else {
         // Validate project exists
+        console.log('[handleOpenInNewWindow] Validating project...');
         const validation = await labelStudioService.validateProject(projectId);
+        console.log('[handleOpenInNewWindow] Validation result:', validation);
         
         if (!validation.exists) {
+          console.log('[handleOpenInNewWindow] Project does not exist, creating...');
           message.info(t('annotate.creatingProject'));
           
           // Project doesn't exist, create it
           const result = await labelStudioService.ensureProject({
             task_id: id,
-            task_name: currentTask.name,
-            annotation_type: currentTask.annotation_type,
+            task_name: task.name,
+            annotation_type: task.annotation_type,
           });
+          console.log('[handleOpenInNewWindow] Ensure project result:', result);
           
           if (result.status !== 'ready') {
+            console.error('[handleOpenInNewWindow] Project creation failed:', result);
             message.error(t('annotate.projectCreationFailed'));
             return;
           }
@@ -229,7 +295,8 @@ const TaskDetailPage: React.FC = () => {
           projectId = result.project_id;
           
           // Update task with new project ID if different
-          if (result.project_id !== currentTask.label_studio_project_id) {
+          if (result.project_id !== task.label_studio_project_id) {
+            console.log('[handleOpenInNewWindow] Updating task with new project ID...');
             await updateTask.mutateAsync({
               id,
               payload: { label_studio_project_id: projectId },
@@ -241,27 +308,16 @@ const TaskDetailPage: React.FC = () => {
       // Get authenticated URL with user's language preference
       // Map language to Label Studio format: 'zh' or 'en'
       const labelStudioLang = language === 'zh' ? 'zh' : 'en';
+      console.log('[handleOpenInNewWindow] Getting auth URL...', { projectId, language: labelStudioLang });
       const authUrlResponse = await labelStudioService.getAuthUrl(projectId, labelStudioLang);
+      console.log('[handleOpenInNewWindow] Auth URL response:', { url: authUrlResponse.url, projectId: authUrlResponse.project_id });
       
       // Open Label Studio in new window with authenticated URL
+      console.log('[handleOpenInNewWindow] Opening new window...');
       window.open(authUrlResponse.url, '_blank', 'noopener,noreferrer');
       
     } catch (error) {
-      console.error('Failed to open in new window:', error);
-      
-      // Handle specific error types
-      if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as { response?: { status?: number; data?: { detail?: string } } };
-        if (axiosError.response?.status === 401) {
-          message.error(t('annotate.authenticationFailed'));
-        } else if (axiosError.response?.status === 503) {
-          message.error(t('annotate.serviceUnavailable'));
-        } else {
-          message.error(axiosError.response?.data?.detail || t('annotate.openWindowFailed'));
-        }
-      } else {
-        message.error(t('annotate.openWindowFailed'));
-      }
+      handleAnnotationError(error, 'handleOpenInNewWindow');
     } finally {
       setOpenWindowLoading(false);
     }
@@ -298,16 +354,24 @@ const TaskDetailPage: React.FC = () => {
     );
   }
 
-  if (error && !mockTask) {
+  if (error || !task) {
     return (
       <Alert
         type="error"
         message={t('failedToLoadTask')}
-        description={t('failedToLoadTaskDescription')}
+        description={error?.message || t('failedToLoadTaskDescription')}
         showIcon
+        action={
+          <Button type="primary" onClick={() => navigate('/tasks')}>
+            {t('backToTasks')}
+          </Button>
+        }
       />
     );
   }
+
+  // Use real task data
+  const currentTask = task;
 
   const tabItems = [
     {

@@ -215,3 +215,9 @@ from src.sync.models import (
     DataConflictModel, SyncRuleModel, TransformationRuleModel,
     IndustryDatasetModel, SyncAuditLogModel, DataQualityScoreModel
 )
+
+# Import Label Studio workspace models to ensure they are registered with SQLAlchemy
+from src.label_studio.workspace_models import (
+    LabelStudioWorkspaceModel, LabelStudioWorkspaceMemberModel,
+    WorkspaceProjectModel, ProjectMemberModel
+)

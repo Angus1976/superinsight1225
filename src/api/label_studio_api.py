@@ -17,6 +17,31 @@ from src.label_studio.integration import (
     ProjectConfig,
     LabelStudioIntegrationError
 )
+from src.label_studio.workspace_models import (
+    LabelStudioWorkspaceModel,
+    LabelStudioWorkspaceMemberModel,
+    WorkspaceProjectModel,
+    WorkspaceMemberRole,
+)
+from src.label_studio.workspace_service import (
+    WorkspaceService,
+    WorkspaceNotFoundError,
+    get_workspace_service,
+)
+from src.label_studio.rbac_service import (
+    RBACService,
+    Permission as RBACPermission,
+    PermissionDeniedError,
+    NotAMemberError,
+    get_rbac_service,
+)
+from src.label_studio.metadata_codec import (
+    MetadataCodec,
+    get_metadata_codec,
+    has_metadata,
+    decode_metadata,
+)
+from uuid import UUID
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +50,14 @@ router = APIRouter(prefix="/api/label-studio", tags=["Label Studio"])
 
 
 # Response models
+class WorkspaceInfoResponse(BaseModel):
+    """Workspace information embedded in project responses."""
+    id: str
+    name: str
+    owner_id: Optional[str] = None
+    role: Optional[str] = None
+
+
 class LabelStudioProject(BaseModel):
     id: int
     title: str
@@ -33,7 +66,8 @@ class LabelStudioProject(BaseModel):
     updated_at: str
     task_count: int = 0
     annotation_count: int = 0
-    
+    workspace: Optional[WorkspaceInfoResponse] = None
+
     class Config:
         from_attributes = True
 
@@ -241,45 +275,162 @@ def get_label_studio() -> LabelStudioIntegration:
         )
 
 
+# Helper function to extract workspace info from project description
+def _extract_workspace_info(
+    description: Optional[str],
+    db: Session,
+    user_id: UUID
+) -> Optional[WorkspaceInfoResponse]:
+    """Extract workspace info from project description metadata."""
+    if not description or not has_metadata(description):
+        return None
+
+    try:
+        _, metadata = decode_metadata(description)
+        workspace_id = metadata.get("workspace_id")
+        if not workspace_id:
+            return None
+
+        # Try to get workspace from database
+        workspace = db.query(LabelStudioWorkspaceModel).filter(
+            LabelStudioWorkspaceModel.id == UUID(workspace_id),
+            LabelStudioWorkspaceModel.is_deleted == False
+        ).first()
+
+        if not workspace:
+            return None
+
+        # Get user's role in workspace
+        member = db.query(LabelStudioWorkspaceMemberModel).filter(
+            LabelStudioWorkspaceMemberModel.workspace_id == UUID(workspace_id),
+            LabelStudioWorkspaceMemberModel.user_id == user_id,
+            LabelStudioWorkspaceMemberModel.is_active == True
+        ).first()
+
+        return WorkspaceInfoResponse(
+            id=str(workspace.id),
+            name=workspace.name,
+            owner_id=str(workspace.owner_id) if workspace.owner_id else None,
+            role=member.role.value if member else None
+        )
+    except Exception as e:
+        logger.warning(f"Failed to extract workspace info: {e}")
+        return None
+
+
+def _get_clean_description(description: Optional[str]) -> Optional[str]:
+    """Remove metadata from description if present."""
+    if not description or not has_metadata(description):
+        return description
+
+    try:
+        clean_desc, _ = decode_metadata(description)
+        return clean_desc
+    except Exception:
+        return description
+
+
 # Label Studio endpoints
 @router.get("/projects", response_model=LabelStudioProjectList)
 def list_projects(
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(10, ge=1, le=100, description="Page size"),
+    workspace_id: Optional[str] = Query(None, description="Filter by workspace ID"),
     current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db_session)
 ):
-    """Get list of Label Studio projects."""
+    """
+    Get list of Label Studio projects.
+
+    When workspace_id is provided:
+    - Verifies user has permission to view the workspace
+    - Returns only projects associated with that workspace
+    - Includes workspace info in each project response
+
+    When workspace_id is not provided:
+    - Returns all accessible projects (backward compatible)
+    - Includes workspace info where available
+    """
     try:
         ls = get_label_studio()
-        
+
+        # Get user ID
+        user_id = current_user.id if hasattr(current_user, 'id') else current_user.user_id
+
+        # If workspace_id provided, verify permission
+        workspace_project_ids: Optional[set] = None
+        if workspace_id:
+            try:
+                workspace_uuid = UUID(workspace_id)
+            except ValueError:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Invalid workspace_id format: {workspace_id}"
+                )
+
+            # Check if user is member of workspace
+            member = db.query(LabelStudioWorkspaceMemberModel).filter(
+                LabelStudioWorkspaceMemberModel.workspace_id == workspace_uuid,
+                LabelStudioWorkspaceMemberModel.user_id == user_id,
+                LabelStudioWorkspaceMemberModel.is_active == True
+            ).first()
+
+            if not member:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You are not a member of this workspace"
+                )
+
+            # Get project IDs associated with this workspace
+            workspace_projects = db.query(WorkspaceProjectModel).filter(
+                WorkspaceProjectModel.workspace_id == workspace_uuid
+            ).all()
+            workspace_project_ids = {
+                str(wp.label_studio_project_id) for wp in workspace_projects
+            }
+
         # Get projects from Label Studio
         projects_data = ls.list_projects()
-        
-        # Convert to response format
+
+        # Convert to response format with workspace filtering
         projects = []
         for proj in projects_data:
+            proj_id = proj.get('id')
+            description = proj.get('description')
+
+            # Filter by workspace if specified
+            if workspace_project_ids is not None:
+                if str(proj_id) not in workspace_project_ids:
+                    continue
+
+            # Extract workspace info from metadata
+            workspace_info = _extract_workspace_info(description, db, user_id)
+
+            # Get clean description (without metadata)
+            clean_description = _get_clean_description(description)
+
             projects.append(LabelStudioProject(
-                id=proj.get('id'),
+                id=proj_id,
                 title=proj.get('title', 'Untitled Project'),
-                description=proj.get('description'),
+                description=clean_description,
                 created_at=proj.get('created_at', ''),
                 updated_at=proj.get('updated_at', ''),
                 task_count=proj.get('task_number', 0),
-                annotation_count=proj.get('num_tasks_with_annotations', 0)
+                annotation_count=proj.get('num_tasks_with_annotations', 0),
+                workspace=workspace_info
             ))
-        
+
         # Apply pagination
         total = len(projects)
         start_idx = (page - 1) * page_size
         end_idx = start_idx + page_size
         paginated_projects = projects[start_idx:end_idx]
-        
+
         return LabelStudioProjectList(
             projects=paginated_projects,
             total=total
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -288,33 +439,51 @@ def list_projects(
         return LabelStudioProjectList(projects=[], total=0)
 
 
-@router.get("/projects/{project_id}")
+@router.get("/projects/{project_id}", response_model=LabelStudioProject)
 def get_project(
     project_id: int,
     current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db_session)
 ):
-    """Get Label Studio project by ID."""
+    """
+    Get Label Studio project by ID.
+
+    Returns project details including workspace information if the project
+    is associated with a workspace. The description field is returned without
+    the encoded metadata.
+    """
     try:
         ls = get_label_studio()
         project_data = ls.get_project(project_id)
-        
+
         if not project_data:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Project {project_id} not found"
             )
-        
+
+        # Get user ID
+        user_id = current_user.id if hasattr(current_user, 'id') else current_user.user_id
+
+        description = project_data.get('description')
+
+        # Extract workspace info from metadata
+        workspace_info = _extract_workspace_info(description, db, user_id)
+
+        # Get clean description (without metadata)
+        clean_description = _get_clean_description(description)
+
         return LabelStudioProject(
             id=project_data.get('id'),
             title=project_data.get('title', 'Untitled Project'),
-            description=project_data.get('description'),
+            description=clean_description,
             created_at=project_data.get('created_at', ''),
             updated_at=project_data.get('updated_at', ''),
             task_count=project_data.get('task_number', 0),
-            annotation_count=project_data.get('num_tasks_with_annotations', 0)
+            annotation_count=project_data.get('num_tasks_with_annotations', 0),
+            workspace=workspace_info
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:

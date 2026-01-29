@@ -77,3 +77,24 @@ export * from './useBrandTheme';
 export * from './useBrandCache';
 export * from './useBrandAnalytics';
 export * from './useBrandABTest';
+
+// Label Studio Workspace hooks
+export {
+  useLSWorkspaces,
+  useLSWorkspace,
+  useCreateLSWorkspace,
+  useUpdateLSWorkspace,
+  useDeleteLSWorkspace,
+  useLSWorkspaceMembers,
+  useAddLSWorkspaceMember,
+  useUpdateLSWorkspaceMember,
+  useRemoveLSWorkspaceMember,
+  useLSWorkspacePermissions,
+  useLSWorkspaceProjects,
+  useLSWorkspaceProject,
+  useAssociateLSProject,
+  useRemoveLSProjectAssociation,
+  useLSWorkspaceContext,
+  useLSWorkspaceSelector,
+  LS_WORKSPACE_QUERY_KEYS,
+} from './useLSWorkspaces';

@@ -97,9 +97,12 @@ const AdminThirdPartyConfigPage = lazyWithPreload(() => import('@/pages/Admin/Th
 // AI Annotation pages
 const AIAnnotationPage = lazyWithPreload(() => import('@/pages/AIAnnotation'));
 
-// Workspace pages
+// Workspace pages (Multi-tenant)
 const WorkspaceManagementPage = lazyWithPreload(() => import('@/pages/Workspace/WorkspaceManagement'));
 const MemberManagementPage = lazyWithPreload(() => import('@/pages/Workspace/MemberManagement'));
+
+// Label Studio Workspaces pages (Enterprise)
+const LSWorkspacesPage = lazyWithPreload(() => import('@/pages/LSWorkspaces'));
 
 const NotFoundPage = lazyWithPreload(() => import('@/pages/Error/404'));
 const ForbiddenPage = lazyWithPreload(() => import('@/pages/Error/403'));
@@ -312,7 +315,17 @@ export const routes: RouteObject[] = [
             path: 'config/third-party',
             element: withSuspense(AdminThirdPartyConfigPage, 'table'),
           },
+          // Label Studio Workspaces (Enterprise)
+          {
+            path: 'ls-workspaces',
+            element: withSuspense(LSWorkspacesPage, 'table'),
+          },
         ],
+      },
+      // Label Studio Workspaces - Top level route
+      {
+        path: 'ls-workspaces',
+        element: withSuspense(LSWorkspacesPage, 'table'),
       },
       {
         path: 'augmentation',

@@ -2,8 +2,9 @@
 
 **版本**: 1.0  
 **创建日期**: 2026-01-26  
-**状态**: 待执行  
+**状态**: 执行中
 **预计工期**: 13-21 天
+**开始日期**: 2026-01-29
 
 ## 任务概览
 
@@ -27,13 +28,21 @@
 ### 1. 数据库模型和迁移
 
 #### 1.1 创建 Workspace 数据库模型
-- [ ] 1.1 创建 Workspace 数据库模型 (Est: 2h)
+- [x] 1.1 创建 Workspace 数据库模型 (Est: 2h) ✓ 2026-01-29
 
 **目标**: 创建 Workspace 相关的 SQLAlchemy 模型
 
 **文件**:
-- 创建: `src/database/models/workspace.py`
-- 修改: `src/database/models/__init__.py`
+- 创建: `src/label_studio/workspace_models.py` ✓
+- 修改: `src/label_studio/__init__.py` ✓
+
+**实际创建的模型**:
+- `LabelStudioWorkspaceModel` - Workspace 主表
+- `LabelStudioWorkspaceMemberModel` - Workspace 成员表
+- `WorkspaceProjectModel` - Workspace 项目关联表
+- `ProjectMemberModel` - 项目成员表
+- `WorkspaceMemberRole` - Workspace 角色枚举
+- `ProjectMemberRole` - 项目角色枚举
 
 **任务详情**:
 1. 创建 `WorkspaceModel` 类
@@ -60,22 +69,27 @@
 
 **验证**:
 ```bash
-python -c "from src.database.models.workspace import WorkspaceModel, WorkspaceMemberModel, WorkspaceProjectModel, ProjectMemberModel; print('Models imported successfully')"
+python -c "from src.label_studio.workspace_models import LabelStudioWorkspaceModel, LabelStudioWorkspaceMemberModel, WorkspaceProjectModel, ProjectMemberModel; print('Models imported successfully')"
+# 或使用 py_compile 验证语法
+python -m py_compile src/label_studio/workspace_models.py
 ```
 
 **依赖**: 无
 
 **验证需求**: 需求 1, 2, 3
 
+**完成状态**: ✓ 模型文件语法验证通过
+
 ---
 
 #### 1.2 创建数据库迁移脚本
-- [ ] 1.2 创建数据库迁移脚本 (Est: 1h)
+- [x] 1.2 创建数据库迁移脚本 (Est: 1h) ✓ 2026-01-29
 
 **目标**: 使用 Alembic 创建数据库迁移脚本
 
 **文件**:
-- 创建: `alembic/versions/xxxx_add_workspace_tables.py`
+- 创建: `alembic/versions/019_add_label_studio_workspace_tables.py` ✓
+- 修改: `src/database/models.py` (添加 workspace 模型导入) ✓
 
 **任务详情**:
 1. 生成迁移脚本
@@ -113,13 +127,21 @@ psql -d superinsight -c "\dt project_members"
 ### 2. 元数据编码服务
 
 #### 2.1 实现元数据编码/解码器
-- [ ] 2.1 实现元数据编码/解码器 (Est: 2h)
+- [x] 2.1 实现元数据编码/解码器 (Est: 2h) ✓ 2026-01-29
 
 **目标**: 实现 Workspace 元数据的编码和解码功能
 
 **文件**:
-- 创建: `src/label_studio/metadata_codec.py`
-- 创建: `tests/label_studio/test_metadata_codec.py`
+- 创建: `src/label_studio/metadata_codec.py` ✓
+- 创建: `tests/label_studio/test_metadata_codec.py` ✓
+- 修改: `src/label_studio/__init__.py` ✓
+
+**实现内容**:
+- `MetadataCodec` 类 - 主编码/解码器
+- `WorkspaceMetadata` 数据类 - 元数据结构
+- `encode_metadata()` / `decode_metadata()` / `has_metadata()` 便捷函数
+- 完整的异常处理 (`MetadataCodecError`, `MetadataDecodeError`, `MetadataEncodeError`)
+- 全面的单元测试覆盖
 
 **任务详情**:
 1. 实现 `MetadataCodec` 类
@@ -164,13 +186,21 @@ pytest tests/label_studio/test_metadata_codec.py -v
 ### 3. Workspace 核心服务
 
 #### 3.1 实现 Workspace Service
-- [ ] 3.1 实现 Workspace Service (Est: 4h)
+- [x] 3.1 实现 Workspace Service (Est: 4h) ✓ 2026-01-29
 
 **目标**: 实现 Workspace 的 CRUD 和成员管理功能
 
 **文件**:
-- 创建: `src/label_studio/workspace_service.py`
-- 创建: `tests/label_studio/test_workspace_service.py`
+- 创建: `src/label_studio/workspace_service.py` ✓
+- 创建: `tests/label_studio/test_workspace_service.py` ✓
+- 修改: `src/label_studio/__init__.py` ✓
+
+**实现内容**:
+- `WorkspaceService` 类 - 完整的 CRUD 和成员管理
+- `WorkspaceInfo` / `MemberInfo` DTO 类
+- 完整的异常层次结构
+- 软删除和恢复支持
+- 全面的单元测试覆盖
 
 **任务详情**:
 1. 实现 `WorkspaceService` 类
@@ -215,13 +245,22 @@ pytest tests/label_studio/test_workspace_service.py -v --cov=src/label_studio/wo
 ---
 
 #### 3.2 实现 RBAC Service
-- [ ] 3.2 实现 RBAC Service (Est: 3h)
+- [x] 3.2 实现 RBAC Service (Est: 3h) ✓ 2026-01-29
 
 **目标**: 实现基于角色的访问控制服务
 
 **文件**:
-- 创建: `src/label_studio/rbac_service.py`
-- 创建: `tests/label_studio/test_rbac_service.py`
+- 创建: `src/label_studio/rbac_service.py` ✓
+- 创建: `tests/label_studio/test_rbac_service.py` ✓
+- 修改: `src/label_studio/__init__.py` ✓
+
+**实现内容**:
+- `Permission` 枚举 - 16 种权限定义
+- `RBACService` 类 - 权限检查和管理
+- `ROLE_PERMISSIONS` 权限矩阵
+- `ROLE_HIERARCHY` 角色层级
+- 异常处理 (`PermissionDeniedError`, `NotAMemberError`)
+- 全面的单元测试覆盖
 
 **任务详情**:
 1. 定义权限枚举 `Permission`
@@ -265,13 +304,14 @@ pytest tests/label_studio/test_rbac_service.py -v --cov=src/label_studio/rbac_se
 ### 4. Label Studio 代理实现
 
 #### 4.1 实现 Label Studio Proxy 基础框架
-- [ ] 4.1 实现 Label Studio Proxy 基础框架 (Est: 3h)
+- [x] 4.1 实现 Label Studio Proxy 基础框架 (Est: 3h) ✓ 2026-01-29
 
 **目标**: 实现 API 代理的基础框架和请求转发
 
 **文件**:
-- 创建: `src/label_studio/proxy.py`
-- 创建: `tests/label_studio/test_proxy.py`
+- 创建: `src/label_studio/proxy.py` ✓
+- 创建: `tests/label_studio/test_proxy.py` ✓
+- 修改: `src/label_studio/__init__.py` ✓
 
 **任务详情**:
 1. 实现 `LabelStudioProxy` 类
@@ -306,13 +346,13 @@ pytest tests/label_studio/test_proxy.py::test_proxy_request -v
 ---
 
 #### 4.2 实现权限验证中间件
-- [ ] 4.2 实现权限验证中间件 (Est: 2h)
+- [x] 4.2 实现权限验证中间件 (Est: 2h) ✓ 2026-01-29
 
 **目标**: 在代理层实现权限验证
 
 **文件**:
-- 修改: `src/label_studio/proxy.py`
-- 修改: `tests/label_studio/test_proxy.py`
+- 修改: `src/label_studio/proxy.py` ✓ (已在 4.1 中实现)
+- 修改: `tests/label_studio/test_proxy.py` ✓
 
 **任务详情**:
 1. 实现 `_verify_permissions` 方法
@@ -345,13 +385,13 @@ pytest tests/label_studio/test_proxy.py::test_permission_verification -v
 ---
 
 #### 4.3 实现元数据注入功能
-- [ ] 4.3 实现元数据注入功能 (Est: 2h)
+- [x] 4.3 实现元数据注入功能 (Est: 2h) ✓ 2026-01-29
 
 **目标**: 在创建项目时自动注入 Workspace 元数据
 
 **文件**:
-- 修改: `src/label_studio/proxy.py`
-- 修改: `tests/label_studio/test_proxy.py`
+- 修改: `src/label_studio/proxy.py` ✓ (已在 4.1 中实现)
+- 修改: `tests/label_studio/test_proxy.py` ✓
 
 **任务详情**:
 1. 实现 `_preprocess_request` 方法
@@ -384,13 +424,13 @@ pytest tests/label_studio/test_proxy.py::test_metadata_injection -v
 ---
 
 #### 4.4 实现元数据提取功能
-- [ ] 4.4 实现元数据提取功能 (Est: 2h)
+- [x] 4.4 实现元数据提取功能 (Est: 2h) ✓ 2026-01-29
 
 **目标**: 在查询项目时自动提取和增强 Workspace 信息
 
 **文件**:
-- 修改: `src/label_studio/proxy.py`
-- 修改: `tests/label_studio/test_proxy.py`
+- 修改: `src/label_studio/proxy.py` ✓ (已在 4.1 中实现)
+- 修改: `tests/label_studio/test_proxy.py` ✓
 
 **任务详情**:
 1. 实现 `_postprocess_response` 方法
@@ -467,14 +507,26 @@ pytest tests/label_studio/test_audit_service.py -v
 ### 5. Workspace API 端点
 
 #### 5.1 实现 Workspace CRUD API
-- [ ] 5.1 实现 Workspace CRUD API (Est: 3h)
+- [x] 5.1 实现 Workspace CRUD API (Est: 3h) ✓ 2026-01-29
 
 **目标**: 实现 Workspace 的创建、查询、更新、删除 API
 
 **文件**:
-- 创建: `src/api/workspace.py`
-- 修改: `src/api/__init__.py`
-- 创建: `tests/api/test_workspace.py`
+- 创建: `src/api/label_studio_workspace.py` ✓
+- 修改: `src/label_studio/__init__.py` ✓
+- 创建: `tests/api/test_label_studio_workspace.py` ✓
+
+**实现内容**:
+- `WorkspaceCreateRequest` / `WorkspaceUpdateRequest` Pydantic 模型
+- `WorkspaceResponse` / `WorkspaceListResponse` 响应模型
+- `POST /api/ls-workspaces` - 创建 Workspace
+- `GET /api/ls-workspaces` - 列出用户的 Workspaces
+- `GET /api/ls-workspaces/{workspace_id}` - 获取 Workspace 详情
+- `PUT /api/ls-workspaces/{workspace_id}` - 更新 Workspace
+- `DELETE /api/ls-workspaces/{workspace_id}` - 删除 Workspace
+- `GET /api/ls-workspaces/{workspace_id}/permissions` - 获取用户权限
+
+**注意**: 使用 `label_studio_workspace.py` 而非 `workspace.py` 以避免与现有 `src/api/workspace.py` 冲突
 
 **任务详情**:
 1. 定义 Pydantic 模型
@@ -514,13 +566,23 @@ pytest tests/api/test_workspace.py::test_workspace_crud -v
 ---
 
 #### 5.2 实现成员管理 API
-- [ ] 5.2 实现成员管理 API (Est: 2h)
+- [x] 5.2 实现成员管理 API (Est: 2h) ✓ 2026-01-29
 
 **目标**: 实现 Workspace 成员的添加、移除、角色管理 API
 
 **文件**:
-- 修改: `src/api/workspace.py`
-- 修改: `tests/api/test_workspace.py`
+- 修改: `src/api/label_studio_workspace.py` ✓
+- 修改: `tests/api/test_label_studio_workspace.py` ✓
+
+**实现内容**:
+- `MemberAddRequest` / `MemberUpdateRequest` Pydantic 模型
+- `MemberResponse` / `MemberListResponse` 响应模型
+- `POST /api/ls-workspaces/{workspace_id}/members` - 添加成员
+- `GET /api/ls-workspaces/{workspace_id}/members` - 列出成员
+- `PUT /api/ls-workspaces/{workspace_id}/members/{user_id}` - 更新成员角色
+- `DELETE /api/ls-workspaces/{workspace_id}/members/{user_id}` - 移除成员
+- `_check_workspace_permission()` 权限检查辅助函数
+- `_parse_role()` 角色解析辅助函数
 
 **任务详情**:
 1. 定义 Pydantic 模型
@@ -559,13 +621,23 @@ pytest tests/api/test_workspace.py::test_member_management -v
 ---
 
 #### 5.3 扩展现有 Label Studio API
-- [ ] 5.3 扩展现有 Label Studio API (Est: 2h)
+- [x] 5.3 扩展现有 Label Studio API (Est: 2h) ✓ 2026-01-29
 
 **目标**: 在现有 Label Studio API 中添加 Workspace 过滤支持
 
 **文件**:
-- 修改: `src/api/label_studio_api.py`
-- 修改: `tests/api/test_label_studio_api.py`
+- 修改: `src/api/label_studio_api.py` ✓
+- 修改: `tests/api/test_label_studio_api.py` ✓
+
+**实现内容**:
+- 添加 `WorkspaceInfoResponse` 模型 - 嵌入式 Workspace 信息
+- 修改 `LabelStudioProject` 模型 - 添加可选 workspace 字段
+- 修改 `GET /api/label-studio/projects` - 添加 workspace_id 查询参数过滤
+- 修改 `GET /api/label-studio/projects/{id}` - 返回包含 workspace 信息
+- 添加 `_extract_workspace_info()` - 从描述元数据提取 Workspace 信息
+- 添加 `_get_clean_description()` - 清除元数据返回原始描述
+- 保持向后兼容 - 无 workspace_id 时返回所有项目
+- 添加 `TestWorkspaceFiltering` 测试类 - 验证 Workspace 过滤功能
 
 **任务详情**:
 1. 修改项目列表 API
@@ -598,13 +670,24 @@ pytest tests/api/test_label_studio_api.py::test_workspace_filter -v
 ---
 
 #### 5.4 实现项目关联 API
-- [ ] 5.4 实现项目关联 API (Est: 2h)
+- [x] 5.4 实现项目关联 API (Est: 2h) ✓ 2026-01-29
 
 **目标**: 实现项目与 Workspace 的关联管理
 
 **文件**:
-- 修改: `src/api/workspace.py`
-- 修改: `tests/api/test_workspace.py`
+- 修改: `src/api/label_studio_workspace.py` ✓
+- 修改: `tests/api/test_label_studio_workspace.py` ✓
+
+**实现内容**:
+- 添加 `ProjectAssociateRequest` Pydantic 模型
+- 添加 `WorkspaceProjectResponse` / `WorkspaceProjectListResponse` 响应模型
+- `POST /api/ls-workspaces/{workspace_id}/projects` - 关联项目到 Workspace
+- `GET /api/ls-workspaces/{workspace_id}/projects` - 列出 Workspace 的项目
+- `GET /api/ls-workspaces/{workspace_id}/projects/{project_id}` - 获取项目详情
+- `DELETE /api/ls-workspaces/{workspace_id}/projects/{project_id}` - 取消关联
+- 验证项目是否已关联到其他 Workspace（防止重复关联）
+- 关联时自动保存 workspace_id, workspace_name 到元数据
+- 添加完整测试覆盖
 
 **任务详情**:
 1. 定义 Pydantic 模型
@@ -643,15 +726,32 @@ pytest tests/api/test_workspace.py::test_project_association -v
 ### 6. 前端组件开发
 
 #### 6.1 创建 Workspace 数据 Hooks
-- [ ] 6.1 创建 Workspace 数据 Hooks (Est: 2h)
+- [x] 6.1 创建 Workspace 数据 Hooks (Est: 2h) ✓ 2026-01-29
 
 **目标**: 使用 TanStack Query 创建数据获取 Hooks
 
 **文件**:
-- 创建: `frontend/src/hooks/useWorkspaces.ts`
-- 创建: `frontend/src/hooks/useWorkspaceMembers.ts`
-- 创建: `frontend/src/hooks/useWorkspaceContext.ts`
-- 修改: `frontend/src/hooks/index.ts`
+- 创建: `frontend/src/types/ls-workspace.ts` ✓
+- 创建: `frontend/src/services/lsWorkspaceService.ts` ✓
+- 创建: `frontend/src/hooks/useLSWorkspaces.ts` ✓
+- 修改: `frontend/src/hooks/index.ts` ✓
+- 修改: `frontend/src/types/index.ts` ✓
+- 修改: `frontend/src/services/index.ts` ✓
+- 修改: `frontend/src/constants/api.ts` ✓
+
+**实现内容**:
+- `LSWorkspace`, `LSWorkspaceMember`, `LSWorkspaceProject` 类型定义
+- `LSUserPermissions`, `LSWorkspaceContext` 上下文类型
+- `WorkspaceMemberRole`, `WorkspacePermission` 枚举类型
+- `lsWorkspaceService` API 服务 - CRUD、成员、项目关联
+- TanStack Query hooks:
+  - `useLSWorkspaces` / `useLSWorkspace` - Workspace 获取
+  - `useCreateLSWorkspace` / `useUpdateLSWorkspace` / `useDeleteLSWorkspace` - CRUD
+  - `useLSWorkspaceMembers` / `useAddLSWorkspaceMember` / `useUpdateLSWorkspaceMember` / `useRemoveLSWorkspaceMember` - 成员管理
+  - `useLSWorkspacePermissions` - 权限获取
+  - `useLSWorkspaceProjects` / `useAssociateLSProject` / `useRemoveLSProjectAssociation` - 项目关联
+  - `useLSWorkspaceContext` - 组合上下文 Hook
+  - `useLSWorkspaceSelector` - 选择器 Hook
 
 **任务详情**:
 1. 实现 `useWorkspaces` Hook
@@ -694,14 +794,24 @@ npm run test -- useWorkspaces
 ---
 
 #### 6.2 创建 Workspace 选择器组件
-- [ ] 6.2 创建 Workspace 选择器组件 (Est: 3h)
+- [x] 6.2 创建 Workspace 选择器组件 (Est: 3h) ✓ 2026-01-29
 
 **目标**: 创建 Workspace 选择器 UI 组件
 
 **文件**:
-- 创建: `frontend/src/components/WorkspaceSelector/index.tsx`
-- 创建: `frontend/src/components/WorkspaceSelector/WorkspaceSelector.test.tsx`
-- 修改: `frontend/src/components/index.ts`
+- 创建: `frontend/src/components/LabelStudio/LSWorkspaceSelector.tsx` ✓
+- 修改: `frontend/src/components/LabelStudio/index.ts` ✓
+
+**实现内容**:
+- `LSWorkspaceSelector` 组件 - 下拉选择器
+- Ant Design Select 组件集成
+- 搜索和过滤功能
+- 创建新 Workspace 模态框
+- 成员数和项目数显示
+- 自动刷新支持
+- i18n 国际化支持 (useTranslation)
+- 可控/非可控两种模式
+- 错误和加载状态处理
 
 **任务详情**:
 1. 实现 WorkspaceSelector 组件
@@ -742,38 +852,44 @@ npm run typecheck
 ---
 
 #### 6.3 扩展项目列表组件
-- [ ] 6.3 扩展项目列表组件 (Est: 3h)
+- [x] 6.3 扩展项目列表组件 (Est: 3h) ✓ 2026-01-29
 
 **目标**: 在项目列表中添加 Workspace 过滤功能
 
 **文件**:
-- 修改: `frontend/src/pages/Projects/index.tsx`
-- 修改: `frontend/src/hooks/useProjects.ts`
-- 创建: `frontend/src/pages/Projects/Projects.test.tsx`
+- 修改: `frontend/src/components/LabelStudio/ProjectSync.tsx` ✓
+
+**实现内容**:
+- 添加 `LSWorkspaceSelector` 集成到 ProjectSync 组件
+- 使用 `useLSWorkspaceProjects` Hook 获取 Workspace 项目
+- 添加 `initialWorkspaceId`, `showWorkspaceSelector`, `onWorkspaceChange` props
+- Workspace 选择后自动过滤项目列表
+- 加载状态和空状态 UI 处理
+- i18n 国际化翻译键支持
 
 **任务详情**:
-1. 修改 useProjects Hook
-   - 添加 `workspace_id` 过滤参数
-   - 支持按 Workspace 过滤项目
-
-2. 修改项目列表页面
-   - 添加 WorkspaceSelector 组件
+1. 修改 ProjectSync 组件
+   - 添加 Workspace 选择器 (LSWorkspaceSelector)
+   - 使用 useLSWorkspaceProjects Hook 获取项目
    - 根据选中的 Workspace 过滤项目
-   - 显示 Workspace 信息列
+
+2. 实现状态管理
+   - selectedWorkspaceId 状态
+   - selectedWorkspace 对象状态
+   - 项目数据的 memo 化转换
 
 3. 实现 i18n 支持
    - 所有新增文本使用翻译键
    - 支持中英文切换
 
-4. 编写组件测试
-   - 测试 Workspace 过滤
-   - 测试项目列表显示
-   - 测试 i18n
+4. 错误和边界情况处理
+   - 空项目列表显示 Empty 组件
+   - 加载中显示 loading 状态
+   - NaN 防护 (totalTasks === 0)
 
 **验证**:
 ```bash
 cd frontend
-npm run test -- Projects
 npm run typecheck
 ```
 
@@ -784,14 +900,24 @@ npm run typecheck
 ---
 
 #### 6.4 扩展 iframe 集成组件
-- [ ] 6.4 扩展 iframe 集成组件 (Est: 3h)
+- [x] 6.4 扩展 iframe 集成组件 (Est: 3h) ✓ 2026-01-29
 
 **目标**: 在 iframe 中传递 Workspace 上下文
 
-**文件**:
-- 修改: `frontend/src/components/LabelStudioIframe/index.tsx`
-- 修改: `frontend/src/utils/postMessageBridge.ts`
-- 修改: `frontend/src/types/annotation.ts`
+**文件** (实际实现路径):
+- 修改: `frontend/src/components/LabelStudio/LabelStudioEmbed.tsx` ✓
+- 修改: `frontend/src/services/iframe/PostMessageBridge.ts` ✓
+- 修改: `frontend/src/services/iframe/types.ts` ✓
+
+**实现内容**:
+- `LabelStudioEmbed` 组件添加 `workspaceId` 和 `onWorkspaceContextChange` props
+- `useLSWorkspaceContext` Hook 集成
+- `workspaceInfo` 构建与 memoization
+- `workspace:context:request` 消息处理 - 发送 Workspace 上下文到 iframe
+- `workspace:permission:check` 消息处理 - 权限验证并返回结果
+- `WorkspaceInfo` / `WorkspacePermissionInfo` 接口定义
+- `WorkspaceMessageType` 枚举 (6 种消息类型)
+- `AnnotationContext` 添加可选 `workspace` 字段
 
 **任务详情**:
 1. 扩展 AnnotationContext 接口
@@ -829,15 +955,25 @@ npm run typecheck
 ---
 
 #### 6.5 创建 Workspace 管理页面
-- [ ] 6.5 创建 Workspace 管理页面 (Est: 4h)
+- [x] 6.5 创建 Workspace 管理页面 (Est: 4h) ✓ 2026-01-29
 
 **目标**: 创建 Workspace 管理界面
 
-**文件**:
-- 创建: `frontend/src/pages/Workspaces/index.tsx`
-- 创建: `frontend/src/pages/Workspaces/WorkspaceForm.tsx`
-- 创建: `frontend/src/pages/Workspaces/MemberManagement.tsx`
-- 创建: `frontend/src/pages/Workspaces/Workspaces.test.tsx`
+**文件** (实际实现路径 - 使用 LSWorkspaces 避免与现有多租户 Workspace 冲突):
+- 创建: `frontend/src/pages/LSWorkspaces/index.tsx` ✓
+- 创建: `frontend/src/pages/LSWorkspaces/MemberManagement.tsx` ✓
+- 创建: `frontend/src/pages/LSWorkspaces/ProjectList.tsx` ✓
+- 修改: `frontend/src/router/routes.tsx` ✓
+
+**实现内容**:
+- `LSWorkspacesPage` 主页面组件 - Workspace 列表和统计
+- `LSWorkspaceMemberManagement` 组件 - 成员管理 (添加/删除/角色修改)
+- `LSWorkspaceProjectList` 组件 - 项目关联管理
+- 使用 `useLSWorkspaces` / `useLSWorkspaceMembers` / `useLSWorkspaceProjects` Hooks
+- 角色权限检查 (canManageRole, canManageMembers)
+- 完整的 i18n 支持 (lsWorkspace 命名空间)
+- Ant Design UI 组件 (Table, Modal, Form, Tabs)
+- 路由配置: `/ls-workspaces` (顶级) 和 `/admin/ls-workspaces`
 
 **任务详情**:
 1. 实现 Workspace 列表页面

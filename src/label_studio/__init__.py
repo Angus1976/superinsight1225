@@ -48,6 +48,58 @@ from .jwt_auth import (
     JWTAuthManager,
     JWTTokenResponse,
 )
+from .workspace_models import (
+    LabelStudioWorkspaceModel,
+    LabelStudioWorkspaceMemberModel,
+    WorkspaceProjectModel,
+    ProjectMemberModel,
+    WorkspaceMemberRole,
+    ProjectMemberRole,
+)
+from .metadata_codec import (
+    MetadataCodec,
+    WorkspaceMetadata,
+    MetadataCodecError,
+    MetadataDecodeError,
+    MetadataEncodeError,
+    get_metadata_codec,
+    encode_metadata,
+    decode_metadata,
+    has_metadata,
+)
+from .workspace_service import (
+    WorkspaceService,
+    WorkspaceInfo,
+    MemberInfo,
+    WorkspaceServiceError,
+    WorkspaceNotFoundError,
+    WorkspaceAlreadyExistsError,
+    MemberNotFoundError,
+    MemberAlreadyExistsError,
+    InsufficientPermissionError,
+    CannotRemoveOwnerError,
+    WorkspaceHasProjectsError,
+    get_workspace_service,
+)
+from .rbac_service import (
+    RBACService,
+    Permission as RBACPermission,
+    ROLE_PERMISSIONS,
+    ROLE_HIERARCHY,
+    RBACError,
+    PermissionDeniedError,
+    NotAMemberError,
+    get_rbac_service,
+)
+from .proxy import (
+    LabelStudioProxy,
+    ProxyResponse,
+    ProxyError,
+    LabelStudioConnectionError,
+    LabelStudioAPIError,
+    ProxyPermissionError,
+    create_label_studio_proxy,
+)
 
 __all__ = [
     # Integration
@@ -90,4 +142,51 @@ __all__ = [
     "create_label_studio_retry_executor",
     "LABEL_STUDIO_RETRYABLE_EXCEPTIONS",
     "LABEL_STUDIO_NON_RETRYABLE_EXCEPTIONS",
+    # Workspace Models
+    "LabelStudioWorkspaceModel",
+    "LabelStudioWorkspaceMemberModel",
+    "WorkspaceProjectModel",
+    "ProjectMemberModel",
+    "WorkspaceMemberRole",
+    "ProjectMemberRole",
+    # Metadata Codec
+    "MetadataCodec",
+    "WorkspaceMetadata",
+    "MetadataCodecError",
+    "MetadataDecodeError",
+    "MetadataEncodeError",
+    "get_metadata_codec",
+    "encode_metadata",
+    "decode_metadata",
+    "has_metadata",
+    # Workspace Service
+    "WorkspaceService",
+    "WorkspaceInfo",
+    "MemberInfo",
+    "WorkspaceServiceError",
+    "WorkspaceNotFoundError",
+    "WorkspaceAlreadyExistsError",
+    "MemberNotFoundError",
+    "MemberAlreadyExistsError",
+    "InsufficientPermissionError",
+    "CannotRemoveOwnerError",
+    "WorkspaceHasProjectsError",
+    "get_workspace_service",
+    # RBAC Service
+    "RBACService",
+    "RBACPermission",
+    "ROLE_PERMISSIONS",
+    "ROLE_HIERARCHY",
+    "RBACError",
+    "PermissionDeniedError",
+    "NotAMemberError",
+    "get_rbac_service",
+    # Label Studio Proxy
+    "LabelStudioProxy",
+    "ProxyResponse",
+    "ProxyError",
+    "LabelStudioConnectionError",
+    "LabelStudioAPIError",
+    "ProxyPermissionError",
+    "create_label_studio_proxy",
 ]

@@ -57,5 +57,8 @@ export * from './components';
 export * from './guards';
 export * from './label-studio';
 
+// Label Studio Workspace types
+export * from './ls-workspace';
+
 // Brand Identity System types
 export * from './brand';

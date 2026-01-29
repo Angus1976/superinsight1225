@@ -3,3 +3,6 @@ export * from './LabelStudioEmbed';
 export * from './ProjectSync';
 export * from './PermissionMapper';
 export * from './QuickActions';
+
+// Label Studio Workspace components
+export * from './LSWorkspaceSelector';

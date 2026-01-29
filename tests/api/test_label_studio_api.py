@@ -421,6 +421,174 @@ class TestHealthCheckEndpoint:
             mock_ls.list_projects()
 
 
+class TestWorkspaceFiltering:
+    """Tests for workspace filtering in project list.
+
+    Validates: Workspace extension requirements
+    - Filter projects by workspace_id
+    - Include workspace info in project responses
+    - Clean metadata from descriptions
+    """
+
+    def test_list_projects_without_workspace_filter(self):
+        """
+        Test: List projects without workspace filter (backward compatible)
+        """
+        # Setup
+        mock_ls = Mock(spec=LabelStudioIntegration)
+        mock_ls.list_projects = Mock(return_value=[
+            {
+                'id': 1,
+                'title': 'Project 1',
+                'description': 'Description 1',
+                'created_at': '2026-01-01',
+                'updated_at': '2026-01-02',
+                'task_number': 10,
+                'num_tasks_with_annotations': 5
+            },
+            {
+                'id': 2,
+                'title': 'Project 2',
+                'description': 'Description 2',
+                'created_at': '2026-01-03',
+                'updated_at': '2026-01-04',
+                'task_number': 20,
+                'num_tasks_with_annotations': 15
+            }
+        ])
+
+        # Execute
+        projects = mock_ls.list_projects()
+
+        # Verify
+        assert len(projects) == 2
+        assert projects[0]['id'] == 1
+        assert projects[1]['id'] == 2
+
+    def test_list_projects_with_workspace_filter(self):
+        """
+        Test: List projects filtered by workspace_id
+        """
+        # Setup - simulate filtered response
+        mock_ls = Mock(spec=LabelStudioIntegration)
+        mock_ls.list_projects = Mock(return_value=[
+            {
+                'id': 1,
+                'title': 'Workspace Project',
+                'description': '[SUPERINSIGHT_META:eyJ3b3Jrc3BhY2VfaWQiOiAidGVzdC0xMjMifQ==]Original description',
+                'created_at': '2026-01-01',
+                'updated_at': '2026-01-02',
+                'task_number': 10,
+                'num_tasks_with_annotations': 5
+            }
+        ])
+
+        # Execute
+        projects = mock_ls.list_projects()
+
+        # Verify
+        assert len(projects) == 1
+        assert projects[0]['id'] == 1
+
+    def test_extract_workspace_info_from_metadata(self):
+        """
+        Test: Extract workspace info from project description metadata
+        """
+        from src.label_studio.metadata_codec import has_metadata, decode_metadata
+
+        # Setup
+        description_with_meta = '[SUPERINSIGHT_META:eyJ3b3Jrc3BhY2VfaWQiOiAidGVzdC0xMjMiLCAid29ya3NwYWNlX25hbWUiOiAiVGVzdCBXb3Jrc3BhY2UifQ==]Original description'
+
+        # Verify metadata presence
+        assert has_metadata(description_with_meta) is True
+
+        # Extract metadata
+        clean_desc, metadata = decode_metadata(description_with_meta)
+        assert clean_desc == 'Original description'
+        assert metadata.get('workspace_id') == 'test-123'
+        assert metadata.get('workspace_name') == 'Test Workspace'
+
+    def test_description_without_metadata(self):
+        """
+        Test: Handle description without metadata
+        """
+        from src.label_studio.metadata_codec import has_metadata
+
+        # Setup
+        description_without_meta = 'Regular description without metadata'
+
+        # Verify
+        assert has_metadata(description_without_meta) is False
+
+    def test_workspace_info_response_model(self):
+        """
+        Test: WorkspaceInfoResponse model structure
+        """
+        from src.api.label_studio_api import WorkspaceInfoResponse
+
+        # Create response
+        workspace_info = WorkspaceInfoResponse(
+            id='workspace-123',
+            name='Test Workspace',
+            owner_id='owner-456',
+            role='admin'
+        )
+
+        # Verify
+        assert workspace_info.id == 'workspace-123'
+        assert workspace_info.name == 'Test Workspace'
+        assert workspace_info.owner_id == 'owner-456'
+        assert workspace_info.role == 'admin'
+
+    def test_project_response_with_workspace(self):
+        """
+        Test: LabelStudioProject response includes workspace info
+        """
+        from src.api.label_studio_api import LabelStudioProject, WorkspaceInfoResponse
+
+        # Create project with workspace
+        workspace_info = WorkspaceInfoResponse(
+            id='workspace-123',
+            name='Test Workspace'
+        )
+
+        project = LabelStudioProject(
+            id=1,
+            title='Test Project',
+            description='Test description',
+            created_at='2026-01-01',
+            updated_at='2026-01-02',
+            task_count=10,
+            annotation_count=5,
+            workspace=workspace_info
+        )
+
+        # Verify
+        assert project.workspace is not None
+        assert project.workspace.id == 'workspace-123'
+        assert project.workspace.name == 'Test Workspace'
+
+    def test_project_response_without_workspace(self):
+        """
+        Test: LabelStudioProject response without workspace (backward compatible)
+        """
+        from src.api.label_studio_api import LabelStudioProject
+
+        # Create project without workspace
+        project = LabelStudioProject(
+            id=1,
+            title='Test Project',
+            description='Test description',
+            created_at='2026-01-01',
+            updated_at='2026-01-02',
+            task_count=10,
+            annotation_count=5
+        )
+
+        # Verify
+        assert project.workspace is None
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
 

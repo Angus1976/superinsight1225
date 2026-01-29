@@ -9,3 +9,7 @@ export * from './quality';
 export * from './security';
 export * from './system';
 export * from './aiAnnotationApi';
+
+// Label Studio services
+export * from './labelStudioService';
+export * from './lsWorkspaceService';

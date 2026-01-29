@@ -27,6 +27,17 @@ export const API_ENDPOINTS = {
     AUTH_URL: (projectId: string) => `/api/label-studio/projects/${projectId}/auth-url`,
   },
 
+  // Label Studio Workspaces (Enterprise)
+  LS_WORKSPACES: {
+    BASE: '/api/ls-workspaces',
+    BY_ID: (id: string) => `/api/ls-workspaces/${id}`,
+    MEMBERS: (id: string) => `/api/ls-workspaces/${id}/members`,
+    MEMBER_BY_ID: (workspaceId: string, userId: string) => `/api/ls-workspaces/${workspaceId}/members/${userId}`,
+    PERMISSIONS: (id: string) => `/api/ls-workspaces/${id}/permissions`,
+    PROJECTS: (id: string) => `/api/ls-workspaces/${id}/projects`,
+    PROJECT_BY_ID: (workspaceId: string, projectId: string) => `/api/ls-workspaces/${workspaceId}/projects/${projectId}`,
+  },
+
   // Users
   USERS: {
     BASE: '/api/security/users',

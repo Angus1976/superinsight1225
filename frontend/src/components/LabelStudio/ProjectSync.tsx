@@ -1,6 +1,6 @@
-// Label Studio project synchronization component
-import { useState, useEffect, useCallback } from 'react';
-import { Card, Row, Col, Progress, Tag, Space, Button, Table, Alert, Statistic, Badge, Tooltip, message } from 'antd';
+// Label Studio project synchronization component with workspace filtering
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Card, Row, Col, Progress, Tag, Space, Button, Table, Alert, Statistic, Badge, Tooltip, message, Empty } from 'antd';
 import {
   SyncOutlined,
   CheckCircleOutlined,
@@ -10,8 +10,12 @@ import {
   CloudSyncOutlined,
   UserOutlined,
   FileTextOutlined,
+  FilterOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
+import { LSWorkspaceSelector } from './LSWorkspaceSelector';
+import { useLSWorkspaceProjects } from '@/hooks/useLSWorkspaces';
+import type { LSWorkspace, LSWorkspaceProject } from '@/types/ls-workspace';
 
 interface ProjectSyncStatus {
   projectId: string;
@@ -23,6 +27,7 @@ interface ProjectSyncStatus {
   completedTasks: number;
   annotators: number;
   errorMessage?: string;
+  workspaceId?: string;
 }
 
 interface SyncLog {
@@ -40,18 +45,45 @@ interface ProjectSyncProps {
   syncInterval?: number;
   onSyncComplete?: (status: ProjectSyncStatus) => void;
   onSyncError?: (error: string) => void;
+  /** Initial workspace ID to filter projects */
+  initialWorkspaceId?: string | null;
+  /** Whether to show workspace selector */
+  showWorkspaceSelector?: boolean;
+  /** Callback when workspace changes */
+  onWorkspaceChange?: (workspaceId: string | null, workspace: LSWorkspace | null) => void;
 }
 
 export const ProjectSync: React.FC<ProjectSyncProps> = ({
   autoSync = false,
   syncInterval = 60000,
   onSyncComplete,
+  initialWorkspaceId = null,
+  showWorkspaceSelector = true,
+  onWorkspaceChange,
 }) => {
   const { t } = useTranslation(['labelStudio', 'common']);
   const [syncStatus, setSyncStatus] = useState<ProjectSyncStatus[]>([]);
   const [syncLogs, setSyncLogs] = useState<SyncLog[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
+
+  // Workspace filtering state
+  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string | null>(initialWorkspaceId);
+  const [selectedWorkspace, setSelectedWorkspace] = useState<LSWorkspace | null>(null);
+
+  // Fetch workspace projects when a workspace is selected
+  const {
+    data: workspaceProjectsData,
+    isLoading: isLoadingWorkspaceProjects,
+    refetch: refetchWorkspaceProjects
+  } = useLSWorkspaceProjects(selectedWorkspaceId);
+
+  // Handle workspace change
+  const handleWorkspaceChange = useCallback((workspaceId: string | null, workspace: LSWorkspace | null) => {
+    setSelectedWorkspaceId(workspaceId);
+    setSelectedWorkspace(workspace);
+    onWorkspaceChange?.(workspaceId, workspace);
+  }, [onWorkspaceChange]);
 
   // Mock sync status data
   const mockSyncStatus: ProjectSyncStatus[] = [
@@ -121,10 +153,33 @@ export const ProjectSync: React.FC<ProjectSyncProps> = ({
     },
   ];
 
+  // Convert workspace projects to sync status format
+  const workspaceProjectsAsSyncStatus = useMemo((): ProjectSyncStatus[] => {
+    if (!workspaceProjectsData?.projects) return [];
+    return workspaceProjectsData.projects.map((project: LSWorkspaceProject) => ({
+      projectId: project.id,
+      projectName: project.label_studio_project_id, // Will be replaced with actual name when available
+      labelStudioProjectId: project.label_studio_project_id,
+      syncStatus: 'synced' as const,
+      lastSyncAt: project.updated_at,
+      totalTasks: 0, // Will be fetched from Label Studio
+      completedTasks: 0,
+      annotators: 0,
+      workspaceId: project.workspace_id,
+    }));
+  }, [workspaceProjectsData]);
+
+  // Merge workspace projects with mock data or use only workspace projects
   useEffect(() => {
-    setSyncStatus(mockSyncStatus);
+    if (selectedWorkspaceId && workspaceProjectsData?.projects) {
+      // Use workspace projects when a workspace is selected
+      setSyncStatus(workspaceProjectsAsSyncStatus);
+    } else if (!selectedWorkspaceId) {
+      // Use mock data when no workspace is selected
+      setSyncStatus(mockSyncStatus);
+    }
     setSyncLogs(mockSyncLogs);
-  }, []);
+  }, [selectedWorkspaceId, workspaceProjectsData, workspaceProjectsAsSyncStatus]);
 
   // Auto sync functionality
   useEffect(() => {
@@ -237,13 +292,18 @@ export const ProjectSync: React.FC<ProjectSyncProps> = ({
     {
       title: t('sync.progress') || 'Progress',
       key: 'progress',
-      render: (_: unknown, record: ProjectSyncStatus) => (
-        <Progress
-          percent={Math.round((record.completedTasks / record.totalTasks) * 100)}
-          size="small"
-          status={record.syncStatus === 'error' ? 'exception' : 'active'}
-        />
-      ),
+      render: (_: unknown, record: ProjectSyncStatus) => {
+        const percent = record.totalTasks > 0
+          ? Math.round((record.completedTasks / record.totalTasks) * 100)
+          : 0;
+        return (
+          <Progress
+            percent={percent}
+            size="small"
+            status={record.syncStatus === 'error' ? 'exception' : 'active'}
+          />
+        );
+      },
     },
     {
       title: t('sync.annotators') || 'Annotators',
@@ -332,9 +392,44 @@ export const ProjectSync: React.FC<ProjectSyncProps> = ({
         </Col>
       </Row>
 
+      {/* Workspace Filter */}
+      {showWorkspaceSelector && (
+        <Card style={{ marginBottom: 16 }}>
+          <Space size="middle" wrap>
+            <Space>
+              <FilterOutlined style={{ color: '#1890ff' }} />
+              <span>{t('workspace.filterByWorkspace', 'Filter by Workspace')}:</span>
+            </Space>
+            <LSWorkspaceSelector
+              value={selectedWorkspaceId}
+              onChange={handleWorkspaceChange}
+              size="middle"
+              allowClear
+              placeholder={t('workspace.allWorkspaces', 'All workspaces')}
+              showCreateButton={false}
+            />
+            {selectedWorkspace && (
+              <Tag color="blue">
+                {selectedWorkspace.name}
+                {selectedWorkspace.project_count > 0 && (
+                  <span> ({selectedWorkspace.project_count} {t('workspace.projects', 'projects')})</span>
+                )}
+              </Tag>
+            )}
+          </Space>
+        </Card>
+      )}
+
       {/* Sync Controls */}
       <Card
-        title={t('sync.projectSync') || 'Project Synchronization'}
+        title={
+          <Space>
+            <span>{t('sync.projectSync') || 'Project Synchronization'}</span>
+            {selectedWorkspace && (
+              <Tag color="processing">{selectedWorkspace.name}</Tag>
+            )}
+          </Space>
+        }
         extra={
           <Space>
             {lastSyncTime && (
@@ -342,11 +437,21 @@ export const ProjectSync: React.FC<ProjectSyncProps> = ({
                 {t('sync.lastSyncTime') || 'Last sync'}: {lastSyncTime.toLocaleTimeString()}
               </span>
             )}
+            {selectedWorkspaceId && (
+              <Button
+                icon={<ReloadOutlined />}
+                onClick={() => refetchWorkspaceProjects()}
+                loading={isLoadingWorkspaceProjects}
+              >
+                {t('common.refresh', 'Refresh')}
+              </Button>
+            )}
             <Button
               type="primary"
               icon={<ReloadOutlined />}
               onClick={handleSyncAll}
               loading={isSyncing}
+              disabled={syncStatus.length === 0}
             >
               {t('sync.syncAll') || 'Sync All'}
             </Button>
@@ -354,12 +459,29 @@ export const ProjectSync: React.FC<ProjectSyncProps> = ({
         }
         style={{ marginBottom: 24 }}
       >
-        <Table
-          dataSource={syncStatus}
-          columns={columns}
-          rowKey="projectId"
-          pagination={false}
-        />
+        {isLoadingWorkspaceProjects ? (
+          <div style={{ textAlign: 'center', padding: 40 }}>
+            <SyncOutlined spin style={{ fontSize: 24, color: '#1890ff' }} />
+            <p style={{ marginTop: 16, color: '#666' }}>
+              {t('workspace.loadingProjects', 'Loading workspace projects...')}
+            </p>
+          </div>
+        ) : syncStatus.length === 0 ? (
+          <Empty
+            description={
+              selectedWorkspaceId
+                ? t('workspace.noProjectsInWorkspace', 'No projects in this workspace')
+                : t('sync.noProjects', 'No projects available')
+            }
+          />
+        ) : (
+          <Table
+            dataSource={syncStatus}
+            columns={columns}
+            rowKey="projectId"
+            pagination={false}
+          />
+        )}
       </Card>
 
       {/* Sync Logs */}

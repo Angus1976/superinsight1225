@@ -1,9 +1,11 @@
-// Label Studio iframe embed component with language synchronization
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { Card, Spin, Alert, Button, Space, message } from 'antd';
-import { ReloadOutlined, ExpandOutlined, CompressOutlined, SyncOutlined, InfoCircleOutlined, GlobalOutlined } from '@ant-design/icons';
+// Label Studio iframe embed component with language synchronization and workspace context
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { Card, Spin, Alert, Button, Space, message, Tag, Tooltip } from 'antd';
+import { ReloadOutlined, ExpandOutlined, CompressOutlined, SyncOutlined, InfoCircleOutlined, GlobalOutlined, TeamOutlined } from '@ant-design/icons';
 import { useLanguageStore, type LabelStudioLanguageMessage } from '@/stores/languageStore';
 import { useTranslation } from 'react-i18next';
+import { useLSWorkspaceContext } from '@/hooks/useLSWorkspaces';
+import type { WorkspaceInfo, WorkspaceMessageType } from '@/services/iframe/types';
 
 interface LabelStudioEmbedProps {
   projectId: string;
@@ -15,6 +17,10 @@ interface LabelStudioEmbedProps {
   onTaskComplete?: (taskId: string) => void;
   onProgressUpdate?: (progress: { completed: number; total: number }) => void;
   height?: number | string;
+  /** Workspace ID for Label Studio Enterprise integration */
+  workspaceId?: string | null;
+  /** Callback when workspace context changes */
+  onWorkspaceContextChange?: (context: WorkspaceInfo | null) => void;
 }
 
 interface LabelStudioMessage {
@@ -37,6 +43,8 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
   onTaskComplete,
   onProgressUpdate,
   height = 600,
+  workspaceId,
+  onWorkspaceContextChange,
 }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [loading, setLoading] = useState(true);
@@ -44,42 +52,75 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
   const [fullscreen, setFullscreen] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
   const [lastActivity, setLastActivity] = useState<Date | null>(null);
-  
+
   // Language store integration
   const { language, syncToLabelStudio } = useLanguageStore();
   const { t } = useTranslation();
 
   // Track previous language to detect changes
   const prevLanguageRef = useRef(language);
+
+  // Workspace context integration
+  const workspaceContext = useLSWorkspaceContext(workspaceId);
+
+  // Build workspace info for iframe
+  const workspaceInfo = useMemo((): WorkspaceInfo | null => {
+    if (!workspaceContext.workspace || !workspaceId) return null;
+    return {
+      id: workspaceContext.workspace.id,
+      name: workspaceContext.workspace.name,
+      description: workspaceContext.workspace.description,
+      role: workspaceContext.userRole || 'viewer',
+      permissions: workspaceContext.permissions.map(p => ({
+        permission: p,
+        granted: true,
+      })),
+      settings: workspaceContext.workspace.settings,
+    };
+  }, [workspaceContext.workspace, workspaceContext.userRole, workspaceContext.permissions, workspaceId]);
+
+  // Track workspace changes and notify
+  const prevWorkspaceIdRef = useRef(workspaceId);
+  useEffect(() => {
+    if (prevWorkspaceIdRef.current !== workspaceId) {
+      prevWorkspaceIdRef.current = workspaceId;
+      onWorkspaceContextChange?.(workspaceInfo);
+    }
+  }, [workspaceId, workspaceInfo, onWorkspaceContextChange]);
   
-  // Build Label Studio URL with authentication, context, and language
+  // Build Label Studio URL with authentication, context, language, and workspace
   const getLabelStudioUrl = useCallback(() => {
     const params = new URLSearchParams();
-    
+
     if (token) {
       params.append('token', token);
     }
-    
+
     if (taskId) {
       params.append('task', taskId);
     }
-    
+
     // Add iframe mode and communication flags
     params.append('mode', 'iframe');
     params.append('enable_postmessage', 'true');
     params.append('enable_hotkeys', 'true');
-    
+
     // Add language parameter for Label Studio localization
     // Label Studio uses Django's i18n, supports 'zh' (Chinese) and 'en' (English)
     params.append('lang', language);
-    
+
+    // Add workspace ID for Label Studio Enterprise
+    if (workspaceId) {
+      params.append('workspace', workspaceId);
+    }
+
     let url = `${baseUrl}/projects/${projectId}/data`;
     if (params.toString()) {
       url += `?${params.toString()}`;
     }
-    
+
     return url;
-  }, [baseUrl, projectId, taskId, token, language]);
+  }, [baseUrl, projectId, taskId, token, language, workspaceId]);
 
   // Enhanced message handling with better error handling and logging
   useEffect(() => {
@@ -180,6 +221,28 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
             // Handle language change from Label Studio
             if (lsMessage.lang && (lsMessage.lang === 'zh' || lsMessage.lang === 'en')) {
               console.log('Label Studio language changed to:', lsMessage.lang);
+            }
+            break;
+
+          // Workspace context message handlers
+          case 'workspace:context:request':
+            // Label Studio is requesting workspace context
+            if (workspaceInfo) {
+              sendMessageToIframe('workspace:context', workspaceInfo);
+              console.log('Sent workspace context to Label Studio:', workspaceInfo);
+            }
+            break;
+
+          case 'workspace:permission:check':
+            // Handle permission check request from Label Studio
+            if (lsMessage.payload && typeof lsMessage.payload === 'object') {
+              const permissionPayload = lsMessage.payload as { permission: string };
+              const hasPermission = workspaceContext.can(permissionPayload.permission as any);
+              sendMessageToIframe('workspace:permission:result', {
+                permission: permissionPayload.permission,
+                granted: hasPermission,
+              });
+              console.log(`Permission check for ${permissionPayload.permission}:`, hasPermission);
             }
             break;
 

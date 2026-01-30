@@ -100,6 +100,17 @@ from .proxy import (
     ProxyPermissionError,
     create_label_studio_proxy,
 )
+from .cache_service import (
+    WorkspaceCacheService,
+    WorkspaceCacheConfig,
+    CacheStats,
+    InMemoryCacheBackend,
+    RedisCacheBackend,
+    get_workspace_cache,
+    clear_cache_instance,
+    cache_workspace,
+    cache_permissions,
+)
 
 __all__ = [
     # Integration
@@ -189,4 +200,14 @@ __all__ = [
     "LabelStudioAPIError",
     "ProxyPermissionError",
     "create_label_studio_proxy",
+    # Cache Service
+    "WorkspaceCacheService",
+    "WorkspaceCacheConfig",
+    "CacheStats",
+    "InMemoryCacheBackend",
+    "RedisCacheBackend",
+    "get_workspace_cache",
+    "clear_cache_instance",
+    "cache_workspace",
+    "cache_permissions",
 ]

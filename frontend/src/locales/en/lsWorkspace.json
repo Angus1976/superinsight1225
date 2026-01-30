@@ -1,0 +1,126 @@
+{
+  "title": "Label Studio Workspaces",
+  "workspace": "Workspace",
+  "workspaces": "Workspaces",
+  "createWorkspace": "Create Workspace",
+  "editWorkspace": "Edit Workspace",
+  "deleteWorkspace": "Delete Workspace",
+  "workspaceDetails": "Workspace Details",
+  "noWorkspaces": "No workspaces found",
+  "selectWorkspace": "Select Workspace",
+  "searchWorkspace": "Search workspace...",
+  "workspaceName": "Workspace Name",
+  "workspaceDescription": "Description",
+  "memberCount": "Members",
+  "projectCount": "Projects",
+  "createdAt": "Created",
+  "updatedAt": "Updated",
+  "owner": "Owner",
+
+  "roles": {
+    "owner": "Owner",
+    "ownerDesc": "Full control over workspace, including deletion and ownership transfer",
+    "admin": "Admin",
+    "adminDesc": "Manage workspace settings, members, and projects (except delete workspace)",
+    "manager": "Manager",
+    "managerDesc": "Manage projects and assign tasks to team members",
+    "reviewer": "Reviewer",
+    "reviewerDesc": "Review annotations and export data",
+    "annotator": "Annotator",
+    "annotatorDesc": "View projects and perform annotation tasks"
+  },
+
+  "permissions": {
+    "title": "Role Permission Matrix",
+    "subtitle": "Overview of permissions granted to each role in the workspace",
+    "permission": "Permission",
+    "currentRole": "Your Role",
+    "permissionCount": "{{count}} of {{total}} permissions",
+
+    "categories": {
+      "workspace": "Workspace",
+      "project": "Project",
+      "task": "Task",
+      "data": "Data"
+    },
+
+    "workspace": {
+      "view": "View Workspace",
+      "viewDesc": "View workspace details and settings",
+      "edit": "Edit Workspace",
+      "editDesc": "Modify workspace name, description, and settings",
+      "delete": "Delete Workspace",
+      "deleteDesc": "Permanently delete the workspace",
+      "manageMembers": "Manage Members",
+      "manageMembersDesc": "Add, remove, and change member roles"
+    },
+
+    "project": {
+      "view": "View Projects",
+      "viewDesc": "View project list and details",
+      "create": "Create Projects",
+      "createDesc": "Create new projects in the workspace",
+      "edit": "Edit Projects",
+      "editDesc": "Modify project settings and configuration",
+      "delete": "Delete Projects",
+      "deleteDesc": "Remove projects from the workspace",
+      "manageMembers": "Manage Project Members",
+      "manageMembersDesc": "Assign members to projects"
+    },
+
+    "task": {
+      "view": "View Tasks",
+      "viewDesc": "View task list and details",
+      "annotate": "Annotate Tasks",
+      "annotateDesc": "Perform annotation work on tasks",
+      "review": "Review Tasks",
+      "reviewDesc": "Review and approve annotations",
+      "assign": "Assign Tasks",
+      "assignDesc": "Assign tasks to team members"
+    },
+
+    "data": {
+      "export": "Export Data",
+      "exportDesc": "Export annotations and project data",
+      "import": "Import Data",
+      "importDesc": "Import data into projects"
+    }
+  },
+
+  "members": {
+    "title": "Members",
+    "addMember": "Add Member",
+    "removeMember": "Remove Member",
+    "updateRole": "Update Role",
+    "selectUser": "Select User",
+    "selectRole": "Select Role",
+    "memberAdded": "Member added successfully",
+    "memberRemoved": "Member removed successfully",
+    "roleUpdated": "Role updated successfully",
+    "cannotRemoveOwner": "Cannot remove the last owner",
+    "cannotDemoteOwner": "Cannot demote the last owner"
+  },
+
+  "projects": {
+    "title": "Projects",
+    "associateProject": "Associate Project",
+    "removeAssociation": "Remove Association",
+    "projectId": "Label Studio Project ID",
+    "associated": "Associated successfully",
+    "removed": "Association removed"
+  },
+
+  "messages": {
+    "createSuccess": "Workspace created successfully",
+    "updateSuccess": "Workspace updated successfully",
+    "deleteSuccess": "Workspace deleted successfully",
+    "deleteConfirm": "Are you sure you want to delete this workspace?",
+    "deleteWarning": "This action cannot be undone. All members will lose access."
+  },
+
+  "validation": {
+    "nameRequired": "Workspace name is required",
+    "nameTooLong": "Workspace name must be less than 255 characters",
+    "descriptionTooLong": "Description must be less than 2000 characters"
+  }
+}

@@ -6,3 +6,4 @@ export * from './QuickActions';
 
 // Label Studio Workspace components
 export * from './LSWorkspaceSelector';
+export * from './LSPermissionDetails';

@@ -47,6 +47,24 @@ class TaskStatus(str, enum.Enum):
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
     REVIEWED = "reviewed"
+    CANCELLED = "cancelled"
+
+
+class TaskPriority(str, enum.Enum):
+    """Task priority enumeration."""
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+    URGENT = "urgent"
+
+
+class AnnotationType(str, enum.Enum):
+    """Annotation type enumeration."""
+    TEXT_CLASSIFICATION = "text_classification"
+    NER = "ner"
+    SENTIMENT = "sentiment"
+    QA = "qa"
+    CUSTOM = "custom"
 
 
 class IssueSeverity(str, enum.Enum):
@@ -117,35 +135,63 @@ class TaskModel(Base):
     """
     Task table for managing annotation tasks.
 
-    Links documents to annotation projects and tracks progress.
-    Extended with sync-related fields for tracking synchronization status.
-    Extended with Label Studio integration fields for annotation workflow.
+    Extended model supporting:
+    - Task management (name, description, priority, annotation_type)
+    - Assignment and progress tracking
+    - Label Studio integration
+    - Sync-related fields for data synchronization
     """
     __tablename__ = "tasks"
 
+    # Primary key
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    document_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("documents.id"), nullable=False)
-    project_id: Mapped[str] = mapped_column(String(100), nullable=False)
+
+    # Basic task information
+    name: Mapped[str] = mapped_column(String(255), nullable=False, default="Untitled Task")
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     status: Mapped[TaskStatus] = mapped_column(SQLEnum(TaskStatus), default=TaskStatus.PENDING)
+    priority: Mapped[TaskPriority] = mapped_column(SQLEnum(TaskPriority), default=TaskPriority.MEDIUM)
+    annotation_type: Mapped[AnnotationType] = mapped_column(SQLEnum(AnnotationType), default=AnnotationType.CUSTOM)
+
+    # Document and project association
+    document_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("documents.id"), nullable=True)
+    project_id: Mapped[str] = mapped_column(String(100), nullable=False)
+
+    # Assignment and ownership
+    assignee_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_by: Mapped[str] = mapped_column(String(100), nullable=False, default="system")
+    tenant_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True, default="default_tenant")
+
+    # Progress tracking
+    progress: Mapped[int] = mapped_column(Integer, default=0)  # 0-100 percentage
+    total_items: Mapped[int] = mapped_column(Integer, default=1)
+    completed_items: Mapped[int] = mapped_column(Integer, default=0)
+
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    due_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    # Annotation data (JSONB)
     annotations: Mapped[list] = mapped_column(JSONB, default=[])
     ai_predictions: Mapped[list] = mapped_column(JSONB, default=[])
     quality_score: Mapped[float] = mapped_column(Float, default=0.0)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    tags: Mapped[list] = mapped_column(JSONB, default=[])
+    task_metadata: Mapped[dict] = mapped_column(JSONB, default={})
 
     # Sync-related fields (Phase 1.2 extension)
-    tenant_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, index=True)
     sync_status: Mapped[Optional[SyncStatus]] = mapped_column(SQLEnum(SyncStatus), nullable=True, default=None)
     sync_version: Mapped[int] = mapped_column(Integer, default=1)
     last_synced_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-    sync_execution_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)  # UUID of sync execution
-    is_from_sync: Mapped[bool] = mapped_column(Boolean, default=False)  # Whether task came from sync
-    sync_metadata: Mapped[dict] = mapped_column(JSONB, default={})  # Additional sync-related metadata
+    sync_execution_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
+    is_from_sync: Mapped[bool] = mapped_column(Boolean, default=False)
+    sync_metadata: Mapped[dict] = mapped_column(JSONB, default={})
 
-    # Label Studio integration fields (Annotation Workflow Fix)
+    # Label Studio integration fields
     label_studio_project_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)
     label_studio_project_created_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     label_studio_sync_status: Mapped[Optional[LabelStudioSyncStatus]] = mapped_column(
-        SQLEnum(LabelStudioSyncStatus), 
+        SQLEnum(LabelStudioSyncStatus),
         default=LabelStudioSyncStatus.PENDING,
         nullable=True
     )
@@ -154,7 +200,8 @@ class TaskModel(Base):
     label_studio_annotation_count: Mapped[int] = mapped_column(Integer, default=0)
 
     # Relationships
-    document: Mapped["DocumentModel"] = relationship("DocumentModel", back_populates="tasks")
+    document: Mapped[Optional["DocumentModel"]] = relationship("DocumentModel", back_populates="tasks")
+    assignee: Mapped[Optional["UserModel"]] = relationship("UserModel", foreign_keys=[assignee_id])
     quality_issues: Mapped[List["QualityIssueModel"]] = relationship("QualityIssueModel", back_populates="task")
     billing_records: Mapped[List["BillingRecordModel"]] = relationship("BillingRecordModel", back_populates="task")
 

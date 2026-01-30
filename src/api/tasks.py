@@ -1,30 +1,26 @@
 """
 Tasks API endpoints for SuperInsight Platform.
-Handles task management, assignment, and progress tracking.
+Handles task management, assignment, and progress tracking with full database persistence.
 """
 
 import logging
-import asyncio
 from datetime import datetime
 from typing import List, Optional, Dict, Any
 from uuid import UUID, uuid4
 from fastapi import APIRouter, Depends, HTTPException, status, Query, BackgroundTasks
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
+from sqlalchemy import or_, func as sql_func
 
 from src.database.connection import get_db_session
 from src.api.auth_simple import get_current_user, SimpleUser
-from src.database.models import TaskModel, TaskStatus
-from src.database.task_extensions import TaskPriority, AnnotationType, TaskAdapter
+from src.database.models import TaskModel, TaskStatus, TaskPriority, AnnotationType, LabelStudioSyncStatus
 from src.api.label_studio_sync import label_studio_sync_service
 
 logger = logging.getLogger(__name__)
 
 # Create router
 router = APIRouter(prefix="/api/tasks", tags=["Tasks"])
-
-# In-memory storage for development (will be replaced with database later)
-_tasks_storage: Dict[str, Dict[str, Any]] = {}
 
 
 # Request/Response models
@@ -77,7 +73,6 @@ class TaskResponse(BaseModel):
     completed_items: int
     tenant_id: str
     label_studio_project_id: Optional[str]
-    # Label Studio sync tracking fields
     label_studio_project_created_at: Optional[datetime] = None
     label_studio_sync_status: Optional[str] = None
     label_studio_last_sync: Optional[datetime] = None
@@ -107,7 +102,37 @@ class TaskStatsResponse(BaseModel):
 
 
 # Helper functions
-def get_task_or_404(task_id: str, db: Session, user: SimpleUser) -> Dict[str, Any]:
+def task_model_to_response(task: TaskModel) -> TaskResponse:
+    """Convert TaskModel to TaskResponse."""
+    return TaskResponse(
+        id=str(task.id),
+        name=task.name,
+        description=task.description,
+        status=task.status.value if hasattr(task.status, 'value') else str(task.status),
+        priority=task.priority.value if hasattr(task.priority, 'value') else str(task.priority),
+        annotation_type=task.annotation_type.value if hasattr(task.annotation_type, 'value') else str(task.annotation_type),
+        assignee_id=str(task.assignee_id) if task.assignee_id else None,
+        assignee_name=task.assignee.username if task.assignee else None,
+        created_by=task.created_by,
+        created_at=task.created_at,
+        updated_at=task.updated_at or task.created_at,
+        due_date=task.due_date,
+        progress=task.progress or 0,
+        total_items=task.total_items or 1,
+        completed_items=task.completed_items or 0,
+        tenant_id=task.tenant_id,
+        label_studio_project_id=task.label_studio_project_id,
+        label_studio_project_created_at=task.label_studio_project_created_at,
+        label_studio_sync_status=task.label_studio_sync_status.value if task.label_studio_sync_status else None,
+        label_studio_last_sync=task.label_studio_last_sync,
+        label_studio_task_count=task.label_studio_task_count or 0,
+        label_studio_annotation_count=task.label_studio_annotation_count or 0,
+        tags=task.tags or [],
+        data_source=task.task_metadata.get("data_source") if task.task_metadata else None
+    )
+
+
+def get_task_or_404(task_id: str, db: Session, tenant_id: str) -> TaskModel:
     """Get task by ID or raise 404 if not found or no access."""
     try:
         task_uuid = UUID(task_id)
@@ -116,61 +141,19 @@ def get_task_or_404(task_id: str, db: Session, user: SimpleUser) -> Dict[str, An
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid task ID format"
         )
-    
-    # Check in-memory storage first
-    if task_id in _tasks_storage:
-        return _tasks_storage[task_id]
-    
-    # Try to get from database
-    try:
-        task_model = db.query(TaskModel).filter(TaskModel.id == task_uuid).first()
-        if task_model:
-            # Convert TaskModel to dict
-            task_dict = {
-                "id": str(task_model.id),
-                "name": task_model.name or f"Task {task_model.id}",
-                "description": task_model.description,
-                "status": task_model.status.value if hasattr(task_model.status, 'value') else str(task_model.status),
-                "priority": task_model.priority.value if hasattr(task_model.priority, 'value') else "medium",
-                "annotation_type": task_model.annotation_type.value if hasattr(task_model.annotation_type, 'value') else "custom",
-                "assignee_id": str(task_model.assignee_id) if task_model.assignee_id else None,
-                "assignee_name": None,  # Would need to join with users table
-                "created_by": str(task_model.created_by) if task_model.created_by else "system",
-                "created_at": task_model.created_at,
-                "updated_at": task_model.updated_at,
-                "due_date": task_model.due_date,
-                "progress": task_model.progress or 0,
-                "total_items": task_model.total_items or 1,
-                "completed_items": task_model.completed_items or 0,
-                "tenant_id": str(task_model.tenant_id) if task_model.tenant_id else user.tenant_id,
-                "label_studio_project_id": task_model.label_studio_project_id,
-                "label_studio_project_created_at": None,
-                "label_studio_sync_status": None,
-                "label_studio_last_sync": None,
-                "label_studio_task_count": 0,
-                "label_studio_annotation_count": 0,
-                "tags": task_model.tags or [],
-                "data_source": None
-            }
-            return task_dict
-    except Exception as e:
-        logger.error(f"Error querying database for task {task_id}: {e}")
-    
-    # Fall back to mock data
-    mock_tasks = TaskAdapter.create_mock_tasks(10)
-    for task in mock_tasks:
-        if task["id"] == task_id:
-            return task
-    
-    raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail="Task not found"
-    )
 
+    task = db.query(TaskModel).filter(
+        TaskModel.id == task_uuid,
+        TaskModel.tenant_id == tenant_id
+    ).first()
 
-def task_to_response(task: Dict[str, Any]) -> TaskResponse:
-    """Convert task dict to TaskResponse."""
-    return TaskResponse(**task)
+    if not task:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Task not found"
+        )
+
+    return task
 
 
 # Task endpoints
@@ -185,97 +168,50 @@ def list_tasks(
     current_user: SimpleUser = Depends(get_current_user),
     db: Session = Depends(get_db_session)
 ):
-    """Get list of tasks with pagination and filtering."""
+    """Get list of tasks with pagination and filtering from database."""
     try:
-        # Get tasks from database
-        all_tasks = []
-        
-        try:
-            # Query database for tasks
-            query = db.query(TaskModel)
-            
-            # Apply filters
-            if status:
-                query = query.filter(TaskModel.status == status)
-            if assignee_id:
-                try:
-                    assignee_uuid = UUID(assignee_id)
-                    query = query.filter(TaskModel.assignee_id == assignee_uuid)
-                except ValueError:
-                    pass
-            
-            # Get all matching tasks
-            task_models = query.all()
-            
-            # Convert to dict format
-            for task_model in task_models:
-                task_dict = {
-                    "id": str(task_model.id),
-                    "name": task_model.name or f"Task {task_model.id}",
-                    "description": task_model.description,
-                    "status": task_model.status.value if hasattr(task_model.status, 'value') else str(task_model.status),
-                    "priority": task_model.priority.value if hasattr(task_model.priority, 'value') else "medium",
-                    "annotation_type": task_model.annotation_type.value if hasattr(task_model.annotation_type, 'value') else "custom",
-                    "assignee_id": str(task_model.assignee_id) if task_model.assignee_id else None,
-                    "assignee_name": None,
-                    "created_by": str(task_model.created_by) if task_model.created_by else "system",
-                    "created_at": task_model.created_at,
-                    "updated_at": task_model.updated_at,
-                    "due_date": task_model.due_date,
-                    "progress": task_model.progress or 0,
-                    "total_items": task_model.total_items or 1,
-                    "completed_items": task_model.completed_items or 0,
-                    "tenant_id": str(task_model.tenant_id) if task_model.tenant_id else current_user.tenant_id,
-                    "label_studio_project_id": task_model.label_studio_project_id,
-                    "label_studio_project_created_at": None,
-                    "label_studio_sync_status": None,
-                    "label_studio_last_sync": None,
-                    "label_studio_task_count": 0,
-                    "label_studio_annotation_count": 0,
-                    "tags": task_model.tags or [],
-                    "data_source": None
-                }
-                all_tasks.append(task_dict)
-                
-        except Exception as e:
-            logger.error(f"Error querying database for tasks: {e}")
-        
-        # If no database tasks, combine in-memory tasks with mock data
-        if len(all_tasks) == 0:
-            all_tasks = list(_tasks_storage.values())
-            if len(all_tasks) == 0:
-                # No in-memory tasks either, use mock data
-                all_tasks = TaskAdapter.create_mock_tasks(20)
-                logger.info(f"Using {len(all_tasks)} mock tasks for development")
-        
-        # Apply additional filters (priority, search)
-        filtered_tasks = all_tasks
+        # Build base query with tenant filter
+        query = db.query(TaskModel).filter(TaskModel.tenant_id == current_user.tenant_id)
+
+        # Apply filters
+        if status:
+            query = query.filter(TaskModel.status == status)
         if priority:
-            filtered_tasks = [t for t in filtered_tasks if t["priority"] == priority]
+            query = query.filter(TaskModel.priority == priority)
+        if assignee_id:
+            try:
+                assignee_uuid = UUID(assignee_id)
+                query = query.filter(TaskModel.assignee_id == assignee_uuid)
+            except ValueError:
+                pass
         if search:
-            search_lower = search.lower()
-            filtered_tasks = [
-                t for t in filtered_tasks 
-                if search_lower in t["name"].lower() or 
-                (t["description"] and search_lower in t["description"].lower())
-            ]
-        
-        # Apply pagination
-        total = len(filtered_tasks)
-        start_idx = (page - 1) * size
-        end_idx = start_idx + size
-        paginated_tasks = filtered_tasks[start_idx:end_idx]
-        
+            search_pattern = f"%{search}%"
+            query = query.filter(
+                or_(
+                    TaskModel.name.ilike(search_pattern),
+                    TaskModel.description.ilike(search_pattern)
+                )
+            )
+
+        # Count total before pagination
+        total = query.count()
+
+        # Apply ordering and pagination
+        tasks = query.order_by(TaskModel.created_at.desc()) \
+                     .offset((page - 1) * size) \
+                     .limit(size) \
+                     .all()
+
         # Convert to response format
-        task_responses = [task_to_response(task) for task in paginated_tasks]
-        
+        task_responses = [task_model_to_response(task) for task in tasks]
+
         return TaskListResponse(
             items=task_responses,
             total=total,
             page=page,
             size=size
         )
-        
+
     except Exception as e:
         logger.error(f"Error listing tasks: {e}")
         raise HTTPException(
@@ -284,51 +220,60 @@ def list_tasks(
         )
 
 
-async def _sync_task_to_label_studio(task_id: str, task_data: Dict[str, Any]):
+async def _sync_task_to_label_studio(task_id: str, db: Session, task_name: str, annotation_type: str, description: Optional[str] = None):
     """
     Background task to sync task to Label Studio.
-    
+
     This runs asynchronously after task creation to avoid blocking the API response.
     """
     try:
         logger.info(f"Starting Label Studio sync for task {task_id}")
-        
+
         # Create Label Studio project
         sync_result = await label_studio_sync_service.create_project_for_task(
             task_id=task_id,
-            task_name=task_data["name"],
-            task_description=task_data.get("description"),
-            annotation_type=task_data["annotation_type"]
+            task_name=task_name,
+            task_description=description,
+            annotation_type=annotation_type
         )
-        
-        # Update task with sync result
-        if task_id in _tasks_storage:
-            _tasks_storage[task_id].update({
-                "label_studio_project_id": sync_result.get("project_id"),
-                "label_studio_sync_status": sync_result["sync_status"],
-                "label_studio_last_sync": sync_result["synced_at"],
-                "label_studio_project_created_at": sync_result["synced_at"] if sync_result["success"] else None,
-            })
-            
-            if sync_result["success"]:
-                logger.info(
-                    f"Successfully synced task {task_id} to Label Studio "
-                    f"project {sync_result['project_id']}"
-                )
-            else:
-                logger.error(
-                    f"Failed to sync task {task_id} to Label Studio: "
-                    f"{sync_result.get('error')}"
-                )
-        
+
+        # Update task with sync result in database
+        try:
+            task_uuid = UUID(task_id)
+            task = db.query(TaskModel).filter(TaskModel.id == task_uuid).first()
+            if task:
+                task.label_studio_project_id = sync_result.get("project_id")
+                task.label_studio_sync_status = LabelStudioSyncStatus.SYNCED if sync_result["success"] else LabelStudioSyncStatus.FAILED
+                task.label_studio_last_sync = datetime.utcnow()
+                if sync_result["success"]:
+                    task.label_studio_project_created_at = datetime.utcnow()
+                db.commit()
+
+                if sync_result["success"]:
+                    logger.info(
+                        f"Successfully synced task {task_id} to Label Studio "
+                        f"project {sync_result['project_id']}"
+                    )
+                else:
+                    logger.error(
+                        f"Failed to sync task {task_id} to Label Studio: "
+                        f"{sync_result.get('error')}"
+                    )
+        except Exception as db_error:
+            logger.error(f"Error updating task sync status in database: {db_error}")
+
     except Exception as e:
         logger.error(f"Error in background sync for task {task_id}: {str(e)}")
         # Update task with error status
-        if task_id in _tasks_storage:
-            _tasks_storage[task_id].update({
-                "label_studio_sync_status": "failed",
-                "label_studio_last_sync": datetime.utcnow().isoformat() + "Z",
-            })
+        try:
+            task_uuid = UUID(task_id)
+            task = db.query(TaskModel).filter(TaskModel.id == task_uuid).first()
+            if task:
+                task.label_studio_sync_status = LabelStudioSyncStatus.FAILED
+                task.label_studio_last_sync = datetime.utcnow()
+                db.commit()
+        except Exception:
+            pass
 
 
 @router.post("", response_model=TaskResponse)
@@ -338,51 +283,76 @@ async def create_task(
     current_user: SimpleUser = Depends(get_current_user),
     db: Session = Depends(get_db_session)
 ):
-    """Create a new task and sync to Label Studio."""
+    """Create a new task and save to database."""
     try:
-        # Create new task
-        task_id = str(uuid4())
-        new_task = {
-            "id": task_id,
-            "name": request.name,
-            "description": request.description,
-            "status": "pending",
-            "priority": request.priority,
-            "annotation_type": request.annotation_type,
-            "assignee_id": request.assignee_id,
-            "assignee_name": None,  # Would be populated from DB lookup
-            "created_by": current_user.username,
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow(),
-            "due_date": request.due_date,
-            "progress": 0,
-            "total_items": request.total_items,
-            "completed_items": 0,
-            "tenant_id": current_user.tenant_id,
-            "label_studio_project_id": None,
-            # Label Studio sync tracking fields
-            "label_studio_project_created_at": None,
-            "label_studio_sync_status": "pending",
-            "label_studio_last_sync": None,
-            "label_studio_task_count": 0,
-            "label_studio_annotation_count": 0,
-            "tags": request.tags or [],
-            "data_source": request.data_source.dict() if request.data_source else None
-        }
-        
-        # Store in memory
-        _tasks_storage[task_id] = new_task
-        
-        logger.info(f"Task created: {task_id} by {current_user.username}")
-        
+        # Parse assignee_id if provided
+        assignee_uuid = None
+        if request.assignee_id:
+            try:
+                assignee_uuid = UUID(request.assignee_id)
+            except ValueError:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid assignee ID format"
+                )
+
+        # Parse priority and annotation_type enums
+        try:
+            priority = TaskPriority(request.priority)
+        except ValueError:
+            priority = TaskPriority.MEDIUM
+
+        try:
+            annotation_type = AnnotationType(request.annotation_type)
+        except ValueError:
+            annotation_type = AnnotationType.CUSTOM
+
+        # Create task model
+        task = TaskModel(
+            id=uuid4(),
+            name=request.name,
+            description=request.description,
+            status=TaskStatus.PENDING,
+            priority=priority,
+            annotation_type=annotation_type,
+            assignee_id=assignee_uuid,
+            created_by=current_user.username,
+            tenant_id=current_user.tenant_id,
+            project_id=f"project_{uuid4()}",
+            due_date=request.due_date,
+            total_items=request.total_items,
+            progress=0,
+            completed_items=0,
+            tags=request.tags or [],
+            task_metadata={"data_source": request.data_source.dict() if request.data_source else None},
+            label_studio_sync_status=LabelStudioSyncStatus.PENDING
+        )
+
+        # Save to database
+        db.add(task)
+        db.commit()
+        db.refresh(task)
+
+        logger.info(f"Task created: {task.id} by {current_user.username}")
+
         # Schedule background sync to Label Studio
-        background_tasks.add_task(_sync_task_to_label_studio, task_id, new_task)
-        logger.info(f"Scheduled Label Studio sync for task {task_id}")
-        
-        return task_to_response(new_task)
-        
+        background_tasks.add_task(
+            _sync_task_to_label_studio,
+            str(task.id),
+            db,
+            task.name,
+            annotation_type.value,
+            task.description
+        )
+        logger.info(f"Scheduled Label Studio sync for task {task.id}")
+
+        return task_model_to_response(task)
+
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error creating task: {e}")
+        db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create task"
@@ -394,24 +364,25 @@ def get_task_stats(
     current_user: SimpleUser = Depends(get_current_user),
     db: Session = Depends(get_db_session)
 ):
-    """Get task statistics."""
+    """Get task statistics from database."""
     try:
-        # Use mock data for stats
-        all_tasks = TaskAdapter.create_mock_tasks(50)
-        
-        total = len(all_tasks)
-        pending = len([t for t in all_tasks if t["status"] == "pending"])
-        in_progress = len([t for t in all_tasks if t["status"] == "in_progress"])
-        completed = len([t for t in all_tasks if t["status"] == "completed"])
-        cancelled = len([t for t in all_tasks if t["status"] == "cancelled"])
-        
-        # Count overdue tasks
+        # Base query with tenant filter
+        base_query = db.query(TaskModel).filter(TaskModel.tenant_id == current_user.tenant_id)
+
+        # Count tasks by status
+        total = base_query.count()
+        pending = base_query.filter(TaskModel.status == TaskStatus.PENDING).count()
+        in_progress = base_query.filter(TaskModel.status == TaskStatus.IN_PROGRESS).count()
+        completed = base_query.filter(TaskModel.status == TaskStatus.COMPLETED).count()
+        cancelled = base_query.filter(TaskModel.status == TaskStatus.CANCELLED).count()
+
+        # Count overdue tasks (due_date < now and status not completed/cancelled)
         now = datetime.utcnow()
-        overdue = len([
-            t for t in all_tasks 
-            if t["due_date"] and t["due_date"] < now and t["status"] != "completed"
-        ])
-        
+        overdue = base_query.filter(
+            TaskModel.due_date < now,
+            TaskModel.status.notin_([TaskStatus.COMPLETED, TaskStatus.CANCELLED])
+        ).count()
+
         return TaskStatsResponse(
             total=total,
             pending=pending,
@@ -420,7 +391,7 @@ def get_task_stats(
             cancelled=cancelled,
             overdue=overdue
         )
-        
+
     except Exception as e:
         logger.error(f"Error getting task stats: {e}")
         raise HTTPException(
@@ -435,9 +406,9 @@ def get_task(
     current_user: SimpleUser = Depends(get_current_user),
     db: Session = Depends(get_db_session)
 ):
-    """Get task by ID."""
-    task = get_task_or_404(task_id, db, current_user)
-    return task_to_response(task)
+    """Get task by ID from database."""
+    task = get_task_or_404(task_id, db, current_user.tenant_id)
+    return task_model_to_response(task)
 
 
 @router.patch("/{task_id}", response_model=TaskResponse)
@@ -447,23 +418,65 @@ def update_task(
     current_user: SimpleUser = Depends(get_current_user),
     db: Session = Depends(get_db_session)
 ):
-    """Update task."""
+    """Update task in database."""
     try:
-        task = get_task_or_404(task_id, db, current_user)
-        
-        # Update fields
+        task = get_task_or_404(task_id, db, current_user.tenant_id)
+
+        # Update fields from request
         update_data = request.dict(exclude_unset=True)
+
         for field, value in update_data.items():
-            task[field] = value
-        
-        task["updated_at"] = datetime.utcnow()
-        
+            if field == "status" and value:
+                try:
+                    task.status = TaskStatus(value)
+                except ValueError:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"Invalid status: {value}"
+                    )
+            elif field == "priority" and value:
+                try:
+                    task.priority = TaskPriority(value)
+                except ValueError:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"Invalid priority: {value}"
+                    )
+            elif field == "assignee_id":
+                if value:
+                    try:
+                        task.assignee_id = UUID(value)
+                    except ValueError:
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Invalid assignee ID format"
+                        )
+                else:
+                    task.assignee_id = None
+            elif field == "data_source":
+                if task.task_metadata is None:
+                    task.task_metadata = {}
+                task.task_metadata["data_source"] = value
+            elif hasattr(task, field):
+                setattr(task, field, value)
+
+        # Auto-calculate progress if completed_items changed
+        if "completed_items" in update_data and task.total_items > 0:
+            task.progress = int((task.completed_items / task.total_items) * 100)
+
+        # Commit changes
+        db.commit()
+        db.refresh(task)
+
         logger.info(f"Task updated: {task_id} by {current_user.username}")
-        
-        return task_to_response(task)
-        
+
+        return task_model_to_response(task)
+
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error updating task: {e}")
+        db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update task"
@@ -476,20 +489,23 @@ def delete_task(
     current_user: SimpleUser = Depends(get_current_user),
     db: Session = Depends(get_db_session)
 ):
-    """Delete task."""
+    """Delete task from database."""
     try:
-        task = get_task_or_404(task_id, db, current_user)
-        
-        # Remove from storage if it exists
-        if task_id in _tasks_storage:
-            del _tasks_storage[task_id]
-        
+        task = get_task_or_404(task_id, db, current_user.tenant_id)
+
+        # Delete from database
+        db.delete(task)
+        db.commit()
+
         logger.info(f"Task deleted: {task_id} by {current_user.username}")
-        
+
         return {"message": "Task deleted successfully"}
-        
+
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error deleting task: {e}")
+        db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete task"
@@ -502,17 +518,33 @@ def batch_delete_tasks(
     current_user: SimpleUser = Depends(get_current_user),
     db: Session = Depends(get_db_session)
 ):
-    """Delete multiple tasks."""
+    """Delete multiple tasks from database."""
     try:
-        # For mock implementation, just return success
-        deleted_count = len(task_ids)
-        
+        deleted_count = 0
+
+        for task_id in task_ids:
+            try:
+                task_uuid = UUID(task_id)
+                task = db.query(TaskModel).filter(
+                    TaskModel.id == task_uuid,
+                    TaskModel.tenant_id == current_user.tenant_id
+                ).first()
+
+                if task:
+                    db.delete(task)
+                    deleted_count += 1
+            except ValueError:
+                continue
+
+        db.commit()
+
         logger.info(f"Batch deleted {deleted_count} tasks by {current_user.username}")
-        
+
         return {"message": f"Successfully deleted {deleted_count} tasks"}
-        
+
     except Exception as e:
         logger.error(f"Error batch deleting tasks: {e}")
+        db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete tasks"
@@ -527,40 +559,39 @@ async def sync_task_to_label_studio(
 ):
     """
     Manually sync a task to Label Studio.
-    
+
     This endpoint can be used to:
     - Create a Label Studio project for a task that failed to sync
     - Re-sync a task after Label Studio configuration changes
     """
     try:
-        # Get task
-        task = get_task_or_404(task_id, db, current_user)
-        
+        task = get_task_or_404(task_id, db, current_user.tenant_id)
+
         # Check if already synced
-        if task.get("label_studio_project_id") and task.get("label_studio_sync_status") == "synced":
+        if task.label_studio_project_id and task.label_studio_sync_status == LabelStudioSyncStatus.SYNCED:
             return {
                 "message": "Task already synced to Label Studio",
-                "project_id": task["label_studio_project_id"],
+                "project_id": task.label_studio_project_id,
                 "sync_status": "synced"
             }
-        
+
         # Sync to Label Studio
         sync_result = await label_studio_sync_service.create_project_for_task(
             task_id=task_id,
-            task_name=task["name"],
-            task_description=task.get("description"),
-            annotation_type=task["annotation_type"]
+            task_name=task.name,
+            task_description=task.description,
+            annotation_type=task.annotation_type.value if hasattr(task.annotation_type, 'value') else str(task.annotation_type)
         )
-        
+
         # Update task with sync result
-        if task_id in _tasks_storage:
-            _tasks_storage[task_id].update({
-                "label_studio_project_id": sync_result.get("project_id"),
-                "label_studio_sync_status": sync_result["sync_status"],
-                "label_studio_last_sync": sync_result["synced_at"],
-                "label_studio_project_created_at": sync_result["synced_at"] if sync_result["success"] else None,
-            })
-        
+        task.label_studio_project_id = sync_result.get("project_id")
+        task.label_studio_sync_status = LabelStudioSyncStatus.SYNCED if sync_result["success"] else LabelStudioSyncStatus.FAILED
+        task.label_studio_last_sync = datetime.utcnow()
+        if sync_result["success"]:
+            task.label_studio_project_created_at = datetime.utcnow()
+
+        db.commit()
+
         if sync_result["success"]:
             return {
                 "message": "Task successfully synced to Label Studio",
@@ -574,7 +605,7 @@ async def sync_task_to_label_studio(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to sync task: {sync_result.get('error')}"
             )
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -591,7 +622,7 @@ async def test_label_studio_connection(
 ):
     """
     Test Label Studio connection and authentication.
-    
+
     This endpoint can be used to verify that:
     - Label Studio is accessible
     - Authentication credentials are valid
@@ -599,7 +630,7 @@ async def test_label_studio_connection(
     """
     try:
         result = await label_studio_sync_service.test_connection()
-        
+
         if result["connected"]:
             return {
                 "status": "success",
@@ -612,7 +643,7 @@ async def test_label_studio_connection(
                 "message": "Failed to connect to Label Studio",
                 "details": result
             }
-        
+
     except Exception as e:
         logger.error(f"Error testing Label Studio connection: {e}")
         return {

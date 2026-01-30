@@ -1,78 +1,23 @@
 """
 Task model extensions for comprehensive task management.
 
-Extends the existing TaskModel with additional fields needed for task management UI.
+This module provides backward compatibility by re-exporting enums from models.py
+and provides the TaskAdapter utility for mock data generation during testing.
+
+Note: The main TaskModel is now defined in src/database/models.py with all
+extended fields. This module is kept for backward compatibility.
 """
 
 from datetime import datetime
 from uuid import uuid4
-from sqlalchemy import String, Text, DateTime, Integer, ForeignKey, Enum as SQLEnum
-from sqlalchemy.dialects.postgresql import UUID, JSONB
-from sqlalchemy.orm import relationship, Mapped, mapped_column
-from sqlalchemy.sql import func
-import enum
 from typing import Optional, List
 
-from src.database.connection import Base
+# Re-export enums from models.py for backward compatibility
+from src.database.models import TaskPriority, AnnotationType, TaskStatus
 
 
-class TaskPriority(str, enum.Enum):
-    """Task priority enumeration."""
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
-    URGENT = "urgent"
-
-
-class AnnotationType(str, enum.Enum):
-    """Annotation type enumeration."""
-    TEXT_CLASSIFICATION = "text_classification"
-    NER = "ner"
-    SENTIMENT = "sentiment"
-    QA = "qa"
-    CUSTOM = "custom"
-
-
-class ExtendedTaskModel(Base):
-    """
-    Extended task model for comprehensive task management.
-    
-    This extends the basic TaskModel with additional fields needed for
-    task management, assignment, progress tracking, and UI display.
-    """
-    __tablename__ = "extended_tasks"
-    
-    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    name: Mapped[str] = mapped_column(String(255), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    annotation_type: Mapped[AnnotationType] = mapped_column(SQLEnum(AnnotationType), default=AnnotationType.CUSTOM)
-    priority: Mapped[TaskPriority] = mapped_column(SQLEnum(TaskPriority), default=TaskPriority.MEDIUM)
-    status: Mapped[str] = mapped_column(String(50), default="pending")  # pending, in_progress, completed, cancelled
-    
-    # Assignment and ownership
-    assignee_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
-    created_by: Mapped[str] = mapped_column(String(100), nullable=False)
-    tenant_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
-    
-    # Progress tracking
-    progress: Mapped[int] = mapped_column(Integer, default=0)  # 0-100
-    total_items: Mapped[int] = mapped_column(Integer, default=1)
-    completed_items: Mapped[int] = mapped_column(Integer, default=0)
-    
-    # Timestamps
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
-    due_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-    
-    # Label Studio integration
-    label_studio_project_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    
-    # Additional metadata
-    tags: Mapped[Optional[List[str]]] = mapped_column(JSONB, nullable=True)
-    task_metadata: Mapped[dict] = mapped_column(JSONB, default={})
-    
-    # Relationships
-    assignee: Mapped[Optional["UserModel"]] = relationship("UserModel", foreign_keys=[assignee_id])
+# NOTE: ExtendedTaskModel is deprecated. Use TaskModel from src.database.models instead.
+# The table "extended_tasks" is no longer used - all task data is in "tasks" table.
 
 
 # For backward compatibility, we'll use the existing TaskModel but add a view/adapter

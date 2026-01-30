@@ -21,7 +21,7 @@ Tables:
 
 3. workspace_projects
    - Links workspaces to Label Studio projects
-   - Stores metadata about the association
+   - Stores project_metadata about the association
 
 4. project_members
    - Project-level member assignments
@@ -109,7 +109,7 @@ def upgrade() -> None:
         sa.Column('workspace_id', postgresql.UUID(as_uuid=True), sa.ForeignKey('label_studio_workspaces.id', ondelete='CASCADE'), nullable=False),
         sa.Column('label_studio_project_id', sa.String(100), nullable=False),
         sa.Column('superinsight_project_id', postgresql.UUID(as_uuid=True), nullable=True),
-        sa.Column('metadata', postgresql.JSONB(), nullable=False, server_default='{}'),
+        sa.Column('project_metadata', postgresql.JSONB(), nullable=False, server_default='{}'),
         sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.func.now(), onupdate=sa.func.now(), nullable=False),
     )

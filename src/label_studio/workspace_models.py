@@ -288,7 +288,7 @@ class WorkspaceProjectModel(Base):
         workspace_id: FK to workspace (UUID)
         label_studio_project_id: Label Studio project ID (string)
         superinsight_project_id: Optional SuperInsight project ID (UUID)
-        metadata: Additional project metadata (JSONB)
+        project_metadata: Additional project metadata (JSONB)
         created_at: Creation timestamp
         updated_at: Last update timestamp
 
@@ -319,8 +319,8 @@ class WorkspaceProjectModel(Base):
         index=True
     )
 
-    # Additional metadata (JSONB)
-    metadata: Mapped[dict] = mapped_column(
+    # Additional metadata (JSONB) - renamed from 'metadata' to avoid SQLAlchemy reserved name
+    project_metadata: Mapped[dict] = mapped_column(
         JSONB,
         default={},
         nullable=False

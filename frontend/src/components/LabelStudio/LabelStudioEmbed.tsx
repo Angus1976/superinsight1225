@@ -147,15 +147,16 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
     // Use the fetched Label Studio URL or fall back to baseUrl
     const effectiveBaseUrl = labelStudioUrl || baseUrl;
     
-    // Build URL based on whether we have a specific task
+    // Build URL - Label Studio Community Edition uses /projects/{id}/ for the main interface
+    // The task parameter will make it open the specific task
     let url: string;
     if (taskId) {
-      // Direct link to specific task in labeling interface
-      // Format: /projects/{id}/data?task={task_id}
-      url = `${effectiveBaseUrl}/projects/${projectId}/data?task=${taskId}`;
+      // Direct link to specific task
+      // Format: /projects/{id}/?task={task_id}
+      url = `${effectiveBaseUrl}/projects/${projectId}/?task=${taskId}`;
     } else {
-      // Link to project's labeling interface (will show first available task)
-      url = `${effectiveBaseUrl}/projects/${projectId}/data`;
+      // Link to project (will show first available task)
+      url = `${effectiveBaseUrl}/projects/${projectId}/`;
     }
     
     // Append authentication and other parameters

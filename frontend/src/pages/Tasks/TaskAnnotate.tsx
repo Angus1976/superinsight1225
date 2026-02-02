@@ -724,18 +724,32 @@ const TaskAnnotatePage: React.FC = () => {
             {/* 主要标注区域 */}
             <Col span={fullscreen ? 24 : 18} style={{ height: '100%' }}>
               <div style={{ height: '100%', marginRight: fullscreen ? 0 : 8 }}>
-                <LabelStudioEmbed
-                  projectId={project.id.toString()}
-                  taskId={currentTask.id.toString()}
-                  token={token ?? undefined}
-                  onAnnotationCreate={handleAnnotationCreate}
-                  onAnnotationUpdate={handleAnnotationUpdate}
-                  onTaskComplete={() => {
-                    message.success(t('annotate.taskComplete'));
-                    handleNextTask();
-                  }}
-                  height="100%"
-                />
+                {currentTask ? (
+                  <LabelStudioEmbed
+                    projectId={project.id.toString()}
+                    taskId={currentTask.id.toString()}
+                    token={token ?? undefined}
+                    onAnnotationCreate={handleAnnotationCreate}
+                    onAnnotationUpdate={handleAnnotationUpdate}
+                    onTaskComplete={() => {
+                      message.success(t('annotate.taskComplete'));
+                      handleNextTask();
+                    }}
+                    height="100%"
+                  />
+                ) : (
+                  <Alert
+                    type="warning"
+                    message={t('annotate.noCurrentTask', '当前没有可用的标注任务')}
+                    description={
+                      <div>
+                        <p>项目 ID: {project.id}</p>
+                        <p>任务总数: {tasks.length}</p>
+                        <p>当前索引: {currentTaskIndex}</p>
+                      </div>
+                    }
+                  />
+                )}
               </div>
             </Col>
 

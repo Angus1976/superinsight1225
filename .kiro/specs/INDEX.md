@@ -107,8 +107,14 @@
 
 **Audit & Security** - 审计与安全
 - [需求文档](./audit-security/requirements.md) - 9个核心需求
-- [设计文档](./audit-security/design.md) - RBAC + SSO + 审计日志
+- [设计文档](./audit-security/design.md) - RBAC + SSO + 审计日志 + Label Studio JWT 集成
 - [任务文档](./audit-security/tasks.md) - 22个实施任务
+- [SSO 集成总结](./audit-security/SSO_INTEGRATION_SUMMARY.md) - SSO 与 JWT 认证集成状态 ✅
+
+**Label Studio JWT Authentication** - Label Studio JWT 认证 (已完成)
+- [需求文档](./label-studio-jwt-authentication/requirements.md) - 10个核心需求
+- [设计文档](./label-studio-jwt-authentication/design.md) - JWT 认证 + 自动刷新 + 向后兼容
+- [任务文档](./label-studio-jwt-authentication/tasks.md) - 19个实施任务 ✅ 全部完成
 
 **Data Permission Control** - 数据权限控制 (新增)
 - [需求文档](./data-permission-control/requirements.md) - 8个核心需求
@@ -148,21 +154,22 @@
 
 ### Phase 4 企业版升级模块统计
 
-| 模块 | 需求数 | 属性测试数 | 任务数 | 预估工时 |
-|------|--------|------------|--------|----------|
-| LLM Integration | 6 | 8 | 13 | 96h |
-| Text-to-SQL Methods | 7 | 8 | 15 | 112h |
-| Admin Configuration | 7 | 6 | 17 | 120h |
-| AI Annotation | 9 | 8 | 16 | 118h |
-| Data Sync Pipeline | 8 | 14 | 18 | 130h |
-| Multi-Tenant Workspace | 11 | 11 | 15 | 110h |
-| Collaboration Workflow | 13 | 11 | 20 | 140h |
-| Data Version & Lineage | 7 | 8 | 17 | 122h |
-| Quality Workflow | 8 | 7 | 19 | 128h |
-| Audit & Security | 9 | 8 | 22 | 180h |
-| Data Permission Control | 8 | 8 | 17 | 136h |
-| License Management | 9 | 8 | 16 | 128h |
-| **合计** | **102** | **105** | **205** | **1520h** |
+| 模块 | 需求数 | 属性测试数 | 任务数 | 预估工时 | 状态 |
+|------|--------|------------|--------|----------|------|
+| LLM Integration | 6 | 8 | 13 | 96h | 进行中 |
+| Text-to-SQL Methods | 7 | 8 | 15 | 112h | 进行中 |
+| Admin Configuration | 7 | 6 | 17 | 120h | 进行中 |
+| AI Annotation | 9 | 8 | 16 | 118h | 进行中 |
+| Data Sync Pipeline | 8 | 14 | 18 | 130h | 进行中 |
+| Multi-Tenant Workspace | 11 | 11 | 15 | 110h | 进行中 |
+| Collaboration Workflow | 13 | 11 | 20 | 140h | 进行中 |
+| Data Version & Lineage | 7 | 8 | 17 | 122h | 进行中 |
+| Quality Workflow | 8 | 7 | 19 | 128h | 进行中 |
+| Audit & Security | 9 | 8 | 22 | 180h | ✅ SSO 集成完成 |
+| Data Permission Control | 8 | 8 | 17 | 136h | 进行中 |
+| License Management | 9 | 8 | 16 | 128h | 进行中 |
+| Label Studio JWT Auth | 10 | 12 | 19 | 65h | ✅ 完成 |
+| **合计** | **112** | **117** | **224** | **1585h** | |
 
 ### 需求覆盖
 - **总需求数**: 162+ 个

@@ -1864,3 +1864,92 @@ class EncryptionError(SecurityError):
 4. **异步监控**: 安全监控使用异步处理
 5. **索引优化**: 为审计日志常用查询字段创建索引
 6. **日志归档**: 定期归档旧日志减少查询压力
+
+---
+
+## SSO 与 Label Studio JWT 认证集成
+
+### 集成概述
+
+SuperInsight 平台实现了两套认证系统的无缝集成：
+
+1. **企业 SSO 认证** - 支持 SAML 2.0、OAuth 2.0、OIDC、LDAP/AD
+2. **Label Studio JWT 认证** - 支持 Label Studio 1.22.0+ 的 JWT 认证
+
+### 集成架构
+
+```mermaid
+graph TB
+    subgraph "用户认证流程"
+        User[用户] --> SSO[SSO Provider]
+        User --> Local[本地登录]
+    end
+    
+    subgraph "SuperInsight 认证层"
+        SSO --> SSOProvider[SSO Provider Service]
+        Local --> AuthService[Auth Service]
+        SSOProvider --> SessionMgr[Session Manager]
+        AuthService --> SessionMgr
+    end
+    
+    subgraph "Label Studio 集成"
+        SessionMgr --> JWTAuth[JWT Auth Manager]
+        JWTAuth --> LSIntegration[Label Studio Integration]
+        LSIntegration --> LabelStudio[Label Studio API]
+    end
+    
+    style JWTAuth fill:#e1f5ff
+    style SSOProvider fill:#fff4e1
+```
+
+### Label Studio JWT 认证实现
+
+**文件**: `src/label_studio/jwt_auth.py`
+
+已实现的核心功能：
+
+1. **JWTAuthManager** - JWT 令牌管理
+   - 用户名/密码认证 (`/api/sessions/`)
+   - 自动令牌刷新 (`/api/sessions/refresh/`)
+   - 令牌过期检测
+   - 线程安全的令牌管理 (`asyncio.Lock()`)
+
+2. **认证方法自动选择**
+   - JWT 认证优先（如果配置了用户名/密码）
+   - 回退到 API Token 认证（向后兼容）
+
+3. **错误处理**
+   - 认证错误不重试（401/403）
+   - 网络错误指数退避重试
+   - 令牌过期自动刷新
+
+### 配置示例
+
+```bash
+# .env 文件配置
+
+# Label Studio JWT 认证 (推荐)
+LABEL_STUDIO_USERNAME=admin
+LABEL_STUDIO_PASSWORD=your_password
+
+# Label Studio API Token 认证 (向后兼容)
+LABEL_STUDIO_API_TOKEN=your_token
+
+# Label Studio URL
+LABEL_STUDIO_URL=http://label-studio:8080
+```
+
+### 测试覆盖
+
+| 测试类型 | 文件 | 测试数 | 状态 |
+|---------|------|--------|------|
+| 单元测试 | `tests/test_label_studio_jwt_auth.py` | 90+ | ✅ 通过 |
+| 集成测试 | `tests/test_label_studio_integration_unit.py` | 60+ | ✅ 通过 |
+| SSO 单元测试 | `tests/unit/test_sso_provider.py` | 24 | ✅ 通过 |
+| SSO 集成测试 | `tests/integration/test_sso_integration.py` | 10 | ⚠️ 部分需要 DB |
+
+### 相关规范文档
+
+- [Label Studio JWT 认证需求](../label-studio-jwt-authentication/requirements.md)
+- [Label Studio JWT 认证设计](../label-studio-jwt-authentication/design.md)
+- [Label Studio JWT 认证任务](../label-studio-jwt-authentication/tasks.md)

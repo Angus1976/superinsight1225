@@ -55,6 +55,19 @@
 5. WHEN SSO 登录成功 THEN THE SSO_Provider SHALL 自动创建或更新用户
 6. THE SSO_Provider SHALL 支持 SSO 登出（单点登出）
 
+### Requirement 3.1: Label Studio JWT 认证集成
+
+**User Story:** 作为系统管理员，我希望 SuperInsight 与 Label Studio 1.22.0+ 无缝集成，使用 JWT 认证。
+
+#### Acceptance Criteria
+
+1. THE JWT_Auth_Manager SHALL 支持用户名/密码认证 (`/api/sessions/`)
+2. THE JWT_Auth_Manager SHALL 自动刷新过期的访问令牌
+3. THE JWT_Auth_Manager SHALL 在刷新令牌过期时自动重新认证
+4. THE JWT_Auth_Manager SHALL 支持向后兼容 API Token 认证
+5. WHEN JWT 认证配置时 THEN 所有 Label Studio API 调用 SHALL 使用 Bearer 令牌
+6. THE JWT_Auth_Manager SHALL 使用 asyncio.Lock() 确保线程安全
+
 ### Requirement 4: 完整审计日志
 
 **User Story:** 作为合规管理员，我希望记录所有操作的审计日志，以便满足合规审计要求。

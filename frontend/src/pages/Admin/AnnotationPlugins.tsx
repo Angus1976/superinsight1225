@@ -686,7 +686,7 @@ const AnnotationPluginsPage: React.FC = () => {
                 percent={selectedPluginStats.successRate}
                 status={selectedPluginStats.successRate >= 95 ? 'success' : 
                         selectedPluginStats.successRate >= 80 ? 'normal' : 'exception'}
-                strokeWidth={12}
+                size={[null, 12]}
               />
             </div>
           </div>

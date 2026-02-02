@@ -252,7 +252,7 @@ const TaskDetailPage: React.FC = () => {
                 <Progress
                   percent={currentTask.progress}
                   status={currentTask.status === 'completed' ? 'success' : 'active'}
-                  strokeWidth={12}
+                  size={[null, 12]}
                 />
               </div>
             </Card>

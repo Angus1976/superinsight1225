@@ -335,7 +335,7 @@ export const LSWorkspaceSelector: React.FC<LSWorkspaceSelectorProps> = ({
         open={createModalVisible}
         onCancel={handleCloseCreateModal}
         footer={null}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={form} layout="vertical" onFinish={handleCreateWorkspace} autoComplete="off">
           <Form.Item

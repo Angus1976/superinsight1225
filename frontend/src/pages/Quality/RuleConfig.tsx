@@ -265,7 +265,7 @@ const RuleConfig: React.FC<RuleConfigProps> = ({ projectId }) => {
         onOk={handleSave}
         onCancel={() => setModalVisible(false)}
         width={700}
-        destroyOnClose
+        destroyOnHidden
       >
         <Form form={form} layout="vertical">
           <Form.Item name="name" label={t('rules.name')} rules={[{ required: true, message: t('rules.inputRuleName') }]}>

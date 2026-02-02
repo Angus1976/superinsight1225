@@ -275,7 +275,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
       <>
         {/* Step 0: Basic Info */}
         <div style={{ display: currentStep === 0 ? 'block' : 'none' }}>
-          <Card title={t('basicInfo')} bordered={false}>
+          <Card title={t('basicInfo')} variant="borderless">
             <Form.Item
               name="name"
               label={t('taskName')}
@@ -340,7 +340,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
 
         {/* Step 1: Data Source */}
         <div style={{ display: currentStep === 1 ? 'block' : 'none' }}>
-          <Card title={t('dataSource')} bordered={false}>
+          <Card title={t('dataSource')} variant="borderless">
             <Form.Item
               name="data_source_type"
               label={t('dataSourceType')}
@@ -408,7 +408,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
 
         {/* Step 2: Annotation Config */}
         <div style={{ display: currentStep === 2 ? 'block' : 'none' }}>
-          <Card title={t('annotationConfig')} bordered={false}>
+          <Card title={t('annotationConfig')} variant="borderless">
             <Form.Item
               name="annotation_type"
               label={t('annotationType')}
@@ -479,7 +479,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
 
         {/* Step 3: Assignment Config */}
         <div style={{ display: currentStep === 3 ? 'block' : 'none' }}>
-          <Card title={t('assignmentConfig')} bordered={false}>
+          <Card title={t('assignmentConfig')} variant="borderless">
             <Form.Item
               name="assignee_id"
               label={t('assignTo')}
@@ -545,7 +545,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
       open={open}
       onCancel={onCancel}
       width={800}
-      destroyOnClose
+      destroyOnHidden
       footer={[
         <Button key="cancel" onClick={onCancel}>
           {t('cancel')}

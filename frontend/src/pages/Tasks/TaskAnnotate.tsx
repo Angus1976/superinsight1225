@@ -805,7 +805,7 @@ const TaskAnnotatePage: React.FC = () => {
                       <Progress
                         percent={progress}
                         status={progress === 100 ? 'success' : 'active'}
-                        strokeWidth={8}
+                        size={[null, 8]}
                       />
                     </div>
                     

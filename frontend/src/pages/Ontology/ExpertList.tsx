@@ -407,7 +407,7 @@ const ExpertList: React.FC<ExpertListProps> = ({ onSelectExpert }) => {
         }}
         footer={null}
         width={700}
-        destroyOnClose
+        destroyOnHidden
       >
         <ExpertProfileForm
           expert={selectedExpert}
@@ -429,7 +429,7 @@ const ExpertList: React.FC<ExpertListProps> = ({ onSelectExpert }) => {
         }}
         footer={null}
         width={600}
-        destroyOnClose
+        destroyOnHidden
       >
         {selectedExpert && <ExpertMetrics expertId={selectedExpert.id} />}
       </Modal>

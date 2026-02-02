@@ -501,6 +501,19 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
             type="primary"
             size="small"
             onClick={() => {
+              // Open Label Studio in new tab - recommended approach
+              const lsUrl = `http://localhost:8080/projects/${projectId}/data`;
+              window.open(lsUrl, '_blank');
+              message.success('已在新标签页中打开 Label Studio，请在那里进行标注');
+            }}
+            title="在新标签页中打开 Label Studio（推荐）"
+          >
+            新标签页打开
+          </Button>
+          <Button
+            type="default"
+            size="small"
+            onClick={() => {
               // Use direct Label Studio URL (port 8080), not the proxy
               const loginUrl = 'http://localhost:8080/user/login/';
               window.open(loginUrl, '_blank', 'width=800,height=600');
@@ -563,7 +576,7 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
         </div>
       )}
 
-      {/* Enhanced error alert */}
+      {/* Enhanced error alert with open in new tab option */}
       {error && (
         <Alert
           type="error"
@@ -580,30 +593,43 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
                 <li>{t('labelStudio.solution3', '确认项目 ID 和任务 ID 是否正确')}</li>
                 <li>{t('labelStudio.solution4', '检查认证令牌是否有效')}</li>
                 <li>
-                  <strong>如果看到登录页面或 404 错误</strong>：请先
+                  <strong>推荐方案</strong>：
                   <Button 
                     type="link" 
                     size="small"
                     onClick={() => {
-                      // Use direct Label Studio URL (port 8080), not the proxy
-                      const loginUrl = 'http://localhost:8080/user/login/';
-                      window.open(loginUrl, '_blank', 'width=800,height=600');
-                      message.info('请在新窗口中登录 Label Studio（用户名: admin@example.com, 密码: admin），然后关闭窗口并点击重新加载');
+                      // Open Label Studio in new tab
+                      const lsUrl = `http://localhost:8080/projects/${projectId}/data`;
+                      window.open(lsUrl, '_blank');
+                      message.success('已在新标签页中打开 Label Studio，请在那里进行标注');
                     }}
                     style={{ padding: 0, height: 'auto' }}
                   >
-                    在新窗口中登录 Label Studio
+                    在新标签页中打开 Label Studio
                   </Button>
-                  ，然后点击重新加载
+                  （推荐使用原生界面进行标注）
                 </li>
               </ul>
             </div>
           }
           showIcon
           action={
-            <Button size="small" onClick={handleReload}>
-              {t('common.retry', '重试')}
-            </Button>
+            <Space>
+              <Button 
+                type="primary"
+                size="small" 
+                onClick={() => {
+                  const lsUrl = `http://localhost:8080/projects/${projectId}/data`;
+                  window.open(lsUrl, '_blank');
+                  message.success('已在新标签页中打开 Label Studio');
+                }}
+              >
+                新标签页打开
+              </Button>
+              <Button size="small" onClick={handleReload}>
+                {t('common.retry', '重试')}
+              </Button>
+            </Space>
           }
           style={{ margin: 16 }}
         />

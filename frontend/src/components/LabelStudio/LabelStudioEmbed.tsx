@@ -165,6 +165,8 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
     if (taskId) {
       // Direct link to specific task annotation interface
       // Format: /projects/{id}/data?task={task_id}
+      // Note: Label Studio Community Edition requires session-based auth
+      // The token parameter won't work for iframe access
       url = `${effectiveBaseUrl}/projects/${projectId}/data?task=${taskId}`;
       console.log('[LabelStudioEmbed] Building URL with taskId:', taskId);
     } else {
@@ -187,6 +189,8 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
       taskId,
       params: additionalParams,
     });
+    console.log('[LabelStudioEmbed] ⚠️ Note: Label Studio Community Edition requires session-based authentication.');
+    console.log('[LabelStudioEmbed] ⚠️ If you see a login page, please login to Label Studio first at:', `${effectiveBaseUrl}/user/login`);
     return url;
   }, [baseUrl, projectId, taskId, token, ssoToken, language, workspaceId, labelStudioUrl]);
 
@@ -486,6 +490,18 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
             title={`${t('common.language', '语言')}: ${language === 'zh' ? '中文' : 'English'}`}
           />
           <Button
+            type="primary"
+            size="small"
+            onClick={() => {
+              const loginUrl = `${labelStudioUrl || baseUrl}/user/login/`;
+              window.open(loginUrl, '_blank', 'width=800,height=600');
+              message.info('请在新窗口中登录 Label Studio（用户名: admin@example.com, 密码: admin），然后关闭窗口并点击重新加载');
+            }}
+            title="在新窗口中登录 Label Studio"
+          >
+            登录 LS
+          </Button>
+          <Button
             type="text"
             icon={<SyncOutlined spin={connectionStatus === 'connecting'} />}
             onClick={() => sendMessageToIframe('sync:request')}
@@ -554,6 +570,22 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
                 <li>{t('labelStudio.solution2', '验证网络连接是否正常')}</li>
                 <li>{t('labelStudio.solution3', '确认项目 ID 和任务 ID 是否正确')}</li>
                 <li>{t('labelStudio.solution4', '检查认证令牌是否有效')}</li>
+                <li>
+                  <strong>如果看到登录页面或 404 错误</strong>：请先
+                  <Button 
+                    type="link" 
+                    size="small"
+                    onClick={() => {
+                      const loginUrl = `${labelStudioUrl || baseUrl}/user/login/`;
+                      window.open(loginUrl, '_blank', 'width=800,height=600');
+                      message.info('请在新窗口中登录 Label Studio（用户名: admin@example.com, 密码: admin），然后关闭窗口并点击重新加载');
+                    }}
+                    style={{ padding: 0, height: 'auto' }}
+                  >
+                    在新窗口中登录 Label Studio
+                  </Button>
+                  ，然后点击重新加载
+                </li>
               </ul>
             </div>
           }

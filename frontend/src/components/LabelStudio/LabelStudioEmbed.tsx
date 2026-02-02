@@ -493,7 +493,8 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
             type="primary"
             size="small"
             onClick={() => {
-              const loginUrl = `${labelStudioUrl || baseUrl}/user/login/`;
+              // Use direct Label Studio URL (port 8080), not the proxy
+              const loginUrl = 'http://localhost:8080/user/login/';
               window.open(loginUrl, '_blank', 'width=800,height=600');
               message.info('请在新窗口中登录 Label Studio（用户名: admin@example.com, 密码: admin），然后关闭窗口并点击重新加载');
             }}
@@ -576,7 +577,8 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
                     type="link" 
                     size="small"
                     onClick={() => {
-                      const loginUrl = `${labelStudioUrl || baseUrl}/user/login/`;
+                      // Use direct Label Studio URL (port 8080), not the proxy
+                      const loginUrl = 'http://localhost:8080/user/login/';
                       window.open(loginUrl, '_blank', 'width=800,height=600');
                       message.info('请在新窗口中登录 Label Studio（用户名: admin@example.com, 密码: admin），然后关闭窗口并点击重新加载');
                     }}

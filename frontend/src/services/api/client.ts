@@ -110,14 +110,22 @@ apiClient.interceptors.response.use(
           return apiClient(originalRequest);
         } catch {
           // Refresh failed, clear tokens and redirect to login
+          console.error('[API Client] Token refresh failed, redirecting to login');
           clearAuthTokens();
-          window.location.href = '/login';
+          // Only redirect if not already on login page
+          if (!window.location.pathname.includes('/login')) {
+            window.location.href = '/login';
+          }
           return Promise.reject(error);
         }
       } else {
-        // No refresh token, redirect to login
+        // No refresh token, clear tokens and redirect to login
+        console.error('[API Client] No refresh token available, redirecting to login');
         clearAuthTokens();
-        window.location.href = '/login';
+        // Only redirect if not already on login page
+        if (!window.location.pathname.includes('/login')) {
+          window.location.href = '/login';
+        }
         return Promise.reject(error);
       }
     }

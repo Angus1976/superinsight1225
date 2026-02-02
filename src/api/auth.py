@@ -3,6 +3,7 @@ Authentication API endpoints for SuperInsight Platform.
 """
 
 import logging
+import os
 from datetime import datetime
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -16,8 +17,11 @@ from src.security.models import UserModel, UserRole, AuditAction
 
 logger = logging.getLogger(__name__)
 
-# Initialize security controller
-security_controller = SecurityController(secret_key="test-secret-key-for-local-development-only")
+# Get secret key from environment variable with fallback
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-in-production")
+
+# Initialize security controller with consistent secret key
+security_controller = SecurityController(secret_key=JWT_SECRET_KEY)
 
 # Security scheme
 security = HTTPBearer()

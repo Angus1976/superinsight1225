@@ -4,6 +4,7 @@ Security middleware for SuperInsight Platform.
 Provides authentication and authorization middleware for FastAPI applications.
 """
 
+import os
 from functools import wraps
 from typing import Optional, Callable, List
 from fastapi import HTTPException, Request, Depends, status
@@ -14,16 +15,18 @@ from src.security.controller import SecurityController
 from src.security.models import UserModel, PermissionType, AuditAction
 from src.database.connection import get_db_session
 
+# Get secret key from environment variable with fallback
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-in-production")
 
 security_scheme = HTTPBearer()
-security_controller = SecurityController()
+security_controller = SecurityController(secret_key=JWT_SECRET_KEY)
 
 
 class SecurityMiddleware:
     """Security middleware for request authentication and authorization."""
     
     def __init__(self):
-        self.security_controller = SecurityController()
+        self.security_controller = SecurityController(secret_key=JWT_SECRET_KEY)
     
     async def authenticate_request(
         self,

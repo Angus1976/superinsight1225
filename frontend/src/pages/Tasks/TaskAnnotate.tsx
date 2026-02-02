@@ -112,9 +112,15 @@ const TaskAnnotatePage: React.FC = () => {
   const { data: taskDetail } = useTask(id || '');
   const updateTask = useUpdateTask();
 
+  // Track if initial fetch has been done to prevent loops
+  const [initialFetchDone, setInitialFetchDone] = useState(false);
+
   // 获取项目和任务数据 - Enhanced with better error handling
   const fetchData = useCallback(async () => {
     if (!id || !token) return;
+    
+    // Prevent re-fetching if already done (avoid infinite loop)
+    if (initialFetchDone) return;
 
     try {
       setLoading(true);
@@ -166,7 +172,7 @@ const TaskAnnotatePage: React.FC = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      const tasksList = tasksResponse.data.results || [];
+      const tasksList = tasksResponse.data.tasks || tasksResponse.data.results || [];
       
       // If no tasks, try to import them
       if (tasksList.length === 0 && id) {
@@ -180,7 +186,7 @@ const TaskAnnotatePage: React.FC = () => {
             headers: { Authorization: `Bearer ${token}` }
           });
           
-          const importedTasks = refetchResponse.data.results || [];
+          const importedTasks = refetchResponse.data.tasks || refetchResponse.data.results || [];
           setTasks(importedTasks);
           message.success({ content: t('annotate.tasksImportedSuccess'), key: 'task-import' });
           
@@ -258,8 +264,9 @@ const TaskAnnotatePage: React.FC = () => {
       }
     } finally {
       setLoading(false);
+      setInitialFetchDone(true);
     }
-  }, [id, token, taskDetail, updateTask, t]);
+  }, [id, token, taskDetail, updateTask, t, initialFetchDone]);
 
   useEffect(() => {
     fetchData();

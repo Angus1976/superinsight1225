@@ -1115,7 +1115,11 @@ class LabelStudioIntegration:
         
         if response.status_code == 200:
             project_data = response.json()
-            return LabelStudioProject(**project_data)
+            # Filter to only include fields that LabelStudioProject dataclass accepts
+            from dataclasses import fields as dataclass_fields
+            valid_fields = {f.name for f in dataclass_fields(LabelStudioProject)}
+            filtered_data = {k: v for k, v in project_data.items() if k in valid_fields}
+            return LabelStudioProject(**filtered_data)
         else:
             logger.error(f"Failed to get project info: {response.status_code}")
             return None

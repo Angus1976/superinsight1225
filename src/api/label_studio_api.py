@@ -41,7 +41,7 @@ from src.label_studio.metadata_codec import (
     has_metadata,
     decode_metadata,
 )
-from uuid import UUID
+from uuid import UUID, uuid4
 
 logger = logging.getLogger(__name__)
 
@@ -84,6 +84,7 @@ class LabelStudioTask(BaseModel):
     predictions: List[Dict[str, Any]] = []
     created_at: str
     updated_at: str
+    is_labeled: bool = False
     
     class Config:
         from_attributes = True
@@ -146,6 +147,35 @@ class EnsureProjectResponse(BaseModel):
                 "status": "ready",
                 "task_count": 100,
                 "message": "Project created successfully"
+            }
+        }
+
+
+# SSO Authentication Models
+class SSOTokenRequest(BaseModel):
+    """Request for SSO token generation."""
+    email: str = Field(..., description="User email for SSO authentication")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "email": "user@example.com"
+            }
+        }
+
+
+class SSOTokenResponse(BaseModel):
+    """Response containing SSO token for Label Studio authentication."""
+    token: str = Field(..., description="JWT token for Label Studio SSO")
+    expires_in: int = Field(default=600, description="Token expiry in seconds")
+    label_studio_url: str = Field(..., description="Label Studio base URL")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                "expires_in": 600,
+                "label_studio_url": "http://localhost:8080"
             }
         }
 
@@ -440,7 +470,7 @@ def list_projects(
 
 
 @router.get("/projects/{project_id}", response_model=LabelStudioProject)
-def get_project(
+async def get_project(
     project_id: int,
     current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db_session)
@@ -454,7 +484,8 @@ def get_project(
     """
     try:
         ls = get_label_studio()
-        project_data = ls.get_project(project_id)
+        # Use get_project_info (async method)
+        project_data = await ls.get_project_info(str(project_id))
 
         if not project_data:
             raise HTTPException(
@@ -465,7 +496,8 @@ def get_project(
         # Get user ID
         user_id = current_user.id
 
-        description = project_data.get('description')
+        # Convert LabelStudioProject to dict for compatibility
+        description = project_data.description if hasattr(project_data, 'description') else None
 
         # Extract workspace info from metadata
         workspace_info = _extract_workspace_info(description, db, user_id)
@@ -474,13 +506,13 @@ def get_project(
         clean_description = _get_clean_description(description)
 
         return LabelStudioProject(
-            id=project_data.get('id'),
-            title=project_data.get('title', 'Untitled Project'),
+            id=project_data.id,
+            title=project_data.title if hasattr(project_data, 'title') else 'Untitled Project',
             description=clean_description,
-            created_at=project_data.get('created_at', ''),
-            updated_at=project_data.get('updated_at', ''),
-            task_count=project_data.get('task_number', 0),
-            annotation_count=project_data.get('num_tasks_with_annotations', 0),
+            created_at=str(project_data.created_at) if hasattr(project_data, 'created_at') else '',
+            updated_at=str(project_data.updated_at) if hasattr(project_data, 'updated_at') else '',
+            task_count=project_data.task_number if hasattr(project_data, 'task_number') else 0,
+            annotation_count=project_data.num_tasks_with_annotations if hasattr(project_data, 'num_tasks_with_annotations') else 0,
             workspace=workspace_info
         )
 
@@ -495,7 +527,7 @@ def get_project(
 
 
 @router.get("/projects/{project_id}/tasks", response_model=LabelStudioTaskList)
-def list_project_tasks(
+async def list_project_tasks(
     project_id: int,
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(10, ge=1, le=100, description="Page size"),
@@ -506,19 +538,34 @@ def list_project_tasks(
     try:
         ls = get_label_studio()
         
-        # Get tasks from Label Studio
-        tasks_data = ls.get_project_tasks(project_id)
+        # Get tasks directly from Label Studio API
+        import httpx
+        headers = await ls._get_headers()
+        
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(
+                f"{ls.base_url}/api/projects/{project_id}/tasks",
+                headers=headers
+            )
+            
+            if response.status_code != 200:
+                logger.error(f"Failed to get tasks: {response.status_code} - {response.text}")
+                return LabelStudioTaskList(tasks=[], total=0)
+            
+            tasks_data = response.json()
         
         # Convert to response format
         tasks = []
         for task in tasks_data:
+            annotations = task.get('annotations', [])
             tasks.append(LabelStudioTask(
                 id=task.get('id'),
                 data=task.get('data', {}),
-                annotations=task.get('annotations', []),
+                annotations=annotations,
                 predictions=task.get('predictions', []),
                 created_at=task.get('created_at', ''),
-                updated_at=task.get('updated_at', '')
+                updated_at=task.get('updated_at', ''),
+                is_labeled=task.get('is_labeled', len(annotations) > 0)
             ))
         
         # Apply pagination
@@ -825,49 +872,66 @@ async def import_tasks_to_project(
                 }
             )
         
-        # Step 3: Convert TaskModel to Task object for import_tasks method
-        # The import_tasks method expects Task objects from src/models/task.py
-        task = Task(
-            task_id=task_model.id,
-            project_id=UUID(project_id) if project_id.isdigit() is False else UUID(int=int(project_id)),
-            tenant_id=UUID(task_model.tenant_id) if task_model.tenant_id else UUID(int=0),
-            title=f"Task {task_model.id}",
-            description=None,
-            assigned_to=None,
-            status=task_model.status.value if hasattr(task_model.status, 'value') else str(task_model.status),
-            metadata={
-                "document_id": str(task_model.document_id),
-                "annotations": task_model.annotations or [],
-                "ai_predictions": task_model.ai_predictions or [],
-                "quality_score": task_model.quality_score
+        # Step 3: Get document content for the task
+        document_content = None
+        if task_model.document_id:
+            doc_model = db.query(DocumentModel).filter(DocumentModel.id == task_model.document_id).first()
+            if doc_model:
+                document_content = doc_model.content
+        
+        # If no document content, use task name as placeholder
+        if not document_content:
+            document_content = task_model.name or f"Task {task_model.id}"
+        
+        # Step 4: Prepare Label Studio task format
+        ls_task = {
+            "data": {
+                "text": document_content,
+                "task_id": str(task_model.id),
+                "document_id": str(task_model.document_id) if task_model.document_id else None
+            },
+            "meta": {
+                "superinsight_task_id": str(task_model.id),
+                "created_at": task_model.created_at.isoformat() if task_model.created_at else None
             }
-        )
+        }
         
-        # Add document_id attribute for import_tasks method
-        task.document_id = task_model.document_id
-        task.id = task_model.id
-        task.annotations = task_model.annotations or []
-        task.ai_predictions = task_model.ai_predictions or []
+        # Step 5: Import task directly to Label Studio
+        import httpx
+        headers = await ls._get_headers()
         
-        # Step 4: Call import_tasks from integration service
-        import_result = await ls.import_tasks(project_id, [task])
-        
-        # Step 5: Update task with Label Studio project ID
-        task_model.project_id = project_id
-        db.commit()
-        
-        logger.info(
-            f"Imported task {request.task_id} to Label Studio project {project_id}: "
-            f"imported={import_result.imported_count}, failed={import_result.failed_count}"
-        )
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(
+                f"{ls.base_url}/api/projects/{project_id}/import",
+                headers=headers,
+                json=[ls_task]
+            )
+            
+            if response.status_code == 201:
+                result = response.json()
+                imported_count = 1
+                # Label Studio import returns stats, not task list
+                task_ids = []
+                logger.info(f"Imported task {request.task_id} to Label Studio project {project_id}: {result}")
+            else:
+                error_msg = f"Failed to import: {response.status_code} - {response.text}"
+                logger.error(error_msg)
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail={
+                        "error": "import_failed",
+                        "message": "Failed to import tasks to Label Studio",
+                        "details": error_msg
+                    }
+                )
         
         return ImportTasksResponse(
-            success=import_result.success,
-            imported_count=import_result.imported_count,
-            failed_count=import_result.failed_count,
-            errors=import_result.errors,
+            success=True,
+            imported_count=imported_count,
+            failed_count=0,
+            errors=[],
             project_id=project_id,
-            task_ids=[]  # Label Studio doesn't return task IDs in import response
+            task_ids=task_ids
         )
         
     except HTTPException:
@@ -996,3 +1060,193 @@ async def get_authenticated_url(
                 "details": str(e)
             }
         )
+
+
+# =============================================================================
+# SSO Authentication Endpoints
+# =============================================================================
+
+@router.post("/auth/sso-token", response_model=SSOTokenResponse)
+async def get_sso_token(
+    request: SSOTokenRequest = Body(...),
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db_session)
+):
+    """
+    Generate SSO token for Label Studio authentication.
+    
+    This endpoint generates a JWT token that can be used to authenticate
+    users in Label Studio without requiring separate login.
+    
+    The token is generated by calling Label Studio's SSO API endpoint.
+    
+    POST /api/label-studio/auth/sso-token
+    Body: { "email": "user@example.com" }
+    
+    Returns:
+        {
+            "token": "eyJhbGc...",
+            "expires_in": 600,
+            "label_studio_url": "http://localhost:8080"
+        }
+    """
+    import httpx
+    import os
+    
+    try:
+        ls = get_label_studio()
+        ls_url = ls.base_url
+        
+        # Get Label Studio API token from environment
+        ls_api_token = os.environ.get('LABEL_STUDIO_API_TOKEN')
+        if not ls_api_token:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Label Studio API token not configured"
+            )
+        
+        # Use the current user's email or the requested email
+        user_email = request.email or current_user.email
+        
+        # Call Label Studio SSO token endpoint
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                f"{ls_url}/api/sso/token",
+                json={"email": user_email},
+                headers={
+                    "Authorization": f"Token {ls_api_token}",
+                    "Content-Type": "application/json"
+                }
+            )
+            
+            if response.status_code == 200:
+                token_data = response.json()
+                return SSOTokenResponse(
+                    token=token_data.get("token", ""),
+                    expires_in=token_data.get("expires_in", 600),
+                    label_studio_url=ls_url
+                )
+            elif response.status_code == 404:
+                # SSO endpoint not available - Label Studio SSO not configured
+                # Fall back to generating a simple redirect URL
+                logger.warning("Label Studio SSO endpoint not available, SSO not configured")
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail={
+                        "error": "sso_not_configured",
+                        "message": "Label Studio SSO is not configured. Please configure label-studio-sso package.",
+                        "fallback_url": f"{ls_url}/user/login/"
+                    }
+                )
+            else:
+                logger.error(f"Failed to get SSO token: {response.status_code} - {response.text}")
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Failed to get SSO token from Label Studio: {response.text}"
+                )
+                
+    except httpx.RequestError as e:
+        logger.error(f"Network error getting SSO token: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Cannot connect to Label Studio service"
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error getting SSO token: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+
+@router.get("/auth/login-url")
+async def get_login_url(
+    project_id: Optional[int] = Query(None, description="Project ID to redirect to after login"),
+    task_id: Optional[int] = Query(None, description="Task ID to redirect to after login"),
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db_session)
+):
+    """
+    Get Label Studio login URL with optional redirect.
+    
+    This endpoint returns a URL that can be used to open Label Studio
+    in a new window. If SSO is configured, it will include the SSO token.
+    
+    GET /api/label-studio/auth/login-url?project_id=18&task_id=42
+    
+    Returns:
+        {
+            "url": "http://localhost:8080/projects/18/data?token=...",
+            "sso_enabled": true
+        }
+    """
+    import httpx
+    import os
+    
+    try:
+        ls = get_label_studio()
+        ls_url = ls.base_url
+        
+        # Build base URL
+        if project_id and task_id:
+            base_path = f"/projects/{project_id}/data?task={task_id}"
+        elif project_id:
+            base_path = f"/projects/{project_id}/data"
+        else:
+            base_path = "/"
+        
+        # Try to get SSO token
+        ls_api_token = os.environ.get('LABEL_STUDIO_API_TOKEN')
+        sso_enabled = False
+        sso_token = None
+        
+        if ls_api_token:
+            try:
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    # Request SSO token (Label Studio will auto-create user if needed)
+                    response = await client.post(
+                        f"{ls_url}/api/sso/token",
+                        json={
+                            "email": current_user.email,
+                            "username": current_user.username or current_user.email.split("@")[0],
+                            "first_name": current_user.full_name.split()[0] if current_user.full_name else "",
+                            "last_name": " ".join(current_user.full_name.split()[1:]) if current_user.full_name and len(current_user.full_name.split()) > 1 else "",
+                        },
+                        headers={
+                            "Authorization": f"Token {ls_api_token}",
+                            "Content-Type": "application/json"
+                        }
+                    )
+                    
+                    if response.status_code == 200:
+                        token_data = response.json()
+                        sso_token = token_data.get("token")
+                        sso_enabled = True
+                    else:
+                        logger.warning(f"SSO token request failed: {response.status_code} - {response.text}")
+            except Exception as e:
+                logger.warning(f"SSO token request failed: {e}")
+        
+        # Build final URL
+        if sso_token:
+            separator = "&" if "?" in base_path else "?"
+            url = f"{ls_url}{base_path}{separator}token={sso_token}"
+        else:
+            url = f"{ls_url}{base_path}"
+        
+        return {
+            "url": url,
+            "sso_enabled": sso_enabled,
+            "label_studio_url": ls_url
+        }
+        
+    except Exception as e:
+        logger.error(f"Error generating login URL: {e}")
+        ls_url = os.environ.get('LABEL_STUDIO_URL', 'http://localhost:8080')
+        return {
+            "url": f"{ls_url}/",
+            "sso_enabled": False,
+            "label_studio_url": ls_url
+        }

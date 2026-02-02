@@ -1,10 +1,11 @@
-// Label Studio iframe embed component with language synchronization and workspace context
+// Label Studio iframe embed component with SSO authentication and language synchronization
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { Card, Spin, Alert, Button, Space, message, Tag, Tooltip } from 'antd';
 import { ReloadOutlined, ExpandOutlined, CompressOutlined, SyncOutlined, InfoCircleOutlined, GlobalOutlined, TeamOutlined } from '@ant-design/icons';
 import { useLanguageStore, type LabelStudioLanguageMessage } from '@/stores/languageStore';
 import { useTranslation } from 'react-i18next';
 import { useLSWorkspaceContext } from '@/hooks/useLSWorkspaces';
+import apiClient from '@/services/api/client';
 import type { WorkspaceInfo, WorkspaceMessageType } from '@/services/iframe/types';
 
 interface LabelStudioEmbedProps {
@@ -52,6 +53,11 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
   const [fullscreen, setFullscreen] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
   const [lastActivity, setLastActivity] = useState<Date | null>(null);
+  
+  // SSO token state
+  const [ssoToken, setSsoToken] = useState<string | null>(null);
+  const [ssoEnabled, setSsoEnabled] = useState(false);
+  const [labelStudioUrl, setLabelStudioUrl] = useState<string>('');
 
   // Language store integration
   const { language, syncToLabelStudio } = useLanguageStore();
@@ -87,13 +93,47 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
       onWorkspaceContextChange?.(workspaceInfo);
     }
   }, [workspaceId, workspaceInfo, onWorkspaceContextChange]);
+
+  // Fetch SSO token or login URL on mount
+  useEffect(() => {
+    const fetchLoginUrl = async () => {
+      try {
+        const response = await apiClient.get('/api/label-studio/auth/login-url', {
+          params: {
+            project_id: projectId,
+            task_id: taskId,
+          },
+        });
+        
+        if (response.data.sso_enabled && response.data.url) {
+          // SSO is enabled, extract token from URL using regex (more robust than URL parsing)
+          const tokenMatch = response.data.url.match(/[?&]token=([^&]+)/);
+          if (tokenMatch && tokenMatch[1]) {
+            setSsoToken(tokenMatch[1]);
+            console.log('[LabelStudioEmbed] SSO token extracted successfully');
+          }
+          setSsoEnabled(true);
+        }
+        // Always use the proxy path for frontend, not the internal Docker URL
+        setLabelStudioUrl('/label-studio');
+      } catch (err) {
+        console.warn('Failed to fetch SSO login URL:', err);
+        // Fall back to proxy URL
+        setLabelStudioUrl('/label-studio');
+      }
+    };
+    
+    fetchLoginUrl();
+  }, [projectId, taskId]);
   
   // Build Label Studio URL with authentication, context, language, and workspace
   const getLabelStudioUrl = useCallback(() => {
     const params = new URLSearchParams();
 
-    if (token) {
-      params.append('token', token);
+    // Use SSO token if available, otherwise use provided token
+    const authToken = ssoToken || token;
+    if (authToken) {
+      params.append('token', authToken);
     }
 
     if (taskId) {
@@ -106,7 +146,6 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
     params.append('enable_hotkeys', 'true');
 
     // Add language parameter for Label Studio localization
-    // Label Studio uses Django's i18n, supports 'zh' (Chinese) and 'en' (English)
     params.append('lang', language);
 
     // Add workspace ID for Label Studio Enterprise
@@ -114,13 +153,15 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
       params.append('workspace', workspaceId);
     }
 
-    let url = `${baseUrl}/projects/${projectId}/data`;
+    // Use the fetched Label Studio URL or fall back to baseUrl
+    const effectiveBaseUrl = labelStudioUrl || baseUrl;
+    let url = `${effectiveBaseUrl}/projects/${projectId}/data`;
     if (params.toString()) {
       url += `?${params.toString()}`;
     }
 
     return url;
-  }, [baseUrl, projectId, taskId, token, language, workspaceId]);
+  }, [baseUrl, projectId, taskId, token, ssoToken, language, workspaceId, labelStudioUrl]);
 
   // Enhanced message handling with better error handling and logging
   useEffect(() => {

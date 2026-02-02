@@ -1,8 +1,9 @@
 # Label Studio 标注导航修复 - 设计文档
 
-**版本**: 1.0  
+**版本**: 2.0  
 **创建日期**: 2026-01-28  
-**状态**: 设计阶段
+**更新日期**: 2026-02-02  
+**状态**: 已实现
 
 ## 1. 问题分析
 
@@ -493,4 +494,64 @@ async def test_get_auth_url_success(client):
 
 ---
 
-**下一步**: 创建任务分解文档 (tasks.md)
+## 6. 实现记录 (2026-02-02)
+
+### 6.1 根本原因确认
+
+经调试确认，问题根本原因是 **JWT 密钥不一致**：
+
+- `src/api/auth.py` 使用 `"test-secret-key-for-local-development-only"`
+- 其他 `SecurityController` 实例使用默认值 `"your-secret-key"`
+- 导致登录生成的 token 无法被其他中间件验证，返回 401
+
+### 6.2 架构变更
+
+#### 6.2.1 JWT 密钥统一
+
+**修改文件**:
+- `src/security/controller.py` - 使用环境变量 `JWT_SECRET_KEY`
+- `src/api/auth.py` - 使用环境变量 `JWT_SECRET_KEY`
+- `src/security/middleware.py` - 使用环境变量 `JWT_SECRET_KEY`
+
+**配置**:
+```python
+# 从环境变量获取密钥，带默认值
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-in-production")
+```
+
+#### 6.2.2 数据库 Schema 同步
+
+**新增列** (users 表):
+- `role` VARCHAR(50) - 用户角色
+- `tenant_id` VARCHAR(100) - 租户 ID
+- `last_login` TIMESTAMP - 最后登录时间
+- `full_name` VARCHAR(255) - 全名
+
+#### 6.2.3 前端按钮简化
+
+**修改文件**: `frontend/src/pages/Tasks/TaskDetail.tsx`
+
+**变更**:
+- `handleStartAnnotation`: 直接导航到 `/tasks/${id}/annotate`，不调用 API
+- `handleOpenInNewWindow`: 直接打开 Label Studio URL，不调用验证 API
+- 移除未使用的 loading 状态和 API 调用
+
+### 6.3 架构原则
+
+根据用户确认的架构原则：
+
+> 前端处理所有用户认证和权限验证，Label Studio 只是标注工具，使用系统级认证即可
+
+**实现**:
+1. 前端验证用户权限后直接导航
+2. 后端 Label Studio API 使用系统级 token (`LABEL_STUDIO_API_TOKEN`)
+3. 标注页面 (`TaskAnnotate.tsx`) 处理项目创建和任务导入
+
+### 6.4 环境变量
+
+| 变量名 | 用途 | 默认值 |
+|--------|------|--------|
+| `JWT_SECRET_KEY` | JWT 签名密钥 | `your-secret-key-change-in-production` |
+| `LABEL_STUDIO_API_TOKEN` | Label Studio 系统级 token | (必须配置) |
+| `LABEL_STUDIO_URL` | Label Studio 服务地址 | `http://label-studio:8080` |
+

@@ -95,10 +95,12 @@ services:
     restart: unless-stopped
 
   # ===========================================================================
-  # Label Studio
+  # Label Studio (with SSO support)
   # ===========================================================================
   label-studio:
-    image: heartexlabs/label-studio:latest
+    build:
+      context: ./deploy/label-studio
+      dockerfile: Dockerfile
     container_name: superinsight-label-studio
     ports:
       - "8080:8080"
@@ -108,13 +110,12 @@ services:
       - LABEL_STUDIO_USERNAME=admin@example.com
       - LABEL_STUDIO_PASSWORD=admin
       # Language configuration (Django i18n)
-      # Default language for Label Studio UI
       - LANGUAGE_CODE=zh-hans
-      # Label Studio specific language setting
       - LABEL_STUDIO_DEFAULT_LANGUAGE=zh
-      # Enable language URL parameter support
       - LABEL_STUDIO_ENABLE_LANGUAGE_PARAM=true
-      # Enable legacy token authentication
+      # SSO configuration
+      - LABEL_STUDIO_SSO_ENABLED=true
+      # Other settings
       - LABEL_STUDIO_DISABLE_SIGNUP_WITHOUT_LINK=false
       - LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED=true
       - LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT=/label-studio/data

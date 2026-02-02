@@ -160,21 +160,27 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
     const effectiveBaseUrl = labelStudioUrl || baseUrl;
     
     // Build URL - Label Studio Community Edition annotation interface
-    // Label Studio uses different URL patterns for accessing tasks
+    // Label Studio has different interfaces:
+    // - /projects/{id}/ - Project dashboard (NOT what we want)
+    // - /projects/{id}/data - Data manager view
+    // - Direct task labeling requires navigating through the UI
+    // 
+    // For Community Edition, we'll use the data manager view which shows tasks
     let url: string;
     if (taskId) {
-      // Direct link to specific task annotation interface
-      // Format: /projects/{id}/ (Label Studio will auto-load the task from query params)
-      // We'll add the task as a URL parameter after the base path
-      url = `${effectiveBaseUrl}/projects/${projectId}/`;
-      console.log('[LabelStudioEmbed] Building URL with taskId:', taskId);
+      // Use data manager view with task filter
+      // This will show the task list, and user can click on the specific task
+      url = `${effectiveBaseUrl}/projects/${projectId}/data`;
+      console.log('[LabelStudioEmbed] Building data manager URL with taskId:', taskId);
       
-      // Add task parameter to URL params
+      // Add task parameter - this will pre-select the task in the data manager
       params.append('task', taskId);
+      // Add tab parameter to show the labeling interface
+      params.append('tab', '0');
     } else {
-      // Link to project (will show first available task)
-      url = `${effectiveBaseUrl}/projects/${projectId}/`;
-      console.log('[LabelStudioEmbed] Building URL without taskId');
+      // Link to data manager (will show all tasks)
+      url = `${effectiveBaseUrl}/projects/${projectId}/data`;
+      console.log('[LabelStudioEmbed] Building data manager URL without taskId');
     }
     
     // Append authentication and other parameters

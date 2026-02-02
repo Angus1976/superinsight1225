@@ -725,18 +725,32 @@ const TaskAnnotatePage: React.FC = () => {
             <Col span={fullscreen ? 24 : 18} style={{ height: '100%' }}>
               <div style={{ height: '100%', marginRight: fullscreen ? 0 : 8 }}>
                 {currentTask ? (
-                  <LabelStudioEmbed
-                    projectId={project.id.toString()}
-                    taskId={currentTask.id.toString()}
-                    token={token ?? undefined}
-                    onAnnotationCreate={handleAnnotationCreate}
-                    onAnnotationUpdate={handleAnnotationUpdate}
-                    onTaskComplete={() => {
-                      message.success(t('annotate.taskComplete'));
-                      handleNextTask();
-                    }}
-                    height="100%"
-                  />
+                  <>
+                    {/* Debug info - will be removed after testing */}
+                    {console.log('[TaskAnnotate] Rendering LabelStudioEmbed with:', {
+                      projectId: project.id,
+                      taskId: currentTask.id,
+                      currentTaskIndex,
+                      totalTasks: tasks.length,
+                      currentTask: {
+                        id: currentTask.id,
+                        is_labeled: currentTask.is_labeled,
+                        data: currentTask.data,
+                      }
+                    })}
+                    <LabelStudioEmbed
+                      projectId={project.id.toString()}
+                      taskId={currentTask.id.toString()}
+                      token={token ?? undefined}
+                      onAnnotationCreate={handleAnnotationCreate}
+                      onAnnotationUpdate={handleAnnotationUpdate}
+                      onTaskComplete={() => {
+                        message.success(t('annotate.taskComplete'));
+                        handleNextTask();
+                      }}
+                      height="100%"
+                    />
+                  </>
                 ) : (
                   <Alert
                     type="warning"
@@ -746,6 +760,8 @@ const TaskAnnotatePage: React.FC = () => {
                         <p>项目 ID: {project.id}</p>
                         <p>任务总数: {tasks.length}</p>
                         <p>当前索引: {currentTaskIndex}</p>
+                        <p>currentTask: {currentTask ? 'exists' : 'null'}</p>
+                        <p>tasks 数组: {JSON.stringify(tasks.map(t => ({ id: t.id, is_labeled: t.is_labeled })))}</p>
                       </div>
                     }
                   />

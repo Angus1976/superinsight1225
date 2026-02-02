@@ -128,6 +128,18 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
   
   // Build Label Studio URL with authentication, context, language, and workspace
   const getLabelStudioUrl = useCallback(() => {
+    // Debug logging
+    console.log('[LabelStudioEmbed] Building URL with params:', {
+      projectId,
+      taskId,
+      token: token ? '***' : 'none',
+      ssoToken: ssoToken ? '***' : 'none',
+      language,
+      workspaceId,
+      baseUrl,
+      labelStudioUrl,
+    });
+
     const params = new URLSearchParams();
 
     // Use SSO token if available, otherwise use provided token
@@ -154,9 +166,11 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
       // Direct link to specific task
       // Format: /projects/{id}/?task={task_id}
       url = `${effectiveBaseUrl}/projects/${projectId}/?task=${taskId}`;
+      console.log('[LabelStudioEmbed] Building URL with taskId:', taskId);
     } else {
       // Link to project (will show first available task)
       url = `${effectiveBaseUrl}/projects/${projectId}/`;
+      console.log('[LabelStudioEmbed] Building URL without taskId');
     }
     
     // Append authentication and other parameters
@@ -166,7 +180,13 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
       url += additionalParams;
     }
 
-    console.log('[LabelStudioEmbed] Generated URL:', url);
+    console.log('[LabelStudioEmbed] Final generated URL:', url);
+    console.log('[LabelStudioEmbed] URL breakdown:', {
+      baseUrl: effectiveBaseUrl,
+      projectId,
+      taskId,
+      params: additionalParams,
+    });
     return url;
   }, [baseUrl, projectId, taskId, token, ssoToken, language, workspaceId, labelStudioUrl]);
 

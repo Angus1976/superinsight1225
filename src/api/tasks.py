@@ -28,6 +28,9 @@ class DataSourceConfig(BaseModel):
     """Data source configuration for task"""
     type: str = Field(..., description="Data source type: file, api, or database")
     config: Dict[str, Any] = Field(default_factory=dict, description="Data source configuration")
+    
+    class Config:
+        extra = "allow"  # Allow additional fields
 
 
 class TaskCreateRequest(BaseModel):
@@ -64,7 +67,7 @@ class TaskResponse(BaseModel):
     annotation_type: str
     assignee_id: Optional[str]
     assignee_name: Optional[str]
-    created_by: str
+    created_by: str  # UUID as string
     created_at: datetime
     updated_at: datetime
     due_date: Optional[datetime]
@@ -104,6 +107,14 @@ class TaskStatsResponse(BaseModel):
 # Helper functions
 def task_model_to_response(task: TaskModel) -> TaskResponse:
     """Convert TaskModel to TaskResponse."""
+    # Safely get assignee name
+    assignee_name = None
+    try:
+        if task.assignee_id and hasattr(task, 'assignee') and task.assignee:
+            assignee_name = task.assignee.username
+    except Exception:
+        pass
+    
     return TaskResponse(
         id=str(task.id),
         name=task.name,
@@ -112,8 +123,8 @@ def task_model_to_response(task: TaskModel) -> TaskResponse:
         priority=task.priority.value if hasattr(task.priority, 'value') else str(task.priority),
         annotation_type=task.annotation_type.value if hasattr(task.annotation_type, 'value') else str(task.annotation_type),
         assignee_id=str(task.assignee_id) if task.assignee_id else None,
-        assignee_name=task.assignee.username if task.assignee else None,
-        created_by=task.created_by,
+        assignee_name=assignee_name,
+        created_by=str(task.created_by),  # Convert UUID to string
         created_at=task.created_at,
         updated_at=task.updated_at or task.created_at,
         due_date=task.due_date,
@@ -158,10 +169,11 @@ def get_task_or_404(task_id: str, db: Session, tenant_id: str) -> TaskModel:
 
 # Task endpoints
 @router.get("", response_model=TaskListResponse)
+@router.get("/list", response_model=TaskListResponse)  # Alias for compatibility
 def list_tasks(
     page: int = Query(1, ge=1, description="Page number"),
     size: int = Query(10, ge=1, le=100, description="Page size"),
-    status: Optional[str] = Query(None, description="Filter by status"),
+    status_filter: Optional[str] = Query(None, description="Filter by status"),
     priority: Optional[str] = Query(None, description="Filter by priority"),
     assignee_id: Optional[str] = Query(None, description="Filter by assignee"),
     search: Optional[str] = Query(None, description="Search in name and description"),
@@ -174,8 +186,8 @@ def list_tasks(
         query = db.query(TaskModel).filter(TaskModel.tenant_id == current_user.tenant_id)
 
         # Apply filters
-        if status:
-            query = query.filter(TaskModel.status == status)
+        if status_filter:
+            query = query.filter(TaskModel.status == status_filter)
         if priority:
             query = query.filter(TaskModel.priority == priority)
         if assignee_id:
@@ -220,22 +232,52 @@ def list_tasks(
         )
 
 
-async def _sync_task_to_label_studio(task_id: str, db: Session, task_name: str, annotation_type: str, description: Optional[str] = None):
+def _sync_task_to_label_studio(task_id: str, db: Session, task_name: str, annotation_type: str, description: Optional[str] = None):
     """
     Background task to sync task to Label Studio.
 
     This runs asynchronously after task creation to avoid blocking the API response.
     """
+    import asyncio
+    
     try:
         logger.info(f"Starting Label Studio sync for task {task_id}")
 
         # Create Label Studio project
-        sync_result = await label_studio_sync_service.create_project_for_task(
-            task_id=task_id,
-            task_name=task_name,
-            task_description=description,
-            annotation_type=annotation_type
-        )
+        # Use asyncio.create_task or run in thread pool for existing event loop
+        try:
+            # Try to get existing event loop
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # If loop is running, we need to use run_coroutine_threadsafe or create new loop
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    future = executor.submit(
+                        asyncio.run,
+                        label_studio_sync_service.create_project_for_task(
+                            task_id=task_id,
+                            task_name=task_name,
+                            task_description=description,
+                            annotation_type=annotation_type
+                        )
+                    )
+                    sync_result = future.result()
+            else:
+                # No running loop, safe to use asyncio.run
+                sync_result = asyncio.run(label_studio_sync_service.create_project_for_task(
+                    task_id=task_id,
+                    task_name=task_name,
+                    task_description=description,
+                    annotation_type=annotation_type
+                ))
+        except RuntimeError:
+            # No event loop, create one
+            sync_result = asyncio.run(label_studio_sync_service.create_project_for_task(
+                task_id=task_id,
+                task_name=task_name,
+                task_description=description,
+                annotation_type=annotation_type
+            ))
 
         # Update task with sync result in database
         try:
@@ -310,13 +352,14 @@ async def create_task(
         # Create task model
         task = TaskModel(
             id=uuid4(),
+            title=request.name,  # Set title field
             name=request.name,
             description=request.description,
             status=TaskStatus.PENDING,
             priority=priority,
             annotation_type=annotation_type,
             assignee_id=assignee_uuid,
-            created_by=current_user.username,
+            created_by=UUID(current_user.id),  # Use id (already a UUID string)
             tenant_id=current_user.tenant_id,
             project_id=f"project_{uuid4()}",
             due_date=request.due_date,

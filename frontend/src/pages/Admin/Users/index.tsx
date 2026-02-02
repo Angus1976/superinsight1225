@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Card, Table, Button, Space, Tag, Modal, Form, Input, Select, Switch, message, Avatar, Tooltip } from 'antd';
+import { Card, Table, Button, Space, Tag, App, Form, Input, Select, Switch, Avatar, Tooltip } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined, LockOutlined, UnlockOutlined, MailOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -25,6 +25,7 @@ interface User {
 
 const AdminUsers: React.FC = () => {
   const { t } = useTranslation('admin');
+  const { modal, message } = App.useApp();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [form] = Form.useForm();
@@ -215,7 +216,7 @@ const AdminUsers: React.FC = () => {
               type="link"
               icon={<MailOutlined />}
               onClick={() => {
-                Modal.confirm({
+                modal.confirm({
                   title: t('users.confirmResetPassword'),
                   content: t('users.confirmResetPasswordMessage', { name: record.fullName }),
                   onOk: () => resetPasswordMutation.mutate(record.id),
@@ -238,7 +239,7 @@ const AdminUsers: React.FC = () => {
                 type="link"
                 icon={<LockOutlined />}
                 onClick={() => {
-                  Modal.confirm({
+                  modal.confirm({
                     title: t('users.confirmLock'),
                     content: t('users.confirmLockMessage', { name: record.fullName }),
                     onOk: () => lockUserMutation.mutate({ id: record.id, action: 'lock' }),
@@ -254,7 +255,7 @@ const AdminUsers: React.FC = () => {
               danger
               icon={<DeleteOutlined />}
               onClick={() => {
-                Modal.confirm({
+                modal.confirm({
                   title: t('users.confirmDelete'),
                   content: t('users.confirmDeleteMessage', { name: record.fullName }),
                   onOk: () => deleteUserMutation.mutate(record.id),

@@ -6,10 +6,9 @@ import {
   Button, 
   Tag, 
   Space, 
-  Modal, 
+  App,
   Progress, 
   Dropdown, 
-  message, 
   Select,
   Input,
   DatePicker,
@@ -62,6 +61,7 @@ const priorityColorMap: Record<TaskPriority, string> = {
 const TasksPage: React.FC = () => {
   const { t } = useTranslation(['tasks', 'common']);
   const navigate = useNavigate();
+  const { modal, message } = App.useApp();
   const actionRef = useRef<ActionType>(null);
   const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -75,7 +75,7 @@ const TasksPage: React.FC = () => {
   const updateTask = useUpdateTask();
 
   const handleDelete = (id: string) => {
-    Modal.confirm({
+    modal.confirm({
       title: t('delete'),
       icon: <ExclamationCircleOutlined />,
       content: t('confirmDeleteTask'),
@@ -94,7 +94,7 @@ const TasksPage: React.FC = () => {
       message.warning(t('selectTasksToDelete'));
       return;
     }
-    Modal.confirm({
+    modal.confirm({
       title: t('deleteTasks'),
       icon: <ExclamationCircleOutlined />,
       content: t('confirmDeleteTasks', { count: selectedRowKeys.length }),

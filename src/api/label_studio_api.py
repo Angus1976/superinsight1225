@@ -355,7 +355,7 @@ def list_projects(
         ls = get_label_studio()
 
         # Get user ID
-        user_id = current_user.id if hasattr(current_user, 'id') else current_user.user_id
+        user_id = current_user.id
 
         # If workspace_id provided, verify permission
         workspace_project_ids: Optional[set] = None
@@ -463,7 +463,7 @@ def get_project(
             )
 
         # Get user ID
-        user_id = current_user.id if hasattr(current_user, 'id') else current_user.user_id
+        user_id = current_user.id
 
         description = project_data.get('description')
 
@@ -953,7 +953,7 @@ async def get_authenticated_url(
         
         # Step 2: Generate authenticated URL with language parameter
         # Use current user's ID for token generation
-        user_id = str(current_user.id) if hasattr(current_user, 'id') else str(current_user.user_id)
+        user_id = str(current_user.id)
         
         url_info = await ls.generate_authenticated_url(
             project_id=project_id,

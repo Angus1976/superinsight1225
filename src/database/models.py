@@ -147,6 +147,7 @@ class TaskModel(Base):
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
 
     # Basic task information
+    title: Mapped[str] = mapped_column(String(255), nullable=False, default="Untitled Task")
     name: Mapped[str] = mapped_column(String(255), nullable=False, default="Untitled Task")
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     status: Mapped[TaskStatus] = mapped_column(SQLEnum(TaskStatus), default=TaskStatus.PENDING)
@@ -159,7 +160,7 @@ class TaskModel(Base):
 
     # Assignment and ownership
     assignee_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
-    created_by: Mapped[str] = mapped_column(String(100), nullable=False, default="system")
+    created_by: Mapped[UUID] = mapped_column(UUID(as_uuid=True), nullable=False)  # Fixed: UUID type to match DB
     tenant_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True, default="default_tenant")
 
     # Progress tracking

@@ -144,17 +144,15 @@ const TasksPage: React.FC = () => {
       let successCount = 0;
       let failCount = 0;
       
+      // Import api from services
+      const { default: api } = await import('@/services/api');
+      
       for (const task of tasksToSync) {
         try {
-          await fetch(`/api/tasks/${task.id}/sync-label-studio`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('token')}`,
-              'Content-Type': 'application/json',
-            },
-          });
+          await api.post(`/api/tasks/${task.id}/sync-label-studio`);
           successCount++;
         } catch (error) {
+          console.error(`Failed to sync task ${task.id}:`, error);
           failCount++;
         }
       }

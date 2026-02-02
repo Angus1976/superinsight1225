@@ -145,13 +145,14 @@ const TaskDetailPage: React.FC = () => {
       return;
     }
     
-    // Open Label Studio directly with the project ID
-    // The user will need to log in to Label Studio if not already authenticated
+    // Open Label Studio data manager (not dashboard) to start labeling
+    // Use /data endpoint to show tasks list where user can click "Label All Tasks"
     const labelStudioUrl = import.meta.env.VITE_LABEL_STUDIO_URL || 'http://localhost:8080';
-    const projectUrl = `${labelStudioUrl}/projects/${projectId}`;
+    const projectUrl = `${labelStudioUrl}/projects/${projectId}/data`;
     
     console.log('[handleOpenInNewWindow] Opening Label Studio URL:', projectUrl);
     window.open(projectUrl, '_blank', 'noopener,noreferrer');
+    message.success('已在新窗口中打开 Label Studio 数据管理器，请点击 "Label All Tasks" 开始标注');
     console.log('[handleOpenInNewWindow] ========== END ==========');
   };
 

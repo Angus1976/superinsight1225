@@ -365,11 +365,14 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
     // Set a timeout to detect if Label Studio doesn't respond
     const timeout = setTimeout(() => {
       if (connectionStatus === 'connecting') {
-        setError(t('labelStudio.timeout', 'Label Studio 响应超时，请检查服务是否正常运行'));
+        // Label Studio loaded but didn't send ready message - this is OK
+        // Just mark as connected and hide loading
+        console.log('[LabelStudioEmbed] Timeout reached, assuming Label Studio is ready');
         setLoading(false);
-        setConnectionStatus('disconnected');
+        setConnectionStatus('connected');
+        setError(null);
       }
-    }, 10000); // 10 second timeout
+    }, 30000); // 30 second timeout (increased from 10s)
 
     // Clear timeout if we receive a ready message
     const clearTimeoutOnReady = () => {

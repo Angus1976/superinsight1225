@@ -129,6 +129,10 @@ export default defineConfig(({ mode }) => ({
   server: {
     port: 5173,
     host: '0.0.0.0',
+    // Suppress specific warnings
+    hmr: {
+      overlay: true,
+    },
     proxy: {
       '/api': {
         target: 'http://superinsight-app:8000',

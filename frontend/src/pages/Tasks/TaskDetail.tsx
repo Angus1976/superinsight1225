@@ -488,7 +488,7 @@ const TaskDetailPage: React.FC = () => {
             <Card title={t('details')} style={{ marginBottom: 16 }}>
               <Descriptions column={1} size="small">
                 <Descriptions.Item label={t('annotationType')}>
-                  {currentTask.annotation_type.replace('_', ' ')}
+                  {currentTask.annotation_type ? currentTask.annotation_type.replace('_', ' ') : '-'}
                 </Descriptions.Item>
                 <Descriptions.Item label={t('assignee')}>
                   {currentTask.assignee_name || t('unassigned')}

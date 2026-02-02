@@ -186,7 +186,7 @@ const QualityRules: React.FC = () => {
               danger
               icon={<DeleteOutlined />}
               onClick={() => {
-                Modal.confirm({
+                modal.confirm({
                   title: t('messages.confirmDelete'),
                   content: t('rules.confirmDeleteContent', { name: record.name }),
                   onOk: () => deleteRuleMutation.mutate(record.id),

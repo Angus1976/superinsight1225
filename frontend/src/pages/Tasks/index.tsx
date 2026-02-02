@@ -128,6 +128,52 @@ const TasksPage: React.FC = () => {
     }
   };
 
+  const handleSyncAllTasks = async () => {
+    const tasksToSync = (data?.items || []).filter(
+      task => task.label_studio_sync_status !== 'synced'
+    );
+    
+    if (tasksToSync.length === 0) {
+      message.info(t('allTasksSynced'));
+      return;
+    }
+    
+    const hide = message.loading(t('syncingTasks', { count: tasksToSync.length }), 0);
+    
+    try {
+      let successCount = 0;
+      let failCount = 0;
+      
+      for (const task of tasksToSync) {
+        try {
+          await fetch(`/api/tasks/${task.id}/sync-label-studio`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+              'Content-Type': 'application/json',
+            },
+          });
+          successCount++;
+        } catch (error) {
+          failCount++;
+        }
+      }
+      
+      hide();
+      
+      if (failCount === 0) {
+        message.success(t('syncSuccess', { count: successCount }));
+      } else {
+        message.warning(t('syncPartialSuccess', { success: successCount, fail: failCount }));
+      }
+      
+      refetch();
+    } catch (error) {
+      hide();
+      message.error(t('syncError'));
+    }
+  };
+
   const handleExportTasks = () => {
     // Export selected tasks or all tasks
     const tasksToExport = selectedRowKeys.length > 0 
@@ -575,16 +621,32 @@ const TasksPage: React.FC = () => {
               : t('exportAll')
             }
           </Button>,
-          <Button
+          <Dropdown
             key="refresh"
-            icon={<ReloadOutlined />}
-            onClick={() => {
-              refetch();
-              actionRef.current?.reload();
+            menu={{
+              items: [
+                {
+                  key: 'refreshList',
+                  icon: <ReloadOutlined />,
+                  label: t('refreshList'),
+                  onClick: () => {
+                    refetch();
+                    actionRef.current?.reload();
+                  },
+                },
+                {
+                  key: 'syncAll',
+                  icon: <ReloadOutlined />,
+                  label: t('syncAllTasks'),
+                  onClick: handleSyncAllTasks,
+                },
+              ],
             }}
           >
-            {t('refresh')}
-          </Button>,
+            <Button icon={<ReloadOutlined />}>
+              {t('refresh')}
+            </Button>
+          </Dropdown>,
           <Button
             key="create"
             type="primary"

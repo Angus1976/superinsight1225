@@ -136,15 +136,6 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
       params.append('token', authToken);
     }
 
-    if (taskId) {
-      params.append('task', taskId);
-    }
-
-    // Add iframe mode and communication flags
-    params.append('mode', 'iframe');
-    params.append('enable_postmessage', 'true');
-    params.append('enable_hotkeys', 'true');
-
     // Add language parameter for Label Studio localization
     params.append('lang', language);
 
@@ -155,11 +146,26 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
 
     // Use the fetched Label Studio URL or fall back to baseUrl
     const effectiveBaseUrl = labelStudioUrl || baseUrl;
-    let url = `${effectiveBaseUrl}/projects/${projectId}/data`;
-    if (params.toString()) {
-      url += `?${params.toString()}`;
+    
+    // Build URL based on whether we have a specific task
+    let url: string;
+    if (taskId) {
+      // Direct link to specific task in labeling interface
+      // Format: /projects/{id}/data?task={task_id}
+      url = `${effectiveBaseUrl}/projects/${projectId}/data?task=${taskId}`;
+    } else {
+      // Link to project's labeling interface (will show first available task)
+      url = `${effectiveBaseUrl}/projects/${projectId}/data`;
+    }
+    
+    // Append authentication and other parameters
+    const additionalParams = params.toString();
+    if (additionalParams) {
+      url += url.includes('?') ? '&' : '?';
+      url += additionalParams;
     }
 
+    console.log('[LabelStudioEmbed] Generated URL:', url);
     return url;
   }, [baseUrl, projectId, taskId, token, ssoToken, language, workspaceId, labelStudioUrl]);
 

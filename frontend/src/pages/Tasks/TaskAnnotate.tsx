@@ -725,32 +725,54 @@ const TaskAnnotatePage: React.FC = () => {
             <Col span={fullscreen ? 24 : 18} style={{ height: '100%' }}>
               <div style={{ height: '100%', marginRight: fullscreen ? 0 : 8 }}>
                 {currentTask ? (
-                  <>
-                    {/* Debug info - will be removed after testing */}
-                    {console.log('[TaskAnnotate] Rendering LabelStudioEmbed with:', {
-                      projectId: project.id,
-                      taskId: currentTask.id,
-                      currentTaskIndex,
-                      totalTasks: tasks.length,
-                      currentTask: {
-                        id: currentTask.id,
-                        is_labeled: currentTask.is_labeled,
-                        data: currentTask.data,
+                  <Card 
+                    title="Label Studio 标注界面" 
+                    style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+                    styles={{ body: { flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' } }}
+                  >
+                    <Result
+                      icon={<InfoCircleOutlined style={{ color: '#1890ff' }} />}
+                      title="请在新窗口中进行标注"
+                      subTitle={
+                        <div style={{ maxWidth: 600 }}>
+                          <p>Label Studio Community Edition 需要在独立窗口中使用以获得最佳体验。</p>
+                          <p style={{ marginTop: 16, fontSize: 14, color: '#666' }}>
+                            点击下方按钮将在新窗口中打开 Label Studio 数据管理器，您可以在那里：
+                          </p>
+                          <ul style={{ textAlign: 'left', display: 'inline-block', marginTop: 8 }}>
+                            <li>查看所有待标注任务</li>
+                            <li>点击 "Label All Tasks" 开始批量标注</li>
+                            <li>或点击单个任务进行标注</li>
+                            <li>使用完整的键盘快捷键和功能</li>
+                          </ul>
+                          <p style={{ marginTop: 16, fontSize: 12, color: '#999' }}>
+                            当前项目 ID: {project.id} | 当前任务: {currentTaskIndex + 1} / {tasks.length}
+                          </p>
+                        </div>
                       }
-                    })}
-                    <LabelStudioEmbed
-                      projectId={project.id.toString()}
-                      taskId={currentTask.id.toString()}
-                      token={token ?? undefined}
-                      onAnnotationCreate={handleAnnotationCreate}
-                      onAnnotationUpdate={handleAnnotationUpdate}
-                      onTaskComplete={() => {
-                        message.success(t('annotate.taskComplete'));
-                        handleNextTask();
-                      }}
-                      height="100%"
+                      extra={[
+                        <Button
+                          key="open"
+                          type="primary"
+                          size="large"
+                          onClick={() => {
+                            const labelStudioUrl = 'http://localhost:8080';
+                            const projectUrl = `${labelStudioUrl}/projects/${project.id}/data`;
+                            window.open(projectUrl, '_blank', 'noopener,noreferrer');
+                            message.success('已在新窗口中打开 Label Studio，请在那里进行标注');
+                          }}
+                        >
+                          在新窗口中打开 Label Studio
+                        </Button>,
+                        <Button
+                          key="back"
+                          onClick={handleBackToTask}
+                        >
+                          返回任务详情
+                        </Button>,
+                      ]}
                     />
-                  </>
+                  </Card>
                 ) : (
                   <Alert
                     type="warning"

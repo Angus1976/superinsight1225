@@ -160,18 +160,20 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
     const effectiveBaseUrl = labelStudioUrl || baseUrl;
     
     // Build URL - Label Studio Community Edition annotation interface
-    // For annotation, we need to use the /data endpoint with task parameter
+    // Label Studio uses different URL patterns for accessing tasks
     let url: string;
     if (taskId) {
       // Direct link to specific task annotation interface
-      // Format: /projects/{id}/data?task={task_id}
-      // Note: Label Studio Community Edition requires session-based auth
-      // The token parameter won't work for iframe access
-      url = `${effectiveBaseUrl}/projects/${projectId}/data?task=${taskId}`;
+      // Format: /projects/{id}/ (Label Studio will auto-load the task from query params)
+      // We'll add the task as a URL parameter after the base path
+      url = `${effectiveBaseUrl}/projects/${projectId}/`;
       console.log('[LabelStudioEmbed] Building URL with taskId:', taskId);
+      
+      // Add task parameter to URL params
+      params.append('task', taskId);
     } else {
-      // Link to project data view (will show first available task)
-      url = `${effectiveBaseUrl}/projects/${projectId}/data`;
+      // Link to project (will show first available task)
+      url = `${effectiveBaseUrl}/projects/${projectId}/`;
       console.log('[LabelStudioEmbed] Building URL without taskId');
     }
     

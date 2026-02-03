@@ -219,7 +219,7 @@ export class ErrorHandler {
     const stackTrace = typeof error === 'object' ? error.stack : undefined;
 
     let severity = ErrorSeverity.MEDIUM;
-    let recoveryAction = RecoveryAction.REFRESH_PERMISSIONS;
+    const recoveryAction = RecoveryAction.REFRESH_PERMISSIONS;
 
     // Determine severity based on context
     if (context?.action === 'admin' || context?.resource === 'system') {

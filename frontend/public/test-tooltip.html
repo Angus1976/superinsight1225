@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tooltip & Popover Test</title>
+  <style>
+    body {
+      padding: 50px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+    }
+    
+    .test-section {
+      margin: 30px 0;
+      padding: 20px;
+      border: 1px solid #e8e8e8;
+      border-radius: 8px;
+    }
+    
+    h2 {
+      color: #262626;
+      margin-bottom: 15px;
+    }
+    
+    .test-button {
+      padding: 8px 16px;
+      background: #1890ff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 10px;
+    }
+    
+    .test-button:hover {
+      background: #40a9ff;
+    }
+    
+    /* 测试CSS规则 */
+    .ant-tooltip {
+      pointer-events: none !important;
+      z-index: 1070 !important;
+    }
+    
+    .ant-tooltip-inner {
+      background-color: #ffffff !important;
+      color: #262626 !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+      border: 1px solid #e8e8e8 !important;
+      pointer-events: none !important;
+    }
+    
+    .ant-tooltip.ant-tooltip-placement-top {
+      transform: translateY(-10px) !important;
+    }
+    
+    .ant-pro-table-column-setting-overlay.ant-popover-placement-bottomRight {
+      transform: translateX(-220px) !important;
+    }
+    
+    .result {
+      margin-top: 15px;
+      padding: 10px;
+      background: #f0f0f0;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+    
+    .success {
+      background: #f6ffed;
+      border: 1px solid #b7eb8f;
+      color: #52c41a;
+    }
+    
+    .error {
+      background: #fff2e8;
+      border: 1px solid #ffbb96;
+      color: #ff4d4f;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔧 Tooltip & Popover 测试页面</h1>
+  
+  <div class="test-section">
+    <h2>测试 1: Tooltip pointer-events</h2>
+    <p>检查 Tooltip 是否设置了 pointer-events: none</p>
+    <button class="test-button" onclick="testTooltipPointerEvents()">运行测试</button>
+    <div id="result1" class="result"></div>
+  </div>
+  
+  <div class="test-section">
+    <h2>测试 2: Tooltip 背景颜色</h2>
+    <p>检查 Tooltip 是否为白色背景</p>
+    <button class="test-button" onclick="testTooltipBackground()">运行测试</button>
+    <div id="result2" class="result"></div>
+  </div>
+  
+  <div class="test-section">
+    <h2>测试 3: Tooltip transform 偏移</h2>
+    <p>检查 Tooltip 是否有 transform 偏移</p>
+    <button class="test-button" onclick="testTooltipTransform()">运行测试</button>
+    <div id="result3" class="result"></div>
+  </div>
+  
+  <div class="test-section">
+    <h2>测试 4: 列设置弹出层 transform</h2>
+    <p>检查列设置弹出层是否向左偏移</p>
+    <button class="test-button" onclick="testPopoverTransform()">运行测试</button>
+    <div id="result4" class="result"></div>
+  </div>
+  
+  <div class="test-section">
+    <h2>CSS 规则检查</h2>
+    <button class="test-button" onclick="checkCSSRules()">检查所有CSS规则</button>
+    <div id="result5" class="result"></div>
+  </div>
+  
+  <script>
+    function testTooltipPointerEvents() {
+      const styles = getComputedStyle(document.documentElement);
+      const result = document.getElementById('result1');
+      
+      // 检查CSS规则是否存在
+      const cssRules = Array.from(document.styleSheets)
+        .flatMap(sheet => {
+          try {
+            return Array.from(sheet.cssRules || []);
+          } catch (e) {
+            return [];
+          }
+        })
+        .filter(rule => rule.selectorText && rule.selectorText.includes('.ant-tooltip'));
+      
+      if (cssRules.length > 0) {
+        const hasPointerEvents = cssRules.some(rule => 
+          rule.style.pointerEvents === 'none'
+        );
+        
+        if (hasPointerEvents) {
+          result.className = 'result success';
+          result.textContent = '✅ 成功: 找到 pointer-events: none 规则';
+        } else {
+          result.className = 'result error';
+          result.textContent = '❌ 失败: 未找到 pointer-events: none 规则';
+        }
+      } else {
+        result.className = 'result error';
+        result.textContent = '❌ 失败: 未找到 .ant-tooltip CSS规则';
+      }
+    }
+    
+    function testTooltipBackground() {
+      const result = document.getElementById('result2');
+      const cssRules = Array.from(document.styleSheets)
+        .flatMap(sheet => {
+          try {
+            return Array.from(sheet.cssRules || []);
+          } catch (e) {
+            return [];
+          }
+        })
+        .filter(rule => rule.selectorText && rule.selectorText.includes('.ant-tooltip-inner'));
+      
+      if (cssRules.length > 0) {
+        const hasWhiteBackground = cssRules.some(rule => 
+          rule.style.backgroundColor && 
+          (rule.style.backgroundColor.includes('255, 255, 255') || 
+           rule.style.backgroundColor.includes('#ffffff') ||
+           rule.style.backgroundColor.includes('rgb(255, 255, 255)'))
+        );
+        
+        if (hasWhiteBackground) {
+          result.className = 'result success';
+          result.textContent = '✅ 成功: Tooltip 背景色为白色';
+        } else {
+          result.className = 'result error';
+          result.textContent = '❌ 失败: Tooltip 背景色不是白色';
+        }
+      } else {
+        result.className = 'result error';
+        result.textContent = '❌ 失败: 未找到 .ant-tooltip-inner CSS规则';
+      }
+    }
+    
+    function testTooltipTransform() {
+      const result = document.getElementById('result3');
+      const cssRules = Array.from(document.styleSheets)
+        .flatMap(sheet => {
+          try {
+            return Array.from(sheet.cssRules || []);
+          } catch (e) {
+            return [];
+          }
+        })
+        .filter(rule => rule.selectorText && 
+          rule.selectorText.includes('.ant-tooltip-placement-top'));
+      
+      if (cssRules.length > 0) {
+        const hasTransform = cssRules.some(rule => 
+          rule.style.transform && rule.style.transform.includes('translateY')
+        );
+        
+        if (hasTransform) {
+          result.className = 'result success';
+          result.textContent = '✅ 成功: Tooltip 有 transform 偏移';
+        } else {
+          result.className = 'result error';
+          result.textContent = '❌ 失败: Tooltip 没有 transform 偏移';
+        }
+      } else {
+        result.className = 'result error';
+        result.textContent = '❌ 失败: 未找到 .ant-tooltip-placement-top CSS规则';
+      }
+    }
+    
+    function testPopoverTransform() {
+      const result = document.getElementById('result4');
+      const cssRules = Array.from(document.styleSheets)
+        .flatMap(sheet => {
+          try {
+            return Array.from(sheet.cssRules || []);
+          } catch (e) {
+            return [];
+          }
+        })
+        .filter(rule => rule.selectorText && 
+          rule.selectorText.includes('.ant-pro-table-column-setting-overlay'));
+      
+      if (cssRules.length > 0) {
+        const hasTransform = cssRules.some(rule => 
+          rule.style.transform && rule.style.transform.includes('translateX')
+        );
+        
+        if (hasTransform) {
+          result.className = 'result success';
+          result.textContent = '✅ 成功: 列设置弹出层有 translateX 偏移';
+        } else {
+          result.className = 'result error';
+          result.textContent = '❌ 失败: 列设置弹出层没有 translateX 偏移';
+        }
+      } else {
+        result.className = 'result error';
+        result.textContent = '❌ 失败: 未找到列设置弹出层CSS规则';
+      }
+    }
+    
+    function checkCSSRules() {
+      const result = document.getElementById('result5');
+      const allRules = Array.from(document.styleSheets)
+        .flatMap(sheet => {
+          try {
+            return Array.from(sheet.cssRules || []);
+          } catch (e) {
+            return [];
+          }
+        });
+      
+      const tooltipRules = allRules.filter(rule => 
+        rule.selectorText && rule.selectorText.includes('.ant-tooltip')
+      );
+      
+      const popoverRules = allRules.filter(rule => 
+        rule.selectorText && rule.selectorText.includes('.ant-pro-table-column-setting')
+      );
+      
+      let output = `总共找到 ${allRules.length} 条CSS规则\n\n`;
+      output += `Tooltip相关规则: ${tooltipRules.length} 条\n`;
+      tooltipRules.forEach(rule => {
+        output += `  - ${rule.selectorText}\n`;
+      });
+      
+      output += `\n列设置相关规则: ${popoverRules.length} 条\n`;
+      popoverRules.forEach(rule => {
+        output += `  - ${rule.selectorText}\n`;
+      });
+      
+      result.className = 'result';
+      result.textContent = output;
+    }
+    
+    // 页面加载时自动运行所有测试
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        testTooltipPointerEvents();
+        testTooltipBackground();
+        testTooltipTransform();
+        testPopoverTransform();
+        checkCSSRules();
+      }, 500);
+    });
+  </script>
+</body>
+</html>

@@ -348,19 +348,19 @@ export const ExportOptionsModal: React.FC<ExportOptionsModalProps> = ({
   // Field label mapping
   const getFieldLabel = (field: ExportField): string => {
     const fieldLabels: Record<ExportField, string> = {
-      id: t('tasks.columns.id'),
-      name: t('tasks.columns.name'),
+      id: t('columns.id'),
+      name: t('columns.name'),
       description: t('description'),
-      status: t('tasks.columns.status'),
-      priority: t('tasks.columns.priority'),
-      annotation_type: t('tasks.columns.annotationType'),
-      progress: t('tasks.columns.progress'),
-      completed_items: t('tasks.columns.completedItems'),
-      total_items: t('tasks.columns.totalItems'),
-      assignee_name: t('tasks.columns.assignee'),
-      created_at: t('tasks.columns.createdAt'),
-      due_date: t('tasks.columns.dueDate'),
-      label_studio_project_id: t('tasks.detail.projectId'),
+      status: t('columns.status'),
+      priority: t('columns.priority'),
+      annotation_type: t('columns.annotationType'),
+      progress: t('columns.progress'),
+      completed_items: t('columns.completedItems'),
+      total_items: t('columns.totalItems'),
+      assignee_name: t('columns.assignee'),
+      created_at: t('columns.createdAt'),
+      due_date: t('columns.dueDate'),
+      label_studio_project_id: t('detail.projectId'),
       label_studio_sync_status: t('syncStatus'),
       tags: t('tagsLabel'),
     };
@@ -380,7 +380,7 @@ export const ExportOptionsModal: React.FC<ExportOptionsModalProps> = ({
       title={
         <Space>
           <DownloadOutlined />
-          {t('tasks.export.title')}
+          {t('export.title')}
         </Space>
       }
       open={open}
@@ -388,7 +388,7 @@ export const ExportOptionsModal: React.FC<ExportOptionsModalProps> = ({
       width={600}
       footer={[
         <Button key="history" icon={<HistoryOutlined />} onClick={() => setShowHistory(!showHistory)}>
-          {t('tasks.export.history') || 'History'}
+          {t('export.history')}
         </Button>,
         <Button key="cancel" onClick={onCancel}>
           {t('cancel')}
@@ -401,7 +401,7 @@ export const ExportOptionsModal: React.FC<ExportOptionsModalProps> = ({
           loading={loading}
           disabled={selectedFields.length === 0 || getTaskCount() === 0}
         >
-          {t('tasks.export.exportButton') || 'Export'} ({getTaskCount()})
+          {t('export.exportButton')} ({getTaskCount()})
         </Button>,
       ]}
     >
@@ -410,7 +410,7 @@ export const ExportOptionsModal: React.FC<ExportOptionsModalProps> = ({
         <div style={{ marginBottom: 16 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <Title level={5} style={{ margin: 0 }}>
-              <HistoryOutlined /> {t('tasks.export.exportHistory') || 'Export History'}
+              <HistoryOutlined /> {t('export.exportHistory') || 'Export History'}
             </Title>
             {exportHistory.length > 0 && (
               <Button 
@@ -419,14 +419,14 @@ export const ExportOptionsModal: React.FC<ExportOptionsModalProps> = ({
                 size="small" 
                 onClick={handleClearHistory}
               >
-                {t('tasks.export.clearHistory') || 'Clear All'}
+                {t('export.clearHistory') || 'Clear All'}
               </Button>
             )}
           </div>
           
           {exportHistory.length === 0 ? (
             <Empty 
-              description={t('tasks.export.noHistory') || 'No export history'} 
+              description={t('export.noHistory') || 'No export history'} 
               image={Empty.PRESENTED_IMAGE_SIMPLE}
             />
           ) : (
@@ -437,13 +437,13 @@ export const ExportOptionsModal: React.FC<ExportOptionsModalProps> = ({
               renderItem={(entry) => (
                 <List.Item
                   actions={[
-                    <Tooltip title={t('tasks.export.applySettings') || 'Apply Settings'} key="apply">
+                    <Tooltip title={t('export.applySettings') || 'Apply Settings'} key="apply">
                       <Button 
                         type="link" 
                         size="small"
                         onClick={() => handleApplyHistoryEntry(entry)}
                       >
-                        {t('tasks.export.apply') || 'Apply'}
+                        {t('export.apply') || 'Apply'}
                       </Button>
                     </Tooltip>,
                     <Tooltip title={t('delete')} key="delete">
@@ -465,7 +465,7 @@ export const ExportOptionsModal: React.FC<ExportOptionsModalProps> = ({
                           {entry.format.toUpperCase()}
                         </Tag>
                         <Text type="secondary" style={{ fontSize: 12 }}>
-                          {entry.taskCount} {t('tasks.export.tasks') || 'tasks'}
+                          {entry.taskCount} {t('export.tasks') || 'tasks'}
                         </Text>
                       </Space>
                     }
@@ -488,7 +488,7 @@ export const ExportOptionsModal: React.FC<ExportOptionsModalProps> = ({
 
       {/* Export Format Selection */}
       <div style={{ marginBottom: 24 }}>
-        <Title level={5}>{t('tasks.export.selectFormat')}</Title>
+        <Title level={5}>{t('export.selectFormat')}</Title>
         <Radio.Group 
           value={format} 
           onChange={(e) => setFormat(e.target.value)}
@@ -498,28 +498,28 @@ export const ExportOptionsModal: React.FC<ExportOptionsModalProps> = ({
             <Radio value="csv" style={{ width: '100%' }}>
               <Space>
                 <FileTextOutlined style={{ color: '#1890ff' }} />
-                <span>{t('tasks.export.csv')}</span>
+                <span>{t('export.csv')}</span>
               </Space>
               <Text type="secondary" style={{ display: 'block', marginLeft: 24, fontSize: 12 }}>
-                {t('tasks.export.csvDescription') || 'Simple tabular format, compatible with spreadsheet applications'}
+                {t('export.csvDescription') || 'Simple tabular format, compatible with spreadsheet applications'}
               </Text>
             </Radio>
             <Radio value="json" style={{ width: '100%' }}>
               <Space>
                 <CodeOutlined style={{ color: '#52c41a' }} />
-                <span>{t('tasks.export.json')}</span>
+                <span>{t('export.json')}</span>
               </Space>
               <Text type="secondary" style={{ display: 'block', marginLeft: 24, fontSize: 12 }}>
-                {t('tasks.export.jsonDescription') || 'Complete data with annotations and metadata'}
+                {t('export.jsonDescription') || 'Complete data with annotations and metadata'}
               </Text>
             </Radio>
             <Radio value="excel" style={{ width: '100%' }}>
               <Space>
                 <FileExcelOutlined style={{ color: '#fa8c16' }} />
-                <span>{t('tasks.export.excel')}</span>
+                <span>{t('export.excelFormat')}</span>
               </Space>
               <Text type="secondary" style={{ display: 'block', marginLeft: 24, fontSize: 12 }}>
-                {t('tasks.export.excelDescription') || 'Multi-sheet workbook with summary and charts data'}
+                {t('export.excelDescription') || 'Multi-sheet workbook with summary and charts data'}
               </Text>
             </Radio>
           </Space>
@@ -529,25 +529,25 @@ export const ExportOptionsModal: React.FC<ExportOptionsModalProps> = ({
       {/* JSON-specific options */}
       {format === 'json' && (
         <div style={{ marginBottom: 24 }}>
-          <Title level={5}>{t('tasks.export.jsonOptions') || 'JSON Options'}</Title>
+          <Title level={5}>{t('export.jsonOptions') || 'JSON Options'}</Title>
           <Space direction="vertical">
             <Checkbox 
               checked={includeAnnotations} 
               onChange={(e) => setIncludeAnnotations(e.target.checked)}
             >
-              {t('tasks.export.includeAnnotations')}
+              {t('export.includeAnnotations')}
             </Checkbox>
             <Checkbox 
               checked={includeProjectConfig} 
               onChange={(e) => setIncludeProjectConfig(e.target.checked)}
             >
-              {t('tasks.export.includeProjectConfig')}
+              {t('export.includeProjectConfig')}
             </Checkbox>
             <Checkbox 
               checked={includeSyncMetadata} 
               onChange={(e) => setIncludeSyncMetadata(e.target.checked)}
             >
-              {t('tasks.export.includeSyncMetadata')}
+              {t('export.includeSyncMetadata')}
             </Checkbox>
           </Space>
         </div>
@@ -555,28 +555,28 @@ export const ExportOptionsModal: React.FC<ExportOptionsModalProps> = ({
 
       {/* Export Range Selection */}
       <div style={{ marginBottom: 24 }}>
-        <Title level={5}>{t('tasks.export.selectRange') || 'Export Range'}</Title>
+        <Title level={5}>{t('export.selectRange') || 'Export Range'}</Title>
         <Radio.Group 
           value={range} 
           onChange={(e) => setRange(e.target.value)}
         >
           <Space direction="vertical">
             <Radio value="all" disabled={totalCount === 0}>
-              {t('tasks.export.allTasks') || 'All Tasks'} ({totalCount})
+              {t('export.allTasks') || 'All Tasks'} ({totalCount})
             </Radio>
             <Radio value="selected" disabled={selectedCount === 0}>
-              {t('tasks.export.selectedTasks') || 'Selected Tasks'} ({selectedCount})
+              {t('export.selectedTasks') || 'Selected Tasks'} ({selectedCount})
               {selectedCount === 0 && (
                 <Text type="secondary" style={{ marginLeft: 8, fontSize: 12 }}>
-                  ({t('tasks.export.noSelection') || 'No tasks selected'})
+                  ({t('export.noSelection') || 'No tasks selected'})
                 </Text>
               )}
             </Radio>
             <Radio value="filtered" disabled={filteredCount === 0 || filteredCount === totalCount}>
-              {t('tasks.export.filteredTasks') || 'Filtered Tasks'} ({filteredCount})
+              {t('export.filteredTasks') || 'Filtered Tasks'} ({filteredCount})
               {filteredCount === totalCount && (
                 <Text type="secondary" style={{ marginLeft: 8, fontSize: 12 }}>
-                  ({t('tasks.export.noFilter') || 'No filter applied'})
+                  ({t('export.noFilter') || 'No filter applied'})
                 </Text>
               )}
             </Radio>
@@ -587,7 +587,7 @@ export const ExportOptionsModal: React.FC<ExportOptionsModalProps> = ({
       {/* Field Selection */}
       <div style={{ marginBottom: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <Title level={5} style={{ margin: 0 }}>{t('tasks.export.selectFields') || 'Select Fields'}</Title>
+          <Title level={5} style={{ margin: 0 }}>{t('export.selectFields') || 'Select Fields'}</Title>
           <Space>
             <Button type="link" size="small" onClick={handleSelectAllFields}>
               {t('selectAll')}
@@ -596,14 +596,14 @@ export const ExportOptionsModal: React.FC<ExportOptionsModalProps> = ({
               {t('selectNone')}
             </Button>
             <Button type="link" size="small" onClick={handleResetFields}>
-              {t('tasks.export.resetDefault') || 'Reset Default'}
+              {t('export.resetDefault') || 'Reset Default'}
             </Button>
           </Space>
         </div>
         
         <Collapse defaultActiveKey={['basic', 'progress']} ghost>
           <Panel 
-            header={t('tasks.export.basicFields') || 'Basic Information'} 
+            header={t('export.basicFields') || 'Basic Information'} 
             key="basic"
           >
             <Space wrap>
@@ -620,7 +620,7 @@ export const ExportOptionsModal: React.FC<ExportOptionsModalProps> = ({
           </Panel>
           
           <Panel 
-            header={t('tasks.export.progressFields') || 'Progress Information'} 
+            header={t('export.progressFields') || 'Progress Information'} 
             key="progress"
           >
             <Space wrap>
@@ -637,7 +637,7 @@ export const ExportOptionsModal: React.FC<ExportOptionsModalProps> = ({
           </Panel>
           
           <Panel 
-            header={t('tasks.export.assignmentFields') || 'Assignment Information'} 
+            header={t('export.assignmentFields') || 'Assignment Information'} 
             key="assignment"
           >
             <Space wrap>
@@ -654,7 +654,7 @@ export const ExportOptionsModal: React.FC<ExportOptionsModalProps> = ({
           </Panel>
           
           <Panel 
-            header={t('tasks.export.labelStudioFields') || 'Label Studio Information'} 
+            header={t('export.labelStudioFields') || 'Label Studio Information'} 
             key="labelStudio"
           >
             <Space wrap>
@@ -676,7 +676,7 @@ export const ExportOptionsModal: React.FC<ExportOptionsModalProps> = ({
       {selectedFields.length === 0 && (
         <Alert
           type="warning"
-          message={t('tasks.export.noFieldsWarning') || 'Please select at least one field to export'}
+          message={t('export.noFieldsWarning') || 'Please select at least one field to export'}
           showIcon
         />
       )}
@@ -686,7 +686,7 @@ export const ExportOptionsModal: React.FC<ExportOptionsModalProps> = ({
         <Alert
           type="info"
           message={
-            t('tasks.export.exportSummary', { 
+            t('export.exportSummary', { 
               count: getTaskCount(), 
               fields: selectedFields.length,
               format: format.toUpperCase()

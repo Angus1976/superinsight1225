@@ -12,7 +12,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Card, Table, Button, Space, Tag, App, Form, Input, Select,
-  Progress, Statistic, Row, Col, Tabs, Descriptions, Badge
+  Progress, Statistic, Row, Col, Tabs, Descriptions, Badge, Modal
 } from 'antd';
 import {
   PlusOutlined, EditOutlined, DeleteOutlined, SettingOutlined,

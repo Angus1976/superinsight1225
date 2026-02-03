@@ -383,12 +383,12 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
         setBatchTasks(prev => [...prev, ...importedBatchTasks]);
         setCreateMode('batch');
         setImportModalOpen(false);
-        message.success(t('tasks.import.importSuccess', { count: result.data.length }) || `Successfully imported ${result.data.length} tasks`);
+        message.success(t('import.importSuccess', { count: result.data.length }) || `Successfully imported ${result.data.length} tasks`);
       } else if (result.errors.length > 0) {
-        message.error(t('tasks.import.importFailed') || 'Import failed');
+        message.error(t('import.importFailed') || 'Import failed');
       }
     } catch (error) {
-      message.error(t('tasks.import.importFailed') || 'Import failed');
+      message.error(t('import.importFailed') || 'Import failed');
     } finally {
       setIsImporting(false);
     }
@@ -397,7 +397,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
 
   const handleDownloadTemplate = useCallback(() => {
     downloadCSVTemplate(t);
-    message.success(t('tasks.import.downloadTemplate') || 'Template downloaded');
+    message.success(t('import.downloadTemplate') || 'Template downloaded');
   }, [t, message]);
 
   // Submit handlers
@@ -586,10 +586,10 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
             beforeUpload={handleFileImport}
           >
             <Button icon={<UploadOutlined />} loading={isImporting}>
-              {t('tasks.import.title') || 'Import'}
+              {t('import.title') || 'Import'}
             </Button>
           </Upload>
-          <Tooltip title={t('tasks.import.downloadTemplate') || 'Download Template'}>
+          <Tooltip title={t('import.downloadTemplate') || 'Download Template'}>
             <Button icon={<DownloadOutlined />} onClick={handleDownloadTemplate} />
           </Tooltip>
           <Button type="primary" icon={<PlusOutlined />} onClick={handleAddBatchTask}>
@@ -608,14 +608,14 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
               beforeUpload={handleFileImport}
             >
               <Button type="primary" icon={<UploadOutlined />} loading={isImporting}>
-                {t('tasks.import.title') || 'Import from File'}
+                {t('import.title') || 'Import from File'}
               </Button>
             </Upload>
             <Button onClick={handleAddBatchTask}>
               {t('addFirstTask') || 'Add Manually'}
             </Button>
             <Button type="link" size="small" onClick={handleDownloadTemplate}>
-              {t('tasks.import.downloadTemplate') || 'Download Template'}
+              {t('import.downloadTemplate') || 'Download Template'}
             </Button>
           </Space>
         </Empty>
@@ -677,7 +677,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
                     <Tooltip title={t('duplicate') || 'Duplicate'}>
                       <Button icon={<CopyOutlined />} size="small" onClick={() => handleDuplicateBatchTask(task)} />
                     </Tooltip>
-                    <Tooltip title={t('delete')}>
+                    <Tooltip title={t('deleteAction')}>
                       <Button icon={<DeleteOutlined />} size="small" danger onClick={() => handleRemoveBatchTask(task.key)} />
                     </Tooltip>
                     {task.isValid && <CheckCircleOutlined style={{ color: '#52c41a' }} />}
@@ -733,8 +733,8 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
             <Col span={12}>
               <Form.Item
                 name="priority"
-                label={t('priority')}
-                rules={[{ required: true, message: t('priorityRequired') }]}
+                label={t('columns.priority')}
+                rules={[{ required: true, message: t('create.priorityRequired') }]}
               >
                 <Select placeholder={t('priorityPlaceholder')}>
                   {priorityOptions.map(option => (
@@ -1033,7 +1033,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
                     okText={t('confirm') || 'Yes'}
                     cancelText={t('cancel')}
                   >
-                    <Button type="link" danger>{t('delete')}</Button>
+                    <Button type="link" danger>{t('deleteAction')}</Button>
                   </Popconfirm>,
                 ]}
               >

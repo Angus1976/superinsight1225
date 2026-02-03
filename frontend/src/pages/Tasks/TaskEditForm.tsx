@@ -79,7 +79,7 @@ export const TaskEditForm: React.FC<TaskEditFormProps> = ({
         <Col span={8}>
           <Form.Item
             name="status"
-            label={t('status')}
+            label={t('columns.status')}
             rules={[{ required: true }]}
           >
             <Select>
@@ -93,7 +93,7 @@ export const TaskEditForm: React.FC<TaskEditFormProps> = ({
         <Col span={8}>
           <Form.Item
             name="priority"
-            label={t('priority')}
+            label={t('columns.priority')}
             rules={[{ required: true }]}
           >
             <Select>

@@ -31,6 +31,7 @@ import {
   FilterOutlined,
   ReloadOutlined,
   DownloadOutlined,
+  UploadOutlined,
   PlayCircleOutlined,
   PauseCircleOutlined,
   CheckCircleOutlined,
@@ -46,8 +47,10 @@ import {
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useTasks, useDeleteTask, useBatchDeleteTasks, useUpdateTask, useTaskStats } from '@/hooks/useTask';
+import { usePermissions } from '@/hooks/usePermissions';
 import { TaskCreateModal } from './TaskCreateModal';
 import { TaskEditModal } from './TaskEditModal';
+import { TaskImportModal } from './TaskImportModal';
 import { BatchEditModal } from './BatchEditModal';
 import { TaskDeleteModal } from './TaskDeleteModal';
 import { ExportOptionsModal, addExportHistoryEntry } from '@/components/Tasks';
@@ -207,6 +210,7 @@ const TasksPage: React.FC = () => {
   const actionRef = useRef<ActionType>(null);
   const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [importModalOpen, setImportModalOpen] = useState(false);
   const [currentParams, setCurrentParams] = useState({});
   const [batchAction, setBatchAction] = useState<string>('');
   const [syncProgress, setSyncProgress] = useState<SyncProgress>({
@@ -223,6 +227,9 @@ const TasksPage: React.FC = () => {
   const [batchEditModalOpen, setBatchEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [tasksToDelete, setTasksToDelete] = useState<Task[]>([]);
+
+  // Permission control
+  const { task: taskPerms } = usePermissions();
 
   const { data, isLoading, refetch } = useTasks(currentParams);
   const { data: stats } = useTaskStats();
@@ -438,7 +445,7 @@ const TasksPage: React.FC = () => {
       if (updatePayload.description !== undefined) {
         syncDetails.push(t('syncedProjectDescription'));
       }
-      syncDetails.push(`${t('progress')}: ${progress}%`);
+      syncDetails.push(`${t('progressLabel')}: ${progress}%`);
       syncDetails.push(`${t('totalItems')}: ${totalTasks}`);
       syncDetails.push(`${t('completed')}: ${completedTasks}`);
       
@@ -535,7 +542,7 @@ const TasksPage: React.FC = () => {
       setSelectedRowKeys(prev => prev.filter(id => !deletedIds.includes(id)));
     }
     refetch();
-    message.success(t('tasks.delete.result.success', { count: deletedIds.length }));
+    message.success(t('delete.result.success', { count: deletedIds.length }));
   };
 
   const handleBatchStatusUpdate = async (status: TaskStatus) => {
@@ -854,7 +861,7 @@ const TasksPage: React.FC = () => {
       return;
     }
     
-    const hide = message.loading(t('tasks.export.exportingJson') || 'Exporting JSON data...', 0);
+    const hide = message.loading(t('export.exportingJson') || 'Exporting JSON data...', 0);
     
     try {
       // Fetch annotations for tasks with Label Studio projects if requested
@@ -921,12 +928,12 @@ const TasksPage: React.FC = () => {
       }, annotationsMap);
       
       hide();
-      message.success(t('tasks.export.exportJsonSuccess') || 'JSON export successful');
+      message.success(t('export.exportJsonSuccess') || 'JSON export successful');
       
     } catch (error) {
       hide();
       console.error('JSON export failed:', error);
-      message.error(t('tasks.export.exportJsonFailed') || 'JSON export failed');
+      message.error(t('export.exportJsonFailed') || 'JSON export failed');
     }
   };
 
@@ -954,10 +961,10 @@ const TasksPage: React.FC = () => {
         t: t,
       });
       
-      message.success(t('tasks.export.exportExcelSuccess') || 'Excel export successful');
+      message.success(t('export.exportExcelSuccess') || 'Excel export successful');
     } catch (error) {
       console.error('Excel export failed:', error);
-      message.error(t('tasks.export.exportExcelFailed') || 'Excel export failed');
+      message.error(t('export.exportExcelFailed') || 'Excel export failed');
     }
   };
 
@@ -1064,7 +1071,7 @@ const TasksPage: React.FC = () => {
             t,
             prettyPrint: true,
           }, annotationsMap);
-          message.success(t('tasks.export.exportJsonSuccess'));
+          message.success(t('export.exportJsonSuccess'));
           break;
           
         case 'excel':
@@ -1082,7 +1089,7 @@ const TasksPage: React.FC = () => {
           };
           
           exportTasksToExcel(tasksToExport, excelOptions);
-          message.success(t('tasks.export.exportExcelSuccess'));
+          message.success(t('export.exportExcelSuccess'));
           break;
       }
       
@@ -1099,7 +1106,7 @@ const TasksPage: React.FC = () => {
       
     } catch (error) {
       console.error('Export failed:', error);
-      message.error(t('tasks.export.exportFailed') || 'Export failed');
+      message.error(t('export.exportFailed') || 'Export failed');
     } finally {
       setExportLoading(false);
     }
@@ -1107,7 +1114,7 @@ const TasksPage: React.FC = () => {
 
   const columns: ProColumns<Task>[] = [
     {
-      title: t('status'),
+      title: t('columns.status'),
       dataIndex: 'status',
       key: 'status',
       width: 120,
@@ -1140,7 +1147,7 @@ const TasksPage: React.FC = () => {
       },
     },
     {
-      title: t('priority'),
+      title: t('columns.priority'),
       dataIndex: 'priority',
       key: 'priority',
       width: 100,
@@ -1191,7 +1198,7 @@ const TasksPage: React.FC = () => {
       },
     },
     {
-      title: t('progress'),
+      title: t('columns.progress'),
       dataIndex: 'progress',
       key: 'progress',
       width: 180,
@@ -1448,7 +1455,7 @@ const TasksPage: React.FC = () => {
       },
     },
     {
-      title: t('actions'),
+      title: t('columns.actions'),
       key: 'actions',
       width: 120,
       fixed: 'right',
@@ -1473,7 +1480,7 @@ const TasksPage: React.FC = () => {
               {
                 key: 'edit',
                 icon: <EditOutlined />,
-                label: t('edit'),
+                label: t('editAction'),
                 onClick: () => handleEdit(record.id),
               },
               { type: 'divider' },
@@ -1511,7 +1518,7 @@ const TasksPage: React.FC = () => {
               {
                 key: 'delete',
                 icon: <DeleteOutlined />,
-                label: t('delete'),
+                label: t('deleteAction'),
                 danger: true,
                 onClick: () => handleDelete(record.id),
               },
@@ -1643,7 +1650,7 @@ const TasksPage: React.FC = () => {
                   {
                     key: 'batchEdit',
                     icon: <EditOutlined />,
-                    label: t('edit'),
+                    label: t('batchEdit.title'),
                     onClick: handleBatchEdit,
                   },
                   { type: 'divider' },
@@ -1717,14 +1724,25 @@ const TasksPage: React.FC = () => {
               {t('refresh')}
             </Button>
           </Dropdown>,
-          <Button
-            key="create"
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => setCreateModalOpen(true)}
-          >
-            {t('createTask')}
-          </Button>,
+          taskPerms.canCreate && (
+            <Button
+              key="import"
+              icon={<UploadOutlined />}
+              onClick={() => setImportModalOpen(true)}
+            >
+              {t('import.title')}
+            </Button>
+          ),
+          taskPerms.canCreate && (
+            <Button
+              key="create"
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => setCreateModalOpen(true)}
+            >
+              {t('createTask')}
+            </Button>
+          ),
         ]}
         onSubmit={(params) => {
           setCurrentParams(params);
@@ -1762,6 +1780,16 @@ const TasksPage: React.FC = () => {
         onCancel={() => setCreateModalOpen(false)}
         onSuccess={() => {
           setCreateModalOpen(false);
+          refetch();
+        }}
+      />
+
+      {/* Task Import Modal */}
+      <TaskImportModal
+        open={importModalOpen}
+        onCancel={() => setImportModalOpen(false)}
+        onSuccess={() => {
+          setImportModalOpen(false);
           refetch();
         }}
       />

@@ -178,7 +178,7 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
       const values = await form.validateFields();
       
       if (!taskId) {
-        message.error(t('tasks.edit.loadFailed'));
+        message.error(t('edit.loadFailed'));
         return;
       }
 
@@ -238,11 +238,11 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
         addEditHistoryEntry(taskId, change.field, change.oldValue, change.newValue);
       }
 
-      message.success(t('tasks.edit.saveSuccess'));
+      message.success(t('edit.saveSuccess'));
       onSuccess();
     } catch (error) {
       if (error instanceof Error && error.message !== 'Validation failed') {
-        message.error(t('tasks.edit.saveFailed'));
+        message.error(t('edit.saveFailed'));
       }
     }
   };
@@ -285,9 +285,9 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
       addEditHistoryEntry(taskId, entry.field, entry.newValue, entry.oldValue, 'Rollback');
       setEditHistory(loadEditHistory(taskId));
 
-      message.success(t('tasks.editHistory.rollbackSuccess'));
+      message.success(t('editHistory.rollbackSuccess'));
     } catch {
-      message.error(t('tasks.editHistory.rollbackFailed'));
+      message.error(t('editHistory.rollbackFailed'));
     }
   }, [taskId, updateTask, message, t]);
 
@@ -296,8 +296,8 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
     const fieldMap: Record<string, string> = {
       name: t('taskName'),
       description: t('description'),
-      status: t('status'),
-      priority: t('priority'),
+      status: t('columns.status'),
+      priority: t('columns.priority'),
       annotation_type: t('annotationType'),
       assignee_id: t('assignee'),
       due_date: t('dueDate'),
@@ -333,35 +333,35 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
   const tabItems = [
     {
       key: 'basic',
-      label: t('tasks.edit.basicInfo'),
+      label: t('edit.basicInfo'),
       children: (
         <Space direction="vertical" style={{ width: '100%' }} size="middle">
           <Form.Item
             name="name"
-            label={t('tasks.edit.taskName')}
+            label={t('edit.taskName')}
             rules={[
-              { required: true, message: t('tasks.edit.taskNameRequired') },
+              { required: true, message: t('edit.taskNameRequired') },
               { max: 100, message: t('taskNameMaxLength') },
             ]}
           >
-            <Input placeholder={t('tasks.edit.taskNamePlaceholder')} maxLength={100} showCount />
+            <Input placeholder={t('edit.taskNamePlaceholder')} maxLength={100} showCount />
           </Form.Item>
 
           <Form.Item
             name="description"
-            label={t('tasks.edit.description')}
+            label={t('edit.description')}
             rules={[{ max: 500, message: t('descriptionMaxLength') }]}
           >
             <TextArea 
               rows={3} 
-              placeholder={t('tasks.edit.descriptionPlaceholder')} 
+              placeholder={t('edit.descriptionPlaceholder')} 
               maxLength={500} 
               showCount 
             />
           </Form.Item>
 
-          <Form.Item name="status" label={t('tasks.edit.status')}>
-            <Select placeholder={t('tasks.edit.statusPlaceholder')}>
+          <Form.Item name="status" label={t('edit.status')}>
+            <Select placeholder={t('edit.statusPlaceholder')}>
               {statusOptions.map(option => (
                 <Select.Option key={option.value} value={option.value}>
                   <Tag color={option.color}>{t(option.label)}</Tag>
@@ -370,8 +370,8 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
             </Select>
           </Form.Item>
 
-          <Form.Item name="priority" label={t('tasks.edit.priority')}>
-            <Select placeholder={t('tasks.edit.priorityPlaceholder')}>
+          <Form.Item name="priority" label={t('edit.priority')}>
+            <Select placeholder={t('edit.priorityPlaceholder')}>
               {priorityOptions.map(option => (
                 <Select.Option key={option.value} value={option.value}>
                   <Space>
@@ -383,10 +383,10 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
             </Select>
           </Form.Item>
 
-          <Form.Item name="tags" label={t('tasks.edit.tags')}>
+          <Form.Item name="tags" label={t('edit.tags')}>
             <Select 
               mode="tags" 
-              placeholder={t('tasks.edit.tagsPlaceholder')} 
+              placeholder={t('edit.tagsPlaceholder')} 
               tokenSeparators={[',']} 
             />
           </Form.Item>
@@ -395,11 +395,11 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
     },
     {
       key: 'annotation',
-      label: t('tasks.edit.annotationConfig'),
+      label: t('edit.annotationConfig'),
       children: (
         <Space direction="vertical" style={{ width: '100%' }} size="middle">
-          <Form.Item name="annotation_type" label={t('tasks.edit.annotationType')}>
-            <Select placeholder={t('tasks.edit.annotationTypePlaceholder')} disabled>
+          <Form.Item name="annotation_type" label={t('edit.annotationType')}>
+            <Select placeholder={t('edit.annotationTypePlaceholder')} disabled>
               {annotationTypeOptions.map(option => (
                 <Select.Option key={option.value} value={option.value}>
                   {t(option.label)}
@@ -416,12 +416,12 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
     },
     {
       key: 'assignment',
-      label: t('tasks.edit.assignmentInfo'),
+      label: t('edit.assignmentInfo'),
       children: (
         <Space direction="vertical" style={{ width: '100%' }} size="middle">
-          <Form.Item name="assignee_id" label={t('tasks.edit.assignee')}>
+          <Form.Item name="assignee_id" label={t('edit.assignee')}>
             <Select 
-              placeholder={t('tasks.edit.assigneePlaceholder')} 
+              placeholder={t('edit.assigneePlaceholder')} 
               allowClear
             >
               {mockUsers.map(user => (
@@ -438,10 +438,10 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
             </Select>
           </Form.Item>
 
-          <Form.Item name="due_date" label={t('tasks.edit.dueDate')}>
+          <Form.Item name="due_date" label={t('edit.dueDate')}>
             <DatePicker 
               style={{ width: '100%' }} 
-              placeholder={t('tasks.edit.dueDatePlaceholder')} 
+              placeholder={t('edit.dueDatePlaceholder')} 
             />
           </Form.Item>
         </Space>
@@ -452,13 +452,13 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
       label: (
         <Space>
           <HistoryOutlined />
-          {t('tasks.editHistory.title')}
+          {t('editHistory.title')}
         </Space>
       ),
       children: (
         <div style={{ maxHeight: 400, overflowY: 'auto' }}>
           {editHistory.length === 0 ? (
-            <Empty description={t('tasks.editHistory.noHistory')} />
+            <Empty description={t('editHistory.noHistory')} />
           ) : (
             <Timeline
               items={editHistory.slice().reverse().map(entry => ({
@@ -478,22 +478,22 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
                     </div>
                     <div style={{ marginTop: 4 }}>
                       <span style={{ color: '#999', fontSize: 12 }}>
-                        {t('tasks.editHistory.editedBy')}: {entry.editedBy}
+                        {t('editHistory.editedBy')}: {entry.editedBy}
                       </span>
                       <Popconfirm
-                        title={t('tasks.editHistory.rollbackConfirm')}
+                        title={t('editHistory.rollbackConfirm')}
                         onConfirm={() => handleRollback(entry)}
                         okText={t('confirm')}
                         cancelText={t('cancel')}
                       >
-                        <Tooltip title={t('tasks.editHistory.rollback')}>
+                        <Tooltip title={t('editHistory.rollback')}>
                           <Button 
                             type="link" 
                             size="small" 
                             icon={<RollbackOutlined />}
                             style={{ marginLeft: 8 }}
                           >
-                            {t('tasks.editHistory.rollback')}
+                            {t('editHistory.rollback')}
                           </Button>
                         </Tooltip>
                       </Popconfirm>
@@ -510,14 +510,14 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
 
   return (
     <Modal
-      title={t('tasks.edit.title')}
+      title={t('edit.title')}
       open={open}
       onCancel={onCancel}
       width={700}
       destroyOnHidden
       footer={[
         <Button key="cancel" onClick={onCancel}>
-          {t('tasks.edit.cancel')}
+          {t('edit.cancel')}
         </Button>,
         <Button
           key="submit"
@@ -525,7 +525,7 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
           loading={updateTask.isPending}
           onClick={handleSubmit}
         >
-          {updateTask.isPending ? t('tasks.edit.saving') : t('tasks.edit.save')}
+          {updateTask.isPending ? t('edit.saving') : t('edit.save')}
         </Button>,
       ]}
     >
@@ -535,7 +535,7 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
         </div>
       ) : error ? (
         <div style={{ textAlign: 'center', padding: 40, color: '#ff4d4f' }}>
-          {t('tasks.edit.loadFailed')}
+          {t('edit.loadFailed')}
         </div>
       ) : (
         <Form form={form} layout="vertical">

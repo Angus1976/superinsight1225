@@ -696,7 +696,7 @@ const TaskAnnotatePage: React.FC = () => {
               <div style={{ height: '100%', marginRight: fullscreen ? 0 : 8 }}>
                 {currentTask ? (
                   <Card 
-                    title={t('tasks:tasks.annotate.title')}
+                    title={t('annotate.title')}
                     style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
                     styles={{ body: { flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' } }}
                   >

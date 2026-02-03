@@ -107,7 +107,7 @@ const TaskDetailPage: React.FC = () => {
     
     if (!id || !task) {
       console.error('[handleStartAnnotation] Task ID or task data is missing');
-      message.error(t('taskDataLoadFailed'));
+      message.error(t('detail.taskDataLoadFailed'));
       return;
     }
     
@@ -129,7 +129,7 @@ const TaskDetailPage: React.FC = () => {
     
     if (!id || !task) {
       console.error('[handleOpenInNewWindow] Task ID or task data is missing');
-      message.error(t('taskDataLoadFailed'));
+      message.error(t('detail.taskDataLoadFailed'));
       return;
     }
     
@@ -137,7 +137,7 @@ const TaskDetailPage: React.FC = () => {
     
     if (!isValidProject(projectId)) {
       // No valid project ID, navigate to annotation page first to create project
-      message.info(t('projectNotCreated'));
+      message.info(t('detail.projectNotCreated'));
       navigateToAnnotate(id);
       return;
     }
@@ -204,7 +204,7 @@ const TaskDetailPage: React.FC = () => {
       label: (
         <Space>
           <FileTextOutlined />
-          {t('overview')}
+          {t('detail.overview')}
         </Space>
       ),
       children: (
@@ -212,11 +212,11 @@ const TaskDetailPage: React.FC = () => {
           {/* Main Content */}
           <Col xs={24} lg={16}>
             {/* Progress Card */}
-            <Card title={t('progress')} style={{ marginBottom: 16 }}>
+            <Card title={t('progressLabel')} style={{ marginBottom: 16 }}>
               <Row gutter={16}>
                 <Col span={8}>
                   <Statistic
-                    title={t('totalItems')}
+                    title={t('detail.totalItems')}
                     value={currentTask.total_items}
                     prefix={<ClockCircleOutlined />}
                   />
@@ -231,7 +231,7 @@ const TaskDetailPage: React.FC = () => {
                 </Col>
                 <Col span={8}>
                   <Statistic
-                    title={t('remaining')}
+                    title={t('detail.remaining')}
                     value={currentTask.total_items - currentTask.completed_items}
                     valueStyle={{ color: '#faad14' }}
                   />
@@ -240,7 +240,7 @@ const TaskDetailPage: React.FC = () => {
               <Divider />
               <div>
                 <span style={{ marginBottom: 8, display: 'block' }}>
-                  {t('overallProgress')}: {currentTask.progress}%
+                  {t('detail.overallProgress')}: {currentTask.progress}%
                 </span>
                 <Progress
                   percent={currentTask.progress}
@@ -252,20 +252,20 @@ const TaskDetailPage: React.FC = () => {
 
             {/* Description */}
             <Card title={t('description')} style={{ marginBottom: 16 }}>
-              <p>{currentTask.description || t('noDescription')}</p>
+              <p>{currentTask.description || t('detail.noDescription')}</p>
             </Card>
 
             {/* 标注集成 */}
             {currentTask.label_studio_project_id && (
-              <Card title={t('dataAnnotation')} style={{ marginBottom: 16 }}>
+              <Card title={t('detail.dataAnnotation')} style={{ marginBottom: 16 }}>
                 <Alert
-                  message={t('annotationFunction')}
+                  message={t('detail.annotationFunction')}
                   description={
                     <div>
                       <p>
-                        {t('projectId')}: <strong>{currentTask.label_studio_project_id}</strong>
+                        {t('detail.projectId')}: <strong>{currentTask.label_studio_project_id}</strong>
                       </p>
-                      <p>{t('annotationType')}: <strong>{currentTask.annotation_type}</strong></p>
+                      <p>{t('annotationTypeLabel')}: <strong>{currentTask.annotation_type}</strong></p>
                       <Space style={{ marginTop: 12 }}>
                         {annotationPerms.canView ? (
                           <Button 
@@ -274,17 +274,17 @@ const TaskDetailPage: React.FC = () => {
                             icon={<PlayCircleOutlined />}
                             onClick={handleStartAnnotation}
                           >
-                            {t('startAnnotation')}
+                            {t('detail.startAnnotation')}
                           </Button>
                         ) : (
-                          <Tooltip title={t('noAnnotationPermission')}>
+                          <Tooltip title={t('detail.noAnnotationPermission')}>
                             <Button 
                               type="primary" 
                               size="large"
                               icon={<PlayCircleOutlined />}
                               disabled
                             >
-                              {t('startAnnotation')}
+                              {t('detail.startAnnotation')}
                             </Button>
                           </Tooltip>
                         )}
@@ -293,7 +293,7 @@ const TaskDetailPage: React.FC = () => {
                           icon={<ExportOutlined />}
                           onClick={handleOpenInNewWindow}
                         >
-                          {t('openInNewWindow')}
+                          {t('detail.openInNewWindow')}
                         </Button>
                       </Space>
                     </div>
@@ -308,38 +308,38 @@ const TaskDetailPage: React.FC = () => {
           {/* Sidebar */}
           <Col xs={24} lg={8}>
             {/* Details */}
-            <Card title={t('details')} style={{ marginBottom: 16 }}>
+            <Card title={t('detail.details')} style={{ marginBottom: 16 }}>
               <Descriptions column={1} size="small">
-                <Descriptions.Item label={t('annotationType')}>
+                <Descriptions.Item label={t('annotationTypeLabel')}>
                   {currentTask.annotation_type ? currentTask.annotation_type.replace('_', ' ') : '-'}
                 </Descriptions.Item>
                 <Descriptions.Item label={t('assignee')}>
                   {currentTask.assignee_name || t('unassigned')}
                 </Descriptions.Item>
-                <Descriptions.Item label={t('createdBy')}>{currentTask.created_by}</Descriptions.Item>
-                <Descriptions.Item label={t('createdAt')}>
+                <Descriptions.Item label={t('detail.createdBy')}>{currentTask.created_by}</Descriptions.Item>
+                <Descriptions.Item label={t('detail.createdAt')}>
                   {new Date(currentTask.created_at).toLocaleString()}
                 </Descriptions.Item>
-                <Descriptions.Item label={t('updatedAt')}>
+                <Descriptions.Item label={t('detail.updatedAt')}>
                   {new Date(currentTask.updated_at).toLocaleString()}
                 </Descriptions.Item>
                 <Descriptions.Item label={t('dueDate')}>
                   {currentTask.due_date
                     ? new Date(currentTask.due_date).toLocaleDateString()
-                    : t('noDueDate')}
+                    : t('detail.noDueDate')}
                 </Descriptions.Item>
               </Descriptions>
             </Card>
 
             {/* Activity Timeline */}
-            <Card title={t('activity')}>
+            <Card title={t('detail.activity')}>
               <Timeline
                 items={[
                   {
                     color: 'green',
                     children: (
                       <>
-                        <p style={{ marginBottom: 4 }}>{t('taskCreated')}</p>
+                        <p style={{ marginBottom: 4 }}>{t('detail.taskCreated')}</p>
                         <small style={{ color: '#999' }}>
                           {new Date(currentTask.created_at).toLocaleString()}
                         </small>
@@ -350,7 +350,7 @@ const TaskDetailPage: React.FC = () => {
                     color: 'blue',
                     children: (
                       <>
-                        <p style={{ marginBottom: 4 }}>{t('assignedTo', { name: currentTask.assignee_name })}</p>
+                        <p style={{ marginBottom: 4 }}>{t('detail.assignedTo', { name: currentTask.assignee_name })}</p>
                         <small style={{ color: '#999' }}>
                           {new Date(currentTask.updated_at).toLocaleString()}
                         </small>
@@ -361,7 +361,7 @@ const TaskDetailPage: React.FC = () => {
                     color: 'gray',
                     children: (
                       <>
-                        <p style={{ marginBottom: 4 }}>{t('progressUpdated', { progress: 65 })}</p>
+                        <p style={{ marginBottom: 4 }}>{t('detail.progressUpdated', { progress: 65 })}</p>
                         <small style={{ color: '#999' }}>
                           {new Date(currentTask.updated_at).toLocaleString()}
                         </small>
@@ -380,8 +380,8 @@ const TaskDetailPage: React.FC = () => {
       label: (
         <Space>
           <BarChartOutlined />
-          {t('progressTracking')}
-          <Badge count={currentTask.progress < 100 ? t('active') : t('completed')} />
+          {t('detail.progressTracking')}
+          <Badge count={currentTask.progress < 100 ? t('common.active') : t('completed')} />
         </Space>
       ),
       children: (
@@ -400,15 +400,15 @@ const TaskDetailPage: React.FC = () => {
       label: (
         <Space>
           <TeamOutlined />
-          {t('teamCollaboration')}
+          {t('detail.teamCollaboration')}
         </Space>
       ),
       children: (
         <Card>
           <Alert
             type="info"
-            message={t('teamCollaborationFeature')}
-            description={t('teamCollaborationDescription')}
+            message={t('detail.teamCollaborationFeature')}
+            description={t('detail.teamCollaborationDescription')}
             showIcon
           />
         </Card>
@@ -422,7 +422,7 @@ const TaskDetailPage: React.FC = () => {
       <Card style={{ marginBottom: 16 }}>
         <Space style={{ marginBottom: 16 }}>
           <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/tasks')}>
-            {t('backToTasks')}
+            {t('detail.backToTasks')}
           </Button>
         </Space>
 
@@ -465,7 +465,7 @@ const TaskDetailPage: React.FC = () => {
                 icon={<PlayCircleOutlined />}
                 onClick={() => handleStatusChange('in_progress')}
               >
-                {t('startTask')}
+                {t('detail.startTask')}
               </Button>
             )}
             {currentTask.status === 'in_progress' && (
@@ -474,14 +474,14 @@ const TaskDetailPage: React.FC = () => {
                 icon={<CheckCircleOutlined />}
                 onClick={() => handleStatusChange('completed')}
               >
-                {t('completeTask')}
+                {t('detail.completeTask')}
               </Button>
             )}
             <Button icon={<EditOutlined />} onClick={() => navigate(`/tasks/${id}/edit`)}>
-              {t('edit')}
+              {t('editAction')}
             </Button>
             <Button danger icon={<DeleteOutlined />} onClick={handleDelete}>
-              {t('delete')}
+              {t('deleteAction')}
             </Button>
           </Space>
         </div>

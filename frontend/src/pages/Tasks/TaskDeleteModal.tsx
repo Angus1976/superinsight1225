@@ -136,7 +136,7 @@ export const TaskDeleteModal: React.FC<TaskDeleteModalProps> = ({
       current: 0,
       total,
       status: 'deleting',
-      message: t('tasks.delete.progress.deleting'),
+      message: t('delete.progress.deleting'),
       failedTasks: [],
       successCount: 0,
     });
@@ -148,8 +148,8 @@ export const TaskDeleteModal: React.FC<TaskDeleteModalProps> = ({
         ...prev,
         current: i + 1,
         message: isBatchDelete
-          ? t('tasks.delete.progress.deletingTask', { current: i + 1, total })
-          : t('tasks.delete.progress.deleting'),
+          ? t('delete.progress.deletingTask', { current: i + 1, total })
+          : t('delete.progress.deleting'),
       }));
 
       try {
@@ -159,7 +159,7 @@ export const TaskDeleteModal: React.FC<TaskDeleteModalProps> = ({
         const errorMessage = error instanceof Error 
           ? error.message 
           : (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail 
-            || t('tasks.delete.result.failed');
+            || t('delete.result.failed');
         
         failedTasks.push({
           id: task.id,
@@ -179,11 +179,11 @@ export const TaskDeleteModal: React.FC<TaskDeleteModalProps> = ({
       total,
       status: allFailed ? 'error' : 'completed',
       message: hasFailures
-        ? t('tasks.delete.result.partialSuccess', { 
+        ? t('delete.result.partialSuccess', { 
             success: deletedIds.length, 
             failed: failedTasks.length 
           })
-        : t('tasks.delete.result.success', { count: deletedIds.length }),
+        : t('delete.result.success', { count: deletedIds.length }),
       failedTasks,
       successCount: deletedIds.length,
     });
@@ -222,7 +222,7 @@ export const TaskDeleteModal: React.FC<TaskDeleteModalProps> = ({
       <Alert
         type="warning"
         icon={<WarningOutlined />}
-        message={t('tasks.delete.warning')}
+        message={t('delete.warning')}
         showIcon
       />
 
@@ -242,7 +242,7 @@ export const TaskDeleteModal: React.FC<TaskDeleteModalProps> = ({
       {/* Batch Delete Info */}
       {isBatchDelete && (
         <div>
-          <Text strong>{t('tasks.delete.batchConfirmMessage', { count: tasks.length })}</Text>
+          <Text strong>{t('delete.batchConfirmMessage', { count: tasks.length })}</Text>
         </div>
       )}
 
@@ -252,25 +252,25 @@ export const TaskDeleteModal: React.FC<TaskDeleteModalProps> = ({
       <div>
         <Title level={5} style={{ marginBottom: 8 }}>
           <ExclamationCircleOutlined style={{ color: '#faad14', marginRight: 8 }} />
-          {t('tasks.delete.impact.title')}
+          {t('delete.impact.title')}
         </Title>
         <List
           size="small"
           dataSource={[
             {
               icon: <DatabaseOutlined />,
-              text: t('tasks.delete.impact.taskInfo'),
-              detail: `${deleteImpact.taskCount} ${t('tasks.export.tasks')}`,
+              text: t('delete.impact.taskInfo'),
+              detail: `${deleteImpact.taskCount} ${t('export.tasks')}`,
             },
             {
               icon: <FileOutlined />,
-              text: t('tasks.delete.impact.annotationData'),
+              text: t('delete.impact.annotationData'),
               detail: `${deleteImpact.completedItems} / ${deleteImpact.totalItems}`,
             },
             ...(deleteImpact.projectCount > 0 ? [{
               icon: <CloudOutlined />,
-              text: t('tasks.delete.impact.labelStudioProject'),
-              detail: `${deleteImpact.projectCount} ${t('tasks.export.tasks')}`,
+              text: t('delete.impact.labelStudioProject'),
+              detail: `${deleteImpact.projectCount} ${t('export.tasks')}`,
             }] : []),
           ]}
           renderItem={(item) => (
@@ -298,14 +298,14 @@ export const TaskDeleteModal: React.FC<TaskDeleteModalProps> = ({
             }))}
           >
             <Space>
-              <Text>{t('tasks.delete.options.deleteLabelStudioProject')}</Text>
+              <Text>{t('delete.options.deleteLabelStudioProject')}</Text>
             </Space>
           </Checkbox>
         )}
         {hasLabelStudioProjects && options.deleteLabelStudioProject && (
           <Alert
             type="error"
-            message={t('tasks.delete.options.deleteLabelStudioProjectTip')}
+            message={t('delete.options.deleteLabelStudioProjectTip')}
             style={{ marginLeft: 24 }}
             showIcon
           />
@@ -341,14 +341,14 @@ export const TaskDeleteModal: React.FC<TaskDeleteModalProps> = ({
         : <WarningOutlined style={{ color: '#faad14' }} />
       }
       title={progress.status === 'completed' 
-        ? t('tasks.delete.progress.completed')
-        : t('tasks.delete.progress.failed')
+        ? t('delete.progress.completed')
+        : t('delete.progress.failed')
       }
       subTitle={progress.message}
       extra={
         progress.failedTasks.length > 0 && (
           <div style={{ textAlign: 'left', maxHeight: 200, overflow: 'auto' }}>
-            <Text strong>{t('tasks.delete.result.failedTasks')}</Text>
+            <Text strong>{t('delete.result.failedTasks')}</Text>
             <List
               size="small"
               dataSource={progress.failedTasks}
@@ -398,7 +398,7 @@ export const TaskDeleteModal: React.FC<TaskDeleteModalProps> = ({
     return (
       <Space>
         <Button onClick={handleCancel}>
-          {t('tasks.delete.buttons.cancel')}
+          {t('delete.buttons.cancel')}
         </Button>
         <Button 
           type="primary" 
@@ -406,7 +406,7 @@ export const TaskDeleteModal: React.FC<TaskDeleteModalProps> = ({
           icon={<DeleteOutlined />}
           onClick={handleDelete}
         >
-          {t('tasks.delete.buttons.confirm')}
+          {t('delete.buttons.confirm')}
         </Button>
       </Space>
     );
@@ -418,8 +418,8 @@ export const TaskDeleteModal: React.FC<TaskDeleteModalProps> = ({
         <Space>
           <DeleteOutlined style={{ color: '#ff4d4f' }} />
           {isBatchDelete 
-            ? t('tasks.delete.batchTitle')
-            : t('tasks.delete.title')
+            ? t('delete.batchTitle')
+            : t('delete.title')
           }
         </Space>
       }

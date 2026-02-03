@@ -57,10 +57,10 @@ const priorityOptions: { label: string; value: TaskPriority; color: string }[] =
 ];
 
 const fieldOptions: { label: string; value: BatchEditField }[] = [
-  { label: 'tasks.batchEdit.status', value: 'status' },
-  { label: 'tasks.batchEdit.priority', value: 'priority' },
-  { label: 'tasks.batchEdit.assignee', value: 'assignee_id' },
-  { label: 'tasks.batchEdit.dueDate', value: 'due_date' },
+  { label: 'batchEdit.status', value: 'status' },
+  { label: 'batchEdit.priority', value: 'priority' },
+  { label: 'batchEdit.assignee', value: 'assignee_id' },
+  { label: 'batchEdit.dueDate', value: 'due_date' },
 ];
 
 interface BatchProgress {
@@ -102,7 +102,7 @@ export const BatchEditModal: React.FC<BatchEditModalProps> = ({
   // Handle batch update
   const handleSubmit = async () => {
     if (!selectedField) {
-      message.warning(t('tasks.batchEdit.noFieldSelected'));
+      message.warning(t('batchEdit.noFieldSelected'));
       return;
     }
 
@@ -111,7 +111,7 @@ export const BatchEditModal: React.FC<BatchEditModalProps> = ({
       const newValue = values[selectedField];
 
       if (newValue === undefined || newValue === null || newValue === '') {
-        message.warning(t('tasks.batchEdit.noValueProvided'));
+        message.warning(t('batchEdit.noValueProvided'));
         return;
       }
 
@@ -171,22 +171,22 @@ export const BatchEditModal: React.FC<BatchEditModalProps> = ({
 
       // Show result message
       if (failCount === 0) {
-        message.success(t('tasks.batchEdit.applySuccess', { count: successCount }));
+        message.success(t('batchEdit.applySuccess', { count: successCount }));
         setTimeout(() => {
           handleCancel();
           onSuccess();
         }, 1000);
       } else if (successCount > 0) {
-        message.warning(t('tasks.batchEdit.applyPartial', { success: successCount, failed: failCount }));
+        message.warning(t('batchEdit.applyPartial', { success: successCount, failed: failCount }));
         setTimeout(() => {
           handleCancel();
           onSuccess();
         }, 2000);
       } else {
-        message.error(t('tasks.batchEdit.applyFailed'));
+        message.error(t('batchEdit.applyFailed'));
       }
     } catch {
-      message.error(t('tasks.batchEdit.applyFailed'));
+      message.error(t('batchEdit.applyFailed'));
     }
   };
 
@@ -197,10 +197,10 @@ export const BatchEditModal: React.FC<BatchEditModalProps> = ({
         return (
           <Form.Item
             name="status"
-            label={t('tasks.batchEdit.newValue')}
-            rules={[{ required: true, message: t('tasks.batchEdit.noValueProvided') }]}
+            label={t('batchEdit.newValue')}
+            rules={[{ required: true, message: t('batchEdit.noValueProvided') }]}
           >
-            <Select placeholder={t('tasks.edit.statusPlaceholder')}>
+            <Select placeholder={t('edit.statusPlaceholder')}>
               {statusOptions.map(option => (
                 <Select.Option key={option.value} value={option.value}>
                   <Tag color={option.color}>{t(option.label)}</Tag>
@@ -214,10 +214,10 @@ export const BatchEditModal: React.FC<BatchEditModalProps> = ({
         return (
           <Form.Item
             name="priority"
-            label={t('tasks.batchEdit.newValue')}
-            rules={[{ required: true, message: t('tasks.batchEdit.noValueProvided') }]}
+            label={t('batchEdit.newValue')}
+            rules={[{ required: true, message: t('batchEdit.noValueProvided') }]}
           >
-            <Select placeholder={t('tasks.edit.priorityPlaceholder')}>
+            <Select placeholder={t('edit.priorityPlaceholder')}>
               {priorityOptions.map(option => (
                 <Select.Option key={option.value} value={option.value}>
                   <Space>
@@ -234,10 +234,10 @@ export const BatchEditModal: React.FC<BatchEditModalProps> = ({
         return (
           <Form.Item
             name="assignee_id"
-            label={t('tasks.batchEdit.newValue')}
-            rules={[{ required: true, message: t('tasks.batchEdit.noValueProvided') }]}
+            label={t('batchEdit.newValue')}
+            rules={[{ required: true, message: t('batchEdit.noValueProvided') }]}
           >
-            <Select placeholder={t('tasks.edit.assigneePlaceholder')}>
+            <Select placeholder={t('edit.assigneePlaceholder')}>
               {mockUsers.map(user => (
                 <Select.Option key={user.id} value={user.id}>
                   <Space>
@@ -257,12 +257,12 @@ export const BatchEditModal: React.FC<BatchEditModalProps> = ({
         return (
           <Form.Item
             name="due_date"
-            label={t('tasks.batchEdit.newValue')}
-            rules={[{ required: true, message: t('tasks.batchEdit.noValueProvided') }]}
+            label={t('batchEdit.newValue')}
+            rules={[{ required: true, message: t('batchEdit.noValueProvided') }]}
           >
             <DatePicker 
               style={{ width: '100%' }} 
-              placeholder={t('tasks.edit.dueDatePlaceholder')} 
+              placeholder={t('edit.dueDatePlaceholder')} 
             />
           </Form.Item>
         );
@@ -276,7 +276,7 @@ export const BatchEditModal: React.FC<BatchEditModalProps> = ({
 
   return (
     <Modal
-      title={t('tasks.batchEdit.title')}
+      title={t('batchEdit.title')}
       open={open}
       onCancel={handleCancel}
       width={500}
@@ -286,7 +286,7 @@ export const BatchEditModal: React.FC<BatchEditModalProps> = ({
       footer={
         isProcessing ? null : [
           <Button key="cancel" onClick={handleCancel}>
-            {t('tasks.batchEdit.cancel')}
+            {t('batchEdit.cancel')}
           </Button>,
           <Button
             key="submit"
@@ -294,7 +294,7 @@ export const BatchEditModal: React.FC<BatchEditModalProps> = ({
             onClick={handleSubmit}
             disabled={!selectedField}
           >
-            {t('tasks.batchEdit.apply')}
+            {t('batchEdit.apply')}
           </Button>,
         ]
       }
@@ -302,7 +302,7 @@ export const BatchEditModal: React.FC<BatchEditModalProps> = ({
       {/* Selected tasks info */}
       <Alert
         type="info"
-        message={t('tasks.batchEdit.selectedCount', { count: tasks.length })}
+        message={t('batchEdit.selectedCount', { count: tasks.length })}
         style={{ marginBottom: 16 }}
         showIcon
       />
@@ -322,16 +322,16 @@ export const BatchEditModal: React.FC<BatchEditModalProps> = ({
           />
           <div style={{ marginTop: 8 }}>
             {progress.status === 'processing' && (
-              <span>{t('tasks.batchEdit.applying')}</span>
+              <span>{t('batchEdit.applying')}</span>
             )}
             {progress.status === 'completed' && (
               <Tag color="success" icon={<CheckCircleOutlined />}>
-                {t('tasks.batchEdit.applySuccess', { count: progress.success })}
+                {t('batchEdit.applySuccess', { count: progress.success })}
               </Tag>
             )}
             {progress.status === 'error' && progress.success > 0 && (
               <Tag color="warning" icon={<ExclamationCircleOutlined />}>
-                {t('tasks.batchEdit.applyPartial', { success: progress.success, failed: progress.failed })}
+                {t('batchEdit.applyPartial', { success: progress.success, failed: progress.failed })}
               </Tag>
             )}
           </div>
@@ -342,11 +342,11 @@ export const BatchEditModal: React.FC<BatchEditModalProps> = ({
       {progress.status === 'idle' && (
         <Form form={form} layout="vertical">
           <Form.Item
-            label={t('tasks.batchEdit.selectField')}
+            label={t('batchEdit.selectField')}
             required
           >
             <Select
-              placeholder={t('tasks.batchEdit.selectField')}
+              placeholder={t('batchEdit.selectField')}
               value={selectedField}
               onChange={(value) => {
                 setSelectedField(value);

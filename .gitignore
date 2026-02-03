@@ -175,4 +175,4 @@ secrets/
 *.key
 *.pem
 *.p12
-*.pfx
+*.pfxfrontend/coverage/

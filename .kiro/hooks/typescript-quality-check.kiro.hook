@@ -1,0 +1,14 @@
+{
+  "enabled": true,
+  "name": "TypeScript 质量检查",
+  "description": "TypeScript 文件保存时的质量检查",
+  "version": "2.0.0",
+  "when": {
+    "type": "fileEdited",
+    "patterns": ["frontend/src/**/*.ts", "frontend/src/**/*.tsx"]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "TS file modified. Check: exports exist (index.ts), API generic types (services), run tsc. Report errors only."
+  }
+}

@@ -1,3 +1,7 @@
+---
+inclusion: manual
+---
+
 # Async/Sync Safety Rules for FastAPI Development
 
 **Version**: 1.0  

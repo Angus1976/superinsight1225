@@ -1,39 +1,72 @@
+---
+inclusion: manual
+---
+
 # TypeScript 导出规范
 
-**Version**: 1.0  
+**Version**: 2.0  
 **Status**: ✅ Active  
-**Last Updated**: 2026-01-19  
-**Priority**: HIGH
+**Last Updated**: 2026-02-04  
+**Priority**: HIGH  
+**加载方式**: 手动加载（按需引用）
 
-## 概述
+---
 
-本规范旨在防止 TypeScript 模块导出时出现的常见错误，包括：
-- 重复导出（TS2308）
-- 导出不存在的成员
-- 类型不匹配的导出
-- 命名冲突
+## 📌 核心原则（必读）
 
-## 问题背景
+**导出前验证 > 避免冲突 > 明确类型**
 
-2026-01-19 修复了 675 个 TypeScript 错误，主要问题包括：
+防止重复导出、导出不存在的成员、类型不匹配。
 
-1. **hooks/index.ts 导出不存在的函数**
-   - `useTaskList` 应为 `useTasks`
-   - `useTaskDetail` 不存在
-   - `useCPUMonitor`、`useNetworkMonitor` 不存在
-   - `useHover` 应为 `useHoverState`
-   - `useFocus` 应为 `useFocusState`
+---
 
-2. **types/index.ts 重复导出**
-   - `ApiError` 在多个文件中定义
-   - `PaginationParams`、`AsyncState` 重复导出
+## 🎯 5 条核心规则（日常使用）
 
-3. **API 服务缺少泛型类型**
-   - `api.get()` 应为 `api.get<ResponseType>()`
+1. **验证成员存在** - 导出前检查源文件
+2. **重命名避免冲突** - 不用通配符导出
+3. **API 调用加泛型** - `api.get<Type>()`
+4. **检查重复导出** - 用工具检测
+5. **严格模式检查** - `npx tsc --noEmit`
 
-## 强制规则
+---
 
-### 规则 1: 导出前验证成员存在性
+## ⚡ 快速参考（80% 场景够用）
+
+### 常见错误模式
+
+| 错误 | 原因 | 修复 |
+|------|------|------|
+| TS2308 重复导出 | 多个文件导出同名 | 重命名或删除重复 |
+| 导出不存在 | index.ts 导出源文件没有的成员 | 检查源文件实际导出 |
+| 类型不匹配 | API 调用缺少泛型 | 添加 `<ResponseType>` |
+
+### 快速检查命令
+
+```bash
+# 检查文件实际导出
+grep -E "^export" ./useTask.ts
+
+# 检查重复导出
+grep -E "^export" ./index.ts | sort | uniq -d
+
+# TypeScript 类型检查
+npx tsc --noEmit
+```
+
+### Hook 命名规范
+
+| 错误名称 | 正确名称 |
+|---------|---------|
+| `useTaskList` | `useTasks` |
+| `useHover` | `useHoverState` |
+| `useFocus` | `useFocusState` |
+
+---
+
+## 📚 详细规则（按需查阅）
+
+<details>
+<summary><b>规则 1: 导出前验证成员存在性</b>（点击展开）</summary>
 
 **❌ 错误示例**:
 ```typescript
@@ -49,7 +82,10 @@ export { useTaskList, useTaskDetail } from './useTask';
 export { useTask, useTasks, useTaskStats } from './useTask';
 ```
 
-### 规则 2: 处理命名冲突时使用重命名
+</details>
+
+<details>
+<summary><b>规则 2: 处理命名冲突时使用重命名</b>（点击展开）</summary>
 
 **❌ 错误示例**:
 ```typescript
@@ -68,7 +104,10 @@ export {
 } from './api-enhanced';
 ```
 
-### 规则 3: API 调用必须指定泛型类型
+</details>
+
+<details>
+<summary><b>规则 3: API 调用必须指定泛型类型</b>（点击展开）</summary>
 
 **❌ 错误示例**:
 ```typescript
@@ -82,7 +121,10 @@ const response = await api.get<User[]>('/api/users');
 const data = await api.post<User>('/api/users', payload);
 ```
 
-### 规则 4: 索引文件导出检查清单
+</details>
+
+<details>
+<summary><b>规则 4: 索引文件导出检查清单</b>（点击展开）</summary>
 
 创建或修改 `index.ts` 导出文件时，必须：
 
@@ -101,7 +143,10 @@ const data = await api.post<User>('/api/users', payload);
 3. **验证导出存在性**
    - 每个 `export { name } from './file'` 中的 `name` 必须在 `file` 中存在
 
-### 规则 5: 使用 TypeScript 严格模式检查
+</details>
+
+<details>
+<summary><b>规则 5: 使用 TypeScript 严格模式检查</b>（点击展开）</summary>
 
 在 `tsconfig.json` 中保持以下配置：
 
@@ -115,7 +160,10 @@ const data = await api.post<User>('/api/users', payload);
 }
 ```
 
-## 常见错误模式
+</details>
+
+<details>
+<summary><b>常见错误模式详解</b>（点击展开）</summary>
 
 ### 模式 1: Hook 命名不一致
 
@@ -144,52 +192,14 @@ export { specificExport } from './moduleA';
 export { anotherExport } from './moduleB';
 ```
 
-## 开发流程检查点
+</details>
 
-### 新建模块时
+---
 
-1. 定义清晰的导出接口
-2. 在 index.ts 中添加导出前，先验证成员存在
-3. 检查是否与现有导出冲突
+## 🔗 相关资源
 
-### 修改现有模块时
-
-1. 如果重命名导出，同步更新所有 index.ts
-2. 如果删除导出，检查是否有其他文件依赖
-3. 运行 `npx tsc --noEmit` 验证
-
-### 代码审查时
-
-1. 检查新增的 index.ts 导出是否正确
-2. 验证 API 调用是否有泛型类型
-3. 确认没有重复导出
-
-## 自动化检查
-
-### 提交前检查
-
-```bash
-# 在 frontend 目录运行
-npx tsc --noEmit
-
-# 如果有错误，必须修复后才能提交
-```
-
-### CI/CD 检查
-
-```yaml
-# GitHub Actions 示例
-- name: TypeScript Check
-  run: |
-    cd frontend
-    npx tsc --noEmit
-```
-
-## 参考资料
-
-- [TypeScript Module Resolution](https://www.typescriptlang.org/docs/handbook/module-resolution.html)
-- [TypeScript Re-exports](https://www.typescriptlang.org/docs/handbook/modules.html#re-exports)
-- [React Query TypeScript](https://tanstack.com/query/latest/docs/react/typescript)
+- **代码质量标准**：`.kiro/steering/coding-quality-standards.md`
+- **前端项目结构**：`.kiro/steering/structure.md`
 
 ---
 

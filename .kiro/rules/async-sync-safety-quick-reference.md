@@ -1,8 +1,13 @@
+---
+inclusion: manual
+---
+
 # Async/Sync Safety - Quick Reference Guide
 
 **Last Updated**: 2026-02-03  
 **Status**: ✅ Active  
-**Priority**: CRITICAL
+**Priority**: CRITICAL  
+**加载方式**: 手动加载（按需引用）
 
 ## The 3 Golden Rules
 

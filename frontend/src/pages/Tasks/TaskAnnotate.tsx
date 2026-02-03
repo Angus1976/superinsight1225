@@ -711,12 +711,12 @@ const TaskAnnotatePage: React.FC = () => {
                 ) : (
                   <Alert
                     type="warning"
-                    message={t('annotate.noCurrentTask', '当前没有可用的标注任务')}
+                    message={t('annotate.noCurrentTask')}
                     description={
                       <div>
-                        <p>项目 ID: {project.id}</p>
-                        <p>任务总数: {tasks.length}</p>
-                        <p>当前索引: {currentTaskIndex}</p>
+                        <p>{t('annotate.projectIdLabel')}: {project.id}</p>
+                        <p>{t('annotate.totalTasksLabel')}: {tasks.length}</p>
+                        <p>{t('annotate.currentIndexLabel')}: {currentTaskIndex}</p>
                       </div>
                     }
                   />
@@ -724,7 +724,7 @@ const TaskAnnotatePage: React.FC = () => {
               </div>
             </Col>
 
-            {/* 右侧控制面板 - 仅在非全屏模式显示 */}
+            {/* Right control panel - only shown in non-fullscreen mode */}
             {!fullscreen && (
               <Col span={6} style={{ height: '100%' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>

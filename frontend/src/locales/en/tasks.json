@@ -90,7 +90,8 @@
       "includeAnnotations": "Include Annotations",
       "exporting": "Exporting...",
       "exportSelected": "Export Selected ({{count}})",
-      "exportAll": "Export All"
+      "exportAll": "Export All",
+      "tasks": "tasks"
     },
     "sync": {
       "title": "Sync Progress",
@@ -180,7 +181,11 @@
       "tasksImportedSuccess": "Task data imported successfully",
       "unexpectedError": "An unexpected error occurred, please try again later",
       "errorDetails": "Error Details",
-      "contactSupport": "If the problem persists, please contact support"
+      "contactSupport": "If the problem persists, please contact support",
+      "noCurrentTask": "No annotation task available",
+      "projectIdLabel": "Project ID",
+      "totalTasksLabel": "Total Tasks",
+      "currentIndexLabel": "Current Index"
     },
     "detail": {
       "overview": "Overview",
@@ -343,7 +348,15 @@
       "approveSuccess": "Approved successfully",
       "rejectSuccess": "Rejected successfully",
       "revisionSuccess": "Revision requested",
-      "batchSuccess": "Batch operation completed, processed {{count}} items"
+      "batchSuccess": "Batch operation completed, processed {{count}} items",
+      "currentUser": "Current User",
+      "defaultApproved": "Approved",
+      "defaultRejected": "Rejected",
+      "defaultNeedsRevision": "Needs Revision",
+      "batchApprovedDefault": "Batch Approved",
+      "batchRejectedDefault": "Batch Rejected",
+      "batchRevisionDefault": "Batch Revision Requested",
+      "pleaseCheckAndRevise": "Please check and revise the annotation"
     },
     "ai": {
       "preAnnotationResults": "AI Pre-annotation Results",
@@ -407,6 +420,51 @@
       "cancel": "Cancel",
       "confirm": "Confirm",
       "active": "Active"
-    }
+    },
+    "delete": {
+      "title": "Delete Task",
+      "batchTitle": "Batch Delete Tasks",
+      "confirmTitle": "Confirm Delete",
+      "confirmMessage": "Are you sure you want to delete task \"{{name}}\"?",
+      "batchConfirmMessage": "Are you sure you want to delete {{count}} selected tasks?",
+      "warning": "This action cannot be undone",
+      "impact": {
+        "title": "Delete Impact",
+        "taskInfo": "Task information will be deleted",
+        "annotationData": "Annotation data will be deleted",
+        "labelStudioProject": "Associated Label Studio project",
+        "relatedFiles": "Related files will be cleaned up",
+        "cacheData": "Cache data will be cleaned up"
+      },
+      "options": {
+        "deleteLabelStudioProject": "Also delete Label Studio project",
+        "deleteLabelStudioProjectTip": "If checked, the associated Label Studio project and all its annotation data will also be deleted",
+        "softDelete": "Soft delete (recoverable)",
+        "softDeleteTip": "Soft deleted tasks can be recovered from trash"
+      },
+      "progress": {
+        "title": "Delete Progress",
+        "deleting": "Deleting...",
+        "deletingTask": "Deleting task {{current}} / {{total}}",
+        "deletingProject": "Deleting Label Studio project...",
+        "cleaningCache": "Cleaning cache...",
+        "completed": "Delete completed",
+        "failed": "Delete failed"
+      },
+      "result": {
+        "success": "Successfully deleted {{count}} tasks",
+        "partialSuccess": "Delete completed: {{success}} succeeded, {{failed}} failed",
+        "failed": "Delete failed",
+        "failedTasks": "Failed tasks:"
+      },
+      "buttons": {
+        "delete": "Delete",
+        "cancel": "Cancel",
+        "confirm": "Confirm Delete",
+        "retry": "Retry"
+      }
+    },
+    "close": "Close",
+    "taskName": "Task Name"
   }
 }

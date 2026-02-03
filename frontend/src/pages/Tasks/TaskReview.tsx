@@ -98,17 +98,22 @@ const TaskReviewPage: React.FC = () => {
   const handleReview = useCallback((itemId: string, action: 'approve' | 'reject' | 'revision', comment?: string) => {
     setReviewItems(prev => prev.map(item => {
       if (item.id === itemId) {
+        const defaultContent = action === 'approve' 
+          ? t('review.defaultApproved') 
+          : action === 'reject' 
+            ? t('review.defaultRejected') 
+            : t('review.defaultNeedsRevision');
         const newComment: ReviewComment = {
           id: `c${Date.now()}`,
-          author: '当前用户',
-          content: comment || (action === 'approve' ? '已批准' : action === 'reject' ? '已拒绝' : '需要修订'),
+          author: t('review.currentUser'),
+          content: comment || defaultContent,
           createdAt: new Date().toISOString(),
           type: action === 'approve' ? 'approval' : action === 'reject' ? 'rejection' : 'revision',
         };
         return {
           ...item,
           status: action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : 'revision_requested',
-          reviewedBy: '当前用户',
+          reviewedBy: t('review.currentUser'),
           reviewedAt: new Date().toISOString(),
           comments: [...(item.comments || []), newComment],
         };
@@ -127,17 +132,22 @@ const TaskReviewPage: React.FC = () => {
     
     setReviewItems(prev => prev.map(item => {
       if (selectedItems.includes(item.id)) {
+        const defaultContent = batchAction === 'approve' 
+          ? t('review.batchApprovedDefault') 
+          : batchAction === 'reject' 
+            ? t('review.batchRejectedDefault') 
+            : t('review.batchRevisionDefault');
         const newComment: ReviewComment = {
           id: `c${Date.now()}`,
-          author: '当前用户',
-          content: reviewComment || (batchAction === 'approve' ? '批量批准' : batchAction === 'reject' ? '批量拒绝' : '批量请求修订'),
+          author: t('review.currentUser'),
+          content: reviewComment || defaultContent,
           createdAt: new Date().toISOString(),
           type: batchAction === 'approve' ? 'approval' : batchAction === 'reject' ? 'rejection' : 'revision',
         };
         return {
           ...item,
           status: batchAction === 'approve' ? 'approved' : batchAction === 'reject' ? 'rejected' : 'revision_requested',
-          reviewedBy: '当前用户',
+          reviewedBy: t('review.currentUser'),
           reviewedAt: new Date().toISOString(),
           comments: [...(item.comments || []), newComment],
         };
@@ -302,7 +312,7 @@ const TaskReviewPage: React.FC = () => {
                     key="revision"
                     size="small"
                     icon={<EditOutlined />}
-                    onClick={() => handleReview(item.id, 'revision', '请检查并修订标注')}
+                    onClick={() => handleReview(item.id, 'revision', t('review.pleaseCheckAndRevise'))}
                   >
                     {t('review.requestRevision') || 'Request Revision'}
                   </Button>,

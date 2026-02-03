@@ -90,7 +90,8 @@
       "includeAnnotations": "包含标注结果",
       "exporting": "正在导出...",
       "exportSelected": "导出选中项 ({{count}})",
-      "exportAll": "导出全部"
+      "exportAll": "导出全部",
+      "tasks": "个任务"
     },
     "sync": {
       "title": "同步进度",
@@ -180,7 +181,11 @@
       "tasksImportedSuccess": "任务数据导入成功",
       "unexpectedError": "发生意外错误，请稍后重试",
       "errorDetails": "错误详情",
-      "contactSupport": "如问题持续，请联系技术支持"
+      "contactSupport": "如问题持续，请联系技术支持",
+      "noCurrentTask": "当前没有可用的标注任务",
+      "projectIdLabel": "项目 ID",
+      "totalTasksLabel": "任务总数",
+      "currentIndexLabel": "当前索引"
     },
     "detail": {
       "overview": "概览",
@@ -343,7 +348,15 @@
       "approveSuccess": "批准成功",
       "rejectSuccess": "拒绝成功",
       "revisionSuccess": "已请求修订",
-      "batchSuccess": "批量操作成功，已处理 {{count}} 项"
+      "batchSuccess": "批量操作成功，已处理 {{count}} 项",
+      "currentUser": "当前用户",
+      "defaultApproved": "已批准",
+      "defaultRejected": "已拒绝",
+      "defaultNeedsRevision": "需要修订",
+      "batchApprovedDefault": "批量批准",
+      "batchRejectedDefault": "批量拒绝",
+      "batchRevisionDefault": "批量请求修订",
+      "pleaseCheckAndRevise": "请检查并修订标注"
     },
     "ai": {
       "preAnnotationResults": "AI 预标注结果",
@@ -407,6 +420,51 @@
       "cancel": "取消",
       "confirm": "确认",
       "active": "活跃"
-    }
+    },
+    "delete": {
+      "title": "删除任务",
+      "batchTitle": "批量删除任务",
+      "confirmTitle": "确认删除",
+      "confirmMessage": "确定要删除任务 \"{{name}}\" 吗？",
+      "batchConfirmMessage": "确定要删除选中的 {{count}} 个任务吗？",
+      "warning": "此操作不可撤销",
+      "impact": {
+        "title": "删除影响",
+        "taskInfo": "任务信息将被删除",
+        "annotationData": "标注数据将被删除",
+        "labelStudioProject": "关联的 Label Studio 项目",
+        "relatedFiles": "关联文件将被清理",
+        "cacheData": "缓存数据将被清理"
+      },
+      "options": {
+        "deleteLabelStudioProject": "同时删除 Label Studio 项目",
+        "deleteLabelStudioProjectTip": "如果选中，将同时删除 Label Studio 中的关联项目及其所有标注数据",
+        "softDelete": "软删除（可恢复）",
+        "softDeleteTip": "软删除后可在回收站中恢复"
+      },
+      "progress": {
+        "title": "删除进度",
+        "deleting": "正在删除...",
+        "deletingTask": "正在删除任务 {{current}} / {{total}}",
+        "deletingProject": "正在删除 Label Studio 项目...",
+        "cleaningCache": "正在清理缓存...",
+        "completed": "删除完成",
+        "failed": "删除失败"
+      },
+      "result": {
+        "success": "成功删除 {{count}} 个任务",
+        "partialSuccess": "删除完成：成功 {{success}} 个，失败 {{failed}} 个",
+        "failed": "删除失败",
+        "failedTasks": "失败的任务："
+      },
+      "buttons": {
+        "delete": "删除",
+        "cancel": "取消",
+        "confirm": "确认删除",
+        "retry": "重试"
+      }
+    },
+    "close": "关闭",
+    "taskName": "任务名称"
   }
 }

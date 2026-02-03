@@ -155,7 +155,7 @@ class ResourceMonitor:
         self.metrics_history: deque = deque(maxlen=2880)  # 24 hours at 30s intervals
         self.is_monitoring = False
         self._monitoring_task: Optional[asyncio.Task] = None
-        self._lock = threading.Lock()
+        self._lock = asyncio.Lock()
         
         # Thresholds for alerts
         self.cpu_warning_threshold = 70.0
@@ -201,7 +201,7 @@ class ResourceMonitor:
             try:
                 metrics = await self._collect_metrics()
                 
-                with self._lock:
+                async with self._lock:
                     self.metrics_history.append(metrics)
                 
                 # Check for alerts
@@ -215,23 +215,25 @@ class ResourceMonitor:
     
     async def _collect_metrics(self) -> ResourceMetrics:
         """Collect current resource metrics."""
-        # CPU usage
-        cpu_percent = psutil.cpu_percent(interval=1)
+        loop = asyncio.get_event_loop()
+        
+        # CPU usage - run in executor
+        cpu_percent = await loop.run_in_executor(None, psutil.cpu_percent, 1)
         
         # Memory usage
-        memory = psutil.virtual_memory()
+        memory = await loop.run_in_executor(None, psutil.virtual_memory)
         memory_percent = memory.percent
         memory_available_gb = memory.available / (1024**3)
         memory_used_gb = memory.used / (1024**3)
         
         # Disk usage
-        disk = psutil.disk_usage('/')
+        disk = await loop.run_in_executor(None, psutil.disk_usage, '/')
         disk_percent = (disk.used / disk.total) * 100
         disk_free_gb = disk.free / (1024**3)
         disk_total_gb = disk.total / (1024**3)
         
         # Network usage
-        network = psutil.net_io_counters()
+        network = await loop.run_in_executor(None, psutil.net_io_counters)
         network_bytes_sent = network.bytes_sent if network else 0
         network_bytes_recv = network.bytes_recv if network else 0
         

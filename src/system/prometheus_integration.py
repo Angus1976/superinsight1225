@@ -53,7 +53,7 @@ class PrometheusMetricsExporter:
         self.registry = CollectorRegistry()
         self.is_collecting = False
         self._collection_task: Optional[asyncio.Task] = None
-        self._lock = threading.Lock()
+        self._lock = asyncio.Lock()
         
         # Prometheus metric instances
         self.system_metrics = {}
@@ -423,9 +423,11 @@ class PrometheusMetricsExporter:
     async def _collect_system_metrics(self):
         """Collect system metrics and update Prometheus gauges."""
         try:
-            # CPU metrics
-            cpu_percent = psutil.cpu_percent(interval=0.1)
-            cpu_per_core = psutil.cpu_percent(interval=0.1, percpu=True)
+            loop = asyncio.get_event_loop()
+            
+            # CPU metrics - run in executor to avoid blocking
+            cpu_percent = await loop.run_in_executor(None, psutil.cpu_percent, 0.1)
+            cpu_per_core = await loop.run_in_executor(None, psutil.cpu_percent, 0.1, True)
             
             self.system_metrics['cpu_usage_percent'].labels(core='total').set(cpu_percent)
             for i, core_usage in enumerate(cpu_per_core):
@@ -433,7 +435,7 @@ class PrometheusMetricsExporter:
             
             # Load averages (if available)
             try:
-                load_avg = psutil.getloadavg()
+                load_avg = await loop.run_in_executor(None, psutil.getloadavg)
                 self.system_metrics['cpu_load_1m'].set(load_avg[0])
                 self.system_metrics['cpu_load_5m'].set(load_avg[1])
                 self.system_metrics['cpu_load_15m'].set(load_avg[2])
@@ -441,23 +443,23 @@ class PrometheusMetricsExporter:
                 pass  # Not available on all platforms
             
             # Memory metrics
-            memory = psutil.virtual_memory()
+            memory = await loop.run_in_executor(None, psutil.virtual_memory)
             self.system_metrics['memory_usage_percent'].set(memory.percent)
             self.system_metrics['memory_available_bytes'].set(memory.available)
             self.system_metrics['memory_used_bytes'].set(memory.used)
             self.system_metrics['memory_cached_bytes'].set(getattr(memory, 'cached', 0))
             
-            swap = psutil.swap_memory()
+            swap = await loop.run_in_executor(None, psutil.swap_memory)
             self.system_metrics['swap_usage_percent'].set(swap.percent)
             
             # Disk metrics
-            disk = psutil.disk_usage('/')
+            disk = await loop.run_in_executor(None, psutil.disk_usage, '/')
             disk_usage_percent = (disk.used / disk.total) * 100
             self.system_metrics['disk_usage_percent'].labels(device='root').set(disk_usage_percent)
             self.system_metrics['disk_free_bytes'].labels(device='root').set(disk.free)
             
             # Disk I/O
-            disk_io = psutil.disk_io_counters()
+            disk_io = await loop.run_in_executor(None, psutil.disk_io_counters)
             if disk_io:
                 # Use _value to set counter to absolute value
                 self.system_metrics['disk_read_bytes_total']._value._value = disk_io.read_bytes

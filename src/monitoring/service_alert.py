@@ -293,7 +293,7 @@ class ServiceAlertManager:
         self._event_history: List[ServiceStateEvent] = []
         self._is_monitoring = False
         self._monitor_task: Optional[asyncio.Task] = None
-        self._lock = threading.Lock()
+        self._lock = asyncio.Lock()
         self._alert_callbacks: List[Callable[[ServiceStateEvent], Awaitable[None]]] = []
         self._recovery_callbacks: List[Callable[[ServiceStateEvent], Awaitable[None]]] = []
     
@@ -354,7 +354,7 @@ class ServiceAlertManager:
             result: 健康检查结果
         """
         # 获取或创建追踪器
-        with self._lock:
+        async with self._lock:
             if service_name not in self._trackers:
                 self._trackers[service_name] = ServiceStateTracker(service_name=service_name)
             tracker = self._trackers[service_name]

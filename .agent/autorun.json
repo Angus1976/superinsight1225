@@ -1,0 +1,38 @@
+{
+  "name": "Auto-Confirm Fast Dev",
+  "description": "自动执行文件操作和命令，不需要每次确认",
+  "tools": ["read", "write", "shell", "glob", "grep"],
+  "toolsSettings": {
+    "shell": {
+      "autoAllowReadonly": true,
+      "allowedCommands": [
+        "python .*",
+        "pytest .*",
+        "python -m .*",
+        "pip .*",
+        "poetry .*",
+        "black .*",
+        "ruff .*",
+        "git .*",
+        "echo .*",
+        "mkdir .*",
+        "touch .*"
+      ],
+      "deniedCommands": [
+        "rm -rf /",
+        "sudo .*",
+        ":(){ :|:& };:",
+        "dd if=/dev/zero"
+      ],
+      "denyByDefault": false
+    },
+    "write": {
+      "allowedPaths": ["**"],
+      "deniedPaths": []
+    },
+    "read": {
+      "allowedPaths": ["**"],
+      "deniedPaths": []
+    }
+  }
+}

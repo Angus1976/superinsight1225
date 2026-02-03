@@ -1,0 +1,300 @@
+/* 
+ * Ant Design 强制覆盖样式
+ * 使用最高优先级选择器来覆盖内联样式
+ */
+
+/* ==========================================
+   修复1: Tooltip 不能遮挡按钮 - 改为显示在下方
+   ========================================== */
+
+/* 使用属性选择器 + !important 提高优先级 */
+div[class*="ant-tooltip"][role="tooltip"] {
+  pointer-events: none !important;
+  cursor: default !important;
+}
+
+div[class*="ant-tooltip"][role="tooltip"] * {
+  pointer-events: none !important;
+  cursor: default !important;
+}
+
+/* 强制所有tooltip显示在下方，箭头在左上角 */
+div[class*="ant-tooltip"][role="tooltip"] {
+  /* 重置所有placement，统一显示在下方 */
+  margin-top: 12px !important;
+  margin-bottom: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* 隐藏原有箭头 */
+div[class*="ant-tooltip"] .ant-tooltip-arrow {
+  display: none !important;
+}
+
+/* 创建新的箭头在左上角 */
+div[class*="ant-tooltip"][role="tooltip"]::before {
+  content: '' !important;
+  position: absolute !important;
+  top: -6px !important;
+  left: 12px !important;
+  width: 0 !important;
+  height: 0 !important;
+  border-left: 6px solid transparent !important;
+  border-right: 6px solid transparent !important;
+  border-bottom: 6px solid #ffffff !important;
+  pointer-events: none !important;
+  z-index: 1 !important;
+}
+
+/* 为工具栏按钮的tooltip特殊处理 - 箭头在右上角 */
+.ant-pro-table-list-toolbar div[class*="ant-tooltip"][role="tooltip"]::before {
+  left: auto !important;
+  right: 12px !important;
+}
+
+/* Tooltip内容样式 - 浅色背景 */
+.ant-tooltip .ant-tooltip-inner {
+  background-color: #ffffff !important;
+  color: #262626 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+  border: 1px solid #e8e8e8 !important;
+  font-size: 12px !important;
+  padding: 6px 10px !important;
+  border-radius: 4px !important;
+  max-width: 250px !important;
+  word-wrap: break-word !important;
+  pointer-events: none !important;
+}
+
+/* ==========================================
+   修复2: 列设置弹出层不能溢出 - 增强版
+   ========================================== */
+
+/* 强制列设置弹出层使用固定定位并向左对齐 */
+div[class*="ant-pro-table-column-setting-overlay"],
+.ant-pro-table-column-setting-overlay {
+  position: fixed !important;
+  max-width: 300px !important;
+  pointer-events: auto !important; /* 确保弹出层可以交互 */
+  z-index: 1050 !important; /* 确保在最上层 */
+}
+
+/* 所有Popover都需要可以交互 */
+.ant-popover {
+  pointer-events: auto !important;
+  z-index: 1050 !important;
+}
+
+/* 当弹出层在底部时，强制从右边定位，防止溢出 */
+div[class*="ant-pro-table-column-setting-overlay"][class*="placement-bottom"],
+.ant-pro-table-column-setting-overlay.ant-popover-placement-bottom,
+.ant-pro-table-column-setting-overlay.ant-popover-placement-bottomRight,
+.ant-pro-table-column-setting-overlay.ant-popover-placement-bottomLeft {
+  right: 20px !important;
+  left: auto !important;
+  transform: none !important;
+}
+
+/* 限制弹出层内容宽度 */
+div[class*="ant-pro-table-column-setting-overlay"] .ant-popover-inner,
+.ant-pro-table-column-setting-overlay .ant-popover-inner {
+  max-width: 280px !important;
+  overflow: hidden !important;
+  pointer-events: auto !important; /* 确保内容可以交互 */
+}
+
+div[class*="ant-pro-table-column-setting-overlay"] .ant-popover-content,
+.ant-pro-table-column-setting-overlay .ant-popover-content {
+  max-width: 280px !important;
+  overflow: hidden !important;
+  pointer-events: auto !important; /* 确保内容可以交互 */
+}
+
+/* 列设置列表样式 */
+.ant-pro-table-column-setting-list {
+  max-width: 280px !important;
+  max-height: 400px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  pointer-events: auto !important; /* 确保列表可以交互 */
+}
+
+/* 列设置列表标题 */
+.ant-pro-table-column-setting-title {
+  pointer-events: auto !important;
+}
+
+/* 列设置列表项 */
+.ant-pro-table-column-setting-list-item {
+  pointer-events: auto !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* 列设置列表项中的复选框和文本 */
+.ant-pro-table-column-setting-list-item .ant-checkbox-wrapper,
+.ant-pro-table-column-setting-list-item .ant-checkbox,
+.ant-pro-table-column-setting-list-item span {
+  pointer-events: auto !important;
+}
+
+/* 确保popover箭头也可见 */
+.ant-popover-arrow {
+  pointer-events: none !important;
+}
+
+/* 确保所有Popover内容都可以交互 */
+.ant-popover-inner,
+.ant-popover-inner-content {
+  pointer-events: auto !important;
+}
+
+/* ==========================================
+   修复3: 确保工具栏按钮可点击
+   ========================================== */
+
+/* 工具栏按钮区域 - 确保可以点击 */
+.ant-pro-table-list-toolbar-setting-item {
+  position: relative !important;
+  z-index: 100 !important;
+  pointer-events: auto !important; /* 确保按钮区域可以交互 */
+}
+
+.ant-pro-table-list-toolbar-setting-item button {
+  pointer-events: auto !important; /* 确保按钮可以点击 */
+  z-index: 101 !important;
+  cursor: pointer !important;
+}
+
+/* 密度选择器 */
+.ant-pro-table-list-toolbar-density {
+  position: relative !important;
+  z-index: 100 !important;
+  pointer-events: auto !important; /* 确保按钮区域可以交互 */
+}
+
+.ant-pro-table-list-toolbar-density button {
+  pointer-events: auto !important; /* 确保按钮可以点击 */
+  z-index: 101 !important;
+  cursor: pointer !important;
+}
+
+/* 确保工具栏区域本身可以交互 */
+.ant-pro-table-list-toolbar {
+  pointer-events: auto !important;
+}
+
+.ant-pro-table-list-toolbar-container {
+  pointer-events: auto !important;
+}
+
+.ant-pro-table-list-toolbar-right {
+  pointer-events: auto !important;
+}
+
+/* ==========================================
+   修复: 确保搜索表单按钮可点击
+   ========================================== */
+
+/* 搜索表单区域 - 所有元素都可以交互 */
+.ant-pro-table-search,
+.ant-pro-form-light-filter,
+form.ant-form {
+  pointer-events: auto !important;
+}
+
+/* 搜索表单中的所有按钮 */
+.ant-pro-table-search button,
+.ant-pro-form-light-filter button,
+form.ant-form button,
+.ant-btn {
+  pointer-events: auto !important;
+}
+
+/* 搜索表单中的所有输入框 */
+.ant-pro-table-search input,
+.ant-pro-table-search .ant-select,
+.ant-pro-table-search .ant-picker,
+form.ant-form input,
+form.ant-form .ant-select,
+form.ant-form .ant-picker {
+  pointer-events: auto !important;
+}
+
+/* 重置和搜索按钮 */
+.ant-form-item-control-input button,
+.ant-space button {
+  pointer-events: auto !important;
+}
+
+/* ==========================================
+   修复4: 下拉菜单可交互
+   ========================================== */
+
+/* 密度下拉菜单 */
+.ant-dropdown-menu {
+  pointer-events: auto !important;
+  z-index: 1050 !important;
+}
+
+.ant-dropdown-menu-item {
+  pointer-events: auto !important;
+}
+
+/* 列设置列表项 */
+.ant-pro-table-column-setting-list-item {
+  pointer-events: auto !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* 列设置列表项中的复选框和文本 */
+.ant-pro-table-column-setting-list-item .ant-checkbox-wrapper,
+.ant-pro-table-column-setting-list-item .ant-checkbox,
+.ant-pro-table-column-setting-list-item span {
+  pointer-events: auto !important;
+}
+
+/* ==========================================
+   修复5: 使用最高优先级确保按钮和弹出层可交互
+   ========================================== */
+
+/* 使用 html body 提高优先级，覆盖 App.css 中的规则 */
+html body .ant-pro-table-list-toolbar-setting-item button,
+html body .ant-pro-table-list-toolbar-density button {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  z-index: 101 !important;
+}
+
+/* 确保所有 Popover 和 Dropdown 都可以交互 */
+html body .ant-popover,
+html body .ant-dropdown {
+  pointer-events: auto !important;
+}
+
+html body .ant-popover-inner,
+html body .ant-popover-inner-content,
+html body .ant-dropdown-menu {
+  pointer-events: auto !important;
+}
+
+/* 确保列设置弹出层可以交互 */
+html body div.ant-popover.ant-pro-table-column-setting-overlay {
+  pointer-events: auto !important;
+  z-index: 1050 !important;
+}
+
+html body div.ant-popover.ant-pro-table-column-setting-overlay * {
+  pointer-events: auto !important;
+}
+
+/* 确保所有复选框都可以点击 */
+html body .ant-checkbox-wrapper,
+html body .ant-checkbox {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}

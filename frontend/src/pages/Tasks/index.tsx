@@ -1,5 +1,5 @@
 // Tasks list page
-import { useState, useRef, useCallback, useMemo } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ProTable, type ProColumns, type ActionType } from '@ant-design/pro-components';
 import { 
@@ -43,7 +43,9 @@ import {
   BarChartOutlined,
   SyncOutlined,
   LinkOutlined,
-  DisconnectOutlined
+  DisconnectOutlined,
+  ColumnHeightOutlined,
+  SettingOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useTasks, useDeleteTask, useBatchDeleteTasks, useUpdateTask, useTaskStats } from '@/hooks/useTask';
@@ -227,6 +229,8 @@ const TasksPage: React.FC = () => {
   const [batchEditModalOpen, setBatchEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [tasksToDelete, setTasksToDelete] = useState<Task[]>([]);
+  const [columnSettingsModalOpen, setColumnSettingsModalOpen] = useState(false);
+  const [visibleColumns, setVisibleColumns] = useState<string[]>([]);
 
   // Permission control
   const { task: taskPerms } = usePermissions();
@@ -236,6 +240,71 @@ const TasksPage: React.FC = () => {
   const deleteTask = useDeleteTask();
   const batchDeleteTasks = useBatchDeleteTasks();
   const updateTask = useUpdateTask();
+
+  // Initialize visible columns from localStorage or default to all columns
+  useEffect(() => {
+    const savedColumns = localStorage.getItem('tasks-table-visible-columns');
+    if (savedColumns) {
+      setVisibleColumns(JSON.parse(savedColumns));
+    } else {
+      // Default: all columns visible
+      setVisibleColumns([
+        'status',
+        'priority',
+        'annotation_type',
+        'progress',
+        'assignee_name',
+        'due_date',
+        'created_at',
+        'label_studio_sync_status',
+        'actions',
+      ]);
+    }
+  }, []);
+
+  // 强制所有tooltip显示在底部，避免遮挡按钮
+  useEffect(() => {
+    const forceTooltipBottom = () => {
+      // 查找所有tooltip触发器
+      const tooltipTriggers = document.querySelectorAll('[data-tooltip], .ant-pro-table-list-toolbar-setting-item, .ant-pro-table-list-toolbar-density');
+      
+      tooltipTriggers.forEach((trigger) => {
+        // 监听鼠标进入事件
+        const handleMouseEnter = () => {
+          setTimeout(() => {
+            // 查找显示的tooltip
+            const tooltips = document.querySelectorAll('.ant-tooltip');
+            tooltips.forEach((tooltip) => {
+              const tooltipElement = tooltip as HTMLElement;
+              
+              // 获取触发器的位置
+              const triggerRect = trigger.getBoundingClientRect();
+              
+              // 强制tooltip显示在触发器下方
+              tooltipElement.style.setProperty('top', `${triggerRect.bottom + 8}px`, 'important');
+              tooltipElement.style.setProperty('left', `${triggerRect.left}px`, 'important');
+              tooltipElement.style.setProperty('transform', 'none', 'important');
+            });
+          }, 10);
+        };
+        
+        trigger.addEventListener('mouseenter', handleMouseEnter);
+      });
+    };
+
+    forceTooltipBottom();
+
+    // 使用MutationObserver监听DOM变化
+    const observer = new MutationObserver(forceTooltipBottom);
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
 
   // Check if cache is valid
   const isCacheValid = useCallback(() => {
@@ -1112,11 +1181,39 @@ const TasksPage: React.FC = () => {
     }
   };
 
-  const columns: ProColumns<Task>[] = [
+  // Handle column visibility toggle
+  const handleColumnVisibilityChange = (columnKey: string, visible: boolean) => {
+    const newVisibleColumns = visible
+      ? [...visibleColumns, columnKey]
+      : visibleColumns.filter(key => key !== columnKey);
+    setVisibleColumns(newVisibleColumns);
+    localStorage.setItem('tasks-table-visible-columns', JSON.stringify(newVisibleColumns));
+  };
+
+  // Handle reset columns to default
+  const handleResetColumns = () => {
+    const defaultColumns = [
+      'status',
+      'priority',
+      'annotation_type',
+      'progress',
+      'assignee_name',
+      'due_date',
+      'created_at',
+      'label_studio_sync_status',
+      'actions',
+    ];
+    setVisibleColumns(defaultColumns);
+    localStorage.setItem('tasks-table-visible-columns', JSON.stringify(defaultColumns));
+    message.success(t('columnSettings.resetSuccess') || '已恢复默认列设置');
+  };
+
+  const allColumns: ProColumns<Task>[] = [
     {
       title: t('columns.status'),
       dataIndex: 'status',
       key: 'status',
+      hideInTable: !visibleColumns.includes('status'),
       width: 120,
       valueType: 'select',
       valueEnum: {
@@ -1150,6 +1247,7 @@ const TasksPage: React.FC = () => {
       title: t('columns.priority'),
       dataIndex: 'priority',
       key: 'priority',
+      hideInTable: !visibleColumns.includes('priority'),
       width: 100,
       valueType: 'select',
       valueEnum: {
@@ -1173,6 +1271,7 @@ const TasksPage: React.FC = () => {
       title: t('annotationType'),
       dataIndex: 'annotation_type',
       key: 'annotation_type',
+      hideInTable: !visibleColumns.includes('annotation_type'),
       width: 150,
       valueType: 'select',
       valueEnum: {
@@ -1201,6 +1300,7 @@ const TasksPage: React.FC = () => {
       title: t('columns.progress'),
       dataIndex: 'progress',
       key: 'progress',
+      hideInTable: !visibleColumns.includes('progress'),
       width: 180,
       search: false,
       sorter: true,
@@ -1234,6 +1334,7 @@ const TasksPage: React.FC = () => {
       title: t('assignee'),
       dataIndex: 'assignee_name',
       key: 'assignee_name',
+      hideInTable: !visibleColumns.includes('assignee_name'),
       width: 120,
       ellipsis: true,
       render: (text, record) => (
@@ -1247,6 +1348,7 @@ const TasksPage: React.FC = () => {
       title: t('dueDate'),
       dataIndex: 'due_date',
       key: 'due_date',
+      hideInTable: !visibleColumns.includes('due_date'),
       width: 120,
       valueType: 'date',
       sorter: true,
@@ -1276,6 +1378,7 @@ const TasksPage: React.FC = () => {
       title: t('created'),
       dataIndex: 'created_at',
       key: 'created_at',
+      hideInTable: !visibleColumns.includes('created_at'),
       width: 120,
       valueType: 'date',
       search: false,
@@ -1290,6 +1393,7 @@ const TasksPage: React.FC = () => {
       title: t('syncStatus'),
       dataIndex: 'label_studio_sync_status',
       key: 'label_studio_sync_status',
+      hideInTable: !visibleColumns.includes('label_studio_sync_status'),
       width: 180,
       search: false,
       render: (_, record) => {
@@ -1460,6 +1564,7 @@ const TasksPage: React.FC = () => {
       width: 120,
       fixed: 'right',
       search: false,
+      hideInTable: !visibleColumns.includes('actions'),
       render: (_, record) => (
         <Dropdown
           menu={{
@@ -1584,9 +1689,19 @@ const TasksPage: React.FC = () => {
         actionRef={actionRef}
         rowKey="id"
         loading={isLoading}
-        columns={columns}
+        columns={allColumns}
         dataSource={data?.items || []}
         scroll={{ x: 1400 }}
+        options={{
+          density: true, // 密度选择器
+          fullScreen: false,
+          reload: false,
+          setting: false, // 禁用默认列设置，使用自定义弹窗
+        }}
+        columnsState={{
+          persistenceKey: 'tasks-table-columns',
+          persistenceType: 'localStorage',
+        }}
         search={{
           labelWidth: 'auto',
           defaultCollapsed: false,
@@ -1645,6 +1760,7 @@ const TasksPage: React.FC = () => {
           selectedRowKeys.length > 0 && (
             <Dropdown
               key="batchActions"
+              trigger={['click']}
               menu={{
                 items: [
                   {
@@ -1688,18 +1804,9 @@ const TasksPage: React.FC = () => {
               </Button>
             </Dropdown>
           ),
-          <Button
-            key="exportOptions"
-            icon={<DownloadOutlined />}
-            onClick={() => setExportModalOpen(true)}
-          >
-            {selectedRowKeys.length > 0 
-              ? t('exportSelected', { count: selectedRowKeys.length })
-              : t('exportAll')
-            }
-          </Button>,
           <Dropdown
             key="refresh"
+            trigger={['click']}
             menu={{
               items: [
                 {
@@ -1713,7 +1820,7 @@ const TasksPage: React.FC = () => {
                 },
                 {
                   key: 'syncAll',
-                  icon: <ReloadOutlined />,
+                  icon: <SyncOutlined />,
                   label: t('syncAllTasks'),
                   onClick: handleSyncAllTasks,
                 },
@@ -1724,6 +1831,16 @@ const TasksPage: React.FC = () => {
               {t('refresh')}
             </Button>
           </Dropdown>,
+          <Button
+            key="exportOptions"
+            icon={<DownloadOutlined />}
+            onClick={() => setExportModalOpen(true)}
+          >
+            {selectedRowKeys.length > 0 
+              ? t('exportSelected', { count: selectedRowKeys.length })
+              : t('exportAll')
+            }
+          </Button>,
           taskPerms.canCreate && (
             <Button
               key="import"
@@ -1733,6 +1850,13 @@ const TasksPage: React.FC = () => {
               {t('import.title')}
             </Button>
           ),
+          <Button
+            key="columnSettings"
+            icon={<SettingOutlined />}
+            onClick={() => setColumnSettingsModalOpen(true)}
+          >
+            {t('columnSettings.title')}
+          </Button>,
           taskPerms.canCreate && (
             <Button
               key="create"
@@ -1750,16 +1874,54 @@ const TasksPage: React.FC = () => {
         onReset={() => {
           setCurrentParams({});
         }}
-        tableAlertRender={({ selectedRowKeys, onCleanSelected }) => (
-          <Space size={24}>
-            <span>
-              {t('selectedItems', { count: selectedRowKeys.length })}
-              <a style={{ marginLeft: 8 }} onClick={onCleanSelected}>
-                {t('clearSelection')}
-              </a>
-            </span>
-          </Space>
-        )}
+        tableAlertRender={({ selectedRowKeys, onCleanSelected }) => {
+          const selectedTasks = (data?.items || []).filter(task => selectedRowKeys.includes(task.id));
+          return (
+            <Space direction="vertical" size={8} style={{ width: '100%' }}>
+              <Space size={24}>
+                <span>
+                  {t('selectedItems', { count: selectedRowKeys.length })}
+                  <a style={{ marginLeft: 8 }} onClick={onCleanSelected}>
+                    {t('clearSelection')}
+                  </a>
+                </span>
+              </Space>
+              {selectedTasks.length > 0 && selectedTasks.length <= 10 && (
+                <div style={{ 
+                  padding: '8px 12px', 
+                  background: '#f0f9ff', 
+                  borderRadius: '4px',
+                  border: '1px solid #91d5ff',
+                  maxHeight: '120px',
+                  overflowY: 'auto'
+                }}>
+                  <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>
+                    {t('selectedTasksList')}:
+                  </div>
+                  <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                    {selectedTasks.map((task, index) => (
+                      <div key={task.id} style={{ fontSize: '13px', color: '#262626' }}>
+                        {index + 1}. {task.name}
+                      </div>
+                    ))}
+                  </Space>
+                </div>
+              )}
+              {selectedTasks.length > 10 && (
+                <div style={{ 
+                  padding: '8px 12px', 
+                  background: '#fff7e6', 
+                  borderRadius: '4px',
+                  border: '1px solid #ffd591',
+                  fontSize: '12px',
+                  color: '#ad6800'
+                }}>
+                  {t('selectedTasksTooMany', { count: selectedTasks.length })}
+                </div>
+              )}
+            </Space>
+          );
+        }}
         tableAlertOptionRender={({ selectedRowKeys }) => (
           <Space size={16}>
             <a onClick={() => handleBatchStatusUpdate('in_progress')}>
@@ -1917,6 +2079,240 @@ const TasksPage: React.FC = () => {
         }}
         onSuccess={handleDeleteSuccess}
       />
+
+      {/* Column Settings Modal */}
+      <Modal
+        title={
+          <Space>
+            <SettingOutlined />
+            {t('columnSettings.title')}
+          </Space>
+        }
+        open={columnSettingsModalOpen}
+        onCancel={() => setColumnSettingsModalOpen(false)}
+        onOk={() => setColumnSettingsModalOpen(false)}
+        width={600}
+        footer={[
+          <Button key="reset" onClick={handleResetColumns}>
+            {t('columnSettings.reset')}
+          </Button>,
+          <Button key="close" type="primary" onClick={() => setColumnSettingsModalOpen(false)}>
+            {t('columnSettings.close')}
+          </Button>,
+        ]}
+      >
+        <div style={{ padding: '8px 0' }}>
+          <p style={{ marginBottom: 16, color: '#666', fontSize: '14px' }}>
+            {t('columnSettings.description')}
+          </p>
+          <div style={{ 
+            padding: '16px', 
+            background: '#fafafa', 
+            borderRadius: '4px',
+            border: '1px solid #e8e8e8',
+            maxHeight: '400px',
+            overflowY: 'auto'
+          }}>
+            <Space direction="vertical" size={12} style={{ width: '100%' }}>
+              <label style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                cursor: 'pointer',
+                padding: '8px',
+                borderRadius: '4px',
+                transition: 'background 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#e6f7ff'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <input
+                  type="checkbox"
+                  checked={visibleColumns.includes('status')}
+                  onChange={(e) => handleColumnVisibilityChange('status', e.target.checked)}
+                  style={{ marginRight: 12, cursor: 'pointer', width: '16px', height: '16px' }}
+                />
+                <span style={{ fontSize: '14px' }}>{t('columns.status')}</span>
+              </label>
+              
+              <label style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                cursor: 'pointer',
+                padding: '8px',
+                borderRadius: '4px',
+                transition: 'background 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#e6f7ff'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <input
+                  type="checkbox"
+                  checked={visibleColumns.includes('priority')}
+                  onChange={(e) => handleColumnVisibilityChange('priority', e.target.checked)}
+                  style={{ marginRight: 12, cursor: 'pointer', width: '16px', height: '16px' }}
+                />
+                <span style={{ fontSize: '14px' }}>{t('columns.priority')}</span>
+              </label>
+              
+              <label style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                cursor: 'pointer',
+                padding: '8px',
+                borderRadius: '4px',
+                transition: 'background 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#e6f7ff'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <input
+                  type="checkbox"
+                  checked={visibleColumns.includes('annotation_type')}
+                  onChange={(e) => handleColumnVisibilityChange('annotation_type', e.target.checked)}
+                  style={{ marginRight: 12, cursor: 'pointer', width: '16px', height: '16px' }}
+                />
+                <span style={{ fontSize: '14px' }}>{t('annotationType')}</span>
+              </label>
+              
+              <label style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                cursor: 'pointer',
+                padding: '8px',
+                borderRadius: '4px',
+                transition: 'background 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#e6f7ff'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <input
+                  type="checkbox"
+                  checked={visibleColumns.includes('progress')}
+                  onChange={(e) => handleColumnVisibilityChange('progress', e.target.checked)}
+                  style={{ marginRight: 12, cursor: 'pointer', width: '16px', height: '16px' }}
+                />
+                <span style={{ fontSize: '14px' }}>{t('columns.progress')}</span>
+              </label>
+              
+              <label style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                cursor: 'pointer',
+                padding: '8px',
+                borderRadius: '4px',
+                transition: 'background 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#e6f7ff'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <input
+                  type="checkbox"
+                  checked={visibleColumns.includes('assignee_name')}
+                  onChange={(e) => handleColumnVisibilityChange('assignee_name', e.target.checked)}
+                  style={{ marginRight: 12, cursor: 'pointer', width: '16px', height: '16px' }}
+                />
+                <span style={{ fontSize: '14px' }}>{t('assignee')}</span>
+              </label>
+              
+              <label style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                cursor: 'pointer',
+                padding: '8px',
+                borderRadius: '4px',
+                transition: 'background 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#e6f7ff'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <input
+                  type="checkbox"
+                  checked={visibleColumns.includes('due_date')}
+                  onChange={(e) => handleColumnVisibilityChange('due_date', e.target.checked)}
+                  style={{ marginRight: 12, cursor: 'pointer', width: '16px', height: '16px' }}
+                />
+                <span style={{ fontSize: '14px' }}>{t('dueDate')}</span>
+              </label>
+              
+              <label style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                cursor: 'pointer',
+                padding: '8px',
+                borderRadius: '4px',
+                transition: 'background 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#e6f7ff'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <input
+                  type="checkbox"
+                  checked={visibleColumns.includes('created_at')}
+                  onChange={(e) => handleColumnVisibilityChange('created_at', e.target.checked)}
+                  style={{ marginRight: 12, cursor: 'pointer', width: '16px', height: '16px' }}
+                />
+                <span style={{ fontSize: '14px' }}>{t('created')}</span>
+              </label>
+              
+              <label style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                cursor: 'pointer',
+                padding: '8px',
+                borderRadius: '4px',
+                transition: 'background 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#e6f7ff'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <input
+                  type="checkbox"
+                  checked={visibleColumns.includes('label_studio_sync_status')}
+                  onChange={(e) => handleColumnVisibilityChange('label_studio_sync_status', e.target.checked)}
+                  style={{ marginRight: 12, cursor: 'pointer', width: '16px', height: '16px' }}
+                />
+                <span style={{ fontSize: '14px' }}>{t('syncStatus')}</span>
+              </label>
+              
+              <label style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                cursor: 'not-allowed',
+                padding: '8px',
+                borderRadius: '4px',
+                background: '#f5f5f5',
+                opacity: 0.6
+              }}>
+                <input
+                  type="checkbox"
+                  checked={visibleColumns.includes('actions')}
+                  onChange={(e) => handleColumnVisibilityChange('actions', e.target.checked)}
+                  style={{ marginRight: 12, cursor: 'not-allowed', width: '16px', height: '16px' }}
+                  disabled
+                />
+                <span style={{ fontSize: '14px', color: '#999' }}>
+                  {t('columns.actions')} ({t('columnSettings.required')})
+                </span>
+              </label>
+            </Space>
+          </div>
+          
+          <div style={{ 
+            padding: '12px', 
+            background: '#e6f7ff', 
+            borderRadius: '4px',
+            border: '1px solid #91d5ff',
+            fontSize: '13px',
+            color: '#0050b3',
+            marginTop: '16px'
+          }}>
+            <Space>
+              <span>💡</span>
+              <span>{t('columnSettings.tip')}</span>
+            </Space>
+          </div>
+        </div>
+      </Modal>
     </>
   );
 };

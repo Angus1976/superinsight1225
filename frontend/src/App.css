@@ -40,3 +40,462 @@
 .read-the-docs {
   color: #888;
 }
+
+/* ========================================
+   全局弹出层样式优化
+   ======================================== */
+
+/* ========================================
+   全局弹出层样式优化
+   ======================================== */
+
+/* ========================================
+   CRITICAL FIX: Tooltip 遮挡按钮问题
+   ======================================== */
+
+/* 1. Tooltip 提示框样式 - 浅色背景，快速响应 */
+.ant-tooltip {
+  z-index: 1060 !important;
+  pointer-events: none !important; /* 防止Tooltip阻挡鼠标操作 */
+}
+
+/* 强制覆盖Tooltip的黑色背景 */
+.ant-tooltip .ant-tooltip-inner {
+  background-color: #ffffff !important;
+  color: #262626 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+  border: 1px solid #e8e8e8 !important;
+  font-size: 12px !important;
+  padding: 6px 10px !important;
+  border-radius: 4px !important;
+  max-width: 250px !important;
+  word-wrap: break-word !important;
+  pointer-events: none !important; /* 确保内容也不阻挡 */
+}
+
+/* 隐藏Tooltip箭头 */
+.ant-tooltip .ant-tooltip-arrow {
+  display: none !important;
+}
+
+.ant-tooltip .ant-tooltip-arrow-content {
+  background-color: #ffffff !important;
+  border: 1px solid #e8e8e8 !important;
+}
+
+/* Tooltip 与按钮保持距离 - 增加偏移量 */
+.ant-tooltip-placement-top {
+  padding-bottom: 20px !important;
+  margin-top: -10px !important;
+}
+
+.ant-tooltip-placement-bottom {
+  padding-top: 20px !important;
+  margin-bottom: -10px !important;
+}
+
+.ant-tooltip-placement-left {
+  padding-right: 20px !important;
+  margin-left: -10px !important;
+}
+
+.ant-tooltip-placement-right {
+  padding-left: 20px !important;
+  margin-right: -10px !important;
+}
+
+/* Tooltip 快速显示和隐藏 */
+.ant-tooltip-placement-top,
+.ant-tooltip-placement-bottom,
+.ant-tooltip-placement-left,
+.ant-tooltip-placement-right {
+  animation-duration: 0.1s !important;
+}
+
+/* 工具栏按钮的Tooltip特殊处理 - 延迟显示 */
+.ant-pro-table-list-toolbar .ant-tooltip {
+  animation-delay: 0.8s !important;
+}
+
+.ant-btn .ant-tooltip {
+  animation-delay: 0.5s !important;
+}
+
+/* 2. Dropdown 下拉菜单样式优化 */
+.ant-dropdown {
+  z-index: 1050 !important;
+}
+
+.ant-dropdown-menu {
+  background-color: #ffffff !important;
+  box-shadow: 0 3px 6px -4px rgba(0, 0, 0, 0.12),
+              0 6px 16px 0 rgba(0, 0, 0, 0.08),
+              0 9px 28px 8px rgba(0, 0, 0, 0.05) !important;
+  border-radius: 6px;
+  padding: 4px;
+}
+
+.ant-dropdown-menu-item {
+  border-radius: 4px;
+  margin: 2px 0;
+  transition: all 0.2s ease;
+}
+
+.ant-dropdown-menu-item:hover {
+  background-color: #f5f5f5 !important;
+}
+
+.ant-dropdown-menu-item-active {
+  background-color: #e6f7ff !important;
+}
+
+/* 3. Popover 弹出框样式 */
+.ant-popover {
+  z-index: 1050 !important;
+}
+
+.ant-popover-inner {
+  background-color: #ffffff !important;
+  box-shadow: 0 3px 6px -4px rgba(0, 0, 0, 0.12),
+              0 6px 16px 0 rgba(0, 0, 0, 0.08),
+              0 9px 28px 8px rgba(0, 0, 0, 0.05) !important;
+  border-radius: 6px;
+}
+
+.ant-popover-title {
+  border-bottom: 1px solid #f0f0f0;
+  padding: 12px 16px;
+  color: #262626;
+  font-weight: 500;
+}
+
+.ant-popover-inner-content {
+  padding: 12px 16px;
+  color: #595959;
+}
+
+/* ========================================
+   CRITICAL FIX: 列设置弹出层溢出问题
+   ======================================== */
+
+/* 4. ProTable 列设置弹出层优化 */
+.ant-pro-table-list-toolbar-setting-item {
+  position: relative;
+  z-index: 1000;
+}
+
+/* 列设置弹出层 - 防止溢出，强制向左对齐 */
+.ant-pro-table-column-setting-overlay {
+  z-index: 1050 !important;
+}
+
+/* 列设置弹出层容器 - 使用 transform 向左偏移 */
+.ant-pro-table-column-setting-overlay.ant-popover {
+  position: fixed !important;
+}
+
+/* 当弹出层在右侧时，向左偏移以防止溢出 */
+.ant-pro-table-column-setting-overlay.ant-popover-placement-bottomRight .ant-popover-content,
+.ant-pro-table-column-setting-overlay.ant-popover-placement-bottom .ant-popover-content {
+  transform: translateX(-100%) !important;
+  margin-left: 40px !important;
+}
+
+/* 列设置弹出层内容 */
+.ant-pro-table-column-setting-overlay .ant-popover-inner {
+  max-width: 280px !important;
+  min-width: 200px !important;
+}
+
+/* 列设置列表 */
+.ant-pro-table-column-setting-list {
+  max-height: 400px !important;
+  max-width: 280px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  background-color: #ffffff !important;
+  padding: 8px !important;
+}
+
+.ant-pro-table-column-setting-list-item {
+  padding: 8px 12px !important;
+  border-radius: 4px !important;
+  transition: background-color 0.2s ease !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.ant-pro-table-column-setting-list-item:hover {
+  background-color: #f5f5f5 !important;
+}
+
+/* 列设置标题 */
+.ant-pro-table-column-setting-title {
+  padding: 8px 12px !important;
+  font-weight: 500 !important;
+  border-bottom: 1px solid #f0f0f0 !important;
+}
+
+/* 5. ProTable 工具栏容器 - 防止裁剪 */
+.ant-pro-table-list-toolbar {
+  overflow: visible !important;
+}
+
+.ant-pro-card {
+  overflow: visible !important;
+}
+
+.ant-pro-card-body {
+  overflow: visible !important;
+}
+
+/* 6. Modal 模态框样式 */
+.ant-modal-mask {
+  background-color: rgba(0, 0, 0, 0.45) !important;
+}
+
+.ant-modal-content {
+  box-shadow: 0 6px 16px 0 rgba(0, 0, 0, 0.08),
+              0 3px 6px -4px rgba(0, 0, 0, 0.12),
+              0 9px 28px 8px rgba(0, 0, 0, 0.05) !important;
+  border-radius: 8px;
+}
+
+/* 7. Select 下拉选择框 */
+.ant-select-dropdown {
+  z-index: 1050 !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 3px 6px -4px rgba(0, 0, 0, 0.12),
+              0 6px 16px 0 rgba(0, 0, 0, 0.08),
+              0 9px 28px 8px rgba(0, 0, 0, 0.05) !important;
+  border-radius: 6px;
+}
+
+.ant-select-item {
+  border-radius: 4px;
+  margin: 2px 4px;
+}
+
+.ant-select-item-option-active {
+  background-color: #f5f5f5 !important;
+}
+
+.ant-select-item-option-selected {
+  background-color: #e6f7ff !important;
+}
+
+/* 8. DatePicker 日期选择器 */
+.ant-picker-dropdown {
+  z-index: 1050 !important;
+}
+
+.ant-picker-panel-container {
+  background-color: #ffffff !important;
+  box-shadow: 0 3px 6px -4px rgba(0, 0, 0, 0.12),
+              0 6px 16px 0 rgba(0, 0, 0, 0.08),
+              0 9px 28px 8px rgba(0, 0, 0, 0.05) !important;
+  border-radius: 6px;
+}
+
+/* 9. Drawer 抽屉样式 */
+.ant-drawer-mask {
+  background-color: rgba(0, 0, 0, 0.45) !important;
+}
+
+.ant-drawer-content-wrapper {
+  box-shadow: -6px 0 16px 0 rgba(0, 0, 0, 0.08),
+              -3px 0 6px -4px rgba(0, 0, 0, 0.12),
+              -9px 0 28px 8px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* 10. Message 全局提示 */
+.ant-message {
+  z-index: 1070 !important;
+}
+
+.ant-message-notice-content {
+  background-color: #ffffff !important;
+  box-shadow: 0 3px 6px -4px rgba(0, 0, 0, 0.12),
+              0 6px 16px 0 rgba(0, 0, 0, 0.08),
+              0 9px 28px 8px rgba(0, 0, 0, 0.05) !important;
+  border-radius: 6px;
+  padding: 10px 16px;
+}
+
+/* 11. Notification 通知提醒框 */
+.ant-notification {
+  z-index: 1070 !important;
+}
+
+.ant-notification-notice {
+  background-color: #ffffff !important;
+  box-shadow: 0 3px 6px -4px rgba(0, 0, 0, 0.12),
+              0 6px 16px 0 rgba(0, 0, 0, 0.08),
+              0 9px 28px 8px rgba(0, 0, 0, 0.05) !important;
+  border-radius: 6px;
+}
+
+/* 12. 滚动条美化 */
+.ant-pro-table-column-setting-list::-webkit-scrollbar,
+.ant-select-dropdown::-webkit-scrollbar,
+.ant-dropdown-menu::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.ant-pro-table-column-setting-list::-webkit-scrollbar-thumb,
+.ant-select-dropdown::-webkit-scrollbar-thumb,
+.ant-dropdown-menu::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.ant-pro-table-column-setting-list::-webkit-scrollbar-thumb:hover,
+.ant-select-dropdown::-webkit-scrollbar-thumb:hover,
+.ant-dropdown-menu::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.3);
+}
+
+.ant-pro-table-column-setting-list::-webkit-scrollbar-track,
+.ant-select-dropdown::-webkit-scrollbar-track,
+.ant-dropdown-menu::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+/* 13. 动画优化 */
+.ant-tooltip,
+.ant-dropdown,
+.ant-popover,
+.ant-select-dropdown,
+.ant-picker-dropdown {
+  animation-duration: 0.2s !important;
+}
+
+/* 14. 暗色模式支持 */
+@media (prefers-color-scheme: dark) {
+  .ant-tooltip-inner {
+    background-color: rgba(31, 31, 31, 0.96) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .ant-tooltip-arrow-content {
+    background-color: rgba(31, 31, 31, 0.96) !important;
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .ant-dropdown-menu,
+  .ant-popover-inner,
+  .ant-select-dropdown,
+  .ant-picker-panel-container,
+  .ant-pro-table-column-setting-list {
+    background-color: #1f1f1f !important;
+    color: #ffffff !important;
+  }
+  
+  .ant-dropdown-menu-item:hover,
+  .ant-select-item-option-active,
+  .ant-pro-table-column-setting-list-item:hover {
+    background-color: #262626 !important;
+  }
+  
+  .ant-dropdown-menu-item-active,
+  .ant-select-item-option-selected {
+    background-color: #177ddc !important;
+  }
+}
+
+/* 15. 响应式优化 */
+@media (max-width: 768px) {
+  .ant-tooltip-inner {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+  
+  .ant-dropdown-menu {
+    max-width: 90vw;
+  }
+  
+  .ant-pro-table-column-setting-list {
+    max-height: 300px !important;
+  }
+}
+
+/* ========================================
+   ULTIMATE FIX: 最终修复方案 - 超强版
+   ======================================== */
+
+/* 修复1: Tooltip绝对不能遮挡按钮 - 最高优先级 */
+html body div.ant-tooltip[role="tooltip"],
+html body div.ant-tooltip[role="tooltip"] *,
+html body .ant-tooltip-content,
+html body .ant-tooltip-inner {
+  pointer-events: none !important;
+  cursor: default !important;
+}
+
+/* 修复2: 列设置弹出层 - 强制定位 */
+html body div.ant-popover.ant-pro-table-column-setting-overlay {
+  position: fixed !important;
+}
+
+html body div.ant-popover.ant-pro-table-column-setting-overlay[class*="placement-bottom"] {
+  /* 使用right定位而不是left，避免溢出 */
+  right: 20px !important;
+  left: auto !important;
+}
+
+html body .ant-pro-table-column-setting-overlay .ant-popover-content {
+  max-width: 280px !important;
+  min-width: 200px !important;
+  overflow: hidden !important;
+}
+
+html body .ant-pro-table-column-setting-overlay .ant-popover-inner {
+  max-width: 280px !important;
+}
+
+/* 修复3: Tooltip偏移 - 最高优先级 */
+html body div.ant-tooltip[class*="placement-top"] {
+  transform: translateY(-15px) !important;
+  margin-top: -5px !important;
+}
+
+html body div.ant-tooltip[class*="placement-bottom"] {
+  transform: translateY(15px) !important;
+  margin-bottom: -5px !important;
+}
+
+html body div.ant-tooltip[class*="placement-left"] {
+  transform: translateX(-15px) !important;
+  margin-left: -5px !important;
+}
+
+html body div.ant-tooltip[class*="placement-right"] {
+  transform: translateX(15px) !important;
+  margin-right: -5px !important;
+}
+
+/* 修复4: 工具栏按钮区域 - 确保不被遮挡 */
+html body .ant-pro-table-list-toolbar-setting-item {
+  position: relative !important;
+  z-index: 10 !important;
+}
+
+html body .ant-pro-table-list-toolbar-setting-item button {
+  position: relative !important;
+  z-index: 11 !important;
+  pointer-events: auto !important;
+}
+
+/* 修复5: 密度选择器弹出层 */
+html body .ant-pro-table-list-toolbar-density .ant-dropdown {
+  pointer-events: auto !important;
+}
+
+html body .ant-pro-table-list-toolbar-density .ant-dropdown-menu {
+  pointer-events: auto !important;
+}
+
+/* force reload 5 - super enhanced */

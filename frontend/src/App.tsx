@@ -16,6 +16,7 @@ import '@/locales/config';
 
 // Import global styles
 import '@/styles/global.scss';
+import '@/styles/antd-overrides.css';
 
 // Create Query Client with optimized cache settings
 const queryClient = new QueryClient({
@@ -65,6 +66,16 @@ function App() {
         theme={{
           algorithm: currentTheme === THEMES.DARK ? theme.darkAlgorithm : theme.defaultAlgorithm,
           ...themeConfig,
+        }}
+        tooltip={{
+          placement: 'bottom', // 默认显示在底部
+          mouseEnterDelay: 0.5, // 延迟显示
+          mouseLeaveDelay: 0.05, // 快速隐藏
+          arrow: false, // 隐藏默认箭头，使用CSS自定义箭头
+        }}
+        popover={{
+          // 确保popovers使用body作为容器以避免overflow和z-index问题
+          getPopupContainer: () => document.body,
         }}
       >
         <AntApp>

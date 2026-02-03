@@ -4,6 +4,29 @@ export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled';
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
 export type AnnotationType = 'text_classification' | 'ner' | 'sentiment' | 'qa' | 'custom';
 
+// Re-export Label Studio types from dedicated module
+export type { LabelStudioSyncStatus } from './labelStudio';
+export type {
+  LabelStudioProject,
+  LabelStudioTask,
+  LabelStudioTaskData,
+  LabelStudioUser,
+  LabelStudioAnnotation,
+  AnnotationResult,
+  AnnotationValue,
+  LabelStudioError,
+  LabelStudioErrorType,
+  AnnotationQualityMetrics,
+  SyncCache,
+  SyncProgress,
+  SyncStatus,
+  ExportAnnotationResult,
+} from './labelStudio';
+export { calculateAnnotationQuality } from './labelStudio';
+
+// Import for local use
+import type { LabelStudioSyncStatus, LabelStudioTask } from './labelStudio';
+
 export interface Task {
   id: string;
   name: string;
@@ -22,7 +45,40 @@ export interface Task {
   completed_items: number;
   tenant_id: string;
   label_studio_project_id?: string;
+  label_studio_sync_status?: LabelStudioSyncStatus;
+  label_studio_last_sync?: string;
+  label_studio_sync_error?: string;
   tags?: string[];
+}
+
+// Annotation page props types
+export interface AnnotationGuideProps {
+  projectId: number;
+  currentTaskIndex: number;
+  totalTasks: number;
+  onOpenLabelStudio: () => void;
+  onBackToTask: () => void;
+}
+
+export interface AnnotationStatsProps {
+  totalTasks: number;
+  completedCount: number;
+  currentTaskIndex: number;
+  progress: number;
+  tasks: LabelStudioTask[];
+  onJumpToTask: (index: number) => void;
+}
+
+export interface AnnotationActionsProps {
+  currentTask: LabelStudioTask;
+  syncInProgress: boolean;
+  onNextTask: () => void;
+  onSkipTask: () => void;
+  onSyncProgress: () => void;
+}
+
+export interface CurrentTaskInfoProps {
+  task: LabelStudioTask;
 }
 
 export interface TaskListParams {
@@ -68,6 +124,10 @@ export interface UpdateTaskPayload {
   label_studio_project_id?: string;
   progress?: number;
   completed_items?: number;
+  total_items?: number;
+  label_studio_sync_status?: 'synced' | 'pending' | 'failed';
+  label_studio_last_sync?: string;
+  label_studio_sync_error?: string;
 }
 
 export interface TaskStats {

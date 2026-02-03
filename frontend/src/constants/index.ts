@@ -1,6 +1,7 @@
 // Export all constants
 export * from './routes';
 export * from './api';
+export * from './labelStudio';
 
 // App constants
 export const APP_NAME = '问视间';

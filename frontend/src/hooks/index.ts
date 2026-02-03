@@ -4,7 +4,10 @@ export * from './useDashboard';
 // Export useTask hooks
 export { 
   useTask, 
-  useTasks, 
+  useTasks,
+  useTasksPaginated,
+  useTasksInfinite,
+  useLazyTask,
   useTaskStats, 
   useCreateTask, 
   useUpdateTask, 
@@ -98,3 +101,8 @@ export {
   useLSWorkspaceSelector,
   LS_WORKSPACE_QUERY_KEYS,
 } from './useLSWorkspaces';
+
+// Label Studio hooks
+export { useLabelStudioUrl } from './useLabelStudioUrl';
+export { useLabelStudio } from './useLabelStudio';
+export type { LabelStudioError, UseLabelStudioReturn } from './useLabelStudio';

@@ -47,6 +47,7 @@ export * from './auth';
 export * from './user';
 export * from './dashboard';
 export * from './task';
+export * from './labelStudio';
 export * from './billing';
 export * from './augmentation';
 export * from './quality';

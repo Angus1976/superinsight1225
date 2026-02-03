@@ -35,6 +35,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useTask, useUpdateTask, useDeleteTask } from '@/hooks/useTask';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useLabelStudio } from '@/hooks';
 import { ProgressTracker } from '@/components/Tasks';
 import type { TaskStatus, TaskPriority } from '@/types';
 
@@ -85,6 +86,7 @@ const TaskDetailPage: React.FC = () => {
   
   const { data: task, isLoading, error } = useTask(id);
   const { annotation: annotationPerms } = usePermissions();
+  const { openLabelStudio, isValidProject, navigateToAnnotate } = useLabelStudio();
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
 
@@ -105,18 +107,13 @@ const TaskDetailPage: React.FC = () => {
     
     if (!id || !task) {
       console.error('[handleStartAnnotation] Task ID or task data is missing');
-      message.error('任务数据加载失败，请刷新页面重试');
+      message.error(t('taskDataLoadFailed'));
       return;
     }
     
-    // Navigate directly to annotation page
-    // The annotation page (TaskAnnotate.tsx) handles:
-    // - Project validation
-    // - Project creation if needed
-    // - Task import
-    // - Error handling with retry options
+    // Navigate directly to annotation page using the hook
     console.log('[handleStartAnnotation] Navigating to:', `/tasks/${id}/annotate`);
-    navigate(`/tasks/${id}/annotate`);
+    navigateToAnnotate(id);
     console.log('[handleStartAnnotation] ========== END ==========');
   };
 
@@ -132,27 +129,22 @@ const TaskDetailPage: React.FC = () => {
     
     if (!id || !task) {
       console.error('[handleOpenInNewWindow] Task ID or task data is missing');
-      message.error('任务数据加载失败，请刷新页面重试');
+      message.error(t('taskDataLoadFailed'));
       return;
     }
     
     const projectId = task.label_studio_project_id;
     
-    if (!projectId) {
-      // No project ID, navigate to annotation page first to create project
-      message.info('项目尚未创建，正在跳转到标注页面...');
-      navigate(`/tasks/${id}/annotate`);
+    if (!isValidProject(projectId)) {
+      // No valid project ID, navigate to annotation page first to create project
+      message.info(t('projectNotCreated'));
+      navigateToAnnotate(id);
       return;
     }
     
-    // Open Label Studio data manager (not dashboard) to start labeling
-    // Use /data endpoint to show tasks list where user can click "Label All Tasks"
-    const labelStudioUrl = import.meta.env.VITE_LABEL_STUDIO_URL || 'http://localhost:8080';
-    const projectUrl = `${labelStudioUrl}/projects/${projectId}/data`;
-    
-    console.log('[handleOpenInNewWindow] Opening Label Studio URL:', projectUrl);
-    window.open(projectUrl, '_blank', 'noopener,noreferrer');
-    message.success('已在新窗口中打开 Label Studio 数据管理器，请点击 "Label All Tasks" 开始标注');
+    // Open Label Studio data manager using the hook
+    console.log('[handleOpenInNewWindow] Opening Label Studio for project:', projectId);
+    openLabelStudio(projectId);
     console.log('[handleOpenInNewWindow] ========== END ==========');
   };
 

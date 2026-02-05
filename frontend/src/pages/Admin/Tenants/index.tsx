@@ -11,8 +11,8 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  Card, Table, Button, Space, Tag, Modal, Form, Input, Select,
-  message, Progress, Statistic, Row, Col, Tabs, Descriptions, Badge
+  Card, Table, Button, Space, Tag, App, Form, Input, Select,
+  Progress, Statistic, Row, Col, Tabs, Descriptions, Badge, Modal
 } from 'antd';
 import {
   PlusOutlined, EditOutlined, DeleteOutlined, SettingOutlined,
@@ -31,6 +31,7 @@ const { TabPane } = Tabs;
 
 const AdminTenants: React.FC = () => {
   const { t } = useTranslation('admin');
+  const { modal, message } = App.useApp();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isDetailVisible, setIsDetailVisible] = useState(false);
   const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
@@ -213,7 +214,7 @@ const AdminTenants: React.FC = () => {
               size="small"
               danger
               onClick={() => {
-                Modal.confirm({
+                modal.confirm({
                   title: t('tenants.confirmSuspend'),
                   content: t('tenants.confirmSuspendMessage', { name: record.name }),
                   onOk: () => setStatusMutation.mutate({ id: record.id, status: 'suspended' }),
@@ -237,7 +238,7 @@ const AdminTenants: React.FC = () => {
             danger
             icon={<DeleteOutlined />}
             onClick={() => {
-              Modal.confirm({
+              modal.confirm({
                 title: t('tenants.confirmDelete'),
                 content: t('tenants.confirmDeleteMessage', { name: record.name }),
                 onOk: () => deleteMutation.mutate(record.id),

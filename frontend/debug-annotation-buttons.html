@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>调试标注按钮</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .primary {
+            background: #1890ff;
+            color: white;
+        }
+        .secondary {
+            background: #fff;
+            border: 1px solid #d9d9d9;
+        }
+        .log {
+            background: #f5f5f5;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .error { color: #ff4d4f; }
+        .success { color: #52c41a; }
+        .info { color: #1890ff; }
+    </style>
+</head>
+<body>
+    <h1>标注按钮调试工具</h1>
+    
+    <div class="section">
+        <h2>配置</h2>
+        <label>任务 ID: <input type="text" id="taskId" value="8d927f00-a2c6-4e2f-8967-f160a3d0b2eb" style="width: 300px;"></label><br><br>
+        <label>API Base URL: <input type="text" id="apiUrl" value="http://localhost:57313" style="width: 300px;"></label><br><br>
+        <label>JWT Token: <input type="text" id="jwtToken" placeholder="从浏览器 localStorage 获取" style="width: 500px;"></label><br><br>
+        <button class="button primary" onclick="getTokenFromStorage()">从 localStorage 获取 Token</button>
+    </div>
+
+    <div class="section">
+        <h2>测试操作</h2>
+        <button class="button primary" onclick="testValidateProject()">1. 验证项目</button>
+        <button class="button primary" onclick="testEnsureProject()">2. 确保项目存在</button>
+        <button class="button primary" onclick="testGetAuthUrl()">3. 获取认证 URL</button>
+        <button class="button secondary" onclick="testStartAnnotation()">模拟"开始标注"</button>
+        <button class="button secondary" onclick="testOpenInNewWindow()">模拟"在新窗口打开"</button>
+        <button class="button secondary" onclick="clearLog()">清除日志</button>
+    </div>
+
+    <div class="section">
+        <h2>日志输出</h2>
+        <div id="log" class="log"></div>
+    </div>
+
+    <script>
+        let projectId = null;
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : 'info';
+            logDiv.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[${type}]`, message);
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        function getTokenFromStorage() {
+            try {
+                const token = localStorage.getItem('token');
+                if (token) {
+                    document.getElementById('jwtToken').value = token;
+                    log('✅ Token 已从 localStorage 获取', 'success');
+                } else {
+                    log('❌ localStorage 中没有找到 token', 'error');
+                }
+            } catch (e) {
+                log(`❌ 获取 token 失败: ${e.message}`, 'error');
+            }
+        }
+
+        async function makeRequest(endpoint, method = 'GET', body = null) {
+            const apiUrl = document.getElementById('apiUrl').value;
+            const token = document.getElementById('jwtToken').value;
+
+            if (!token) {
+                log('❌ 请先设置 JWT Token', 'error');
+                return null;
+            }
+
+            const url = `${apiUrl}${endpoint}`;
+            log(`📤 ${method} ${url}`);
+            if (body) {
+                log(`📦 Request body: ${JSON.stringify(body, null, 2)}`);
+            }
+
+            try {
+                const options = {
+                    method,
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                };
+
+                if (body) {
+                    options.body = JSON.stringify(body);
+                }
+
+                const response = await fetch(url, options);
+                const data = await response.json();
+
+                if (response.ok) {
+                    log(`✅ ${response.status} ${response.statusText}`, 'success');
+                    log(`📥 Response: ${JSON.stringify(data, null, 2)}`, 'success');
+                    return data;
+                } else {
+                    log(`❌ ${response.status} ${response.statusText}`, 'error');
+                    log(`📥 Error: ${JSON.stringify(data, null, 2)}`, 'error');
+                    return null;
+                }
+            } catch (e) {
+                log(`❌ 请求失败: ${e.message}`, 'error');
+                return null;
+            }
+        }
+
+        async function testValidateProject() {
+            if (!projectId) {
+                log('⚠️ 还没有项目 ID，请先运行"确保项目存在"', 'error');
+                return;
+            }
+            log('=== 测试：验证项目 ===');
+            await makeRequest(`/api/label-studio/projects/${projectId}/validate`);
+        }
+
+        async function testEnsureProject() {
+            const taskId = document.getElementById('taskId').value;
+            if (!taskId) {
+                log('❌ 请输入任务 ID', 'error');
+                return;
+            }
+
+            log('=== 测试：确保项目存在 ===');
+            const data = await makeRequest('/api/label-studio/projects/ensure', 'POST', {
+                task_id: taskId,
+                task_name: 'test',
+                annotation_type: 'text_classification'
+            });
+
+            if (data && data.project_id) {
+                projectId = data.project_id;
+                log(`✅ 项目 ID 已保存: ${projectId}`, 'success');
+            }
+        }
+
+        async function testGetAuthUrl() {
+            if (!projectId) {
+                log('⚠️ 还没有项目 ID，请先运行"确保项目存在"', 'error');
+                return;
+            }
+            log('=== 测试：获取认证 URL ===');
+            const data = await makeRequest(`/api/label-studio/projects/${projectId}/auth-url?language=zh`);
+            
+            if (data && data.url) {
+                log(`✅ 认证 URL: ${data.url}`, 'success');
+            }
+        }
+
+        async function testStartAnnotation() {
+            const taskId = document.getElementById('taskId').value;
+            if (!taskId) {
+                log('❌ 请输入任务 ID', 'error');
+                return;
+            }
+
+            log('=== 模拟：开始标注 ===');
+            
+            // Step 1: Ensure project
+            log('步骤 1: 确保项目存在...');
+            const ensureData = await makeRequest('/api/label-studio/projects/ensure', 'POST', {
+                task_id: taskId,
+                task_name: 'test',
+                annotation_type: 'text_classification'
+            });
+
+            if (!ensureData || !ensureData.project_id) {
+                log('❌ 项目创建失败', 'error');
+                return;
+            }
+
+            projectId = ensureData.project_id;
+            log(`✅ 项目 ID: ${projectId}`, 'success');
+
+            // Step 2: Validate project
+            log('步骤 2: 验证项目...');
+            const validateData = await makeRequest(`/api/label-studio/projects/${projectId}/validate`);
+
+            if (!validateData || !validateData.exists) {
+                log('❌ 项目验证失败', 'error');
+                return;
+            }
+
+            log('✅ 项目验证成功', 'success');
+            log(`✅ 应该导航到: /tasks/${taskId}/annotate`, 'success');
+        }
+
+        async function testOpenInNewWindow() {
+            const taskId = document.getElementById('taskId').value;
+            if (!taskId) {
+                log('❌ 请输入任务 ID', 'error');
+                return;
+            }
+
+            log('=== 模拟：在新窗口打开 ===');
+            
+            // Step 1: Ensure project
+            log('步骤 1: 确保项目存在...');
+            const ensureData = await makeRequest('/api/label-studio/projects/ensure', 'POST', {
+                task_id: taskId,
+                task_name: 'test',
+                annotation_type: 'text_classification'
+            });
+
+            if (!ensureData || !ensureData.project_id) {
+                log('❌ 项目创建失败', 'error');
+                return;
+            }
+
+            projectId = ensureData.project_id;
+            log(`✅ 项目 ID: ${projectId}`, 'success');
+
+            // Step 2: Get auth URL
+            log('步骤 2: 获取认证 URL...');
+            const authData = await makeRequest(`/api/label-studio/projects/${projectId}/auth-url?language=zh`);
+
+            if (!authData || !authData.url) {
+                log('❌ 获取认证 URL 失败', 'error');
+                return;
+            }
+
+            log(`✅ 认证 URL: ${authData.url}`, 'success');
+            log('✅ 应该在新窗口打开此 URL', 'success');
+            
+            // Actually open the window
+            const confirmOpen = confirm('是否在新窗口打开 Label Studio？');
+            if (confirmOpen) {
+                window.open(authData.url, '_blank', 'noopener,noreferrer');
+            }
+        }
+
+        // Auto-load token on page load
+        window.addEventListener('load', () => {
+            getTokenFromStorage();
+        });
+    </script>
+</body>
+</html>

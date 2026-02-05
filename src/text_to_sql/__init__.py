@@ -12,7 +12,8 @@ from .models import (
     SQLValidationResult,
     TableInfo,
     ColumnInfo,
-    QueryComplexity
+    QueryComplexity,
+    DatabaseDialect
 )
 from .schemas import (
     SQLGenerationResult,
@@ -52,6 +53,7 @@ __all__ = [
     "TableInfo",
     "ColumnInfo",
     "QueryComplexity",
+    "DatabaseDialect",
     # New Schemas
     "SQLGenerationResult",
     "MethodInfo",

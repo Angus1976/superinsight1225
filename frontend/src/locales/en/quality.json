@@ -521,5 +521,40 @@
     "ruleDeleteFailed": "Failed to delete quality rule",
     "loadRulesFailed": "Failed to load rules",
     "templateCreateSuccess": "Rule created from template successfully"
+  },
+  "ai": {
+    "stats": {
+      "ai_accuracy": "AI Accuracy",
+      "agreement_rate": "Human-AI Agreement",
+      "total_samples": "Total Samples",
+      "active_alerts": "Active Alerts"
+    },
+    "titles": {
+      "degradation_alerts": "Quality Degradation Alerts",
+      "confidence_distribution": "Confidence Distribution",
+      "human_ai_agreement": "Human-AI Agreement Analysis",
+      "engine_performance": "Engine Performance Comparison"
+    },
+    "columns": {
+      "metric": "Metric",
+      "ai_value": "AI Value",
+      "human_value": "Human Value",
+      "agreement_rate": "Agreement Rate",
+      "discrepancies": "Discrepancies",
+      "engine": "Engine",
+      "samples": "Samples"
+    },
+    "labels": {
+      "vs_previous": "vs previous",
+      "human_accuracy": "Human accuracy",
+      "avg_per_day": "Avg per day",
+      "needs_attention": "Needs Attention",
+      "all_good": "All Good",
+      "current": "Current",
+      "previous": "Previous"
+    },
+    "filters": {
+      "all_engines": "All Engines"
+    }
   }
 }

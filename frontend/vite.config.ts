@@ -129,18 +129,27 @@ export default defineConfig(({ mode }) => ({
   server: {
     port: 5173,
     host: '0.0.0.0',
+    // Suppress specific warnings
+    hmr: {
+      overlay: true,
+    },
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: 'http://superinsight-app:8000',
         changeOrigin: true,
       },
       '/health': {
-        target: 'http://localhost:8000',
+        target: 'http://superinsight-app:8000',
         changeOrigin: true,
       },
       '/system': {
-        target: 'http://localhost:8000',
+        target: 'http://superinsight-app:8000',
         changeOrigin: true,
+      },
+      '/label-studio': {
+        target: 'http://superinsight-label-studio:8080',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/label-studio/, ''),
       },
     },
   },

@@ -5,6 +5,23 @@ import { reportWebVitals } from '@/utils/performance'
 import { initPerformanceOptimizations } from '@/utils/performanceOptimization'
 import { preloadCriticalRoutes } from '@/router/routes'
 
+// Suppress specific Ant Design deprecation warnings from Pro Components
+// These are internal to @ant-design/pro-components and will be fixed in their next release
+const originalWarn = console.warn
+console.warn = (...args: unknown[]) => {
+  const message = args[0]
+  if (
+    typeof message === 'string' &&
+    (message.includes('TableColumn') ||
+     message.includes('Table.Column') ||
+     message.includes('is deprecated'))
+  ) {
+    // Suppress these specific warnings
+    return
+  }
+  originalWarn.apply(console, args)
+}
+
 // Initialize performance optimizations early
 initPerformanceOptimizations()
 

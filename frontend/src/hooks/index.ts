@@ -4,7 +4,10 @@ export * from './useDashboard';
 // Export useTask hooks
 export { 
   useTask, 
-  useTasks, 
+  useTasks,
+  useTasksPaginated,
+  useTasksInfinite,
+  useLazyTask,
   useTaskStats, 
   useCreateTask, 
   useUpdateTask, 
@@ -71,3 +74,35 @@ export {
   useLLMConfigPage,
   LLM_QUERY_KEYS,
 } from './useLLMProviders';
+
+// Brand Identity System hooks
+export * from './useBrandTheme';
+export * from './useBrandCache';
+export * from './useBrandAnalytics';
+export * from './useBrandABTest';
+
+// Label Studio Workspace hooks
+export {
+  useLSWorkspaces,
+  useLSWorkspace,
+  useCreateLSWorkspace,
+  useUpdateLSWorkspace,
+  useDeleteLSWorkspace,
+  useLSWorkspaceMembers,
+  useAddLSWorkspaceMember,
+  useUpdateLSWorkspaceMember,
+  useRemoveLSWorkspaceMember,
+  useLSWorkspacePermissions,
+  useLSWorkspaceProjects,
+  useLSWorkspaceProject,
+  useAssociateLSProject,
+  useRemoveLSProjectAssociation,
+  useLSWorkspaceContext,
+  useLSWorkspaceSelector,
+  LS_WORKSPACE_QUERY_KEYS,
+} from './useLSWorkspaces';
+
+// Label Studio hooks
+export { useLabelStudioUrl } from './useLabelStudioUrl';
+export { useLabelStudio } from './useLabelStudio';
+export type { LabelStudioError, UseLabelStudioReturn } from './useLabelStudio';

@@ -521,5 +521,61 @@
     "ruleDeleteFailed": "质量规则删除失败",
     "loadRulesFailed": "加载规则失败",
     "templateCreateSuccess": "从模板创建规则成功"
+  },
+  "ai": {
+    "stats": {
+      "ai_accuracy": "AI 准确率",
+      "agreement_rate": "人机一致率",
+      "total_samples": "总样本数",
+      "active_alerts": "活跃预警"
+    },
+    "titles": {
+      "degradation_alerts": "质量下降预警",
+      "confidence_distribution": "置信度分布",
+      "human_ai_agreement": "人机一致性分析",
+      "engine_performance": "引擎性能对比",
+      "accuracy_trend": "AI 准确率趋势"
+    },
+    "columns": {
+      "metric": "指标",
+      "ai_value": "AI 值",
+      "human_value": "人工值",
+      "agreement_rate": "一致率",
+      "discrepancies": "差异数",
+      "engine": "引擎",
+      "samples": "样本数",
+      "accuracy": "准确率",
+      "confidence": "平均置信度",
+      "suggestions": "建议数",
+      "acceptance_rate": "接受率"
+    },
+    "labels": {
+      "vs_previous": "vs 之前",
+      "human_accuracy": "人工准确率",
+      "avg_per_day": "日均值",
+      "needs_attention": "需要关注",
+      "all_good": "一切正常",
+      "current": "当前",
+      "previous": "之前",
+      "confidence_range": "置信度范围",
+      "distribution": "分布",
+      "acceptance_rate": "接受率",
+      "alert_severity": "严重程度",
+      "degradation_rate": "下降率",
+      "recommendation": "建议"
+    },
+    "filters": {
+      "all_engines": "所有引擎",
+      "date_range": "日期范围",
+      "last_7_days": "最近 7 天",
+      "last_30_days": "最近 30 天",
+      "last_90_days": "最近 90 天"
+    },
+    "messages": {
+      "no_data": "所选时间段无可用数据",
+      "loading": "正在加载 AI 质量指标...",
+      "alert_dismissed": "预警已关闭",
+      "metrics_refreshed": "指标已刷新"
+    }
   }
 }

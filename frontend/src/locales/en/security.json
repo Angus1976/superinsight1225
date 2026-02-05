@@ -165,6 +165,12 @@
     "recommendations": "Recommendations",
     "noFindings": "No findings",
     "noRecommendations": "No recommendations",
+    "totalRecords": "Total Records",
+    "sensitiveRecords": "Sensitive Records",
+    "accessCount": "Access Count",
+    "violations": "Violations",
+    "score": "Compliance Score",
+    "occurrences": "occurrences",
     "types": {
       "gdpr": "GDPR Compliance Report",
       "soc2": "SOC 2 Compliance Report",

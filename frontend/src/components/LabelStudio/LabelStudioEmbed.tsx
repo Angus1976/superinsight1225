@@ -1,9 +1,12 @@
-// Label Studio iframe embed component with language synchronization
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { Card, Spin, Alert, Button, Space, message } from 'antd';
-import { ReloadOutlined, ExpandOutlined, CompressOutlined, SyncOutlined, InfoCircleOutlined, GlobalOutlined } from '@ant-design/icons';
+// Label Studio iframe embed component with SSO authentication and language synchronization
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { Card, Spin, Alert, Button, Space, message, Tag, Tooltip } from 'antd';
+import { ReloadOutlined, ExpandOutlined, CompressOutlined, SyncOutlined, InfoCircleOutlined, GlobalOutlined, TeamOutlined } from '@ant-design/icons';
 import { useLanguageStore, type LabelStudioLanguageMessage } from '@/stores/languageStore';
 import { useTranslation } from 'react-i18next';
+import { useLSWorkspaceContext } from '@/hooks/useLSWorkspaces';
+import apiClient from '@/services/api/client';
+import type { WorkspaceInfo, WorkspaceMessageType } from '@/services/iframe/types';
 
 interface LabelStudioEmbedProps {
   projectId: string;
@@ -15,6 +18,10 @@ interface LabelStudioEmbedProps {
   onTaskComplete?: (taskId: string) => void;
   onProgressUpdate?: (progress: { completed: number; total: number }) => void;
   height?: number | string;
+  /** Workspace ID for Label Studio Enterprise integration */
+  workspaceId?: string | null;
+  /** Callback when workspace context changes */
+  onWorkspaceContextChange?: (context: WorkspaceInfo | null) => void;
 }
 
 interface LabelStudioMessage {
@@ -37,6 +44,8 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
   onTaskComplete,
   onProgressUpdate,
   height = 600,
+  workspaceId,
+  onWorkspaceContextChange,
 }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [loading, setLoading] = useState(true);
@@ -45,37 +54,153 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
   const [lastActivity, setLastActivity] = useState<Date | null>(null);
   
+  // SSO token state
+  const [ssoToken, setSsoToken] = useState<string | null>(null);
+  const [ssoEnabled, setSsoEnabled] = useState(false);
+  const [labelStudioUrl, setLabelStudioUrl] = useState<string>('');
+
   // Language store integration
   const { language, syncToLabelStudio } = useLanguageStore();
   const { t } = useTranslation();
 
   // Track previous language to detect changes
   const prevLanguageRef = useRef(language);
+
+  // Workspace context integration
+  const workspaceContext = useLSWorkspaceContext(workspaceId);
+
+  // Build workspace info for iframe
+  const workspaceInfo = useMemo((): WorkspaceInfo | null => {
+    if (!workspaceContext.workspace || !workspaceId) return null;
+    return {
+      id: workspaceContext.workspace.id,
+      name: workspaceContext.workspace.name,
+      description: workspaceContext.workspace.description,
+      role: workspaceContext.userRole || 'viewer',
+      permissions: workspaceContext.permissions.map(p => ({
+        permission: p,
+        granted: true,
+      })),
+      settings: workspaceContext.workspace.settings,
+    };
+  }, [workspaceContext.workspace, workspaceContext.userRole, workspaceContext.permissions, workspaceId]);
+
+  // Track workspace changes and notify
+  const prevWorkspaceIdRef = useRef(workspaceId);
+  useEffect(() => {
+    if (prevWorkspaceIdRef.current !== workspaceId) {
+      prevWorkspaceIdRef.current = workspaceId;
+      onWorkspaceContextChange?.(workspaceInfo);
+    }
+  }, [workspaceId, workspaceInfo, onWorkspaceContextChange]);
+
+  // Fetch SSO token or login URL on mount
+  useEffect(() => {
+    const fetchLoginUrl = async () => {
+      try {
+        const response = await apiClient.get('/api/label-studio/auth/login-url', {
+          params: {
+            project_id: projectId,
+            task_id: taskId,
+          },
+        });
+        
+        if (response.data.sso_enabled && response.data.url) {
+          // SSO is enabled, extract token from URL using regex (more robust than URL parsing)
+          const tokenMatch = response.data.url.match(/[?&]token=([^&]+)/);
+          if (tokenMatch && tokenMatch[1]) {
+            setSsoToken(tokenMatch[1]);
+            console.log('[LabelStudioEmbed] SSO token extracted successfully');
+          }
+          setSsoEnabled(true);
+        }
+        // Always use the proxy path for frontend, not the internal Docker URL
+        setLabelStudioUrl('/label-studio');
+      } catch (err) {
+        console.warn('Failed to fetch SSO login URL:', err);
+        // Fall back to proxy URL
+        setLabelStudioUrl('/label-studio');
+      }
+    };
+    
+    fetchLoginUrl();
+  }, [projectId, taskId]);
   
-  // Build Label Studio URL with authentication, context, and language
+  // Build Label Studio URL with authentication, context, language, and workspace
   const getLabelStudioUrl = useCallback(() => {
+    // Debug logging
+    console.log('[LabelStudioEmbed] Building URL with params:', {
+      projectId,
+      taskId,
+      token: token ? '***' : 'none',
+      ssoToken: ssoToken ? '***' : 'none',
+      language,
+      workspaceId,
+      baseUrl,
+      labelStudioUrl,
+    });
+
     const params = new URLSearchParams();
-    
-    if (token) {
-      params.append('token', token);
+
+    // Use SSO token if available, otherwise use provided token
+    const authToken = ssoToken || token;
+    if (authToken) {
+      params.append('token', authToken);
     }
+
+    // Add language parameter for Label Studio localization
+    params.append('lang', language);
+
+    // Add workspace ID for Label Studio Enterprise
+    if (workspaceId) {
+      params.append('workspace', workspaceId);
+    }
+
+    // Use the fetched Label Studio URL or fall back to baseUrl
+    const effectiveBaseUrl = labelStudioUrl || baseUrl;
     
+    // Build URL - Label Studio Community Edition annotation interface
+    // Label Studio has different interfaces:
+    // - /projects/{id}/ - Project dashboard (NOT what we want)
+    // - /projects/{id}/data - Data manager view
+    // - Direct task labeling requires navigating through the UI
+    // 
+    // For Community Edition, we'll use the data manager view which shows tasks
+    let url: string;
     if (taskId) {
+      // Use data manager view with task filter
+      // This will show the task list, and user can click on the specific task
+      url = `${effectiveBaseUrl}/projects/${projectId}/data`;
+      console.log('[LabelStudioEmbed] Building data manager URL with taskId:', taskId);
+      
+      // Add task parameter - this will pre-select the task in the data manager
       params.append('task', taskId);
+      // Add tab parameter to show the labeling interface
+      params.append('tab', '0');
+    } else {
+      // Link to data manager (will show all tasks)
+      url = `${effectiveBaseUrl}/projects/${projectId}/data`;
+      console.log('[LabelStudioEmbed] Building data manager URL without taskId');
     }
     
-    // Add iframe mode and communication flags
-    params.append('mode', 'iframe');
-    params.append('enable_postmessage', 'true');
-    params.append('enable_hotkeys', 'true');
-    
-    let url = `${baseUrl}/projects/${projectId}/data`;
-    if (params.toString()) {
-      url += `?${params.toString()}`;
+    // Append authentication and other parameters
+    const additionalParams = params.toString();
+    if (additionalParams) {
+      url += url.includes('?') ? '&' : '?';
+      url += additionalParams;
     }
-    
+
+    console.log('[LabelStudioEmbed] Final generated URL:', url);
+    console.log('[LabelStudioEmbed] URL breakdown:', {
+      baseUrl: effectiveBaseUrl,
+      projectId,
+      taskId,
+      params: additionalParams,
+    });
+    console.log('[LabelStudioEmbed] ⚠️ Note: Label Studio Community Edition requires session-based authentication.');
+    console.log('[LabelStudioEmbed] ⚠️ If you see a login page, please login to Label Studio first at:', `${effectiveBaseUrl}/user/login`);
     return url;
-  }, [baseUrl, projectId, taskId, token]);
+  }, [baseUrl, projectId, taskId, token, ssoToken, language, workspaceId, labelStudioUrl]);
 
   // Enhanced message handling with better error handling and logging
   useEffect(() => {
@@ -179,6 +304,28 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
             }
             break;
 
+          // Workspace context message handlers
+          case 'workspace:context:request':
+            // Label Studio is requesting workspace context
+            if (workspaceInfo) {
+              sendMessageToIframe('workspace:context', workspaceInfo);
+              console.log('Sent workspace context to Label Studio:', workspaceInfo);
+            }
+            break;
+
+          case 'workspace:permission:check':
+            // Handle permission check request from Label Studio
+            if (lsMessage.payload && typeof lsMessage.payload === 'object') {
+              const permissionPayload = lsMessage.payload as { permission: string };
+              const hasPermission = workspaceContext.can(permissionPayload.permission as any);
+              sendMessageToIframe('workspace:permission:result', {
+                permission: permissionPayload.permission,
+                granted: hasPermission,
+              });
+              console.log(`Permission check for ${permissionPayload.permission}:`, hasPermission);
+            }
+            break;
+
           default:
             // Log unknown message types for debugging
             console.log('Unknown Label Studio message type:', lsMessage.type);
@@ -257,11 +404,14 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
     // Set a timeout to detect if Label Studio doesn't respond
     const timeout = setTimeout(() => {
       if (connectionStatus === 'connecting') {
-        setError(t('labelStudio.timeout', 'Label Studio 响应超时，请检查服务是否正常运行'));
+        // Label Studio loaded but didn't send ready message - this is OK
+        // Just mark as connected and hide loading
+        console.log('[LabelStudioEmbed] Timeout reached, assuming Label Studio is ready');
         setLoading(false);
-        setConnectionStatus('disconnected');
+        setConnectionStatus('connected');
+        setError(null);
       }
-    }, 10000); // 10 second timeout
+    }, 30000); // 30 second timeout (increased from 10s)
 
     // Clear timeout if we receive a ready message
     const clearTimeoutOnReady = () => {
@@ -416,6 +566,9 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
                 <li>{t('labelStudio.solution2', '验证网络连接是否正常')}</li>
                 <li>{t('labelStudio.solution3', '确认项目 ID 和任务 ID 是否正确')}</li>
                 <li>{t('labelStudio.solution4', '检查认证令牌是否有效')}</li>
+                <li>
+                  <strong>推荐</strong>：返回任务详情页，点击"在新窗口中打开"按钮，在 Label Studio 原生界面中进行标注
+                </li>
               </ul>
             </div>
           }

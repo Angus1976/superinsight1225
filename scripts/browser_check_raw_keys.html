@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raw Translation Key Checker</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .header {
+            background: #1890ff;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .section {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .page-link {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 5px;
+            background: #1890ff;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+        .page-link:hover {
+            background: #40a9ff;
+        }
+        .check-button {
+            padding: 12px 24px;
+            background: #52c41a;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        .check-button:hover {
+            background: #73d13d;
+        }
+        .results {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+        }
+        .results.pass {
+            background: #f6ffed;
+            border: 1px solid #b7eb8f;
+            color: #52c41a;
+        }
+        .results.fail {
+            background: #fff2e8;
+            border: 1px solid #ffbb96;
+            color: #fa541c;
+        }
+        .issue-item {
+            padding: 8px;
+            margin: 5px 0;
+            background: #fff;
+            border-left: 3px solid #fa541c;
+            font-family: monospace;
+        }
+        .instructions {
+            background: #e6f7ff;
+            border: 1px solid #91d5ff;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .pattern-list {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .lang-selector {
+            margin: 10px 0;
+        }
+        .lang-button {
+            padding: 8px 16px;
+            margin: 0 5px;
+            border: 2px solid #1890ff;
+            background: white;
+            color: #1890ff;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .lang-button.active {
+            background: #1890ff;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔍 Raw Translation Key Checker</h1>
+        <p>Verify that no raw translation keys are visible in the admin console</p>
+    </div>
+
+    <div class="section instructions">
+        <h2>📋 Instructions</h2>
+        <ol>
+            <li>Click on each page link below to open it in a new tab</li>
+            <li>On each page, click the "Check This Page" button</li>
+            <li>Review the results for any raw translation keys</li>
+            <li>Test in both Chinese (zh) and English (en)</li>
+        </ol>
+        <p><strong>What are raw translation keys?</strong></p>
+        <div class="pattern-list">
+            • Text with dots: admin.console.title<br>
+            • camelCase: billingManagement, quotaManagement<br>
+            • Module prefixes: permissionConfig.*, console.*
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🌐 Language Selection</h2>
+        <div class="lang-selector">
+            <button class="lang-button active" onclick="switchLanguage('zh')">中文 (zh)</button>
+            <button class="lang-button" onclick="switchLanguage('en')">English (en)</button>
+        </div>
+        <p id="current-lang">Current language: <strong>zh (Chinese)</strong></p>
+    </div>
+
+    <div class="section">
+        <h2>📄 Admin Pages to Check</h2>
+        <div>
+            <a href="http://localhost:5173/admin/console" target="_blank" class="page-link">
+                Console Overview
+            </a>
+            <a href="http://localhost:5173/admin/billing" target="_blank" class="page-link">
+                Billing Management
+            </a>
+            <a href="http://localhost:5173/admin/permissions" target="_blank" class="page-link">
+                Permission Config
+            </a>
+            <a href="http://localhost:5173/admin/quota" target="_blank" class="page-link">
+                Quota Management
+            </a>
+            <a href="http://localhost:5173/admin/tenants" target="_blank" class="page-link">
+                Tenant Management
+            </a>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🔍 Check Current Page</h2>
+        <p>Open an admin page in a new tab, then click this button on that page:</p>
+        <button class="check-button" onclick="checkCurrentPage()">
+            Check This Page for Raw Keys
+        </button>
+        <button class="check-button" style="background: #1890ff;" onclick="copyCheckScript()">
+            Copy Check Script
+        </button>
+        <div id="results"></div>
+    </div>
+
+    <div class="section">
+        <h2>📊 Manual Verification Checklist</h2>
+        <div id="checklist">
+            <h3>Chinese (zh)</h3>
+            <label><input type="checkbox" id="zh-console"> Console Overview</label><br>
+            <label><input type="checkbox" id="zh-billing"> Billing Management</label><br>
+            <label><input type="checkbox" id="zh-permissions"> Permission Config</label><br>
+            <label><input type="checkbox" id="zh-quota"> Quota Management</label><br>
+            <label><input type="checkbox" id="zh-tenants"> Tenant Management</label><br>
+            
+            <h3>English (en)</h3>
+            <label><input type="checkbox" id="en-console"> Console Overview</label><br>
+            <label><input type="checkbox" id="en-billing"> Billing Management</label><br>
+            <label><input type="checkbox" id="en-permissions"> Permission Config</label><br>
+            <label><input type="checkbox" id="en-quota"> Quota Management</label><br>
+            <label><input type="checkbox" id="en-tenants"> Tenant Management</label><br>
+        </div>
+    </div>
+
+    <script>
+        // Translation key patterns
+        const PATTERNS = [
+            /\w+\.\w+\.\w+/,  // word.word.word
+            /^[a-z]+[A-Z]/,   // camelCase
+            /billingManagement\./,
+            /permissionConfig\./,
+            /quotaManagement\./,
+            /console\./,
+            /admin\./,
+        ];
+
+        // Whitelist (not translation keys)
+        const WHITELIST = [
+            'localhost:5173',
+            'localhost:8000',
+            'http://',
+            'https://',
+            'www.',
+            '.com',
+            '.json',
+            'API',
+            'ID',
+            'URL',
+        ];
+
+        function looksLikeTranslationKey(text) {
+            if (WHITELIST.some(w => text.includes(w))) {
+                return false;
+            }
+            return PATTERNS.some(pattern => pattern.test(text));
+        }
+
+        function switchLanguage(lang) {
+            localStorage.setItem('i18nextLng', lang);
+            document.querySelectorAll('.lang-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            document.getElementById('current-lang').innerHTML = 
+                `Current language: <strong>${lang} (${lang === 'zh' ? 'Chinese' : 'English'})</strong>`;
+            alert(`Language switched to ${lang}. Please refresh the admin pages to see the change.`);
+        }
+
+        function checkCurrentPage() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<p>Checking page...</p>';
+
+            try {
+                const allElements = document.querySelectorAll('body *');
+                const suspiciousTexts = [];
+
+                allElements.forEach(el => {
+                    // Check text content
+                    for (let node of el.childNodes) {
+                        if (node.nodeType === Node.TEXT_NODE) {
+                            const text = node.textContent.trim();
+                            if (text && looksLikeTranslationKey(text)) {
+                                suspiciousTexts.push({
+                                    text: text,
+                                    tag: el.tagName,
+                                    className: el.className
+                                });
+                            }
+                        }
+                    }
+
+                    // Check attributes
+                    if (el.placeholder && looksLikeTranslationKey(el.placeholder)) {
+                        suspiciousTexts.push({
+                            text: el.placeholder,
+                            tag: el.tagName,
+                            attribute: 'placeholder'
+                        });
+                    }
+                    if (el.title && looksLikeTranslationKey(el.title)) {
+                        suspiciousTexts.push({
+                            text: el.title,
+                            tag: el.tagName,
+                            attribute: 'title'
+                        });
+                    }
+                });
+
+                // Display results
+                if (suspiciousTexts.length === 0) {
+                    resultsDiv.className = 'results pass';
+                    resultsDiv.innerHTML = `
+                        <h3>✅ PASS</h3>
+                        <p>No raw translation keys found on this page!</p>
+                        <p>Page: ${window.location.href}</p>
+                    `;
+                } else {
+                    resultsDiv.className = 'results fail';
+                    let html = `
+                        <h3>❌ FAIL</h3>
+                        <p>Found ${suspiciousTexts.length} suspicious text(s) that look like translation keys:</p>
+                        <p>Page: ${window.location.href}</p>
+                    `;
+                    suspiciousTexts.forEach((item, idx) => {
+                        const location = item.attribute 
+                            ? `${item.tag}.${item.attribute}` 
+                            : item.tag;
+                        html += `<div class="issue-item">${idx + 1}. "${item.text}" (in ${location})</div>`;
+                    });
+                    resultsDiv.innerHTML = html;
+                }
+            } catch (error) {
+                resultsDiv.className = 'results fail';
+                resultsDiv.innerHTML = `
+                    <h3>⚠️ Error</h3>
+                    <p>${error.message}</p>
+                `;
+            }
+        }
+
+        function copyCheckScript() {
+            const script = `
+// Paste this in browser console on any admin page
+const PATTERNS = [
+    /\\w+\\.\\w+\\.\\w+/,
+    /^[a-z]+[A-Z]/,
+    /billingManagement\\./,
+    /permissionConfig\\./,
+    /quotaManagement\\./,
+    /console\\./,
+    /admin\\./,
+];
+const WHITELIST = ['localhost', 'http://', 'https://', 'www.', '.com', '.json', 'API', 'ID', 'URL'];
+function check(text) {
+    if (WHITELIST.some(w => text.includes(w))) return false;
+    return PATTERNS.some(p => p.test(text));
+}
+const suspicious = [];
+document.querySelectorAll('body *').forEach(el => {
+    for (let node of el.childNodes) {
+        if (node.nodeType === 3) {
+            const text = node.textContent.trim();
+            if (text && check(text)) suspicious.push(text);
+        }
+    }
+});
+console.log('Suspicious texts:', suspicious.length);
+suspicious.forEach((t, i) => console.log(i + 1 + '. "' + t + '"'));
+            `.trim();
+
+            navigator.clipboard.writeText(script).then(() => {
+                alert('Check script copied to clipboard! Paste it in the browser console on any admin page.');
+            }).catch(() => {
+                alert('Failed to copy. Please copy manually from the console.');
+                console.log(script);
+            });
+        }
+    </script>
+</body>
+</html>

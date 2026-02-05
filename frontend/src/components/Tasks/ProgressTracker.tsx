@@ -158,7 +158,7 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
       startTime: '2025-01-20T09:00:00Z',
       endTime: '2025-01-20T12:30:00Z',
       duration: 210,
-      activity: 'Text Classification',
+      activity: 'textClassification',
       itemsCompleted: 85,
     },
     {
@@ -169,7 +169,7 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
       startTime: '2025-01-20T13:30:00Z',
       endTime: '2025-01-20T17:00:00Z',
       duration: 210,
-      activity: 'Quality Review',
+      activity: 'qualityReview',
       itemsCompleted: 65,
     },
     {
@@ -179,7 +179,7 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
       userName: 'John Doe',
       startTime: '2025-01-21T09:00:00Z',
       duration: 60,
-      activity: 'Text Classification',
+      activity: 'textClassification',
       itemsCompleted: 20,
     },
   ];
@@ -316,7 +316,7 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
       title: t('activity'),
       dataIndex: 'activity',
       key: 'activity',
-      render: (activity) => <Tag color="blue">{activity}</Tag>,
+      render: (activity) => <Tag color="blue">{t(`activityTypes.${activity}`)}</Tag>,
     },
     {
       title: t('itemsCompleted'),

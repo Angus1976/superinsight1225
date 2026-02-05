@@ -1,0 +1,86 @@
+{
+  "title": "AI 任务管理",
+  "tabs": {
+    "task_queue": "任务队列",
+    "team_performance": "团队绩效",
+    "ai_routing_config": "AI 路由配置"
+  },
+  "columns": {
+    "task_id": "任务 ID",
+    "title": "标题",
+    "project": "项目",
+    "assignee": "负责人",
+    "ai_suggestion": "AI 建议",
+    "progress": "进度",
+    "status": "状态",
+    "priority": "优先级",
+    "member": "成员",
+    "skills": "技能",
+    "workload": "工作负载",
+    "accuracy": "准确率",
+    "ai_agreement": "AI 一致率",
+    "tasks_completed": "已完成",
+    "avg_speed": "平均速度"
+  },
+  "status": {
+    "pending": "待处理",
+    "in_progress": "进行中",
+    "review": "审核中",
+    "completed": "已完成"
+  },
+  "priority": {
+    "high": "高",
+    "medium": "中",
+    "low": "低"
+  },
+  "labels": {
+    "unassigned": "未分配",
+    "suggested_assignee": "建议负责人",
+    "reasoning": "理由",
+    "human_annotated": "人工标注",
+    "ai_pre_annotated": "AI 预标注",
+    "ai_suggested": "AI 建议",
+    "review_required": "需要审核",
+    "items_per_hour": "条/小时",
+    "hours": "小时"
+  },
+  "actions": {
+    "accept_ai_suggestion": "接受 AI",
+    "assign_manually": "手动分配"
+  },
+  "filters": {
+    "select_project": "选择项目",
+    "all_projects": "所有项目"
+  },
+  "metrics": {
+    "total_annotations": "总标注数",
+    "human_annotations": "人工标注数",
+    "ai_annotations": "AI 预标注数",
+    "ai_acceptance_rate": "AI 接受率",
+    "time_saved": "节省时间",
+    "quality_score": "质量评分"
+  },
+  "config": {
+    "routing_title": "AI 路由配置",
+    "routing_description": "配置如何根据置信度分数、技能和工作负载将 AI 建议路由给标注员",
+    "low_confidence_threshold": "低置信度阈值",
+    "low_confidence_tooltip": "低于此阈值的项目将被标记为需要人工审核",
+    "high_confidence_threshold": "高置信度阈值",
+    "high_confidence_tooltip": "高于此阈值的项目可以在启用时自动分配",
+    "auto_assign_high_confidence": "自动分配高置信度任务",
+    "auto_assign_tooltip": "自动分配具有高置信度 AI 建议的任务",
+    "skill_based_routing": "基于技能的路由",
+    "skill_based_tooltip": "根据标注员的技能标签路由任务",
+    "workload_balancing": "工作负载平衡",
+    "workload_balancing_tooltip": "在团队成员之间平衡任务分配"
+  },
+  "messages": {
+    "task_assigned": "任务分配成功",
+    "config_updated": "路由配置已更新"
+  },
+  "errors": {
+    "fetch_tasks_failed": "加载任务失败",
+    "assign_failed": "任务分配失败",
+    "config_update_failed": "配置更新失败"
+  }
+}

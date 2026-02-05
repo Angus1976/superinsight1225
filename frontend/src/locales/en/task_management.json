@@ -1,0 +1,86 @@
+{
+  "title": "AI Task Management",
+  "tabs": {
+    "task_queue": "Task Queue",
+    "team_performance": "Team Performance",
+    "ai_routing_config": "AI Routing Configuration"
+  },
+  "columns": {
+    "task_id": "Task ID",
+    "title": "Title",
+    "project": "Project",
+    "assignee": "Assignee",
+    "ai_suggestion": "AI Suggestion",
+    "progress": "Progress",
+    "status": "Status",
+    "priority": "Priority",
+    "member": "Member",
+    "skills": "Skills",
+    "workload": "Workload",
+    "accuracy": "Accuracy",
+    "ai_agreement": "AI Agreement",
+    "tasks_completed": "Completed",
+    "avg_speed": "Avg Speed"
+  },
+  "status": {
+    "pending": "Pending",
+    "in_progress": "In Progress",
+    "review": "Under Review",
+    "completed": "Completed"
+  },
+  "priority": {
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low"
+  },
+  "labels": {
+    "unassigned": "Unassigned",
+    "suggested_assignee": "Suggested Assignee",
+    "reasoning": "Reasoning",
+    "human_annotated": "Human Annotated",
+    "ai_pre_annotated": "AI Pre-Annotated",
+    "ai_suggested": "AI Suggested",
+    "review_required": "Review Required",
+    "items_per_hour": "items/hour",
+    "hours": "hours"
+  },
+  "actions": {
+    "accept_ai_suggestion": "Accept AI",
+    "assign_manually": "Assign Manually"
+  },
+  "filters": {
+    "select_project": "Select Project",
+    "all_projects": "All Projects"
+  },
+  "metrics": {
+    "total_annotations": "Total Annotations",
+    "human_annotations": "Human Annotations",
+    "ai_annotations": "AI Pre-Annotations",
+    "ai_acceptance_rate": "AI Acceptance Rate",
+    "time_saved": "Time Saved",
+    "quality_score": "Quality Score"
+  },
+  "config": {
+    "routing_title": "AI Routing Configuration",
+    "routing_description": "Configure how AI suggestions are routed to annotators based on confidence scores, skills, and workload",
+    "low_confidence_threshold": "Low Confidence Threshold",
+    "low_confidence_tooltip": "Items below this threshold will be flagged for manual review",
+    "high_confidence_threshold": "High Confidence Threshold",
+    "high_confidence_tooltip": "Items above this threshold can be auto-assigned if enabled",
+    "auto_assign_high_confidence": "Auto-assign High Confidence Tasks",
+    "auto_assign_tooltip": "Automatically assign tasks with high confidence AI suggestions",
+    "skill_based_routing": "Skill-Based Routing",
+    "skill_based_tooltip": "Route tasks to annotators based on their skill tags",
+    "workload_balancing": "Workload Balancing",
+    "workload_balancing_tooltip": "Balance task distribution across team members"
+  },
+  "messages": {
+    "task_assigned": "Task assigned successfully",
+    "config_updated": "Routing configuration updated"
+  },
+  "errors": {
+    "fetch_tasks_failed": "Failed to load tasks",
+    "assign_failed": "Failed to assign task",
+    "config_update_failed": "Failed to update configuration"
+  }
+}

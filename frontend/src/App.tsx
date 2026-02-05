@@ -16,13 +16,20 @@ import '@/locales/config';
 
 // Import global styles
 import '@/styles/global.scss';
+import '@/styles/antd-overrides.css';
 
-// Create Query Client
+// Create Query Client with optimized cache settings
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
+      // Reduce stale time to ensure fresh data on navigation
+      staleTime: 30000, // 30 seconds
+      // Enable cache time but keep it short
+      gcTime: 5 * 60 * 1000, // 5 minutes (formerly cacheTime)
+      // Refetch on mount if data is stale
+      refetchOnMount: true,
     },
   },
 });
@@ -59,6 +66,16 @@ function App() {
         theme={{
           algorithm: currentTheme === THEMES.DARK ? theme.darkAlgorithm : theme.defaultAlgorithm,
           ...themeConfig,
+        }}
+        tooltip={{
+          placement: 'bottom', // 默认显示在底部
+          mouseEnterDelay: 0.5, // 延迟显示
+          mouseLeaveDelay: 0.05, // 快速隐藏
+          arrow: false, // 隐藏默认箭头，使用CSS自定义箭头
+        }}
+        popover={{
+          // 确保popovers使用body作为容器以避免overflow和z-index问题
+          getPopupContainer: () => document.body,
         }}
       >
         <AntApp>

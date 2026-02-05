@@ -1,5 +1,11 @@
 // 完整的标注页面
-import { useState, useEffect, useCallback } from 'react';
+// Performance optimizations:
+// - All callback functions are wrapped with useCallback to ensure stable references
+// - Computed values use useMemo to avoid recalculation
+// - Child components are memoized with React.memo
+// - Inline functions in JSX are replaced with stable callback references
+// - Lazy loading for task data with useLazyTask hook
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Card,
@@ -16,75 +22,50 @@ import {
   Divider,
   Typography,
   Tooltip,
-  Badge,
   Dropdown,
   Modal,
+  Result,
 } from 'antd';
 import {
   ArrowLeftOutlined,
   CheckCircleOutlined,
-  StepForwardOutlined,
   ReloadOutlined,
   LockOutlined,
   FullscreenOutlined,
   FullscreenExitOutlined,
-  SaveOutlined,
   SyncOutlined,
   SettingOutlined,
   InfoCircleOutlined,
+  ExclamationCircleOutlined,
+  LoginOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import { LabelStudioEmbed } from '@/components/LabelStudio';
 import { PermissionGuard } from '@/components/Auth/PermissionGuard';
+import { 
+  AnnotationGuide, 
+  AnnotationStats, 
+  AnnotationActions, 
+  CurrentTaskInfo 
+} from '@/components/Tasks';
 import { useAuthStore } from '@/stores/authStore';
 import { usePermissions } from '@/hooks/usePermissions';
-import { useTask, useUpdateTask } from '@/hooks/useTask';
+import { useTask, useLazyTask, useUpdateTask } from '@/hooks/useTask';
+import { useLabelStudio, type LabelStudioError } from '@/hooks';
 import { Permission } from '@/utils/permissions';
 import apiClient from '@/services/api/client';
+import { labelStudioService } from '@/services/labelStudioService';
+import type { 
+  LabelStudioTask, 
+  LabelStudioProject, 
+  AnnotationResult 
+} from '@/types/task';
 
 const { Title, Text } = Typography;
-
-interface AnnotationResult {
-  id?: number;
-  result: Array<{
-    value: any;
-    from_name: string;
-    to_name: string;
-    type: string;
-  }>;
-  task: number;
-  created_at?: string;
-  updated_at?: string;
-}
-
-interface LabelStudioTask {
-  id: number;
-  data: {
-    text: string;
-    [key: string]: any;
-  };
-  project: number;
-  is_labeled: boolean;
-  annotations: AnnotationResult[];
-}
-
-interface LabelStudioProject {
-  id: number;
-  title: string;
-  description: string;
-  task_number: number;
-  total_annotations_number: number;
-  label_config: string;
-  created_by: {
-    id: number;
-    username: string;
-  };
-}
 
 const TaskAnnotatePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { token, user } = useAuthStore();
+  const { token } = useAuthStore();
   const { annotation: annotationPerms, roleDisplayName } = usePermissions();
   const { t } = useTranslation(['tasks', 'common']);
   
@@ -96,66 +77,171 @@ const TaskAnnotatePage: React.FC = () => {
   const [fullscreen, setFullscreen] = useState(false);
   const [syncInProgress, setSyncInProgress] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
+  
+  // Error state for better error handling
+  const [error, setError] = useState<LabelStudioError | null>(null);
 
   const { data: taskDetail } = useTask(id || '');
   const updateTask = useUpdateTask();
+  const { prefetchTask } = useLazyTask();
+  const { 
+    openLabelStudio, 
+    handleError: handleLabelStudioError, 
+    navigateToTaskDetail 
+  } = useLabelStudio();
 
-  // 获取项目和任务数据
+  // Track if initial fetch has been done to prevent loops
+  const [initialFetchDone, setInitialFetchDone] = useState(false);
+
+  // Prefetch task data when component mounts for faster subsequent loads
+  useEffect(() => {
+    if (id) {
+      prefetchTask(id);
+    }
+  }, [id, prefetchTask]);
+
+  // 获取项目和任务数据 - Enhanced with better error handling
   const fetchData = useCallback(async () => {
     if (!id || !token) return;
+    
+    // Prevent re-fetching if already done (avoid infinite loop)
+    if (initialFetchDone) return;
 
     try {
       setLoading(true);
+      setError(null);
       
-      // 获取项目信息
-      const projectResponse = await apiClient.get(`/api/label-studio/projects/${id}`, {
+      // Step 1: Validate project exists
+      let projectId = taskDetail?.label_studio_project_id;
+      
+      // If no project ID, try to create project automatically
+      if (!projectId) {
+        try {
+          message.loading({ content: t('annotate.creatingProjectAuto'), key: 'project-creation' });
+          
+          const ensureResult = await labelStudioService.ensureProject({
+            task_id: id,
+            task_name: taskDetail?.name || 'Annotation Project',
+            annotation_type: taskDetail?.annotation_type || 'text_classification',
+          });
+          
+          projectId = ensureResult.project_id;
+          message.success({ content: t('annotate.projectCreatedSuccess'), key: 'project-creation' });
+          
+          // Update task with project ID if we have taskDetail
+          if (taskDetail) {
+            await updateTask.mutateAsync({
+              id: taskDetail.id,
+              payload: { label_studio_project_id: projectId }
+            });
+          }
+        } catch (createError) {
+          console.error('Failed to create project:', createError);
+          setError({
+            type: 'service',
+            message: t('annotate.projectCreationFailed'),
+            details: createError instanceof Error ? createError.message : undefined,
+          });
+          return;
+        }
+      }
+      
+      // Step 2: Fetch project info
+      const projectResponse = await apiClient.get(`/api/label-studio/projects/${projectId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setProject(projectResponse.data);
       
-      // 获取任务列表
-      const tasksResponse = await apiClient.get(`/api/label-studio/projects/${id}/tasks`, {
+      // Step 3: Fetch tasks
+      const tasksResponse = await apiClient.get(`/api/label-studio/projects/${projectId}/tasks`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setTasks(tasksResponse.data.results || []);
       
-      // 找到第一个未标注的任务
-      const unlabeledIndex = tasksResponse.data.results.findIndex((task: LabelStudioTask) => !task.is_labeled);
-      if (unlabeledIndex !== -1) {
-        setCurrentTaskIndex(unlabeledIndex);
+      const tasksList = tasksResponse.data.tasks || tasksResponse.data.results || [];
+      
+      // If no tasks, try to import them
+      if (tasksList.length === 0 && id) {
+        try {
+          message.loading({ content: t('annotate.importingTasks'), key: 'task-import' });
+          
+          await labelStudioService.importTasks(projectId, id);
+          
+          // Refetch tasks after import
+          const refetchResponse = await apiClient.get(`/api/label-studio/projects/${projectId}/tasks`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          
+          const importedTasks = refetchResponse.data.tasks || refetchResponse.data.results || [];
+          setTasks(importedTasks);
+          message.success({ content: t('annotate.tasksImportedSuccess'), key: 'task-import' });
+          
+          // Find first unlabeled task
+          const unlabeledIndex = importedTasks.findIndex((task: LabelStudioTask) => !task.is_labeled);
+          if (unlabeledIndex !== -1) {
+            setCurrentTaskIndex(unlabeledIndex);
+          }
+          
+          // Count labeled tasks
+          const labeled = importedTasks.filter((task: LabelStudioTask) => task.is_labeled).length;
+          setAnnotationCount(labeled);
+        } catch (importError) {
+          console.error('Failed to import tasks:', importError);
+          // Continue with empty task list - user can still see the project
+          setTasks([]);
+        }
+      } else {
+        setTasks(tasksList);
+        
+        // Find first unlabeled task
+        const unlabeledIndex = tasksList.findIndex((task: LabelStudioTask) => !task.is_labeled);
+        if (unlabeledIndex !== -1) {
+          setCurrentTaskIndex(unlabeledIndex);
+        }
+        
+        // Count labeled tasks
+        const labeled = tasksList.filter((task: LabelStudioTask) => task.is_labeled).length;
+        setAnnotationCount(labeled);
       }
       
-      // 统计已标注数量
-      const labeled = tasksResponse.data.results.filter((task: LabelStudioTask) => task.is_labeled).length;
-      setAnnotationCount(labeled);
+    } catch (err) {
+      console.error('Failed to fetch data:', err);
       
-    } catch (error) {
-      console.error('Failed to fetch data:', error);
-      message.error(t('annotate.loadDataFailed'));
+      // Use unified error handling from useLabelStudio hook
+      const errorInfo = handleLabelStudioError(err);
+      setError(errorInfo);
     } finally {
       setLoading(false);
+      setInitialFetchDone(true);
     }
-  }, [id, token, t]);
+  }, [id, token, taskDetail, updateTask, t, initialFetchDone]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  const currentTask = tasks[currentTaskIndex];
-  const progress = tasks.length > 0 ? Math.round((annotationCount / tasks.length) * 100) : 0;
+  // Memoize computed values to avoid recalculation on each render
+  const currentTask = useMemo(() => tasks[currentTaskIndex], [tasks, currentTaskIndex]);
+  const progress = useMemo(
+    () => tasks.length > 0 ? Math.round((annotationCount / tasks.length) * 100) : 0,
+    [annotationCount, tasks.length]
+  );
+  const tasksLength = useMemo(() => tasks.length, [tasks.length]);
 
   // 处理标注创建
-  const handleAnnotationCreate = useCallback(async (annotation: AnnotationResult) => {
+  const handleAnnotationCreate = useCallback(async (annotation: unknown) => {
     if (!annotationPerms.canCreate) {
       message.error(t('annotate.noCreatePermission'));
       return;
     }
 
+    // Type guard for annotation
+    const annotationData = annotation as AnnotationResult;
+
     try {
       setSyncInProgress(true);
       const response = await apiClient.post(
         `/api/label-studio/projects/${id}/tasks/${currentTask.id}/annotations`,
-        annotation,
+        annotationData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
@@ -195,17 +281,20 @@ const TaskAnnotatePage: React.FC = () => {
   }, [annotationPerms.canCreate, id, currentTask, token, tasks, currentTaskIndex, annotationCount, taskDetail, updateTask, t]);
 
   // 处理标注更新
-  const handleAnnotationUpdate = useCallback(async (annotation: AnnotationResult) => {
+  const handleAnnotationUpdate = useCallback(async (annotation: unknown) => {
     if (!annotationPerms.canEdit) {
       message.error(t('annotate.noEditPermission'));
       return;
     }
 
+    // Type guard for annotation
+    const annotationData = annotation as AnnotationResult;
+
     try {
       setSyncInProgress(true);
       await apiClient.patch(
         `/api/label-studio/annotations/${currentTask.annotations[0]?.id}`,
-        annotation,
+        annotationData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
@@ -215,7 +304,7 @@ const TaskAnnotatePage: React.FC = () => {
       const updatedTasks = [...tasks];
       updatedTasks[currentTaskIndex].annotations[0] = {
         ...updatedTasks[currentTaskIndex].annotations[0],
-        ...annotation
+        ...annotationData
       };
       setTasks(updatedTasks);
       setLastSyncTime(new Date());
@@ -253,8 +342,10 @@ const TaskAnnotatePage: React.FC = () => {
 
   // 返回任务详情
   const handleBackToTask = useCallback(() => {
-    navigate(`/tasks/${id}`);
-  }, [navigate, id]);
+    if (id) {
+      navigateToTaskDetail(id);
+    }
+  }, [id, navigateToTaskDetail]);
 
   // 切换全屏模式
   const handleToggleFullscreen = useCallback(() => {
@@ -265,28 +356,197 @@ const TaskAnnotatePage: React.FC = () => {
   const handleSyncProgress = useCallback(async () => {
     try {
       setSyncInProgress(true);
+      setError(null);
       await fetchData();
       setLastSyncTime(new Date());
       message.success(t('annotate.syncComplete'));
-    } catch (error) {
+    } catch (err) {
       message.error(t('annotate.syncFailed'));
     } finally {
       setSyncInProgress(false);
     }
   }, [fetchData, t]);
 
-  // 跳转到指定任务
+  // Handle retry after error
+  const handleRetry = useCallback(async () => {
+    setError(null);
+    await fetchData();
+  }, [fetchData]);
+
+  // Handle re-login for auth errors
+  const handleReLogin = useCallback(() => {
+    // Navigate to login page
+    navigate('/login', { state: { from: `/tasks/${id}/annotate` } });
+  }, [navigate, id]);
+
+  // Handle create project for not found errors
+  const handleCreateProject = useCallback(async () => {
+    if (!id || !taskDetail) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
+      
+      message.loading({ content: t('annotate.creatingProjectAuto'), key: 'project-creation' });
+      
+      const ensureResult = await labelStudioService.ensureProject({
+        task_id: id,
+        task_name: taskDetail.name || 'Annotation Project',
+        annotation_type: taskDetail.annotation_type || 'text_classification',
+      });
+      
+      message.success({ content: t('annotate.projectCreatedSuccess'), key: 'project-creation' });
+      
+      // Update task with project ID
+      await updateTask.mutateAsync({
+        id: taskDetail.id,
+        payload: { label_studio_project_id: ensureResult.project_id }
+      });
+      
+      // Refetch data
+      await fetchData();
+    } catch (err) {
+      console.error('Failed to create project:', err);
+      setError({
+        type: 'service',
+        message: t('annotate.projectCreationFailed'),
+        details: err instanceof Error ? err.message : undefined,
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [id, taskDetail, updateTask, fetchData, t]);
+
+  // Memoized callback for opening Label Studio - avoids inline function in JSX
+  const handleOpenLabelStudioCallback = useCallback(() => {
+    if (project) {
+      openLabelStudio(project.id);
+    }
+  }, [project, openLabelStudio]);
+
+  // Memoized progress format function to avoid inline function in JSX
+  const progressFormat = useCallback(() => `${progress}%`, [progress]);
+
+  // 跳转到指定任务 - defined before jumpToTaskMenuItems to avoid circular dependency
   const handleJumpToTask = useCallback((taskIndex: number) => {
     if (taskIndex >= 0 && taskIndex < tasks.length) {
       setCurrentTaskIndex(taskIndex);
     }
   }, [tasks.length]);
 
+  // Memoized dropdown menu items for task jumping - avoids recreating on each render
+  const jumpToTaskMenuItems = useMemo(() => 
+    tasks.map((task, index) => ({
+      key: index,
+      label: (
+        <Space>
+          <span>{t('annotate.task')} {index + 1}</span>
+          {task.is_labeled && <CheckCircleOutlined style={{ color: '#52c41a' }} />}
+        </Space>
+      ),
+      onClick: () => handleJumpToTask(index),
+    })),
+    [tasks, t, handleJumpToTask]
+  );
+
   if (loading) {
     return (
       <div style={{ textAlign: 'center', padding: '50px' }}>
         <Spin size="large" />
         <p style={{ marginTop: 16 }}>{t('annotate.loadingTask')}</p>
+      </div>
+    );
+  }
+
+  // Error state with recovery options
+  if (error) {
+    const getErrorIcon = () => {
+      switch (error.type) {
+        case 'not_found':
+          return <ExclamationCircleOutlined style={{ color: '#faad14' }} />;
+        case 'auth':
+          return <LockOutlined style={{ color: '#ff4d4f' }} />;
+        case 'network':
+        case 'service':
+          return <ExclamationCircleOutlined style={{ color: '#ff4d4f' }} />;
+        default:
+          return <ExclamationCircleOutlined style={{ color: '#ff4d4f' }} />;
+      }
+    };
+
+    const getErrorActions = () => {
+      switch (error.type) {
+        case 'not_found':
+          return (
+            <Space>
+              <Button type="primary" onClick={handleCreateProject}>
+                {t('annotate.creatingProject')}
+              </Button>
+              <Button onClick={handleBackToTask}>
+                {t('annotate.backToTask')}
+              </Button>
+            </Space>
+          );
+        case 'auth':
+          return (
+            <Space>
+              <Button type="primary" icon={<LoginOutlined />} onClick={handleReLogin}>
+                {t('common:login')}
+              </Button>
+              <Button onClick={handleBackToTask}>
+                {t('annotate.backToTask')}
+              </Button>
+            </Space>
+          );
+        case 'network':
+        case 'service':
+          return (
+            <Space>
+              <Button type="primary" icon={<ReloadOutlined />} onClick={handleRetry}>
+                {t('annotate.retryLoading')}
+              </Button>
+              <Button onClick={handleBackToTask}>
+                {t('annotate.backToTask')}
+              </Button>
+            </Space>
+          );
+        default:
+          return (
+            <Space>
+              <Button type="primary" icon={<ReloadOutlined />} onClick={handleRetry}>
+                {t('annotate.retryLoading')}
+              </Button>
+              <Button onClick={handleBackToTask}>
+                {t('annotate.backToTask')}
+              </Button>
+            </Space>
+          );
+      }
+    };
+
+    return (
+      <div style={{ padding: '50px', maxWidth: '600px', margin: '0 auto' }}>
+        <Result
+          icon={getErrorIcon()}
+          title={error.message}
+          subTitle={error.details}
+          extra={getErrorActions()}
+        />
+        {error.details && error.type === 'unknown' && (
+          <Alert
+            type="info"
+            message={t('annotate.errorDetails')}
+            description={
+              <div>
+                <p>{error.details}</p>
+                <p style={{ marginTop: 8, color: '#666' }}>
+                  {t('annotate.contactSupport')}
+                </p>
+              </div>
+            }
+            style={{ marginTop: 16 }}
+          />
+        )}
       </div>
     );
   }
@@ -396,16 +656,7 @@ const TaskAnnotatePage: React.FC = () => {
                 </Tooltip>
                 <Dropdown
                   menu={{
-                    items: tasks.map((task, index) => ({
-                      key: index,
-                      label: (
-                        <Space>
-                          <span>{t('annotate.task')} {index + 1}</span>
-                          {task.is_labeled && <CheckCircleOutlined style={{ color: '#52c41a' }} />}
-                        </Space>
-                      ),
-                      onClick: () => handleJumpToTask(index),
-                    })),
+                    items: jumpToTaskMenuItems,
                   }}
                 >
                   <Button icon={<SettingOutlined />}>
@@ -422,7 +673,7 @@ const TaskAnnotatePage: React.FC = () => {
                   type="circle"
                   size={50}
                   percent={progress}
-                  format={() => `${progress}%`}
+                  format={progressFormat}
                 />
               </Space>
             </Col>
@@ -443,167 +694,61 @@ const TaskAnnotatePage: React.FC = () => {
             {/* 主要标注区域 */}
             <Col span={fullscreen ? 24 : 18} style={{ height: '100%' }}>
               <div style={{ height: '100%', marginRight: fullscreen ? 0 : 8 }}>
-                <LabelStudioEmbed
-                  projectId={project.id.toString()}
-                  taskId={currentTask.id.toString()}
-                  token={token}
-                  onAnnotationCreate={handleAnnotationCreate}
-                  onAnnotationUpdate={handleAnnotationUpdate}
-                  onTaskComplete={() => {
-                    message.success(t('annotate.taskComplete'));
-                    handleNextTask();
-                  }}
-                  height="100%"
-                />
+                {currentTask ? (
+                  <Card 
+                    title={t('annotate.title')}
+                    style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+                    styles={{ body: { flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' } }}
+                  >
+                    <AnnotationGuide
+                      projectId={project.id}
+                      currentTaskIndex={currentTaskIndex}
+                      totalTasks={tasks.length}
+                      onOpenLabelStudio={handleOpenLabelStudioCallback}
+                      onBackToTask={handleBackToTask}
+                    />
+                  </Card>
+                ) : (
+                  <Alert
+                    type="warning"
+                    message={t('annotate.noCurrentTask')}
+                    description={
+                      <div>
+                        <p>{t('annotate.projectIdLabel')}: {project.id}</p>
+                        <p>{t('annotate.totalTasksLabel')}: {tasks.length}</p>
+                        <p>{t('annotate.currentIndexLabel')}: {currentTaskIndex}</p>
+                      </div>
+                    }
+                  />
+                )}
               </div>
             </Col>
 
-            {/* 右侧控制面板 - 仅在非全屏模式显示 */}
+            {/* Right control panel - only shown in non-fullscreen mode */}
             {!fullscreen && (
               <Col span={6} style={{ height: '100%' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
                   {/* 当前任务信息 */}
-                  <Card title={t('annotate.currentTask')} style={{ marginBottom: 16 }}>
-                    <div style={{ marginBottom: 16 }}>
-                      <Text strong>{t('annotate.textToAnnotate')}:</Text>
-                      <div style={{ 
-                        padding: '12px', 
-                        background: '#f5f5f5', 
-                        borderRadius: '6px',
-                        marginTop: '8px',
-                        maxHeight: '120px',
-                        overflow: 'auto'
-                      }}>
-                        {currentTask.data.text}
-                      </div>
-                    </div>
-                    
-                    <Space>
-                      <Text strong>{t('annotate.annotationStatus')}:</Text>
-                      <Tag color={currentTask.is_labeled ? 'green' : 'orange'}>
-                        {currentTask.is_labeled ? t('annotate.annotated') : t('annotate.toAnnotate')}
-                      </Tag>
-                    </Space>
-                  </Card>
+                  <CurrentTaskInfo task={currentTask} />
 
                   {/* 操作按钮 */}
-                  <Card title={t('annotate.operations')} style={{ marginBottom: 16 }}>
-                    <Space direction="vertical" style={{ width: '100%' }}>
-                      <Button
-                        type="primary"
-                        icon={<CheckCircleOutlined />}
-                        block
-                        disabled={!currentTask.is_labeled}
-                        onClick={handleNextTask}
-                      >
-                        {t('annotate.nextTask')}
-                      </Button>
-                      
-                      <Button
-                        icon={<StepForwardOutlined />}
-                        block
-                        onClick={handleSkipTask}
-                      >
-                        {t('annotate.skipTask')}
-                      </Button>
-                      
-                      <Button
-                        icon={<SaveOutlined />}
-                        block
-                        loading={syncInProgress}
-                        onClick={handleSyncProgress}
-                      >
-                        {t('annotate.manualSync')}
-                      </Button>
-                    </Space>
-                  </Card>
+                  <AnnotationActions
+                    currentTask={currentTask}
+                    syncInProgress={syncInProgress}
+                    onNextTask={handleNextTask}
+                    onSkipTask={handleSkipTask}
+                    onSyncProgress={handleSyncProgress}
+                  />
 
                   {/* 进度统计 */}
-                  <Card title={t('annotate.annotationProgress')} style={{ flex: 1 }}>
-                    <div style={{ marginBottom: 16 }}>
-                      <Progress
-                        percent={progress}
-                        status={progress === 100 ? 'success' : 'active'}
-                        strokeWidth={8}
-                      />
-                    </div>
-                    
-                    <Row gutter={16}>
-                      <Col span={12}>
-                        <Statistic
-                          title={t('annotate.totalTasks')}
-                          value={tasks.length}
-                          valueStyle={{ fontSize: '18px' }}
-                        />
-                      </Col>
-                      <Col span={12}>
-                        <Statistic
-                          title={t('annotate.completed')}
-                          value={annotationCount}
-                          valueStyle={{ fontSize: '18px', color: '#52c41a' }}
-                        />
-                      </Col>
-                    </Row>
-                    
-                    <Divider />
-                    
-                    <Row gutter={16}>
-                      <Col span={12}>
-                        <Statistic
-                          title={t('annotate.remaining')}
-                          value={tasks.length - annotationCount}
-                          valueStyle={{ fontSize: '18px', color: '#faad14' }}
-                        />
-                      </Col>
-                      <Col span={12}>
-                        <Statistic
-                          title={t('annotate.current')}
-                          value={currentTaskIndex + 1}
-                          valueStyle={{ fontSize: '18px', color: '#1890ff' }}
-                        />
-                      </Col>
-                    </Row>
-
-                    {/* 任务列表预览 */}
-                    <Divider />
-                    <div style={{ maxHeight: '200px', overflow: 'auto' }}>
-                      <Text strong style={{ marginBottom: 8, display: 'block' }}>
-                        {t('annotate.taskList')}:
-                      </Text>
-                      {tasks.slice(0, 10).map((task, index) => (
-                        <div 
-                          key={task.id}
-                          style={{ 
-                            padding: '4px 8px',
-                            marginBottom: '4px',
-                            background: index === currentTaskIndex ? '#e6f7ff' : '#f5f5f5',
-                            borderRadius: '4px',
-                            cursor: 'pointer',
-                            border: index === currentTaskIndex ? '1px solid #1890ff' : '1px solid transparent'
-                          }}
-                          onClick={() => handleJumpToTask(index)}
-                        >
-                          <Space size={4}>
-                            <Badge 
-                              status={task.is_labeled ? 'success' : 'processing'} 
-                              size="small"
-                            />
-                            <Text style={{ fontSize: 12 }}>
-                              {t('annotate.task')} {index + 1}
-                            </Text>
-                            {task.is_labeled && (
-                              <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 12 }} />
-                            )}
-                          </Space>
-                        </div>
-                      ))}
-                      {tasks.length > 10 && (
-                        <Text type="secondary" style={{ fontSize: 12 }}>
-                          ... {t('annotate.moreTasks', { count: tasks.length - 10 })}
-                        </Text>
-                      )}
-                    </div>
-                  </Card>
+                  <AnnotationStats
+                    totalTasks={tasks.length}
+                    completedCount={annotationCount}
+                    currentTaskIndex={currentTaskIndex}
+                    progress={progress}
+                    tasks={tasks}
+                    onJumpToTask={handleJumpToTask}
+                  />
                 </div>
               </Col>
             )}

@@ -1,4 +1,4 @@
-// Task API service
+// Task API service with pagination support
 import apiClient from './api/client';
 import { API_ENDPOINTS } from '@/constants';
 import type {
@@ -10,10 +10,21 @@ import type {
   TaskStats,
 } from '@/types';
 
+// Default pagination settings
+const DEFAULT_PAGE_SIZE = 10;
+
 export const taskService = {
   // Get task list with pagination and filters
   async getList(params: TaskListParams = {}): Promise<TaskListResponse> {
-    const response = await apiClient.get<TaskListResponse>(API_ENDPOINTS.TASKS.BASE, { params });
+    // Ensure pagination params have defaults
+    const paginatedParams = {
+      ...params,
+      page: params.page || 1,
+      page_size: params.page_size || DEFAULT_PAGE_SIZE,
+    };
+    const response = await apiClient.get<TaskListResponse>(API_ENDPOINTS.TASKS.BASE, { 
+      params: paginatedParams 
+    });
     return response.data;
   },
 

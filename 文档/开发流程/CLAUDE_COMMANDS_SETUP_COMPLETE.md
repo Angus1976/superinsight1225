@@ -273,7 +273,7 @@
 
 3. **查看示例项目**
    ```bash
-   cd habit-tracker
+   cd docs/references/habit-tracker
    cat README.md
    ```
 

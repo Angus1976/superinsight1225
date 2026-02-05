@@ -90,58 +90,11 @@ export const QualityReports: React.FC<QualityReportsProps> = ({
   ]);
   const [chartType, setChartType] = useState<'line' | 'area'>('line');
 
-  // Mock data for demonstration
-  const mockTrends: QualityTrendData[] = Array.from({ length: 24 }, (_, i) => {
-    const timestamp = Date.now() - (23 - i) * 3600000;
-    return {
-      timestamp,
-      datetime: new Date(timestamp).toISOString(),
-      qualityScore: 0.75 + Math.random() * 0.2,
-      completionRate: 0.85 + Math.random() * 0.1,
-      revisionRate: 0.05 + Math.random() * 0.1,
-      avgAnnotationTime: 120 + Math.random() * 60,
-    };
-  });
-
-  const mockDistribution: QualityDistributionData[] = [
-    { range: '90-100%', count: 45, percentage: 45, color: '#52c41a' },
-    { range: '80-89%', count: 30, percentage: 30, color: '#1890ff' },
-    { range: '70-79%', count: 15, percentage: 15, color: '#faad14' },
-    { range: '60-69%', count: 8, percentage: 8, color: '#ff7875' },
-    { range: '<60%', count: 2, percentage: 2, color: '#ff4d4f' },
-  ];
-
-  const mockWorkTime: WorkTimeData[] = [
-    { user: '张三', totalHours: 42.5, efficiency: 0.92, qualityScore: 0.88, tasksCompleted: 15 },
-    { user: '李四', totalHours: 38.2, efficiency: 0.85, qualityScore: 0.91, tasksCompleted: 12 },
-    { user: '王五', totalHours: 45.1, efficiency: 0.78, qualityScore: 0.85, tasksCompleted: 18 },
-    { user: '赵六', totalHours: 35.8, efficiency: 0.88, qualityScore: 0.89, tasksCompleted: 11 },
-    { user: '钱七', totalHours: 40.3, efficiency: 0.82, qualityScore: 0.87, tasksCompleted: 14 },
-  ];
-
-  const mockAnomalies: AnomalyData[] = [
-    {
-      timestamp: Date.now() - 2 * 3600000,
-      datetime: new Date(Date.now() - 2 * 3600000).toISOString(),
-      type: 'quality',
-      severity: 'high',
-      description: '质量分数异常下降',
-      value: 0.45,
-    },
-    {
-      timestamp: Date.now() - 5 * 3600000,
-      datetime: new Date(Date.now() - 5 * 3600000).toISOString(),
-      type: 'efficiency',
-      severity: 'medium',
-      description: '标注效率低于平均水平',
-      value: 0.65,
-    },
-  ];
-
-  const trends = data?.trends || mockTrends;
-  const distribution = data?.distribution || mockDistribution;
-  const workTime = data?.workTime || mockWorkTime;
-  const anomalies = data?.anomalies || mockAnomalies;
+  // Use real data or empty arrays
+  const trends = data?.trends || [];
+  const distribution = data?.distribution || [];
+  const workTime = data?.workTime || [];
+  const anomalies = data?.anomalies || [];
 
   // Format trend data for charts
   const formattedTrends = trends.map((item) => ({
@@ -152,10 +105,16 @@ export const QualityReports: React.FC<QualityReportsProps> = ({
     revisionPercent: (item.revisionRate * 100).toFixed(1),
   }));
 
-  // Calculate summary statistics
-  const avgQuality = trends.reduce((sum, item) => sum + item.qualityScore, 0) / trends.length;
-  const avgCompletion = trends.reduce((sum, item) => sum + item.completionRate, 0) / trends.length;
-  const avgRevision = trends.reduce((sum, item) => sum + item.revisionRate, 0) / trends.length;
+  // Calculate summary statistics (handle empty data)
+  const avgQuality = trends.length > 0 
+    ? trends.reduce((sum, item) => sum + item.qualityScore, 0) / trends.length 
+    : 0;
+  const avgCompletion = trends.length > 0
+    ? trends.reduce((sum, item) => sum + item.completionRate, 0) / trends.length
+    : 0;
+  const avgRevision = trends.length > 0
+    ? trends.reduce((sum, item) => sum + item.revisionRate, 0) / trends.length
+    : 0;
   const totalWorkHours = workTime.reduce((sum, item) => sum + item.totalHours, 0);
 
   // Export to CSV/Excel

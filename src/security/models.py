@@ -124,7 +124,10 @@ class SecurityAuditLogModel(Base):
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     user_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     tenant_id: Mapped[str] = mapped_column(String(100), nullable=False)
-    action: Mapped[AuditAction] = mapped_column(SQLEnum(AuditAction), nullable=False)
+    action: Mapped[AuditAction] = mapped_column(
+        SQLEnum(AuditAction, values_callable=lambda x: [e.value for e in x]),
+        nullable=False
+    )
     resource_type: Mapped[str] = mapped_column(String(50), nullable=False)
     resource_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     ip_address: Mapped[Optional[str]] = mapped_column(INET, nullable=True)

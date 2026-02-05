@@ -3,14 +3,14 @@
 export const API_ENDPOINTS = {
   // Authentication
   AUTH: {
-    LOGIN: '/auth/login',
-    LOGOUT: '/auth/logout',
-    REGISTER: '/auth/register',
-    CURRENT_USER: '/auth/me',
-    REFRESH: '/auth/refresh',
-    SWITCH_TENANT: '/auth/switch-tenant',
-    FORGOT_PASSWORD: '/auth/forgot-password',
-    RESET_PASSWORD: '/auth/reset-password',
+    LOGIN: '/api/auth/login',
+    LOGOUT: '/api/auth/logout',
+    REGISTER: '/api/auth/register',
+    CURRENT_USER: '/api/auth/me',
+    REFRESH: '/api/auth/refresh',
+    SWITCH_TENANT: '/api/auth/switch-tenant',
+    FORGOT_PASSWORD: '/api/auth/forgot-password',
+    RESET_PASSWORD: '/api/auth/reset-password',
   },
 
   // Label Studio
@@ -20,6 +20,22 @@ export const API_ENDPOINTS = {
     TASKS: (projectId: string) => `/api/label-studio/projects/${projectId}/tasks`,
     ANNOTATIONS: (projectId: string, taskId: string) =>
       `/api/label-studio/projects/${projectId}/tasks/${taskId}/annotations`,
+    // New endpoints for annotation workflow fix
+    ENSURE_PROJECT: '/api/label-studio/projects/ensure',
+    VALIDATE_PROJECT: (id: string) => `/api/label-studio/projects/${id}/validate`,
+    IMPORT_TASKS: (projectId: string) => `/api/label-studio/projects/${projectId}/import-tasks`,
+    AUTH_URL: (projectId: string) => `/api/label-studio/projects/${projectId}/auth-url`,
+  },
+
+  // Label Studio Workspaces (Enterprise)
+  LS_WORKSPACES: {
+    BASE: '/api/ls-workspaces',
+    BY_ID: (id: string) => `/api/ls-workspaces/${id}`,
+    MEMBERS: (id: string) => `/api/ls-workspaces/${id}/members`,
+    MEMBER_BY_ID: (workspaceId: string, userId: string) => `/api/ls-workspaces/${workspaceId}/members/${userId}`,
+    PERMISSIONS: (id: string) => `/api/ls-workspaces/${id}/permissions`,
+    PROJECTS: (id: string) => `/api/ls-workspaces/${id}/projects`,
+    PROJECT_BY_ID: (workspaceId: string, projectId: string) => `/api/ls-workspaces/${workspaceId}/projects/${projectId}`,
   },
 
   // Users
@@ -40,8 +56,8 @@ export const API_ENDPOINTS = {
 
   // Admin
   ADMIN: {
-    TENANTS: '/auth/tenants',
-    TENANT_BY_ID: (id: string) => `/auth/tenants/${id}`,
+    TENANTS: '/api/auth/tenants',
+    TENANT_BY_ID: (id: string) => `/api/auth/tenants/${id}`,
   },
 
   // Workspaces

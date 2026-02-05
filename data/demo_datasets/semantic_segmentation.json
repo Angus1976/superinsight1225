@@ -1,0 +1,17 @@
+[
+  {
+    "image": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800",
+    "title": "山景分割",
+    "segments": ["sky", "mountain", "forest", "water"]
+  },
+  {
+    "image": "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800",
+    "title": "城市分割",
+    "segments": ["building", "road", "sky", "vehicle"]
+  },
+  {
+    "image": "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800",
+    "title": "森林分割",
+    "segments": ["tree", "grass", "sky", "path"]
+  }
+]

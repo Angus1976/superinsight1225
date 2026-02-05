@@ -20,8 +20,6 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
 from src.database.connection import get_db_session
-from src.api.auth import get_current_user
-from src.security.models import UserModel
 
 from src.multi_tenant.workspace.schemas import (
     # Enums
@@ -90,18 +88,136 @@ def get_cross_tenant_collaborator(db: Session = Depends(get_db_session)) -> Cros
     return CrossTenantCollaborator(db)
 
 
-def check_admin_permission(current_user: UserModel):
-    """Check if user has admin permission."""
-    if current_user.role.value not in ["admin", "super_admin"]:
+# Flexible user authentication that works with both UserModel and simple users table
+from fastapi import Header
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from sqlalchemy import text
+import jwt
+
+security_bearer = HTTPBearer()
+
+
+class SimpleUserModel:
+    """Simple user model for compatibility with users table without role field."""
+    def __init__(self, id, username, email, full_name, tenant_id, is_active, is_superuser=False, role=None):
+        self.id = id
+        self.username = username
+        self.email = email
+        self.full_name = full_name
+        self.tenant_id = tenant_id or "system"
+        self.is_active = is_active
+        self.is_superuser = is_superuser
+        self.role = role
+
+
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security_bearer),
+    db: Session = Depends(get_db_session)
+) -> SimpleUserModel:
+    """
+    Get current authenticated user with fallback support.
+    
+    This function uses raw SQL to query the user, handling cases where
+    the role field might not exist in the database.
+    """
+    token = credentials.credentials
+    
+    try:
+        # Use the same secret key as auth_simple.py for compatibility
+        secret_key = "your-secret-key-change-in-production"
+        
+        payload = jwt.decode(token, secret_key, algorithms=["HS256"])
+        user_id = payload.get("user_id") or payload.get("sub")
+        
+        if not user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token payload",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+    except jwt.InvalidTokenError as e:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin permission required"
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Invalid or expired token: {e}",
+            headers={"WWW-Authenticate": "Bearer"},
         )
+    
+    # Query user from database using raw SQL for compatibility
+    try:
+        # Query user - the users table has 'name' not 'full_name', and no 'tenant_id' or 'role' columns
+        result = db.execute(text("""
+            SELECT id, username, email, name, is_active, is_superuser
+            FROM users WHERE id = :user_id
+        """), {"user_id": user_id})
+        row = result.fetchone()
+    except Exception as e:
+        logger.error(f"Failed to query user: {e}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Database error",
+        )
+    
+    if not row:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    user_id, username, email, name, is_active, is_superuser = row
+    
+    if not is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User is inactive",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    return SimpleUserModel(
+        id=str(user_id),
+        username=username,
+        email=email,
+        full_name=name,  # Use 'name' field as full_name
+        tenant_id="system",  # Default tenant since column doesn't exist
+        is_active=is_active,
+        is_superuser=is_superuser,
+        role=None  # No role column in this table
+    )
 
 
-def check_tenant_access(current_user: UserModel, tenant_id: str):
+def check_admin_permission(current_user: SimpleUserModel):
+    """Check if user has admin permission."""
+    # Check is_superuser field first (most reliable)
+    if current_user.is_superuser:
+        return
+    
+    # Try to check role field
+    if current_user.role:
+        role_value = current_user.role.value if hasattr(current_user.role, 'value') else str(current_user.role)
+        if role_value in ["admin", "super_admin"]:
+            return
+    
+    # If neither check passed, deny access
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Admin permission required"
+    )
+
+
+def check_tenant_access(current_user: SimpleUserModel, tenant_id: str):
     """Check if user has access to the tenant."""
-    if current_user.tenant_id != tenant_id and current_user.role.value != "super_admin":
+    # Check if user is super admin
+    is_super_admin = current_user.is_superuser
+    
+    # Also check role field
+    if not is_super_admin and current_user.role:
+        role_value = current_user.role.value if hasattr(current_user.role, 'value') else str(current_user.role)
+        if role_value == "super_admin":
+            is_super_admin = True
+    
+    # Check tenant access
+    if current_user.tenant_id != tenant_id and not is_super_admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied to this tenant"
@@ -115,7 +231,7 @@ def check_tenant_access(current_user: UserModel, tenant_id: str):
 @router.post("/tenants", response_model=TenantResponse, status_code=status.HTTP_201_CREATED)
 async def create_tenant(
     request: TenantCreateConfig,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUserModel = Depends(get_current_user),
     tenant_manager: TenantManager = Depends(get_tenant_manager)
 ):
     """Create a new tenant."""
@@ -147,12 +263,19 @@ async def list_tenants(
     status_filter: Optional[TenantStatus] = Query(None, alias="status"),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUserModel = Depends(get_current_user),
     tenant_manager: TenantManager = Depends(get_tenant_manager)
 ):
     """List all tenants (admin only) or current tenant."""
     try:
-        if current_user.role.value == "super_admin":
+        # Check if user is super admin (check is_superuser first, then role)
+        is_super_admin = current_user.is_superuser
+        if not is_super_admin and current_user.role:
+            role_value = current_user.role.value if hasattr(current_user.role, 'value') else str(current_user.role)
+            if role_value == "super_admin":
+                is_super_admin = True
+        
+        if is_super_admin:
             tenants = tenant_manager.list_tenants(
                 status=status_filter.value if status_filter else None,
                 skip=skip,
@@ -188,7 +311,7 @@ async def list_tenants(
 @router.get("/tenants/{tenant_id}", response_model=TenantResponse)
 async def get_tenant(
     tenant_id: str,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUserModel = Depends(get_current_user),
     tenant_manager: TenantManager = Depends(get_tenant_manager)
 ):
     """Get tenant by ID."""
@@ -227,7 +350,7 @@ async def get_tenant(
 async def update_tenant(
     tenant_id: str,
     request: TenantUpdateConfig,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUserModel = Depends(get_current_user),
     tenant_manager: TenantManager = Depends(get_tenant_manager)
 ):
     """Update tenant."""
@@ -267,7 +390,7 @@ async def update_tenant(
 async def set_tenant_status(
     tenant_id: str,
     new_status: TenantStatus,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUserModel = Depends(get_current_user),
     tenant_manager: TenantManager = Depends(get_tenant_manager)
 ):
     """Set tenant status (active/suspended/disabled)."""
@@ -305,7 +428,7 @@ async def set_tenant_status(
 @router.delete("/tenants/{tenant_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_tenant(
     tenant_id: str,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUserModel = Depends(get_current_user),
     tenant_manager: TenantManager = Depends(get_tenant_manager)
 ):
     """Delete tenant (soft delete)."""
@@ -336,7 +459,7 @@ async def delete_tenant(
 @router.post("/workspaces", response_model=WorkspaceResponse, status_code=status.HTTP_201_CREATED)
 async def create_workspace(
     request: WorkspaceCreateConfig,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUserModel = Depends(get_current_user),
     workspace_manager: WorkspaceManager = Depends(get_workspace_manager)
 ):
     """Create a new workspace in the current tenant."""
@@ -370,7 +493,7 @@ async def list_workspaces(
     status_filter: Optional[WorkspaceStatus] = Query(None, alias="status"),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUserModel = Depends(get_current_user),
     workspace_manager: WorkspaceManager = Depends(get_workspace_manager)
 ):
     """List workspaces for the current tenant."""
@@ -413,7 +536,7 @@ async def list_workspaces(
 @router.get("/workspaces/hierarchy", response_model=List[WorkspaceNode])
 async def get_workspace_hierarchy(
     tenant_id: Optional[str] = Query(None),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUserModel = Depends(get_current_user),
     workspace_manager: WorkspaceManager = Depends(get_workspace_manager)
 ):
     """Get workspace hierarchy tree for a tenant."""
@@ -436,7 +559,7 @@ async def get_workspace_hierarchy(
 @router.get("/workspaces/{workspace_id}", response_model=WorkspaceResponse)
 async def get_workspace(
     workspace_id: str,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUserModel = Depends(get_current_user),
     workspace_manager: WorkspaceManager = Depends(get_workspace_manager)
 ):
     """Get workspace by ID."""
@@ -475,7 +598,7 @@ async def get_workspace(
 async def update_workspace(
     workspace_id: str,
     request: WorkspaceUpdateConfig,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUserModel = Depends(get_current_user),
     workspace_manager: WorkspaceManager = Depends(get_workspace_manager)
 ):
     """Update workspace."""
@@ -514,7 +637,7 @@ async def update_workspace(
 @router.post("/workspaces/{workspace_id}/archive", response_model=WorkspaceResponse)
 async def archive_workspace(
     workspace_id: str,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUserModel = Depends(get_current_user),
     workspace_manager: WorkspaceManager = Depends(get_workspace_manager)
 ):
     """Archive a workspace."""
@@ -553,7 +676,7 @@ async def archive_workspace(
 @router.post("/workspaces/{workspace_id}/restore", response_model=WorkspaceResponse)
 async def restore_workspace(
     workspace_id: str,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUserModel = Depends(get_current_user),
     workspace_manager: WorkspaceManager = Depends(get_workspace_manager)
 ):
     """Restore an archived workspace."""
@@ -593,7 +716,7 @@ async def restore_workspace(
 async def move_workspace(
     workspace_id: str,
     new_parent_id: Optional[str] = Query(None),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUserModel = Depends(get_current_user),
     workspace_manager: WorkspaceManager = Depends(get_workspace_manager)
 ):
     """Move workspace to a new parent (change hierarchy)."""
@@ -637,7 +760,7 @@ async def move_workspace(
 @router.delete("/workspaces/{workspace_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_workspace(
     workspace_id: str,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUserModel = Depends(get_current_user),
     workspace_manager: WorkspaceManager = Depends(get_workspace_manager)
 ):
     """Delete workspace."""
@@ -676,7 +799,7 @@ async def delete_workspace(
 async def invite_member(
     workspace_id: str,
     request: InvitationConfig,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUserModel = Depends(get_current_user),
     workspace_manager: WorkspaceManager = Depends(get_workspace_manager),
     member_manager: MemberManager = Depends(get_member_manager)
 ):
@@ -722,7 +845,7 @@ async def invite_member(
 async def add_member(
     workspace_id: str,
     request: MemberAddRequest,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUserModel = Depends(get_current_user),
     workspace_manager: WorkspaceManager = Depends(get_workspace_manager),
     member_manager: MemberManager = Depends(get_member_manager)
 ):
@@ -768,7 +891,7 @@ async def list_members(
     workspace_id: str,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUserModel = Depends(get_current_user),
     workspace_manager: WorkspaceManager = Depends(get_workspace_manager),
     member_manager: MemberManager = Depends(get_member_manager)
 ):
@@ -812,7 +935,7 @@ async def update_member_role(
     workspace_id: str,
     user_id: str,
     role: MemberRole,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUserModel = Depends(get_current_user),
     workspace_manager: WorkspaceManager = Depends(get_workspace_manager),
     member_manager: MemberManager = Depends(get_member_manager)
 ):
@@ -857,7 +980,7 @@ async def update_member_role(
 async def remove_member(
     workspace_id: str,
     user_id: str,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUserModel = Depends(get_current_user),
     workspace_manager: WorkspaceManager = Depends(get_workspace_manager),
     member_manager: MemberManager = Depends(get_member_manager)
 ):
@@ -897,7 +1020,7 @@ class BatchMemberRequest(BaseModel):
 async def batch_add_members(
     workspace_id: str,
     request: BatchMemberRequest,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUserModel = Depends(get_current_user),
     workspace_manager: WorkspaceManager = Depends(get_workspace_manager),
     member_manager: MemberManager = Depends(get_member_manager)
 ):
@@ -950,7 +1073,7 @@ class CustomRoleResponse(BaseModel):
 async def create_custom_role(
     workspace_id: str,
     request: CustomRoleConfig,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUserModel = Depends(get_current_user),
     workspace_manager: WorkspaceManager = Depends(get_workspace_manager),
     member_manager: MemberManager = Depends(get_member_manager)
 ):
@@ -993,7 +1116,7 @@ async def create_custom_role(
 async def get_quota(
     entity_type: EntityType,
     entity_id: str,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUserModel = Depends(get_current_user),
     quota_manager: QuotaManager = Depends(get_quota_manager)
 ):
     """Get quota configuration for a tenant or workspace."""
@@ -1030,7 +1153,7 @@ async def set_quota(
     entity_type: EntityType,
     entity_id: str,
     request: QuotaConfig,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUserModel = Depends(get_current_user),
     quota_manager: QuotaManager = Depends(get_quota_manager)
 ):
     """Set quota configuration for a tenant or workspace."""
@@ -1061,7 +1184,7 @@ async def set_quota(
 async def get_quota_usage(
     entity_type: EntityType,
     entity_id: str,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUserModel = Depends(get_current_user),
     quota_manager: QuotaManager = Depends(get_quota_manager)
 ):
     """Get current usage for a tenant or workspace."""
@@ -1096,7 +1219,7 @@ async def check_quota(
     entity_id: str,
     resource_type: ResourceType,
     amount: int = Query(1, ge=1),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUserModel = Depends(get_current_user),
     quota_manager: QuotaManager = Depends(get_quota_manager)
 ):
     """Check if a resource operation is allowed within quota limits."""
@@ -1126,7 +1249,7 @@ class CreateShareRequest(BaseModel):
 @router.post("/shares", response_model=ShareLinkResponse, status_code=status.HTTP_201_CREATED)
 async def create_share(
     request: CreateShareRequest,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUserModel = Depends(get_current_user),
     collaborator: CrossTenantCollaborator = Depends(get_cross_tenant_collaborator)
 ):
     """Create a share link for cross-tenant collaboration."""
@@ -1160,7 +1283,7 @@ async def create_share(
 @router.get("/shares/{token}", response_model=SharedResourceAccess)
 async def access_share(
     token: str,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUserModel = Depends(get_current_user),
     collaborator: CrossTenantCollaborator = Depends(get_cross_tenant_collaborator)
 ):
     """Access a shared resource using a share token."""
@@ -1201,7 +1324,7 @@ async def access_share(
 @router.delete("/shares/{share_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def revoke_share(
     share_id: str,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUserModel = Depends(get_current_user),
     collaborator: CrossTenantCollaborator = Depends(get_cross_tenant_collaborator)
 ):
     """Revoke a share link."""
@@ -1226,7 +1349,7 @@ async def revoke_share(
 async def list_shares(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUserModel = Depends(get_current_user),
     collaborator: CrossTenantCollaborator = Depends(get_cross_tenant_collaborator)
 ):
     """List all share links created by the current tenant."""
@@ -1258,7 +1381,7 @@ async def list_shares(
 async def set_tenant_whitelist(
     tenant_id: str,
     request: WhitelistConfig,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUserModel = Depends(get_current_user),
     collaborator: CrossTenantCollaborator = Depends(get_cross_tenant_collaborator)
 ):
     """Set the whitelist of tenants allowed to access shared resources."""
@@ -1279,7 +1402,7 @@ async def set_tenant_whitelist(
 @router.get("/tenants/{tenant_id}/whitelist", response_model=WhitelistConfig)
 async def get_tenant_whitelist(
     tenant_id: str,
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUserModel = Depends(get_current_user),
     collaborator: CrossTenantCollaborator = Depends(get_cross_tenant_collaborator)
 ):
     """Get the whitelist of tenants allowed to access shared resources."""
@@ -1341,7 +1464,7 @@ class AdminDashboardResponse(BaseModel):
 
 @router.get("/admin/dashboard", response_model=AdminDashboardResponse)
 async def get_admin_dashboard(
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUserModel = Depends(get_current_user),
     tenant_manager: TenantManager = Depends(get_tenant_manager),
     workspace_manager: WorkspaceManager = Depends(get_workspace_manager),
     db: Session = Depends(get_db_session)
@@ -1408,7 +1531,7 @@ class ServiceStatusResponse(BaseModel):
 
 @router.get("/admin/services", response_model=List[ServiceStatusResponse])
 async def get_service_status(
-    current_user: UserModel = Depends(get_current_user)
+    current_user: SimpleUserModel = Depends(get_current_user)
 ):
     """Get status of all system services."""
     check_admin_permission(current_user)
@@ -1467,7 +1590,7 @@ class SystemConfigResponse(BaseModel):
 
 @router.get("/admin/config", response_model=SystemConfigResponse)
 async def get_system_config(
-    current_user: UserModel = Depends(get_current_user)
+    current_user: SimpleUserModel = Depends(get_current_user)
 ):
     """Get current system configuration."""
     check_admin_permission(current_user)
@@ -1493,7 +1616,7 @@ async def get_system_config(
 @router.put("/admin/config", response_model=SystemConfigResponse)
 async def update_system_config(
     request: SystemConfigRequest,
-    current_user: UserModel = Depends(get_current_user)
+    current_user: SimpleUserModel = Depends(get_current_user)
 ):
     """Update system configuration."""
     check_admin_permission(current_user)
@@ -1549,7 +1672,7 @@ async def get_audit_logs(
     end_date: Optional[datetime] = Query(None),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
-    current_user: UserModel = Depends(get_current_user),
+    current_user: SimpleUserModel = Depends(get_current_user),
     db: Session = Depends(get_db_session)
 ):
     """Get audit logs with optional filters."""

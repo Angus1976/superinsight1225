@@ -6,6 +6,7 @@ data isolation, IP whitelisting, and audit logging.
 """
 
 import hashlib
+import os
 import re
 import ipaddress
 from datetime import datetime, timedelta
@@ -23,6 +24,9 @@ from src.security.models import (
 )
 from src.database.connection import get_db_session
 
+# Get secret key from environment variable with fallback
+DEFAULT_JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-in-production")
+
 
 class SecurityController:
     """
@@ -32,8 +36,8 @@ class SecurityController:
     audit logging, and sensitive data masking.
     """
     
-    def __init__(self, secret_key: str = "your-secret-key"):
-        self.secret_key = secret_key
+    def __init__(self, secret_key: str = None):
+        self.secret_key = secret_key or DEFAULT_JWT_SECRET_KEY
         # Try to initialize bcrypt, fallback to simple hashing if it fails
         try:
             self.pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

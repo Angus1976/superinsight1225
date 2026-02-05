@@ -1,0 +1,126 @@
+{
+  "title": "Label Studio 工作空间",
+  "workspace": "工作空间",
+  "workspaces": "工作空间",
+  "createWorkspace": "创建工作空间",
+  "editWorkspace": "编辑工作空间",
+  "deleteWorkspace": "删除工作空间",
+  "workspaceDetails": "工作空间详情",
+  "noWorkspaces": "暂无工作空间",
+  "selectWorkspace": "选择工作空间",
+  "searchWorkspace": "搜索工作空间...",
+  "workspaceName": "工作空间名称",
+  "workspaceDescription": "描述",
+  "memberCount": "成员数",
+  "projectCount": "项目数",
+  "createdAt": "创建时间",
+  "updatedAt": "更新时间",
+  "owner": "所有者",
+
+  "roles": {
+    "owner": "所有者",
+    "ownerDesc": "对工作空间拥有完全控制权，包括删除和转让所有权",
+    "admin": "管理员",
+    "adminDesc": "管理工作空间设置、成员和项目（除删除工作空间外）",
+    "manager": "经理",
+    "managerDesc": "管理项目并向团队成员分配任务",
+    "reviewer": "审核员",
+    "reviewerDesc": "审核标注结果并导出数据",
+    "annotator": "标注员",
+    "annotatorDesc": "查看项目并执行标注任务"
+  },
+
+  "permissions": {
+    "title": "角色权限矩阵",
+    "subtitle": "工作空间中各角色的权限概览",
+    "permission": "权限",
+    "currentRole": "当前角色",
+    "permissionCount": "{{count}}/{{total}} 项权限",
+
+    "categories": {
+      "workspace": "工作空间",
+      "project": "项目",
+      "task": "任务",
+      "data": "数据"
+    },
+
+    "workspace": {
+      "view": "查看工作空间",
+      "viewDesc": "查看工作空间详情和设置",
+      "edit": "编辑工作空间",
+      "editDesc": "修改工作空间名称、描述和设置",
+      "delete": "删除工作空间",
+      "deleteDesc": "永久删除工作空间",
+      "manageMembers": "管理成员",
+      "manageMembersDesc": "添加、移除成员并修改角色"
+    },
+
+    "project": {
+      "view": "查看项目",
+      "viewDesc": "查看项目列表和详情",
+      "create": "创建项目",
+      "createDesc": "在工作空间中创建新项目",
+      "edit": "编辑项目",
+      "editDesc": "修改项目设置和配置",
+      "delete": "删除项目",
+      "deleteDesc": "从工作空间移除项目",
+      "manageMembers": "管理项目成员",
+      "manageMembersDesc": "为项目分配成员"
+    },
+
+    "task": {
+      "view": "查看任务",
+      "viewDesc": "查看任务列表和详情",
+      "annotate": "标注任务",
+      "annotateDesc": "执行任务的标注工作",
+      "review": "审核任务",
+      "reviewDesc": "审核和批准标注结果",
+      "assign": "分配任务",
+      "assignDesc": "向团队成员分配任务"
+    },
+
+    "data": {
+      "export": "导出数据",
+      "exportDesc": "导出标注和项目数据",
+      "import": "导入数据",
+      "importDesc": "向项目导入数据"
+    }
+  },
+
+  "members": {
+    "title": "成员",
+    "addMember": "添加成员",
+    "removeMember": "移除成员",
+    "updateRole": "更新角色",
+    "selectUser": "选择用户",
+    "selectRole": "选择角色",
+    "memberAdded": "成员添加成功",
+    "memberRemoved": "成员移除成功",
+    "roleUpdated": "角色更新成功",
+    "cannotRemoveOwner": "无法移除最后一个所有者",
+    "cannotDemoteOwner": "无法降级最后一个所有者"
+  },
+
+  "projects": {
+    "title": "项目",
+    "associateProject": "关联项目",
+    "removeAssociation": "取消关联",
+    "projectId": "Label Studio 项目 ID",
+    "associated": "关联成功",
+    "removed": "已取消关联"
+  },
+
+  "messages": {
+    "createSuccess": "工作空间创建成功",
+    "updateSuccess": "工作空间更新成功",
+    "deleteSuccess": "工作空间删除成功",
+    "deleteConfirm": "确定要删除此工作空间吗？",
+    "deleteWarning": "此操作无法撤销，所有成员将失去访问权限。"
+  },
+
+  "validation": {
+    "nameRequired": "工作空间名称不能为空",
+    "nameTooLong": "工作空间名称不能超过 255 个字符",
+    "descriptionTooLong": "描述不能超过 2000 个字符"
+  }
+}

@@ -5,7 +5,6 @@ import logging
 from typing import Optional
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, Session, DeclarativeBase
-from sqlalchemy.pool import QueuePool
 from contextlib import contextmanager
 
 from src.config.settings import settings
@@ -39,9 +38,10 @@ class DatabaseManager:
                 )
             else:
                 # PostgreSQL/MySQL configuration with connection pooling
+                # Note: poolclass is omitted to let SQLAlchemy choose the appropriate pool
+                # for the engine type (sync vs async)
                 self._engine = create_engine(
                     settings.database.database_url,
-                    poolclass=QueuePool,
                     pool_size=settings.database.database_pool_size,
                     max_overflow=settings.database.database_max_overflow,
                     pool_timeout=settings.database.database_pool_timeout,

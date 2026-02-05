@@ -3,6 +3,7 @@ Authentication API endpoints for SuperInsight Platform.
 """
 
 import logging
+import os
 from datetime import datetime
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -16,8 +17,11 @@ from src.security.models import UserModel, UserRole, AuditAction
 
 logger = logging.getLogger(__name__)
 
-# Initialize security controller
-security_controller = SecurityController(secret_key="test-secret-key-for-local-development-only")
+# Get secret key from environment variable with fallback
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-in-production")
+
+# Initialize security controller with consistent secret key
+security_controller = SecurityController(secret_key=JWT_SECRET_KEY)
 
 # Security scheme
 security = HTTPBearer()
@@ -51,7 +55,7 @@ class UserResponse(BaseModel):
 
 
 # Dependency to get current user
-async def get_current_user(
+def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db_session)
 ) -> UserModel:
@@ -87,7 +91,7 @@ async def get_current_user(
 
 # Authentication endpoints
 @router.post("/login", response_model=LoginResponse)
-async def login(
+def login(
     request: LoginRequest,
     db: Session = Depends(get_db_session)
 ):
@@ -161,7 +165,7 @@ async def login(
 
 
 @router.post("/logout")
-async def logout(
+def logout(
     current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db_session)
 ):
@@ -189,7 +193,7 @@ async def logout(
 
 
 @router.get("/me", response_model=UserResponse)
-async def get_current_user_info(
+def get_current_user_info(
     current_user: UserModel = Depends(get_current_user)
 ):
     """Get current user information."""
@@ -206,7 +210,7 @@ async def get_current_user_info(
 
 
 @router.get("/tenants")
-async def get_tenants(db: Session = Depends(get_db_session)):
+def get_tenants(db: Session = Depends(get_db_session)):
     """Get available tenants for login."""
     try:
         from src.database.multi_tenant_models import TenantModel, TenantStatus

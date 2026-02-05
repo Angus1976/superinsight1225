@@ -17,8 +17,8 @@ from sqlalchemy.dialects.postgresql import UUID
 
 
 # revision identifiers, used by Alembic.
-revision: str = '016_add_llm_health_status'
-down_revision: Union[str, Sequence[str], None] = '015_add_optimization_indexes'
+revision: str = '016_llm_health_status'
+down_revision: Union[str, Sequence[str], None] = '015_optimization_indexes'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

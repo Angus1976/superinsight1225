@@ -1,0 +1,17 @@
+[
+  {
+    "timeseries": "https://raw.githubusercontent.com/plotly/datasets/master/finance-charts-apple.csv",
+    "title": "Apple 股票价格",
+    "type": "股票数据"
+  },
+  {
+    "timeseries": "https://raw.githubusercontent.com/jbrownlee/Datasets/master/airline-passengers.csv",
+    "title": "航空乘客数量",
+    "type": "时间序列"
+  },
+  {
+    "timeseries": "https://raw.githubusercontent.com/jbrownlee/Datasets/master/daily-min-temperatures.csv",
+    "title": "每日最低温度",
+    "type": "气象数据"
+  }
+]

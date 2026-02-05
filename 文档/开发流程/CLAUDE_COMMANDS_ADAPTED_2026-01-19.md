@@ -437,7 +437,7 @@ uvicorn src.app:app --reload
 ### 外部资源
 - **原始项目**: https://github.com/coleam00/habit-tracker
 - **Conventional Commits**: https://www.conventionalcommits.org/
-- **PIV 方法论**: habit-tracker/PIVLoopDiagram.png
+- **PIV 方法论**: docs/references/habit-tracker/PIVLoopDiagram.png
 
 ---
 

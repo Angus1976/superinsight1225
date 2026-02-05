@@ -50,5 +50,53 @@
       "saveSuccess": "标注已保存",
       "saveError": "保存标注失败"
     }
+  },
+  "titles": {
+    "ai_assistance": "AI 辅助"
+  },
+  "sections": {
+    "quality_alerts": "质量警报",
+    "ai_suggestions": "AI 建议"
+  },
+  "labels": {
+    "confidence": "置信度",
+    "details": "详情",
+    "reasoning": "推理依据",
+    "patterns": "模式",
+    "context": "上下文"
+  },
+  "actions": {
+    "refresh_suggestions": "刷新建议",
+    "request_suggestions": "请求建议",
+    "accept": "接受",
+    "reject": "拒绝"
+  },
+  "modals": {
+    "reject_suggestion": "拒绝建议"
+  },
+  "placeholders": {
+    "reject_reason": "可选：输入拒绝理由..."
+  },
+  "tooltips": {
+    "similar_examples": "找到 {{count}} 个相似示例"
+  },
+  "messages": {
+    "ai_connected": "AI 辅助已连接",
+    "ai_disconnected": "AI 辅助已断开",
+    "ai_suggestions_received": "收到 {{count}} 条 AI 建议",
+    "ai_suggestions_loaded": "加载了 {{count}} 条 AI 建议",
+    "no_suggestions": "暂无 AI 建议",
+    "loading_suggestions": "正在加载 AI 建议...",
+    "suggestion_accepted": "建议已接受",
+    "suggestion_rejected": "建议已拒绝",
+    "reject_reason_prompt": "可选：提供拒绝此建议的理由（有助于提高 AI 准确性）"
+  },
+  "errors": {
+    "ai_suggestions_failed": "加载 AI 建议失败",
+    "suggestion_feedback_failed": "提交反馈失败"
+  },
+  "tips": {
+    "ai_suggestions": "AI 建议可用",
+    "ai_suggestions_desc": "查看 AI 生成的建议并接受或拒绝它们以帮助提高准确性"
   }
 }

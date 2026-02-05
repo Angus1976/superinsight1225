@@ -1,0 +1,1252 @@
+"""
+Label Studio API endpoints for SuperInsight Platform.
+Provides integration with Label Studio for project and task management.
+"""
+
+import logging
+from typing import List, Optional, Dict, Any
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Body
+from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
+
+from src.database.connection import get_db_session
+from src.api.auth import get_current_user
+from src.security.models import UserModel
+from src.label_studio.integration import (
+    LabelStudioIntegration,
+    ProjectConfig,
+    LabelStudioIntegrationError
+)
+from src.label_studio.workspace_models import (
+    LabelStudioWorkspaceModel,
+    LabelStudioWorkspaceMemberModel,
+    WorkspaceProjectModel,
+    WorkspaceMemberRole,
+)
+from src.label_studio.workspace_service import (
+    WorkspaceService,
+    WorkspaceNotFoundError,
+    get_workspace_service,
+)
+from src.label_studio.rbac_service import (
+    RBACService,
+    Permission as RBACPermission,
+    PermissionDeniedError,
+    NotAMemberError,
+    get_rbac_service,
+)
+from src.label_studio.metadata_codec import (
+    MetadataCodec,
+    get_metadata_codec,
+    has_metadata,
+    decode_metadata,
+)
+from uuid import UUID, uuid4
+
+logger = logging.getLogger(__name__)
+
+# Create router
+router = APIRouter(prefix="/api/label-studio", tags=["Label Studio"])
+
+
+# Response models
+class WorkspaceInfoResponse(BaseModel):
+    """Workspace information embedded in project responses."""
+    id: str
+    name: str
+    owner_id: Optional[str] = None
+    role: Optional[str] = None
+
+
+class LabelStudioProject(BaseModel):
+    id: int
+    title: str
+    description: Optional[str] = None
+    created_at: str
+    updated_at: str
+    task_count: int = 0
+    annotation_count: int = 0
+    workspace: Optional[WorkspaceInfoResponse] = None
+
+    class Config:
+        from_attributes = True
+
+
+class LabelStudioProjectList(BaseModel):
+    projects: List[LabelStudioProject]
+    total: int
+
+
+class LabelStudioTask(BaseModel):
+    id: int
+    data: Dict[str, Any]
+    annotations: List[Dict[str, Any]] = []
+    predictions: List[Dict[str, Any]] = []
+    created_at: str
+    updated_at: str
+    is_labeled: bool = False
+    
+    class Config:
+        from_attributes = True
+
+
+class LabelStudioTaskList(BaseModel):
+    tasks: List[LabelStudioTask]
+    total: int
+
+
+# Request models for new endpoints
+class EnsureProjectRequest(BaseModel):
+    """Request body for ensuring a Label Studio project exists.
+    
+    Validates: Requirements 1.3 - Automatic Project Creation
+    """
+    task_id: str = Field(..., description="SuperInsight task ID")
+    task_name: str = Field(default="Annotation Project", description="Task name for project title")
+    annotation_type: str = Field(default="text_classification", description="Type of annotation")
+    description: Optional[str] = Field(default=None, description="Project description")
+    existing_project_id: Optional[str] = Field(default=None, description="Existing Label Studio project ID if known")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "task_id": "550e8400-e29b-41d4-a716-446655440000",
+                "task_name": "Customer Review Classification",
+                "annotation_type": "text_classification",
+                "description": "Classify customer reviews by sentiment"
+            }
+        }
+
+
+# Response models for new endpoints
+class EnsureProjectResponse(BaseModel):
+    """Response for ensure project endpoint.
+    
+    Validates: Requirements 1.3 - Automatic Project Creation
+    
+    API Response Format (Section 6.1):
+    {
+      "project_id": "123",
+      "created": true,
+      "status": "ready",
+      "task_count": 100,
+      "message": "Project created successfully"
+    }
+    """
+    project_id: str = Field(..., description="Label Studio project ID")
+    created: bool = Field(..., description="Whether a new project was created")
+    status: str = Field(default="ready", description="Project status (ready, creating, error)")
+    task_count: int = Field(default=0, description="Number of tasks in the project")
+    message: str = Field(default="", description="Status message")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "project_id": "123",
+                "created": True,
+                "status": "ready",
+                "task_count": 100,
+                "message": "Project created successfully"
+            }
+        }
+
+
+# SSO Authentication Models
+class SSOTokenRequest(BaseModel):
+    """Request for SSO token generation."""
+    email: str = Field(..., description="User email for SSO authentication")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "email": "user@example.com"
+            }
+        }
+
+
+class SSOTokenResponse(BaseModel):
+    """Response containing SSO token for Label Studio authentication."""
+    token: str = Field(..., description="JWT token for Label Studio SSO")
+    expires_in: int = Field(default=600, description="Token expiry in seconds")
+    label_studio_url: str = Field(..., description="Label Studio base URL")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                "expires_in": 600,
+                "label_studio_url": "http://localhost:8080"
+            }
+        }
+
+
+class ProjectValidationResponse(BaseModel):
+    """Response for project validation endpoint.
+    
+    Validates: Requirements 1.1, 1.2
+    
+    API Response Format (Section 6.2):
+    {
+      "exists": true,
+      "accessible": true,
+      "task_count": 100,
+      "annotation_count": 65,
+      "status": "ready"
+    }
+    """
+    exists: bool = Field(..., description="Whether the project exists in Label Studio")
+    accessible: bool = Field(..., description="Whether the project is accessible with current credentials")
+    task_count: int = Field(default=0, description="Number of tasks in the project")
+    annotation_count: int = Field(default=0, description="Number of completed annotations")
+    status: str = Field(default="ready", description="Project status (ready, creating, error)")
+    error_message: Optional[str] = Field(default=None, description="Error message if validation failed")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "exists": True,
+                "accessible": True,
+                "task_count": 100,
+                "annotation_count": 65,
+                "status": "ready"
+            }
+        }
+
+
+class ImportTasksRequest(BaseModel):
+    """Request body for importing tasks to Label Studio project.
+    
+    Validates: Requirements 1.4 - Task Data Synchronization
+    """
+    task_id: str = Field(..., description="SuperInsight task ID to import")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "task_id": "550e8400-e29b-41d4-a716-446655440000"
+            }
+        }
+
+
+class ImportTasksResponse(BaseModel):
+    """Response for import tasks endpoint.
+    
+    Validates: Requirements 1.4 - Task Data Synchronization
+    
+    API Response Format (Design Section 5.3):
+    {
+        "success": true,
+        "imported_count": 100,
+        "failed_count": 0,
+        "errors": [],
+        "project_id": "123",
+        "task_ids": [1, 2, 3]
+    }
+    """
+    success: bool = Field(..., description="Whether the import was successful")
+    imported_count: int = Field(default=0, description="Number of tasks successfully imported")
+    failed_count: int = Field(default=0, description="Number of tasks that failed to import")
+    errors: List[str] = Field(default_factory=list, description="List of error messages")
+    project_id: str = Field(..., description="Label Studio project ID")
+    task_ids: List[int] = Field(default_factory=list, description="List of imported Label Studio task IDs")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "success": True,
+                "imported_count": 100,
+                "failed_count": 0,
+                "errors": [],
+                "project_id": "123",
+                "task_ids": [1, 2, 3, 4, 5]
+            }
+        }
+
+
+class AuthenticatedUrlResponse(BaseModel):
+    """Response for authenticated URL endpoint.
+    
+    Validates: Requirements 1.2 - Open Annotation in New Window
+    Validates: Requirements 1.5 - Seamless Language Synchronization
+    
+    API Response Format (Design Section 6.3):
+    {
+        "url": "http://localhost:8080/projects/123?token=eyJ0eXAiOiJKV1QiLCJhbGc...",
+        "expires_at": "2025-01-26T12:00:00Z",
+        "project_id": "123"
+    }
+    """
+    url: str = Field(..., description="Authenticated URL with token and language parameter")
+    expires_at: str = Field(..., description="ISO format datetime when token expires")
+    project_id: str = Field(..., description="Label Studio project ID")
+    language: Optional[str] = Field(default="zh", description="Language parameter used in URL")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "url": "http://localhost:8080/projects/123?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...&lang=zh",
+                "expires_at": "2025-01-26T12:00:00Z",
+                "project_id": "123",
+                "language": "zh"
+            }
+        }
+
+
+# Helper function to get Label Studio integration
+def get_label_studio() -> LabelStudioIntegration:
+    """Get Label Studio integration instance."""
+    try:
+        return LabelStudioIntegration()
+    except Exception as e:
+        logger.error(f"Failed to initialize Label Studio integration: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Label Studio service is not available"
+        )
+
+
+# Helper function to extract workspace info from project description
+def _extract_workspace_info(
+    description: Optional[str],
+    db: Session,
+    user_id: UUID
+) -> Optional[WorkspaceInfoResponse]:
+    """Extract workspace info from project description metadata."""
+    if not description or not has_metadata(description):
+        return None
+
+    try:
+        _, metadata = decode_metadata(description)
+        workspace_id = metadata.get("workspace_id")
+        if not workspace_id:
+            return None
+
+        # Try to get workspace from database
+        workspace = db.query(LabelStudioWorkspaceModel).filter(
+            LabelStudioWorkspaceModel.id == UUID(workspace_id),
+            LabelStudioWorkspaceModel.is_deleted == False
+        ).first()
+
+        if not workspace:
+            return None
+
+        # Get user's role in workspace
+        member = db.query(LabelStudioWorkspaceMemberModel).filter(
+            LabelStudioWorkspaceMemberModel.workspace_id == UUID(workspace_id),
+            LabelStudioWorkspaceMemberModel.user_id == user_id,
+            LabelStudioWorkspaceMemberModel.is_active == True
+        ).first()
+
+        return WorkspaceInfoResponse(
+            id=str(workspace.id),
+            name=workspace.name,
+            owner_id=str(workspace.owner_id) if workspace.owner_id else None,
+            role=member.role.value if member else None
+        )
+    except Exception as e:
+        logger.warning(f"Failed to extract workspace info: {e}")
+        return None
+
+
+def _get_clean_description(description: Optional[str]) -> Optional[str]:
+    """Remove metadata from description if present."""
+    if not description or not has_metadata(description):
+        return description
+
+    try:
+        clean_desc, _ = decode_metadata(description)
+        return clean_desc
+    except Exception:
+        return description
+
+
+# Label Studio endpoints
+@router.get("/projects", response_model=LabelStudioProjectList)
+def list_projects(
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(10, ge=1, le=100, description="Page size"),
+    workspace_id: Optional[str] = Query(None, description="Filter by workspace ID"),
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db_session)
+):
+    """
+    Get list of Label Studio projects.
+
+    When workspace_id is provided:
+    - Verifies user has permission to view the workspace
+    - Returns only projects associated with that workspace
+    - Includes workspace info in each project response
+
+    When workspace_id is not provided:
+    - Returns all accessible projects (backward compatible)
+    - Includes workspace info where available
+    """
+    try:
+        ls = get_label_studio()
+
+        # Get user ID
+        user_id = current_user.id
+
+        # If workspace_id provided, verify permission
+        workspace_project_ids: Optional[set] = None
+        if workspace_id:
+            try:
+                workspace_uuid = UUID(workspace_id)
+            except ValueError:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Invalid workspace_id format: {workspace_id}"
+                )
+
+            # Check if user is member of workspace
+            member = db.query(LabelStudioWorkspaceMemberModel).filter(
+                LabelStudioWorkspaceMemberModel.workspace_id == workspace_uuid,
+                LabelStudioWorkspaceMemberModel.user_id == user_id,
+                LabelStudioWorkspaceMemberModel.is_active == True
+            ).first()
+
+            if not member:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You are not a member of this workspace"
+                )
+
+            # Get project IDs associated with this workspace
+            workspace_projects = db.query(WorkspaceProjectModel).filter(
+                WorkspaceProjectModel.workspace_id == workspace_uuid
+            ).all()
+            workspace_project_ids = {
+                str(wp.label_studio_project_id) for wp in workspace_projects
+            }
+
+        # Get projects from Label Studio
+        projects_data = ls.list_projects()
+
+        # Convert to response format with workspace filtering
+        projects = []
+        for proj in projects_data:
+            proj_id = proj.get('id')
+            description = proj.get('description')
+
+            # Filter by workspace if specified
+            if workspace_project_ids is not None:
+                if str(proj_id) not in workspace_project_ids:
+                    continue
+
+            # Extract workspace info from metadata
+            workspace_info = _extract_workspace_info(description, db, user_id)
+
+            # Get clean description (without metadata)
+            clean_description = _get_clean_description(description)
+
+            projects.append(LabelStudioProject(
+                id=proj_id,
+                title=proj.get('title', 'Untitled Project'),
+                description=clean_description,
+                created_at=proj.get('created_at', ''),
+                updated_at=proj.get('updated_at', ''),
+                task_count=proj.get('task_number', 0),
+                annotation_count=proj.get('num_tasks_with_annotations', 0),
+                workspace=workspace_info
+            ))
+
+        # Apply pagination
+        total = len(projects)
+        start_idx = (page - 1) * page_size
+        end_idx = start_idx + page_size
+        paginated_projects = projects[start_idx:end_idx]
+
+        return LabelStudioProjectList(
+            projects=paginated_projects,
+            total=total
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error listing Label Studio projects: {e}")
+        # Return empty list instead of error for better UX
+        return LabelStudioProjectList(projects=[], total=0)
+
+
+@router.get("/projects/{project_id}", response_model=LabelStudioProject)
+async def get_project(
+    project_id: int,
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db_session)
+):
+    """
+    Get Label Studio project by ID.
+
+    Returns project details including workspace information if the project
+    is associated with a workspace. The description field is returned without
+    the encoded metadata.
+    """
+    try:
+        ls = get_label_studio()
+        # Use get_project_info (async method)
+        project_data = await ls.get_project_info(str(project_id))
+
+        if not project_data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Project {project_id} not found"
+            )
+
+        # Get user ID
+        user_id = current_user.id
+
+        # Convert LabelStudioProject to dict for compatibility
+        description = project_data.description if hasattr(project_data, 'description') else None
+
+        # Extract workspace info from metadata
+        workspace_info = _extract_workspace_info(description, db, user_id)
+
+        # Get clean description (without metadata)
+        clean_description = _get_clean_description(description)
+
+        return LabelStudioProject(
+            id=project_data.id,
+            title=project_data.title if hasattr(project_data, 'title') else 'Untitled Project',
+            description=clean_description,
+            created_at=str(project_data.created_at) if hasattr(project_data, 'created_at') else '',
+            updated_at=str(project_data.updated_at) if hasattr(project_data, 'updated_at') else '',
+            task_count=project_data.task_number if hasattr(project_data, 'task_number') else 0,
+            annotation_count=project_data.num_tasks_with_annotations if hasattr(project_data, 'num_tasks_with_annotations') else 0,
+            workspace=workspace_info
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting Label Studio project {project_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve project"
+        )
+
+
+@router.get("/projects/{project_id}/tasks", response_model=LabelStudioTaskList)
+async def list_project_tasks(
+    project_id: int,
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(10, ge=1, le=100, description="Page size"),
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db_session)
+):
+    """Get list of tasks for a Label Studio project."""
+    try:
+        ls = get_label_studio()
+        
+        # Get tasks directly from Label Studio API
+        import httpx
+        headers = await ls._get_headers()
+        
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(
+                f"{ls.base_url}/api/projects/{project_id}/tasks",
+                headers=headers
+            )
+            
+            if response.status_code != 200:
+                logger.error(f"Failed to get tasks: {response.status_code} - {response.text}")
+                return LabelStudioTaskList(tasks=[], total=0)
+            
+            tasks_data = response.json()
+        
+        # Convert to response format
+        tasks = []
+        for task in tasks_data:
+            annotations = task.get('annotations', [])
+            tasks.append(LabelStudioTask(
+                id=task.get('id'),
+                data=task.get('data', {}),
+                annotations=annotations,
+                predictions=task.get('predictions', []),
+                created_at=task.get('created_at', ''),
+                updated_at=task.get('updated_at', ''),
+                is_labeled=task.get('is_labeled', len(annotations) > 0)
+            ))
+        
+        # Apply pagination
+        total = len(tasks)
+        start_idx = (page - 1) * page_size
+        end_idx = start_idx + page_size
+        paginated_tasks = tasks[start_idx:end_idx]
+        
+        return LabelStudioTaskList(
+            tasks=paginated_tasks,
+            total=total
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error listing tasks for project {project_id}: {e}")
+        # Return empty list instead of error for better UX
+        return LabelStudioTaskList(tasks=[], total=0)
+
+
+@router.get("/health")
+def check_health(
+    current_user: UserModel = Depends(get_current_user)
+):
+    """Check Label Studio service health."""
+    try:
+        ls = get_label_studio()
+        # Try to list projects as a health check
+        ls.list_projects()
+        return {"status": "healthy", "message": "Label Studio is accessible"}
+    except Exception as e:
+        logger.error(f"Label Studio health check failed: {e}")
+        return {
+            "status": "unhealthy",
+            "message": "Label Studio is not accessible",
+            "error": str(e)
+        }
+
+
+@router.post("/projects/ensure", response_model=EnsureProjectResponse)
+async def ensure_project_exists(
+    request: EnsureProjectRequest = Body(...),
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db_session)
+):
+    """
+    Ensure Label Studio project exists for task.
+    Creates project if needed.
+    
+    This endpoint implements idempotent project creation - calling it multiple
+    times with the same task_id will return the existing project if one exists.
+    
+    POST /api/label-studio/projects/ensure
+    Body: {
+        "task_id": "uuid",
+        "task_name": "Project Title",
+        "annotation_type": "text_classification",
+        "description": "Optional description",
+        "existing_project_id": "123"  // Optional
+    }
+    
+    Returns:
+        {
+            "project_id": "123",
+            "created": true/false,
+            "status": "ready",
+            "task_count": 100,
+            "message": "Project created successfully"
+        }
+    
+    Validates: Requirements 1.3 - Automatic Project Creation
+    - WHEN task is created with annotation requirement, THEN system creates corresponding Label Studio project
+    - WHEN user attempts to annotate task without project, THEN system creates project automatically
+    - WHERE project already exists, THEN system reuses existing project
+    """
+    try:
+        ls = get_label_studio()
+        
+        # Create project configuration
+        # Label Studio has a 50 character limit for project titles
+        max_title_length = 50
+        task_name = request.task_name
+        
+        # Truncate task name if needed
+        if len(task_name) > max_title_length:
+            task_name = task_name[:max_title_length-3] + "..."
+        
+        project_config = ProjectConfig(
+            title=task_name,
+            description=request.description or f"Annotation project for task {request.task_id}",
+            annotation_type=request.annotation_type
+        )
+        
+        # Check if we need to create a new project or reuse existing
+        existing_project_id = request.existing_project_id
+        created = False
+        
+        # Call ensure_project_exists from integration service
+        project = await ls.ensure_project_exists(
+            project_id=existing_project_id,
+            project_config=project_config
+        )
+        
+        # Determine if project was newly created
+        # If existing_project_id was None or different from returned project.id, it was created
+        if existing_project_id is None or str(project.id) != str(existing_project_id):
+            created = True
+            message = "Project created successfully"
+        else:
+            message = "Using existing project"
+        
+        # Get task count from project info
+        task_count = getattr(project, 'task_number', 0) or 0
+        
+        logger.info(
+            f"Ensure project for task {request.task_id}: "
+            f"project_id={project.id}, created={created}, task_count={task_count}"
+        )
+        
+        return EnsureProjectResponse(
+            project_id=str(project.id),
+            created=created,
+            status="ready",
+            task_count=task_count,
+            message=message
+        )
+        
+    except LabelStudioIntegrationError as e:
+        logger.error(f"Label Studio integration error ensuring project: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error": "project_creation_failed",
+                "message": "Failed to create Label Studio project",
+                "details": str(e)
+            }
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error ensuring project for task {request.task_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error": "project_creation_failed",
+                "message": "Failed to create Label Studio project",
+                "details": str(e)
+            }
+        )
+
+
+@router.get("/projects/{project_id}/validate", response_model=ProjectValidationResponse)
+async def validate_project(
+    project_id: str,
+    current_user: UserModel = Depends(get_current_user)
+):
+    """
+    Validate project exists and is accessible.
+    
+    This endpoint checks if a Label Studio project exists, is accessible with
+    current credentials, and returns information about its task and annotation counts.
+    It is used to verify project status before navigation to annotation pages.
+    
+    GET /api/label-studio/projects/{project_id}/validate
+    
+    Returns:
+        {
+            "exists": true/false,
+            "accessible": true/false,
+            "task_count": 100,
+            "annotation_count": 65,
+            "status": "ready"
+        }
+    
+    Validates: Requirements 1.1 - Label Studio project and tasks are successfully fetched
+    - WHEN annotation page loads, THEN Label Studio project and tasks are successfully fetched
+    - WHEN Label Studio project exists, THEN user sees the annotation interface
+    
+    Validates: Requirements 1.2 - Label Studio project page loads successfully
+    - WHEN new window opens, THEN Label Studio project page loads successfully (no 404 error)
+    """
+    try:
+        ls = get_label_studio()
+        
+        # Call validate_project from integration service
+        validation_result = await ls.validate_project(project_id)
+        
+        logger.info(
+            f"Validated project {project_id}: "
+            f"exists={validation_result.exists}, accessible={validation_result.accessible}, "
+            f"task_count={validation_result.task_count}, annotation_count={validation_result.annotation_count}, "
+            f"status={validation_result.status}"
+        )
+        
+        # Return validation result
+        return ProjectValidationResponse(
+            exists=validation_result.exists,
+            accessible=validation_result.accessible,
+            task_count=validation_result.task_count,
+            annotation_count=validation_result.annotation_count,
+            status=validation_result.status,
+            error_message=validation_result.error_message
+        )
+        
+    except LabelStudioIntegrationError as e:
+        logger.error(f"Label Studio integration error validating project {project_id}: {e}")
+        # Return validation failure response instead of raising exception
+        # This allows frontend to handle the error gracefully
+        return ProjectValidationResponse(
+            exists=False,
+            accessible=False,
+            task_count=0,
+            annotation_count=0,
+            status="error",
+            error_message=str(e)
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error validating project {project_id}: {e}")
+        # Return validation failure response
+        return ProjectValidationResponse(
+            exists=False,
+            accessible=False,
+            task_count=0,
+            annotation_count=0,
+            status="error",
+            error_message=f"Unexpected error: {str(e)}"
+        )
+
+
+@router.post("/projects/{project_id}/import-tasks", response_model=ImportTasksResponse)
+async def import_tasks_to_project(
+    project_id: str,
+    request: ImportTasksRequest = Body(...),
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db_session)
+):
+    """
+    Import tasks from SuperInsight to Label Studio project.
+    
+    This endpoint fetches task data from the SuperInsight database and imports
+    it into the specified Label Studio project. It uses the existing import_tasks()
+    method from the integration service.
+    
+    POST /api/label-studio/projects/{project_id}/import-tasks
+    Body: { "task_id": "uuid" }
+    
+    Returns:
+        {
+            "success": true,
+            "imported_count": 100,
+            "failed_count": 0,
+            "errors": [],
+            "project_id": "123",
+            "task_ids": [1, 2, 3]
+        }
+    
+    Validates: Requirements 1.4 - Task Data Synchronization
+    - WHEN annotation is created in Label Studio, THEN system syncs it back to SuperInsight database
+    - WHEN project is created, THEN system imports all task data into Label Studio
+    - IF sync fails, THEN system retries with exponential backoff
+    """
+    from uuid import UUID
+    from src.database.models import TaskModel, DocumentModel
+    from src.models.task import Task
+    
+    try:
+        ls = get_label_studio()
+        
+        # Step 1: Validate project exists
+        validation_result = await ls.validate_project(project_id)
+        if not validation_result.exists:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={
+                    "error": "project_not_found",
+                    "message": f"Label Studio project {project_id} not found",
+                    "project_id": project_id
+                }
+            )
+        
+        # Step 2: Fetch task from database
+        try:
+            task_uuid = UUID(request.task_id)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "error": "invalid_task_id",
+                    "message": f"Invalid task ID format: {request.task_id}"
+                }
+            )
+        
+        task_model = db.query(TaskModel).filter(TaskModel.id == task_uuid).first()
+        
+        if not task_model:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={
+                    "error": "task_not_found",
+                    "message": f"Task {request.task_id} not found in database"
+                }
+            )
+        
+        # Step 3: Get document content for the task
+        document_content = None
+        if task_model.document_id:
+            doc_model = db.query(DocumentModel).filter(DocumentModel.id == task_model.document_id).first()
+            if doc_model:
+                document_content = doc_model.content
+        
+        # If no document content, use task name as placeholder
+        if not document_content:
+            document_content = task_model.name or f"Task {task_model.id}"
+        
+        # Step 4: Prepare Label Studio task format
+        ls_task = {
+            "data": {
+                "text": document_content,
+                "task_id": str(task_model.id),
+                "document_id": str(task_model.document_id) if task_model.document_id else None
+            },
+            "meta": {
+                "superinsight_task_id": str(task_model.id),
+                "created_at": task_model.created_at.isoformat() if task_model.created_at else None
+            }
+        }
+        
+        # Step 5: Import task directly to Label Studio
+        import httpx
+        headers = await ls._get_headers()
+        
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(
+                f"{ls.base_url}/api/projects/{project_id}/import",
+                headers=headers,
+                json=[ls_task]
+            )
+            
+            if response.status_code == 201:
+                result = response.json()
+                imported_count = 1
+                # Label Studio import returns stats, not task list
+                task_ids = []
+                logger.info(f"Imported task {request.task_id} to Label Studio project {project_id}: {result}")
+            else:
+                error_msg = f"Failed to import: {response.status_code} - {response.text}"
+                logger.error(error_msg)
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail={
+                        "error": "import_failed",
+                        "message": "Failed to import tasks to Label Studio",
+                        "details": error_msg
+                    }
+                )
+        
+        return ImportTasksResponse(
+            success=True,
+            imported_count=imported_count,
+            failed_count=0,
+            errors=[],
+            project_id=project_id,
+            task_ids=task_ids
+        )
+        
+    except HTTPException:
+        raise
+    except LabelStudioIntegrationError as e:
+        logger.error(f"Label Studio integration error importing tasks: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error": "import_failed",
+                "message": "Failed to import tasks to Label Studio",
+                "details": str(e)
+            }
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error importing tasks to project {project_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error": "import_failed",
+                "message": "Failed to import tasks to Label Studio",
+                "details": str(e)
+            }
+        )
+
+
+@router.get("/projects/{project_id}/auth-url", response_model=AuthenticatedUrlResponse)
+async def get_authenticated_url(
+    project_id: str,
+    language: str = Query(default="zh", description="Language preference ('zh' for Chinese, 'en' for English)"),
+    current_user: UserModel = Depends(get_current_user)
+):
+    """
+    Generate authenticated URL for Label Studio with language support.
+    
+    This endpoint generates a temporary authenticated URL that can be used to
+    open Label Studio in a new browser window. The URL includes:
+    - A temporary JWT token for authentication
+    - A language parameter (?lang=zh or ?lang=en) for Label Studio i18n
+    
+    The token expires after 1 hour by default.
+    
+    GET /api/label-studio/projects/{project_id}/auth-url?language=zh
+    
+    Query Parameters:
+        language: User's language preference
+            - 'zh' or 'zh-CN': Chinese (Simplified) - default
+            - 'en' or 'en-US': English
+    
+    Returns:
+        {
+            "url": "http://localhost:8080/projects/123?token=eyJ0eXAiOiJKV1QiLCJhbGc...",
+            "expires_at": "2025-01-26T12:00:00Z",
+            "project_id": "123",
+            "language": "zh"
+        }
+    
+    Validates: Requirements 1.2 - Open Annotation in New Window
+    - WHEN user clicks "在新窗口打开" button, THEN system opens Label Studio project in new browser tab
+    - WHEN new window opens, THEN Label Studio project page loads successfully (no 404 error)
+    - WHEN Label Studio loads, THEN user is automatically authenticated
+    
+    Validates: Requirements 1.5 - Seamless Language Synchronization
+    - WHEN Label Studio opens, THEN interface language matches user's current language preference
+    - WHERE user has selected Chinese in SuperInsight, THEN Label Studio displays in Chinese
+    - WHERE user has selected English in SuperInsight, THEN Label Studio displays in English
+    - WHERE Label Studio opens in new window, THEN language preference is included in authenticated URL
+    """
+    try:
+        ls = get_label_studio()
+        
+        # Step 1: Validate project exists before generating URL
+        validation_result = await ls.validate_project(project_id)
+        if not validation_result.exists:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={
+                    "error": "project_not_found",
+                    "message": f"Label Studio project {project_id} not found",
+                    "project_id": project_id
+                }
+            )
+        
+        # Step 2: Generate authenticated URL with language parameter
+        # Use current user's ID for token generation
+        user_id = str(current_user.id)
+        
+        url_info = await ls.generate_authenticated_url(
+            project_id=project_id,
+            user_id=user_id,
+            language=language,
+            expires_in=3600  # 1 hour expiration
+        )
+        
+        logger.info(
+            f"Generated authenticated URL for project {project_id}, "
+            f"user {user_id}, language {url_info.get('language', language)}"
+        )
+        
+        return AuthenticatedUrlResponse(
+            url=url_info["url"],
+            expires_at=url_info["expires_at"],
+            project_id=url_info["project_id"],
+            language=url_info.get("language", language)
+        )
+        
+    except HTTPException:
+        raise
+    except LabelStudioIntegrationError as e:
+        logger.error(f"Label Studio integration error generating auth URL: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error": "url_generation_failed",
+                "message": "Failed to generate authenticated URL",
+                "details": str(e)
+            }
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error generating auth URL for project {project_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error": "url_generation_failed",
+                "message": "Failed to generate authenticated URL",
+                "details": str(e)
+            }
+        )
+
+
+# =============================================================================
+# SSO Authentication Endpoints
+# =============================================================================
+
+@router.post("/auth/sso-token", response_model=SSOTokenResponse)
+async def get_sso_token(
+    request: SSOTokenRequest = Body(...),
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db_session)
+):
+    """
+    Generate SSO token for Label Studio authentication.
+    
+    This endpoint generates a JWT token that can be used to authenticate
+    users in Label Studio without requiring separate login.
+    
+    The token is generated by calling Label Studio's SSO API endpoint.
+    
+    POST /api/label-studio/auth/sso-token
+    Body: { "email": "user@example.com" }
+    
+    Returns:
+        {
+            "token": "eyJhbGc...",
+            "expires_in": 600,
+            "label_studio_url": "http://localhost:8080"
+        }
+    """
+    import httpx
+    import os
+    
+    try:
+        ls = get_label_studio()
+        ls_url = ls.base_url
+        
+        # Get Label Studio API token from environment
+        ls_api_token = os.environ.get('LABEL_STUDIO_API_TOKEN')
+        if not ls_api_token:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Label Studio API token not configured"
+            )
+        
+        # Use the current user's email or the requested email
+        user_email = request.email or current_user.email
+        
+        # Call Label Studio SSO token endpoint
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                f"{ls_url}/api/sso/token",
+                json={"email": user_email},
+                headers={
+                    "Authorization": f"Token {ls_api_token}",
+                    "Content-Type": "application/json"
+                }
+            )
+            
+            if response.status_code == 200:
+                token_data = response.json()
+                return SSOTokenResponse(
+                    token=token_data.get("token", ""),
+                    expires_in=token_data.get("expires_in", 600),
+                    label_studio_url=ls_url
+                )
+            elif response.status_code == 404:
+                # SSO endpoint not available - Label Studio SSO not configured
+                # Fall back to generating a simple redirect URL
+                logger.warning("Label Studio SSO endpoint not available, SSO not configured")
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail={
+                        "error": "sso_not_configured",
+                        "message": "Label Studio SSO is not configured. Please configure label-studio-sso package.",
+                        "fallback_url": f"{ls_url}/user/login/"
+                    }
+                )
+            else:
+                logger.error(f"Failed to get SSO token: {response.status_code} - {response.text}")
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Failed to get SSO token from Label Studio: {response.text}"
+                )
+                
+    except httpx.RequestError as e:
+        logger.error(f"Network error getting SSO token: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Cannot connect to Label Studio service"
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error getting SSO token: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+
+@router.get("/auth/login-url")
+async def get_login_url(
+    project_id: Optional[int] = Query(None, description="Project ID to redirect to after login"),
+    task_id: Optional[int] = Query(None, description="Task ID to redirect to after login"),
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db_session)
+):
+    """
+    Get Label Studio login URL with optional redirect.
+    
+    This endpoint returns a URL that can be used to open Label Studio
+    in a new window. If SSO is configured, it will include the SSO token.
+    
+    GET /api/label-studio/auth/login-url?project_id=18&task_id=42
+    
+    Returns:
+        {
+            "url": "http://localhost:8080/projects/18/data?token=...",
+            "sso_enabled": true
+        }
+    """
+    import httpx
+    import os
+    
+    try:
+        ls = get_label_studio()
+        ls_url = ls.base_url
+        
+        # Build base URL
+        if project_id and task_id:
+            base_path = f"/projects/{project_id}/data?task={task_id}"
+        elif project_id:
+            base_path = f"/projects/{project_id}/data"
+        else:
+            base_path = "/"
+        
+        # Try to get SSO token
+        ls_api_token = os.environ.get('LABEL_STUDIO_API_TOKEN')
+        sso_enabled = False
+        sso_token = None
+        
+        if ls_api_token:
+            try:
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    # Request SSO token (Label Studio will auto-create user if needed)
+                    response = await client.post(
+                        f"{ls_url}/api/sso/token",
+                        json={
+                            "email": current_user.email,
+                            "username": current_user.username or current_user.email.split("@")[0],
+                            "first_name": current_user.full_name.split()[0] if current_user.full_name else "",
+                            "last_name": " ".join(current_user.full_name.split()[1:]) if current_user.full_name and len(current_user.full_name.split()) > 1 else "",
+                        },
+                        headers={
+                            "Authorization": f"Token {ls_api_token}",
+                            "Content-Type": "application/json"
+                        }
+                    )
+                    
+                    if response.status_code == 200:
+                        token_data = response.json()
+                        sso_token = token_data.get("token")
+                        sso_enabled = True
+                    else:
+                        logger.warning(f"SSO token request failed: {response.status_code} - {response.text}")
+            except Exception as e:
+                logger.warning(f"SSO token request failed: {e}")
+        
+        # Build final URL
+        if sso_token:
+            separator = "&" if "?" in base_path else "?"
+            url = f"{ls_url}{base_path}{separator}token={sso_token}"
+        else:
+            url = f"{ls_url}{base_path}"
+        
+        return {
+            "url": url,
+            "sso_enabled": sso_enabled,
+            "label_studio_url": ls_url
+        }
+        
+    except Exception as e:
+        logger.error(f"Error generating login URL: {e}")
+        ls_url = os.environ.get('LABEL_STUDIO_URL', 'http://localhost:8080')
+        return {
+            "url": f"{ls_url}/",
+            "sso_enabled": False,
+            "label_studio_url": ls_url
+        }

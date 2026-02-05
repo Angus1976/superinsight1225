@@ -86,7 +86,7 @@ class MetricsCollector:
         self.collection_interval = 10  # seconds
         self.is_collecting = False
         self._collection_task: Optional[asyncio.Task] = None
-        self._lock = threading.Lock()
+        self._lock = asyncio.Lock()
         self.alerts: List[PerformanceAlert] = []
         self.bottleneck_analyses: List[BottleneckAnalysis] = []
         self.alert_handlers: List[Callable] = []
@@ -577,9 +577,11 @@ class MetricsCollector:
     async def _collect_system_metrics(self):
         """Collect enhanced system-level metrics."""
         try:
-            # CPU usage with per-core breakdown
-            cpu_percent = psutil.cpu_percent(interval=1)
-            cpu_per_core = psutil.cpu_percent(interval=1, percpu=True)
+            loop = asyncio.get_event_loop()
+            
+            # CPU usage with per-core breakdown - run in executor
+            cpu_percent = await loop.run_in_executor(None, psutil.cpu_percent, 1)
+            cpu_per_core = await loop.run_in_executor(None, psutil.cpu_percent, 1, True)
             
             self.record_metric("system.cpu.usage_percent", cpu_percent)
             for i, core_usage in enumerate(cpu_per_core):
@@ -587,7 +589,7 @@ class MetricsCollector:
             
             # CPU load averages (if available)
             try:
-                load_avg = psutil.getloadavg()
+                load_avg = await loop.run_in_executor(None, psutil.getloadavg)
                 self.record_metric("system.cpu.load_1min", load_avg[0])
                 self.record_metric("system.cpu.load_5min", load_avg[1])
                 self.record_metric("system.cpu.load_15min", load_avg[2])
@@ -595,7 +597,7 @@ class MetricsCollector:
                 pass  # Not available on all platforms
             
             # Memory usage with detailed breakdown
-            memory = psutil.virtual_memory()
+            memory = await loop.run_in_executor(None, psutil.virtual_memory)
             self.record_metric("system.memory.usage_percent", memory.percent)
             self.record_metric("system.memory.available_bytes", memory.available)
             self.record_metric("system.memory.used_bytes", memory.used)
@@ -603,18 +605,18 @@ class MetricsCollector:
             self.record_metric("system.memory.buffers_bytes", getattr(memory, 'buffers', 0))
             
             # Swap usage
-            swap = psutil.swap_memory()
+            swap = await loop.run_in_executor(None, psutil.swap_memory)
             self.record_metric("system.swap.usage_percent", swap.percent)
             self.record_metric("system.swap.used_bytes", swap.used)
             
             # Disk usage and I/O
-            disk = psutil.disk_usage('/')
+            disk = await loop.run_in_executor(None, psutil.disk_usage, '/')
             self.record_metric("system.disk.usage_percent", (disk.used / disk.total) * 100)
             self.record_metric("system.disk.free_bytes", disk.free)
             self.record_metric("system.disk.total_bytes", disk.total)
             
             # Disk I/O statistics
-            disk_io = psutil.disk_io_counters()
+            disk_io = await loop.run_in_executor(None, psutil.disk_io_counters)
             if disk_io:
                 self.record_metric("system.disk.read_bytes", disk_io.read_bytes)
                 self.record_metric("system.disk.write_bytes", disk_io.write_bytes)

@@ -763,7 +763,7 @@ const DataDesensitizationConfig: React.FC = () => {
                 <Card key={report.id} size="small">
                   <Row gutter={16}>
                     <Col span={18}>
-                      <Descriptions title={t(`security:compliance.${report.reportType}`)} column={3}>
+                      <Descriptions title={t(`security:compliance.types.${report.reportType}`)} column={3}>
                         <Descriptions.Item label={t('security:compliance.period')}>
                           {dayjs(report.period.start).format('YYYY-MM-DD')} - {dayjs(report.period.end).format('YYYY-MM-DD')}
                         </Descriptions.Item>

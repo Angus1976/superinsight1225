@@ -893,7 +893,7 @@ const QualityPage: React.FC = () => {
         open={configDrawerOpen}
         onClose={() => setConfigDrawerOpen(false)}
         width={800}
-        destroyOnClose
+        destroyOnHidden
       >
         {selectedRule && (
           <RuleConfigForm
@@ -910,7 +910,7 @@ const QualityPage: React.FC = () => {
         open={versionDrawerOpen}
         onClose={() => setVersionDrawerOpen(false)}
         width={1000}
-        destroyOnClose
+        destroyOnHidden
       >
         {selectedRule && (
           <RuleVersionManager

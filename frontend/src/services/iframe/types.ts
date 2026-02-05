@@ -105,6 +105,21 @@ export interface TaskInfo {
   dueDate?: string;
 }
 
+// Workspace Context Types for Label Studio Enterprise integration
+export interface WorkspaceInfo {
+  id: string;
+  name: string;
+  description?: string;
+  role: string;
+  permissions: WorkspacePermissionInfo[];
+  settings?: Record<string, unknown>;
+}
+
+export interface WorkspacePermissionInfo {
+  permission: string;
+  granted: boolean;
+}
+
 export interface AnnotationContext {
   user: UserInfo;
   project: ProjectInfo;
@@ -113,6 +128,8 @@ export interface AnnotationContext {
   timestamp: number;
   sessionId?: string;
   metadata?: Record<string, unknown>;
+  /** Label Studio Enterprise workspace context */
+  workspace?: WorkspaceInfo;
 }
 
 export interface ContextManagerConfig {
@@ -203,6 +220,22 @@ export enum AnnotationEvent {
   ERROR = 'annotation:error',
   PROGRESS = 'annotation:progress',
   CANCELLED = 'annotation:cancelled',
+}
+
+// Workspace-related message types for iframe communication
+export enum WorkspaceMessageType {
+  /** Send workspace context to iframe */
+  WORKSPACE_CONTEXT = 'workspace:context',
+  /** Request workspace context from main window */
+  WORKSPACE_CONTEXT_REQUEST = 'workspace:context:request',
+  /** Workspace context updated */
+  WORKSPACE_CONTEXT_UPDATED = 'workspace:context:updated',
+  /** Workspace permission check request */
+  WORKSPACE_PERMISSION_CHECK = 'workspace:permission:check',
+  /** Workspace permission check response */
+  WORKSPACE_PERMISSION_RESULT = 'workspace:permission:result',
+  /** Workspace member role changed */
+  WORKSPACE_ROLE_CHANGED = 'workspace:role:changed',
 }
 
 export type EventHandler = (data: unknown, event: EventRecord) => void | Promise<void>;

@@ -1,78 +1,23 @@
 """
 Task model extensions for comprehensive task management.
 
-Extends the existing TaskModel with additional fields needed for task management UI.
+This module provides backward compatibility by re-exporting enums from models.py
+and provides the TaskAdapter utility for mock data generation during testing.
+
+Note: The main TaskModel is now defined in src/database/models.py with all
+extended fields. This module is kept for backward compatibility.
 """
 
 from datetime import datetime
 from uuid import uuid4
-from sqlalchemy import String, Text, DateTime, Integer, ForeignKey, Enum as SQLEnum
-from sqlalchemy.dialects.postgresql import UUID, JSONB
-from sqlalchemy.orm import relationship, Mapped, mapped_column
-from sqlalchemy.sql import func
-import enum
 from typing import Optional, List
 
-from src.database.connection import Base
+# Re-export enums from models.py for backward compatibility
+from src.database.models import TaskPriority, AnnotationType, TaskStatus
 
 
-class TaskPriority(str, enum.Enum):
-    """Task priority enumeration."""
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
-    URGENT = "urgent"
-
-
-class AnnotationType(str, enum.Enum):
-    """Annotation type enumeration."""
-    TEXT_CLASSIFICATION = "text_classification"
-    NER = "ner"
-    SENTIMENT = "sentiment"
-    QA = "qa"
-    CUSTOM = "custom"
-
-
-class ExtendedTaskModel(Base):
-    """
-    Extended task model for comprehensive task management.
-    
-    This extends the basic TaskModel with additional fields needed for
-    task management, assignment, progress tracking, and UI display.
-    """
-    __tablename__ = "extended_tasks"
-    
-    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    name: Mapped[str] = mapped_column(String(255), nullable=False)
-    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    annotation_type: Mapped[AnnotationType] = mapped_column(SQLEnum(AnnotationType), default=AnnotationType.CUSTOM)
-    priority: Mapped[TaskPriority] = mapped_column(SQLEnum(TaskPriority), default=TaskPriority.MEDIUM)
-    status: Mapped[str] = mapped_column(String(50), default="pending")  # pending, in_progress, completed, cancelled
-    
-    # Assignment and ownership
-    assignee_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
-    created_by: Mapped[str] = mapped_column(String(100), nullable=False)
-    tenant_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
-    
-    # Progress tracking
-    progress: Mapped[int] = mapped_column(Integer, default=0)  # 0-100
-    total_items: Mapped[int] = mapped_column(Integer, default=1)
-    completed_items: Mapped[int] = mapped_column(Integer, default=0)
-    
-    # Timestamps
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
-    due_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-    
-    # Label Studio integration
-    label_studio_project_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    
-    # Additional metadata
-    tags: Mapped[Optional[List[str]]] = mapped_column(JSONB, nullable=True)
-    task_metadata: Mapped[dict] = mapped_column(JSONB, default={})
-    
-    # Relationships
-    assignee: Mapped[Optional["UserModel"]] = relationship("UserModel", foreign_keys=[assignee_id])
+# NOTE: ExtendedTaskModel is deprecated. Use TaskModel from src.database.models instead.
+# The table "extended_tasks" is no longer used - all task data is in "tasks" table.
 
 
 # For backward compatibility, we'll use the existing TaskModel but add a view/adapter
@@ -104,7 +49,13 @@ class TaskAdapter:
             "total_items": 1,
             "completed_items": 1 if task_model.status.value == "completed" else 0,
             "tenant_id": task_model.tenant_id or "default_tenant",
-            "label_studio_project_id": task_model.project_id,
+            "label_studio_project_id": task_model.label_studio_project_id or task_model.project_id,
+            # Label Studio sync tracking fields
+            "label_studio_project_created_at": task_model.label_studio_project_created_at,
+            "label_studio_sync_status": task_model.label_studio_sync_status.value if hasattr(task_model.label_studio_sync_status, 'value') else str(task_model.label_studio_sync_status) if task_model.label_studio_sync_status else "pending",
+            "label_studio_last_sync": task_model.label_studio_last_sync,
+            "label_studio_task_count": task_model.label_studio_task_count or 0,
+            "label_studio_annotation_count": task_model.label_studio_annotation_count or 0,
             "tags": []
         }
     
@@ -118,6 +69,7 @@ class TaskAdapter:
         statuses = ["pending", "in_progress", "completed", "cancelled"]
         priorities = ["low", "medium", "high", "urgent"]
         types = ["text_classification", "ner", "sentiment", "qa"]
+        label_studio_sync_statuses = ["pending", "synced", "failed"]
         
         for i in range(count):
             task_id = str(uuid4())
@@ -128,6 +80,13 @@ class TaskAdapter:
             
             total_items = random.randint(50, 1000)
             completed_items = int(total_items * progress / 100)
+            
+            # Label Studio sync tracking
+            ls_sync_status = random.choice(label_studio_sync_statuses)
+            ls_task_count = random.randint(10, 100) if ls_sync_status == "synced" else 0
+            ls_annotation_count = int(ls_task_count * progress / 100) if ls_sync_status == "synced" else 0
+            ls_project_created_at = datetime.utcnow() - timedelta(days=random.randint(1, 30)) if ls_sync_status != "pending" else None
+            ls_last_sync = datetime.utcnow() - timedelta(hours=random.randint(1, 24)) if ls_sync_status == "synced" else None
             
             mock_tasks.append({
                 "id": task_id,
@@ -147,6 +106,12 @@ class TaskAdapter:
                 "completed_items": completed_items,
                 "tenant_id": "default_tenant",
                 "label_studio_project_id": f"project_{i+1}",
+                # Label Studio sync tracking fields
+                "label_studio_project_created_at": ls_project_created_at,
+                "label_studio_sync_status": ls_sync_status,
+                "label_studio_last_sync": ls_last_sync,
+                "label_studio_task_count": ls_task_count,
+                "label_studio_annotation_count": ls_annotation_count,
                 "tags": random.sample(["urgent", "customer", "product", "support", "quality"], random.randint(0, 3))
             })
         

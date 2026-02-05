@@ -20,7 +20,8 @@ from src.label_studio.integration import (
     LabelStudioIntegrationError,
     ProjectConfig,
     ImportResult,
-    ExportResult
+    ExportResult,
+    ProjectValidationResult
 )
 from src.label_studio.config import LabelStudioConfig, LabelStudioProject
 from src.models.task import Task, TaskStatus
@@ -1094,6 +1095,253 @@ class TestLabelStudioHealthCheck:
             assert headers['Authorization'] == 'Token test_token_123'
             assert 'Content-Type' in headers
             assert headers['Content-Type'] == 'application/json'
+
+
+class TestLabelStudioIntegrationProjectValidation:
+    """Unit tests for project validation functionality.
+    
+    Tests the validate_project() method which validates that a Label Studio
+    project exists and is accessible, returning task and annotation counts.
+    
+    Validates: Requirements 1.1, 1.2
+    """
+    
+    @pytest.fixture
+    def integration(self):
+        """Label Studio integration instance."""
+        config = Mock(spec=LabelStudioConfig)
+        config.base_url = "https://labelstudio.example.com"
+        config.api_token = "test_token_123"
+        config.validate_config.return_value = True
+        return LabelStudioIntegration(config)
+    
+    @pytest.mark.asyncio
+    async def test_validate_project_success(self, integration):
+        """Test successful project validation.
+        
+        Validates: Requirements 1.1 - WHEN annotation page loads, 
+        THEN Label Studio project and tasks are successfully fetched
+        """
+        project_id = "123"
+        
+        # Mock project info with task and annotation counts
+        mock_project = Mock()
+        mock_project.id = 123
+        mock_project.title = "Test Project"
+        mock_project.task_number = 100
+        mock_project.num_tasks_with_annotations = 65
+        mock_project.is_published = True
+        mock_project.is_draft = False
+        
+        with patch.object(integration, 'get_project_info', new_callable=AsyncMock) as mock_get_info:
+            mock_get_info.return_value = mock_project
+            
+            result = await integration.validate_project(project_id)
+            
+            # Verify result
+            assert result.exists is True
+            assert result.accessible is True
+            assert result.task_count == 100
+            assert result.annotation_count == 65
+            assert result.status == "ready"
+            assert result.error_message is None
+            
+            # Verify get_project_info was called
+            mock_get_info.assert_called_once_with(project_id)
+    
+    @pytest.mark.asyncio
+    async def test_validate_project_not_found(self, integration):
+        """Test project validation when project doesn't exist.
+        
+        Validates: Requirements 1.2 - WHEN new window opens, 
+        THEN Label Studio project page loads successfully (no 404 error)
+        """
+        project_id = "999"
+        
+        with patch.object(integration, 'get_project_info', new_callable=AsyncMock) as mock_get_info:
+            mock_get_info.return_value = None
+            
+            result = await integration.validate_project(project_id)
+            
+            # Verify result indicates project not found
+            assert result.exists is False
+            assert result.accessible is False
+            assert result.task_count == 0
+            assert result.annotation_count == 0
+            assert result.status == "error"
+            assert "not found" in result.error_message.lower()
+    
+    @pytest.mark.asyncio
+    async def test_validate_project_draft_status(self, integration):
+        """Test project validation for draft project.
+        
+        Validates: Requirements 1.1 - Project status is correctly identified
+        """
+        project_id = "456"
+        
+        mock_project = Mock()
+        mock_project.id = 456
+        mock_project.title = "Draft Project"
+        mock_project.task_number = 0
+        mock_project.num_tasks_with_annotations = 0
+        mock_project.is_published = False
+        mock_project.is_draft = True
+        
+        with patch.object(integration, 'get_project_info', new_callable=AsyncMock) as mock_get_info:
+            mock_get_info.return_value = mock_project
+            
+            result = await integration.validate_project(project_id)
+            
+            # Verify draft status
+            assert result.exists is True
+            assert result.accessible is True
+            assert result.status == "creating"
+    
+    @pytest.mark.asyncio
+    async def test_validate_project_empty_tasks(self, integration):
+        """Test project validation for project with no tasks.
+        
+        Validates: Requirements 1.1 - Project with no tasks is still valid
+        """
+        project_id = "789"
+        
+        mock_project = Mock()
+        mock_project.id = 789
+        mock_project.title = "Empty Project"
+        mock_project.task_number = 0
+        mock_project.num_tasks_with_annotations = 0
+        mock_project.is_published = True
+        mock_project.is_draft = False
+        
+        with patch.object(integration, 'get_project_info', new_callable=AsyncMock) as mock_get_info:
+            mock_get_info.return_value = mock_project
+            
+            result = await integration.validate_project(project_id)
+            
+            # Verify empty project is still valid
+            assert result.exists is True
+            assert result.accessible is True
+            assert result.task_count == 0
+            assert result.annotation_count == 0
+            assert result.status == "ready"
+    
+    @pytest.mark.asyncio
+    async def test_validate_project_timeout_error(self, integration):
+        """Test project validation with timeout error.
+        
+        Validates: Requirements 1.1 - Error handling for network issues
+        """
+        project_id = "123"
+        
+        with patch.object(integration, 'get_project_info', new_callable=AsyncMock) as mock_get_info:
+            mock_get_info.side_effect = httpx.TimeoutException("Connection timed out")
+            
+            result = await integration.validate_project(project_id)
+            
+            # Verify timeout is handled
+            assert result.exists is False
+            assert result.accessible is False
+            assert result.status == "error"
+            assert "timeout" in result.error_message.lower()
+    
+    @pytest.mark.asyncio
+    async def test_validate_project_network_error(self, integration):
+        """Test project validation with network error.
+        
+        Validates: Requirements 1.1 - Error handling for network issues
+        """
+        project_id = "123"
+        
+        with patch.object(integration, 'get_project_info', new_callable=AsyncMock) as mock_get_info:
+            mock_get_info.side_effect = httpx.RequestError("Network unreachable")
+            
+            result = await integration.validate_project(project_id)
+            
+            # Verify network error is handled
+            assert result.exists is False
+            assert result.accessible is False
+            assert result.status == "error"
+            assert "network error" in result.error_message.lower()
+    
+    @pytest.mark.asyncio
+    async def test_validate_project_unexpected_error(self, integration):
+        """Test project validation with unexpected error.
+        
+        Validates: Requirements 1.1 - Error handling for unexpected issues
+        """
+        project_id = "123"
+        
+        with patch.object(integration, 'get_project_info', new_callable=AsyncMock) as mock_get_info:
+            mock_get_info.side_effect = Exception("Unexpected database error")
+            
+            result = await integration.validate_project(project_id)
+            
+            # Verify unexpected error is handled
+            assert result.exists is False
+            assert result.accessible is False
+            assert result.status == "error"
+            assert "unexpected error" in result.error_message.lower()
+    
+    @pytest.mark.asyncio
+    async def test_validate_project_to_dict(self, integration):
+        """Test ProjectValidationResult to_dict method.
+        
+        Validates: Requirements 1.1 - Result can be serialized for API response
+        """
+        project_id = "123"
+        
+        mock_project = Mock()
+        mock_project.id = 123
+        mock_project.title = "Test Project"
+        mock_project.task_number = 50
+        mock_project.num_tasks_with_annotations = 25
+        mock_project.is_published = True
+        mock_project.is_draft = False
+        
+        with patch.object(integration, 'get_project_info', new_callable=AsyncMock) as mock_get_info:
+            mock_get_info.return_value = mock_project
+            
+            result = await integration.validate_project(project_id)
+            result_dict = result.to_dict()
+            
+            # Verify dictionary structure
+            assert isinstance(result_dict, dict)
+            assert result_dict["exists"] is True
+            assert result_dict["accessible"] is True
+            assert result_dict["task_count"] == 50
+            assert result_dict["annotation_count"] == 25
+            assert result_dict["status"] == "ready"
+            assert result_dict["error_message"] is None
+    
+    @pytest.mark.asyncio
+    async def test_validate_project_missing_attributes(self, integration):
+        """Test project validation when project info has missing attributes.
+        
+        Validates: Requirements 1.1 - Graceful handling of incomplete data
+        """
+        project_id = "123"
+        
+        # Mock project with missing attributes
+        mock_project = Mock()
+        mock_project.id = 123
+        mock_project.title = "Minimal Project"
+        # Simulate missing attributes by having getattr return None
+        del mock_project.task_number
+        del mock_project.num_tasks_with_annotations
+        del mock_project.is_published
+        del mock_project.is_draft
+        
+        with patch.object(integration, 'get_project_info', new_callable=AsyncMock) as mock_get_info:
+            mock_get_info.return_value = mock_project
+            
+            result = await integration.validate_project(project_id)
+            
+            # Verify defaults are used for missing attributes
+            assert result.exists is True
+            assert result.accessible is True
+            assert result.task_count == 0  # Default when attribute missing
+            assert result.annotation_count == 0  # Default when attribute missing
+            assert result.status == "ready"
 
 
 if __name__ == "__main__":

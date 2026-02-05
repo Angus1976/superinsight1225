@@ -1,0 +1,2050 @@
+{
+  "title": "管理后台",
+  "systemManagement": "系统管理",
+  "tenantManagement": "租户管理",
+  "systemMonitoring": "系统监控",
+  "securityAudit": "安全与审计",
+  "nav": {
+    "overview": "概览",
+    "console": "控制台",
+    "tenants": "租户",
+    "workspaces": "工作空间",
+    "members": "成员",
+    "permissions": "权限",
+    "quotas": "配额",
+    "billing": "计费",
+    "system": "系统",
+    "llm": "LLM",
+    "configManagement": "配置管理",
+    "configCenter": "配置中心",
+    "llmConfig": "LLM 配置",
+    "databaseConfig": "数据库配置",
+    "syncStrategy": "同步策略",
+    "sqlBuilder": "SQL 构建器",
+    "configHistory": "配置历史",
+    "thirdPartyTools": "第三方工具"
+  },
+  "tenants": {
+    "title": "租户管理",
+    "createTenant": "创建租户",
+    "editTenant": "编辑租户",
+    "deleteTenant": "删除租户",
+    "tenantSettings": "租户设置",
+    "confirmDelete": "确定删除此租户？",
+    "deleteWarning": "此操作无法撤销。",
+    "stats": {
+      "totalTenants": "租户总数",
+      "activeTenants": "活跃租户",
+      "totalUsers": "用户总数",
+      "storageUsed": "已用存储"
+    },
+    "columns": {
+      "tenantInfo": "租户名称",
+      "status": "状态",
+      "plan": "套餐",
+      "users": "用户数",
+      "storageUsage": "存储使用",
+      "resources": "资源配额",
+      "created": "创建时间",
+      "actions": "操作"
+    },
+    "status": {
+      "active": "活跃",
+      "inactive": "未激活",
+      "suspended": "已暂停"
+    },
+    "plan": {
+      "free": "免费版",
+      "pro": "专业版",
+      "enterprise": "企业版"
+    },
+    "form": {
+      "name": "租户名称",
+      "namePlaceholder": "请输入租户名称",
+      "nameRequired": "请输入租户名称",
+      "description": "描述",
+      "descriptionPlaceholder": "请输入租户描述",
+      "plan": "套餐",
+      "planRequired": "请选择套餐",
+      "storageLimit": "存储限制 (GB)",
+      "cpuQuota": "CPU 配额 (核心)",
+      "memoryQuota": "内存配额 (GB)",
+      "apiRateLimit": "API 速率限制 (请求/分钟)",
+      "adminAccount": "管理员账户",
+      "adminUsername": "管理员用户名",
+      "adminUsernamePlaceholder": "请输入管理员用户名",
+      "adminUsernameRequired": "请输入管理员用户名",
+      "adminEmail": "管理员邮箱",
+      "adminEmailPlaceholder": "请输入管理员邮箱",
+      "adminEmailRequired": "请输入管理员邮箱",
+      "adminEmailInvalid": "请输入有效的邮箱地址"
+    },
+    "settings": {
+      "theme": "主题",
+      "themeLight": "浅色",
+      "themeDark": "深色",
+      "themeAuto": "自动",
+      "language": "语言",
+      "languageEn": "English",
+      "languageZh": "中文",
+      "timezone": "时区",
+      "auditLogRetention": "审计日志保留 (天)",
+      "notifications": "通知",
+      "backup": "备份",
+      "backupFrequency": "备份频率",
+      "backupDaily": "每日",
+      "backupWeekly": "每周",
+      "backupMonthly": "每月"
+    },
+    "tooltips": {
+      "activeUsers": "活跃用户",
+      "cpuQuota": "CPU 配额",
+      "memoryQuota": "内存配额",
+      "editTenant": "编辑租户",
+      "settings": "设置",
+      "deleteTenant": "删除租户"
+    },
+    "pagination": {
+      "total": "共 {{total}} 个租户",
+      "range": "{{start}}-{{end}} / {{total}}"
+    },
+    "createSuccess": "租户创建成功",
+    "createFailed": "租户创建失败",
+    "updateSuccess": "租户更新成功",
+    "updateFailed": "租户更新失败",
+    "deleteSuccess": "租户删除成功",
+    "deleteFailed": "租户删除失败",
+    "statusUpdateSuccess": "租户状态更新成功",
+    "statusUpdateFailed": "租户状态更新失败",
+    "confirmSuspend": "确认暂停",
+    "confirmSuspendMessage": "确定要暂停租户 \"{{name}}\" 吗？",
+    "confirmDeleteMessage": "确定要删除租户 \"{{name}}\" 吗？此操作不可恢复！",
+    "statusFilter": "状态筛选",
+    "tenantDetail": "租户详情",
+    "columns": {
+      "tenantInfo": "租户信息",
+      "status": "状态",
+      "plan": "套餐",
+      "users": "用户数",
+      "storageUsage": "存储使用",
+      "resources": "资源配额",
+      "created": "创建时间",
+      "actions": "操作",
+      "adminEmail": "管理员邮箱",
+      "createdAt": "创建时间",
+      "action": "操作"
+    },
+    "actions": {
+      "detail": "详情",
+      "edit": "编辑",
+      "suspend": "暂停",
+      "activate": "激活",
+      "delete": "删除"
+    },
+    "plans": {
+      "free": "免费版",
+      "basic": "基础版",
+      "professional": "专业版",
+      "enterprise": "企业版"
+    },
+    "detail": {
+      "basicInfo": "基本信息",
+      "quotaUsage": "配额使用",
+      "config": "配置",
+      "tenantId": "租户ID",
+      "name": "名称",
+      "status": "状态",
+      "plan": "套餐",
+      "adminEmail": "管理员邮箱",
+      "createdAt": "创建时间",
+      "description": "描述"
+    },
+    "quota": {
+      "storage": "存储",
+      "projectCount": "项目数",
+      "userCount": "用户数",
+      "apiCalls": "API调用"
+    },
+    "config": {
+      "features": "功能配置",
+      "security": "安全配置",
+      "mfa": "MFA",
+      "mfaRequired": "必需",
+      "mfaOptional": "可选",
+      "sessionTimeout": "会话超时",
+      "minutes": "分钟",
+      "enabled": "启用",
+      "disabled": "禁用"
+    },
+    "stats": {
+      "totalTenants": "总租户数",
+      "activeTenants": "活跃租户",
+      "suspendedTenants": "暂停租户",
+      "activeRate": "活跃率"
+    }
+  },
+  "systemMonitoring": {
+    "title": "系统监控",
+    "timeRange": "时间范围",
+    "refresh": "刷新",
+    "refreshInterval": "刷新间隔",
+    "overview": {
+      "systemStatus": "系统状态",
+      "uptime": "运行时间",
+      "criticalAlerts": "严重告警",
+      "warnings": "警告",
+      "hours": "小时"
+    },
+    "charts": {
+      "systemPerformance": "系统性能",
+      "serviceStatus": "服务状态",
+      "cpuUsage": "CPU 使用率",
+      "memoryUsage": "内存使用率",
+      "diskUsage": "磁盘使用率"
+    },
+    "services": {
+      "title": "服务健康状态",
+      "name": "服务",
+      "status": "状态",
+      "uptime": "运行时间",
+      "responseTime": "响应时间",
+      "errorRate": "错误率",
+      "actions": "操作",
+      "healthy": "健康",
+      "degraded": "降级",
+      "unhealthy": "不健康",
+      "restartService": "重启服务",
+      "serviceSettings": "服务设置"
+    },
+    "alerts": {
+      "title": "最近告警",
+      "type": "类型",
+      "message": "消息",
+      "source": "来源",
+      "time": "时间",
+      "status": "状态",
+      "actions": "操作",
+      "types": {
+        "info": "信息",
+        "warning": "警告",
+        "error": "错误",
+        "critical": "严重"
+      },
+      "statuses": {
+        "new": "新建",
+        "acknowledged": "已确认",
+        "resolved": "已解决"
+      },
+      "acknowledge": "确认",
+      "resolve": "解决"
+    }
+  },
+  "securityAudit": {
+    "title": "安全审计",
+    "auditLogs": "审计日志",
+    "systemLogs": "系统日志",
+    "export": "导出",
+    "overview": {
+      "totalAuditLogs": "审计日志总数",
+      "highRiskActions": "高风险操作",
+      "failedLogins": "登录失败",
+      "activeUsers": "活跃用户"
+    },
+    "charts": {
+      "actionDistribution": "操作分布",
+      "hourlyActivity": "每小时活动",
+      "riskAssessment": "风险评估"
+    },
+    "filters": {
+      "searchByUserId": "按用户 ID 搜索",
+      "action": "操作",
+      "service": "服务",
+      "logLevel": "日志级别"
+    },
+    "columns": {
+      "time": "时间",
+      "user": "用户",
+      "action": "操作",
+      "resource": "资源",
+      "ipAddress": "IP 地址",
+      "status": "状态",
+      "actions": "操作",
+      "level": "级别",
+      "service": "服务",
+      "message": "消息"
+    },
+    "actions": {
+      "login": "登录",
+      "logout": "登出",
+      "create": "创建",
+      "update": "更新",
+      "delete": "删除",
+      "view": "查看",
+      "export": "导出"
+    },
+    "status": {
+      "success": "成功",
+      "failed": "失败"
+    },
+    "logLevels": {
+      "debug": "调试",
+      "info": "信息",
+      "warn": "警告",
+      "error": "错误",
+      "fatal": "致命"
+    },
+    "services": {
+      "api": "API 服务器",
+      "database": "数据库",
+      "auth": "认证",
+      "sync": "数据同步"
+    },
+    "tabs": {
+      "audit": "审计日志",
+      "system": "系统日志"
+    },
+    "details": {
+      "title": "审计日志详情",
+      "timestamp": "时间戳",
+      "userId": "用户 ID",
+      "action": "操作",
+      "resourceType": "资源类型",
+      "resourceId": "资源 ID",
+      "ipAddress": "IP 地址",
+      "userAgent": "用户代理",
+      "details": "详细信息"
+    },
+    "tooltips": {
+      "viewDetails": "查看详情"
+    },
+    "pagination": {
+      "total": "共 {{total}} 条日志",
+      "range": "{{start}}-{{end}} / {{total}}"
+    }
+  },
+  "configSync": {
+    "title": "同步策略管理",
+    "addStrategy": "添加策略",
+    "editStrategy": "编辑同步策略",
+    "addStrategyTitle": "添加同步策略",
+    "createSuccess": "同步策略创建成功",
+    "createFailed": "创建失败: {{error}}",
+    "updateSuccess": "同步策略更新成功",
+    "updateFailed": "更新失败: {{error}}",
+    "deleteSuccess": "同步策略删除成功",
+    "deleteFailed": "删除失败: {{error}}",
+    "triggerSuccess": "同步任务已启动: {{jobId}}",
+    "triggerFailed": "触发同步失败: {{error}}",
+    "confirmDelete": "确定删除此同步策略？",
+    "syncDescription": "同步说明",
+    "syncDescriptionText": "配置数据同步策略，支持全量同步、增量同步和实时同步三种模式。可设置 Cron 表达式进行定时同步。",
+    "strategyPrefix": "策略",
+    "manualTrigger": "手动触发",
+    "neverSynced": "从未同步",
+    "enabled": "已启用",
+    "disabled": "已禁用",
+    "noHistory": "暂无同步记录",
+    "columns": {
+      "name": "名称",
+      "database": "数据库",
+      "syncMode": "同步模式",
+      "schedule": "调度",
+      "lastSync": "最后同步",
+      "status": "状态",
+      "actions": "操作"
+    },
+    "actions": {
+      "syncNow": "立即同步",
+      "syncHistory": "同步历史",
+      "edit": "编辑",
+      "delete": "删除"
+    },
+    "form": {
+      "strategyName": "策略名称",
+      "strategyNamePlaceholder": "例如：每日全量同步",
+      "dbConnection": "数据库连接",
+      "dbConnectionRequired": "请选择数据库连接",
+      "dbConnectionPlaceholder": "选择数据库连接",
+      "syncMode": "同步模式",
+      "syncModeRequired": "请选择同步模式",
+      "syncModePlaceholder": "选择同步模式",
+      "incrementalField": "增量字段",
+      "incrementalFieldRequired": "增量同步需要指定增量字段",
+      "incrementalFieldPlaceholder": "例如：updated_at, id",
+      "schedule": "调度表达式",
+      "scheduleExtra": "Cron 表达式，留空则手动触发。例如：0 2 * * * (每天凌晨2点)",
+      "schedulePlaceholder": "例如：0 2 * * *",
+      "batchSize": "批次大小",
+      "enableStrategy": "启用策略"
+    },
+    "history": {
+      "title": "同步历史",
+      "status": "状态",
+      "startTime": "开始时间",
+      "endTime": "完成时间",
+      "recordsSynced": "同步记录数",
+      "errorMessage": "错误信息"
+    }
+  },
+  "configDB": {
+    "title": "数据库配置管理",
+    "addDatabase": "添加数据库",
+    "addConfig": "添加数据库配置",
+    "editConfig": "编辑数据库配置",
+    "configDetail": "数据库配置详情",
+    "createSuccess": "数据库配置创建成功",
+    "createFailed": "创建失败: {{error}}",
+    "updateSuccess": "数据库配置更新成功",
+    "updateFailed": "更新失败: {{error}}",
+    "deleteSuccess": "数据库配置删除成功",
+    "deleteFailed": "删除失败: {{error}}",
+    "testing": "测试中...",
+    "testFailed": "测试失败",
+    "testConnection": "测试连接",
+    "connectionSuccess": "连接成功 ({{latency}}ms)",
+    "connectionFailed": "连接失败: {{error}}",
+    "connectionNormal": "连接正常 ({{latency}}ms)",
+    "connectionFailedShort": "连接失败",
+    "enabled": "已启用",
+    "disabled": "已禁用",
+    "readonly": "只读",
+    "readwrite": "读写",
+    "sslEnabled": "已启用",
+    "sslDisabled": "未启用",
+    "securityTip": "安全提示",
+    "securityTipDescription": "建议使用只读权限的数据库账户进行数据提取，密码将加密存储并脱敏显示。",
+    "confirmDelete": "确定删除此配置？",
+    "confirmDeleteDescription": "删除后相关的同步策略也将失效",
+    "columns": {
+      "name": "名称",
+      "type": "类型",
+      "host": "主机",
+      "database": "数据库",
+      "permission": "权限",
+      "status": "状态",
+      "actions": "操作"
+    },
+    "form": {
+      "connectionName": "连接名称",
+      "connectionNameRequired": "请输入连接名称",
+      "connectionNamePlaceholder": "例如：生产数据库-只读",
+      "description": "描述",
+      "descriptionPlaceholder": "连接描述（可选）",
+      "dbType": "数据库类型",
+      "dbTypeRequired": "请选择数据库类型",
+      "dbTypePlaceholder": "选择数据库类型",
+      "host": "主机地址",
+      "hostRequired": "请输入主机地址",
+      "hostPlaceholder": "例如：localhost 或 192.168.1.100",
+      "port": "端口",
+      "portRequired": "请输入端口",
+      "databaseName": "数据库名",
+      "databaseNameRequired": "请输入数据库名",
+      "databaseNamePlaceholder": "数据库名称",
+      "username": "用户名",
+      "usernameRequired": "请输入用户名",
+      "usernamePlaceholder": "数据库用户名",
+      "password": "密码",
+      "passwordPlaceholder": "数据库密码（将加密存储）",
+      "passwordKeepEmpty": "留空则保持原有密码不变",
+      "readonlyConnection": "只读连接",
+      "enableSSL": "启用 SSL"
+    },
+    "detail": {
+      "name": "名称",
+      "type": "类型",
+      "status": "状态",
+      "host": "主机",
+      "port": "端口",
+      "database": "数据库",
+      "username": "用户名",
+      "password": "密码",
+      "permission": "权限",
+      "createdAt": "创建时间",
+      "updatedAt": "更新时间"
+    }
+  },
+  "configDashboard": {
+    "title": "管理员配置中心",
+    "loadingData": "加载仪表盘数据...",
+    "loadFailed": "加载失败",
+    "loadFailedDescription": "无法加载仪表盘数据，请稍后重试。",
+    "retry": "重试",
+    "refresh": "刷新",
+    "systemHealth": "系统健康状态",
+    "keyMetrics": "关键指标",
+    "totalAnnotations": "总标注数",
+    "activeUsers": "活跃用户",
+    "pendingTasks": "待处理任务",
+    "todaySync": "今日同步",
+    "configOverview": "配置概览",
+    "llmConfig": "LLM 配置",
+    "dbConnections": "数据库连接",
+    "syncStrategies": "同步策略",
+    "thirdPartyTools": "第三方工具",
+    "quickActions": "快捷操作",
+    "recentAlerts": "最近告警",
+    "unit": "个",
+    "actions": {
+      "configureLLM": "配置 LLM",
+      "addDatabase": "添加数据库",
+      "syncStrategy": "同步策略",
+      "sqlBuilder": "SQL 构建器",
+      "configHistory": "配置历史",
+      "thirdPartyTools": "第三方工具"
+    }
+  },
+  "console": {
+    "title": "管理控制台",
+    "subtitle": "系统概览和监控",
+    "systemConfig": "系统配置",
+    "lastUpdated": "最后更新",
+    "systemStatus": "系统状态",
+    "healthy": "健康",
+    "unhealthy": "异常",
+    "database": "数据库",
+    "cache": "缓存",
+    "storage": "存储",
+    "normal": "正常",
+    "abnormal": "异常",
+    "tenantStats": "租户统计",
+    "totalTenants": "总租户数",
+    "activeTenants": "活跃租户",
+    "suspendedTenants": "暂停租户",
+    "disabledTenants": "禁用租户",
+    "activeRate": "活跃率",
+    "active": "活跃",
+    "workspaceStats": "工作空间统计",
+    "totalWorkspaces": "总工作空间",
+    "activeWorkspaces": "活跃工作空间",
+    "archivedWorkspaces": "已归档",
+    "userStats": "用户统计",
+    "totalUsers": "总用户数",
+    "activeToday": "今日活跃",
+    "activeThisWeek": "本周活跃",
+    "serviceStatus": "服务状态",
+    "columns": {
+      "serviceName": "服务名称",
+      "status": "状态",
+      "version": "版本",
+      "uptime": "运行时间",
+      "lastCheck": "最后检查"
+    },
+    "status": {
+      "running": "运行中",
+      "degraded": "降级",
+      "stopped": "停止"
+    }
+  },
+  "system": {
+    "title": "系统配置",
+    "statusOverview": "系统状态",
+    "configTitle": "系统配置",
+    "saveConfig": "保存配置",
+    "configSaveSuccess": "系统配置保存成功",
+    "configSaveFailed": "系统配置保存失败",
+    "connectionTestSuccess": "{{type}}连接测试成功",
+    "connectionTestFailed": "{{type}}连接测试失败",
+    "testConnection": "测试连接",
+    "testDatabaseConnection": "测试数据库连接",
+    "testCacheConnection": "测试缓存连接",
+    "status": {
+      "healthy": "正常",
+      "warning": "警告",
+      "error": "错误",
+      "unknown": "未知"
+    },
+    "database": {
+      "title": "数据库",
+      "connections": "连接数",
+      "responseTime": "响应时间",
+      "host": "主机地址",
+      "port": "端口",
+      "name": "数据库名",
+      "maxConnections": "最大连接数",
+      "connectionTimeout": "连接超时（秒）",
+      "queryTimeout": "查询超时（秒）",
+      "configWarning": "修改数据库配置需要重启系统才能生效，请谨慎操作。"
+    },
+    "cache": {
+      "title": "缓存",
+      "memoryUsage": "内存使用",
+      "hitRate": "命中率",
+      "enabled": "启用缓存",
+      "type": "缓存类型",
+      "host": "缓存主机",
+      "port": "缓存端口",
+      "ttl": "默认TTL（秒）",
+      "types": {
+        "redis": "Redis",
+        "memory": "内存缓存"
+      }
+    },
+    "storage": {
+      "title": "存储",
+      "type": "存储类型",
+      "path": "存储路径",
+      "maxFileSize": "最大文件大小",
+      "allowedTypes": "允许的文件类型"
+    },
+    "general": {
+      "title": "基本设置",
+      "siteName": "站点名称",
+      "siteDescription": "站点描述",
+      "adminEmail": "管理员邮箱",
+      "timezone": "时区",
+      "language": "默认语言",
+      "maintenanceMode": "维护模式",
+      "timezones": {
+        "shanghai": "Asia/Shanghai (UTC+8)",
+        "utc": "UTC (UTC+0)",
+        "newYork": "America/New_York (UTC-5)"
+      },
+      "languages": {
+        "zhCN": "简体中文",
+        "enUS": "English"
+      }
+    },
+    "security": {
+      "title": "安全",
+      "sessionTimeout": "会话超时（分钟）",
+      "passwordMinLength": "密码最小长度",
+      "passwordRequireSpecialChars": "密码包含特殊字符",
+      "maxLoginAttempts": "最大登录尝试次数",
+      "lockoutDuration": "锁定时长（分钟）"
+    },
+    "systemLoad": "系统负载",
+    "memory": "内存",
+    "disk": "磁盘"
+  },
+  "tenants": {
+    "title": "租户管理",
+    "createTenant": "新建租户",
+    "editTenant": "编辑租户",
+    "tenantDetail": "租户详情",
+    "createSuccess": "租户创建成功",
+    "createFailed": "租户创建失败",
+    "updateSuccess": "租户更新成功",
+    "updateFailed": "租户更新失败",
+    "deleteSuccess": "租户删除成功",
+    "deleteFailed": "租户删除失败",
+    "statusUpdateSuccess": "租户状态更新成功",
+    "statusUpdateFailed": "租户状态更新失败",
+    "confirmSuspend": "确认暂停",
+    "confirmSuspendMessage": "确定要暂停租户 \"{{name}}\" 吗？",
+    "confirmDelete": "确认删除",
+    "confirmDeleteMessage": "确定要删除租户 \"{{name}}\" 吗？此操作不可恢复！",
+    "statusFilter": "状态筛选",
+    "columns": {
+      "tenantInfo": "租户信息",
+      "status": "状态",
+      "plan": "套餐",
+      "adminEmail": "管理员邮箱",
+      "createdAt": "创建时间",
+      "action": "操作"
+    },
+    "status": {
+      "active": "活跃",
+      "suspended": "暂停",
+      "disabled": "禁用"
+    },
+    "actions": {
+      "detail": "详情",
+      "edit": "编辑",
+      "suspend": "暂停",
+      "activate": "激活",
+      "delete": "删除"
+    },
+    "plans": {
+      "free": "免费版",
+      "basic": "基础版",
+      "professional": "专业版",
+      "enterprise": "企业版"
+    },
+    "form": {
+      "name": "租户名称",
+      "namePlaceholder": "请输入租户名称",
+      "nameRequired": "请输入租户名称",
+      "description": "描述",
+      "descriptionPlaceholder": "请输入租户描述",
+      "adminEmail": "管理员邮箱",
+      "adminEmailPlaceholder": "admin@example.com",
+      "adminEmailRequired": "请输入管理员邮箱",
+      "adminEmailInvalid": "请输入有效的邮箱地址",
+      "plan": "套餐类型"
+    },
+    "detail": {
+      "basicInfo": "基本信息",
+      "quotaUsage": "配额使用",
+      "config": "配置",
+      "tenantId": "租户ID",
+      "name": "名称",
+      "status": "状态",
+      "plan": "套餐",
+      "adminEmail": "管理员邮箱",
+      "createdAt": "创建时间",
+      "description": "描述"
+    },
+    "quota": {
+      "storage": "存储",
+      "projectCount": "项目数",
+      "userCount": "用户数",
+      "apiCalls": "API调用"
+    },
+    "config": {
+      "features": "功能配置",
+      "security": "安全配置",
+      "mfa": "MFA",
+      "mfaRequired": "必需",
+      "mfaOptional": "可选",
+      "sessionTimeout": "会话超时",
+      "minutes": "分钟",
+      "enabled": "启用",
+      "disabled": "禁用"
+    },
+    "stats": {
+      "totalTenants": "总租户数",
+      "activeTenants": "活跃租户",
+      "suspendedTenants": "暂停租户",
+      "activeRate": "活跃率"
+    },
+    "pagination": {
+      "total": "第 {{start}}-{{end}} 条，共 {{total}} 条"
+    }
+  },
+  "users": {
+    "title": "用户管理",
+    "createUser": "新建用户",
+    "editUser": "编辑用户",
+    "createSuccess": "用户创建成功",
+    "createFailed": "用户创建失败",
+    "updateSuccess": "用户更新成功",
+    "updateFailed": "用户更新失败",
+    "deleteSuccess": "用户删除成功",
+    "deleteFailed": "用户删除失败",
+    "statusUpdateSuccess": "用户状态更新成功",
+    "statusUpdateFailed": "用户状态更新失败",
+    "passwordResetSent": "密码重置邮件已发送",
+    "passwordResetFailed": "密码重置失败",
+    "confirmResetPassword": "确认重置密码",
+    "confirmResetPasswordMessage": "确定要为用户 \"{{name}}\" 重置密码吗？重置链接将发送到用户邮箱。",
+    "confirmLock": "确认锁定用户",
+    "confirmLockMessage": "确定要锁定用户 \"{{name}}\" 吗？",
+    "confirmDelete": "确认删除",
+    "confirmDeleteMessage": "确定要删除用户 \"{{name}}\" 吗？此操作不可恢复！",
+    "filters": {
+      "selectTenant": "选择租户",
+      "allTenants": "全部租户",
+      "selectRole": "选择角色",
+      "allRoles": "全部角色",
+      "selectStatus": "选择状态",
+      "allStatus": "全部状态"
+    },
+    "columns": {
+      "userInfo": "用户信息",
+      "tenant": "租户",
+      "roles": "角色",
+      "status": "状态",
+      "loginStats": "登录统计",
+      "createdAt": "创建时间",
+      "action": "操作"
+    },
+    "status": {
+      "active": "活跃",
+      "inactive": "非活跃",
+      "locked": "已锁定",
+      "pending": "待激活"
+    },
+    "actions": {
+      "edit": "编辑用户",
+      "resetPassword": "重置密码",
+      "lock": "锁定用户",
+      "unlock": "解锁用户",
+      "delete": "删除用户"
+    },
+    "info": {
+      "verified": "已验证",
+      "loginCount": "登录次数",
+      "lastLogin": "最后登录",
+      "neverLoggedIn": "从未登录"
+    },
+    "form": {
+      "username": "用户名",
+      "usernamePlaceholder": "请输入用户名",
+      "usernameRequired": "请输入用户名",
+      "email": "邮箱",
+      "emailPlaceholder": "请输入邮箱",
+      "emailRequired": "请输入邮箱",
+      "emailInvalid": "请输入有效的邮箱地址",
+      "fullName": "姓名",
+      "fullNamePlaceholder": "请输入姓名",
+      "fullNameRequired": "请输入姓名",
+      "tenant": "所属租户",
+      "tenantPlaceholder": "请选择租户",
+      "tenantRequired": "请选择租户",
+      "roles": "角色",
+      "rolesPlaceholder": "请选择角色",
+      "rolesRequired": "请选择角色",
+      "password": "初始密码",
+      "passwordPlaceholder": "请输入初始密码",
+      "passwordRequired": "请输入初始密码",
+      "status": "状态",
+      "emailVerified": "邮箱验证",
+      "emailVerifiedYes": "已验证",
+      "emailVerifiedNo": "未验证"
+    },
+    "pagination": {
+      "total": "第 {{start}}-{{end}} 条，共 {{total}} 条"
+    }
+  },
+  "textToSql": {
+    "title": "Text-to-SQL 配置",
+    "subtitle": "配置和管理 Text-to-SQL 方法、测试 SQL 生成、第三方插件管理",
+    "loadConfigFailed": "加载配置失败",
+    "saveConfigSuccess": "配置保存成功",
+    "saveConfigFailed": "保存配置失败",
+    "switchMethodFailed": "切换方法失败",
+    "testQueryRequired": "请输入测试查询",
+    "sqlGenerationSuccess": "SQL 生成成功",
+    "sqlGenerationFailed": "SQL 生成失败",
+    "testGenerationFailed": "测试生成失败",
+    "deletePlugin": "删除插件",
+    "confirmDeletePlugin": "确定要删除插件 \"{{name}}\" 吗？",
+    "deletePluginSuccess": "插件删除成功",
+    "deletePluginFailed": "删除插件失败",
+    "operationFailed": "操作失败",
+    "pluginUpdateSuccess": "插件更新成功",
+    "pluginRegisterSuccess": "插件注册成功",
+    "savePluginFailed": "保存插件失败",
+    "healthCheckFailed": "健康检查失败",
+    "methodsConfig": "方法配置",
+    "refresh": "刷新",
+    "defaultMethod": "默认方法",
+    "selectDefaultMethod": "请选择默认方法",
+    "selectMethodPlaceholder": "选择默认方法",
+    "autoSelectEnabled": "自动方法选择",
+    "on": "开启",
+    "off": "关闭",
+    "fallbackEnabled": "失败回退",
+    "available": "可用",
+    "unavailable": "不可用",
+    "sqlGenerationTest": "SQL 生成测试",
+    "naturalLanguageQuery": "自然语言查询",
+    "queryPlaceholder": "输入自然语言查询，例如：查询所有用户的订单数量",
+    "testMethod": "测试方法",
+    "useDefaultMethod": "使用默认方法",
+    "generatedSql": "生成的 SQL",
+    "noResult": "(无结果)",
+    "methodUsed": "使用方法",
+    "confidence": "置信度",
+    "executionTime": "执行时间",
+    "pluginsTable": {
+      "name": "插件名称",
+      "connectionType": "连接类型",
+      "supportedDbTypes": "支持数据库",
+      "healthStatus": "健康状态",
+      "healthy": "健康",
+      "unhealthy": "异常",
+      "enabledStatus": "启用状态",
+      "actions": "操作",
+      "healthCheck": "健康检查",
+      "edit": "编辑",
+      "delete": "删除"
+    },
+    "thirdPartyPlugins": "第三方插件管理",
+    "noPlugins": "暂无插件",
+    "statistics": "统计信息",
+    "totalCalls": "总调用次数",
+    "currentMethod": "当前方法",
+    "averageSwitchTime": "平均切换时间",
+    "maxSwitchTime": "最大切换时间",
+    "methodUsage": "方法使用统计",
+    "times": "次",
+    "addPlugin": "添加插件",
+    "editPlugin": "编辑插件",
+    "pluginName": "插件名称",
+    "pluginNameRequired": "请输入插件名称",
+    "pluginNamePlaceholder": "例如：vanna-ai",
+    "connectionType": "连接类型",
+    "connectionTypeRequired": "请选择连接类型",
+    "connectionTypePlaceholder": "选择连接类型",
+    "restApi": "REST API",
+    "grpc": "gRPC",
+    "localSdk": "本地 SDK",
+    "database": "数据库",
+    "apiEndpoint": "API 端点",
+    "apiEndpointRequired": "请输入 API 端点",
+    "apiEndpointPlaceholder": "例如：http://localhost:8080/api/v1",
+    "apiKey": "API Key",
+    "apiKeyPlaceholder": "可选，用于认证",
+    "timeout": "超时时间 (秒)",
+    "timeoutRequired": "请输入超时时间",
+    "enabled": "启用状态",
+    "enabledText": "启用",
+    "disabledText": "禁用",
+    "save": "保存",
+    "cancel": "取消",
+    "switchMethodSuccess": "已切换到 {{method}} 方法 ({{time}}ms)",
+    "pluginHealthCheckSuccess": "插件 \"{{name}}\" 健康状态正常",
+    "pluginHealthCheckFailed": "插件 \"{{name}}\" 健康检查失败",
+    "availableMethods": "可用方法",
+    "testGenerate": "测试生成",
+    "generationResult": "生成结果",
+    "pluginName": "插件名称",
+    "connectionType": "连接类型",
+    "supportedDatabases": "支持数据库",
+    "healthStatus": "健康状态",
+    "enabledStatus": "启用状态",
+    "actions": "操作",
+    "healthCheck": "健康检查",
+    "edit": "编辑",
+    "delete": "删除",
+    "addPlugin": "添加插件",
+    "loadingConfig": "加载配置中...",
+    "methodsTab": "方法配置",
+    "testTab": "SQL 测试",
+    "pluginsTab": "第三方插件",
+    "saveConfig": "保存配置"
+  },
+  "console": {
+    "title": "管理控制台",
+    "subtitle": "系统概览和监控",
+    "systemConfig": "系统配置",
+    "systemStatus": "系统状态",
+    "healthy": "健康",
+    "unhealthy": "异常",
+    "database": "数据库",
+    "cache": "缓存",
+    "storage": "存储",
+    "normal": "正常",
+    "abnormal": "异常",
+    "tenantStats": "租户统计",
+    "totalTenants": "总租户数",
+    "activeTenants": "活跃租户",
+    "suspendedTenants": "暂停租户",
+    "disabledTenants": "禁用租户",
+    "active": "活跃",
+    "workspaceStats": "工作空间统计",
+    "totalWorkspaces": "总工作空间数",
+    "activeWorkspaces": "活跃工作空间",
+    "archivedWorkspaces": "已归档工作空间",
+    "userStats": "用户统计",
+    "totalUsers": "总用户数",
+    "activeToday": "今日活跃",
+    "activeThisWeek": "本周活跃",
+    "serviceStatus": "服务状态",
+    "columns": {
+      "serviceName": "服务名称",
+      "status": "状态",
+      "version": "版本",
+      "uptime": "运行时间",
+      "lastCheck": "最后检查"
+    },
+    "status": {
+      "running": "运行中",
+      "degraded": "降级",
+      "stopped": "停止"
+    },
+    "lastUpdated": "最后更新"
+  },
+  "llm": {
+    "title": "LLM 配置管理",
+    "subtitle": "配置和管理大语言模型提供商，包括本地和云端服务",
+    "loadConfigFailed": "加载配置失败",
+    "refreshHealthFailed": "刷新健康状态失败",
+    "configValidationFailed": "配置验证失败",
+    "configSaveSuccess": "配置保存成功",
+    "configSaveFailed": "保存配置失败",
+    "configReset": "配置已重置",
+    "hotReloadSuccess": "热重载成功",
+    "hotReloadFailed": "热重载失败",
+    "actions": {
+      "confirmReset": "确认重置",
+      "confirmResetMessage": "确定要重置所有配置为默认值吗？",
+      "testConnection": "测试连接",
+      "save": "保存",
+      "reset": "重置",
+      "hotReload": "热重载"
+    },
+    "status": {
+      "connectionSuccess": "连接成功",
+      "connectionFailed": "连接失败",
+      "healthy": "健康",
+      "unhealthy": "异常",
+      "online": "在线",
+      "offline": "离线"
+    },
+    "local": {
+      "title": "本地配置",
+      "endpoint": "Ollama 端点",
+      "endpointRequired": "请输入 Ollama 端点",
+      "endpointPlaceholder": "例如：http://localhost:11434",
+      "model": "模型名称",
+      "modelRequired": "请输入模型名称",
+      "modelPlaceholder": "例如：llama2:7b",
+      "timeout": "超时时间 (秒)",
+      "maxRetries": "最大重试次数"
+    },
+    "cloud": {
+      "title": "云端配置",
+      "openai": {
+        "title": "OpenAI",
+        "apiKey": "API Key",
+        "apiKeyRequired": "请输入 OpenAI API Key",
+        "baseUrl": "Base URL",
+        "baseUrlRequired": "请输入 Base URL",
+        "baseUrlPlaceholder": "例如：https://api.openai.com/v1",
+        "model": "模型",
+        "modelRequired": "请输入模型名称",
+        "modelPlaceholder": "例如：gpt-3.5-turbo"
+      },
+      "azure": {
+        "title": "Azure OpenAI",
+        "endpoint": "端点",
+        "endpointPlaceholder": "例如：https://your-resource.openai.azure.com/",
+        "apiKey": "API Key",
+        "deployment": "部署名称",
+        "deploymentRequired": "请输入部署名称",
+        "deploymentPlaceholder": "例如：gpt-35-turbo"
+      }
+    },
+    "china": {
+      "title": "国内服务",
+      "timeout": "超时时间 (秒)",
+      "qwen": {
+        "title": "通义千问",
+        "apiKey": "API Key",
+        "apiKeyRequired": "请输入通义千问 API Key",
+        "model": "模型",
+        "modelRequired": "请输入模型名称",
+        "modelPlaceholder": "例如：qwen-turbo"
+      },
+      "zhipu": {
+        "title": "智谱 GLM",
+        "apiKey": "API Key",
+        "apiKeyRequired": "请输入智谱 API Key",
+        "model": "模型",
+        "modelRequired": "请输入模型名称",
+        "modelPlaceholder": "例如：glm-3-turbo"
+      },
+      "baidu": {
+        "title": "文心一言",
+        "apiKey": "API Key",
+        "apiKeyRequired": "请输入百度 API Key",
+        "secretKey": "Secret Key",
+        "secretKeyRequired": "请输入百度 Secret Key",
+        "model": "模型",
+        "modelRequired": "请输入模型名称",
+        "modelPlaceholder": "例如：ernie-3.5-8k"
+      },
+      "hunyuan": {
+        "title": "腾讯混元",
+        "secretId": "Secret ID",
+        "secretIdRequired": "请输入腾讯 Secret ID",
+        "secretKey": "Secret Key",
+        "secretKeyRequired": "请输入腾讯 Secret Key",
+        "model": "模型",
+        "modelRequired": "请输入模型名称",
+        "modelPlaceholder": "例如：hunyuan-lite"
+      }
+    },
+    "form": {
+      "addConfig": "添加配置",
+      "editConfig": "编辑配置",
+      "configName": "配置名称",
+      "configNameRequired": "请输入配置名称",
+      "configNamePlaceholder": "例如：OpenAI GPT-4",
+      "descriptionPlaceholder": "可选的配置描述",
+      "llmType": "LLM 类型",
+      "llmTypeRequired": "请选择 LLM 类型",
+      "llmTypePlaceholder": "选择 LLM 类型",
+      "modelName": "模型名称",
+      "modelNameRequired": "请输入模型名称",
+      "modelNamePlaceholder": "例如：gpt-4",
+      "apiEndpoint": "API 端点",
+      "apiEndpointPlaceholder": "例如：https://api.openai.com/v1",
+      "apiKeyPlaceholder": "输入 API Key",
+      "apiKeyKeepEmpty": "留空表示保持原有 API Key",
+      "apiKeyMasked": "API Key 已加密显示",
+      "notSet": "未设置",
+      "maxTokens": "最大 Token 数",
+      "timeout": "超时时间 (秒)",
+      "setAsDefault": "设为默认",
+      "enabled": "已启用",
+      "confirmDelete": "确定删除此配置？",
+      "configTip": "配置提示",
+      "configTipDescription": "API Key 将被加密存储，请妥善保管原始密钥。"
+    },
+    "local": {
+      "defaultModel": "默认模型"
+    }
+  },
+  "configDashboard": {
+    "title": "配置管理控制台",
+    "refresh": "刷新",
+    "loadingData": "加载数据中...",
+    "loadFailed": "加载失败",
+    "loadFailedDescription": "无法加载配置数据，请检查网络连接",
+    "retry": "重试",
+    "systemHealth": "系统健康状态",
+    "keyMetrics": "关键指标",
+    "totalAnnotations": "总标注数",
+    "activeUsers": "活跃用户",
+    "pendingTasks": "待处理任务",
+    "todaySync": "今日同步",
+    "configOverview": "配置概览",
+    "llmConfig": "LLM 配置",
+    "dbConnections": "数据库连接",
+    "syncStrategies": "同步策略",
+    "thirdPartyTools": "第三方工具",
+    "unit": "个",
+    "quickActions": "快捷操作",
+    "recentAlerts": "最近告警",
+    "actions": {
+      "configureLLM": "配置 LLM",
+      "addDatabase": "添加数据库",
+      "syncStrategy": "同步策略",
+      "sqlBuilder": "SQL 构建器",
+      "configHistory": "配置历史",
+      "thirdPartyTools": "第三方工具"
+    }
+  },
+  "configDB": {
+    "title": "数据库配置管理",
+    "addDatabase": "添加数据库",
+    "addConfig": "添加数据库配置",
+    "editConfig": "编辑数据库配置",
+    "configDetail": "数据库配置详情",
+    "createSuccess": "数据库配置创建成功",
+    "createFailed": "创建失败: {{error}}",
+    "updateSuccess": "数据库配置更新成功",
+    "updateFailed": "更新失败: {{error}}",
+    "deleteSuccess": "数据库配置删除成功",
+    "deleteFailed": "删除失败: {{error}}",
+    "testing": "测试中...",
+    "testFailed": "测试失败",
+    "testConnection": "测试连接",
+    "connectionSuccess": "连接成功 ({{latency}}ms)",
+    "connectionFailed": "连接失败: {{error}}",
+    "connectionNormal": "连接正常 ({{latency}}ms)",
+    "connectionFailedShort": "连接失败",
+    "enabled": "已启用",
+    "disabled": "已禁用",
+    "readonly": "只读",
+    "readwrite": "读写",
+    "sslEnabled": "已启用",
+    "sslDisabled": "未启用",
+    "securityTip": "安全提示",
+    "securityTipDescription": "建议使用只读权限的数据库账户进行数据提取，密码将加密存储并脱敏显示。",
+    "confirmDelete": "确定删除此配置？",
+    "confirmDeleteDescription": "删除后相关的同步策略也将失效",
+    "columns": {
+      "name": "名称",
+      "type": "类型",
+      "host": "主机",
+      "database": "数据库",
+      "permission": "权限",
+      "status": "状态",
+      "actions": "操作"
+    },
+    "form": {
+      "connectionName": "连接名称",
+      "connectionNameRequired": "请输入连接名称",
+      "connectionNamePlaceholder": "例如：生产数据库",
+      "description": "描述",
+      "descriptionPlaceholder": "可选的连接描述",
+      "dbType": "数据库类型",
+      "dbTypeRequired": "请选择数据库类型",
+      "dbTypePlaceholder": "选择数据库类型",
+      "host": "主机地址",
+      "hostRequired": "请输入主机地址",
+      "hostPlaceholder": "例如：localhost 或 192.168.1.100",
+      "port": "端口号",
+      "portRequired": "请输入端口号",
+      "databaseName": "数据库名",
+      "databaseNameRequired": "请输入数据库名",
+      "databaseNamePlaceholder": "例如：mydb",
+      "username": "用户名",
+      "usernameRequired": "请输入用户名",
+      "usernamePlaceholder": "数据库用户名",
+      "password": "密码",
+      "passwordPlaceholder": "数据库密码",
+      "passwordKeepEmpty": "留空表示保持原有密码",
+      "readonlyConnection": "只读连接",
+      "enableSSL": "启用 SSL"
+    },
+    "detail": {
+      "name": "名称",
+      "type": "类型",
+      "status": "状态",
+      "host": "主机",
+      "port": "端口",
+      "database": "数据库",
+      "username": "用户名",
+      "password": "密码",
+      "permission": "权限",
+      "createdAt": "创建时间",
+      "updatedAt": "更新时间"
+    }
+  },
+  "quotaManagement": {
+    "title": "配额管理",
+    "subtitle": "管理系统资源使用配额和限制",
+    "columns": {
+      "tenant": "租户",
+      "storage": "存储",
+      "projects": "项目数",
+      "users": "用户数",
+      "apiCalls": "API 调用",
+      "status": "状态"
+    },
+    "status": {
+      "notConfigured": "未配置",
+      "normal": "正常",
+      "warning": "警告",
+      "exceeded": "超限"
+    },
+    "actions": {
+      "editQuota": "编辑配额",
+      "viewDetails": "查看详情"
+    },
+    "form": {
+      "storageQuota": "存储配额 (GB)",
+      "storageQuotaRequired": "请输入存储配额",
+      "projectQuota": "项目配额",
+      "projectQuotaRequired": "请输入项目数上限",
+      "userQuota": "用户配额",
+      "userQuotaRequired": "请输入用户数上限",
+      "apiQuota": "API 调用配额",
+      "apiQuotaRequired": "请输入 API 调用上限",
+      "save": "保存配额",
+      "cancel": "取消"
+    },
+    "updateSuccess": "配额更新成功",
+    "updateFailed": "配额更新失败",
+    "statusTags": {
+      "quotaTight": "配额紧张",
+      "approachingLimit": "接近上限",
+      "normal": "正常"
+    },
+    "actions": {
+      "adjustQuota": "调整配额"
+    },
+    "statistics": {
+      "totalStorage": "总存储使用",
+      "totalProjects": "总项目数",
+      "totalUsers": "总用户数",
+      "totalApiCalls": "总 API 调用"
+    },
+    "alert": {
+      "quotaWarning": "{{count}} 个租户配额使用超过 80%"
+    },
+    "buttons": {
+      "refresh": "刷新"
+    },
+    "pagination": {
+      "total": "共 {{total}} 个租户"
+    },
+    "modal": {
+      "adjustQuota": "调整配额 - {{name}}"
+    }
+  },
+  "sqlBuilder": {
+    "title": "SQL 构建器",
+    "subtitle": "可视化 SQL 查询构建工具",
+    "selectDatabase": "选择数据库",
+    "selectTables": "选择表",
+    "selectColumns": "选择列",
+    "addCondition": "添加条件",
+    "buildSQL": "生成 SQL",
+    "executeSQL": "执行查询",
+    "saveTemplate": "保存模板",
+    "loadTemplate": "加载模板",
+    "sqlPreview": "SQL 预览",
+    "queryResult": "查询结果",
+    "validationWarning": "SQL 生成成功，但存在验证警告",
+    "buildFailed": "SQL 生成失败",
+    "selectDbFirst": "请先选择数据库",
+    "selectDbDescription": "选择一个数据库连接以开始构建 SQL 查询",
+    "querySuccess": "查询成功，返回 {{count}} 条记录",
+    "executeFailed": "执行失败",
+    "selectDbForTemplate": "请先选择数据库",
+    "templateSaved": "模板保存成功",
+    "saveFailed": "保存失败",
+    "templateName": "模板名称",
+    "templateDescription": "模板描述",
+    "templateLoaded": "已加载模板: {{name}}",
+    "sqlCopied": "SQL 已复制到剪贴板",
+    "noTables": "暂无表",
+    "noColumns": "暂无列",
+    "noTemplates": "暂无模板",
+    "tableName": "表名",
+    "columnName": "列名",
+    "dataType": "数据类型",
+    "actions": "操作",
+    "databaseStructure": "数据库结构",
+    "queryTemplates": "查询模板",
+    "queryConfiguration": "查询配置",
+    "selectTablesPlaceholder": "选择要查询的表",
+    "selectColumnsPlaceholder": "选择列（留空选择全部）",
+    "whereConditions": "WHERE 条件",
+    "field": "字段",
+    "operator": "操作符",
+    "value": "值",
+    "orderBy": "排序",
+    "addOrderBy": "添加排序",
+    "limit": "限制",
+    "limitRows": "返回行数",
+    "generatedSQL": "生成的 SQL",
+    "copySQL": "复制 SQL",
+    "saveAsTemplate": "保存为模板",
+    "executeQuery": "执行查询",
+    "resultTruncated": "结果已截断",
+    "templateNameRequired": "模板名称",
+    "templateNamePlaceholder": "输入模板名称",
+    "description": "描述",
+    "descriptionPlaceholder": "模板描述（可选）",
+    "rows": "{{count}} 行",
+    "sqlPlaceholder": "SQL 将在此显示...",
+    "queryResultTitle": "查询结果 ({{count}} 行, {{time}}ms)"
+  },
+  "thirdPartyConfig": {
+    "title": "第三方工具配置",
+    "subtitle": "配置和管理第三方工具集成",
+    "addTool": "添加工具",
+    "editTool": "编辑工具",
+    "toolName": "工具名称",
+    "toolType": "工具类型",
+    "toolTypes": {
+      "textToSql": "Text-to-SQL",
+      "aiAnnotation": "AI 标注",
+      "dataProcessing": "数据处理",
+      "custom": "自定义"
+    },
+    "apiEndpoint": "API 端点",
+    "status": "状态",
+    "actions": "操作",
+    "enabled": "已启用",
+    "disabled": "已禁用",
+    "enabledColumn": "启用",
+    "updateSuccess": "第三方工具配置更新成功",
+    "updateFailed": "更新失败",
+    "deleteSuccess": "第三方工具配置删除成功",
+    "deleteFailed": "删除失败",
+    "toolEnabled": "工具已启用",
+    "toolDisabled": "工具已禁用",
+    "operationFailed": "操作失败",
+    "checking": "检查中...",
+    "healthCheckSuccess": "健康检查通过 ({{latency}}ms)",
+    "healthCheckFailed": "健康检查失败",
+    "checkFailed": "检查失败",
+    "confirmDelete": "确定删除此工具配置？",
+    "configName": "配置名称",
+    "configNameRequired": "请输入配置名称",
+    "configNamePlaceholder": "例如：自定义 Text-to-SQL 服务",
+    "description": "描述",
+    "descriptionPlaceholder": "工具描述（可选）",
+    "toolTypeRequired": "请选择工具类型",
+    "toolTypePlaceholder": "选择工具类型",
+    "endpointRequired": "请输入 API 端点",
+    "endpointInvalid": "请输入有效的 URL",
+    "endpointPlaceholder": "例如：https://api.example.com/v1",
+    "apiKey": "API Key",
+    "apiKeyPlaceholder": "输入 API Key（将加密存储）",
+    "apiKeyKeepEmpty": "留空则保持原有 API Key 不变",
+    "timeout": "超时时间（秒）",
+    "setEnabled": "启用工具",
+    "save": "保存",
+    "cancel": "取消",
+    "healthCheck": "健康检查",
+    "edit": "编辑",
+    "delete": "删除",
+    "healthy": "健康",
+    "healthyWithLatency": "健康 ({{latency}}ms)",
+    "unhealthy": "异常",
+    "notChecked": "未检查",
+    "callStats": "调用统计",
+    "calls": "调用",
+    "infoTitle": "第三方工具说明",
+    "infoDescription": "配置和管理第三方工具集成，包括 Text-to-SQL、AI 标注等服务。启用/禁用操作将立即生效。",
+    "stats": {
+      "totalTools": "总工具数",
+      "enabled": "已启用",
+      "totalCalls": "总调用次数",
+      "avgSuccessRate": "平均成功率"
+    }
+  },
+  "common": {
+    "refresh": "刷新",
+    "delete": "删除",
+    "cancel": "取消",
+    "ok": "确定",
+    "save": "保存",
+    "edit": "编辑",
+    "create": "创建",
+    "update": "更新",
+    "view": "查看",
+    "search": "搜索",
+    "filter": "筛选",
+    "export": "导出",
+    "import": "导入",
+    "download": "下载",
+    "upload": "上传",
+    "close": "关闭",
+    "back": "返回",
+    "next": "下一步",
+    "previous": "上一步",
+    "submit": "提交",
+    "reset": "重置",
+    "clear": "清空",
+    "confirm": "确认",
+    "loading": "加载中...",
+    "success": "成功",
+    "error": "错误",
+    "warning": "警告",
+    "info": "信息"
+  },
+  "billingManagement": {
+    "title": "账单管理",
+    "subtitle": "管理系统账单和收入统计",
+    "columns": {
+      "tenant": "租户",
+      "period": "账期",
+      "storage": "存储费用",
+      "api": "API 费用",
+      "user": "用户费用",
+      "total": "总费用",
+      "status": "状态",
+      "actions": "操作"
+    },
+    "status": {
+      "pending": "待支付",
+      "paid": "已支付",
+      "overdue": "逾期"
+    },
+    "actions": {
+      "details": "详情",
+      "download": "下载"
+    },
+    "summary": {
+      "monthlyRevenue": "本月总收入",
+      "paid": "已收款",
+      "pending": "待收款",
+      "overdue": "逾期款"
+    },
+    "export": {
+      "exporting": "正在导出 {{format}} 格式报表...",
+      "csv": "CSV",
+      "excel": "Excel",
+      "pdf": "PDF"
+    },
+    "unit": {
+      "calls": "次",
+      "users": "人",
+      "currency": "元"
+    },
+    "tabs": {
+      "all": "全部账单",
+      "pending": "待支付",
+      "paid": "已支付",
+      "overdue": "逾期"
+    },
+    "charts": {
+      "storageDistribution": "存储费用分布",
+      "apiTrend": "API 调用趋势",
+      "revenueTrend": "收入趋势"
+    },
+    "pagination": {
+      "total": "共 {{total}} 条账单"
+    },
+    "summary": {
+      "pageTotal": "本页合计"
+    }
+  },
+  "permissionConfig": {
+    "title": "权限配置管理",
+    "subtitle": "配置和管理系统权限、角色和API访问控制",
+    "saveSuccess": "权限配置已保存",
+    "resetSuccess": "已重置为默认配置",
+    "ownerPermissionImmutable": "所有者权限不可修改",
+    "table": {
+      "permission": "权限"
+    },
+    "roles": {
+      "owner": "所有者",
+      "admin": "管理员",
+      "member": "成员",
+      "guest": "访客"
+    },
+    "permissions": {
+      "workspace": {
+        "title": "工作空间权限",
+        "create": "创建工作空间",
+        "createDesc": "允许创建新的工作空间",
+        "read": "查看工作空间",
+        "readDesc": "允许查看工作空间信息",
+        "update": "编辑工作空间",
+        "updateDesc": "允许编辑工作空间设置",
+        "delete": "删除工作空间",
+        "deleteDesc": "允许删除工作空间",
+        "archive": "归档工作空间",
+        "archiveDesc": "允许归档/恢复工作空间"
+      },
+      "member": {
+        "title": "成员权限",
+        "invite": "邀请成员",
+        "inviteDesc": "允许邀请新成员",
+        "add": "添加成员",
+        "addDesc": "允许直接添加成员",
+        "remove": "移除成员",
+        "removeDesc": "允许移除成员",
+        "role": "修改角色",
+        "roleDesc": "允许修改成员角色"
+      },
+      "project": {
+        "title": "项目权限",
+        "create": "创建项目",
+        "createDesc": "允许创建新项目",
+        "read": "查看项目",
+        "readDesc": "允许查看项目",
+        "update": "编辑项目",
+        "updateDesc": "允许编辑项目",
+        "delete": "删除项目",
+        "deleteDesc": "允许删除项目",
+        "export": "导出数据",
+        "exportDesc": "允许导出项目数据"
+      },
+      "annotation": {
+        "title": "标注权限",
+        "create": "创建标注",
+        "createDesc": "允许创建标注",
+        "read": "查看标注",
+        "readDesc": "允许查看标注",
+        "update": "编辑标注",
+        "updateDesc": "允许编辑标注",
+        "delete": "删除标注",
+        "deleteDesc": "允许删除标注",
+        "review": "审核标注",
+        "reviewDesc": "允许审核标注"
+      }
+    },
+    "apiPermissions": {
+      "tenants": "租户管理",
+      "workspaces": "工作空间管理",
+      "members": "成员管理",
+      "projects": "项目管理",
+      "annotations": "标注管理",
+      "quotas": "配额管理",
+      "shares": "共享管理",
+      "admin": "管理员功能"
+    },
+    "apiTable": {
+      "endpoint": "API 端点",
+      "description": "描述",
+      "methods": "允许的方法",
+      "roles": "所需角色"
+    },
+    "tabs": {
+      "matrix": "权限矩阵",
+      "api": "API 权限",
+      "roles": "角色概览"
+    },
+    "alert": {
+      "title": "权限说明",
+      "description": "所有者拥有全部权限且不可修改。其他角色的权限可以根据需要进行配置。"
+    },
+    "buttons": {
+      "reset": "重置",
+      "save": "保存配置"
+    },
+    "placeholders": {
+      "selectTenant": "选择租户"
+    },
+    "stats": {
+      "permissionCount": "共 {{count}} 项权限"
+    }
+  },
+  "llm": {
+    "title": "LLM 配置管理",
+    "subtitle": "配置和管理各种 LLM 提供商，包括本地 Ollama、云端服务和中国 LLM 服务。",
+    "form": {
+      "addConfig": "添加配置",
+      "editConfig": "编辑 LLM 配置",
+      "configName": "配置名称",
+      "configNameRequired": "请输入配置名称",
+      "configNamePlaceholder": "例如：生产环境 OpenAI",
+      "descriptionPlaceholder": "配置描述（可选）",
+      "llmType": "LLM 类型",
+      "llmTypeRequired": "请选择 LLM 类型",
+      "llmTypePlaceholder": "选择 LLM 提供商",
+      "modelName": "模型名称",
+      "modelNameRequired": "请输入模型名称",
+      "modelNamePlaceholder": "例如：gpt-3.5-turbo, qwen-turbo",
+      "apiEndpoint": "API 端点",
+      "apiEndpointPlaceholder": "例如：https://api.openai.com/v1",
+      "apiKeyPlaceholder": "输入 API Key（将加密存储）",
+      "apiKeyKeepEmpty": "留空则保持原有 API Key 不变",
+      "apiKeyMasked": "API Key 已脱敏显示",
+      "notSet": "未设置",
+      "maxTokens": "最大 Token 数",
+      "timeout": "超时时间（秒）",
+      "setAsDefault": "设为默认",
+      "enabled": "已启用",
+      "confirmDelete": "确定删除此配置？",
+      "configTip": "配置说明",
+      "configTipDescription": "管理 LLM 提供商配置，包括本地 Ollama、OpenAI、通义千问等。API Key 将加密存储并脱敏显示。"
+    },
+    "loadConfigFailed": "加载配置失败",
+    "refreshHealthFailed": "刷新健康状态失败",
+    "configValidationFailed": "配置验证失败，请检查错误信息",
+    "configSaveSuccess": "配置保存成功",
+    "configSaveFailed": "保存配置失败",
+    "configReset": "配置已重置",
+    "hotReloadSuccess": "配置热加载成功",
+    "hotReloadFailed": "热加载失败",
+    "loadingConfig": "加载配置中...",
+    "validationFailed": "配置验证失败",
+    "validationWarnings": "配置警告",
+    "tabs": {
+      "general": "通用配置",
+      "local": "本地 LLM",
+      "cloud": "云端 LLM",
+      "china": "中国 LLM"
+    },
+    "actions": {
+      "saveConfig": "保存配置",
+      "reset": "重置",
+      "hotReload": "热加载",
+      "refreshStatus": "刷新状态",
+      "testConnection": "测试连接",
+      "confirmReset": "重置配置",
+      "confirmResetMessage": "确定要重置所有配置吗？未保存的更改将丢失。"
+    },
+    "status": {
+      "testing": "测试中...",
+      "connectionSuccess": "连接成功",
+      "connectionFailed": "连接失败",
+      "online": "在线",
+      "offline": "离线",
+      "unknown": "未知",
+      "notConfigured": "未配置",
+      "disabled": "已禁用"
+    },
+    "general": {
+      "title": "通用配置",
+      "defaultMethod": "默认 LLM 方法",
+      "defaultMethodPlaceholder": "选择默认方法",
+      "defaultMethodRequired": "请选择默认 LLM 方法",
+      "enabledMethods": "启用的方法",
+      "enabledMethodsPlaceholder": "选择启用的方法",
+      "enabledMethodsRequired": "请选择至少一个启用的方法"
+    },
+    "local": {
+      "title": "本地 Ollama 配置",
+      "ollamaUrl": "Ollama 服务地址",
+      "ollamaUrlPlaceholder": "http://localhost:11434",
+      "ollamaUrlRequired": "请输入 Ollama 服务地址",
+      "defaultModel": "默认模型",
+      "defaultModelPlaceholder": "llama2",
+      "defaultModelRequired": "请输入默认模型名称",
+      "timeout": "超时时间 (秒)",
+      "maxRetries": "最大重试次数"
+    },
+    "cloud": {
+      "title": "云端 LLM 配置",
+      "openai": {
+        "title": "OpenAI",
+        "apiKey": "OpenAI API Key",
+        "baseUrl": "API 基础地址",
+        "baseUrlPlaceholder": "https://api.openai.com/v1",
+        "baseUrlRequired": "请输入 API 基础地址",
+        "model": "默认模型",
+        "modelPlaceholder": "gpt-3.5-turbo",
+        "modelRequired": "请输入默认模型"
+      },
+      "azure": {
+        "title": "Azure OpenAI",
+        "endpoint": "Azure 端点",
+        "endpointPlaceholder": "https://your-resource.openai.azure.com/",
+        "apiKey": "Azure API Key",
+        "deployment": "部署名称",
+        "deploymentPlaceholder": "gpt-35-turbo",
+        "apiVersion": "API 版本",
+        "apiVersionPlaceholder": "2023-12-01-preview",
+        "apiVersionRequired": "请输入 API 版本"
+      },
+      "timeout": "超时时间 (秒)",
+      "maxRetries": "最大重试次数"
+    },
+    "china": {
+      "title": "中国 LLM 配置",
+      "timeout": "超时时间 (秒)",
+      "maxRetries": "最大重试次数"
+    },
+    "providers": {
+      "localOllama": "本地 Ollama",
+      "cloudOpenai": "OpenAI",
+      "cloudAzure": "Azure OpenAI",
+      "chinaQwen": "通义千问",
+      "chinaZhipu": "智谱 GLM",
+      "chinaBaidu": "文心一言",
+      "chinaHunyuan": "腾讯混元"
+    },
+    "qwen": {
+      "title": "通义千问",
+      "apiKey": "千问 API Key",
+      "model": "默认模型",
+      "modelPlaceholder": "qwen-turbo",
+      "modelRequired": "请输入默认模型"
+    },
+    "zhipu": {
+      "title": "智谱 GLM",
+      "apiKey": "智谱 API Key",
+      "model": "默认模型",
+      "modelPlaceholder": "glm-4",
+      "modelRequired": "请输入默认模型"
+    },
+    "baidu": {
+      "title": "文心一言",
+      "apiKey": "百度 API Key",
+      "secretKey": "百度 Secret Key",
+      "model": "默认模型",
+      "modelPlaceholder": "ernie-bot-turbo",
+      "modelRequired": "请输入默认模型"
+    },
+    "hunyuan": {
+      "title": "腾讯混元",
+      "secretId": "腾讯云 Secret ID",
+      "secretKey": "腾讯云 Secret Key",
+      "model": "默认模型",
+      "modelPlaceholder": "hunyuan-lite",
+      "modelRequired": "请输入默认模型"
+    },
+    "help": {
+      "ollama": "确保 Ollama 服务已在本地运行，默认端口为 11434。",
+      "openai": "需要有效的 OpenAI API Key，可在 platform.openai.com 获取。",
+      "qianwen": "需要阿里云通义千问 API Key，可在阿里云控制台获取。",
+      "zhipu": "需要智谱 AI API Key，可在 open.bigmodel.cn 获取。",
+      "hunyuan": "需要腾讯云混元 API Key，可在腾讯云控制台获取。",
+      "custom": "自定义提供商需要配置兼容 OpenAI API 格式的端点。"
+    },
+    "error": {
+      "providerUnavailable": "提供商不可用",
+      "rateLimitExceeded": "请求频率超限",
+      "timeout": "请求超时",
+      "invalidConfig": "配置无效",
+      "authenticationFailed": "认证失败",
+      "connectionFailed": "连接失败",
+      "invalidResponse": "响应格式无效",
+      "modelNotFound": "模型不存在",
+      "quotaExceeded": "配额已用尽",
+      "serverError": "服务器错误",
+      "networkError": "网络错误",
+      "unknownError": "未知错误"
+    }
+  },
+  "textToSql": {
+    "title": "Text-to-SQL 配置",
+    "subtitle": "配置和管理 Text-to-SQL 方法，支持多种转换引擎和插件",
+    "loadConfigFailed": "加载配置失败",
+    "saveConfigSuccess": "配置保存成功",
+    "saveConfigFailed": "配置保存失败",
+    "testGenerationFailed": "测试生成失败",
+    "deletePlugin": "删除插件",
+    "confirmDeletePlugin": "确定删除插件 \"{{name}}\" 吗？",
+    "deletePluginSuccess": "插件删除成功",
+    "deletePluginFailed": "插件删除失败",
+    "pluginEnabled": "插件 \"{{name}}\" 已启用",
+    "pluginDisabled": "插件 \"{{name}}\" 已禁用",
+    "operationFailed": "操作失败",
+    "pluginUpdateSuccess": "插件更新成功",
+    "pluginRegisterSuccess": "插件注册成功",
+    "savePluginFailed": "插件保存失败",
+    "cancel": "取消",
+    "pluginsTable": {
+      "name": "名称",
+      "type": "类型",
+      "status": "状态",
+      "actions": "操作",
+      "edit": "编辑",
+      "delete": "删除",
+      "enable": "启用",
+      "disable": "禁用",
+      "healthCheck": "健康检查"
+    },
+    "testSection": {
+      "title": "SQL 生成测试",
+      "inputPlaceholder": "输入自然语言查询...",
+      "testButton": "测试生成",
+      "resultTitle": "生成结果",
+      "noResult": "暂无结果"
+    },
+    "pluginsSection": {
+      "title": "插件管理",
+      "addPlugin": "添加插件",
+      "totalPlugins": "共 {{count}} 个插件"
+    },
+    "statistics": {
+      "totalRequests": "总请求数",
+      "successRate": "成功率",
+      "averageLatency": "平均延迟"
+    }
+  },
+  "system": {
+    "title": "系统配置",
+    "statusOverview": "系统状态",
+    "configTitle": "系统配置",
+    "saveConfig": "保存配置",
+    "configSaveSuccess": "系统配置保存成功",
+    "configSaveFailed": "系统配置保存失败",
+    "connectionTestSuccess": "{{type}}连接测试成功",
+    "connectionTestFailed": "{{type}}连接测试失败",
+    "testConnection": "测试连接",
+    "testDatabaseConnection": "测试数据库连接",
+    "testCacheConnection": "测试缓存连接",
+    "refresh": "刷新",
+    "status": {
+      "healthy": "正常",
+      "warning": "警告",
+      "error": "错误",
+      "unknown": "未知"
+    },
+    "database": {
+      "title": "数据库",
+      "connections": "连接数",
+      "responseTime": "响应时间",
+      "host": "主机地址",
+      "port": "端口",
+      "name": "数据库名",
+      "maxConnections": "最大连接数",
+      "connectionTimeout": "连接超时（秒）",
+      "queryTimeout": "查询超时（秒）",
+      "configWarning": "修改数据库配置需要重启系统才能生效，请谨慎操作。"
+    },
+    "cache": {
+      "title": "缓存",
+      "memoryUsage": "内存使用",
+      "hitRate": "命中率",
+      "enabled": "启用缓存",
+      "type": "缓存类型",
+      "host": "缓存主机",
+      "port": "缓存端口",
+      "ttl": "默认TTL（秒）",
+      "types": {
+        "redis": "Redis",
+        "memory": "内存缓存"
+      }
+    },
+    "storage": {
+      "title": "存储",
+      "usedSpace": "已用空间",
+      "totalSpace": "总空间"
+    },
+    "systemLoad": "系统负载",
+    "memory": "内存",
+    "disk": "磁盘",
+    "tabs": {
+      "general": "基本设置",
+      "database": "数据库",
+      "cache": "缓存",
+      "security": "安全"
+    },
+    "general": {
+      "title": "基本设置",
+      "siteName": "站点名称",
+      "siteNameRequired": "请输入站点名称",
+      "siteDescription": "站点描述",
+      "siteDescriptionPlaceholder": "AI数据治理与标注平台",
+      "adminEmail": "管理员邮箱",
+      "adminEmailRequired": "请输入管理员邮箱",
+      "adminEmailInvalid": "请输入有效的邮箱地址",
+      "timezone": "时区",
+      "timezoneRequired": "请选择时区",
+      "timezonePlaceholder": "请选择时区",
+      "language": "默认语言",
+      "languageRequired": "请选择默认语言",
+      "languagePlaceholder": "请选择默认语言",
+      "maintenanceMode": "维护模式",
+      "maintenanceModeOn": "开启",
+      "maintenanceModeOff": "关闭",
+      "timezones": {
+        "shanghai": "Asia/Shanghai (UTC+8)",
+        "utc": "UTC (UTC+0)",
+        "newYork": "America/New_York (UTC-5)"
+      },
+      "languages": {
+        "zhCN": "简体中文",
+        "enUS": "English"
+      }
+    },
+    "security": {
+      "title": "安全设置",
+      "sessionTimeout": "会话超时（分钟）",
+      "passwordMinLength": "密码最小长度",
+      "passwordRequireSpecialChars": "密码包含特殊字符",
+      "passwordRequireSpecialCharsOn": "要求",
+      "passwordRequireSpecialCharsOff": "不要求",
+      "maxLoginAttempts": "最大登录尝试次数",
+      "lockoutDuration": "锁定时长（分钟）"
+    }
+  },
+  "configHistory": {
+    "title": "配置变更历史",
+    "refresh": "刷新",
+    "loadDiffFailed": "获取差异失败",
+    "rollbackSuccess": "配置回滚成功",
+    "rollbackFailed": "回滚失败: {{error}}",
+    "rollbackConfirm": "未选择历史记录",
+    "unnamed": "未命名",
+    "columns": {
+      "time": "时间",
+      "configType": "配置类型",
+      "operationType": "操作类型",
+      "operator": "操作人",
+      "summary": "变更摘要",
+      "actions": "操作"
+    },
+    "operations": {
+      "create": "创建",
+      "modify": "修改"
+    },
+    "tooltips": {
+      "viewDiff": "查看差异",
+      "rollback": "回滚到此版本"
+    },
+    "confirm": {
+      "rollback": "确定回滚到此版本？",
+      "rollbackDescription": "回滚将覆盖当前配置",
+      "ok": "确定",
+      "cancel": "取消"
+    },
+    "alert": {
+      "description": "配置历史说明",
+      "descriptionText": "所有配置变更都会被记录，您可以查看变更详情并回滚到之前的版本。"
+    },
+    "filters": {
+      "configType": "配置类型",
+      "startTime": "开始时间",
+      "endTime": "结束时间"
+    },
+    "modal": {
+      "diff": "配置差异对比",
+      "close": "关闭",
+      "rollback": "确认回滚",
+      "rollbackWarning": "回滚警告",
+      "rollbackWarningText": "回滚操作将使用历史记录中的旧值覆盖当前配置，此操作不可撤销。"
+    },
+    "diff": {
+      "added": "新增字段",
+      "removed": "删除字段",
+      "modified": "修改字段",
+      "oldValue": "旧值:",
+      "newValue": "新值:",
+      "noDiff": "无差异",
+      "loading": "加载中..."
+    },
+    "rollbackInfo": {
+      "configType": "配置类型",
+      "changeTime": "变更时间",
+      "operator": "操作人",
+      "reasonPlaceholder": "请输入回滚原因（可选）"
+    }
+  },
+  "annotationPlugins": {
+    "title": "标注插件管理",
+    "loadPluginsFailed": "加载插件列表失败",
+    "pluginUpdateSuccess": "插件更新成功",
+    "pluginCreateSuccess": "插件创建成功",
+    "configJsonError": "配置 JSON 格式错误",
+    "pluginDeleted": "插件已删除",
+    "pluginEnabled": "插件已启用",
+    "pluginDisabled": "插件已禁用",
+    "connectionTestSuccess": "连接测试成功",
+    "connectionTestFailed": "连接测试失败",
+    "connectionTestError": "连接测试出错",
+    "priorityUpdated": "优先级已更新",
+    "columns": {
+      "name": "插件名称",
+      "type": "类型",
+      "endpoint": "端点",
+      "status": "状态",
+      "enabled": "启用",
+      "priority": "优先级",
+      "supportedTypes": "支持类型",
+      "actions": "操作"
+    },
+    "status": {
+      "running": "运行中",
+      "error": "错误",
+      "inactive": "未激活"
+    },
+    "tooltips": {
+      "testConnection": "测试连接",
+      "viewStats": "查看统计",
+      "edit": "编辑",
+      "delete": "删除"
+    },
+    "confirm": {
+      "deletePlugin": "确定要删除此插件吗？",
+      "ok": "确定",
+      "cancel": "取消"
+    },
+    "buttons": {
+      "addPlugin": "添加插件",
+      "save": "保存"
+    },
+    "statistics": {
+      "totalPlugins": "总插件数",
+      "enabled": "已启用",
+      "healthy": "健康状态",
+      "totalCalls": "总调用次数"
+    },
+    "modal": {
+      "editPlugin": "编辑插件",
+      "addPlugin": "添加插件",
+      "pluginStats": "插件统计"
+    },
+    "form": {
+      "name": "插件名称",
+      "nameRequired": "请输入插件名称",
+      "namePlaceholder": "例如: Prodigy Adapter",
+      "type": "连接类型",
+      "typeRequired": "请选择连接类型",
+      "typePlaceholder": "选择连接类型",
+      "endpoint": "端点地址",
+      "endpointRequired": "请输入端点地址",
+      "endpointPlaceholder": "例如: http://localhost:8080/api",
+      "priority": "优先级",
+      "priorityTooltip": "数值越大优先级越高",
+      "supportedTypes": "支持的标注类型",
+      "supportedTypesRequired": "请选择支持的标注类型",
+      "supportedTypesPlaceholder": "选择支持的标注类型",
+      "config": "配置 (JSON)",
+      "configPlaceholder": "{\"apiKey\": \"xxx\", \"timeout\": 30000}"
+    },
+    "types": {
+      "restApi": "REST API",
+      "grpc": "gRPC",
+      "websocket": "WebSocket",
+      "sdk": "SDK"
+    },
+    "annotationTypes": {
+      "textClassification": "文本分类",
+      "ner": "命名实体识别",
+      "sentiment": "情感分析",
+      "relationExtraction": "关系抽取",
+      "qa": "问答"
+    },
+    "stats": {
+      "totalCalls": "总调用次数",
+      "successRate": "成功率",
+      "avgLatency": "平均延迟",
+      "totalCost": "总成本",
+      "errorCount": "错误次数",
+      "lastCall": "最后调用",
+      "successRateTrend": "成功率趋势",
+      "noData": "暂无统计数据",
+      "noDataDescription": "该插件尚未被调用过"
+    }
+  }
+}

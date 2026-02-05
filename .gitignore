@@ -149,6 +149,10 @@ temp/
 *.tmp
 *.temp
 
+# Process ID files
+*.pid
+.*.pid
+
 # IDE
 .idea/
 *.swp
@@ -175,4 +179,4 @@ secrets/
 *.key
 *.pem
 *.p12
-*.pfx
+*.pfxfrontend/coverage/

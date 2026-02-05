@@ -1,0 +1,14 @@
+{
+  "enabled": true,
+  "name": "保存时质量检查",
+  "description": "保存文件时运行适当的检查和格式化",
+  "version": "1.0.0",
+  "when": {
+    "type": "fileEdited",
+    "patterns": ["**/*.py", "**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "File saved. Run linter/formatter. For test files, run tests. Report errors only."
+  }
+}

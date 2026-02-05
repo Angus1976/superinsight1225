@@ -48,6 +48,7 @@ import {
   LineChart,
   Line,
 } from 'recharts';
+import { useTranslation } from 'react-i18next';
 import { useAuditLogs, useSystemLogs } from '@/hooks';
 import type { SystemAuditLog } from '@/types';
 
@@ -59,6 +60,7 @@ const { TabPane } = Tabs;
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
 const SecurityAudit: React.FC = () => {
+  const { t } = useTranslation('admin');
   const [auditFilters, setAuditFilters] = useState({
     tenant_id: undefined as string | undefined,
     user_id: undefined as string | undefined,
@@ -99,7 +101,7 @@ const SecurityAudit: React.FC = () => {
   // Audit log columns
   const auditColumns: ColumnsType<SystemAuditLog> = [
     {
-      title: 'Time',
+      title: t('securityAudit.columns.time'),
       dataIndex: 'timestamp',
       key: 'timestamp',
       width: 180,
@@ -107,7 +109,7 @@ const SecurityAudit: React.FC = () => {
       sorter: (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
     },
     {
-      title: 'User',
+      title: t('securityAudit.columns.user'),
       dataIndex: 'user_id',
       key: 'user_id',
       width: 120,
@@ -119,7 +121,7 @@ const SecurityAudit: React.FC = () => {
       ),
     },
     {
-      title: 'Action',
+      title: t('securityAudit.columns.action'),
       dataIndex: 'action',
       key: 'action',
       width: 150,
@@ -134,11 +136,13 @@ const SecurityAudit: React.FC = () => {
           export: 'purple',
         };
         const color = actionColors[action.toLowerCase()] || 'default';
-        return <Tag color={color}>{action.toUpperCase()}</Tag>;
+        const actionKey = action.toLowerCase() as keyof typeof t;
+        const actionText = t(`securityAudit.actions.${actionKey}`, { defaultValue: action });
+        return <Tag color={color}>{actionText.toUpperCase()}</Tag>;
       },
     },
     {
-      title: 'Resource',
+      title: t('securityAudit.columns.resource'),
       key: 'resource',
       width: 200,
       render: (_, record) => (
@@ -152,14 +156,14 @@ const SecurityAudit: React.FC = () => {
       ),
     },
     {
-      title: 'IP Address',
+      title: t('securityAudit.columns.ipAddress'),
       dataIndex: 'ip_address',
       key: 'ip_address',
       width: 120,
       render: (ip) => <Text code>{ip}</Text>,
     },
     {
-      title: 'Status',
+      title: t('securityAudit.columns.status'),
       key: 'status',
       width: 100,
       render: (_, record) => {
@@ -167,22 +171,22 @@ const SecurityAudit: React.FC = () => {
         const isSuccess = !record.details?.error;
         return isSuccess ? (
           <Tag color="success" icon={<CheckCircleOutlined />}>
-            Success
+            {t('securityAudit.status.success')}
           </Tag>
         ) : (
           <Tag color="error" icon={<CloseCircleOutlined />}>
-            Failed
+            {t('securityAudit.status.failed')}
           </Tag>
         );
       },
     },
     {
-      title: 'Actions',
+      title: t('securityAudit.columns.actions'),
       key: 'actions',
       width: 100,
       render: (_, record) => (
         <Space>
-          <Tooltip title="View Details">
+          <Tooltip title={t('securityAudit.tooltips.viewDetails')}>
             <Button
               type="link"
               icon={<EyeOutlined />}
@@ -198,14 +202,14 @@ const SecurityAudit: React.FC = () => {
   // System log columns
   const systemLogColumns: ColumnsType<any> = [
     {
-      title: 'Time',
+      title: t('securityAudit.columns.time'),
       dataIndex: 'timestamp',
       key: 'timestamp',
       width: 180,
       render: (time) => new Date(time).toLocaleString(),
     },
     {
-      title: 'Level',
+      title: t('securityAudit.columns.level'),
       dataIndex: 'level',
       key: 'level',
       width: 100,
@@ -221,7 +225,7 @@ const SecurityAudit: React.FC = () => {
       },
     },
     {
-      title: 'Service',
+      title: t('securityAudit.columns.service'),
       dataIndex: 'service',
       key: 'service',
       width: 120,
@@ -233,7 +237,7 @@ const SecurityAudit: React.FC = () => {
       ),
     },
     {
-      title: 'Message',
+      title: t('securityAudit.columns.message'),
       dataIndex: 'message',
       key: 'message',
       ellipsis: true,
@@ -283,7 +287,7 @@ const SecurityAudit: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Total Audit Logs"
+              title={t('securityAudit.overview.totalAuditLogs')}
               value={auditLogsData?.total || 0}
               prefix={<SecurityScanOutlined />}
             />
@@ -292,7 +296,7 @@ const SecurityAudit: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="High Risk Actions"
+              title={t('securityAudit.overview.highRiskActions')}
               value={riskLevels.High || 0}
               valueStyle={{ color: '#f5222d' }}
               prefix={<WarningOutlined />}
@@ -302,7 +306,7 @@ const SecurityAudit: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Failed Logins"
+              title={t('securityAudit.overview.failedLogins')}
               value={auditLogs.filter((log: SystemAuditLog) => 
                 log.action === 'login' && log.details?.error
               ).length}
@@ -314,7 +318,7 @@ const SecurityAudit: React.FC = () => {
         <Col xs={24} sm={6}>
           <Card>
             <Statistic
-              title="Active Users"
+              title={t('securityAudit.overview.activeUsers')}
               value={new Set(auditLogs.map((log: SystemAuditLog) => log.user_id)).size}
               prefix={<UserOutlined />}
             />
@@ -325,7 +329,7 @@ const SecurityAudit: React.FC = () => {
       {/* Security Analytics */}
       <Row gutter={16} style={{ marginBottom: 16 }}>
         <Col xs={24} lg={8}>
-          <Card title="Action Distribution" style={{ height: 300 }}>
+          <Card title={t('securityAudit.charts.actionDistribution')} style={{ height: 300 }}>
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
                 <Pie
@@ -347,7 +351,7 @@ const SecurityAudit: React.FC = () => {
           </Card>
         </Col>
         <Col xs={24} lg={8}>
-          <Card title="Hourly Activity" style={{ height: 300 }}>
+          <Card title={t('securityAudit.charts.hourlyActivity')} style={{ height: 300 }}>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={hourlyChartData}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -360,7 +364,7 @@ const SecurityAudit: React.FC = () => {
           </Card>
         </Col>
         <Col xs={24} lg={8}>
-          <Card title="Risk Assessment" style={{ height: 300 }}>
+          <Card title={t('securityAudit.charts.riskAssessment')} style={{ height: 300 }}>
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
                 <Pie
@@ -388,16 +392,16 @@ const SecurityAudit: React.FC = () => {
 
       {/* Logs Tables */}
       <Tabs defaultActiveKey="audit">
-        <TabPane tab="Audit Logs" key="audit">
+        <TabPane tab={t('securityAudit.tabs.audit')} key="audit">
           <Card
-            title="Security Audit Logs"
+            title={t('securityAudit.auditLogs')}
             extra={
               <Space>
                 <Button
                   icon={<DownloadOutlined />}
                   onClick={handleExportLogs}
                 >
-                  Export
+                  {t('securityAudit.export')}
                 </Button>
               </Space>
             }
@@ -406,7 +410,7 @@ const SecurityAudit: React.FC = () => {
             <Row gutter={16} style={{ marginBottom: 16 }}>
               <Col xs={24} sm={8}>
                 <Search
-                  placeholder="Search by user ID"
+                  placeholder={t('securityAudit.filters.searchByUserId')}
                   onSearch={(value) =>
                     setAuditFilters(prev => ({ ...prev, user_id: value || undefined }))
                   }
@@ -415,20 +419,20 @@ const SecurityAudit: React.FC = () => {
               </Col>
               <Col xs={24} sm={6}>
                 <Select
-                  placeholder="Action"
+                  placeholder={t('securityAudit.filters.action')}
                   style={{ width: '100%' }}
                   allowClear
                   onChange={(value) =>
                     setAuditFilters(prev => ({ ...prev, action: value }))
                   }
                 >
-                  <Select.Option value="login">Login</Select.Option>
-                  <Select.Option value="logout">Logout</Select.Option>
-                  <Select.Option value="create">Create</Select.Option>
-                  <Select.Option value="update">Update</Select.Option>
-                  <Select.Option value="delete">Delete</Select.Option>
-                  <Select.Option value="view">View</Select.Option>
-                  <Select.Option value="export">Export</Select.Option>
+                  <Select.Option value="login">{t('securityAudit.actions.login')}</Select.Option>
+                  <Select.Option value="logout">{t('securityAudit.actions.logout')}</Select.Option>
+                  <Select.Option value="create">{t('securityAudit.actions.create')}</Select.Option>
+                  <Select.Option value="update">{t('securityAudit.actions.update')}</Select.Option>
+                  <Select.Option value="delete">{t('securityAudit.actions.delete')}</Select.Option>
+                  <Select.Option value="view">{t('securityAudit.actions.view')}</Select.Option>
+                  <Select.Option value="export">{t('securityAudit.actions.export')}</Select.Option>
                 </Select>
               </Col>
               <Col xs={24} sm={10}>
@@ -464,46 +468,46 @@ const SecurityAudit: React.FC = () => {
                 showSizeChanger: true,
                 showQuickJumper: true,
                 showTotal: (total, range) =>
-                  `${range[0]}-${range[1]} of ${total} logs`,
+                  t('securityAudit.pagination.range', { start: range[0], end: range[1], total }),
               }}
               size="small"
             />
           </Card>
         </TabPane>
 
-        <TabPane tab="System Logs" key="system">
-          <Card title="System Logs">
+        <TabPane tab={t('securityAudit.tabs.system')} key="system">
+          <Card title={t('securityAudit.systemLogs')}>
             {/* System Log Filters */}
             <Row gutter={16} style={{ marginBottom: 16 }}>
               <Col xs={24} sm={6}>
                 <Select
-                  placeholder="Service"
+                  placeholder={t('securityAudit.filters.service')}
                   style={{ width: '100%' }}
                   allowClear
                   onChange={(value) =>
                     setSystemLogFilters(prev => ({ ...prev, service: value }))
                   }
                 >
-                  <Select.Option value="api">API Server</Select.Option>
-                  <Select.Option value="database">Database</Select.Option>
-                  <Select.Option value="auth">Authentication</Select.Option>
-                  <Select.Option value="sync">Data Sync</Select.Option>
+                  <Select.Option value="api">{t('securityAudit.services.api')}</Select.Option>
+                  <Select.Option value="database">{t('securityAudit.services.database')}</Select.Option>
+                  <Select.Option value="auth">{t('securityAudit.services.auth')}</Select.Option>
+                  <Select.Option value="sync">{t('securityAudit.services.sync')}</Select.Option>
                 </Select>
               </Col>
               <Col xs={24} sm={6}>
                 <Select
-                  placeholder="Log Level"
+                  placeholder={t('securityAudit.filters.logLevel')}
                   style={{ width: '100%' }}
                   allowClear
                   onChange={(value) =>
                     setSystemLogFilters(prev => ({ ...prev, level: value }))
                   }
                 >
-                  <Select.Option value="DEBUG">Debug</Select.Option>
-                  <Select.Option value="INFO">Info</Select.Option>
-                  <Select.Option value="WARN">Warning</Select.Option>
-                  <Select.Option value="ERROR">Error</Select.Option>
-                  <Select.Option value="FATAL">Fatal</Select.Option>
+                  <Select.Option value="DEBUG">{t('securityAudit.logLevels.debug')}</Select.Option>
+                  <Select.Option value="INFO">{t('securityAudit.logLevels.info')}</Select.Option>
+                  <Select.Option value="WARN">{t('securityAudit.logLevels.warn')}</Select.Option>
+                  <Select.Option value="ERROR">{t('securityAudit.logLevels.error')}</Select.Option>
+                  <Select.Option value="FATAL">{t('securityAudit.logLevels.fatal')}</Select.Option>
                 </Select>
               </Col>
               <Col xs={24} sm={12}>
@@ -539,7 +543,7 @@ const SecurityAudit: React.FC = () => {
 
       {/* Log Detail Modal */}
       <Modal
-        title="Audit Log Details"
+        title={t('securityAudit.details.title')}
         open={detailModalOpen}
         onCancel={() => {
           setDetailModalOpen(false);
@@ -551,25 +555,25 @@ const SecurityAudit: React.FC = () => {
         {selectedLog && (
           <div>
             <Descriptions bordered column={2}>
-              <Descriptions.Item label="Timestamp">
+              <Descriptions.Item label={t('securityAudit.details.timestamp')}>
                 {new Date(selectedLog.timestamp).toLocaleString()}
               </Descriptions.Item>
-              <Descriptions.Item label="User ID">
+              <Descriptions.Item label={t('securityAudit.details.userId')}>
                 <Text code>{selectedLog.user_id}</Text>
               </Descriptions.Item>
-              <Descriptions.Item label="Action">
+              <Descriptions.Item label={t('securityAudit.details.action')}>
                 <Tag>{selectedLog.action}</Tag>
               </Descriptions.Item>
-              <Descriptions.Item label="Resource Type">
+              <Descriptions.Item label={t('securityAudit.details.resourceType')}>
                 {selectedLog.resource_type}
               </Descriptions.Item>
-              <Descriptions.Item label="Resource ID">
+              <Descriptions.Item label={t('securityAudit.details.resourceId')}>
                 <Text code>{selectedLog.resource_id}</Text>
               </Descriptions.Item>
-              <Descriptions.Item label="IP Address">
+              <Descriptions.Item label={t('securityAudit.details.ipAddress')}>
                 <Text code>{selectedLog.ip_address}</Text>
               </Descriptions.Item>
-              <Descriptions.Item label="User Agent" span={2}>
+              <Descriptions.Item label={t('securityAudit.details.userAgent')} span={2}>
                 <Text code style={{ fontSize: '12px' }}>
                   {selectedLog.user_agent}
                 </Text>
@@ -578,7 +582,7 @@ const SecurityAudit: React.FC = () => {
 
             {selectedLog.details && (
               <div style={{ marginTop: 16 }}>
-                <Text strong>Details:</Text>
+                <Text strong>{t('securityAudit.details.details')}:</Text>
                 <pre style={{
                   background: '#f5f5f5',
                   padding: 12,

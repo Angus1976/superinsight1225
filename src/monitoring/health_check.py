@@ -18,7 +18,7 @@ import threading
 
 from pydantic import BaseModel, Field
 
-from src.i18n.translations import t
+from src.i18n.translations import get_translation as t
 
 logger = logging.getLogger(__name__)
 
@@ -463,42 +463,42 @@ class HealthCheckManager:
         self._checkers: Dict[str, HealthChecker] = {}
         self._start_time = datetime.now()
         self._version = version
-        self._lock = threading.Lock()
+        self._lock = asyncio.Lock()
         self._cached_results: Dict[str, ServiceHealthResult] = {}
         self._cache_ttl_seconds = 10  # 缓存 TTL
         self._last_full_check: Optional[datetime] = None
     
-    def register(self, checker: HealthChecker):
+    async def register(self, checker: HealthChecker):
         """
         注册健康检查器
         
         Args:
             checker: 健康检查器实例
         """
-        with self._lock:
+        async with self._lock:
             self._checkers[checker.name] = checker
             logger.info(t('monitoring.health.checker_registered', name=checker.name))
     
-    def unregister(self, name: str):
+    async def unregister(self, name: str):
         """
         取消注册健康检查器
         
         Args:
             name: 检查器名称
         """
-        with self._lock:
+        async with self._lock:
             if name in self._checkers:
                 del self._checkers[name]
                 logger.info(t('monitoring.health.checker_unregistered', name=name))
     
-    def get_checker(self, name: str) -> Optional[HealthChecker]:
+    async def get_checker(self, name: str) -> Optional[HealthChecker]:
         """获取健康检查器"""
-        with self._lock:
+        async with self._lock:
             return self._checkers.get(name)
     
-    def list_checkers(self) -> List[str]:
+    async def list_checkers(self) -> List[str]:
         """列出所有检查器名称"""
-        with self._lock:
+        async with self._lock:
             return list(self._checkers.keys())
     
     async def check_service(self, name: str) -> Optional[ServiceHealthResult]:
@@ -511,13 +511,13 @@ class HealthCheckManager:
         Returns:
             健康检查结果
         """
-        checker = self.get_checker(name)
+        checker = await self.get_checker(name)
         if not checker:
             return None
         
         result = await checker.check_with_timeout()
         
-        with self._lock:
+        async with self._lock:
             self._cached_results[name] = result
         
         return result
@@ -538,6 +538,13 @@ class HealthCheckManager:
         if use_cache and self._last_full_check:
             elapsed = (now - self._last_full_check).total_seconds()
             if elapsed < self._cache_ttl_seconds:
+                async with self._lock:
+                    return HealthCheckResponse(
+                        timestamp=now,
+                        services=self._cached_results.copy(),
+                        uptime_seconds=(now - self._start_time).total_seconds(),
+                        version=self._version
+                    )
                 return self._build_response(self._cached_results)
         
         # 并发执行所有检查

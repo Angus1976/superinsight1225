@@ -8,14 +8,18 @@ task management, and real-time collaboration.
 
 import asyncio
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
+
+# Task progress storage (in production, use Redis or database)
+_task_progress: Dict[str, Dict[str, Any]] = {}
+_task_results: Dict[str, List[Dict[str, Any]]] = {}
 
 # Import local modules with fallback
 try:
@@ -382,42 +386,159 @@ async def _process_pre_annotation(
 ) -> None:
     """Background task for pre-annotation processing."""
     try:
-        # Process documents
-        # This is a simplified implementation
         logger.info(f"Processing pre-annotation task {task_id}")
-        # TODO: Implement actual batch processing with engine
+
+        # Initialize progress tracking
+        _task_progress[task_id] = {
+            "status": "processing",
+            "progress": 0.0,
+            "processed_count": 0,
+            "total_count": len(request.document_ids),
+            "estimated_remaining_seconds": len(request.document_ids) * 2,
+            "started_at": datetime.utcnow().isoformat(),
+        }
+
+        # Initialize engine
+        await engine.initialize()
+
+        # Import schemas
+        try:
+            from ai.annotation_schemas import (
+                AnnotationType,
+                AnnotationTask,
+                AnnotatedSample,
+                PreAnnotationConfig,
+            )
+        except ImportError:
+            from src.ai.annotation_schemas import (
+                AnnotationType,
+                AnnotationTask,
+                AnnotatedSample,
+                PreAnnotationConfig,
+            )
+
+        # Map annotation type string to enum
+        annotation_type_map = {
+            "ner": AnnotationType.NER,
+            "classification": AnnotationType.TEXT_CLASSIFICATION,
+            "sentiment": AnnotationType.SENTIMENT,
+            "relation": AnnotationType.RELATION_EXTRACTION,
+            "qa": AnnotationType.QA,
+            "summarization": AnnotationType.SUMMARIZATION,
+        }
+        ann_type = annotation_type_map.get(request.annotation_type.lower(), AnnotationType.NER)
+
+        # Create annotation tasks from document IDs
+        tasks = [
+            AnnotationTask(
+                id=doc_id,
+                data={"document_id": doc_id},
+                annotation_type=ann_type,
+            )
+            for doc_id in request.document_ids
+        ]
+
+        # Create config
+        config = PreAnnotationConfig(
+            annotation_type=ann_type,
+            batch_size=request.batch_size,
+            confidence_threshold=request.confidence_threshold,
+            max_items=len(tasks),
+        )
+
+        # Process with or without samples
+        if request.samples:
+            samples = [
+                AnnotatedSample(
+                    id=str(i),
+                    data=sample.get("data", {}),
+                    annotation_type=ann_type,
+                    annotation=sample.get("annotation", {}),
+                    confidence=sample.get("confidence", 1.0),
+                )
+                for i, sample in enumerate(request.samples)
+            ]
+            result = await engine.pre_annotate_with_samples(tasks, samples, config)
+        else:
+            result = await engine.pre_annotate(tasks, config)
+
+        # Store results
+        _task_results[task_id] = [
+            {
+                "document_id": r.task_id,
+                "annotations": [r.annotation] if r.annotation else [],
+                "confidence": r.confidence,
+                "needs_review": r.needs_review,
+                "processing_time_ms": r.processing_time_ms or 0,
+            }
+            for r in result.results
+        ]
+
+        # Update progress to complete
+        _task_progress[task_id] = {
+            "status": "completed",
+            "progress": 1.0,
+            "processed_count": result.successful + result.failed,
+            "total_count": result.total_tasks,
+            "estimated_remaining_seconds": 0,
+            "successful": result.successful,
+            "failed": result.failed,
+            "needs_review": result.needs_review,
+            "completed_at": datetime.utcnow().isoformat(),
+        }
+
+        logger.info(f"Pre-annotation task {task_id} completed: {result.successful} successful, {result.failed} failed")
+
     except Exception as e:
-        logger.error(f"Pre-annotation processing failed: {e}")
+        logger.error(f"Pre-annotation processing failed: {e}", exc_info=True)
+        _task_progress[task_id] = {
+            "status": "failed",
+            "progress": 0.0,
+            "error": str(e),
+            "failed_at": datetime.utcnow().isoformat(),
+        }
 
 
 @router.get("/pre-annotate/{task_id}/progress")
 async def get_pre_annotation_progress(task_id: str):
     """Get progress of a pre-annotation task."""
-    # TODO: Implement actual progress tracking
+    progress = _task_progress.get(task_id)
+
+    if not progress:
+        raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
+
     return {
         "task_id": task_id,
-        "status": "processing",
-        "progress": 0.45,
-        "processed_count": 45,
-        "total_count": 100,
-        "estimated_remaining_seconds": 120,
+        **progress,
     }
 
 
 @router.get("/pre-annotate/{task_id}/results", response_model=List[PreAnnotationResult])
 async def get_pre_annotation_results(task_id: str):
     """Get results of a completed pre-annotation task."""
-    # TODO: Implement actual result retrieval
+    # Check if task exists
+    progress = _task_progress.get(task_id)
+    if not progress:
+        raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
+
+    # Check if task is completed
+    if progress.get("status") != "completed":
+        raise HTTPException(
+            status_code=400,
+            detail=f"Task {task_id} is not yet completed (status: {progress.get('status')})"
+        )
+
+    # Get results
+    results = _task_results.get(task_id, [])
     return [
         PreAnnotationResult(
-            document_id="doc_1",
-            annotations=[
-                {"label": "PERSON", "start": 0, "end": 10, "text": "John Smith", "confidence": 0.92}
-            ],
-            confidence=0.92,
-            needs_review=False,
-            processing_time_ms=45.2,
+            document_id=r["document_id"],
+            annotations=r["annotations"],
+            confidence=r["confidence"],
+            needs_review=r["needs_review"],
+            processing_time_ms=r["processing_time_ms"],
         )
+        for r in results
     ]
 
 
@@ -433,40 +554,141 @@ async def get_suggestion(
     """
     Get real-time annotation suggestion.
 
-    - Targets <100ms latency
+    - Targets <500ms latency (with LLM, may be up to 5s)
     - Uses pattern matching and similarity analysis
     - Returns confidence scores
     """
-    start_time = datetime.utcnow()
+    import time
+    start_time = time.time()
 
     try:
-        # Generate suggestion
+        # Generate suggestion ID
         suggestion_id = f"sug_{datetime.utcnow().strftime('%Y%m%d%H%M%S%f')}"
 
-        # TODO: Use actual engine for suggestions
-        annotations = [
-            {
-                "label": "ENTITY",
-                "start": 0,
-                "end": len(request.text),
-                "text": request.text,
-                "confidence": 0.85,
-            }
-        ]
+        # Import schemas
+        try:
+            from ai.annotation_schemas import (
+                AnnotationType,
+                AnnotationTask,
+            )
+        except ImportError:
+            from src.ai.annotation_schemas import (
+                AnnotationType,
+                AnnotationTask,
+            )
 
-        latency_ms = (datetime.utcnow() - start_time).total_seconds() * 1000
+        # Map annotation type
+        annotation_type_map = {
+            "ner": AnnotationType.NER,
+            "classification": AnnotationType.TEXT_CLASSIFICATION,
+            "sentiment": AnnotationType.SENTIMENT,
+            "relation": AnnotationType.RELATION_EXTRACTION,
+        }
+        ann_type = annotation_type_map.get(request.annotation_type.lower(), AnnotationType.NER)
+
+        # Create task for suggestion
+        task = AnnotationTask(
+            id=request.document_id,
+            data={"text": request.text, "context": request.context},
+            annotation_type=ann_type,
+        )
+
+        # Check if we have cached patterns that match
+        cached_patterns = list(engine._pattern_cache.values())
+        annotations = []
+        confidence = 0.0
+
+        if cached_patterns:
+            # Try to find matching patterns
+            matches = await engine.find_similar_tasks(
+                patterns=cached_patterns,
+                unannotated_tasks=[task],
+                similarity_threshold=0.7,
+            )
+
+            if matches:
+                best_match = matches[0]
+                pattern = engine._pattern_cache.get(best_match.pattern_id)
+                if pattern and pattern.annotation_template:
+                    annotations = [pattern.annotation_template]
+                    confidence = best_match.similarity_score
+                    logger.info(f"Found pattern match with confidence {confidence}")
+
+        # If no pattern match, generate basic suggestion based on annotation type
+        if not annotations:
+            if ann_type == AnnotationType.NER:
+                # Simple NER-based suggestion using heuristics
+                annotations = _generate_ner_suggestions(request.text)
+                confidence = 0.6 if annotations else 0.3
+            elif ann_type == AnnotationType.TEXT_CLASSIFICATION:
+                annotations = [{"label": "UNKNOWN", "confidence": 0.5}]
+                confidence = 0.5
+            elif ann_type == AnnotationType.SENTIMENT:
+                annotations = [{"sentiment": "neutral", "score": 0.0, "confidence": 0.5}]
+                confidence = 0.5
+            else:
+                annotations = [{"label": "SUGGESTION", "text": request.text[:50], "confidence": 0.4}]
+                confidence = 0.4
+
+        latency_ms = (time.time() - start_time) * 1000
 
         return SuggestionResponse(
             suggestion_id=suggestion_id,
             document_id=request.document_id,
             annotations=annotations,
-            confidence=0.85,
+            confidence=confidence,
             latency_ms=latency_ms,
         )
 
     except Exception as e:
-        logger.error(f"Suggestion generation failed: {e}")
+        logger.error(f"Suggestion generation failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+def _generate_ner_suggestions(text: str) -> List[Dict[str, Any]]:
+    """Generate basic NER suggestions using heuristics."""
+    import re
+    suggestions = []
+
+    # Simple capitalized word detection for potential entities
+    capitalized_pattern = re.compile(r'\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\b')
+    for match in capitalized_pattern.finditer(text):
+        if len(match.group()) > 2:  # Skip single letters
+            suggestions.append({
+                "label": "ENTITY",
+                "start": match.start(),
+                "end": match.end(),
+                "text": match.group(),
+                "confidence": 0.6,
+            })
+
+    # Pattern for numbers/dates
+    number_pattern = re.compile(r'\b\d{4}[-/]\d{1,2}[-/]\d{1,2}\b|\b\d+(?:\.\d+)?%?\b')
+    for match in number_pattern.finditer(text):
+        suggestions.append({
+            "label": "NUMBER" if '%' not in match.group() else "PERCENT",
+            "start": match.start(),
+            "end": match.end(),
+            "text": match.group(),
+            "confidence": 0.7,
+        })
+
+    # Pattern for emails
+    email_pattern = re.compile(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b')
+    for match in email_pattern.finditer(text):
+        suggestions.append({
+            "label": "EMAIL",
+            "start": match.start(),
+            "end": match.end(),
+            "text": match.group(),
+            "confidence": 0.9,
+        })
+
+    return suggestions
+
+
+# Feedback storage (in production, use database)
+_suggestion_feedback: Dict[str, Dict[str, Any]] = {}
 
 
 @router.post("/feedback")
@@ -481,15 +703,56 @@ async def submit_feedback(
     - Tracks acceptance/rejection rates
     """
     try:
-        # TODO: Process feedback with engine
+        # Store feedback
+        _suggestion_feedback[request.suggestion_id] = {
+            "suggestion_id": request.suggestion_id,
+            "accepted": request.accepted,
+            "modified_annotation": request.modified_annotation,
+            "reason": request.reason,
+            "submitted_at": datetime.utcnow().isoformat(),
+        }
+
+        # If accepted with modification, we could use this to improve patterns
+        if request.accepted and request.modified_annotation:
+            # Import schemas for creating sample
+            try:
+                from ai.annotation_schemas import AnnotatedSample, AnnotationType
+            except ImportError:
+                from src.ai.annotation_schemas import AnnotatedSample, AnnotationType
+
+            # Create a sample from the feedback to learn from
+            sample = AnnotatedSample(
+                id=f"feedback_{request.suggestion_id}",
+                data=request.modified_annotation.get("data", {}),
+                annotation_type=AnnotationType.NER,  # Default, should be from original
+                annotation=request.modified_annotation,
+                confidence=1.0,  # Human annotation is high confidence
+            )
+
+            # Analyze patterns from this new sample
+            await engine.analyze_patterns([sample])
+            logger.info(f"Learned from feedback {request.suggestion_id}")
+
+        # Calculate acceptance rate
+        total_feedback = len(_suggestion_feedback)
+        accepted_count = sum(1 for f in _suggestion_feedback.values() if f.get("accepted"))
+        acceptance_rate = accepted_count / total_feedback if total_feedback > 0 else 0.0
+
+        # Check if rejection rate is high (>30%)
+        rejection_rate = 1.0 - acceptance_rate
+        if rejection_rate > 0.3 and total_feedback >= 10:
+            logger.warning(f"High rejection rate detected: {rejection_rate:.2%}")
+            # In production, this would trigger a notification
+
         return {
             "status": "accepted",
             "message": "Feedback recorded successfully",
             "suggestion_id": request.suggestion_id,
+            "acceptance_rate": acceptance_rate,
         }
 
     except Exception as e:
-        logger.error(f"Feedback submission failed: {e}")
+        logger.error(f"Feedback submission failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -565,6 +828,10 @@ async def validate_annotations(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# Validation results storage
+_validation_results: Dict[str, Dict[str, Any]] = {}
+
+
 async def _process_validation(
     validation_id: str,
     engine: PostValidationEngine,
@@ -573,29 +840,181 @@ async def _process_validation(
     """Background task for validation processing."""
     try:
         logger.info(f"Processing validation task {validation_id}")
-        # TODO: Implement actual validation with engine
+
+        # Initialize progress tracking
+        _task_progress[validation_id] = {
+            "status": "processing",
+            "progress": 0.0,
+            "started_at": datetime.utcnow().isoformat(),
+        }
+
+        # Import schemas
+        try:
+            from ai.annotation_schemas import ValidationConfig, ValidationRule
+        except ImportError:
+            from src.ai.annotation_schemas import ValidationConfig, ValidationRule
+
+        # In production, fetch actual annotations from database
+        # For now, use mock annotations based on document IDs
+        annotations = []
+        if request.document_ids:
+            for doc_id in request.document_ids:
+                annotations.append({
+                    "id": doc_id,
+                    "data": {"text": f"Sample text for document {doc_id}"},
+                    "annotation_data": {"label": "ENTITY", "confidence": 0.85},
+                })
+        else:
+            # If no document IDs, generate some mock annotations
+            for i in range(10):
+                annotations.append({
+                    "id": f"doc_{i}",
+                    "data": {"text": f"Sample text {i}"},
+                    "annotation_data": {"label": "ENTITY", "confidence": 0.8 + (i * 0.01)},
+                })
+
+        # Create validation config
+        custom_rules = []
+        if request.custom_rules:
+            for rule_data in request.custom_rules:
+                custom_rules.append(ValidationRule(
+                    rule_id=rule_data.get("rule_id", str(uuid4())),
+                    name=rule_data.get("name", "Custom Rule"),
+                    description=rule_data.get("description", ""),
+                    condition=rule_data.get("condition", ""),
+                    severity=rule_data.get("severity", "warning"),
+                    enabled=rule_data.get("enabled", True),
+                ))
+
+        config = ValidationConfig(
+            dimensions=request.validation_types,
+            custom_rules=custom_rules,
+            use_ragas=True,
+            use_deepeval=True,
+        )
+
+        # Run validation
+        report = await engine.validate(
+            annotations=annotations,
+            config=config,
+        )
+
+        # Store results
+        _validation_results[validation_id] = {
+            "report_id": report.report_id,
+            "project_id": request.project_id,
+            "overall_score": report.overall_score,
+            "accuracy_score": report.accuracy,
+            "recall_score": report.recall,
+            "consistency_score": report.consistency,
+            "completeness_score": report.completeness,
+            "dimension_scores": report.dimension_scores,
+            "issues": [
+                {
+                    "annotation_id": issue.annotation_id,
+                    "dimension": issue.dimension,
+                    "severity": issue.severity,
+                    "message": issue.message,
+                    "details": issue.details,
+                }
+                for issue in report.issues
+            ],
+            "recommendations": report.recommendations,
+            "total_annotations": report.total_annotations,
+            "created_at": report.created_at.isoformat() if report.created_at else datetime.utcnow().isoformat(),
+        }
+
+        # Update progress to complete
+        _task_progress[validation_id] = {
+            "status": "completed",
+            "progress": 1.0,
+            "completed_at": datetime.utcnow().isoformat(),
+            "overall_score": report.overall_score,
+        }
+
+        logger.info(f"Validation task {validation_id} completed with score {report.overall_score:.2f}")
+
     except Exception as e:
-        logger.error(f"Validation processing failed: {e}")
+        logger.error(f"Validation processing failed: {e}", exc_info=True)
+        _task_progress[validation_id] = {
+            "status": "failed",
+            "progress": 0.0,
+            "error": str(e),
+            "failed_at": datetime.utcnow().isoformat(),
+        }
 
 
 @router.get("/quality-report/{project_id}", response_model=QualityReportResponse)
-async def get_quality_report(project_id: str):
+async def get_quality_report(
+    project_id: str,
+    engine: PostValidationEngine = Depends(get_post_validation_engine),
+):
     """Get quality report for a project."""
-    # TODO: Implement actual quality report generation
-    return QualityReportResponse(
-        project_id=project_id,
-        overall_score=0.87,
-        accuracy_score=0.89,
-        consistency_score=0.85,
-        completeness_score=0.88,
-        total_annotations=1500,
-        issues_count=45,
-        recommendations=[
-            "Review annotations with confidence < 0.7",
-            "Check consistency in entity boundary definitions",
-        ],
-        generated_at=datetime.utcnow(),
-    )
+    try:
+        # Check for cached validation results for this project
+        cached_result = None
+        for val_id, result in _validation_results.items():
+            if result.get("project_id") == project_id:
+                cached_result = result
+                break
+
+        if cached_result:
+            # Return cached result
+            return QualityReportResponse(
+                project_id=project_id,
+                overall_score=cached_result.get("overall_score", 0.0),
+                accuracy_score=cached_result.get("accuracy_score", 0.0),
+                consistency_score=cached_result.get("consistency_score", 0.0),
+                completeness_score=cached_result.get("completeness_score", 0.0),
+                total_annotations=cached_result.get("total_annotations", 0),
+                issues_count=len(cached_result.get("issues", [])),
+                recommendations=cached_result.get("recommendations", []),
+                generated_at=datetime.fromisoformat(cached_result.get("created_at", datetime.utcnow().isoformat())),
+            )
+
+        # If no cached result, generate a quick validation
+        # In production, this would fetch annotations from database
+        mock_annotations = [
+            {
+                "id": f"doc_{i}",
+                "data": {"text": f"Sample text {i}"},
+                "annotation_data": {"label": "ENTITY", "confidence": 0.8 + (i * 0.01)},
+            }
+            for i in range(20)
+        ]
+
+        # Import schemas
+        try:
+            from ai.annotation_schemas import ValidationConfig
+        except ImportError:
+            from src.ai.annotation_schemas import ValidationConfig
+
+        config = ValidationConfig(
+            dimensions=["accuracy", "consistency", "completeness"],
+            use_ragas=False,  # Quick validation without Ragas
+            use_deepeval=False,
+        )
+
+        report = await engine.validate(
+            annotations=mock_annotations,
+            config=config,
+        )
+
+        return QualityReportResponse(
+            project_id=project_id,
+            overall_score=report.overall_score,
+            accuracy_score=report.accuracy,
+            consistency_score=report.consistency,
+            completeness_score=report.completeness,
+            total_annotations=report.total_annotations,
+            issues_count=len(report.issues),
+            recommendations=report.recommendations,
+            generated_at=report.created_at or datetime.utcnow(),
+        )
+
+    except Exception as e:
+        logger.error(f"Quality report generation failed: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/inconsistencies/{project_id}", response_model=List[InconsistencyResponse])
@@ -650,30 +1069,28 @@ async def list_engines(
 ):
     """List available annotation engines."""
     try:
-        # TODO: Get actual engines from switcher
-        engines = [
-            {
-                "engine_id": "pre_annotation_default",
-                "engine_type": "pre_annotation",
-                "name": "Default Pre-Annotation Engine",
-                "status": "active",
-                "supported_types": ["ner", "classification", "relation"],
-            },
-            {
-                "engine_id": "mid_coverage_default",
-                "engine_type": "mid_coverage",
-                "name": "Default Mid-Coverage Engine",
-                "status": "active",
-                "supported_types": ["ner", "classification"],
-            },
-            {
-                "engine_id": "post_validation_default",
-                "engine_type": "post_validation",
-                "name": "Default Post-Validation Engine",
-                "status": "active",
-                "supported_types": ["quality", "consistency"],
-            },
-        ]
+        # Get methods from switcher
+        methods_info = switcher.list_methods_info()
+        stats = switcher.get_all_stats()
+        current_method = switcher.get_current_method()
+
+        engines = []
+        for info in methods_info:
+            method_stats = stats.get(info.name, {})
+            engines.append({
+                "engine_id": info.name,
+                "engine_type": info.method_type.value if hasattr(info.method_type, 'value') else str(info.method_type),
+                "name": info.description or info.name,
+                "status": "active" if info.enabled else "inactive",
+                "is_default": info.name == current_method,
+                "supported_types": [t.value if hasattr(t, 'value') else str(t) for t in info.supported_types],
+                "config": info.config,
+                "stats": {
+                    "total_calls": method_stats.get("total_calls", 0),
+                    "success_rate": method_stats.get("success_rate", 0.0),
+                    "avg_latency_ms": method_stats.get("avg_latency_ms", 0.0),
+                },
+            })
 
         return EngineListResponse(
             engines=engines,
@@ -681,7 +1098,7 @@ async def list_engines(
         )
 
     except Exception as e:
-        logger.error(f"Engine listing failed: {e}")
+        logger.error(f"Engine listing failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -716,25 +1133,57 @@ async def compare_engines(
     try:
         comparison_id = f"cmp_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}"
 
-        # TODO: Implement actual engine comparison
-        results = [
-            {
-                "engine_id": engine_id,
-                "accuracy": 0.85 + (i * 0.02),
-                "latency_ms": 50 + (i * 10),
-                "throughput": 100 - (i * 5),
-            }
-            for i, engine_id in enumerate(request.engine_ids)
+        # Import schemas
+        try:
+            from ai.annotation_plugin_interface import AnnotationType, AnnotationTask
+        except ImportError:
+            from src.ai.annotation_plugin_interface import AnnotationType, AnnotationTask
+
+        # Map annotation type
+        annotation_type_map = {
+            "ner": AnnotationType.NER,
+            "classification": AnnotationType.TEXT_CLASSIFICATION,
+            "sentiment": AnnotationType.SENTIMENT,
+            "relation": AnnotationType.RELATION_EXTRACTION,
+        }
+        ann_type = annotation_type_map.get(request.annotation_type.lower(), AnnotationType.NER)
+
+        # Create test tasks from document IDs
+        test_tasks = [
+            AnnotationTask(
+                id=doc_id,
+                data={"document_id": doc_id, "text": f"Sample text for {doc_id}"},
+                annotation_type=ann_type,
+            )
+            for doc_id in request.test_documents
         ]
+
+        # Run comparison using switcher
+        report = await switcher.compare_methods(
+            tasks=test_tasks,
+            annotation_type=ann_type,
+            methods=request.engine_ids if request.engine_ids else None,
+        )
+
+        # Format results for API response
+        results = []
+        for method_name, method_data in report.results.items():
+            results.append({
+                "engine_id": method_name,
+                "success": method_data.get("success", False),
+                "accuracy": method_data.get("avg_confidence", 0.0),  # Use confidence as accuracy proxy
+                "latency_ms": method_data.get("latency_ms", 0.0),
+                "result_count": method_data.get("result_count", 0),
+            })
 
         return EngineComparisonResponse(
             comparison_id=comparison_id,
             results=results,
-            recommendation=request.engine_ids[0] if request.engine_ids else None,
+            recommendation=report.winner,
         )
 
     except Exception as e:
-        logger.error(f"Engine comparison failed: {e}")
+        logger.error(f"Engine comparison failed: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -924,3 +1373,282 @@ async def get_websocket_stats(
 ):
     """Get WebSocket connection statistics."""
     return ws_manager.get_stats()
+
+
+# =============================================================================
+# Additional Endpoints for Frontend Integration
+# =============================================================================
+
+class TaskListResponse(BaseModel):
+    """List of annotation tasks."""
+    tasks: List[Dict[str, Any]]
+    total_count: int
+    page: int
+    page_size: int
+
+
+class AIMetricsResponse(BaseModel):
+    """AI metrics for a project."""
+    total_annotations: int
+    human_annotations: int
+    ai_pre_annotations: int
+    ai_suggestions: int
+    ai_acceptance_rate: float
+    time_saved_hours: float
+    quality_score: float
+
+
+class QualityMetricsResponse(BaseModel):
+    """Detailed quality metrics for AI dashboard."""
+    overview: Dict[str, Any]
+    accuracy_trend: List[Dict[str, Any]]
+    confidence_distribution: List[Dict[str, Any]]
+    engine_performance: List[Dict[str, Any]]
+    degradation_alerts: List[Dict[str, Any]]
+
+
+class RoutingConfigRequest(BaseModel):
+    """AI routing configuration."""
+    low_confidence_threshold: float = Field(ge=0, le=1)
+    high_confidence_threshold: float = Field(ge=0, le=1)
+    auto_assign_high_confidence: bool = False
+    skill_based_routing: bool = True
+    workload_balancing: bool = True
+    review_levels: int = Field(ge=1, le=3, default=2)
+
+
+class RoutingConfigResponse(BaseModel):
+    """Routing configuration response."""
+    config: Dict[str, Any]
+    status: str
+    message: str
+
+
+@router.get("/tasks", response_model=TaskListResponse)
+async def list_tasks(
+    project_id: Optional[str] = Query(None, description="Filter by project ID"),
+    status: Optional[str] = Query(None, description="Filter by status"),
+    assigned_to: Optional[str] = Query(None, description="Filter by assignee"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=100),
+    collab_manager: CollaborationManager = Depends(get_collab_manager),
+):
+    """
+    List annotation tasks with filters.
+
+    Returns tasks that match the specified filters, with pagination support.
+    """
+    try:
+        # TODO: Implement actual database query with filters
+        # For now, return mock data
+        mock_tasks = [
+            {
+                "task_id": f"task_{i}",
+                "title": f"Annotation Task {i}",
+                "project_id": project_id or "default_project",
+                "project_name": "Default Project",
+                "assigned_to": "user1" if i % 2 == 0 else None,
+                "assigned_by": "manual" if i % 2 == 0 else "ai",
+                "status": "in_progress" if i % 3 == 0 else "pending",
+                "priority": "high" if i % 4 == 0 else "medium",
+                "metrics": {
+                    "total_items": 100,
+                    "human_annotated": 40 + i,
+                    "ai_pre_annotated": 30,
+                    "ai_suggested": 10,
+                    "review_required": 5,
+                },
+                "created_at": datetime.utcnow().isoformat(),
+            }
+            for i in range(10)
+        ]
+
+        return TaskListResponse(
+            tasks=mock_tasks,
+            total_count=len(mock_tasks),
+            page=page,
+            page_size=page_size,
+        )
+
+    except Exception as e:
+        logger.error(f"Task listing failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/metrics", response_model=AIMetricsResponse)
+async def get_ai_metrics(
+    project_id: Optional[str] = Query(None, description="Filter by project ID"),
+):
+    """
+    Get AI annotation metrics.
+
+    Returns overall metrics about AI assistance including:
+    - Total annotations
+    - Human vs AI annotation counts
+    - Acceptance rates
+    - Time saved
+    - Quality scores
+    """
+    try:
+        # TODO: Implement actual metrics calculation from database
+        # For now, return mock data
+        return AIMetricsResponse(
+            total_annotations=1500,
+            human_annotations=900,
+            ai_pre_annotations=500,
+            ai_suggestions=100,
+            ai_acceptance_rate=0.85,
+            time_saved_hours=45.5,
+            quality_score=0.92,
+        )
+
+    except Exception as e:
+        logger.error(f"Metrics retrieval failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/quality-metrics", response_model=QualityMetricsResponse)
+async def get_quality_metrics(
+    project_id: str = Query(..., description="Project ID"),
+    date_range: str = Query("last_30_days", description="Date range filter"),
+    engine_id: Optional[str] = Query(None, description="Filter by engine"),
+):
+    """
+    Get detailed quality metrics for AI quality dashboard.
+
+    Returns comprehensive quality metrics including:
+    - Accuracy trends
+    - Confidence distributions
+    - Engine performance comparisons
+    - Quality degradation alerts
+    """
+    try:
+        # TODO: Implement actual quality metrics calculation
+        # For now, return mock data
+        from datetime import timedelta
+
+        # Generate mock accuracy trend
+        accuracy_trend = []
+        for i in range(7):
+            date = datetime.utcnow() - timedelta(days=6-i)
+            accuracy_trend.append({
+                "date": date.strftime("%Y-%m-%d"),
+                "ai_accuracy": 0.88 + (i * 0.01),
+                "human_accuracy": 0.92 + (i * 0.005),
+                "agreement_rate": 0.85 + (i * 0.008),
+                "sample_count": 200 + (i * 10),
+            })
+
+        return QualityMetricsResponse(
+            overview={
+                "ai_accuracy": 0.92,
+                "agreement_rate": 0.88,
+                "total_samples": 1500,
+                "active_alerts": 2,
+            },
+            accuracy_trend=accuracy_trend,
+            confidence_distribution=[
+                {"range": "0.9-1.0", "count": 800, "acceptance_rate": 0.95},
+                {"range": "0.7-0.9", "count": 500, "acceptance_rate": 0.85},
+                {"range": "0.5-0.7", "count": 150, "acceptance_rate": 0.60},
+                {"range": "0.0-0.5", "count": 50, "acceptance_rate": 0.30},
+            ],
+            engine_performance=[
+                {
+                    "engine_id": "pre-annotation",
+                    "engine_name": "Pre-annotation Engine",
+                    "accuracy": 0.94,
+                    "confidence": 0.91,
+                    "samples": 600,
+                    "suggestions": 580,
+                    "acceptance_rate": 0.92,
+                },
+                {
+                    "engine_id": "mid-coverage",
+                    "engine_name": "Mid-coverage Engine",
+                    "accuracy": 0.90,
+                    "confidence": 0.85,
+                    "samples": 500,
+                    "suggestions": 450,
+                    "acceptance_rate": 0.88,
+                },
+            ],
+            degradation_alerts=[
+                {
+                    "alert_id": "alert_1",
+                    "metric": "AI Accuracy",
+                    "current_value": 0.92,
+                    "previous_value": 0.95,
+                    "degradation_rate": -0.03,
+                    "severity": "warning",
+                    "recommendation": "Review recent model changes",
+                    "timestamp": datetime.utcnow().isoformat(),
+                }
+            ],
+        )
+
+    except Exception as e:
+        logger.error(f"Quality metrics retrieval failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/routing/config", response_model=RoutingConfigResponse)
+async def get_routing_config():
+    """Get current AI routing configuration."""
+    try:
+        # TODO: Retrieve from database/config store
+        config = {
+            "low_confidence_threshold": 0.5,
+            "high_confidence_threshold": 0.9,
+            "auto_assign_high_confidence": False,
+            "skill_based_routing": True,
+            "workload_balancing": True,
+            "review_levels": 2,
+        }
+
+        return RoutingConfigResponse(
+            config=config,
+            status="success",
+            message="Routing configuration retrieved successfully",
+        )
+
+    except Exception as e:
+        logger.error(f"Routing config retrieval failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.put("/routing/config", response_model=RoutingConfigResponse)
+async def update_routing_config(request: RoutingConfigRequest):
+    """
+    Update AI routing configuration.
+
+    Configures how AI suggestions are routed based on:
+    - Confidence thresholds
+    - Auto-assignment rules
+    - Skill-based routing
+    - Workload balancing
+    """
+    try:
+        # Validate thresholds
+        if request.low_confidence_threshold >= request.high_confidence_threshold:
+            raise HTTPException(
+                status_code=400,
+                detail="Low confidence threshold must be less than high confidence threshold",
+            )
+
+        # TODO: Save to database/config store
+        config = request.dict()
+
+        logger.info(f"Routing config updated: {config}")
+
+        return RoutingConfigResponse(
+            config=config,
+            status="success",
+            message="Routing configuration updated successfully",
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Routing config update failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

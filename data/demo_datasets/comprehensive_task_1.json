@@ -1,0 +1,52 @@
+[
+  {
+    "id": 1,
+    "image": "https://images.unsplash.com/photo-1542838132-92c53300491e?w=800",
+    "text": "这是一个现代化的办公环境，配备了最新的科技设备。桌面上摆放着笔记本电脑、智能手机和咖啡杯。",
+    "metadata": {
+      "source": "办公场景数据集",
+      "date": "2026-01-25",
+      "location": "北京"
+    }
+  },
+  {
+    "id": 2,
+    "image": "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800",
+    "text": "美味的意大利面配上新鲜的番茄酱和罗勒叶，这道菜色香味俱全，是餐厅的招牌菜之一。",
+    "metadata": {
+      "source": "美食数据集",
+      "date": "2026-01-25",
+      "location": "上海"
+    }
+  },
+  {
+    "id": 3,
+    "image": "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=800",
+    "text": "一只可爱的橘猫正在阳光下打盹，它的毛发在阳光照射下显得格外柔软。猫咪看起来非常放松和满足。",
+    "metadata": {
+      "source": "宠物数据集",
+      "date": "2026-01-25",
+      "location": "广州"
+    }
+  },
+  {
+    "id": 4,
+    "image": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800",
+    "text": "壮丽的山景在日出时分显得格外迷人，远处的雪山在晨光中闪耀着金色的光芒。这是大自然最美的馈赠。",
+    "metadata": {
+      "source": "风景数据集",
+      "date": "2026-01-25",
+      "location": "西藏"
+    }
+  },
+  {
+    "id": 5,
+    "image": "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800",
+    "text": "城市的夜景灯火辉煌，高楼大厦的灯光倒映在江面上，形成了一幅美丽的画卷。这座城市充满了活力和现代感。",
+    "metadata": {
+      "source": "城市数据集",
+      "date": "2026-01-25",
+      "location": "深圳"
+    }
+  }
+]

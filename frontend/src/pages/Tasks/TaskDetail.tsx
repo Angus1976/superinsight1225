@@ -1,5 +1,6 @@
 // Task detail page
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { useParams, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import {
   Card,
   Descriptions,
@@ -16,6 +17,8 @@ import {
   Statistic,
   Tabs,
   Badge,
+  Tooltip,
+  message,
 } from 'antd';
 import {
   ArrowLeftOutlined,
@@ -27,10 +30,12 @@ import {
   BarChartOutlined,
   TeamOutlined,
   FileTextOutlined,
+  ExportOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useTask, useUpdateTask, useDeleteTask } from '@/hooks/useTask';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useLabelStudio } from '@/hooks';
 import { ProgressTracker } from '@/components/Tasks';
 import type { TaskStatus, TaskPriority } from '@/types';
 
@@ -49,37 +54,99 @@ const priorityColorMap: Record<TaskPriority, string> = {
 };
 
 const TaskDetailPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const params = useParams<{ id: string }>();
+  const location = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation('tasks');
-  const { data: task, isLoading, error } = useTask(id || '');
+  
+  // Get ID with fallback to URL parsing
+  let id = params.id;
+  
+  // Debug logging
+  console.log('[TaskDetail] useParams:', params);
+  console.log('[TaskDetail] location.pathname:', location.pathname);
+  
+  // If useParams fails, parse from URL
+  if (!id) {
+    const pathParts = location.pathname.split('/');
+    const taskIndex = pathParts.indexOf('tasks');
+    if (taskIndex >= 0 && pathParts[taskIndex + 1]) {
+      id = pathParts[taskIndex + 1];
+      console.warn('[TaskDetail] useParams failed, using URL parsing. ID:', id);
+    }
+  }
+  
+  console.log('[TaskDetail] Final ID:', id);
+  
+  // If still no ID, redirect to tasks list
+  if (!id || id === 'undefined') {
+    console.error('[TaskDetail] No valid ID found, redirecting to tasks list');
+    return <Navigate to="/tasks" replace />;
+  }
+  
+  const { data: task, isLoading, error } = useTask(id);
   const { annotation: annotationPerms } = usePermissions();
+  const { openLabelStudio, isValidProject, navigateToAnnotate } = useLabelStudio();
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
 
-  // Mock data for development
-  const mockTask = {
-    id: id || '1',
-    name: t('mockData.customerReviewClassification'),
-    description: t('mockData.customerReviewDescription'),
-    status: 'in_progress' as TaskStatus,
-    priority: 'high' as TaskPriority,
-    annotation_type: 'sentiment' as const,
-    assignee_id: 'user1',
-    assignee_name: 'John Doe',
-    created_by: 'admin',
-    created_at: '2025-01-15T10:00:00Z',
-    updated_at: '2025-01-20T14:30:00Z',
-    due_date: '2025-02-01T00:00:00Z',
-    progress: 65,
-    total_items: 1000,
-    completed_items: 650,
-    tenant_id: 'tenant1',
-    label_studio_project_id: 'ls-project-123',
-    tags: [t('tags.urgent'), t('tags.customer'), t('tags.sentiment')],
+  // Debug: Log permission state
+  console.log('[TaskDetail] annotationPerms:', annotationPerms);
+  console.log('[TaskDetail] task:', task);
+  console.log('[TaskDetail] task.label_studio_project_id:', task?.label_studio_project_id);
+
+  /**
+   * Handle "开始标注" button click
+   * Navigates directly to annotation page - validation happens there
+   * Validates: Requirements 1.1, 1.6
+   */
+  const handleStartAnnotation = () => {
+    console.log('[handleStartAnnotation] ========== START ==========');
+    console.log('[handleStartAnnotation] id:', id);
+    console.log('[handleStartAnnotation] task:', task);
+    
+    if (!id || !task) {
+      console.error('[handleStartAnnotation] Task ID or task data is missing');
+      message.error(t('detail.taskDataLoadFailed'));
+      return;
+    }
+    
+    // Navigate directly to annotation page using the hook
+    console.log('[handleStartAnnotation] Navigating to:', `/tasks/${id}/annotate`);
+    navigateToAnnotate(id);
+    console.log('[handleStartAnnotation] ========== END ==========');
   };
 
-  const currentTask = task || mockTask;
+  /**
+   * Handle "在新窗口打开" button click
+   * Opens Label Studio project in a new window
+   * Validates: Requirements 1.2, 1.5
+   */
+  const handleOpenInNewWindow = () => {
+    console.log('[handleOpenInNewWindow] ========== START ==========');
+    console.log('[handleOpenInNewWindow] id:', id);
+    console.log('[handleOpenInNewWindow] task:', task);
+    
+    if (!id || !task) {
+      console.error('[handleOpenInNewWindow] Task ID or task data is missing');
+      message.error(t('detail.taskDataLoadFailed'));
+      return;
+    }
+    
+    const projectId = task.label_studio_project_id;
+    
+    if (!isValidProject(projectId)) {
+      // No valid project ID, navigate to annotation page first to create project
+      message.info(t('detail.projectNotCreated'));
+      navigateToAnnotate(id);
+      return;
+    }
+    
+    // Open Label Studio data manager using the hook
+    console.log('[handleOpenInNewWindow] Opening Label Studio for project:', projectId);
+    openLabelStudio(projectId);
+    console.log('[handleOpenInNewWindow] ========== END ==========');
+  };
 
   const handleStatusChange = async (newStatus: TaskStatus) => {
     if (id) {
@@ -112,16 +179,24 @@ const TaskDetailPage: React.FC = () => {
     );
   }
 
-  if (error && !mockTask) {
+  if (error || !task) {
     return (
       <Alert
         type="error"
         message={t('failedToLoadTask')}
-        description={t('failedToLoadTaskDescription')}
+        description={error?.message || t('failedToLoadTaskDescription')}
         showIcon
+        action={
+          <Button type="primary" onClick={() => navigate('/tasks')}>
+            {t('backToTasks')}
+          </Button>
+        }
       />
     );
   }
+
+  // Use real task data
+  const currentTask = task;
 
   const tabItems = [
     {
@@ -129,7 +204,7 @@ const TaskDetailPage: React.FC = () => {
       label: (
         <Space>
           <FileTextOutlined />
-          {t('overview')}
+          {t('detail.overview')}
         </Space>
       ),
       children: (
@@ -137,11 +212,11 @@ const TaskDetailPage: React.FC = () => {
           {/* Main Content */}
           <Col xs={24} lg={16}>
             {/* Progress Card */}
-            <Card title={t('progress')} style={{ marginBottom: 16 }}>
+            <Card title={t('progressLabel')} style={{ marginBottom: 16 }}>
               <Row gutter={16}>
                 <Col span={8}>
                   <Statistic
-                    title={t('totalItems')}
+                    title={t('detail.totalItems')}
                     value={currentTask.total_items}
                     prefix={<ClockCircleOutlined />}
                   />
@@ -156,7 +231,7 @@ const TaskDetailPage: React.FC = () => {
                 </Col>
                 <Col span={8}>
                   <Statistic
-                    title={t('remaining')}
+                    title={t('detail.remaining')}
                     value={currentTask.total_items - currentTask.completed_items}
                     valueStyle={{ color: '#faad14' }}
                   />
@@ -165,55 +240,60 @@ const TaskDetailPage: React.FC = () => {
               <Divider />
               <div>
                 <span style={{ marginBottom: 8, display: 'block' }}>
-                  {t('overallProgress')}: {currentTask.progress}%
+                  {t('detail.overallProgress')}: {currentTask.progress}%
                 </span>
                 <Progress
                   percent={currentTask.progress}
                   status={currentTask.status === 'completed' ? 'success' : 'active'}
-                  strokeWidth={12}
+                  size={[null, 12]}
                 />
               </div>
             </Card>
 
             {/* Description */}
             <Card title={t('description')} style={{ marginBottom: 16 }}>
-              <p>{currentTask.description || t('noDescription')}</p>
+              <p>{currentTask.description || t('detail.noDescription')}</p>
             </Card>
 
             {/* 标注集成 */}
             {currentTask.label_studio_project_id && (
-              <Card title={t('dataAnnotation')} style={{ marginBottom: 16 }}>
+              <Card title={t('detail.dataAnnotation')} style={{ marginBottom: 16 }}>
                 <Alert
-                  message={t('annotationFunction')}
+                  message={t('detail.annotationFunction')}
                   description={
                     <div>
                       <p>
-                        {t('projectId')}: <strong>{currentTask.label_studio_project_id}</strong>
+                        {t('detail.projectId')}: <strong>{currentTask.label_studio_project_id}</strong>
                       </p>
-                      <p>{t('annotationType')}: <strong>{currentTask.annotation_type}</strong></p>
+                      <p>{t('annotationTypeLabel')}: <strong>{currentTask.annotation_type}</strong></p>
                       <Space style={{ marginTop: 12 }}>
                         {annotationPerms.canView ? (
                           <Button 
                             type="primary" 
                             size="large"
-                            onClick={() => navigate(`/tasks/${id}/annotate`)}
+                            icon={<PlayCircleOutlined />}
+                            onClick={handleStartAnnotation}
                           >
-                            {t('startAnnotation')}
+                            {t('detail.startAnnotation')}
                           </Button>
                         ) : (
-                          <Button 
-                            type="primary" 
-                            size="large"
-                            disabled
-                            title={t('noAnnotationPermission')}
-                          >
-                            {t('startAnnotation')}
-                          </Button>
+                          <Tooltip title={t('detail.noAnnotationPermission')}>
+                            <Button 
+                              type="primary" 
+                              size="large"
+                              icon={<PlayCircleOutlined />}
+                              disabled
+                            >
+                              {t('detail.startAnnotation')}
+                            </Button>
+                          </Tooltip>
                         )}
                         <Button 
-                          onClick={() => window.open(`/api/label-studio/projects/${currentTask.label_studio_project_id}`, '_blank')}
+                          size="large"
+                          icon={<ExportOutlined />}
+                          onClick={handleOpenInNewWindow}
                         >
-                          {t('openInNewWindow')}
+                          {t('detail.openInNewWindow')}
                         </Button>
                       </Space>
                     </div>
@@ -228,38 +308,38 @@ const TaskDetailPage: React.FC = () => {
           {/* Sidebar */}
           <Col xs={24} lg={8}>
             {/* Details */}
-            <Card title={t('details')} style={{ marginBottom: 16 }}>
+            <Card title={t('detail.details')} style={{ marginBottom: 16 }}>
               <Descriptions column={1} size="small">
-                <Descriptions.Item label={t('annotationType')}>
-                  {currentTask.annotation_type.replace('_', ' ')}
+                <Descriptions.Item label={t('annotationTypeLabel')}>
+                  {currentTask.annotation_type ? currentTask.annotation_type.replace('_', ' ') : '-'}
                 </Descriptions.Item>
                 <Descriptions.Item label={t('assignee')}>
                   {currentTask.assignee_name || t('unassigned')}
                 </Descriptions.Item>
-                <Descriptions.Item label={t('createdBy')}>{currentTask.created_by}</Descriptions.Item>
-                <Descriptions.Item label={t('createdAt')}>
+                <Descriptions.Item label={t('detail.createdBy')}>{currentTask.created_by}</Descriptions.Item>
+                <Descriptions.Item label={t('detail.createdAt')}>
                   {new Date(currentTask.created_at).toLocaleString()}
                 </Descriptions.Item>
-                <Descriptions.Item label={t('updatedAt')}>
+                <Descriptions.Item label={t('detail.updatedAt')}>
                   {new Date(currentTask.updated_at).toLocaleString()}
                 </Descriptions.Item>
                 <Descriptions.Item label={t('dueDate')}>
                   {currentTask.due_date
                     ? new Date(currentTask.due_date).toLocaleDateString()
-                    : t('noDueDate')}
+                    : t('detail.noDueDate')}
                 </Descriptions.Item>
               </Descriptions>
             </Card>
 
             {/* Activity Timeline */}
-            <Card title={t('activity')}>
+            <Card title={t('detail.activity')}>
               <Timeline
                 items={[
                   {
                     color: 'green',
                     children: (
                       <>
-                        <p style={{ marginBottom: 4 }}>{t('taskCreated')}</p>
+                        <p style={{ marginBottom: 4 }}>{t('detail.taskCreated')}</p>
                         <small style={{ color: '#999' }}>
                           {new Date(currentTask.created_at).toLocaleString()}
                         </small>
@@ -270,7 +350,7 @@ const TaskDetailPage: React.FC = () => {
                     color: 'blue',
                     children: (
                       <>
-                        <p style={{ marginBottom: 4 }}>{t('assignedTo', { name: currentTask.assignee_name })}</p>
+                        <p style={{ marginBottom: 4 }}>{t('detail.assignedTo', { name: currentTask.assignee_name })}</p>
                         <small style={{ color: '#999' }}>
                           {new Date(currentTask.updated_at).toLocaleString()}
                         </small>
@@ -281,7 +361,7 @@ const TaskDetailPage: React.FC = () => {
                     color: 'gray',
                     children: (
                       <>
-                        <p style={{ marginBottom: 4 }}>{t('progressUpdated', { progress: 65 })}</p>
+                        <p style={{ marginBottom: 4 }}>{t('detail.progressUpdated', { progress: 65 })}</p>
                         <small style={{ color: '#999' }}>
                           {new Date(currentTask.updated_at).toLocaleString()}
                         </small>
@@ -300,8 +380,8 @@ const TaskDetailPage: React.FC = () => {
       label: (
         <Space>
           <BarChartOutlined />
-          {t('progressTracking')}
-          <Badge count={currentTask.progress < 100 ? t('active') : t('completed')} />
+          {t('detail.progressTracking')}
+          <Badge count={currentTask.progress < 100 ? t('common.active') : t('completed')} />
         </Space>
       ),
       children: (
@@ -320,15 +400,15 @@ const TaskDetailPage: React.FC = () => {
       label: (
         <Space>
           <TeamOutlined />
-          {t('teamCollaboration')}
+          {t('detail.teamCollaboration')}
         </Space>
       ),
       children: (
         <Card>
           <Alert
             type="info"
-            message={t('teamCollaborationFeature')}
-            description={t('teamCollaborationDescription')}
+            message={t('detail.teamCollaborationFeature')}
+            description={t('detail.teamCollaborationDescription')}
             showIcon
           />
         </Card>
@@ -342,7 +422,7 @@ const TaskDetailPage: React.FC = () => {
       <Card style={{ marginBottom: 16 }}>
         <Space style={{ marginBottom: 16 }}>
           <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/tasks')}>
-            {t('backToTasks')}
+            {t('detail.backToTasks')}
           </Button>
         </Space>
 
@@ -385,7 +465,7 @@ const TaskDetailPage: React.FC = () => {
                 icon={<PlayCircleOutlined />}
                 onClick={() => handleStatusChange('in_progress')}
               >
-                {t('startTask')}
+                {t('detail.startTask')}
               </Button>
             )}
             {currentTask.status === 'in_progress' && (
@@ -394,14 +474,14 @@ const TaskDetailPage: React.FC = () => {
                 icon={<CheckCircleOutlined />}
                 onClick={() => handleStatusChange('completed')}
               >
-                {t('completeTask')}
+                {t('detail.completeTask')}
               </Button>
             )}
             <Button icon={<EditOutlined />} onClick={() => navigate(`/tasks/${id}/edit`)}>
-              {t('edit')}
+              {t('editAction')}
             </Button>
             <Button danger icon={<DeleteOutlined />} onClick={handleDelete}>
-              {t('delete')}
+              {t('deleteAction')}
             </Button>
           </Space>
         </div>

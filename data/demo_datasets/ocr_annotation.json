@@ -1,0 +1,17 @@
+[
+  {
+    "image": "https://labelstud.io/images/opossum_snow.jpg",
+    "ocr": "OPOSSUM IN SNOW",
+    "title": "OCR 示例 1"
+  },
+  {
+    "image": "https://images.unsplash.com/photo-1516979187457-637abb4f9353?w=800",
+    "ocr": "MENU\nCoffee - $3.50\nTea - $2.50\nCake - $4.00",
+    "title": "菜单识别"
+  },
+  {
+    "image": "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=800",
+    "ocr": "SALE\n50% OFF\nLimited Time",
+    "title": "广告牌识别"
+  }
+]

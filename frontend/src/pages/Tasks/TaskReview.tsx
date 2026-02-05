@@ -79,54 +79,11 @@ const TaskReviewPage: React.FC = () => {
   const [batchModalVisible, setBatchModalVisible] = useState(false);
   const [batchAction, setBatchAction] = useState<'approve' | 'reject' | 'revision'>('approve');
 
-  // Mock review items
-  const mockReviewItems: ReviewItem[] = [
-    {
-      id: 'r1',
-      taskId: id || '1',
-      annotationId: 'a1',
-      content: '这个产品非常好用，我很满意！',
-      annotation: { sentiment: 'positive', confidence: 0.95 },
-      annotator: '张三',
-      annotatedAt: '2026-01-10T10:30:00Z',
-      status: 'pending',
-      qualityScore: 4.5,
-    },
-    {
-      id: 'r2',
-      taskId: id || '1',
-      annotationId: 'a2',
-      content: '服务态度很差，等了很久都没人理。',
-      annotation: { sentiment: 'negative', confidence: 0.88 },
-      annotator: '李四',
-      annotatedAt: '2026-01-10T11:15:00Z',
-      status: 'approved',
-      reviewedBy: '王五',
-      reviewedAt: '2026-01-10T14:00:00Z',
-      qualityScore: 5,
-      comments: [
-        { id: 'c1', author: '王五', content: '标注准确', createdAt: '2026-01-10T14:00:00Z', type: 'approval' }
-      ],
-    },
-    {
-      id: 'r3',
-      taskId: id || '1',
-      annotationId: 'a3',
-      content: '一般般吧，没什么特别的感觉。',
-      annotation: { sentiment: 'positive', confidence: 0.65 },
-      annotator: '张三',
-      annotatedAt: '2026-01-10T12:00:00Z',
-      status: 'revision_requested',
-      reviewedBy: '王五',
-      reviewedAt: '2026-01-10T15:30:00Z',
-      qualityScore: 2,
-      comments: [
-        { id: 'c2', author: '王五', content: '这应该是中性情感，请重新标注', createdAt: '2026-01-10T15:30:00Z', type: 'revision' }
-      ],
-    },
-  ];
+  // TODO: Replace with real API call to fetch review items
+  // GET /api/tasks/{id}/review-items
+  const mockReviewItems: ReviewItem[] = [];
 
-  const [reviewItems, setReviewItems] = useState<ReviewItem[]>(mockReviewItems);
+  const [reviewItems, setReviewItems] = useState<ReviewItem[]>([]);
 
   // Calculate stats
   const stats: ReviewStats = {
@@ -141,17 +98,22 @@ const TaskReviewPage: React.FC = () => {
   const handleReview = useCallback((itemId: string, action: 'approve' | 'reject' | 'revision', comment?: string) => {
     setReviewItems(prev => prev.map(item => {
       if (item.id === itemId) {
+        const defaultContent = action === 'approve' 
+          ? t('review.defaultApproved') 
+          : action === 'reject' 
+            ? t('review.defaultRejected') 
+            : t('review.defaultNeedsRevision');
         const newComment: ReviewComment = {
           id: `c${Date.now()}`,
-          author: '当前用户',
-          content: comment || (action === 'approve' ? '已批准' : action === 'reject' ? '已拒绝' : '需要修订'),
+          author: t('review.currentUser'),
+          content: comment || defaultContent,
           createdAt: new Date().toISOString(),
           type: action === 'approve' ? 'approval' : action === 'reject' ? 'rejection' : 'revision',
         };
         return {
           ...item,
           status: action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : 'revision_requested',
-          reviewedBy: '当前用户',
+          reviewedBy: t('review.currentUser'),
           reviewedAt: new Date().toISOString(),
           comments: [...(item.comments || []), newComment],
         };
@@ -170,17 +132,22 @@ const TaskReviewPage: React.FC = () => {
     
     setReviewItems(prev => prev.map(item => {
       if (selectedItems.includes(item.id)) {
+        const defaultContent = batchAction === 'approve' 
+          ? t('review.batchApprovedDefault') 
+          : batchAction === 'reject' 
+            ? t('review.batchRejectedDefault') 
+            : t('review.batchRevisionDefault');
         const newComment: ReviewComment = {
           id: `c${Date.now()}`,
-          author: '当前用户',
-          content: reviewComment || (batchAction === 'approve' ? '批量批准' : batchAction === 'reject' ? '批量拒绝' : '批量请求修订'),
+          author: t('review.currentUser'),
+          content: reviewComment || defaultContent,
           createdAt: new Date().toISOString(),
           type: batchAction === 'approve' ? 'approval' : batchAction === 'reject' ? 'rejection' : 'revision',
         };
         return {
           ...item,
           status: batchAction === 'approve' ? 'approved' : batchAction === 'reject' ? 'rejected' : 'revision_requested',
-          reviewedBy: '当前用户',
+          reviewedBy: t('review.currentUser'),
           reviewedAt: new Date().toISOString(),
           comments: [...(item.comments || []), newComment],
         };
@@ -345,7 +312,7 @@ const TaskReviewPage: React.FC = () => {
                     key="revision"
                     size="small"
                     icon={<EditOutlined />}
-                    onClick={() => handleReview(item.id, 'revision', '请检查并修订标注')}
+                    onClick={() => handleReview(item.id, 'revision', t('review.pleaseCheckAndRevise'))}
                   >
                     {t('review.requestRevision') || 'Request Revision'}
                   </Button>,

@@ -101,7 +101,7 @@ class SystemHealthMonitor:
         self.last_check_results: Dict[str, HealthMetric] = {}
         self.monitoring_active = False
         self.monitor_thread: Optional[threading.Thread] = None
-        self.check_lock = threading.Lock()
+        self.check_lock = asyncio.Lock()
         
         # Issue detection
         self.detected_issues: Set[str] = set()
@@ -202,11 +202,11 @@ class SystemHealthMonitor:
                 logger.error(f"Health monitoring loop error: {e}")
                 time.sleep(10.0)
     
-    def _run_health_check(self, health_check: HealthCheck):
+    async def _run_health_check(self, health_check: HealthCheck):
         """Run a single health check with retry logic."""
         for attempt in range(health_check.retry_attempts):
             try:
-                with self.check_lock:
+                async with self.check_lock:
                     # Check dependencies first
                     if not self._check_dependencies(health_check.dependencies):
                         logger.debug(f"Skipping {health_check.name} due to failed dependencies")
@@ -233,7 +233,7 @@ class SystemHealthMonitor:
             except Exception as e:
                 logger.error(f"Health check {health_check.name} failed (attempt {attempt + 1}): {e}")
                 if attempt < health_check.retry_attempts - 1:
-                    time.sleep(health_check.retry_delay)
+                    await asyncio.sleep(health_check.retry_delay)
                 else:
                     # All attempts failed, create error metric
                     error_metric = HealthMetric(

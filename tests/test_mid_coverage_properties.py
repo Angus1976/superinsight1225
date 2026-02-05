@@ -15,7 +15,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pytest
 from hypothesis import given, strategies as st, settings, assume
 from typing import List, Dict, Any
-from datetime import datetime
+from datetime import datetime, timezone
 from pydantic import BaseModel, Field
 from enum import Enum
 from uuid import uuid4
@@ -81,7 +81,7 @@ def coverage_result_strategy(draw):
         )),
         auto_covered=draw(st.booleans()),
         reviewed=draw(st.booleans()),
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
     )
 
 

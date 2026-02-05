@@ -1,15 +1,14 @@
 // Tasks list page
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ProTable, type ProColumns, type ActionType } from '@ant-design/pro-components';
 import { 
   Button, 
   Tag, 
   Space, 
-  Modal, 
+  App,
   Progress, 
   Dropdown, 
-  message, 
   Select,
   Input,
   DatePicker,
@@ -18,7 +17,8 @@ import {
   Card,
   Statistic,
   Row,
-  Col
+  Col,
+  Modal
 } from 'antd';
 import {
   PlusOutlined,
@@ -31,19 +31,165 @@ import {
   FilterOutlined,
   ReloadOutlined,
   DownloadOutlined,
+  UploadOutlined,
   PlayCircleOutlined,
   PauseCircleOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
+  ClockCircleOutlined,
   TagOutlined,
   UserOutlined,
   CalendarOutlined,
-  BarChartOutlined
+  BarChartOutlined,
+  SyncOutlined,
+  LinkOutlined,
+  DisconnectOutlined,
+  ColumnHeightOutlined,
+  SettingOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useTasks, useDeleteTask, useBatchDeleteTasks, useUpdateTask, useTaskStats } from '@/hooks/useTask';
+import { usePermissions } from '@/hooks/usePermissions';
 import { TaskCreateModal } from './TaskCreateModal';
+import { TaskEditModal } from './TaskEditModal';
+import { TaskImportModal } from './TaskImportModal';
+import { BatchEditModal } from './BatchEditModal';
+import { TaskDeleteModal } from './TaskDeleteModal';
+import { ExportOptionsModal, addExportHistoryEntry } from '@/components/Tasks';
+import type { ExportOptions, ExportField } from '@/components/Tasks';
+import { apiClient } from '@/services';
+import { exportTasksToCSV, exportTasksToJSON, exportTasksToExcel, exportTasksWithCustomFields } from '@/utils/export';
+import { API_ENDPOINTS } from '@/constants';
 import type { Task, TaskStatus, TaskPriority } from '@/types';
+import type { ExportAnnotationResult } from '@/utils/export';
+
+// Types for Label Studio API responses
+interface LabelStudioProject {
+  id: number;
+  title: string;
+  description?: string;
+  task_number: number;
+  num_tasks_with_annotations: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+interface LabelStudioTask {
+  id: number;
+  is_labeled: boolean;
+  annotations?: LabelStudioAnnotation[];
+  total_annotations?: number;
+}
+
+// Annotation result from Label Studio
+interface LabelStudioAnnotation {
+  id: number;
+  created_at: string;
+  updated_at: string;
+  completed_by?: number;
+  result?: unknown[];
+  was_cancelled?: boolean;
+  ground_truth?: boolean;
+  lead_time?: number; // Time spent on annotation in seconds
+}
+
+// Extended project details from Label Studio API
+interface LabelStudioProjectDetails {
+  id: number;
+  title: string;
+  description?: string;
+  task_number?: number;
+  num_tasks_with_annotations?: number;
+  created_at?: string;
+  updated_at?: string;
+  total_annotations_number?: number;
+  total_predictions_number?: number;
+}
+
+// Annotation quality metrics
+interface AnnotationQualityMetrics {
+  totalAnnotations: number;
+  avgLeadTime: number; // Average time per annotation in seconds
+  completionRate: number; // Percentage of tasks with annotations
+  annotatorCount: number; // Number of unique annotators
+}
+
+// Cache for Label Studio API responses
+interface SyncCache {
+  projects: Map<number, LabelStudioProject>;
+  projectTasks: Map<number, LabelStudioTask[]>;
+  lastFetch: number;
+}
+
+// Cache TTL: 30 seconds
+const CACHE_TTL = 30 * 1000;
+
+// Global cache instance
+let syncCache: SyncCache = {
+  projects: new Map(),
+  projectTasks: new Map(),
+  lastFetch: 0,
+};
+
+/**
+ * Calculate annotation quality metrics from Label Studio tasks
+ * @param tasks - Array of Label Studio tasks with annotations
+ * @returns Annotation quality metrics
+ */
+const calculateAnnotationQuality = (tasks: LabelStudioTask[]): AnnotationQualityMetrics => {
+  let totalAnnotations = 0;
+  let totalLeadTime = 0;
+  let annotationsWithLeadTime = 0;
+  const annotatorIds = new Set<number>();
+  
+  for (const task of tasks) {
+    if (task.annotations && task.annotations.length > 0) {
+      for (const annotation of task.annotations) {
+        totalAnnotations++;
+        
+        // Track lead time (time spent on annotation)
+        if (annotation.lead_time && annotation.lead_time > 0) {
+          totalLeadTime += annotation.lead_time;
+          annotationsWithLeadTime++;
+        }
+        
+        // Track unique annotators
+        if (annotation.completed_by) {
+          annotatorIds.add(annotation.completed_by);
+        }
+      }
+    }
+    
+    // Also count from total_annotations if available
+    if (task.total_annotations && task.total_annotations > 0 && (!task.annotations || task.annotations.length === 0)) {
+      totalAnnotations += task.total_annotations;
+    }
+  }
+  
+  const tasksWithAnnotations = tasks.filter(t => t.is_labeled).length;
+  const completionRate = tasks.length > 0 
+    ? Math.round((tasksWithAnnotations / tasks.length) * 100) 
+    : 0;
+  
+  const avgLeadTime = annotationsWithLeadTime > 0 
+    ? Math.round(totalLeadTime / annotationsWithLeadTime) 
+    : 0;
+  
+  return {
+    totalAnnotations,
+    avgLeadTime,
+    completionRate,
+    annotatorCount: annotatorIds.size,
+  };
+};
+
+// Sync progress state
+interface SyncProgress {
+  current: number;
+  total: number;
+  status: 'idle' | 'syncing' | 'completed' | 'error';
+  message: string;
+}
 
 const statusColorMap: Record<TaskStatus, string> = {
   pending: 'default',
@@ -62,11 +208,32 @@ const priorityColorMap: Record<TaskPriority, string> = {
 const TasksPage: React.FC = () => {
   const { t } = useTranslation(['tasks', 'common']);
   const navigate = useNavigate();
+  const { modal, message } = App.useApp();
   const actionRef = useRef<ActionType>(null);
   const [selectedRowKeys, setSelectedRowKeys] = useState<string[]>([]);
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [importModalOpen, setImportModalOpen] = useState(false);
   const [currentParams, setCurrentParams] = useState({});
   const [batchAction, setBatchAction] = useState<string>('');
+  const [syncProgress, setSyncProgress] = useState<SyncProgress>({
+    current: 0,
+    total: 0,
+    status: 'idle',
+    message: '',
+  });
+  const [syncModalOpen, setSyncModalOpen] = useState(false);
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editTaskId, setEditTaskId] = useState<string | null>(null);
+  const [batchEditModalOpen, setBatchEditModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [tasksToDelete, setTasksToDelete] = useState<Task[]>([]);
+  const [columnSettingsModalOpen, setColumnSettingsModalOpen] = useState(false);
+  const [visibleColumns, setVisibleColumns] = useState<string[]>([]);
+
+  // Permission control
+  const { task: taskPerms } = usePermissions();
 
   const { data, isLoading, refetch } = useTasks(currentParams);
   const { data: stats } = useTaskStats();
@@ -74,37 +241,377 @@ const TasksPage: React.FC = () => {
   const batchDeleteTasks = useBatchDeleteTasks();
   const updateTask = useUpdateTask();
 
-  const handleDelete = (id: string) => {
-    Modal.confirm({
-      title: t('delete'),
-      icon: <ExclamationCircleOutlined />,
-      content: t('confirmDeleteTask'),
-      okText: t('confirm'),
-      cancelText: t('cancel'),
-      okType: 'danger',
-      onOk: async () => {
-        await deleteTask.mutateAsync(id);
-        refetch();
-      },
+  // Initialize visible columns from localStorage or default to all columns
+  useEffect(() => {
+    const savedColumns = localStorage.getItem('tasks-table-visible-columns');
+    if (savedColumns) {
+      setVisibleColumns(JSON.parse(savedColumns));
+    } else {
+      // Default: all columns visible
+      setVisibleColumns([
+        'status',
+        'priority',
+        'annotation_type',
+        'progress',
+        'assignee_name',
+        'due_date',
+        'created_at',
+        'label_studio_sync_status',
+        'actions',
+      ]);
+    }
+  }, []);
+
+  // 强制所有tooltip显示在底部，避免遮挡按钮
+  useEffect(() => {
+    const forceTooltipBottom = () => {
+      // 查找所有tooltip触发器
+      const tooltipTriggers = document.querySelectorAll('[data-tooltip], .ant-pro-table-list-toolbar-setting-item, .ant-pro-table-list-toolbar-density');
+      
+      tooltipTriggers.forEach((trigger) => {
+        // 监听鼠标进入事件
+        const handleMouseEnter = () => {
+          setTimeout(() => {
+            // 查找显示的tooltip
+            const tooltips = document.querySelectorAll('.ant-tooltip');
+            tooltips.forEach((tooltip) => {
+              const tooltipElement = tooltip as HTMLElement;
+              
+              // 获取触发器的位置
+              const triggerRect = trigger.getBoundingClientRect();
+              
+              // 强制tooltip显示在触发器下方
+              tooltipElement.style.setProperty('top', `${triggerRect.bottom + 8}px`, 'important');
+              tooltipElement.style.setProperty('left', `${triggerRect.left}px`, 'important');
+              tooltipElement.style.setProperty('transform', 'none', 'important');
+            });
+          }, 10);
+        };
+        
+        trigger.addEventListener('mouseenter', handleMouseEnter);
+      });
+    };
+
+    forceTooltipBottom();
+
+    // 使用MutationObserver监听DOM变化
+    const observer = new MutationObserver(forceTooltipBottom);
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
     });
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+  // Check if cache is valid
+  const isCacheValid = useCallback(() => {
+    return Date.now() - syncCache.lastFetch < CACHE_TTL;
+  }, []);
+
+  // Clear cache
+  const clearCache = useCallback(() => {
+    syncCache = {
+      projects: new Map(),
+      projectTasks: new Map(),
+      lastFetch: 0,
+    };
+  }, []);
+
+  // Fetch all Label Studio projects with caching
+  const fetchLabelStudioProjects = useCallback(async (forceRefresh = false): Promise<LabelStudioProject[]> => {
+    if (!forceRefresh && isCacheValid() && syncCache.projects.size > 0) {
+      console.log('[fetchLabelStudioProjects] Using cached projects');
+      return Array.from(syncCache.projects.values());
+    }
+
+    console.log('[fetchLabelStudioProjects] Fetching from API...');
+    const response = await apiClient.get<{ results: LabelStudioProject[] }>(
+      API_ENDPOINTS.LABEL_STUDIO.PROJECTS
+    );
+    const projects = response.data.results || [];
+    
+    // Update cache
+    syncCache.projects.clear();
+    projects.forEach(p => syncCache.projects.set(p.id, p));
+    syncCache.lastFetch = Date.now();
+    
+    return projects;
+  }, [isCacheValid]);
+
+  // Batch fetch tasks for multiple projects
+  const batchFetchProjectTasks = useCallback(async (
+    projectIds: number[],
+    forceRefresh = false
+  ): Promise<Map<number, LabelStudioTask[]>> => {
+    const result = new Map<number, LabelStudioTask[]>();
+    const projectsToFetch: number[] = [];
+
+    // Check cache for each project
+    for (const projectId of projectIds) {
+      if (!forceRefresh && isCacheValid() && syncCache.projectTasks.has(projectId)) {
+        result.set(projectId, syncCache.projectTasks.get(projectId)!);
+      } else {
+        projectsToFetch.push(projectId);
+      }
+    }
+
+    if (projectsToFetch.length === 0) {
+      console.log('[batchFetchProjectTasks] All projects found in cache');
+      return result;
+    }
+
+    console.log(`[batchFetchProjectTasks] Fetching ${projectsToFetch.length} projects from API...`);
+
+    // Batch fetch with concurrency limit (5 concurrent requests)
+    const BATCH_SIZE = 5;
+    for (let i = 0; i < projectsToFetch.length; i += BATCH_SIZE) {
+      const batch = projectsToFetch.slice(i, i + BATCH_SIZE);
+      const batchResults = await Promise.allSettled(
+        batch.map(async (projectId) => {
+          const response = await apiClient.get<{ tasks: LabelStudioTask[] }>(
+            API_ENDPOINTS.LABEL_STUDIO.TASKS(String(projectId))
+          );
+          return { projectId, tasks: response.data.tasks || [] };
+        })
+      );
+
+      // Process results
+      for (const settledResult of batchResults) {
+        if (settledResult.status === 'fulfilled') {
+          const { projectId, tasks } = settledResult.value;
+          result.set(projectId, tasks);
+          syncCache.projectTasks.set(projectId, tasks);
+        }
+      }
+    }
+
+    return result;
+  }, [isCacheValid]);
+
+  // Determine which tasks need syncing (incremental sync)
+  const getTasksNeedingSync = useCallback((
+    localTasks: Task[],
+    lsProjects: LabelStudioProject[]
+  ): Task[] => {
+    const projectMapById = new Map(lsProjects.map(p => [p.id, p]));
+    const projectMapByTitle = new Map(lsProjects.map(p => [p.title.toLowerCase().trim(), p]));
+
+    return localTasks.filter(task => {
+      // Task needs sync if:
+      // 1. It has a project ID and the project exists
+      // 2. It doesn't have a project ID but a matching project exists by name
+      // 3. It hasn't been synced recently (check last_sync timestamp)
+      
+      const projectId = task.label_studio_project_id;
+      
+      if (projectId) {
+        const project = projectMapById.get(Number(projectId));
+        if (!project) return false; // Project doesn't exist, skip
+        
+        // Check if sync is needed based on last sync time
+        if (task.label_studio_last_sync) {
+          const lastSync = new Date(task.label_studio_last_sync).getTime();
+          const syncAge = Date.now() - lastSync;
+          // Skip if synced within last 5 minutes and status is 'synced'
+          if (syncAge < 5 * 60 * 1000 && task.label_studio_sync_status === 'synced') {
+            return false;
+          }
+        }
+        return true;
+      }
+      
+      // Try to find matching project by name
+      const matchingProject = projectMapByTitle.get(task.name.toLowerCase().trim());
+      return !!matchingProject;
+    });
+  }, []);
+
+  // Sync a single task with Label Studio - includes project details sync and annotation results
+  const handleSyncSingleTask = useCallback(async (task: Task) => {
+    const projectId = task.label_studio_project_id;
+    
+    if (!projectId) {
+      message.warning(t('syncTaskNoProject'));
+      return;
+    }
+    
+    const hide = message.loading(t('syncingSingleTask'), 0);
+    
+    try {
+      // 1. Fetch project details (name, description, updated_at)
+      const projectResponse = await apiClient.get<LabelStudioProjectDetails>(
+        API_ENDPOINTS.LABEL_STUDIO.PROJECT_BY_ID(projectId)
+      );
+      const projectDetails = projectResponse.data;
+      
+      // 2. Fetch tasks for this project to calculate progress and annotation results
+      const tasksResponse = await apiClient.get<{ tasks: LabelStudioTask[] }>(
+        API_ENDPOINTS.LABEL_STUDIO.TASKS(projectId)
+      );
+      const lsTasks = tasksResponse.data.tasks || [];
+      
+      // 3. Calculate progress from tasks
+      const totalTasks = lsTasks.length;
+      const completedTasks = lsTasks.filter(t => t.is_labeled).length;
+      const progress = totalTasks > 0 
+        ? Math.round((completedTasks / totalTasks) * 100) 
+        : 0;
+      
+      // 4. Calculate annotation quality metrics
+      const qualityMetrics = calculateAnnotationQuality(lsTasks);
+      console.log('[handleSyncSingleTask] Quality metrics:', qualityMetrics);
+      
+      // 5. Build update payload with project details and annotation results
+      const updatePayload: {
+        name?: string;
+        description?: string;
+        total_items: number;
+        completed_items: number;
+        progress: number;
+        label_studio_sync_status: 'synced' | 'pending' | 'failed';
+        label_studio_last_sync: string;
+        label_studio_sync_error?: string;
+      } = {
+        total_items: totalTasks,
+        completed_items: completedTasks,
+        progress: progress,
+        label_studio_sync_status: 'synced',
+        label_studio_last_sync: projectDetails.updated_at || new Date().toISOString(),
+        label_studio_sync_error: '', // Clear any previous error on successful sync
+      };
+      
+      // 6. Sync project name if available and different
+      if (projectDetails.title && projectDetails.title !== task.name) {
+        // Only update name if it's from Label Studio and meaningful
+        // Don't overwrite if the project title is just a generic name
+        const isGenericTitle = /^Project \d+$/.test(projectDetails.title);
+        if (!isGenericTitle) {
+          updatePayload.name = projectDetails.title;
+        }
+      }
+      
+      // 7. Sync project description if available
+      if (projectDetails.description !== undefined) {
+        updatePayload.description = projectDetails.description || '';
+      }
+      
+      // 8. Update task with synced data
+      await updateTask.mutateAsync({
+        id: task.id,
+        payload: updatePayload
+      });
+      
+      hide();
+      
+      // Show detailed sync result with annotation quality info
+      const syncDetails = [];
+      if (updatePayload.name) {
+        syncDetails.push(t('syncedProjectName'));
+      }
+      if (updatePayload.description !== undefined) {
+        syncDetails.push(t('syncedProjectDescription'));
+      }
+      syncDetails.push(`${t('progressLabel')}: ${progress}%`);
+      syncDetails.push(`${t('totalItems')}: ${totalTasks}`);
+      syncDetails.push(`${t('completed')}: ${completedTasks}`);
+      
+      // Add annotation quality info to log
+      if (qualityMetrics.totalAnnotations > 0) {
+        syncDetails.push(`${t('syncedAnnotations')}: ${qualityMetrics.totalAnnotations}`);
+        if (qualityMetrics.avgLeadTime > 0) {
+          syncDetails.push(`${t('syncedAvgTime')}: ${Math.round(qualityMetrics.avgLeadTime / 60)}min`);
+        }
+        if (qualityMetrics.annotatorCount > 0) {
+          syncDetails.push(`${t('syncedAnnotators')}: ${qualityMetrics.annotatorCount}`);
+        }
+      }
+      
+      message.success(t('syncSingleTaskSuccess', { progress }));
+      console.log('[handleSyncSingleTask] Synced details:', syncDetails.join(', '));
+      
+      refetch();
+      
+    } catch (error) {
+      hide();
+      console.error('[handleSyncSingleTask] Failed:', error);
+      
+      // Extract error message for display
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail || t('syncSingleTaskFailed');
+      
+      // Update status to failed with error message
+      try {
+        await updateTask.mutateAsync({
+          id: task.id,
+          payload: {
+            label_studio_sync_status: 'failed',
+            label_studio_last_sync: new Date().toISOString(),
+            label_studio_sync_error: errorMessage,
+          }
+        });
+      } catch (updateError) {
+        console.error('[handleSyncSingleTask] Failed to update status:', updateError);
+      }
+      
+      message.error(t('syncSingleTaskFailed'));
+      refetch();
+    }
+  }, [t, updateTask, refetch, message]);
+
+  // Handle single task delete with enhanced modal
+  const handleDelete = (id: string) => {
+    const task = (data?.items || []).find(t => t.id === id);
+    if (task) {
+      setTasksToDelete([task]);
+      setDeleteModalOpen(true);
+    }
   };
 
+  // Handle opening edit modal
+  const handleEdit = (taskId: string) => {
+    setEditTaskId(taskId);
+    setEditModalOpen(true);
+  };
+
+  // Handle opening batch edit modal
+  const handleBatchEdit = () => {
+    if (selectedRowKeys.length === 0) {
+      message.warning(t('selectTasksToUpdate'));
+      return;
+    }
+    setBatchEditModalOpen(true);
+  };
+
+  // Get selected tasks for batch edit
+  const getSelectedTasks = () => {
+    return (data?.items || []).filter(task => selectedRowKeys.includes(task.id));
+  };
+
+  // Handle batch delete with enhanced modal
   const handleBatchDelete = () => {
     if (selectedRowKeys.length === 0) {
       message.warning(t('selectTasksToDelete'));
       return;
     }
-    Modal.confirm({
-      title: t('deleteTasks'),
-      icon: <ExclamationCircleOutlined />,
-      content: t('confirmDeleteTasks', { count: selectedRowKeys.length }),
-      okType: 'danger',
-      onOk: async () => {
-        await batchDeleteTasks.mutateAsync(selectedRowKeys);
-        setSelectedRowKeys([]);
-        refetch();
-      },
-    });
+    const tasks = (data?.items || []).filter(task => selectedRowKeys.includes(task.id));
+    setTasksToDelete(tasks);
+    setDeleteModalOpen(true);
+  };
+
+  // Handle delete success callback
+  const handleDeleteSuccess = (deletedIds: string[]) => {
+    setDeleteModalOpen(false);
+    setTasksToDelete([]);
+    // Clear selection if batch delete
+    if (deletedIds.length > 1) {
+      setSelectedRowKeys(prev => prev.filter(id => !deletedIds.includes(id)));
+    }
+    refetch();
+    message.success(t('delete.result.success', { count: deletedIds.length }));
   };
 
   const handleBatchStatusUpdate = async (status: TaskStatus) => {
@@ -128,68 +635,585 @@ const TasksPage: React.FC = () => {
     }
   };
 
-  const handleExportTasks = () => {
-    // Export selected tasks or all tasks
-    const tasksToExport = selectedRowKeys.length > 0 
-      ? (data?.items || mockTasks).filter(task => selectedRowKeys.includes(task.id))
-      : (data?.items || mockTasks);
+  const handleSyncAllTasks = async () => {
+    // Show sync progress modal
+    setSyncModalOpen(true);
+    setSyncProgress({
+      current: 0,
+      total: 0,
+      status: 'syncing',
+      message: t('syncingTasks'),
+    });
     
-    const csvContent = [
-      ['ID', 'Name', 'Status', 'Priority', 'Assignee', 'Progress', 'Created', 'Due Date'].join(','),
-      ...tasksToExport.map(task => [
-        task.id,
-        `"${task.name}"`,
-        task.status,
-        task.priority,
-        task.assignee_name || '',
-        `${task.progress}%`,
-        new Date(task.created_at).toLocaleDateString(),
-        task.due_date ? new Date(task.due_date).toLocaleDateString() : ''
-      ].join(','))
-    ].join('\n');
+    try {
+      // 1. Fetch Label Studio projects (with caching)
+      console.log('[handleSyncAllTasks] Fetching Label Studio projects...');
+      setSyncProgress(prev => ({ ...prev, message: t('syncFetchingProjects') || 'Fetching projects...' }));
+      
+      const lsProjects = await fetchLabelStudioProjects();
+      console.log('[handleSyncAllTasks] Found', lsProjects.length, 'Label Studio projects');
+      
+      // 2. Get local tasks list
+      const localTasks = data?.items || [];
+      
+      if (localTasks.length === 0) {
+        setSyncProgress({
+          current: 0,
+          total: 0,
+          status: 'completed',
+          message: t('noTasksToSync'),
+        });
+        return;
+      }
+      
+      // 3. Determine which tasks need syncing (incremental sync)
+      const tasksToSync = getTasksNeedingSync(localTasks, lsProjects);
+      
+      if (tasksToSync.length === 0) {
+        setSyncProgress({
+          current: 0,
+          total: 0,
+          status: 'completed',
+          message: t('allTasksSynced'),
+        });
+        return;
+      }
+      
+      console.log(`[handleSyncAllTasks] ${tasksToSync.length} tasks need syncing (${localTasks.length - tasksToSync.length} skipped)`);
+      
+      // 4. Create project mappings
+      const projectMapById = new Map(lsProjects.map(p => [p.id, p]));
+      const projectMapByTitle = new Map(lsProjects.map(p => [p.title.toLowerCase().trim(), p]));
+      
+      // 5. Collect all project IDs that need task fetching
+      const projectIdsToFetch = new Set<number>();
+      const taskProjectMapping = new Map<string, number>(); // task.id -> projectId
+      
+      for (const task of tasksToSync) {
+        let projectId = task.label_studio_project_id ? Number(task.label_studio_project_id) : null;
+        
+        if (!projectId) {
+          const matchingProject = projectMapByTitle.get(task.name.toLowerCase().trim());
+          if (matchingProject) {
+            projectId = matchingProject.id;
+          }
+        }
+        
+        if (projectId && projectMapById.has(projectId)) {
+          projectIdsToFetch.add(projectId);
+          taskProjectMapping.set(task.id, projectId);
+        }
+      }
+      
+      // 6. Batch fetch all project tasks at once
+      setSyncProgress(prev => ({ 
+        ...prev, 
+        message: t('syncFetchingTasks') || `Fetching tasks for ${projectIdsToFetch.size} projects...`,
+        total: tasksToSync.length,
+      }));
+      
+      const projectTasksMap = await batchFetchProjectTasks(Array.from(projectIdsToFetch));
+      
+      // 7. Process tasks in batches for updates
+      let successCount = 0;
+      let failCount = 0;
+      let skippedCount = 0;
+      let linkedCount = 0;
+      
+      const UPDATE_BATCH_SIZE = 10;
+      const updatePromises: Promise<void>[] = [];
+      
+      for (let i = 0; i < tasksToSync.length; i++) {
+        const task = tasksToSync[i];
+        
+        // Update progress
+        setSyncProgress(prev => ({
+          ...prev,
+          current: i + 1,
+          message: t('syncProgressMessage', { current: i + 1, total: tasksToSync.length }) || 
+            `Syncing task ${i + 1} of ${tasksToSync.length}...`,
+        }));
+        
+        const updatePromise = (async () => {
+          try {
+            let projectId = task.label_studio_project_id ? Number(task.label_studio_project_id) : null;
+            let wasLinked = false;
+            
+            // Try to find matching project by name if no project ID
+            if (!projectId) {
+              const matchingProject = projectMapByTitle.get(task.name.toLowerCase().trim());
+              if (matchingProject) {
+                projectId = matchingProject.id;
+                wasLinked = true;
+                console.log(`[handleSyncAllTasks] Linking task "${task.name}" to project ${projectId}`);
+              } else {
+                skippedCount++;
+                return;
+              }
+            }
+            
+            // Get project details from cache for name/description sync
+            const projectDetails = projectMapById.get(projectId);
+            
+            // Get project tasks from cache
+            const lsTasks = projectTasksMap.get(projectId);
+            
+            if (!lsTasks) {
+              console.warn(`[handleSyncAllTasks] No tasks found for project ${projectId}`);
+              
+              await updateTask.mutateAsync({
+                id: task.id,
+                payload: {
+                  label_studio_sync_status: 'failed',
+                  label_studio_last_sync: new Date().toISOString(),
+                  label_studio_sync_error: t('syncErrorNoTasks'),
+                }
+              });
+              
+              failCount++;
+              return;
+            }
+            
+            // Calculate progress
+            const totalTasks = lsTasks.length;
+            const completedTasks = lsTasks.filter(t => t.is_labeled).length;
+            const progress = totalTasks > 0 
+              ? Math.round((completedTasks / totalTasks) * 100) 
+              : 0;
+            
+            // Calculate annotation quality metrics
+            const qualityMetrics = calculateAnnotationQuality(lsTasks);
+            
+            // Build update payload with project details and annotation results
+            const updatePayload: {
+              name?: string;
+              description?: string;
+              total_items: number;
+              completed_items: number;
+              progress: number;
+              label_studio_sync_status: 'synced' | 'pending' | 'failed';
+              label_studio_last_sync: string;
+              label_studio_project_id?: string;
+            } = {
+              total_items: totalTasks,
+              completed_items: completedTasks,
+              progress: progress,
+              label_studio_sync_status: 'synced',
+              label_studio_last_sync: new Date().toISOString(),
+            };
+            
+            // Sync project name if available and meaningful
+            if (projectDetails?.title && projectDetails.title !== task.name) {
+              const isGenericTitle = /^Project \d+$/.test(projectDetails.title);
+              if (!isGenericTitle) {
+                updatePayload.name = projectDetails.title;
+              }
+            }
+            
+            if (wasLinked) {
+              updatePayload.label_studio_project_id = String(projectId);
+            }
+            
+            await updateTask.mutateAsync({
+              id: task.id,
+              payload: updatePayload
+            });
+            
+            if (wasLinked) linkedCount++;
+            successCount++;
+            
+            // Log with annotation quality info
+            const qualityInfo = qualityMetrics.totalAnnotations > 0 
+              ? `, annotations=${qualityMetrics.totalAnnotations}, annotators=${qualityMetrics.annotatorCount}`
+              : '';
+            console.log(`[handleSyncAllTasks] Task "${task.name}" synced: ${completedTasks}/${totalTasks} (${progress}%)${qualityInfo}`);
+            
+          } catch (error) {
+            console.error(`[handleSyncAllTasks] Failed to sync task ${task.id}:`, error);
+            
+            // Extract error message
+            const errorMessage = error instanceof Error 
+              ? error.message 
+              : (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail || t('syncError');
+            
+            try {
+              await updateTask.mutateAsync({
+                id: task.id,
+                payload: {
+                  label_studio_sync_status: 'failed',
+                  label_studio_last_sync: new Date().toISOString(),
+                  label_studio_sync_error: errorMessage,
+                }
+              });
+            } catch (updateError) {
+              console.error(`[handleSyncAllTasks] Failed to update task ${task.id} status:`, updateError);
+            }
+            
+            failCount++;
+          }
+        })();
+        
+        updatePromises.push(updatePromise);
+        
+        // Process in batches to avoid overwhelming the server
+        if (updatePromises.length >= UPDATE_BATCH_SIZE || i === tasksToSync.length - 1) {
+          await Promise.all(updatePromises);
+          updatePromises.length = 0;
+        }
+      }
+      
+      // 8. Show final result
+      const totalSkipped = localTasks.length - tasksToSync.length + skippedCount;
+      
+      setSyncProgress({
+        current: tasksToSync.length,
+        total: tasksToSync.length,
+        status: failCount > 0 ? 'error' : 'completed',
+        message: failCount === 0 && successCount > 0
+          ? (linkedCount > 0 
+              ? t('syncSuccessWithLinked', { count: successCount, linked: linkedCount })
+              : t('syncSuccess', { count: successCount }))
+          : failCount > 0
+            ? t('syncPartialSuccess', { success: successCount, fail: failCount })
+            : t('allTasksSynced'),
+      });
+      
+      console.log(`[handleSyncAllTasks] Sync completed: success=${successCount}, failed=${failCount}, skipped=${totalSkipped}, linked=${linkedCount}`);
+      
+      // 9. Refresh list
+      refetch();
+      
+    } catch (error) {
+      console.error('[handleSyncAllTasks] Sync failed:', error);
+      setSyncProgress({
+        current: 0,
+        total: 0,
+        status: 'error',
+        message: t('syncError'),
+      });
+    }
+  };
 
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `tasks_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const handleExportTasks = () => {
+    // Export selected tasks or all tasks as CSV
+    const tasksToExport = selectedRowKeys.length > 0 
+      ? (data?.items || []).filter(task => selectedRowKeys.includes(task.id))
+      : (data?.items || []);
+    
+    if (tasksToExport.length === 0) {
+      message.warning(t('noTasksToExport'));
+      return;
+    }
+    
+    // Use the export utility with i18n support
+    exportTasksToCSV(tasksToExport, {
+      includeId: true,
+      includeDescription: false,
+      includeLabelStudioId: false,
+      includeSyncStatus: true,
+      includeTags: false,
+      t: t,
+    });
     
     message.success(t('exportSuccess'));
   };
 
-  const columns: ProColumns<Task>[] = [
+  // JSON export handler with annotation results
+  const handleExportTasksToJSON = async (includeAnnotations: boolean = true) => {
+    // Export selected tasks or all tasks as JSON
+    const tasksToExport = selectedRowKeys.length > 0 
+      ? (data?.items || []).filter(task => selectedRowKeys.includes(task.id))
+      : (data?.items || []);
+    
+    if (tasksToExport.length === 0) {
+      message.warning(t('noTasksToExport'));
+      return;
+    }
+    
+    const hide = message.loading(t('export.exportingJson') || 'Exporting JSON data...', 0);
+    
+    try {
+      // Fetch annotations for tasks with Label Studio projects if requested
+      const annotationsMap = new Map<string, ExportAnnotationResult[]>();
+      
+      if (includeAnnotations) {
+        const tasksWithProjects = tasksToExport.filter(task => task.label_studio_project_id);
+        
+        // Fetch annotations in batches
+        const BATCH_SIZE = 5;
+        for (let i = 0; i < tasksWithProjects.length; i += BATCH_SIZE) {
+          const batch = tasksWithProjects.slice(i, i + BATCH_SIZE);
+          const results = await Promise.allSettled(
+            batch.map(async task => {
+              try {
+                const response = await apiClient.get<{ tasks: Array<{ id: number; annotations?: Array<{ id: number; result?: unknown[]; created_at?: string; updated_at?: string; completed_by?: number; was_cancelled?: boolean; lead_time?: number }> }> }>(
+                  API_ENDPOINTS.LABEL_STUDIO.TASKS(task.label_studio_project_id!)
+                );
+                
+                // Extract annotations from all tasks in the project
+                const annotations: ExportAnnotationResult[] = [];
+                const lsTasks = response.data.tasks || [];
+                
+                for (const lsTask of lsTasks) {
+                  if (lsTask.annotations && lsTask.annotations.length > 0) {
+                    for (const annotation of lsTask.annotations) {
+                      annotations.push({
+                        id: annotation.id,
+                        task_id: lsTask.id,
+                        result: annotation.result || [],
+                        created_at: annotation.created_at,
+                        updated_at: annotation.updated_at,
+                        completed_by: annotation.completed_by,
+                        was_cancelled: annotation.was_cancelled,
+                        lead_time: annotation.lead_time,
+                      });
+                    }
+                  }
+                }
+                
+                return { taskId: task.id, annotations };
+              } catch (error) {
+                console.error(`Failed to fetch annotations for task ${task.id}:`, error);
+                return { taskId: task.id, annotations: [] };
+              }
+            })
+          );
+          
+          for (const result of results) {
+            if (result.status === 'fulfilled') {
+              annotationsMap.set(result.value.taskId, result.value.annotations);
+            }
+          }
+        }
+      }
+      
+      // Export to JSON with annotations
+      exportTasksToJSON(tasksToExport, {
+        includeAnnotations,
+        includeProjectConfig: true,
+        includeSyncMetadata: true,
+        t: t,
+        prettyPrint: true,
+      }, annotationsMap);
+      
+      hide();
+      message.success(t('export.exportJsonSuccess') || 'JSON export successful');
+      
+    } catch (error) {
+      hide();
+      console.error('JSON export failed:', error);
+      message.error(t('export.exportJsonFailed') || 'JSON export failed');
+    }
+  };
+
+  // Excel export handler
+  const handleExportTasksToExcel = () => {
+    // Export selected tasks or all tasks as Excel
+    const tasksToExport = selectedRowKeys.length > 0 
+      ? (data?.items || []).filter(task => selectedRowKeys.includes(task.id))
+      : (data?.items || []);
+    
+    if (tasksToExport.length === 0) {
+      message.warning(t('noTasksToExport'));
+      return;
+    }
+    
+    try {
+      exportTasksToExcel(tasksToExport, {
+        includeId: true,
+        includeDescription: true,
+        includeLabelStudioId: true,
+        includeSyncStatus: true,
+        includeTags: true,
+        includeSummary: true,
+        includeChartsData: true,
+        t: t,
+      });
+      
+      message.success(t('export.exportExcelSuccess') || 'Excel export successful');
+    } catch (error) {
+      console.error('Excel export failed:', error);
+      message.error(t('export.exportExcelFailed') || 'Excel export failed');
+    }
+  };
+
+  // Export with options handler
+  const handleExportWithOptions = async (options: ExportOptions) => {
+    setExportLoading(true);
+    
+    try {
+      // Determine which tasks to export based on range
+      let tasksToExport: Task[] = [];
+      
+      switch (options.range) {
+        case 'selected':
+          tasksToExport = (data?.items || []).filter(task => selectedRowKeys.includes(task.id));
+          break;
+        case 'filtered':
+          // For filtered, we use the current data which is already filtered
+          tasksToExport = data?.items || [];
+          break;
+        case 'all':
+        default:
+          tasksToExport = data?.items || [];
+          break;
+      }
+      
+      if (tasksToExport.length === 0) {
+        message.warning(t('noTasksToExport'));
+        setExportLoading(false);
+        setExportModalOpen(false);
+        return;
+      }
+      
+      const filename = `tasks_export_${new Date().toISOString().split('T')[0]}`;
+      
+      // Export based on format
+      switch (options.format) {
+        case 'csv':
+          // Use custom fields export for CSV
+          exportTasksWithCustomFields(tasksToExport, options.fields as (keyof Task)[], {
+            filename,
+            t,
+          });
+          message.success(t('exportSuccess'));
+          break;
+          
+        case 'json':
+          // Fetch annotations if requested
+          const annotationsMap = new Map<string, ExportAnnotationResult[]>();
+          
+          if (options.includeAnnotations) {
+            const tasksWithProjects = tasksToExport.filter(task => task.label_studio_project_id);
+            
+            const BATCH_SIZE = 5;
+            for (let i = 0; i < tasksWithProjects.length; i += BATCH_SIZE) {
+              const batch = tasksWithProjects.slice(i, i + BATCH_SIZE);
+              const results = await Promise.allSettled(
+                batch.map(async task => {
+                  try {
+                    const response = await apiClient.get<{ tasks: Array<{ id: number; annotations?: Array<{ id: number; result?: unknown[]; created_at?: string; updated_at?: string; completed_by?: number; was_cancelled?: boolean; lead_time?: number }> }> }>(
+                      API_ENDPOINTS.LABEL_STUDIO.TASKS(task.label_studio_project_id!)
+                    );
+                    
+                    const annotations: ExportAnnotationResult[] = [];
+                    const lsTasks = response.data.tasks || [];
+                    
+                    for (const lsTask of lsTasks) {
+                      if (lsTask.annotations && lsTask.annotations.length > 0) {
+                        for (const annotation of lsTask.annotations) {
+                          annotations.push({
+                            id: annotation.id,
+                            task_id: lsTask.id,
+                            result: annotation.result || [],
+                            created_at: annotation.created_at,
+                            updated_at: annotation.updated_at,
+                            completed_by: annotation.completed_by,
+                            was_cancelled: annotation.was_cancelled,
+                            lead_time: annotation.lead_time,
+                          });
+                        }
+                      }
+                    }
+                    
+                    return { taskId: task.id, annotations };
+                  } catch (error) {
+                    console.error(`Failed to fetch annotations for task ${task.id}:`, error);
+                    return { taskId: task.id, annotations: [] };
+                  }
+                })
+              );
+              
+              for (const result of results) {
+                if (result.status === 'fulfilled') {
+                  annotationsMap.set(result.value.taskId, result.value.annotations);
+                }
+              }
+            }
+          }
+          
+          exportTasksToJSON(tasksToExport, {
+            includeAnnotations: options.includeAnnotations,
+            includeProjectConfig: options.includeProjectConfig,
+            includeSyncMetadata: options.includeSyncMetadata,
+            filename,
+            t,
+            prettyPrint: true,
+          }, annotationsMap);
+          message.success(t('export.exportJsonSuccess'));
+          break;
+          
+        case 'excel':
+          // Map fields to Excel options
+          const excelOptions = {
+            includeId: options.fields.includes('id'),
+            includeDescription: options.fields.includes('description'),
+            includeLabelStudioId: options.fields.includes('label_studio_project_id'),
+            includeSyncStatus: options.fields.includes('label_studio_sync_status'),
+            includeTags: options.fields.includes('tags'),
+            includeSummary: true,
+            includeChartsData: true,
+            filename,
+            t,
+          };
+          
+          exportTasksToExcel(tasksToExport, excelOptions);
+          message.success(t('export.exportExcelSuccess'));
+          break;
+      }
+      
+      // Add to export history
+      addExportHistoryEntry({
+        format: options.format,
+        range: options.range,
+        taskCount: tasksToExport.length,
+        fields: options.fields,
+        filename: `${filename}.${options.format === 'excel' ? 'xlsx' : options.format}`,
+      });
+      
+      setExportModalOpen(false);
+      
+    } catch (error) {
+      console.error('Export failed:', error);
+      message.error(t('export.exportFailed') || 'Export failed');
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
+  // Handle column visibility toggle
+  const handleColumnVisibilityChange = (columnKey: string, visible: boolean) => {
+    const newVisibleColumns = visible
+      ? [...visibleColumns, columnKey]
+      : visibleColumns.filter(key => key !== columnKey);
+    setVisibleColumns(newVisibleColumns);
+    localStorage.setItem('tasks-table-visible-columns', JSON.stringify(newVisibleColumns));
+  };
+
+  // Handle reset columns to default
+  const handleResetColumns = () => {
+    const defaultColumns = [
+      'status',
+      'priority',
+      'annotation_type',
+      'progress',
+      'assignee_name',
+      'due_date',
+      'created_at',
+      'label_studio_sync_status',
+      'actions',
+    ];
+    setVisibleColumns(defaultColumns);
+    localStorage.setItem('tasks-table-visible-columns', JSON.stringify(defaultColumns));
+    message.success(t('columnSettings.resetSuccess') || '已恢复默认列设置');
+  };
+
+  const allColumns: ProColumns<Task>[] = [
     {
-      title: t('taskName'),
-      dataIndex: 'name',
-      key: 'name',
-      width: 200,
-      ellipsis: true,
-      render: (_, record) => (
-        <Space direction="vertical" size={0}>
-          <a onClick={() => navigate(`/tasks/${record.id}`)}>{record.name}</a>
-          {record.tags && record.tags.length > 0 && (
-            <Space size={4}>
-              {record.tags.slice(0, 2).map(tag => (
-                <Tag key={tag} size="small" icon={<TagOutlined />}>
-                  {tag}
-                </Tag>
-              ))}
-              {record.tags.length > 2 && (
-                <Tooltip title={record.tags.slice(2).join(', ')}>
-                  <Tag size="small">+{record.tags.length - 2}</Tag>
-                </Tooltip>
-              )}
-            </Space>
-          )}
-        </Space>
-      ),
-    },
-    {
-      title: t('status'),
+      title: t('columns.status'),
       dataIndex: 'status',
       key: 'status',
+      hideInTable: !visibleColumns.includes('status'),
       width: 120,
       valueType: 'select',
       valueEnum: {
@@ -220,9 +1244,10 @@ const TasksPage: React.FC = () => {
       },
     },
     {
-      title: t('priority'),
+      title: t('columns.priority'),
       dataIndex: 'priority',
       key: 'priority',
+      hideInTable: !visibleColumns.includes('priority'),
       width: 100,
       valueType: 'select',
       valueEnum: {
@@ -246,6 +1271,7 @@ const TasksPage: React.FC = () => {
       title: t('annotationType'),
       dataIndex: 'annotation_type',
       key: 'annotation_type',
+      hideInTable: !visibleColumns.includes('annotation_type'),
       width: 150,
       valueType: 'select',
       valueEnum: {
@@ -271,9 +1297,10 @@ const TasksPage: React.FC = () => {
       },
     },
     {
-      title: t('progress'),
+      title: t('columns.progress'),
       dataIndex: 'progress',
       key: 'progress',
+      hideInTable: !visibleColumns.includes('progress'),
       width: 180,
       search: false,
       sorter: true,
@@ -307,6 +1334,7 @@ const TasksPage: React.FC = () => {
       title: t('assignee'),
       dataIndex: 'assignee_name',
       key: 'assignee_name',
+      hideInTable: !visibleColumns.includes('assignee_name'),
       width: 120,
       ellipsis: true,
       render: (text, record) => (
@@ -320,6 +1348,7 @@ const TasksPage: React.FC = () => {
       title: t('dueDate'),
       dataIndex: 'due_date',
       key: 'due_date',
+      hideInTable: !visibleColumns.includes('due_date'),
       width: 120,
       valueType: 'date',
       sorter: true,
@@ -349,6 +1378,7 @@ const TasksPage: React.FC = () => {
       title: t('created'),
       dataIndex: 'created_at',
       key: 'created_at',
+      hideInTable: !visibleColumns.includes('created_at'),
       width: 120,
       valueType: 'date',
       search: false,
@@ -360,11 +1390,181 @@ const TasksPage: React.FC = () => {
       ),
     },
     {
-      title: t('actions'),
+      title: t('syncStatus'),
+      dataIndex: 'label_studio_sync_status',
+      key: 'label_studio_sync_status',
+      hideInTable: !visibleColumns.includes('label_studio_sync_status'),
+      width: 180,
+      search: false,
+      render: (_, record) => {
+        const syncStatus = record.label_studio_sync_status;
+        const hasProjectId = !!record.label_studio_project_id;
+        const lastSync = record.label_studio_last_sync;
+        const syncError = record.label_studio_sync_error;
+        
+        // Format relative time (e.g., "5 minutes ago")
+        const formatRelativeTime = (dateString: string): string => {
+          const date = new Date(dateString);
+          const now = new Date();
+          const diffMs = now.getTime() - date.getTime();
+          const diffSec = Math.floor(diffMs / 1000);
+          const diffMin = Math.floor(diffSec / 60);
+          const diffHour = Math.floor(diffMin / 60);
+          const diffDay = Math.floor(diffHour / 24);
+          
+          if (diffSec < 60) {
+            return t('syncTimeJustNow');
+          } else if (diffMin < 60) {
+            return t('syncTimeMinutesAgo', { count: diffMin });
+          } else if (diffHour < 24) {
+            return t('syncTimeHoursAgo', { count: diffHour });
+          } else if (diffDay < 7) {
+            return t('syncTimeDaysAgo', { count: diffDay });
+          } else {
+            return date.toLocaleDateString();
+          }
+        };
+        
+        // Determine sync status display
+        const getSyncStatusConfig = () => {
+          if (!hasProjectId) {
+            return {
+              icon: <DisconnectOutlined />,
+              color: 'default',
+              text: t('syncStatusNotLinked'),
+              tooltip: t('syncStatusNotLinkedTip'),
+              showLastSync: false,
+              showError: false,
+            };
+          }
+          
+          switch (syncStatus) {
+            case 'synced':
+              return {
+                icon: <CheckCircleOutlined />,
+                color: 'success',
+                text: t('syncStatusSynced'),
+                tooltip: t('syncStatusSyncedTip'),
+                showLastSync: true,
+                showError: false,
+              };
+            case 'pending':
+              return {
+                icon: <ClockCircleOutlined spin />,
+                color: 'warning',
+                text: t('syncStatusPending'),
+                tooltip: t('syncStatusPendingTip'),
+                showLastSync: true,
+                showError: false,
+              };
+            case 'failed':
+              return {
+                icon: <ExclamationCircleOutlined />,
+                color: 'error',
+                text: t('syncStatusFailed'),
+                tooltip: syncError || t('syncStatusFailedTip'),
+                showLastSync: true,
+                showError: true,
+              };
+            default:
+              return {
+                icon: <ClockCircleOutlined />,
+                color: 'default',
+                text: t('syncStatusNotSynced'),
+                tooltip: t('syncStatusNotSyncedTip'),
+                showLastSync: false,
+                showError: false,
+              };
+          }
+        };
+        
+        const config = getSyncStatusConfig();
+        
+        // Build tooltip content with detailed information
+        const tooltipContent = (
+          <div style={{ maxWidth: 250 }}>
+            <div style={{ fontWeight: 'bold', marginBottom: 4 }}>
+              {config.text}
+            </div>
+            {config.showLastSync && lastSync && (
+              <div style={{ fontSize: 12, color: '#999', marginBottom: 4 }}>
+                {t('syncStatusLastSync', { time: formatRelativeTime(lastSync) })}
+              </div>
+            )}
+            {config.showError && syncError && (
+              <div style={{ fontSize: 12, color: '#ff4d4f', marginTop: 4 }}>
+                {t('syncErrorInfo')}: {syncError}
+              </div>
+            )}
+            {!config.showLastSync && (
+              <div style={{ fontSize: 12, color: '#999' }}>
+                {config.tooltip}
+              </div>
+            )}
+          </div>
+        );
+        
+        return (
+          <Space direction="vertical" size={0} style={{ width: '100%' }}>
+            <Space size={4}>
+              <Tooltip title={tooltipContent} placement="topLeft">
+                <Tag 
+                  color={config.color} 
+                  icon={config.icon}
+                  style={{ cursor: 'pointer', marginRight: 0 }}
+                >
+                  {config.text}
+                </Tag>
+              </Tooltip>
+              {hasProjectId && (
+                <Tooltip title={t('syncSingleTask')}>
+                  <Button
+                    type="text"
+                    size="small"
+                    icon={<SyncOutlined />}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSyncSingleTask(record);
+                    }}
+                    style={{ padding: '0 4px' }}
+                  />
+                </Tooltip>
+              )}
+            </Space>
+            {/* Show last sync time in relative format */}
+            {config.showLastSync && lastSync && (
+              <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>
+                {formatRelativeTime(lastSync)}
+              </div>
+            )}
+            {/* Show error indicator for failed sync */}
+            {config.showError && syncError && (
+              <Tooltip title={syncError}>
+                <div style={{ 
+                  fontSize: 11, 
+                  color: '#ff4d4f', 
+                  marginTop: 2,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  maxWidth: 150,
+                  cursor: 'help'
+                }}>
+                  {t('syncErrorShort')}
+                </div>
+              </Tooltip>
+            )}
+          </Space>
+        );
+      },
+    },
+    {
+      title: t('columns.actions'),
       key: 'actions',
       width: 120,
       fixed: 'right',
       search: false,
+      hideInTable: !visibleColumns.includes('actions'),
       render: (_, record) => (
         <Dropdown
           menu={{
@@ -385,8 +1585,8 @@ const TasksPage: React.FC = () => {
               {
                 key: 'edit',
                 icon: <EditOutlined />,
-                label: t('edit'),
-                onClick: () => navigate(`/tasks/${record.id}/edit`),
+                label: t('editAction'),
+                onClick: () => handleEdit(record.id),
               },
               { type: 'divider' },
               {
@@ -423,7 +1623,7 @@ const TasksPage: React.FC = () => {
               {
                 key: 'delete',
                 icon: <DeleteOutlined />,
-                label: t('delete'),
+                label: t('deleteAction'),
                 danger: true,
                 onClick: () => handleDelete(record.id),
               },
@@ -433,63 +1633,6 @@ const TasksPage: React.FC = () => {
           <Button type="text" icon={<MoreOutlined />} />
         </Dropdown>
       ),
-    },
-  ];
-
-  // Mock data for development
-  const mockTasks: Task[] = [
-    {
-      id: '1',
-      name: t('mockData.customerReviewClassification'),
-      description: t('mockData.customerReviewDescription'),
-      status: 'in_progress',
-      priority: 'high',
-      annotation_type: 'sentiment',
-      assignee_id: 'user1',
-      assignee_name: 'John Doe',
-      created_by: 'admin',
-      created_at: '2025-01-15T10:00:00Z',
-      updated_at: '2025-01-20T14:30:00Z',
-      due_date: '2025-02-01T00:00:00Z',
-      progress: 65,
-      total_items: 1000,
-      completed_items: 650,
-      tenant_id: 'tenant1',
-      tags: [t('tags.urgent'), t('tags.customer')],
-    },
-    {
-      id: '2',
-      name: t('mockData.productEntityRecognition'),
-      description: t('mockData.productEntityDescription'),
-      status: 'pending',
-      priority: 'medium',
-      annotation_type: 'ner',
-      created_by: 'admin',
-      created_at: '2025-01-18T09:00:00Z',
-      updated_at: '2025-01-18T09:00:00Z',
-      due_date: '2025-02-15T00:00:00Z',
-      progress: 0,
-      total_items: 500,
-      completed_items: 0,
-      tenant_id: 'tenant1',
-      tags: [t('tags.product')],
-    },
-    {
-      id: '3',
-      name: t('mockData.faqClassification'),
-      description: t('mockData.faqClassificationDescription'),
-      status: 'completed',
-      priority: 'low',
-      annotation_type: 'text_classification',
-      assignee_id: 'user2',
-      assignee_name: 'Jane Smith',
-      created_by: 'admin',
-      created_at: '2025-01-10T08:00:00Z',
-      updated_at: '2025-01-19T16:00:00Z',
-      progress: 100,
-      total_items: 200,
-      completed_items: 200,
-      tenant_id: 'tenant1',
     },
   ];
 
@@ -546,9 +1689,19 @@ const TasksPage: React.FC = () => {
         actionRef={actionRef}
         rowKey="id"
         loading={isLoading}
-        columns={columns}
-        dataSource={data?.items || mockTasks}
+        columns={allColumns}
+        dataSource={data?.items || []}
         scroll={{ x: 1400 }}
+        options={{
+          density: true, // 密度选择器
+          fullScreen: false,
+          reload: false,
+          setting: false, // 禁用默认列设置，使用自定义弹窗
+        }}
+        columnsState={{
+          persistenceKey: 'tasks-table-columns',
+          persistenceType: 'localStorage',
+        }}
         search={{
           labelWidth: 'auto',
           defaultCollapsed: false,
@@ -573,7 +1726,7 @@ const TasksPage: React.FC = () => {
               end: range[1], 
               total 
             }),
-          total: data?.total || mockTasks.length,
+          total: data?.total || 0,
         }}
         rowSelection={{
           selectedRowKeys,
@@ -583,14 +1736,14 @@ const TasksPage: React.FC = () => {
               key: 'all',
               text: t('selectAll'),
               onSelect: () => {
-                setSelectedRowKeys((data?.items || mockTasks).map(item => item.id));
+                setSelectedRowKeys((data?.items || []).map(item => item.id));
               },
             },
             {
               key: 'invert',
               text: t('invertSelection'),
               onSelect: () => {
-                const allKeys = (data?.items || mockTasks).map(item => item.id);
+                const allKeys = (data?.items || []).map(item => item.id);
                 setSelectedRowKeys(allKeys.filter(key => !selectedRowKeys.includes(key)));
               },
             },
@@ -607,8 +1760,16 @@ const TasksPage: React.FC = () => {
           selectedRowKeys.length > 0 && (
             <Dropdown
               key="batchActions"
+              trigger={['click']}
               menu={{
                 items: [
+                  {
+                    key: 'batchEdit',
+                    icon: <EditOutlined />,
+                    label: t('batchEdit.title'),
+                    onClick: handleBatchEdit,
+                  },
+                  { type: 'divider' },
                   {
                     key: 'batchStart',
                     icon: <PlayCircleOutlined />,
@@ -643,34 +1804,69 @@ const TasksPage: React.FC = () => {
               </Button>
             </Dropdown>
           ),
+          <Dropdown
+            key="refresh"
+            trigger={['click']}
+            menu={{
+              items: [
+                {
+                  key: 'refreshList',
+                  icon: <ReloadOutlined />,
+                  label: t('refreshList'),
+                  onClick: () => {
+                    refetch();
+                    actionRef.current?.reload();
+                  },
+                },
+                {
+                  key: 'syncAll',
+                  icon: <SyncOutlined />,
+                  label: t('syncAllTasks'),
+                  onClick: handleSyncAllTasks,
+                },
+              ],
+            }}
+          >
+            <Button icon={<ReloadOutlined />}>
+              {t('refresh')}
+            </Button>
+          </Dropdown>,
           <Button
-            key="export"
+            key="exportOptions"
             icon={<DownloadOutlined />}
-            onClick={handleExportTasks}
+            onClick={() => setExportModalOpen(true)}
           >
             {selectedRowKeys.length > 0 
               ? t('exportSelected', { count: selectedRowKeys.length })
               : t('exportAll')
             }
           </Button>,
+          taskPerms.canCreate && (
+            <Button
+              key="import"
+              icon={<UploadOutlined />}
+              onClick={() => setImportModalOpen(true)}
+            >
+              {t('import.title')}
+            </Button>
+          ),
           <Button
-            key="refresh"
-            icon={<ReloadOutlined />}
-            onClick={() => {
-              refetch();
-              actionRef.current?.reload();
-            }}
+            key="columnSettings"
+            icon={<SettingOutlined />}
+            onClick={() => setColumnSettingsModalOpen(true)}
           >
-            {t('refresh')}
+            {t('columnSettings.title')}
           </Button>,
-          <Button
-            key="create"
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => setCreateModalOpen(true)}
-          >
-            {t('createTask')}
-          </Button>,
+          taskPerms.canCreate && (
+            <Button
+              key="create"
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => setCreateModalOpen(true)}
+            >
+              {t('createTask')}
+            </Button>
+          ),
         ]}
         onSubmit={(params) => {
           setCurrentParams(params);
@@ -678,16 +1874,54 @@ const TasksPage: React.FC = () => {
         onReset={() => {
           setCurrentParams({});
         }}
-        tableAlertRender={({ selectedRowKeys, onCleanSelected }) => (
-          <Space size={24}>
-            <span>
-              {t('selectedItems', { count: selectedRowKeys.length })}
-              <a style={{ marginLeft: 8 }} onClick={onCleanSelected}>
-                {t('clearSelection')}
-              </a>
-            </span>
-          </Space>
-        )}
+        tableAlertRender={({ selectedRowKeys, onCleanSelected }) => {
+          const selectedTasks = (data?.items || []).filter(task => selectedRowKeys.includes(task.id));
+          return (
+            <Space direction="vertical" size={8} style={{ width: '100%' }}>
+              <Space size={24}>
+                <span>
+                  {t('selectedItems', { count: selectedRowKeys.length })}
+                  <a style={{ marginLeft: 8 }} onClick={onCleanSelected}>
+                    {t('clearSelection')}
+                  </a>
+                </span>
+              </Space>
+              {selectedTasks.length > 0 && selectedTasks.length <= 10 && (
+                <div style={{ 
+                  padding: '8px 12px', 
+                  background: '#f0f9ff', 
+                  borderRadius: '4px',
+                  border: '1px solid #91d5ff',
+                  maxHeight: '120px',
+                  overflowY: 'auto'
+                }}>
+                  <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>
+                    {t('selectedTasksList')}:
+                  </div>
+                  <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                    {selectedTasks.map((task, index) => (
+                      <div key={task.id} style={{ fontSize: '13px', color: '#262626' }}>
+                        {index + 1}. {task.name}
+                      </div>
+                    ))}
+                  </Space>
+                </div>
+              )}
+              {selectedTasks.length > 10 && (
+                <div style={{ 
+                  padding: '8px 12px', 
+                  background: '#fff7e6', 
+                  borderRadius: '4px',
+                  border: '1px solid #ffd591',
+                  fontSize: '12px',
+                  color: '#ad6800'
+                }}>
+                  {t('selectedTasksTooMany', { count: selectedTasks.length })}
+                </div>
+              )}
+            </Space>
+          );
+        }}
         tableAlertOptionRender={({ selectedRowKeys }) => (
           <Space size={16}>
             <a onClick={() => handleBatchStatusUpdate('in_progress')}>
@@ -711,6 +1945,374 @@ const TasksPage: React.FC = () => {
           refetch();
         }}
       />
+
+      {/* Task Import Modal */}
+      <TaskImportModal
+        open={importModalOpen}
+        onCancel={() => setImportModalOpen(false)}
+        onSuccess={() => {
+          setImportModalOpen(false);
+          refetch();
+        }}
+      />
+
+      {/* Export Options Modal */}
+      <ExportOptionsModal
+        open={exportModalOpen}
+        onCancel={() => setExportModalOpen(false)}
+        onExport={handleExportWithOptions}
+        selectedCount={selectedRowKeys.length}
+        filteredCount={data?.items?.length || 0}
+        totalCount={data?.total || 0}
+        loading={exportLoading}
+      />
+
+      {/* Sync Progress Modal */}
+      <Modal
+        title={
+          <Space>
+            <SyncOutlined spin={syncProgress.status === 'syncing'} />
+            {t('syncProgressTitle') || 'Sync Progress'}
+          </Space>
+        }
+        open={syncModalOpen}
+        onCancel={() => {
+          if (syncProgress.status !== 'syncing') {
+            setSyncModalOpen(false);
+            setSyncProgress({
+              current: 0,
+              total: 0,
+              status: 'idle',
+              message: '',
+            });
+          }
+        }}
+        footer={
+          syncProgress.status === 'syncing' ? null : (
+            <Button 
+              type="primary" 
+              onClick={() => {
+                setSyncModalOpen(false);
+                setSyncProgress({
+                  current: 0,
+                  total: 0,
+                  status: 'idle',
+                  message: '',
+                });
+              }}
+            >
+              {t('close') || 'Close'}
+            </Button>
+          )
+        }
+        closable={syncProgress.status !== 'syncing'}
+        maskClosable={syncProgress.status !== 'syncing'}
+      >
+        <div style={{ textAlign: 'center', padding: '20px 0' }}>
+          {syncProgress.total > 0 && (
+            <Progress
+              type="circle"
+              percent={Math.round((syncProgress.current / syncProgress.total) * 100)}
+              status={
+                syncProgress.status === 'error' ? 'exception' :
+                syncProgress.status === 'completed' ? 'success' : 'active'
+              }
+              format={() => `${syncProgress.current}/${syncProgress.total}`}
+            />
+          )}
+          {syncProgress.total === 0 && syncProgress.status === 'syncing' && (
+            <Progress type="circle" percent={0} status="active" />
+          )}
+          {syncProgress.total === 0 && syncProgress.status === 'completed' && (
+            <Progress type="circle" percent={100} status="success" />
+          )}
+          <p style={{ marginTop: 16, color: '#666' }}>
+            {syncProgress.message}
+          </p>
+          {syncProgress.status === 'completed' && syncProgress.total > 0 && (
+            <Tag color="success" icon={<CheckCircleOutlined />}>
+              {t('syncCompleted') || 'Sync Completed'}
+            </Tag>
+          )}
+          {syncProgress.status === 'error' && (
+            <Tag color="error" icon={<ExclamationCircleOutlined />}>
+              {t('syncHasErrors') || 'Sync Has Errors'}
+            </Tag>
+          )}
+        </div>
+      </Modal>
+
+      {/* Task Edit Modal */}
+      <TaskEditModal
+        open={editModalOpen}
+        taskId={editTaskId}
+        onCancel={() => {
+          setEditModalOpen(false);
+          setEditTaskId(null);
+        }}
+        onSuccess={() => {
+          setEditModalOpen(false);
+          setEditTaskId(null);
+          refetch();
+        }}
+      />
+
+      {/* Batch Edit Modal */}
+      <BatchEditModal
+        open={batchEditModalOpen}
+        tasks={getSelectedTasks()}
+        onCancel={() => setBatchEditModalOpen(false)}
+        onSuccess={() => {
+          setBatchEditModalOpen(false);
+          setSelectedRowKeys([]);
+          refetch();
+        }}
+      />
+
+      {/* Task Delete Modal */}
+      <TaskDeleteModal
+        open={deleteModalOpen}
+        tasks={tasksToDelete}
+        onCancel={() => {
+          setDeleteModalOpen(false);
+          setTasksToDelete([]);
+        }}
+        onSuccess={handleDeleteSuccess}
+      />
+
+      {/* Column Settings Modal */}
+      <Modal
+        title={
+          <Space>
+            <SettingOutlined />
+            {t('columnSettings.title')}
+          </Space>
+        }
+        open={columnSettingsModalOpen}
+        onCancel={() => setColumnSettingsModalOpen(false)}
+        onOk={() => setColumnSettingsModalOpen(false)}
+        width={600}
+        footer={[
+          <Button key="reset" onClick={handleResetColumns}>
+            {t('columnSettings.reset')}
+          </Button>,
+          <Button key="close" type="primary" onClick={() => setColumnSettingsModalOpen(false)}>
+            {t('columnSettings.close')}
+          </Button>,
+        ]}
+      >
+        <div style={{ padding: '8px 0' }}>
+          <p style={{ marginBottom: 16, color: '#666', fontSize: '14px' }}>
+            {t('columnSettings.description')}
+          </p>
+          <div style={{ 
+            padding: '16px', 
+            background: '#fafafa', 
+            borderRadius: '4px',
+            border: '1px solid #e8e8e8',
+            maxHeight: '400px',
+            overflowY: 'auto'
+          }}>
+            <Space direction="vertical" size={12} style={{ width: '100%' }}>
+              <label style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                cursor: 'pointer',
+                padding: '8px',
+                borderRadius: '4px',
+                transition: 'background 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#e6f7ff'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <input
+                  type="checkbox"
+                  checked={visibleColumns.includes('status')}
+                  onChange={(e) => handleColumnVisibilityChange('status', e.target.checked)}
+                  style={{ marginRight: 12, cursor: 'pointer', width: '16px', height: '16px' }}
+                />
+                <span style={{ fontSize: '14px' }}>{t('columns.status')}</span>
+              </label>
+              
+              <label style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                cursor: 'pointer',
+                padding: '8px',
+                borderRadius: '4px',
+                transition: 'background 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#e6f7ff'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <input
+                  type="checkbox"
+                  checked={visibleColumns.includes('priority')}
+                  onChange={(e) => handleColumnVisibilityChange('priority', e.target.checked)}
+                  style={{ marginRight: 12, cursor: 'pointer', width: '16px', height: '16px' }}
+                />
+                <span style={{ fontSize: '14px' }}>{t('columns.priority')}</span>
+              </label>
+              
+              <label style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                cursor: 'pointer',
+                padding: '8px',
+                borderRadius: '4px',
+                transition: 'background 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#e6f7ff'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <input
+                  type="checkbox"
+                  checked={visibleColumns.includes('annotation_type')}
+                  onChange={(e) => handleColumnVisibilityChange('annotation_type', e.target.checked)}
+                  style={{ marginRight: 12, cursor: 'pointer', width: '16px', height: '16px' }}
+                />
+                <span style={{ fontSize: '14px' }}>{t('annotationType')}</span>
+              </label>
+              
+              <label style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                cursor: 'pointer',
+                padding: '8px',
+                borderRadius: '4px',
+                transition: 'background 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#e6f7ff'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <input
+                  type="checkbox"
+                  checked={visibleColumns.includes('progress')}
+                  onChange={(e) => handleColumnVisibilityChange('progress', e.target.checked)}
+                  style={{ marginRight: 12, cursor: 'pointer', width: '16px', height: '16px' }}
+                />
+                <span style={{ fontSize: '14px' }}>{t('columns.progress')}</span>
+              </label>
+              
+              <label style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                cursor: 'pointer',
+                padding: '8px',
+                borderRadius: '4px',
+                transition: 'background 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#e6f7ff'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <input
+                  type="checkbox"
+                  checked={visibleColumns.includes('assignee_name')}
+                  onChange={(e) => handleColumnVisibilityChange('assignee_name', e.target.checked)}
+                  style={{ marginRight: 12, cursor: 'pointer', width: '16px', height: '16px' }}
+                />
+                <span style={{ fontSize: '14px' }}>{t('assignee')}</span>
+              </label>
+              
+              <label style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                cursor: 'pointer',
+                padding: '8px',
+                borderRadius: '4px',
+                transition: 'background 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#e6f7ff'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <input
+                  type="checkbox"
+                  checked={visibleColumns.includes('due_date')}
+                  onChange={(e) => handleColumnVisibilityChange('due_date', e.target.checked)}
+                  style={{ marginRight: 12, cursor: 'pointer', width: '16px', height: '16px' }}
+                />
+                <span style={{ fontSize: '14px' }}>{t('dueDate')}</span>
+              </label>
+              
+              <label style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                cursor: 'pointer',
+                padding: '8px',
+                borderRadius: '4px',
+                transition: 'background 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#e6f7ff'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <input
+                  type="checkbox"
+                  checked={visibleColumns.includes('created_at')}
+                  onChange={(e) => handleColumnVisibilityChange('created_at', e.target.checked)}
+                  style={{ marginRight: 12, cursor: 'pointer', width: '16px', height: '16px' }}
+                />
+                <span style={{ fontSize: '14px' }}>{t('created')}</span>
+              </label>
+              
+              <label style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                cursor: 'pointer',
+                padding: '8px',
+                borderRadius: '4px',
+                transition: 'background 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#e6f7ff'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                <input
+                  type="checkbox"
+                  checked={visibleColumns.includes('label_studio_sync_status')}
+                  onChange={(e) => handleColumnVisibilityChange('label_studio_sync_status', e.target.checked)}
+                  style={{ marginRight: 12, cursor: 'pointer', width: '16px', height: '16px' }}
+                />
+                <span style={{ fontSize: '14px' }}>{t('syncStatus')}</span>
+              </label>
+              
+              <label style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                cursor: 'not-allowed',
+                padding: '8px',
+                borderRadius: '4px',
+                background: '#f5f5f5',
+                opacity: 0.6
+              }}>
+                <input
+                  type="checkbox"
+                  checked={visibleColumns.includes('actions')}
+                  onChange={(e) => handleColumnVisibilityChange('actions', e.target.checked)}
+                  style={{ marginRight: 12, cursor: 'not-allowed', width: '16px', height: '16px' }}
+                  disabled
+                />
+                <span style={{ fontSize: '14px', color: '#999' }}>
+                  {t('columns.actions')} ({t('columnSettings.required')})
+                </span>
+              </label>
+            </Space>
+          </div>
+          
+          <div style={{ 
+            padding: '12px', 
+            background: '#e6f7ff', 
+            borderRadius: '4px',
+            border: '1px solid #91d5ff',
+            fontSize: '13px',
+            color: '#0050b3',
+            marginTop: '16px'
+          }}>
+            <Space>
+              <span>💡</span>
+              <span>{t('columnSettings.tip')}</span>
+            </Space>
+          </div>
+        </div>
+      </Modal>
     </>
   );
 };

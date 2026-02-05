@@ -6,6 +6,35 @@
 @import './interactions.scss';
 @import './accessibility.scss';
 
+// Brand Identity System CSS Variables
+:root {
+  // Brand Colors - Default Theme
+  --brand-primary: #1890ff;
+  --brand-primary-hover: #40a9ff;
+  --brand-primary-active: #096dd9;
+  --brand-primary-light: #e6f7ff;
+  --brand-secondary: #52c41a;
+  --brand-secondary-hover: #73d13d;
+  --brand-secondary-active: #389e0d;
+  --brand-accent: #722ed1;
+  --brand-background: #ffffff;
+  --brand-surface: #fafafa;
+  --brand-text: rgba(0, 0, 0, 0.88);
+  --brand-text-secondary: rgba(0, 0, 0, 0.65);
+  
+  // Brand Animation
+  --brand-animation-duration: 0.3s;
+  --brand-animation-easing: cubic-bezier(0.645, 0.045, 0.355, 1);
+}
+
+// Dark theme brand colors
+[data-theme='dark'] {
+  --brand-background: #141414;
+  --brand-surface: #1f1f1f;
+  --brand-text: rgba(255, 255, 255, 0.88);
+  --brand-text-secondary: rgba(255, 255, 255, 0.65);
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -240,5 +269,189 @@ a {
   ::selection {
     background-color: rgba(24, 144, 255, 0.3);
     color: #fff;
+  }
+}
+
+
+// ========================================
+// Tooltip and Popover Overrides
+// ========================================
+
+// Force light tooltip background
+:global {
+  .ant-tooltip {
+    z-index: 1060 !important;
+    pointer-events: none !important;
+    
+    .ant-tooltip-inner {
+      background-color: #ffffff !important;
+      color: #262626 !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+      border: 1px solid #e8e8e8 !important;
+      font-size: 12px !important;
+      padding: 6px 10px !important;
+      border-radius: 4px !important;
+      max-width: 250px !important;
+      pointer-events: none !important;
+    }
+    
+    .ant-tooltip-arrow {
+      display: none !important;
+    }
+    
+    // Ensure tooltip content doesn't block interactions
+    .ant-tooltip-content {
+      pointer-events: none !important;
+    }
+  }
+  
+  // Tooltip placement offset - prevent blocking buttons with larger offset
+  .ant-tooltip-placement-top {
+    padding-bottom: 20px !important;
+    margin-top: -8px !important;
+  }
+  
+  .ant-tooltip-placement-bottom {
+    padding-top: 20px !important;
+    margin-bottom: -8px !important;
+  }
+  
+  .ant-tooltip-placement-left {
+    padding-right: 20px !important;
+    margin-left: -8px !important;
+  }
+  
+  .ant-tooltip-placement-right {
+    padding-left: 20px !important;
+    margin-right: -8px !important;
+  }
+  
+  // Specific fix for toolbar button tooltips
+  .ant-pro-table-list-toolbar-setting-item {
+    .ant-tooltip {
+      padding-bottom: 24px !important;
+    }
+  }
+  
+  // ProTable column settings overflow fix
+  .ant-pro-table-column-setting-overlay {
+    z-index: 1050 !important;
+    
+    &.ant-popover {
+      // Ensure popover doesn't overflow viewport
+      max-width: min(320px, calc(100vw - 40px)) !important;
+    }
+    
+    // Adjust position if overflowing
+    &.ant-popover-placement-bottomRight {
+      .ant-popover-content {
+        transform-origin: right top !important;
+      }
+    }
+  }
+  
+  // Column settings list styling
+  .ant-pro-table-column-setting-list {
+    max-height: 400px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    background-color: #ffffff !important;
+    padding: 8px !important;
+    min-width: 200px !important;
+    max-width: 280px !important;
+    
+    &-item {
+      padding: 8px 12px !important;
+      border-radius: 4px !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      
+      &:hover {
+        background-color: #f5f5f5 !important;
+      }
+    }
+  }
+  
+  // Ensure toolbar buttons have proper spacing for tooltips
+  .ant-pro-table-list-toolbar-setting-item {
+    margin-left: 8px !important;
+    
+    // Add extra space for tooltip
+    .ant-btn {
+      position: relative !important;
+      
+      &::before {
+        content: '';
+        position: absolute;
+        top: -12px;
+        left: -12px;
+        right: -12px;
+        bottom: -12px;
+        pointer-events: none;
+      }
+    }
+  }
+  
+  // Dropdown menu styles
+  .ant-dropdown {
+    z-index: 1050 !important;
+    
+    .ant-dropdown-menu {
+      background-color: #ffffff !important;
+      box-shadow: 0 3px 6px -4px rgba(0, 0, 0, 0.12),
+                  0 6px 16px 0 rgba(0, 0, 0, 0.08),
+                  0 9px 28px 8px rgba(0, 0, 0, 0.05) !important;
+      border-radius: 6px !important;
+      padding: 4px !important;
+      
+      &-item {
+        border-radius: 4px !important;
+        margin: 2px 0 !important;
+        
+        &:hover {
+          background-color: #f5f5f5 !important;
+        }
+        
+        &-active {
+          background-color: #e6f7ff !important;
+        }
+      }
+    }
+  }
+  
+  // Ensure ProTable toolbar doesn't clip dropdowns
+  .ant-pro-table-list-toolbar {
+    overflow: visible !important;
+  }
+  
+  .ant-pro-card {
+    overflow: visible !important;
+    
+    &-body {
+      overflow: visible !important;
+    }
+  }
+}
+
+// Dark theme tooltip override
+[data-theme='dark'] {
+  :global {
+    .ant-tooltip .ant-tooltip-inner {
+      background-color: rgba(31, 31, 31, 0.96) !important;
+      color: #ffffff !important;
+      border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+    
+    .ant-dropdown-menu,
+    .ant-pro-table-column-setting-list {
+      background-color: #1f1f1f !important;
+      color: #ffffff !important;
+    }
+    
+    .ant-dropdown-menu-item:hover,
+    .ant-pro-table-column-setting-list-item:hover {
+      background-color: #262626 !important;
+    }
   }
 }

@@ -391,8 +391,8 @@ vim .agents/plans/my-feature.md
 
 ### 外部资源
 - [habit-tracker GitHub](https://github.com/coleam00/habit-tracker)
-- [PIV Loop Diagram](habit-tracker/PIVLoopDiagram.png)
-- [Top 1% Agentic Engineering](habit-tracker/Top1%25AgenticEngineering.png)
+- [PIV Loop Diagram](docs/references/habit-tracker/PIVLoopDiagram.png)
+- [Top 1% Agentic Engineering](docs/references/habit-tracker/Top1%25AgenticEngineering.png)
 
 ---
 

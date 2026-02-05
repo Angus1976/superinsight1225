@@ -244,8 +244,8 @@ chmod +x scripts/piv-validate.sh
 
 ### 外部资源
 1. **原始项目**: https://github.com/coleam00/habit-tracker
-2. **PIV 循环图**: `habit-tracker/PIVLoopDiagram.png`
-3. **工程最佳实践**: `habit-tracker/Top1%AgenticEngineering.png`
+2. **PIV 循环图**: `docs/references/habit-tracker/PIVLoopDiagram.png`
+3. **工程最佳实践**: `docs/references/habit-tracker/Top1%AgenticEngineering.png`
 
 ### 示例
 查看 `habit-tracker/` 目录中的完整实现示例：
@@ -345,7 +345,7 @@ PIV Validate (验证)
 cat .kiro/PIV_QUICK_START.md
 
 # 2. 查看示例项目
-cd habit-tracker
+cd docs/references/habit-tracker
 cat README.md
 
 # 3. 创建你的第一个计划

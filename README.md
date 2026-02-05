@@ -393,7 +393,7 @@ docker compose logs -f app
 docker exec superinsight-app alembic upgrade head
 
 # 创建管理员用户
-docker exec superinsight-app python reset_admin_password.py
+docker exec superinsight-app python scripts/reset_admin_password.py
 ```
 
 ### 4. 访问服务

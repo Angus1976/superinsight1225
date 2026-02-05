@@ -149,6 +149,10 @@ temp/
 *.tmp
 *.temp
 
+# Process ID files
+*.pid
+.*.pid
+
 # IDE
 .idea/
 *.swp

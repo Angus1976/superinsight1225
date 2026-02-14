@@ -21,7 +21,6 @@ try:
         ValidationResult, mask_api_key
     )
     from src.models.llm_configuration import LLMConfiguration, LLMUsageLog
-    from src.database.session import get_async_session
 except ImportError:
     from ai.llm_schemas import (
         LLMConfig, LLMMethod, LocalConfig, CloudConfig, ChinaLLMConfig,

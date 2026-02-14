@@ -1,0 +1,80 @@
+{
+  "workflowPlayground": {
+    "title": "Workflow Playground",
+    "subtitle": "Design and test data workflows through conversation",
+    "chat": {
+      "title": "Conversational Design",
+      "placeholder": "Describe the data workflow you want...",
+      "send": "Send",
+      "clear": "Clear",
+      "examples": {
+        "title": "Example Prompts",
+        "example1": "Create a workflow to analyze customer feedback sentiment",
+        "example2": "Design a workflow to detect anomalies in images",
+        "example3": "Build a workflow to extract key information from documents"
+      }
+    },
+    "workflow": {
+      "title": "Workflow Definition",
+      "noWorkflow": "No workflow generated yet",
+      "generating": "Generating workflow...",
+      "dataSource": "Data Source",
+      "governed": "Governed Data",
+      "raw": "Raw Data",
+      "steps": "Steps",
+      "edit": "Edit",
+      "visualize": "Visualize"
+    },
+    "results": {
+      "title": "Execution Results",
+      "noResults": "No workflow executed yet",
+      "executing": "Executing...",
+      "execute": "Execute",
+      "compare": "Compare",
+      "save": "Save to Production",
+      "quality": {
+        "title": "Quality Metrics",
+        "completeness": "Completeness",
+        "accuracy": "Accuracy",
+        "consistency": "Consistency",
+        "confidence": "Confidence"
+      },
+      "metrics": {
+        "executionTime": "Execution Time",
+        "dataPoints": "Data Points",
+        "qualityScore": "Quality Score"
+      }
+    },
+    "history": {
+      "title": "Execution History",
+      "empty": "No history yet",
+      "time": "Time",
+      "dataSource": "Data Source",
+      "qualityScore": "Quality Score",
+      "view": "View"
+    },
+    "messages": {
+      "workflowGenerated": "Workflow generated",
+      "executionStarted": "Workflow execution started",
+      "executionCompleted": "Workflow execution completed",
+      "executionFailed": "Workflow execution failed",
+      "workflowSaved": "Workflow saved to production",
+      "chatCleared": "Chat cleared"
+    },
+    "errors": {
+      "generateFailed": "Failed to generate workflow",
+      "executeFailed": "Failed to execute workflow",
+      "saveFailed": "Failed to save workflow",
+      "loadFailed": "Failed to load workflow"
+    }
+  },
+  "gateway": {
+    "title": "AI Gateway Management",
+    "list": "Gateway List",
+    "register": "Register Gateway",
+    "name": "Name",
+    "type": "Type",
+    "status": "Status",
+    "actions": "Actions"
+  }
+}

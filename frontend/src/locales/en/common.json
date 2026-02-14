@@ -55,6 +55,7 @@
   "pleaseSelect": "Please select {{field}}",
   "menu": {
     "dashboard": "Dashboard",
+    "aiAssistant": "AI Assistant",
     "tasks": "Task Management",
     "taskList": "Task List",
     "taskCreate": "Create Task",

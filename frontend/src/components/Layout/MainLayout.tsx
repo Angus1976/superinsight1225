@@ -13,6 +13,7 @@ import {
   AuditOutlined,
   HomeOutlined,
   SyncOutlined,
+  RobotOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/authStore';
@@ -26,6 +27,11 @@ const menuItems = [
     path: ROUTES.DASHBOARD,
     name: 'dashboard',
     icon: <DashboardOutlined />,
+  },
+  {
+    path: '/ai-assistant',
+    name: 'aiAssistant',
+    icon: <RobotOutlined />,
   },
   {
     path: ROUTES.TASKS,

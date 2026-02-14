@@ -94,6 +94,12 @@ const AdminSQLBuilderPage = lazyWithPreload(() => import('@/pages/Admin/SQLBuild
 const AdminConfigHistoryPage = lazyWithPreload(() => import('@/pages/Admin/ConfigHistory'));
 const AdminThirdPartyConfigPage = lazyWithPreload(() => import('@/pages/Admin/ThirdPartyConfig'));
 
+// AI Integration pages
+const AdminAIIntegrationPage = lazyWithPreload(() => import('@/pages/Admin/AIIntegration'));
+
+// AI Assistant pages
+const AIAssistantPage = lazyWithPreload(() => import('@/pages/AIAssistant'));
+
 // AI Annotation pages
 const AIAnnotationPage = lazyWithPreload(() => import('@/pages/AIAnnotation'));
 
@@ -196,6 +202,10 @@ export const routes: RouteObject[] = [
       {
         path: 'dashboard',
         element: withSuspense(DashboardPage, 'dashboard'),
+      },
+      {
+        path: 'ai-assistant',
+        element: withSuspense(AIAssistantPage, 'page'),
       },
       {
         path: 'tasks',
@@ -314,6 +324,11 @@ export const routes: RouteObject[] = [
           {
             path: 'config/third-party',
             element: withSuspense(AdminThirdPartyConfigPage, 'table'),
+          },
+          // AI Integration
+          {
+            path: 'ai-integration',
+            element: withSuspense(AdminAIIntegrationPage, 'page'),
           },
           // Label Studio Workspaces (Enterprise)
           {

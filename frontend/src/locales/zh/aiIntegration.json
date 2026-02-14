@@ -1,0 +1,80 @@
+{
+  "workflowPlayground": {
+    "title": "工作流实验场",
+    "subtitle": "通过对话设计和测试数据工作流",
+    "chat": {
+      "title": "对话设计",
+      "placeholder": "描述您想要的数据工作流...",
+      "send": "发送",
+      "clear": "清空",
+      "examples": {
+        "title": "示例提示",
+        "example1": "创建一个工作流来分析客户反馈情感",
+        "example2": "设计一个工作流来检测图像中的异常",
+        "example3": "构建一个工作流来提取文档中的关键信息"
+      }
+    },
+    "workflow": {
+      "title": "工作流定义",
+      "noWorkflow": "尚未生成工作流",
+      "generating": "正在生成工作流...",
+      "dataSource": "数据源",
+      "governed": "治理数据",
+      "raw": "原始数据",
+      "steps": "步骤",
+      "edit": "编辑",
+      "visualize": "可视化"
+    },
+    "results": {
+      "title": "执行结果",
+      "noResults": "尚未执行工作流",
+      "executing": "正在执行...",
+      "execute": "执行",
+      "compare": "对比",
+      "save": "保存到生产环境",
+      "quality": {
+        "title": "质量指标",
+        "completeness": "完整性",
+        "accuracy": "准确性",
+        "consistency": "一致性",
+        "confidence": "置信度"
+      },
+      "metrics": {
+        "executionTime": "执行时间",
+        "dataPoints": "数据点",
+        "qualityScore": "质量分数"
+      }
+    },
+    "history": {
+      "title": "执行历史",
+      "empty": "暂无历史记录",
+      "time": "时间",
+      "dataSource": "数据源",
+      "qualityScore": "质量分数",
+      "view": "查看"
+    },
+    "messages": {
+      "workflowGenerated": "工作流已生成",
+      "executionStarted": "开始执行工作流",
+      "executionCompleted": "工作流执行完成",
+      "executionFailed": "工作流执行失败",
+      "workflowSaved": "工作流已保存到生产环境",
+      "chatCleared": "对话已清空"
+    },
+    "errors": {
+      "generateFailed": "生成工作流失败",
+      "executeFailed": "执行工作流失败",
+      "saveFailed": "保存工作流失败",
+      "loadFailed": "加载工作流失败"
+    }
+  },
+  "gateway": {
+    "title": "AI 网关管理",
+    "list": "网关列表",
+    "register": "注册网关",
+    "name": "名称",
+    "type": "类型",
+    "status": "状态",
+    "actions": "操作"
+  }
+}

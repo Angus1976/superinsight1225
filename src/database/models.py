@@ -269,3 +269,8 @@ from src.label_studio.workspace_models import (
     LabelStudioWorkspaceModel, LabelStudioWorkspaceMemberModel,
     WorkspaceProjectModel, ProjectMemberModel
 )
+
+# Import AI integration models to ensure they are registered with SQLAlchemy
+from src.models.ai_integration import (
+    AIGateway, AISkill, AIAuditLog
+)

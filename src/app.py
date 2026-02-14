@@ -1918,6 +1918,130 @@ async def include_optional_routers():
     except Exception as e:
         logger.error(f"❌ i18n API failed to load: {e}")
 
+    # AI Integration - Gateway Management router
+    # Requirements: AI Application Integration spec - Tasks 13.1
+    try:
+        from src.api.ai_integration_gateways import router as ai_gateways_router
+        app.include_router(ai_gateways_router)
+        _track_api_registration(
+            module_path="src.api.ai_integration_gateways",
+            prefix="/api/v1/ai-integration/gateways",
+            tags=["AI Gateway Management"],
+            success=True
+        )
+        logger.info("✅ AI Gateway Management API registered: /api/v1/ai-integration/gateways")
+    except ImportError as e:
+        _track_api_registration(
+            module_path="src.api.ai_integration_gateways",
+            prefix="/api/v1/ai-integration/gateways",
+            tags=["AI Gateway Management"],
+            success=False,
+            error=str(e)
+        )
+        logger.warning(f"⚠️ AI Gateway Management API not available: {e}")
+    except Exception as e:
+        _track_api_registration(
+            module_path="src.api.ai_integration_gateways",
+            prefix="/api/v1/ai-integration/gateways",
+            tags=["AI Gateway Management"],
+            success=False,
+            error=str(e)
+        )
+        logger.error(f"❌ AI Gateway Management API failed to load: {e}")
+
+    # AI Integration - Skill Management router
+    # Requirements: AI Application Integration spec - Tasks 13.2
+    try:
+        from src.api.ai_integration_skills import router as ai_skills_router
+        app.include_router(ai_skills_router)
+        _track_api_registration(
+            module_path="src.api.ai_integration_skills",
+            prefix="/api/v1/ai-integration/skills",
+            tags=["AI Skill Management"],
+            success=True
+        )
+        logger.info("✅ AI Skill Management API registered: /api/v1/ai-integration/skills")
+    except ImportError as e:
+        _track_api_registration(
+            module_path="src.api.ai_integration_skills",
+            prefix="/api/v1/ai-integration/skills",
+            tags=["AI Skill Management"],
+            success=False,
+            error=str(e)
+        )
+        logger.warning(f"⚠️ AI Skill Management API not available: {e}")
+    except Exception as e:
+        _track_api_registration(
+            module_path="src.api.ai_integration_skills",
+            prefix="/api/v1/ai-integration/skills",
+            tags=["AI Skill Management"],
+            success=False,
+            error=str(e)
+        )
+        logger.error(f"❌ AI Skill Management API failed to load: {e}")
+
+    # AI Integration - Data Access router
+    # Requirements: AI Application Integration spec - Tasks 13.3
+    try:
+        from src.api.ai_integration_data import router as ai_data_router
+        app.include_router(ai_data_router)
+        _track_api_registration(
+            module_path="src.api.ai_integration_data",
+            prefix="/api/v1/ai-integration/data",
+            tags=["AI Data Access"],
+            success=True
+        )
+        logger.info("✅ AI Data Access API registered: /api/v1/ai-integration/data")
+    except ImportError as e:
+        _track_api_registration(
+            module_path="src.api.ai_integration_data",
+            prefix="/api/v1/ai-integration/data",
+            tags=["AI Data Access"],
+            success=False,
+            error=str(e)
+        )
+        logger.warning(f"⚠️ AI Data Access API not available: {e}")
+    except Exception as e:
+        _track_api_registration(
+            module_path="src.api.ai_integration_data",
+            prefix="/api/v1/ai-integration/data",
+            tags=["AI Data Access"],
+            success=False,
+            error=str(e)
+        )
+        logger.error(f"❌ AI Data Access API failed to load: {e}")
+
+    # AI Integration - Workflow Designer router
+    # Requirements: AI Application Integration spec - Tasks 23.2
+    try:
+        from src.api.ai_integration_workflows import router as ai_workflows_router
+        app.include_router(ai_workflows_router)
+        _track_api_registration(
+            module_path="src.api.ai_integration_workflows",
+            prefix="/api/v1/ai-integration/workflows",
+            tags=["AI Workflow Designer"],
+            success=True
+        )
+        logger.info("✅ AI Workflow Designer API registered: /api/v1/ai-integration/workflows")
+    except ImportError as e:
+        _track_api_registration(
+            module_path="src.api.ai_integration_workflows",
+            prefix="/api/v1/ai-integration/workflows",
+            tags=["AI Workflow Designer"],
+            success=False,
+            error=str(e)
+        )
+        logger.warning(f"⚠️ AI Workflow Designer API not available: {e}")
+    except Exception as e:
+        _track_api_registration(
+            module_path="src.api.ai_integration_workflows",
+            prefix="/api/v1/ai-integration/workflows",
+            tags=["AI Workflow Designer"],
+            success=False,
+            error=str(e)
+        )
+        logger.error(f"❌ AI Workflow Designer API failed to load: {e}")
+
     # Compliance Reports API
     try:
         from src.api.compliance_reports import router as compliance_router

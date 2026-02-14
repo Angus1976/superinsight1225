@@ -55,6 +55,7 @@
   "pleaseSelect": "请选择{{field}}",
   "menu": {
     "dashboard": "仪表盘",
+    "aiAssistant": "AI 智能助手",
     "tasks": "任务管理",
     "taskList": "任务列表",
     "taskCreate": "创建任务",

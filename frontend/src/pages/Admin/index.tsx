@@ -7,7 +7,7 @@ import {
   SecurityScanOutlined, TeamOutlined, DatabaseOutlined, SettingOutlined, 
   DashboardOutlined, ApiOutlined, SafetyOutlined, CloudOutlined, DollarOutlined,
   AppstoreOutlined, SyncOutlined, HistoryOutlined, CodeOutlined, ToolOutlined,
-  DownOutlined
+  DownOutlined, RocketOutlined
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
@@ -63,6 +63,7 @@ const AdminPage: React.FC = () => {
     if (path.includes('/users')) return 'users';
     if (path.includes('/system')) return 'system';
     if (path.includes('/llm-config')) return 'llm-config';
+    if (path.includes('/ai-integration')) return 'ai-integration';
     // Admin Configuration Module
     if (path.includes('/config/llm')) return 'config-llm';
     if (path.includes('/config/databases')) return 'config-db';
@@ -188,6 +189,11 @@ const AdminPage: React.FC = () => {
       key: 'llm-config',
       label: <><ApiOutlined /> {t('admin:nav.llm')}</>,
       onClick: () => handleMenuClick('/admin/llm-config'),
+    },
+    {
+      key: 'ai-integration',
+      label: <><RocketOutlined /> AI 应用集成</>,
+      onClick: () => handleMenuClick('/admin/ai-integration'),
     },
     {
       key: 'config-menu',

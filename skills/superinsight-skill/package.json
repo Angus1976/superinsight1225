@@ -1,0 +1,29 @@
+{
+  "name": "superinsight-skill",
+  "version": "2.0.0",
+  "description": "OpenClaw skill for querying and analyzing SuperInsight governed data with workflow design capabilities",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "lint": "eslint ."
+  },
+  "keywords": [
+    "openclaw",
+    "superinsight",
+    "data-governance",
+    "ai-skill"
+  ],
+  "author": "SuperInsight Team",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.50.0",
+    "jest": "^29.7.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

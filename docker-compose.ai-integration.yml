@@ -1,0 +1,142 @@
+version: '3.8'
+
+# =============================================================================
+# AI Application Integration Services
+# =============================================================================
+# This file extends the main docker-compose.yml with OpenClaw services
+# for AI assistant integration with SuperInsight governed data.
+#
+# Usage:
+#   docker-compose -f docker-compose.yml -f docker-compose.ai-integration.yml up
+#
+# Requirements:
+#   - Main docker-compose.yml must be running
+#   - OPENCLAW_API_KEY must be set in environment
+#   - TENANT_ID must be configured
+# =============================================================================
+
+services:
+  # ===========================================================================
+  # OpenClaw Gateway
+  # ===========================================================================
+  # Main routing and communication component for multi-channel messaging
+  # Handles connections to WhatsApp, Telegram, Slack, Discord, etc.
+  # ===========================================================================
+  openclaw-gateway:
+    build:
+      context: ./deploy/ai-integration/openclaw-gateway
+      dockerfile: Dockerfile
+    container_name: superinsight-openclaw-gateway
+    ports:
+      - "3000:3000"
+    environment:
+      # SuperInsight API Configuration
+      - SUPERINSIGHT_API_URL=http://app:8000
+      - SUPERINSIGHT_API_KEY=${OPENCLAW_API_KEY}
+      - SUPERINSIGHT_TENANT_ID=${TENANT_ID}
+      
+      # Gateway Configuration
+      - GATEWAY_PORT=3000
+      - GATEWAY_HOST=0.0.0.0
+      - NODE_ENV=${NODE_ENV:-production}
+      
+      # Logging
+      - LOG_LEVEL=${OPENCLAW_LOG_LEVEL:-info}
+    networks:
+      - superinsight_network
+    volumes:
+      # Configuration files
+      - openclaw_config:/app/config
+      # Persistent memory for conversations
+      - openclaw_memory:/app/memory
+      # Logs
+      - openclaw_logs:/app/logs
+    depends_on:
+      - app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+  # ===========================================================================
+  # OpenClaw Agent (Pi)
+  # ===========================================================================
+  # Agent runtime that executes skills and manages conversations
+  # Connects to SuperInsight APIs for governed data access
+  # ===========================================================================
+  openclaw-agent:
+    build:
+      context: ./deploy/ai-integration/openclaw-agent
+      dockerfile: Dockerfile
+    container_name: superinsight-openclaw-agent
+    ports:
+      - "8081:8080"
+    environment:
+      # Gateway Connection
+      - GATEWAY_URL=http://openclaw-gateway:3000
+      
+      # SuperInsight API Configuration
+      - SUPERINSIGHT_API_URL=http://app:8000
+      - SUPERINSIGHT_API_KEY=${OPENCLAW_API_KEY}
+      - SUPERINSIGHT_TENANT_ID=${TENANT_ID}
+      
+      # Agent Configuration
+      - AGENT_NAME=${OPENCLAW_AGENT_NAME:-SuperInsight Assistant}
+      - AGENT_DESCRIPTION=${OPENCLAW_AGENT_DESCRIPTION:-AI assistant for governed data access}
+      
+      # LLM Configuration (will be injected by deployment script)
+      - LLM_PROVIDER=${OPENCLAW_LLM_PROVIDER:-ollama}
+      - LLM_MODEL=${OPENCLAW_LLM_MODEL:-llama2}
+      - LLM_API_URL=${OPENCLAW_LLM_API_URL:-http://ollama:11434}
+      - LLM_API_KEY=${OPENCLAW_LLM_API_KEY:-}
+      
+      # Language Configuration
+      - OPENCLAW_SYSTEM_PROMPT=${OPENCLAW_SYSTEM_PROMPT:-}
+      - OPENCLAW_USER_LANGUAGE=${OPENCLAW_USER_LANGUAGE:-zh-CN}
+      - OPENCLAW_LOCALE=${OPENCLAW_LOCALE:-zh-CN}
+      
+      # Logging
+      - LOG_LEVEL=${OPENCLAW_LOG_LEVEL:-info}
+      - NODE_ENV=${NODE_ENV:-production}
+    networks:
+      - superinsight_network
+    volumes:
+      # Skills directory
+      - openclaw_skills:/app/skills
+      # Persistent memory for conversations
+      - openclaw_memory:/app/memory
+      # Logs
+      - openclaw_logs:/app/logs
+    depends_on:
+      - openclaw-gateway
+      - app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  openclaw_config:
+    driver: local
+  openclaw_skills:
+    driver: local
+  openclaw_memory:
+    driver: local
+  openclaw_logs:
+    driver: local
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  superinsight_network:
+    external: true

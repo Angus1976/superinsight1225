@@ -10,7 +10,9 @@
     "tasks": "可领取任务",
     "earnings": "收益统计",
     "annotators": "标注员管理",
-    "platforms": "第三方平台"
+    "platforms": "第三方平台",
+    "desensitization": "脱敏配置",
+    "audit": "审计日志"
   },
   "tasks": {
     "projectName": "项目名称",

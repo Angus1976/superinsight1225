@@ -38,9 +38,13 @@ import {
   CloudServerOutlined,
   WalletOutlined,
   TeamOutlined,
+  SafetyOutlined,
+  AuditOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import type { ColumnsType } from 'antd/es/table';
+import DesensitizerConfig from '@/components/Crowdsource/DesensitizerConfig';
+import DesensitizationAudit from '@/components/Crowdsource/DesensitizationAudit';
 
 // Types
 interface CrowdsourceTask {
@@ -446,6 +450,16 @@ const CrowdsourcePage: React.FC = () => {
                   />
                 </div>
               ),
+            },
+            {
+              key: 'desensitization',
+              label: <span><SafetyOutlined /> {t('tabs.desensitization')}</span>,
+              children: <DesensitizerConfig taskId="default" />,
+            },
+            {
+              key: 'audit',
+              label: <span><AuditOutlined /> {t('tabs.audit')}</span>,
+              children: <DesensitizationAudit />,
             },
           ]}
         />

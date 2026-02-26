@@ -138,5 +138,102 @@ if ! grep -q "label_studio_sso" "$URLS_FILE" 2>/dev/null; then
     echo "SSO URLs patched"
 fi
 
+# ============================================================
+# SuperInsight Branding & i18n Patches
+# ============================================================
+
+LS_STATIC_DIR="/label-studio/label_studio/core/static"
+LS_TEMPLATE_DIR="/label-studio/label_studio/core/templates"
+LS_BASE_TEMPLATE="$LS_TEMPLATE_DIR/base.html"
+CUSTOM_DIR="/label-studio/custom"
+
+# --- Patch: Copy i18n-inject.js to LS static directory ---
+I18N_MARKER="# SUPERINSIGHT_I18N_PATCH"
+I18N_SRC="$CUSTOM_DIR/i18n-inject.js"
+I18N_DEST="$LS_STATIC_DIR/i18n-inject.js"
+
+if ! grep -q "$I18N_MARKER" "$LS_BASE_TEMPLATE" 2>/dev/null; then
+    if [ -f "$I18N_SRC" ] && [ -d "$LS_STATIC_DIR" ] && [ -f "$LS_BASE_TEMPLATE" ]; then
+        echo "Applying i18n injection patch..."
+        cp "$I18N_SRC" "$I18N_DEST"
+        # Inject <script> tag before </body>
+        sed -i "/$I18N_MARKER/d" "$LS_BASE_TEMPLATE"
+        sed -i "s|</body>|<script src=\"/static/i18n-inject.js\"></script> $I18N_MARKER\n</body>|" "$LS_BASE_TEMPLATE"
+        echo "i18n injection patch applied"
+    else
+        echo "ERROR: i18n patch failed - source ($I18N_SRC), static dir ($LS_STATIC_DIR), or template ($LS_BASE_TEMPLATE) not found"
+    fi
+else
+    echo "i18n injection patch already applied, skipping"
+fi
+
+# --- Patch: Copy branding.css to LS static directory ---
+CSS_MARKER="# SUPERINSIGHT_BRANDING_CSS_PATCH"
+CSS_SRC="$CUSTOM_DIR/branding.css"
+CSS_DEST="$LS_STATIC_DIR/branding.css"
+
+if ! grep -q "$CSS_MARKER" "$LS_BASE_TEMPLATE" 2>/dev/null; then
+    if [ -f "$CSS_SRC" ] && [ -d "$LS_STATIC_DIR" ] && [ -f "$LS_BASE_TEMPLATE" ]; then
+        echo "Applying branding CSS patch..."
+        cp "$CSS_SRC" "$CSS_DEST"
+        # Inject <link> tag before </head>
+        sed -i "/$CSS_MARKER/d" "$LS_BASE_TEMPLATE"
+        sed -i "s|</head>|<link rel=\"stylesheet\" href=\"/static/branding.css\"> $CSS_MARKER\n</head>|" "$LS_BASE_TEMPLATE"
+        echo "Branding CSS patch applied"
+    else
+        echo "ERROR: branding CSS patch failed - source ($CSS_SRC), static dir ($LS_STATIC_DIR), or template ($LS_BASE_TEMPLATE) not found"
+    fi
+else
+    echo "Branding CSS patch already applied, skipping"
+fi
+
+# --- Patch: Copy favicon to LS static directory ---
+FAVICON_MARKER="# SUPERINSIGHT_FAVICON_PATCH"
+FAVICON_SRC="$CUSTOM_DIR/favicon.svg"
+FAVICON_DEST="$LS_STATIC_DIR/favicon.svg"
+FAVICON_ICO_DEST="$LS_STATIC_DIR/favicon.ico"
+
+if [ ! -f "$FAVICON_DEST" ] || ! grep -q "$FAVICON_MARKER" "$LS_BASE_TEMPLATE" 2>/dev/null; then
+    if [ -f "$FAVICON_SRC" ] && [ -d "$LS_STATIC_DIR" ] && [ -f "$LS_BASE_TEMPLATE" ]; then
+        echo "Applying favicon patch..."
+        cp "$FAVICON_SRC" "$FAVICON_DEST"
+        # Also copy as .ico fallback if original exists
+        if [ -f "$FAVICON_ICO_DEST" ]; then
+            cp "$FAVICON_SRC" "$FAVICON_ICO_DEST"
+        fi
+        # Replace existing favicon link or inject new one
+        if grep -q "favicon" "$LS_BASE_TEMPLATE" 2>/dev/null; then
+            sed -i 's|<link[^>]*rel="[^"]*icon[^"]*"[^>]*>|<link rel="icon" href="/static/favicon.svg" type="image/svg+xml">|g' "$LS_BASE_TEMPLATE"
+        fi
+        # Add marker comment if not present
+        if ! grep -q "$FAVICON_MARKER" "$LS_BASE_TEMPLATE" 2>/dev/null; then
+            sed -i "s|</head>|<!-- $FAVICON_MARKER -->\n</head>|" "$LS_BASE_TEMPLATE"
+        fi
+        echo "Favicon patch applied"
+    else
+        echo "ERROR: favicon patch failed - source ($FAVICON_SRC), static dir ($LS_STATIC_DIR), or template ($LS_BASE_TEMPLATE) not found"
+    fi
+else
+    echo "Favicon patch already applied, skipping"
+fi
+
+# --- Patch: Replace <title> with 问视间 ---
+TITLE_MARKER="# SUPERINSIGHT_TITLE_PATCH"
+
+if ! grep -q "$TITLE_MARKER" "$LS_BASE_TEMPLATE" 2>/dev/null; then
+    if [ -f "$LS_BASE_TEMPLATE" ]; then
+        echo "Applying title patch..."
+        # Replace title content
+        sed -i 's|<title>[^<]*Label Studio[^<]*</title>|<title>问视间</title>|g' "$LS_BASE_TEMPLATE"
+        # Add marker comment
+        sed -i "s|</head>|<!-- $TITLE_MARKER -->\n</head>|" "$LS_BASE_TEMPLATE"
+        echo "Title patch applied"
+    else
+        echo "ERROR: title patch failed - template ($LS_BASE_TEMPLATE) not found"
+    fi
+else
+    echo "Title patch already applied, skipping"
+fi
+
 # Run original entrypoint
 exec /label-studio/deploy/docker-entrypoint.sh "$@"

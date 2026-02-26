@@ -2,6 +2,23 @@
   "page_title": "AI Annotation Engine Configuration",
   "page_description": "Configure and manage AI annotation engines, quality thresholds, and A/B testing",
 
+  "menu": {
+    "dashboard": "Dashboard",
+    "tasks": "Tasks",
+    "quality": "Quality",
+    "collaboration": "Collaboration",
+    "engines": "Engines",
+    "execution": "Execution",
+    "trial": "Trial Run",
+    "batch": "Batch Execute",
+    "rhythm": "Rhythm Control"
+  },
+
+  "dashboard": {
+    "recent_tasks": "Recent Tasks",
+    "quality_overview": "Quality Overview"
+  },
+
   "tabs": {
     "engines": "Engines",
     "llm_configuration": "LLM Configuration",
@@ -120,6 +137,12 @@
   },
 
   "stats": {
+    "total_tasks": "Total Tasks",
+    "completed": "Completed",
+    "active_annotators": "Active Annotators",
+    "ai_accuracy": "AI Accuracy",
+    "pending_reviews": "Pending Reviews",
+    "conflicts": "Conflicts",
     "total_engines": "Total Engines",
     "healthy_engines": "Healthy Engines",
     "degraded_engines": "Degraded Engines",
@@ -290,6 +313,8 @@
   },
 
   "alerts": {
+    "conflicts_title": "Annotation Conflicts Detected",
+    "conflicts_description": "{{count}} conflict(s) need resolution",
     "unhealthy_engines_title": "Unhealthy Engines Detected",
     "unhealthy_engines_description": "{{count}} engine(s) are not healthy. Check configuration and connectivity.",
     "quality_below_threshold_title": "Quality Below Threshold",
@@ -375,8 +400,33 @@
     }
   },
 
+  "execution": {
+    "title": "Execution Panel",
+    "progress": "Execution Progress",
+    "processed": "Processed",
+    "remaining": "Remaining",
+    "estimated_time": "Estimated Time",
+    "minutes": "min",
+    "seconds": "sec",
+    "label_distribution": "Label Distribution",
+    "confidence_distribution": "Confidence Distribution",
+    "errors": "Error Details",
+    "error_code": "Code",
+    "error_message": "Message",
+    "error_time": "Time",
+    "error_item": "Item",
+    "retry": "Retry",
+    "pause": "Pause",
+    "resume": "Resume",
+    "status_running": "Running",
+    "status_paused": "Paused",
+    "status_completed": "Completed",
+    "status_error": "Error",
+    "no_data": "No execution data",
+    "items": "items"
+  },
+
   "quality": {
-    "ai_accuracy": "AI Accuracy",
     "agreement_rate": "Agreement Rate",
     "total_samples": "Total Samples",
     "active_alerts": "Active Alerts",
@@ -452,5 +502,96 @@
     "role_annotator": "Annotator",
     "role_reviewer": "Reviewer",
     "role_admin": "Admin"
+  },
+
+  "trial": {
+    "config_title": "Trial Configuration",
+    "sample_size": "Sample Size",
+    "annotation_type": "Annotation Type",
+    "accuracy": "Accuracy",
+    "avg_confidence": "Avg Confidence",
+    "duration": "Duration",
+    "timestamp": "Timestamp",
+    "actions": "Actions",
+    "expand_full": "Expand",
+    "run": "Run Trial",
+    "run_success": "Trial completed",
+    "run_failed": "Trial failed",
+    "confidence_threshold": "Confidence Threshold",
+    "comparison_title": "Trial Comparison",
+    "clear": "Clear",
+    "low_confidence_warning": "Some trials have average confidence below 0.6. Consider adjusting annotation config."
+  },
+
+  "batch": {
+    "config_title": "Batch Configuration",
+    "batch_size": "Batch Size",
+    "interval": "Interval",
+    "quality_threshold": "Quality Threshold",
+    "auto_stop": "Auto Stop",
+    "start": "Start Batch",
+    "continue": "Continue",
+    "stop": "Stop",
+    "batch_index": "Batch #",
+    "accuracy": "Accuracy",
+    "processed_count": "Processed",
+    "status": "Status",
+    "quality_trend": "Quality Trend",
+    "progress_summary": "Batch {{current}}/{{total}} — {{processed}}/{{totalItems}} items processed",
+    "auto_paused": "Auto-Paused: Quality Below Threshold",
+    "auto_paused_desc": "Batch accuracy dropped below the configured threshold. Adjust config and continue, or stop execution.",
+    "batch_failed": "Batch {{index}} failed"
+  },
+
+  "audit": {
+    "title": "Desensitization Audit Log",
+    "operator": "Operator",
+    "timestamp": "Timestamp",
+    "rules_count": "Rules",
+    "affected_count": "Affected Count",
+    "task_id": "Task ID",
+    "refresh": "Refresh",
+    "operator_placeholder": "Filter by operator"
+  },
+
+  "external": {
+    "title": "External Annotation",
+    "loading": "Loading task...",
+    "submit": "Submit Annotations",
+    "submitting": "Submitting...",
+    "submit_success": "Annotations submitted successfully",
+    "submit_failed": "Failed to submit annotations",
+    "load_failed": "Failed to load task",
+    "invalid_token": "Invalid or expired link",
+    "invalid_token_desc": "Please contact the administrator for a new annotation link.",
+    "validation_failed": "Quality validation failed. Please review your annotations.",
+    "task_info": "Task Info",
+    "task_title": "Task Title",
+    "project": "Project",
+    "data_count": "Data Count",
+    "annotation_area": "Annotation Area",
+    "no_data": "No data to annotate",
+    "item_index": "Item {{index}}",
+    "back_to_home": "Back to Home"
+  },
+
+  "rhythm": {
+    "config_title": "Rhythm Configuration",
+    "rate": "Annotation Rate",
+    "items_per_min": "items/min",
+    "concurrency": "Concurrency",
+    "priority_title": "Priority Rules",
+    "field": "Field",
+    "value": "Value",
+    "priority": "Priority",
+    "actions": "Actions",
+    "add_rule": "Add Rule",
+    "field_dataType": "Data Type",
+    "field_labelCategory": "Label Category",
+    "status_title": "Real-time Status",
+    "current_rate": "Current Rate",
+    "queue_depth": "Queue Depth",
+    "resource_usage": "Resource Usage",
+    "sync_failed": "Failed to sync rhythm config"
   }
 }

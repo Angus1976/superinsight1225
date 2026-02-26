@@ -22,6 +22,10 @@ import {
   CheckCircleOutlined,
   SyncOutlined,
   ExclamationCircleOutlined,
+  RocketOutlined,
+  ExperimentOutlined,
+  AppstoreOutlined,
+  ControlOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import type { MenuProps } from 'antd';
@@ -31,6 +35,10 @@ import TaskManagement from '@/components/AIAnnotation/TaskManagement';
 import QualityDashboard from '@/components/AIAnnotation/QualityDashboard';
 import AnnotationCollaboration from '@/components/AIAnnotation/AnnotationCollaboration';
 import EngineConfiguration from './EngineConfiguration';
+import ExecutionPanel from '@/components/AIAnnotation/ExecutionPanel';
+import TrialRunner from '@/components/AIAnnotation/TrialRunner';
+import BatchExecutor from '@/components/AIAnnotation/BatchExecutor';
+import RhythmController from '@/components/AIAnnotation/RhythmController';
 
 // Types
 interface AIAnnotationStats {
@@ -58,6 +66,10 @@ const AIAnnotationIndex: React.FC = () => {
   // Get current menu key from path
   const getMenuKey = () => {
     const path = location.pathname;
+    if (path.includes('/execution')) return 'execution';
+    if (path.includes('/trial')) return 'trial';
+    if (path.includes('/batch')) return 'batch';
+    if (path.includes('/rhythm')) return 'rhythm';
     if (path.includes('/tasks')) return 'tasks';
     if (path.includes('/quality')) return 'quality';
     if (path.includes('/collaboration')) return 'collaboration';
@@ -105,6 +117,26 @@ const AIAnnotationIndex: React.FC = () => {
       key: 'engines',
       icon: <SettingOutlined />,
       label: t('ai_annotation:menu.engines'),
+    },
+    {
+      key: 'execution',
+      icon: <RocketOutlined />,
+      label: t('ai_annotation:menu.execution'),
+    },
+    {
+      key: 'trial',
+      icon: <ExperimentOutlined />,
+      label: t('ai_annotation:menu.trial'),
+    },
+    {
+      key: 'batch',
+      icon: <AppstoreOutlined />,
+      label: t('ai_annotation:menu.batch'),
+    },
+    {
+      key: 'rhythm',
+      icon: <ControlOutlined />,
+      label: t('ai_annotation:menu.rhythm'),
     },
   ];
 
@@ -261,6 +293,10 @@ const AIAnnotationIndex: React.FC = () => {
           <Route path="quality" element={<QualityDashboard projectId="default" />} />
           <Route path="collaboration" element={<AnnotationCollaboration projectId="default" />} />
           <Route path="engines" element={<EngineConfiguration />} />
+          <Route path="execution" element={<ExecutionPanel taskId="default" />} />
+          <Route path="trial" element={<TrialRunner />} />
+          <Route path="batch" element={<BatchExecutor />} />
+          <Route path="rhythm" element={<RhythmController />} />
           <Route path="*" element={<Navigate to="/ai-annotation" replace />} />
         </Routes>
       </div>

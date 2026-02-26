@@ -37,16 +37,6 @@ const menuItems = [
     path: ROUTES.TASKS,
     name: 'tasks',
     icon: <OrderedListOutlined />,
-    children: [
-      {
-        path: `${ROUTES.TASKS}/list`,
-        name: 'taskList',
-      },
-      {
-        path: `${ROUTES.TASKS}/create`,
-        name: 'taskCreate',
-      },
-    ],
   },
   {
     path: ROUTES.AUGMENTATION,

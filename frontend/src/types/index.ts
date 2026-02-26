@@ -63,3 +63,6 @@ export * from './ls-workspace';
 
 // Brand Identity System types
 export * from './brand';
+
+// Help system types
+export * from './help';

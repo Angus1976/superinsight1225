@@ -38,9 +38,12 @@ interface LanguageState {
   language: SupportedLanguage;
   isInitialized: boolean;
   labelStudioSynced: boolean;
+  pendingLanguage: SupportedLanguage | null;  // iframe 未就绪时缓存
   
   // Actions
   setLanguage: (lang: SupportedLanguage) => void;
+  setPendingLanguage: (lang: SupportedLanguage | null) => void;
+  clearPendingLanguage: () => void;
   syncToLabelStudio: () => void;
   initializeLanguage: () => void;
   handleLabelStudioMessage: (event: MessageEvent) => void;
@@ -52,6 +55,7 @@ export const useLanguageStore = create<LanguageState>()(
       language: DEFAULT_LANGUAGE,
       isInitialized: false,
       labelStudioSynced: false,
+      pendingLanguage: null,
 
       /**
        * Set language and synchronize across all systems
@@ -90,6 +94,24 @@ export const useLanguageStore = create<LanguageState>()(
         });
 
         console.log(`[LanguageStore] Language changed to: ${lang}`);
+      },
+
+      /**
+       * Cache language when iframe is not ready yet
+       * Will be synced when iframe becomes ready
+       */
+      setPendingLanguage: (lang: SupportedLanguage | null) => {
+        set({ pendingLanguage: lang });
+        if (lang) {
+          console.log(`[LanguageStore] Pending language cached: ${lang}`);
+        }
+      },
+
+      /**
+       * Clear pending language after successful sync
+       */
+      clearPendingLanguage: () => {
+        set({ pendingLanguage: null });
       },
 
       /**

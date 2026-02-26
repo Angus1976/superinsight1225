@@ -103,6 +103,15 @@ const AIAssistantPage = lazyWithPreload(() => import('@/pages/AIAssistant'));
 // AI Annotation pages
 const AIAnnotationPage = lazyWithPreload(() => import('@/pages/AIAnnotation'));
 
+// Data Structuring pages
+const DataStructuringUploadPage = lazyWithPreload(() => import('@/pages/DataStructuring/Upload'));
+const DataStructuringPreviewPage = lazyWithPreload(() => import('@/pages/DataStructuring/Preview'));
+const DataStructuringSchemaPage = lazyWithPreload(() => import('@/pages/DataStructuring/SchemaEditor'));
+const DataStructuringResultsPage = lazyWithPreload(() => import('@/pages/DataStructuring/Results'));
+
+// External Annotation page (no auth required)
+const ExternalAnnotationPage = lazyWithPreload(() => import('@/pages/ExternalAnnotation'));
+
 // Workspace pages (Multi-tenant)
 const WorkspaceManagementPage = lazyWithPreload(() => import('@/pages/Workspace/WorkspaceManagement'));
 const MemberManagementPage = lazyWithPreload(() => import('@/pages/Workspace/MemberManagement'));
@@ -188,6 +197,10 @@ export const routes: RouteObject[] = [
     element: withMinimalSuspense(ResetPasswordPage),
   },
   {
+    path: 'external-annotation/:token',
+    element: withMinimalSuspense(ExternalAnnotationPage),
+  },
+  {
     path: '/',
     element: (
       <ProtectedRoute>
@@ -209,6 +222,10 @@ export const routes: RouteObject[] = [
       },
       {
         path: 'tasks',
+        element: withSuspense(TasksPage, 'table'),
+      },
+      {
+        path: 'tasks/list',
         element: withSuspense(TasksPage, 'table'),
       },
       {
@@ -461,6 +478,23 @@ export const routes: RouteObject[] = [
       {
         path: 'ai-annotation/*',
         element: withSuspense(AIAnnotationPage, 'dashboard'),
+      },
+      // Data Structuring workflow
+      {
+        path: 'data-structuring/upload',
+        element: withSuspense(DataStructuringUploadPage, 'page'),
+      },
+      {
+        path: 'data-structuring/preview/:jobId',
+        element: withSuspense(DataStructuringPreviewPage, 'page'),
+      },
+      {
+        path: 'data-structuring/schema/:jobId',
+        element: withSuspense(DataStructuringSchemaPage, 'page'),
+      },
+      {
+        path: 'data-structuring/results/:jobId',
+        element: withSuspense(DataStructuringResultsPage, 'table'),
       },
     ],
   },

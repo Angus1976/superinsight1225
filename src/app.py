@@ -1153,6 +1153,16 @@ except ImportError as e:
 except Exception as e:
     logger.error(f"Tasks API failed to load: {e}")
 
+# Include structuring API router
+try:
+    from src.api.structuring import router as structuring_router
+    app.include_router(structuring_router)
+    logger.info("Structuring API loaded successfully")
+except ImportError as e:
+    logger.error(f"Structuring API not available: {e}")
+except Exception as e:
+    logger.error(f"Structuring API failed to load: {e}")
+
 # Include Label Studio API router
 try:
     from src.api.label_studio_api import router as label_studio_router

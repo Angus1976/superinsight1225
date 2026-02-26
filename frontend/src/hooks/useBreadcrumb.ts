@@ -30,7 +30,7 @@ export const useBreadcrumb = () => {
     else if (pathname.startsWith('/tasks')) {
       items.push({ title: t('menu.tasks'), path: ROUTES.TASKS });
       
-      if (segments.length === 1) {
+      if (segments.length === 1 || segments[1] === 'list') {
         title = t('menu.tasks');
       } else if (segments[1] === 'create') {
         title = t('tasks.create');

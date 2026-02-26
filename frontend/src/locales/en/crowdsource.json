@@ -10,7 +10,9 @@
     "tasks": "Available Tasks",
     "earnings": "Earnings Statistics",
     "annotators": "Annotator Management",
-    "platforms": "Third-party Platforms"
+    "platforms": "Third-party Platforms",
+    "desensitization": "Desensitization",
+    "audit": "Audit Log"
   },
   "tasks": {
     "projectName": "Project Name",

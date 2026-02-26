@@ -1,6 +1,6 @@
 // Label Studio iframe embed component with SSO authentication and language synchronization
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import { Card, Spin, Alert, Button, Space, message, Tag, Tooltip } from 'antd';
+import { Card, Skeleton, Alert, Button, Space, message, Tag, Tooltip } from 'antd';
 import { ReloadOutlined, ExpandOutlined, CompressOutlined, SyncOutlined, InfoCircleOutlined, GlobalOutlined, TeamOutlined } from '@ant-design/icons';
 import { useLanguageStore, type LabelStudioLanguageMessage } from '@/stores/languageStore';
 import { useTranslation } from 'react-i18next';
@@ -22,6 +22,8 @@ interface LabelStudioEmbedProps {
   workspaceId?: string | null;
   /** Callback when workspace context changes */
   onWorkspaceContextChange?: (context: WorkspaceInfo | null) => void;
+  /** Whether to show skeleton loading screen (default: true) */
+  showSkeleton?: boolean;
 }
 
 interface LabelStudioMessage {
@@ -46,6 +48,7 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
   height = 600,
   workspaceId,
   onWorkspaceContextChange,
+  showSkeleton = true,
 }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [loading, setLoading] = useState(true);
@@ -53,6 +56,9 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
   const [fullscreen, setFullscreen] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
   const [lastActivity, setLastActivity] = useState<Date | null>(null);
+  const [timedOut, setTimedOut] = useState(false);
+  const [iframeReady, setIframeReady] = useState(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   // SSO token state
   const [ssoToken, setSsoToken] = useState<string | null>(null);
@@ -65,6 +71,9 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
 
   // Track previous language to detect changes
   const prevLanguageRef = useRef(language);
+
+  // Cache language when iframe is not ready yet (Req 2.4)
+  const pendingLanguageRef = useRef<string | null>(null);
 
   // Workspace context integration
   const workspaceContext = useLSWorkspaceContext(workspaceId);
@@ -241,7 +250,10 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
         switch (lsMessage.type) {
           case 'labelStudio:ready':
           case 'ls:ready':
+            if (timeoutRef.current) clearTimeout(timeoutRef.current);
             setLoading(false);
+            setTimedOut(false);
+            setIframeReady(true);
             setError(null);
             setConnectionStatus('connected');
             // Sync language when Label Studio is ready
@@ -342,25 +354,43 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
   // Reload iframe when language changes to apply Label Studio's built-in localization
   // Label Studio uses Django's i18n which requires a page reload to change language
   useEffect(() => {
-    if (prevLanguageRef.current !== language && connectionStatus === 'connected') {
-      console.log(`[LabelStudioEmbed] Language changed from ${prevLanguageRef.current} to ${language}, reloading iframe...`);
-      prevLanguageRef.current = language;
-      
-      // Show loading state and reload iframe
+    if (prevLanguageRef.current === language) return;
+
+    prevLanguageRef.current = language;
+
+    // If iframe is ready and connected, reload with new language
+    if (iframeReady && connectionStatus === 'connected') {
+      console.log(`[LabelStudioEmbed] Language changed to ${language}, reloading iframe...`);
       setLoading(true);
+      setTimedOut(false);
+      setIframeReady(false);
       setConnectionStatus('connecting');
-      
+
       if (iframeRef.current) {
-        // Reload the iframe to apply new language
         iframeRef.current.src = getLabelStudioUrl();
       }
-      
-      // Also try postMessage sync (may work for some Label Studio versions)
+
       syncToLabelStudio();
-      
       message.info(t('labelStudio.languageChanging', '正在切换 Label Studio 语言...'));
+      return;
     }
-  }, [language, connectionStatus, syncToLabelStudio, getLabelStudioUrl, t]);
+
+    // iframe not ready yet — cache language for later sync (Req 2.4)
+    console.log(`[LabelStudioEmbed] iframe not ready, caching pendingLanguage: ${language}`);
+    pendingLanguageRef.current = language;
+  }, [language, iframeReady, connectionStatus, syncToLabelStudio, getLabelStudioUrl, t]);
+
+  // Sync pending language when iframe becomes ready (Req 2.4)
+  useEffect(() => {
+    if (!iframeReady) return;
+    if (!pendingLanguageRef.current) return;
+
+    const pending = pendingLanguageRef.current;
+    pendingLanguageRef.current = null;
+
+    console.log(`[LabelStudioEmbed] iframe ready, syncing pendingLanguage: ${pending}`);
+    syncToLabelStudio();
+  }, [iframeReady, syncToLabelStudio]);
 
   // Enhanced bi-directional communication
   const sendMessageToIframe = useCallback((type: string, payload?: any) => {
@@ -382,10 +412,32 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
     return () => clearInterval(healthCheck);
   }, [connectionStatus, sendMessageToIframe]);
 
+  // 15-second timeout for iframe loading (Req 3.4)
+  const LOAD_TIMEOUT_MS = 15_000;
+
+  useEffect(() => {
+    if (!loading) return;
+    // Clear any existing timeout
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+
+    timeoutRef.current = setTimeout(() => {
+      if (loading && connectionStatus === 'connecting') {
+        setTimedOut(true);
+        setLoading(false);
+      }
+    }, LOAD_TIMEOUT_MS);
+
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, [loading, connectionStatus]);
+
   // Reload iframe with enhanced error handling
   const handleReload = useCallback(() => {
     setLoading(true);
     setError(null);
+    setTimedOut(false);
+    setIframeReady(false);
     setConnectionStatus('connecting');
     setLastActivity(null);
     
@@ -399,24 +451,24 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
     setFullscreen((prev) => !prev);
   }, []);
 
-  // Handle iframe load with timeout
+  // Handle iframe load — trigger fade-in and clear timeout
   const handleIframeLoad = useCallback(() => {
-    // Set a timeout to detect if Label Studio doesn't respond
-    const timeout = setTimeout(() => {
+    // Clear the 15s timeout since iframe loaded
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+
+    // Mark iframe as ready for fade-in animation (Req 3.2)
+    setIframeReady(true);
+    setTimedOut(false);
+
+    // Set a shorter timeout to detect if LS doesn't send ready message
+    const readyTimeout = setTimeout(() => {
       if (connectionStatus === 'connecting') {
-        // Label Studio loaded but didn't send ready message - this is OK
-        // Just mark as connected and hide loading
-        console.log('[LabelStudioEmbed] Timeout reached, assuming Label Studio is ready');
+        console.log('[LabelStudioEmbed] Ready-message timeout, assuming LS is ready');
         setLoading(false);
         setConnectionStatus('connected');
         setError(null);
       }
-    }, 30000); // 30 second timeout (increased from 10s)
-
-    // Clear timeout if we receive a ready message
-    const clearTimeoutOnReady = () => {
-      clearTimeout(timeout);
-    };
+    }, 30_000);
 
     // Send initial handshake
     setTimeout(() => {
@@ -428,13 +480,15 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
       });
     }, 1000);
 
-    return clearTimeoutOnReady;
-  }, [connectionStatus, sendMessageToIframe, projectId, taskId, language, t]);
+    return () => clearTimeout(readyTimeout);
+  }, [connectionStatus, sendMessageToIframe, projectId, taskId, language]);
 
   // Handle iframe error
   const handleIframeError = useCallback(() => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
     setError(t('labelStudio.loadError', '无法加载 Label Studio，请检查网络连接和服务状态'));
     setLoading(false);
+    setTimedOut(false);
     setConnectionStatus('disconnected');
   }, [t]);
 
@@ -526,26 +580,47 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
         </Space>
       }
     >
-      {/* Loading indicator with enhanced feedback */}
-      {loading && (
-        <div
-          style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            zIndex: 10,
-            textAlign: 'center'
-          }}
-        >
-          <Spin size="large" tip={t('labelStudio.loading', '正在加载 Label Studio...')} />
-          <div style={{ marginTop: 16, color: '#666' }}>
-            <p>{t('labelStudio.connectionStatus', '连接状态')}: {getConnectionStatusText()}</p>
-            {connectionStatus === 'connecting' && (
-              <p style={{ fontSize: 12 }}>
-                {t('labelStudio.loadingHint', '如果长时间无响应，请检查 Label Studio 服务是否正常运行')}
-              </p>
-            )}
+      {/* Skeleton loading screen (Req 3.1) with progress text (Req 3.5) */}
+      {loading && showSkeleton && (
+        <div style={{ position: 'absolute', inset: 0, zIndex: 10, background: '#fff', padding: 16 }}>
+          {/* Toolbar skeleton */}
+          <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
+            <Skeleton.Button active size="small" style={{ width: 80 }} />
+            <Skeleton.Button active size="small" style={{ width: 80 }} />
+            <Skeleton.Button active size="small" style={{ width: 80 }} />
+            <div style={{ flex: 1 }} />
+            <Skeleton.Avatar active size="small" shape="circle" />
+          </div>
+          {/* Content area skeleton */}
+          <div style={{ display: 'flex', gap: 16, height: 'calc(100% - 80px)' }}>
+            <div style={{ flex: 1 }}>
+              <Skeleton active paragraph={{ rows: 8 }} />
+            </div>
+            <div style={{ width: 240 }}>
+              <Skeleton active paragraph={{ rows: 6 }} />
+            </div>
+          </div>
+          {/* Progress status text (Req 3.5) */}
+          <div style={{ textAlign: 'center', marginTop: 16, color: '#999', fontSize: 13 }}>
+            <SyncOutlined spin style={{ marginRight: 8 }} />
+            {t('labelStudio.connectingStatus', '正在连接标注系统...')}
+          </div>
+        </div>
+      )}
+
+      {/* Timeout message with retry (Req 3.4) */}
+      {timedOut && !error && (
+        <div style={{ position: 'absolute', inset: 0, zIndex: 10, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ textAlign: 'center', maxWidth: 400 }}>
+            <p style={{ fontSize: 16, color: '#595959', marginBottom: 8 }}>
+              {t('labelStudio.timeoutMessage', '标注系统连接超时')}
+            </p>
+            <p style={{ fontSize: 13, color: '#999', marginBottom: 24 }}>
+              {t('labelStudio.timeoutHint', '系统未能在 15 秒内完成加载，请检查网络连接后重试')}
+            </p>
+            <Button type="primary" icon={<ReloadOutlined />} onClick={handleReload}>
+              {t('common.retry', '重试')}
+            </Button>
           </div>
         </div>
       )}
@@ -582,7 +657,7 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
         />
       )}
 
-      {/* iframe with enhanced attributes and language sync */}
+      {/* iframe with 300ms fade-in animation (Req 3.2) */}
       <iframe
         ref={iframeRef}
         data-label-studio
@@ -591,7 +666,9 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
           width: '100%',
           height: '100%',
           border: 'none',
-          display: error ? 'none' : 'block',
+          display: error || timedOut ? 'none' : 'block',
+          opacity: iframeReady ? 1 : 0,
+          transition: 'opacity 300ms ease-in',
         }}
         onLoad={handleIframeLoad}
         onError={handleIframeError}

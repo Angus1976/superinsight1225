@@ -194,17 +194,17 @@ const QualityPage: React.FC = () => {
           <Menu mode="horizontal" selectedKeys={[location.pathname.split('/').pop() || '']}>
             <Menu.Item key="quality">
               <Link to="/quality">
-                <DashboardOutlined /> 质量概览
+                <DashboardOutlined /> {t('dashboard.overview')}
               </Link>
             </Menu.Item>
             <Menu.Item key="rules">
               <Link to="/quality/rules">
-                <SafetyCertificateOutlined /> 质量规则
+                <SafetyCertificateOutlined /> {t('rules.title')}
               </Link>
             </Menu.Item>
             <Menu.Item key="reports">
               <Link to="/quality/reports">
-                <FileTextOutlined /> 质量报告
+                <FileTextOutlined /> {t('reports.title')}
               </Link>
             </Menu.Item>
           </Menu>
@@ -513,7 +513,7 @@ const QualityPage: React.FC = () => {
 
   const ruleColumns: ColumnsType<QualityRule> = [
     {
-      title: 'Rule Name',
+      title: t('rules.name'),
       dataIndex: 'name',
       key: 'name',
       render: (name, record) => (
@@ -528,14 +528,14 @@ const QualityPage: React.FC = () => {
       ),
     },
     {
-      title: 'Type',
+      title: t('rules.type'),
       dataIndex: 'type',
       key: 'type',
       width: 120,
       render: (type) => <Tag color={typeColors[type]}>{type.toUpperCase()}</Tag>,
     },
     {
-      title: 'Severity',
+      title: t('rules.severity'),
       dataIndex: 'severity',
       key: 'severity',
       width: 100,
@@ -544,7 +544,7 @@ const QualityPage: React.FC = () => {
       ),
     },
     {
-      title: 'Violations',
+      title: t('rules.violations'),
       dataIndex: 'violations_count',
       key: 'violations_count',
       width: 100,
@@ -553,7 +553,7 @@ const QualityPage: React.FC = () => {
       ),
     },
     {
-      title: 'Enabled',
+      title: t('rules.enabled'),
       dataIndex: 'enabled',
       key: 'enabled',
       width: 100,
@@ -566,14 +566,14 @@ const QualityPage: React.FC = () => {
       ),
     },
     {
-      title: 'Last Run',
+      title: t('rules.lastRun'),
       dataIndex: 'last_run',
       key: 'last_run',
       width: 150,
       render: (date) => (date ? new Date(date).toLocaleString() : '-'),
     },
     {
-      title: 'Actions',
+      title: t('rules.actions'),
       key: 'actions',
       width: 200,
       render: (_, record) => (
@@ -610,26 +610,26 @@ const QualityPage: React.FC = () => {
 
   const issueColumns: ColumnsType<QualityIssue> = [
     {
-      title: 'Issue',
+      title: t('issues.description'),
       dataIndex: 'description',
       key: 'description',
       ellipsis: true,
     },
     {
-      title: 'Rule',
+      title: t('issues.rule'),
       dataIndex: 'rule_name',
       key: 'rule_name',
       width: 200,
     },
     {
-      title: 'Task',
+      title: t('issues.task'),
       dataIndex: 'task_name',
       key: 'task_name',
       width: 200,
       render: (name) => <a>{name}</a>,
     },
     {
-      title: 'Severity',
+      title: t('issues.severity'),
       dataIndex: 'severity',
       key: 'severity',
       width: 100,
@@ -638,7 +638,7 @@ const QualityPage: React.FC = () => {
       ),
     },
     {
-      title: 'Status',
+      title: t('issues.status'),
       dataIndex: 'status',
       key: 'status',
       width: 100,
@@ -647,7 +647,7 @@ const QualityPage: React.FC = () => {
       ),
     },
     {
-      title: 'Created',
+      title: t('issues.created'),
       dataIndex: 'created_at',
       key: 'created_at',
       width: 150,

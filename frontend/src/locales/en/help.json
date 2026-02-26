@@ -1,0 +1,34 @@
+{
+  "general": {
+    "title": "Help Center",
+    "description": "Press F1 or ? to view help for the current page at any time."
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "description": "View overall project data overview and statistics.",
+    "exportButton": {
+      "title": "Export Data",
+      "description": "Export current dashboard data to CSV or Excel format.",
+      "shortcut": "Ctrl+E"
+    }
+  },
+  "tasks": {
+    "title": "Task Management",
+    "description": "Create, assign, and manage annotation tasks.",
+    "createButton": {
+      "title": "Create Task",
+      "description": "Create a new annotation task with name, type, and assignee."
+    },
+    "exportButton": {
+      "title": "Export Tasks",
+      "description": "Export the task list to CSV or Excel format.",
+      "shortcut": "Ctrl+E"
+    }
+  },
+  "shortcuts": {
+    "title": "Shortcuts",
+    "toggleHelp": "F1 or ? — Toggle help",
+    "closeHelp": "Esc — Close help",
+    "navigate": "Tab — Navigate between help sections"
+  }
+}

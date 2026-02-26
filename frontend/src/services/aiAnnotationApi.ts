@@ -318,6 +318,62 @@ export interface RoutingConfig {
   review_levels: number;
 }
 
+// Desensitization Types
+export interface DesensitizationRule {
+  id: string;
+  type: 'name' | 'phone' | 'email' | 'address' | 'regex';
+  pattern?: string;
+  replacement: string;
+  enabled: boolean;
+}
+
+export interface DesensitizationPreview {
+  original: string;
+  desensitized: string;
+}
+
+// Audit Types
+export interface AuditLogEntry {
+  id: string;
+  operator: string;
+  timestamp: string;
+  rules: DesensitizationRule[];
+  affectedCount: number;
+  taskId: string;
+}
+
+export interface AuditFilter {
+  dateRange?: [string, string];
+  operator?: string;
+}
+
+// Rhythm Types
+export interface RhythmConfig {
+  ratePerMinute: number;
+  concurrency: number;
+  priorityRules: PriorityRule[];
+}
+
+export interface PriorityRule {
+  field: 'dataType' | 'labelCategory';
+  value: string;
+  priority: number;
+}
+
+export interface RhythmStatus {
+  currentRate: number;
+  queueDepth: number;
+  resourceUsage: number;
+}
+
+// Execution Types
+export interface ExecutionError {
+  code: string;
+  message: string;
+  timestamp: string;
+  itemId?: string;
+}
+
 // ==================== API Functions ====================
 
 const BASE_URL = '/api/v1/annotation';
@@ -486,6 +542,58 @@ export async function getWebSocketStats(): Promise<Record<string, unknown>> {
   return response.data;
 }
 
+// Desensitization APIs
+export async function getDesensitizationRules(taskId: string): Promise<DesensitizationRule[]> {
+  const response = await apiClient.get<DesensitizationRule[]>(`${BASE_URL}/desensitization/${taskId}/rules`);
+  return response.data;
+}
+
+export async function saveDesensitizationRules(taskId: string, rules: DesensitizationRule[]): Promise<void> {
+  await apiClient.put(`${BASE_URL}/desensitization/${taskId}/rules`, { rules });
+}
+
+export async function previewDesensitization(taskId: string, rules: DesensitizationRule[]): Promise<DesensitizationPreview[]> {
+  const response = await apiClient.post<DesensitizationPreview[]>(`${BASE_URL}/desensitization/${taskId}/preview`, { rules });
+  return response.data;
+}
+
+// Audit APIs
+export async function getAuditLogs(filter: AuditFilter): Promise<AuditLogEntry[]> {
+  const response = await apiClient.get<AuditLogEntry[]>(`${BASE_URL}/desensitization/audit`, { params: filter });
+  return response.data;
+}
+
+// External Annotation APIs
+export async function generateExternalLink(taskId: string): Promise<{ url: string; token: string }> {
+  const response = await apiClient.post<{ url: string; token: string }>(`${BASE_URL}/external/${taskId}/link`);
+  return response.data;
+}
+
+export async function getExternalTask(token: string): Promise<{ task: AnnotationTask; data: unknown[] }> {
+  const response = await apiClient.get<{ task: AnnotationTask; data: unknown[] }>(`${BASE_URL}/external/task/${token}`);
+  return response.data;
+}
+
+export async function submitExternalAnnotation(token: string, annotations: unknown[]): Promise<void> {
+  await apiClient.post(`${BASE_URL}/external/task/${token}/submit`, { annotations });
+}
+
+// Rhythm APIs
+export async function updateRhythmConfig(config: RhythmConfig): Promise<void> {
+  await apiClient.put(`${BASE_URL}/rhythm/config`, config);
+}
+
+export async function getRhythmStatus(): Promise<RhythmStatus> {
+  const response = await apiClient.get<RhythmStatus>(`${BASE_URL}/rhythm/status`);
+  return response.data;
+}
+
+// Annotation Mapping APIs
+export async function mapBackAnnotations(taskId: string): Promise<{ mappedCount: number }> {
+  const response = await apiClient.post<{ mappedCount: number }>(`${BASE_URL}/desensitization/${taskId}/map-back`);
+  return response.data;
+}
+
 // ==================== WebSocket Helper ====================
 
 export function createAnnotationWebSocket(
@@ -576,4 +684,20 @@ export default {
   // WebSocket
   getWebSocketStats,
   createAnnotationWebSocket,
+
+  // Desensitization
+  getDesensitizationRules,
+  saveDesensitizationRules,
+  previewDesensitization,
+  getAuditLogs,
+  mapBackAnnotations,
+
+  // External Annotation
+  generateExternalLink,
+  getExternalTask,
+  submitExternalAnnotation,
+
+  // Rhythm
+  updateRhythmConfig,
+  getRhythmStatus,
 };

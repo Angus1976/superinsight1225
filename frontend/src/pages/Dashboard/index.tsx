@@ -13,6 +13,7 @@ import {
   QualityReports, 
   KnowledgeGraph 
 } from '@/components/Dashboard';
+import { HelpIcon } from '@/components/SmartHelp';
 import { useDashboard } from '@/hooks/useDashboard';
 import { useAuthStore } from '@/stores/authStore';
 
@@ -52,9 +53,11 @@ const DashboardPage: React.FC = () => {
   }
 
   return (
-    <div>
+    <div data-help-key="dashboard">
       <Title level={4} style={{ marginBottom: 24 }}>
         {t('welcome', { name: user?.username || 'User' })}
+        {' '}
+        <HelpIcon helpKey="dashboard" size="small" />
       </Title>
 
       <Tabs defaultActiveKey="overview" size="large">

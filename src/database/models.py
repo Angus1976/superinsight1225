@@ -274,3 +274,8 @@ from src.label_studio.workspace_models import (
 from src.models.ai_integration import (
     AIGateway, AISkill, AIAuditLog
 )
+
+# Import structuring models to ensure they are registered with SQLAlchemy
+from src.models.structuring import (  # noqa: F401
+    StructuringJob, StructuredRecord
+)

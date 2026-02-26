@@ -1,0 +1,34 @@
+{
+  "general": {
+    "title": "帮助中心",
+    "description": "按 F1 或 ? 键可随时查看当前页面的帮助信息。"
+  },
+  "dashboard": {
+    "title": "仪表盘",
+    "description": "查看项目整体数据概览和统计信息。",
+    "exportButton": {
+      "title": "导出数据",
+      "description": "将当前仪表盘数据导出为 CSV 或 Excel 格式。",
+      "shortcut": "Ctrl+E"
+    }
+  },
+  "tasks": {
+    "title": "任务管理",
+    "description": "创建、分配和管理标注任务。",
+    "createButton": {
+      "title": "新建任务",
+      "description": "创建新的标注任务，设置名称、类型和分配人员。"
+    },
+    "exportButton": {
+      "title": "导出任务",
+      "description": "将任务列表导出为 CSV 或 Excel 格式。",
+      "shortcut": "Ctrl+E"
+    }
+  },
+  "shortcuts": {
+    "title": "快捷键一览",
+    "toggleHelp": "F1 或 ? — 打开/关闭帮助",
+    "closeHelp": "Esc — 关闭帮助",
+    "navigate": "Tab — 在帮助内容间导航"
+  }
+}

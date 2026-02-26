@@ -1,0 +1,118 @@
+/**
+ * 问视间品牌覆盖样式 — Label Studio
+ *
+ * 通过 entrypoint-sso.sh 注入到 Label Studio HTML 模板中。
+ * 所有规则使用非破坏性覆盖：如果此文件加载失败，
+ * Label Studio 原始界面正常显示，不影响标注功能。
+ *
+ * 需求: 5.1 (Logo 替换), 5.3 (主题色), 5.5 (降级兼容)
+ */
+
+/* ============================================================
+   1. Logo 替换 — 隐藏原始 Logo，显示问视间品牌文字
+   需求 5.1: 隐藏标注系统原始 Logo 并替换为问视间 Logo
+   ============================================================ */
+
+/* 顶部导航栏中的 Logo 图片 */
+.ls-header__logo img,
+.ls-header .ls-logo img,
+header [class*="logo"] img,
+.dm-header [class*="logo"] img {
+  display: none !important;
+}
+
+/* 用 ::after 伪元素替换为问视间品牌文字 */
+.ls-header__logo,
+.ls-header .ls-logo,
+header [class*="logo"] a:first-child,
+.dm-header [class*="logo"] a:first-child {
+  display: flex !important;
+  align-items: center;
+  min-width: auto;
+}
+
+.ls-header__logo::after,
+.ls-header .ls-logo::after,
+header [class*="logo"] a:first-child::after,
+.dm-header [class*="logo"] a:first-child::after {
+  content: "问视间";
+  font-size: 18px;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+}
+
+/* ============================================================
+   2. 主题色调整 — 与问视间品牌色 (#1890ff) 保持一致
+   需求 5.3: 将标注系统的主题色调整为与问视间品牌色一致
+   ============================================================ */
+
+:root {
+  /* 问视间品牌色 */
+  --ls-brand-primary: #1890ff;
+  --ls-brand-primary-hover: #40a9ff;
+  --ls-brand-primary-active: #096dd9;
+  --ls-brand-primary-light: #e6f7ff;
+}
+
+/* 顶部导航栏背景色 */
+.ls-header,
+header[class*="header"],
+.dm-header {
+  background-color: var(--ls-brand-primary) !important;
+}
+
+/* 主要按钮 */
+.ls-button_look_primary,
+button[class*="primary"],
+.dm-content button[class*="primary"] {
+  background-color: var(--ls-brand-primary) !important;
+  border-color: var(--ls-brand-primary) !important;
+}
+
+.ls-button_look_primary:hover,
+button[class*="primary"]:hover,
+.dm-content button[class*="primary"]:hover {
+  background-color: var(--ls-brand-primary-hover) !important;
+  border-color: var(--ls-brand-primary-hover) !important;
+}
+
+.ls-button_look_primary:active,
+button[class*="primary"]:active,
+.dm-content button[class*="primary"]:active {
+  background-color: var(--ls-brand-primary-active) !important;
+  border-color: var(--ls-brand-primary-active) !important;
+}
+
+/* 链接与文本高亮色 */
+a[class*="ls-"],
+.ls-link,
+.dm-content a {
+  color: var(--ls-brand-primary);
+}
+
+a[class*="ls-"]:hover,
+.ls-link:hover,
+.dm-content a:hover {
+  color: var(--ls-brand-primary-hover);
+}
+
+/* 选中/激活状态 */
+.ls-tab_active,
+[class*="tab"][class*="active"],
+.dm-tab_active {
+  border-bottom-color: var(--ls-brand-primary) !important;
+  color: var(--ls-brand-primary) !important;
+}
+
+/* 复选框与单选框选中态 */
+input[type="checkbox"]:checked + *,
+input[type="radio"]:checked + * {
+  color: var(--ls-brand-primary);
+}
+
+/* 选中行高亮 */
+.dm-content tr[class*="selected"],
+.dm-content tr[class*="highlighted"] {
+  background-color: var(--ls-brand-primary-light) !important;
+}

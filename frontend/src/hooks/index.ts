@@ -106,3 +106,8 @@ export {
 export { useLabelStudioUrl } from './useLabelStudioUrl';
 export { useLabelStudio } from './useLabelStudio';
 export type { LabelStudioError, UseLabelStudioReturn } from './useLabelStudio';
+
+// Smart Help Assistant hooks
+export { useHelpShortcut } from './useHelpShortcut';
+export { useHelpContext, extractPageFromRoute } from './useHelpContext';
+

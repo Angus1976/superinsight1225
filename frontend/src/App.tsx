@@ -8,6 +8,8 @@ import { useUIStore } from '@/stores/uiStore';
 import { useLanguageStore, setupLabelStudioLanguageListener } from '@/stores/languageStore';
 import { AppRouter } from '@/router';
 import { ErrorBoundary } from '@/components/Common/ErrorBoundary';
+import { HelpOverlay } from '@/components/SmartHelp';
+import { useHelpShortcut } from '@/hooks/useHelpShortcut';
 import { THEMES } from '@/constants';
 import { lightTheme, darkTheme } from '@/styles/theme';
 
@@ -35,6 +37,8 @@ const queryClient = new QueryClient({
 });
 
 function App() {
+  useHelpShortcut(); // 注册全局帮助快捷键 (F1 / ?)
+
   const { theme: currentTheme, language: uiLanguage, setLanguage: setUILanguage } = useUIStore();
   const { language: langStoreLanguage, initializeLanguage, setLanguage: setLangStoreLanguage } = useLanguageStore();
 
@@ -81,6 +85,7 @@ function App() {
         <AntApp>
           <ErrorBoundary>
             <AppRouter />
+            <HelpOverlay />
           </ErrorBoundary>
         </AntApp>
       </ConfigProvider>

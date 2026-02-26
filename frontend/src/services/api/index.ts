@@ -1,5 +1,6 @@
 // API service exports
 import apiClient, { optimizedApiClient } from './client';
+export * as structuringApi from './structuringApi';
 
 // Export both clients
 export { apiClient, optimizedApiClient };

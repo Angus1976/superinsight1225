@@ -2,6 +2,23 @@
   "page_title": "AI 标注引擎配置",
   "page_description": "配置和管理 AI 标注引擎、质量阈值和 A/B 测试",
 
+  "menu": {
+    "dashboard": "仪表盘",
+    "tasks": "任务管理",
+    "quality": "质量监控",
+    "collaboration": "协作",
+    "engines": "引擎配置",
+    "execution": "执行面板",
+    "trial": "试算",
+    "batch": "批量执行",
+    "rhythm": "节奏控制"
+  },
+
+  "dashboard": {
+    "recent_tasks": "最近任务",
+    "quality_overview": "质量概览"
+  },
+
   "tabs": {
     "engines": "引擎",
     "llm_configuration": "LLM 配置",
@@ -120,6 +137,12 @@
   },
 
   "stats": {
+    "total_tasks": "总任务数",
+    "completed": "已完成",
+    "active_annotators": "活跃标注员",
+    "ai_accuracy": "AI 准确率",
+    "pending_reviews": "待审核",
+    "conflicts": "冲突",
     "total_engines": "总引擎数",
     "healthy_engines": "健康引擎",
     "degraded_engines": "降级引擎",
@@ -290,6 +313,8 @@
   },
 
   "alerts": {
+    "conflicts_title": "存在标注冲突",
+    "conflicts_description": "有 {{count}} 个冲突需要解决",
     "unhealthy_engines_title": "检测到不健康引擎",
     "unhealthy_engines_description": "{{count}} 个引擎不健康。请检查配置和连接性。",
     "quality_below_threshold_title": "质量低于阈值",
@@ -375,6 +400,32 @@
     }
   },
 
+  "execution": {
+    "title": "执行面板",
+    "progress": "执行进度",
+    "processed": "已处理",
+    "remaining": "剩余",
+    "estimated_time": "预估剩余时间",
+    "minutes": "分钟",
+    "seconds": "秒",
+    "label_distribution": "标签分布",
+    "confidence_distribution": "置信度分布",
+    "errors": "错误详情",
+    "error_code": "错误码",
+    "error_message": "错误信息",
+    "error_time": "时间",
+    "error_item": "条目",
+    "retry": "重试",
+    "pause": "暂停",
+    "resume": "恢复",
+    "status_running": "运行中",
+    "status_paused": "已暂停",
+    "status_completed": "已完成",
+    "status_error": "错误",
+    "no_data": "暂无执行数据",
+    "items": "条"
+  },
+
   "quality": {
     "ai_accuracy": "AI 准确率",
     "agreement_rate": "一致率",
@@ -452,5 +503,96 @@
     "role_annotator": "标注员",
     "role_reviewer": "审核员",
     "role_admin": "管理员"
+  },
+
+  "trial": {
+    "config_title": "试算配置",
+    "sample_size": "样本数量",
+    "annotation_type": "标注类型",
+    "accuracy": "准确率",
+    "avg_confidence": "平均置信度",
+    "duration": "耗时",
+    "timestamp": "时间",
+    "actions": "操作",
+    "expand_full": "扩展",
+    "run": "运行试算",
+    "run_success": "试算完成",
+    "run_failed": "试算失败",
+    "confidence_threshold": "置信度阈值",
+    "comparison_title": "试算对比",
+    "clear": "清除",
+    "low_confidence_warning": "部分试算的平均置信度低于 0.6，建议调整标注配置。"
+  },
+
+  "batch": {
+    "config_title": "批次配置",
+    "batch_size": "批次大小",
+    "interval": "批次间隔",
+    "quality_threshold": "质量阈值",
+    "auto_stop": "自动暂停",
+    "start": "开始批量执行",
+    "continue": "继续执行",
+    "stop": "停止",
+    "batch_index": "批次 #",
+    "accuracy": "准确率",
+    "processed_count": "已处理",
+    "status": "状态",
+    "quality_trend": "质量趋势",
+    "progress_summary": "批次 {{current}}/{{total}} — 已处理 {{processed}}/{{totalItems}} 条",
+    "auto_paused": "自动暂停：质量低于阈值",
+    "auto_paused_desc": "批次准确率低于设定阈值，请调整配置后继续，或停止执行。",
+    "batch_failed": "批次 {{index}} 执行失败"
+  },
+
+  "audit": {
+    "title": "脱敏审计日志",
+    "operator": "操作人",
+    "timestamp": "操作时间",
+    "rules_count": "规则数",
+    "affected_count": "影响数据量",
+    "task_id": "任务 ID",
+    "refresh": "刷新",
+    "operator_placeholder": "按操作人筛选"
+  },
+
+  "external": {
+    "title": "外部标注",
+    "loading": "加载任务中...",
+    "submit": "提交标注",
+    "submitting": "提交中...",
+    "submit_success": "标注提交成功",
+    "submit_failed": "标注提交失败",
+    "load_failed": "加载任务失败",
+    "invalid_token": "链接无效或已过期",
+    "invalid_token_desc": "请联系管理员获取新的标注链接。",
+    "validation_failed": "质量校验未通过，请检查标注结果。",
+    "task_info": "任务信息",
+    "task_title": "任务标题",
+    "project": "项目",
+    "data_count": "数据条数",
+    "annotation_area": "标注区域",
+    "no_data": "暂无待标注数据",
+    "item_index": "第 {{index}} 条",
+    "back_to_home": "返回首页"
+  },
+
+  "rhythm": {
+    "config_title": "节奏配置",
+    "rate": "标注速率",
+    "items_per_min": "条/分钟",
+    "concurrency": "并发数",
+    "priority_title": "优先级规则",
+    "field": "字段",
+    "value": "值",
+    "priority": "优先级",
+    "actions": "操作",
+    "add_rule": "添加规则",
+    "field_dataType": "数据类型",
+    "field_labelCategory": "标签类别",
+    "status_title": "实时状态",
+    "current_rate": "当前速率",
+    "queue_depth": "队列深度",
+    "resource_usage": "资源使用率",
+    "sync_failed": "节奏配置同步失败"
   }
 }

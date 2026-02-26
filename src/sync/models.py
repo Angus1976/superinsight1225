@@ -104,6 +104,26 @@ class DataSourceType(str, enum.Enum):
     S3 = "s3"
     LOCAL_FILE = "local_file"
     WEBHOOK = "webhook"
+    # 数据湖/数仓类型
+    HIVE = "hive"
+    CLICKHOUSE = "clickhouse"
+    DORIS = "doris"               # 兼容 StarRocks
+    SPARK_SQL = "spark_sql"
+    PRESTO_TRINO = "presto_trino"
+    DELTA_LAKE = "delta_lake"
+    ICEBERG = "iceberg"
+
+
+# 数据湖/数仓类型集合，供其他模块使用
+DATALAKE_TYPES = frozenset({
+    DataSourceType.HIVE,
+    DataSourceType.CLICKHOUSE,
+    DataSourceType.DORIS,
+    DataSourceType.SPARK_SQL,
+    DataSourceType.PRESTO_TRINO,
+    DataSourceType.DELTA_LAKE,
+    DataSourceType.ICEBERG,
+})
 
 
 class DataSourceStatus(str, enum.Enum):

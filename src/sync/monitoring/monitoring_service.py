@@ -438,6 +438,60 @@ class MonitoringServiceOrchestrator:
         self.alert_manager.acknowledge_alert(rule_name)
         self.notification_service.acknowledge_alert(rule_name)
 
+    # ------------------------------------------------------------------
+    # Datalake monitoring delegation
+    # ------------------------------------------------------------------
+
+    def get_datalake_monitoring(self):
+        """Return the datalake monitoring service singleton.
+
+        Lazy-imported to avoid circular dependencies.
+        """
+        from src.sync.connectors.datalake.monitoring import (
+            get_datalake_monitoring_service,
+        )
+        return get_datalake_monitoring_service()
+
+    async def record_datalake_health_check(
+        self,
+        source_id,
+        tenant_id: str,
+        status: str,
+        latency_ms: float,
+        error_message: Optional[str] = None,
+    ) -> None:
+        """Delegate health-check recording to datalake monitoring."""
+        svc = self.get_datalake_monitoring()
+        await svc.record_health_check(
+            source_id, tenant_id, status, latency_ms, error_message
+        )
+
+    async def record_datalake_query_performance(
+        self,
+        source_id,
+        tenant_id: str,
+        latency_ms: float,
+        status: str,
+    ) -> None:
+        """Delegate query-performance recording to datalake monitoring."""
+        svc = self.get_datalake_monitoring()
+        await svc.record_query_performance(
+            source_id, tenant_id, latency_ms, status
+        )
+
+    async def record_datalake_volume_metric(
+        self,
+        source_id,
+        tenant_id: str,
+        volume_gb: float,
+        row_count: int,
+    ) -> None:
+        """Delegate volume-metric recording to datalake monitoring."""
+        svc = self.get_datalake_monitoring()
+        await svc.record_volume_metric(
+            source_id, tenant_id, volume_gb, row_count
+        )
+
 
 # Global monitoring service instance
 monitoring_service = MonitoringServiceOrchestrator()

@@ -64,6 +64,11 @@ const DataSyncPage: React.FC = () => {
                 <ExportOutlined /> {t('dataSync:nav.export', '数据导出')}
               </Link>
             </Menu.Item>
+            <Menu.Item key="datalake">
+              <Link to="/data-sync/datalake/sources">
+                <DatabaseOutlined /> {t('dataSync:datalake.title', '数据湖/数仓')}
+              </Link>
+            </Menu.Item>
           </Menu>
         </Card>
         <Outlet />

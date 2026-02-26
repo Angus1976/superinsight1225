@@ -116,3 +116,77 @@ input[type="radio"]:checked + * {
 .dm-content tr[class*="highlighted"] {
   background-color: var(--ls-brand-primary-light) !important;
 }
+
+/* ============================================================
+   3. 侧边栏品牌隐藏 — 隐藏 Label Studio 原始 Logo
+   需求 2.1: 侧边栏左上角不显示原始 Label Studio 品牌
+   ============================================================ */
+
+/* 侧边栏 Logo 图片隐藏 */
+[class*="sidebar"] [class*="logo"] img,
+.ls-sidebar [class*="logo"] img,
+.ls-menu [class*="logo"] img,
+nav[class*="sidebar"] [class*="logo"] img {
+  display: none !important;
+}
+
+/* 侧边栏 Logo 区域用 ::after 伪元素替换为问视间品牌文字 */
+[class*="sidebar"] [class*="logo"],
+.ls-sidebar [class*="logo"],
+.ls-menu [class*="logo"],
+nav[class*="sidebar"] [class*="logo"] {
+  display: flex !important;
+  align-items: center;
+  min-width: auto;
+}
+
+[class*="sidebar"] [class*="logo"]::after,
+.ls-sidebar [class*="logo"]::after,
+.ls-menu [class*="logo"]::after,
+nav[class*="sidebar"] [class*="logo"]::after {
+  content: "问视间";
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ls-brand-primary, #1890ff);
+  letter-spacing: 0.5px;
+}
+
+/* ============================================================
+   4. 侧边栏底部链接隐藏 — 移除外部链接（API、Docs、GitHub、Slack）
+   需求 2.2: 侧边栏底部不显示 Label Studio 外部链接
+   ============================================================ */
+
+/* 侧边栏底部 footer 区域 */
+[class*="sidebar"] [class*="footer"],
+.ls-sidebar [class*="footer"],
+.ls-menu [class*="footer"],
+nav[class*="sidebar"] [class*="footer"] {
+  display: none !important;
+}
+
+/* 侧边栏中指向外部服务的链接 */
+[class*="sidebar"] a[href*="github"],
+[class*="sidebar"] a[href*="slack"],
+[class*="sidebar"] a[href*="community"],
+[class*="sidebar"] a[href*="docs.humansignal"],
+[class*="sidebar"] a[href*="labelstud.io"],
+.ls-sidebar a[href*="github"],
+.ls-sidebar a[href*="slack"],
+.ls-sidebar a[href*="community"],
+.ls-menu a[href*="github"],
+.ls-menu a[href*="slack"],
+.ls-menu a[href*="community"] {
+  display: none !important;
+}
+
+/* ============================================================
+   5. 侧边栏版本号隐藏 — 移除 Label Studio 版本号显示
+   需求 2.2: 侧边栏底部不显示 Label Studio 版本号
+   ============================================================ */
+
+[class*="sidebar"] [class*="version"],
+.ls-sidebar [class*="version"],
+.ls-menu [class*="version"],
+nav[class*="sidebar"] [class*="version"] {
+  display: none !important;
+}

@@ -20,7 +20,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 
 # revision identifiers, used by Alembic.
 revision: str = '021_add_ai_integration'
-down_revision: Union[str, Sequence[str], None] = 'merge_all_heads_2026_01_16'
+down_revision: Union[str, Sequence[str], None] = 'merge_2026_01_16'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

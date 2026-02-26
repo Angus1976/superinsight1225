@@ -48,6 +48,8 @@ class ResourceType(str, Enum):
     TRANSFORMATION = "transformation"
     DATASET = "dataset"
     AUDIT_LOG = "audit_log"
+    DATALAKE_SOURCE = "datalake_source"
+    DATALAKE_DASHBOARD = "datalake_dashboard"
 
 
 @dataclass

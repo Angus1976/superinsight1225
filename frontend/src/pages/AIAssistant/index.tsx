@@ -14,10 +14,13 @@ import {
   Row,
   Col,
   Statistic,
+  Segmented,
   message,
+  Checkbox,
 } from 'antd';
 import {
   SendOutlined,
+  StopOutlined,
   RobotOutlined,
   UserOutlined,
   ThunderboltOutlined,
@@ -25,6 +28,8 @@ import {
   BulbOutlined,
   ClockCircleOutlined,
 } from '@ant-design/icons';
+import { sendMessageStream, getOpenClawStatus } from '@/services/aiAssistantApi';
+import type { ChatMessage as ApiChatMessage, ChatMode, SkillInfo } from '@/types/aiAssistant';
 import './styles.css';
 
 const { TextArea } = Input;
@@ -50,6 +55,13 @@ const AIAssistant: React.FC = () => {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const abortRef = useRef<(() => void) | null>(null);
+
+  const [chatMode, setChatMode] = useState<ChatMode>('direct');
+  const [gatewayId, setGatewayId] = useState<string | null>(null);
+  const [gatewayAvailable, setGatewayAvailable] = useState(false);
+  const [skills, setSkills] = useState<SkillInfo[]>([]);
+  const [selectedSkillIds, setSelectedSkillIds] = useState<string[]>([]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -87,10 +99,39 @@ const AIAssistant: React.FC = () => {
     },
   ];
 
-  const handleSendMessage = async () => {
-    if (!inputValue.trim()) {
+  const handleModeChange = async (value: string | number) => {
+    const newMode = value as ChatMode;
+    if (newMode === 'openclaw') {
+      try {
+        const status = await getOpenClawStatus();
+        if (!status.available) {
+          message.warning('OpenClaw 网关不可用，请检查网关状态');
+          return;
+        }
+        setChatMode('openclaw');
+        setGatewayId(status.gateway_id);
+        setGatewayAvailable(true);
+        setSkills(status.skills);
+      } catch {
+        message.error('无法连接 OpenClaw 服务');
+      }
       return;
     }
+    setChatMode('direct');
+    setGatewayId(null);
+    setGatewayAvailable(false);
+    setSkills([]);
+    setSelectedSkillIds([]);
+  };
+
+  const handleSkillToggle = (skillId: string) => {
+    setSelectedSkillIds((prev) =>
+      prev.includes(skillId) ? prev.filter((id) => id !== skillId) : [...prev, skillId]
+    );
+  };
+
+  const handleSendMessage = async () => {
+    if (!inputValue.trim() || isLoading) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -99,95 +140,86 @@ const AIAssistant: React.FC = () => {
       timestamp: new Date(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    const assistantMessageId = (Date.now() + 1).toString();
+    const assistantMessage: Message = {
+      id: assistantMessageId,
+      role: 'assistant',
+      content: '',
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, userMessage, assistantMessage]);
     setInputValue('');
     setIsLoading(true);
 
-    // 模拟 AI 响应
-    setTimeout(() => {
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: generateResponse(inputValue),
-        timestamp: new Date(),
-        type: inputValue.includes('工作流') ? 'workflow' : 'text',
-      };
-      setMessages((prev) => [...prev, assistantMessage]);
-      setIsLoading(false);
-    }, 1500);
+    const apiMessages: ApiChatMessage[] = [
+      ...messages.map((m) => ({ role: m.role, content: m.content })),
+      { role: 'user' as const, content: inputValue },
+    ];
+
+    const { abort } = sendMessageStream({
+      messages: apiMessages,
+      mode: chatMode,
+      gateway_id: chatMode === 'openclaw' ? gatewayId ?? undefined : undefined,
+      skill_ids: chatMode === 'openclaw' ? selectedSkillIds : undefined,
+    }, {
+      onChunk: (chunk) => {
+        if (!chunk.content) return;
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantMessageId
+              ? { ...m, content: m.content + chunk.content }
+              : m,
+          ),
+        );
+      },
+      onDone: () => {
+        setIsLoading(false);
+        abortRef.current = null;
+      },
+      onError: (error) => {
+        const errorMsg = error.message || '';
+
+        if (errorMsg.includes('503') || errorMsg.includes('网关') || errorMsg.includes('不可用')) {
+          message.error('OpenClaw 网关不可用，建议切换到 LLM 直连模式');
+        } else if (errorMsg.includes('504') || errorMsg.includes('超时') || errorMsg.includes('timeout')) {
+          message.warning('请求超时，请稍后重试或切换到 LLM 直连模式');
+        } else if (errorMsg.includes('404') || errorMsg.includes('not found')) {
+          message.warning('网关信息已过期，正在刷新...');
+          getOpenClawStatus()
+            .then((status) => {
+              if (status.available) {
+                setGatewayId(status.gateway_id);
+                setSkills(status.skills);
+              } else {
+                setChatMode('direct');
+                setGatewayId(null);
+                setGatewayAvailable(false);
+                setSkills([]);
+                setSelectedSkillIds([]);
+                message.info('已自动切换到 LLM 直连模式');
+              }
+            })
+            .catch(() => {
+              // Silently fail — user already saw the warning
+            });
+        } else {
+          message.error('AI 服务暂时不可用，请稍后重试');
+        }
+
+        console.error('AI stream error:', error);
+        setIsLoading(false);
+        abortRef.current = null;
+      },
+    });
+
+    abortRef.current = abort;
   };
 
-  const generateResponse = (input: string): string => {
-    if (input.includes('销售预测') || input.includes('工作流')) {
-      return `我已经为您设计了一个销售预测工作流：
-
-**工作流步骤：**
-
-1. **数据收集** 📊
-   - 从数据库获取历史销售数据
-   - 包含：日期、产品、销售额、地区等维度
-   - 时间范围：最近 12 个月
-
-2. **数据预处理** 🔧
-   - 清洗异常值和缺失值
-   - 特征工程：提取时间特征（星期、月份、季节）
-   - 数据标准化
-
-3. **模型训练** 🤖
-   - 使用时间序列模型（ARIMA/Prophet）
-   - 训练集：前 10 个月数据
-   - 验证集：最近 2 个月数据
-
-4. **预测生成** 📈
-   - 生成未来 7 天的销售预测
-   - 包含置信区间
-   - 按产品和地区分组
-
-5. **实时修正** ⚡
-   - 每日对比实际销售额与预测值
-   - 计算预测误差（MAPE）
-   - 自动调整模型参数
-   - 重新训练模型（增量学习）
-
-6. **结果展示** 📊
-   - 可视化预测趋势
-   - 显示预测准确率
-   - 生成分析报告
-
-**预期效果：**
-- 预测准确率：85%+
-- 每日自动更新
-- 支持多维度分析
-
-是否需要我帮您创建这个工作流的具体配置？`;
-    }
-
-    if (input.includes('数据质量')) {
-      return `我已经分析了您的数据集质量，以下是发现的问题和建议：
-
-**质量问题：**
-1. ⚠️ 缺失值：约 5% 的记录存在缺失字段
-2. ⚠️ 重复数据：发现 120 条重复记录
-3. ⚠️ 异常值：销售额字段存在 15 个异常值
-
-**改进建议：**
-1. 使用均值/中位数填充缺失值
-2. 去除重复记录
-3. 使用 IQR 方法处理异常值
-4. 增加数据验证规则
-
-需要我帮您执行这些优化吗？`;
-    }
-
-    return `我理解您的需求。让我帮您分析一下...
-
-基于您的问题，我建议：
-1. 首先查看相关数据集
-2. 分析数据特征和分布
-3. 设计合适的处理流程
-4. 生成可视化报告
-
-您想从哪一步开始？`;
+  const handleStopGeneration = () => {
+    abortRef.current?.();
+    abortRef.current = null;
+    setIsLoading(false);
   };
 
   const handleQuickAction = (prompt: string) => {
@@ -212,10 +244,24 @@ const AIAssistant: React.FC = () => {
                 <Avatar size={40} icon={<RobotOutlined />} style={{ backgroundColor: '#1890ff' }} />
                 <div>
                   <Title level={4} style={{ margin: 0 }}>AI 智能助手</Title>
-                  <Text type="secondary">OpenClaw 驱动</Text>
+                  <Text type="secondary">
+                    {chatMode === 'openclaw' ? 'OpenClaw 技能增强' : 'LLM 直连'}
+                  </Text>
                 </div>
               </Space>
-              <Tag color="success">在线</Tag>
+              <Space>
+                <Segmented
+                  value={chatMode}
+                  options={[
+                    { label: 'LLM 直连', value: 'direct' },
+                    { label: 'OpenClaw', value: 'openclaw' },
+                  ]}
+                  onChange={handleModeChange}
+                />
+                <Tag color={chatMode === 'openclaw' && gatewayAvailable ? 'success' : 'default'}>
+                  {chatMode === 'openclaw' ? (gatewayAvailable ? '网关在线' : '网关离线') : '在线'}
+                </Tag>
+              </Space>
             </div>
 
             <Divider />
@@ -273,7 +319,7 @@ const AIAssistant: React.FC = () => {
                   )}
                 />
               )}
-              {isLoading && (
+              {isLoading && messages.length > 0 && messages[messages.length - 1].content === '' && (
                 <div className="message-item assistant">
                   <Space align="start" size={12}>
                     <Avatar icon={<RobotOutlined />} style={{ backgroundColor: '#1890ff' }} />
@@ -293,16 +339,27 @@ const AIAssistant: React.FC = () => {
                 autoSize={{ minRows: 2, maxRows: 6 }}
                 disabled={isLoading}
               />
-              <Button
-                type="primary"
-                icon={<SendOutlined />}
-                onClick={handleSendMessage}
-                loading={isLoading}
-                disabled={!inputValue.trim()}
-                style={{ marginTop: 8 }}
-              >
-                发送
-              </Button>
+              {isLoading ? (
+                <Button
+                  type="default"
+                  danger
+                  icon={<StopOutlined />}
+                  onClick={handleStopGeneration}
+                  style={{ marginTop: 8 }}
+                >
+                  停止
+                </Button>
+              ) : (
+                <Button
+                  type="primary"
+                  icon={<SendOutlined />}
+                  onClick={handleSendMessage}
+                  disabled={!inputValue.trim()}
+                  style={{ marginTop: 8 }}
+                >
+                  发送
+                </Button>
+              )}
             </div>
           </Card>
         </Col>
@@ -310,6 +367,35 @@ const AIAssistant: React.FC = () => {
         {/* 右侧：快捷操作和统计 */}
         <Col span={8}>
           <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+            {/* 技能面板 */}
+            {chatMode === 'openclaw' && (
+              <Card title="🛠 技能面板" size="small">
+                {skills.length === 0 ? (
+                  <Text type="secondary">暂无可用技能</Text>
+                ) : (
+                  <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                    {skills.map((skill) => (
+                      <Card key={skill.id} size="small" style={{ marginBottom: 4 }}>
+                        <Checkbox
+                          checked={selectedSkillIds.includes(skill.id)}
+                          onChange={() => handleSkillToggle(skill.id)}
+                        >
+                          <Text strong>{skill.name}</Text>
+                          <Tag color="blue" style={{ marginLeft: 8 }}>{skill.version}</Tag>
+                          <Tag color={skill.status === 'deployed' ? 'green' : 'default'}>{skill.status}</Tag>
+                        </Checkbox>
+                        {skill.description && (
+                          <div style={{ marginLeft: 24, marginTop: 4 }}>
+                            <Text type="secondary" style={{ fontSize: 12 }}>{skill.description}</Text>
+                          </div>
+                        )}
+                      </Card>
+                    ))}
+                  </Space>
+                )}
+              </Card>
+            )}
+
             {/* 统计卡片 */}
             <Card title="今日统计">
               <Row gutter={16}>

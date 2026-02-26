@@ -115,6 +115,20 @@ export const API_ENDPOINTS = {
     BATCH: '/api/tasks/batch',
   },
 
+  // Datalake/Warehouse
+  DATALAKE: {
+    SOURCES: '/api/v1/datalake/sources',
+    SOURCE_BY_ID: (id: string) => `/api/v1/datalake/sources/${id}`,
+    TEST_CONNECTION: (id: string) => `/api/v1/datalake/sources/${id}/test`,
+    DATABASES: (id: string) => `/api/v1/datalake/sources/${id}/databases`,
+    TABLES: (id: string) => `/api/v1/datalake/sources/${id}/tables`,
+    DASHBOARD_OVERVIEW: '/api/v1/datalake/dashboard/overview',
+    DASHBOARD_HEALTH: '/api/v1/datalake/dashboard/health',
+    VOLUME_TRENDS: '/api/v1/datalake/dashboard/volume-trends',
+    QUERY_PERFORMANCE: '/api/v1/datalake/dashboard/query-performance',
+    DATA_FLOW: '/api/v1/datalake/dashboard/data-flow',
+  },
+
   // System
   SYSTEM: {
     HEALTH: '/health',

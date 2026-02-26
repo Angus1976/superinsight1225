@@ -531,7 +531,7 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
       styles={{ body: { padding: 0, height: iframeHeight } }}
       title={
         <Space>
-          <span>Label Studio</span>
+          <span>{t('labelStudio.title', '标注系统')}</span>
           <div
             style={{
               width: 8,

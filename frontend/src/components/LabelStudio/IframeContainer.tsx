@@ -4,6 +4,7 @@
  */
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, Spin, Alert, Button, Space, Progress } from 'antd';
 import { ReloadOutlined, ExpandOutlined, CompressOutlined } from '@ant-design/icons';
 import { IframeManager, IframeConfig, IframeStatus } from '../../services/iframe';
@@ -25,6 +26,7 @@ export const IframeContainer: React.FC<IframeContainerProps> = ({
   height = 600,
   showToolbar = true,
 }) => {
+  const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const managerRef = useRef<IframeManager | null>(null);
   const [loading, setLoading] = useState(true);
@@ -127,7 +129,7 @@ export const IframeContainer: React.FC<IframeContainerProps> = ({
     <Card
       style={containerStyle}
       styles={{ body: { padding: 0, height: iframeHeight, position: 'relative' } }}
-      title="Label Studio"
+      title={t('labelStudio.title', '标注系统')}
       extra={
         showToolbar && (
           <Space>
@@ -165,7 +167,7 @@ export const IframeContainer: React.FC<IframeContainerProps> = ({
             background: 'rgba(255, 255, 255, 0.9)',
           }}
         >
-          <Spin size="large" tip="Loading Label Studio..." />
+          <Spin size="large" tip={t('labelStudio.loading', '正在加载标注系统...')} />
           {progress > 0 && (
             <div style={{ marginTop: 16, width: 200 }}>
               <Progress percent={progress} status="active" />
@@ -178,12 +180,12 @@ export const IframeContainer: React.FC<IframeContainerProps> = ({
       {error && (
         <Alert
           type="error"
-          message="Label Studio Error"
+          message={t('labelStudio.loadErrorTitle', '标注系统加载错误')}
           description={error}
           showIcon
           action={
             <Button size="small" onClick={handleReload}>
-              Retry
+              {t('common.retry', '重试')}
             </Button>
           }
           style={{ margin: 16 }}

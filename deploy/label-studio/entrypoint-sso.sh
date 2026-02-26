@@ -143,7 +143,7 @@ fi
 # ============================================================
 
 LS_STATIC_DIR="/label-studio/label_studio/core/static"
-LS_TEMPLATE_DIR="/label-studio/label_studio/core/templates"
+LS_TEMPLATE_DIR="/label-studio/label_studio/templates"
 LS_BASE_TEMPLATE="$LS_TEMPLATE_DIR/base.html"
 CUSTOM_DIR="/label-studio/custom"
 

@@ -398,5 +398,80 @@
   },
   "common": {
     "totalRecords": "第 {{start}}-{{end}} 条，共 {{total}} 条"
+  },
+  "datalake": {
+    "title": "数据湖/数仓管理",
+    "description": "管理数据湖和数仓连接，浏览 Schema，查看看板",
+    "nav": {
+      "sources": "数据源管理",
+      "dashboard": "可视化看板",
+      "schemaBrowser": "Schema 浏览器"
+    },
+    "sources": {
+      "title": "数据湖/数仓数据源",
+      "create": "添加数据源",
+      "createSource": "创建数据源",
+      "edit": "编辑数据源",
+      "editSource": "编辑数据源",
+      "delete": "删除数据源",
+      "deleteSource": "删除数据源",
+      "testConnection": "测试连接",
+      "connectionStatus": "连接状态",
+      "connected": "已连接",
+      "error": "错误",
+      "sourceType": "数据源类型",
+      "sourceName": "数据源名称",
+      "name": "名称",
+      "type": "类型",
+      "status": "状态",
+      "lastHealthCheck": "最后健康检查",
+      "actions": "操作",
+      "confirmDelete": "确定要删除此数据源吗？此操作无法撤销。"
+    },
+    "dashboard": {
+      "title": "数据湖/数仓看板",
+      "totalSources": "数据源总数",
+      "activeSources": "活跃数据源",
+      "errorSources": "异常数据源",
+      "dataVolume": "数据总量",
+      "avgLatency": "平均查询延迟",
+      "volumeTrends": "数据量趋势",
+      "queryPerformance": "查询性能",
+      "dataFlow": "数据流向",
+      "healthy": "健康",
+      "degraded": "降级",
+      "down": "不可用"
+    },
+    "schemaBrowser": {
+      "title": "Schema 浏览器",
+      "databases": "数据库",
+      "tables": "数据表",
+      "preview": "数据预览",
+      "selectDatabase": "选择数据库",
+      "selectTable": "选择数据表",
+      "columns": "列信息",
+      "dataPreview": "数据预览",
+      "columnName": "列名",
+      "columnType": "数据类型",
+      "comment": "注释",
+      "rowCount": "行数",
+      "tableSize": "表大小"
+    },
+    "status": {
+      "connected": "已连接",
+      "error": "错误",
+      "healthy": "健康",
+      "degraded": "降级",
+      "down": "不可用"
+    },
+    "types": {
+      "hive": "Hive",
+      "clickhouse": "ClickHouse",
+      "doris": "Doris/StarRocks",
+      "spark_sql": "Spark SQL",
+      "presto_trino": "Presto/Trino",
+      "delta_lake": "Delta Lake",
+      "iceberg": "Apache Iceberg"
+    }
   }
 }

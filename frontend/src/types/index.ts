@@ -66,3 +66,6 @@ export * from './brand';
 
 // Help system types
 export * from './help';
+
+// Datalake/Warehouse types
+export * from './datalake';

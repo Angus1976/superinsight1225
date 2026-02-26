@@ -398,5 +398,80 @@
   },
   "common": {
     "totalRecords": "{{start}}-{{end}} of {{total}} records"
+  },
+  "datalake": {
+    "title": "Datalake / Warehouse Management",
+    "description": "Manage datalake and warehouse connections, browse schemas, and view dashboards",
+    "nav": {
+      "sources": "Data Sources",
+      "dashboard": "Dashboard",
+      "schemaBrowser": "Schema Browser"
+    },
+    "sources": {
+      "title": "Datalake / Warehouse Sources",
+      "create": "Add Source",
+      "createSource": "Create Source",
+      "edit": "Edit Source",
+      "editSource": "Edit Source",
+      "delete": "Delete Source",
+      "deleteSource": "Delete Source",
+      "testConnection": "Test Connection",
+      "connectionStatus": "Connection Status",
+      "connected": "Connected",
+      "error": "Error",
+      "sourceType": "Source Type",
+      "sourceName": "Source Name",
+      "name": "Name",
+      "type": "Type",
+      "status": "Status",
+      "lastHealthCheck": "Last Health Check",
+      "actions": "Actions",
+      "confirmDelete": "Are you sure you want to delete this source? This action cannot be undone."
+    },
+    "dashboard": {
+      "title": "Datalake / Warehouse Dashboard",
+      "totalSources": "Total Sources",
+      "activeSources": "Active Sources",
+      "errorSources": "Error Sources",
+      "dataVolume": "Data Volume",
+      "avgLatency": "Avg Query Latency",
+      "volumeTrends": "Volume Trends",
+      "queryPerformance": "Query Performance",
+      "dataFlow": "Data Flow",
+      "healthy": "Healthy",
+      "degraded": "Degraded",
+      "down": "Down"
+    },
+    "schemaBrowser": {
+      "title": "Schema Browser",
+      "databases": "Databases",
+      "tables": "Tables",
+      "preview": "Data Preview",
+      "selectDatabase": "Select Database",
+      "selectTable": "Select Table",
+      "columns": "Columns",
+      "dataPreview": "Data Preview",
+      "columnName": "Column Name",
+      "columnType": "Column Type",
+      "comment": "Comment",
+      "rowCount": "Row Count",
+      "tableSize": "Table Size"
+    },
+    "status": {
+      "connected": "Connected",
+      "error": "Error",
+      "healthy": "Healthy",
+      "degraded": "Degraded",
+      "down": "Down"
+    },
+    "types": {
+      "hive": "Hive",
+      "clickhouse": "ClickHouse",
+      "doris": "Doris/StarRocks",
+      "spark_sql": "Spark SQL",
+      "presto_trino": "Presto/Trino",
+      "delta_lake": "Delta Lake",
+      "iceberg": "Apache Iceberg"
+    }
   }
 }

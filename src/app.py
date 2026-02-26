@@ -2071,6 +2071,47 @@ async def include_optional_routers():
         logger.warning(f"⚠️ Data Sync API not available: {e}")
     except Exception as e:
         logger.error(f"❌ Data Sync API failed to load: {e}")
+
+    # AI Assistant API
+    try:
+        from src.api.ai_assistant import router as ai_assistant_router
+        app.include_router(ai_assistant_router)
+        logger.info("✅ AI Assistant API loaded successfully")
+    except ImportError as e:
+        logger.warning(f"⚠️ AI Assistant API not available: {e}")
+    except Exception as e:
+        logger.error(f"❌ AI Assistant API failed to load: {e}")
+
+    # Datalake/Warehouse API
+    # Validates: Requirements 2.1 - 数据湖/数仓数据源管理
+    try:
+        from src.sync.connectors.datalake.router import router as datalake_router
+        app.include_router(datalake_router)
+        _track_api_registration(
+            module_path="src.sync.connectors.datalake.router",
+            prefix="/api/v1/datalake",
+            tags=["Datalake"],
+            success=True
+        )
+        logger.info("✅ Datalake API registered: /api/v1/datalake")
+    except ImportError as e:
+        _track_api_registration(
+            module_path="src.sync.connectors.datalake.router",
+            prefix="/api/v1/datalake",
+            tags=["Datalake"],
+            success=False,
+            error=str(e)
+        )
+        logger.warning(f"⚠️ Datalake API not available: {e}")
+    except Exception as e:
+        _track_api_registration(
+            module_path="src.sync.connectors.datalake.router",
+            prefix="/api/v1/datalake",
+            tags=["Datalake"],
+            success=False,
+            error=str(e)
+        )
+        logger.error(f"❌ Datalake API failed to load: {e}")
     
     # SOX Compliance API - moved to main app setup for immediate availability
     # This is handled in the main app setup section below
@@ -2223,6 +2264,16 @@ async def include_optional_routers():
             error=str(e)
         )
         logger.error(f"❌ Versioning API failed to load: {e}")
+
+    # Data Structuring API
+    try:
+        from src.api.structuring import router as structuring_router
+        app.include_router(structuring_router)
+        logger.info("✅ Data Structuring API loaded successfully")
+    except ImportError as e:
+        logger.warning(f"⚠️ Data Structuring API not available: {e}")
+    except Exception as e:
+        logger.error(f"❌ Data Structuring API failed to load: {e}")
 
     # Output API registration summary
     # Validates: Requirements 3.2 - 详细的日志记录每个 API 的注册状态

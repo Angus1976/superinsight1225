@@ -73,6 +73,10 @@ const DataSyncHistoryPage = lazyWithPreload(() => import('@/pages/DataSync/Histo
 const DataSyncSchedulerPage = lazyWithPreload(() => import('@/pages/DataSync/Scheduler'));
 const DataSyncSecurityPage = lazyWithPreload(() => import('@/pages/DataSync/Security'));
 const DataSyncExportPage = lazyWithPreload(() => import('@/pages/DataSync/Export'));
+const DatalakePage = lazyWithPreload(() => import('@/pages/DataSync/Datalake'));
+const DatalakeSourcesPage = lazyWithPreload(() => import('@/pages/DataSync/Datalake/Sources'));
+const DatalakeDashboardPage = lazyWithPreload(() => import('@/pages/DataSync/Datalake/Dashboard'));
+const DatalakeSchemaBrowserPage = lazyWithPreload(() => import('@/pages/DataSync/Datalake/SchemaBrowser'));
 
 // Admin pages
 const AdminConsolePage = lazyWithPreload(() => import('@/pages/Admin/Console'));
@@ -472,6 +476,24 @@ export const routes: RouteObject[] = [
           {
             path: 'export',
             element: withSuspense(DataSyncExportPage, 'table'),
+          },
+          {
+            path: 'datalake',
+            element: withSuspense(DatalakePage, 'dashboard'),
+            children: [
+              {
+                path: 'sources',
+                element: withSuspense(DatalakeSourcesPage, 'table'),
+              },
+              {
+                path: 'dashboard',
+                element: withSuspense(DatalakeDashboardPage, 'dashboard'),
+              },
+              {
+                path: 'schema-browser',
+                element: withSuspense(DatalakeSchemaBrowserPage, 'table'),
+              },
+            ],
           },
         ],
       },

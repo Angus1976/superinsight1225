@@ -56,6 +56,9 @@ class SyncResourceType(str, enum.Enum):
     SYSTEM_CONFIG = "system_config"
     USER_MANAGEMENT = "user_management"
     TENANT_MANAGEMENT = "tenant_management"
+    # 数据湖/数仓资源类型
+    DATALAKE_SOURCE = "datalake_source"
+    DATALAKE_DASHBOARD = "datalake_dashboard"
 
 
 class FieldAccessLevel(str, enum.Enum):

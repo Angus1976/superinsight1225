@@ -12,9 +12,13 @@ try:
     from src.ai.llm.audit_service import LLMAuditService, get_llm_audit_service
     from src.ai.llm_schemas import LLMMethod
 except ImportError:
-    from ai.llm.health_monitor import HealthMonitor
-    from ai.llm.audit_service import LLMAuditService, get_llm_audit_service
-    from ai.llm_schemas import LLMMethod
+    # Fallback for direct script execution
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from src.ai.llm.health_monitor import HealthMonitor
+    from src.ai.llm.audit_service import LLMAuditService, get_llm_audit_service
+    from src.ai.llm_schemas import LLMMethod
 
 logger = logging.getLogger(__name__)
 

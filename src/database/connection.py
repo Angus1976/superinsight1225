@@ -13,7 +13,8 @@ logger = logging.getLogger(__name__)
 
 # SQLAlchemy 2.0 base class for models
 class Base(DeclarativeBase):
-    pass
+    """Base class for all SQLAlchemy models with extend_existing enabled."""
+    __table_args__ = {'extend_existing': True}
 
 
 class DatabaseManager:
@@ -121,7 +122,7 @@ def get_db_session() -> Session:
 # Alias for backward compatibility
 def get_db() -> Session:
     """Alias for get_db_session for backward compatibility"""
-    return get_db_session()
+    yield from get_db_session()
 
 
 def init_database() -> None:
@@ -207,3 +208,23 @@ def get_database_stats() -> dict:
 def close_database() -> None:
     """Close database connections"""
     db_manager.close()
+
+
+# Placeholder for async session - not implemented yet
+# This is here to prevent import errors in modules that expect it
+async def get_async_session():
+    """
+    Placeholder for async session support.
+    
+    Currently returns synchronous session wrapped for async compatibility.
+    For full async support, use AsyncSession from sqlalchemy.ext.asyncio.
+    """
+    session = db_manager._session_factory()
+    try:
+        yield session
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()

@@ -147,11 +147,11 @@ class BaseChinaAdapter(ABC):
                     continue
                 raise self._handle_error(e)
             except httpx.TimeoutException:
-                raise LLMError(
+                raise LLMException(LLMError(
                     error_code=LLMErrorCode.TIMEOUT,
                     message=f"Request timed out after {self._timeout} seconds",
                     provider=self.method.value
-                )
+                ))
             except Exception as e:
                 last_error = e
                 if attempt < self._retry_config.max_retries - 1:
@@ -160,12 +160,12 @@ class BaseChinaAdapter(ABC):
                     continue
                 break
         
-        raise LLMError(
+        raise LLMException(LLMError(
             error_code=LLMErrorCode.RATE_LIMITED,
             message=f"Max retries exceeded: {last_error}",
             provider=self.method.value,
             retry_after=int(self._retry_config.get_delay(self._retry_config.max_retries))
-        )
+        ))
     
     def _get_generate_endpoint(self) -> str:
         """Get generation endpoint URL."""
@@ -469,11 +469,11 @@ class BaiduAdapter(BaseChinaAdapter):
             data = response.json()
             
             if "error_code" in data:
-                raise LLMError(
+                raise LLMException(LLMError(
                     error_code=LLMErrorCode.GENERATION_FAILED,
                     message=data.get("error_msg", "Unknown error"),
                     provider=self.method.value
-                )
+                ))
             
             result = self._from_native_format(data, model)
             result.latency_ms = (time.time() - start_time) * 1000
@@ -690,12 +690,12 @@ class ChinaLLMProvider(LLMProvider):
         """
         Generate embedding (limited support in China LLMs).
         """
-        raise LLMError(
+        raise LLMException(LLMError(
             error_code=LLMErrorCode.SERVICE_UNAVAILABLE,
             message="Embedding not supported for this provider",
             provider=self.method.value,
             suggestions=["Use OpenAI or local Ollama for embeddings"]
-        )
+        ))
     
     async def health_check(self) -> HealthStatus:
         """Check provider health."""

@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session
 from src.ai_integration.openclaw_llm_bridge import OpenClawLLMBridge
 from src.ai.llm_schemas import GenerateOptions, LLMResponse
 from src.models.ai_integration import AIGateway, AISkill
-from src.api.ai_assistant import SkillInfoResponse, OpenClawStatusResponse
+from src.ai_integration.schemas import SkillInfoResponse, OpenClawStatusResponse
 
 logger = logging.getLogger(__name__)
 
@@ -89,8 +89,8 @@ class OpenClawChatService:
                 f"Gateway {gateway_id} is not available"
             )
 
-        stream_url = self._resolve_stream_url(gateway)
-        if not stream_url:
+        chat_url = self._resolve_chat_url(gateway)
+        if not chat_url:
             # Fallback: wrap non-streaming response as SSE chunks
             async for chunk in self._fallback_stream(
                 gateway_id, tenant_id, prompt, options, system_prompt, skill_ids
@@ -98,14 +98,10 @@ class OpenClawChatService:
                 yield chunk
             return
 
-        payload = {
-            "prompt": prompt,
-            "system_prompt": system_prompt,
-            **self._build_options_dict(options, skill_ids),
-        }
-
         try:
-            async for chunk in self._stream_from_gateway(stream_url, payload):
+            async for chunk in self._call_gateway_as_stream(
+                chat_url, prompt, system_prompt
+            ):
                 yield chunk
         except OpenClawUnavailableError:
             raise
@@ -119,11 +115,16 @@ class OpenClawChatService:
             yield self._sse_chunk(
                 error="OpenClaw 网关连接失败", done=True
             )
-        except Exception as exc:
-            logger.error("Stream error for gateway %s: %s", gateway_id, exc)
+        except BaseException as exc:
+            # Catch BaseException to handle all exceptions
+            logger.error("Stream error for gateway %s: %s (type: %s)", gateway_id, exc, type(exc).__name__)
+            error_message = str(exc) if str(exc) else f"Stream error: {type(exc).__name__}"
             yield self._sse_chunk(
-                error="OpenClaw 网关连接中断", done=True
+                error=f"OpenClaw 网关错误: {error_message}", done=True
             )
+            # Re-raise if it's a system exception (SystemExit, KeyboardInterrupt)
+            if isinstance(exc, (SystemExit, KeyboardInterrupt)):
+                raise
 
     # ------------------------------------------------------------------
     # Status query
@@ -205,47 +206,40 @@ class OpenClawChatService:
 
     # --- Streaming internals ---
 
-    def _resolve_stream_url(self, gateway: AIGateway) -> Optional[str]:
-        """Extract the streaming endpoint URL from gateway configuration."""
+    def _resolve_chat_url(self, gateway: AIGateway) -> Optional[str]:
+        """Extract the chat endpoint URL from gateway configuration."""
         config = gateway.configuration or {}
         network = config.get("network_settings", {})
         base_url = network.get("base_url", "")
         if not base_url:
             return None
-        return f"{base_url.rstrip('/')}/chat/stream"
+        return f"{base_url.rstrip('/')}/api/chat"
 
-    async def _stream_from_gateway(
-        self, url: str, payload: dict
+    async def _call_gateway_as_stream(
+        self, url: str, prompt: str, system_prompt: str
     ) -> AsyncIterator[str]:
-        """Open an HTTP stream to the gateway and yield SSE chunks."""
-        async with httpx.AsyncClient(timeout=STREAM_TIMEOUT_SECONDS) as client:
-            async with client.stream("POST", url, json=payload) as resp:
-                if resp.status_code != 200:
-                    raise OpenClawUnavailableError(
-                        f"Gateway returned status {resp.status_code}"
-                    )
-                async for line in resp.aiter_lines():
-                    chunk = self._parse_gateway_line(line)
-                    if chunk is not None:
-                        yield chunk
+        """Call Gateway /api/chat and wrap the response as SSE chunks."""
+        payload = {"message": prompt}
+        if system_prompt:
+            payload["system_prompt"] = system_prompt
 
-        # Ensure a final done chunk is always sent
+        async with httpx.AsyncClient(timeout=STREAM_TIMEOUT_SECONDS) as client:
+            resp = await client.post(url, json=payload)
+            if resp.status_code != 200:
+                raise OpenClawUnavailableError(
+                    f"Gateway returned status {resp.status_code}"
+                )
+            data = resp.json()
+
+        if not data.get("success", False):
+            error = data.get("error", "Gateway request failed")
+            yield self._sse_chunk(error=error, done=True)
+            return
+
+        reply = data.get("reply", "")
+        yield self._sse_chunk(content=reply, done=False)
         yield self._sse_chunk(content="", done=True)
 
-    def _parse_gateway_line(self, line: str) -> Optional[str]:
-        """Parse a single SSE line from the gateway into our SSE format."""
-        if not line or not line.startswith("data:"):
-            return None
-        raw = line[len("data:"):].strip()
-        if not raw:
-            return None
-        try:
-            data = json.loads(raw)
-            content = data.get("content", "")
-            done = data.get("done", False)
-            return self._sse_chunk(content=content, done=done)
-        except json.JSONDecodeError:
-            return self._sse_chunk(content=raw, done=False)
 
     async def _fallback_stream(
         self,

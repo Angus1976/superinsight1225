@@ -28,9 +28,13 @@ try:
         LLMConfig, LLMMethod, GenerateOptions, LLMResponse, LLMError
     )
 except ImportError:
-    from ai.llm_config_manager import LLMConfigManager, get_config_manager
-    from ai.llm_switcher import LLMSwitcher
-    from ai.llm_schemas import (
+    # Fallback for direct script execution
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from src.ai.llm_config_manager import LLMConfigManager, get_config_manager
+    from src.ai.llm_switcher import LLMSwitcher
+    from src.ai.llm_schemas import (
         LLMConfig, LLMMethod, GenerateOptions, LLMResponse, LLMError
     )
 

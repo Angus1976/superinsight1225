@@ -150,20 +150,20 @@ class CloudLLMProvider(LLMProvider):
                 )
                 
             except httpx.TimeoutException:
-                raise LLMError(
+                raise LLMException(LLMError(
                     error_code=LLMErrorCode.TIMEOUT,
                     message=f"Request timed out after {self._timeout} seconds",
                     provider=self.method.value,
                     suggestions=["Increase timeout", "Reduce max_tokens"]
-                )
+                ))
             except httpx.HTTPStatusError as e:
                 raise self._handle_http_error(e)
             except Exception as e:
-                raise LLMError(
+                raise LLMException(LLMError(
                     error_code=LLMErrorCode.GENERATION_FAILED,
                     message=str(e),
                     provider=self.method.value
-                )
+                ))
     
     async def stream_generate(
         self,
@@ -217,19 +217,19 @@ class CloudLLMProvider(LLMProvider):
                                 continue
                                 
             except httpx.TimeoutException:
-                raise LLMError(
+                raise LLMException(LLMError(
                     error_code=LLMErrorCode.TIMEOUT,
                     message=f"Stream timed out after {self._timeout} seconds",
                     provider=self.method.value
-                )
+                ))
             except httpx.HTTPStatusError as e:
                 raise self._handle_http_error(e)
             except Exception as e:
-                raise LLMError(
+                raise LLMException(LLMError(
                     error_code=LLMErrorCode.GENERATION_FAILED,
                     message=str(e),
                     provider=self.method.value
-                )
+                ))
     
     async def embed(
         self,
@@ -278,19 +278,19 @@ class CloudLLMProvider(LLMProvider):
                 )
                 
             except httpx.TimeoutException:
-                raise LLMError(
+                raise LLMException(LLMError(
                     error_code=LLMErrorCode.TIMEOUT,
                     message=f"Embedding request timed out after {self._timeout} seconds",
                     provider=self.method.value
-                )
+                ))
             except httpx.HTTPStatusError as e:
                 raise self._handle_http_error(e)
             except Exception as e:
-                raise LLMError(
+                raise LLMException(LLMError(
                     error_code=LLMErrorCode.GENERATION_FAILED,
                     message=str(e),
                     provider=self.method.value
-                )
+                ))
     
     # ==================== Health & Validation ====================
     

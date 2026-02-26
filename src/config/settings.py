@@ -191,6 +191,9 @@ class AppSettings:
     debug: bool = field(default_factory=lambda: get_env_bool("DEBUG", True))
     log_level: str = field(default_factory=lambda: get_env("LOG_LEVEL", "INFO"))
 
+    # CORS settings
+    cors_origins: list[str] = field(default_factory=lambda: get_env("CORS_ORIGINS", "http://localhost:3000,http://localhost:5173").split(","))
+
     # File storage settings
     upload_dir: str = field(default_factory=lambda: get_env("UPLOAD_DIR", "./uploads"))
     max_file_size: str = field(default_factory=lambda: get_env("MAX_FILE_SIZE", "100MB"))

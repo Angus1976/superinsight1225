@@ -22,12 +22,24 @@ try:
     )
     from src.models.llm_configuration import LLMConfiguration, LLMUsageLog
 except ImportError:
+    import sys
+    import os
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
     from ai.llm_schemas import (
         LLMConfig, LLMMethod, LocalConfig, CloudConfig, ChinaLLMConfig,
         ValidationResult, mask_api_key
     )
     from models.llm_configuration import LLMConfiguration, LLMUsageLog
-    from database.session import get_async_session
+
+# Async session is optional - only needed if using database persistence
+get_async_session = None
+try:
+    from src.database.connection import get_db as get_async_session
+except ImportError:
+    try:
+        from database.connection import get_db as get_async_session
+    except ImportError:
+        pass  # Database not available, will use in-memory config only
 
 logger = logging.getLogger(__name__)
 
@@ -73,13 +85,12 @@ class LLMConfigManager:
         self._hot_reload_task: Optional[asyncio.Task] = None
         self._running = False
     
-    async def get_db(self) -> AsyncSession:
-        """Get database session."""
+    async def get_db(self) -> Optional[AsyncSession]:
+        """Get database session. Returns None if database not available."""
         if self._db:
             return self._db
-        async for session in get_async_session():
-            return session
-        raise RuntimeError("Failed to get database session")
+        # Database persistence not available - will use in-memory config only
+        return None
     
     # ==================== CRUD Operations ====================
     
@@ -150,6 +161,22 @@ class LLMConfigManager:
             Saved LLMConfig
         """
         db = await self.get_db()
+        if db is None:
+            # Database not available, only update cache
+            cache_key = self._get_cache_key(tenant_id)
+            self._local_cache[cache_key] = config
+            self._cache_timestamps[cache_key] = datetime.utcnow()
+            if self._redis:
+                try:
+                    await self._redis.set(
+                        cache_key,
+                        config.model_dump_json(),
+                        ex=self._cache_ttl
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed to update Redis cache: {e}")
+            return config
+        
         cache_key = self._get_cache_key(tenant_id)
         
         # Check for existing config
@@ -208,6 +235,12 @@ class LLMConfigManager:
             True if deleted, False if not found
         """
         db = await self.get_db()
+        if db is None:
+            # Database not available, only clear cache
+            cache_key = self._get_cache_key(tenant_id)
+            await self._clear_cache(cache_key)
+            return True
+        
         cache_key = self._get_cache_key(tenant_id)
         
         stmt = delete(LLMConfiguration).where(
@@ -433,6 +466,10 @@ class LLMConfigManager:
         """
         try:
             db = await self.get_db()
+            if db is None:
+                # Database not available, skip logging
+                logger.debug("Skipping usage logging - database not available")
+                return
             
             log_entry = LLMUsageLog.create_log(
                 method=method,
@@ -502,6 +539,10 @@ class LLMConfigManager:
     async def _load_from_db(self, tenant_id: Optional[str]) -> LLMConfig:
         """Load configuration from database."""
         db = await self.get_db()
+        if db is None:
+            # Database not available, return default config
+            return LLMConfig()
+        
         db_config = await self._get_db_config(db, tenant_id)
         
         if db_config and db_config.config_data:

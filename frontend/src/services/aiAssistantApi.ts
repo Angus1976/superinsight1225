@@ -29,8 +29,15 @@ export async function sendMessage(request: ChatRequest): Promise<ChatResponse> {
  * GET /api/v1/ai-assistant/chat/openclaw-status
  */
 export async function getOpenClawStatus(): Promise<OpenClawStatus> {
-  const response = await apiClient.get<OpenClawStatus>(`${API_BASE}/chat/openclaw-status`);
-  return response.data;
+  console.log('[API] Fetching OpenClaw status from:', `${API_BASE}/chat/openclaw-status`);
+  try {
+    const response = await apiClient.get<OpenClawStatus>(`${API_BASE}/chat/openclaw-status`);
+    console.log('[API] OpenClaw status response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('[API] Failed to fetch OpenClaw status:', error);
+    throw error;
+  }
 }
 
 /**

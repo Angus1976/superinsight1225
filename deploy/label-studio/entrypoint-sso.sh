@@ -143,12 +143,14 @@ fi
 # ============================================================
 
 LS_STATIC_DIR="/label-studio/label_studio/core/static"
+LS_STATIC_BUILD_DIR="/label-studio/label_studio/core/static_build"
+# NOTE: base.html is at /label-studio/label_studio/templates/, NOT core/templates/
 LS_TEMPLATE_DIR="/label-studio/label_studio/templates"
 LS_BASE_TEMPLATE="$LS_TEMPLATE_DIR/base.html"
 CUSTOM_DIR="/label-studio/custom"
 
 # --- Patch: Copy i18n-inject.js to LS static directory ---
-I18N_MARKER="# SUPERINSIGHT_I18N_PATCH"
+I18N_MARKER="SUPERINSIGHT_I18N_PATCH"
 I18N_SRC="$CUSTOM_DIR/i18n-inject.js"
 I18N_DEST="$LS_STATIC_DIR/i18n-inject.js"
 
@@ -156,9 +158,10 @@ if ! grep -q "$I18N_MARKER" "$LS_BASE_TEMPLATE" 2>/dev/null; then
     if [ -f "$I18N_SRC" ] && [ -d "$LS_STATIC_DIR" ] && [ -f "$LS_BASE_TEMPLATE" ]; then
         echo "Applying i18n injection patch..."
         cp "$I18N_SRC" "$I18N_DEST"
+        # Also copy to static_build (Django collectstatic output) so it's actually served
+        [ -d "$LS_STATIC_BUILD_DIR" ] && cp "$I18N_SRC" "$LS_STATIC_BUILD_DIR/i18n-inject.js"
         # Inject <script> tag before </body>
-        sed -i "/$I18N_MARKER/d" "$LS_BASE_TEMPLATE"
-        sed -i "s|</body>|<script src=\"/static/i18n-inject.js\"></script> $I18N_MARKER\n</body>|" "$LS_BASE_TEMPLATE"
+        sed -i "s|</body>|<!-- $I18N_MARKER --><script src=\"/static/i18n-inject.js\"></script>\n</body>|" "$LS_BASE_TEMPLATE"
         echo "i18n injection patch applied"
     else
         echo "ERROR: i18n patch failed - source ($I18N_SRC), static dir ($LS_STATIC_DIR), or template ($LS_BASE_TEMPLATE) not found"
@@ -168,7 +171,7 @@ else
 fi
 
 # --- Patch: Copy branding.css to LS static directory ---
-CSS_MARKER="# SUPERINSIGHT_BRANDING_CSS_PATCH"
+CSS_MARKER="SUPERINSIGHT_BRANDING_CSS_PATCH"
 CSS_SRC="$CUSTOM_DIR/branding.css"
 CSS_DEST="$LS_STATIC_DIR/branding.css"
 
@@ -176,9 +179,10 @@ if ! grep -q "$CSS_MARKER" "$LS_BASE_TEMPLATE" 2>/dev/null; then
     if [ -f "$CSS_SRC" ] && [ -d "$LS_STATIC_DIR" ] && [ -f "$LS_BASE_TEMPLATE" ]; then
         echo "Applying branding CSS patch..."
         cp "$CSS_SRC" "$CSS_DEST"
+        # Also copy to static_build (Django collectstatic output) so it's actually served
+        [ -d "$LS_STATIC_BUILD_DIR" ] && cp "$CSS_SRC" "$LS_STATIC_BUILD_DIR/branding.css"
         # Inject <link> tag before </head>
-        sed -i "/$CSS_MARKER/d" "$LS_BASE_TEMPLATE"
-        sed -i "s|</head>|<link rel=\"stylesheet\" href=\"/static/branding.css\"> $CSS_MARKER\n</head>|" "$LS_BASE_TEMPLATE"
+        sed -i "s|</head>|<!-- $CSS_MARKER --><link rel=\"stylesheet\" href=\"/static/branding.css\">\n</head>|" "$LS_BASE_TEMPLATE"
         echo "Branding CSS patch applied"
     else
         echo "ERROR: branding CSS patch failed - source ($CSS_SRC), static dir ($LS_STATIC_DIR), or template ($LS_BASE_TEMPLATE) not found"
@@ -188,7 +192,7 @@ else
 fi
 
 # --- Patch: Copy favicon to LS static directory ---
-FAVICON_MARKER="# SUPERINSIGHT_FAVICON_PATCH"
+FAVICON_MARKER="SUPERINSIGHT_FAVICON_PATCH"
 FAVICON_SRC="$CUSTOM_DIR/favicon.svg"
 FAVICON_DEST="$LS_STATIC_DIR/favicon.svg"
 FAVICON_ICO_DEST="$LS_STATIC_DIR/favicon.ico"
@@ -218,21 +222,50 @@ else
 fi
 
 # --- Patch: Replace <title> with 问视间 ---
-TITLE_MARKER="# SUPERINSIGHT_TITLE_PATCH"
+TITLE_MARKER="SUPERINSIGHT_TITLE_PATCH"
 
 if ! grep -q "$TITLE_MARKER" "$LS_BASE_TEMPLATE" 2>/dev/null; then
-    if [ -f "$LS_BASE_TEMPLATE" ]; then
-        echo "Applying title patch..."
-        # Replace title content
-        sed -i 's|<title>[^<]*Label Studio[^<]*</title>|<title>问视间</title>|g' "$LS_BASE_TEMPLATE"
-        # Add marker comment
-        sed -i "s|</head>|<!-- $TITLE_MARKER -->\n</head>|" "$LS_BASE_TEMPLATE"
-        echo "Title patch applied"
-    else
-        echo "ERROR: title patch failed - template ($LS_BASE_TEMPLATE) not found"
-    fi
+    echo "Applying global brand replacement across all templates..."
+    # Replace "Label Studio" in ALL HTML templates (title tags, text content, etc.)
+    find /label-studio/label_studio -name "*.html" -exec \
+        sed -i 's|Label Studio|问视间|g' {} \;
+    # Add marker to base template so we don't re-run
+    sed -i "s|</head>|<!-- $TITLE_MARKER -->\n</head>|" "$LS_BASE_TEMPLATE"
+    echo "Global brand replacement applied"
 else
-    echo "Title patch already applied, skipping"
+    echo "Global brand replacement already applied, skipping"
+fi
+
+# --- NOTE: React bundle patching removed ---
+# sed on minified JS bundles can corrupt them (different byte length for
+# multi-byte UTF-8 chars breaks source maps & may crash the app).
+# Brand replacement for the React SPA is handled entirely by:
+#   1. branding.css  — hides SVG logo via CSS, injects brand text via ::before
+#   2. i18n-inject.js — replaces text nodes + MutationObserver for dynamic content
+
+# --- Patch simple.html: inject branding CSS + i18n JS (it extends different base) ---
+LS_SIMPLE_TEMPLATE="$LS_TEMPLATE_DIR/simple.html"
+if [ -f "$LS_SIMPLE_TEMPLATE" ] && ! grep -q "branding.css" "$LS_SIMPLE_TEMPLATE" 2>/dev/null; then
+    echo "Patching simple.html with branding assets..."
+    sed -i 's|</head>|<link rel="stylesheet" href="/static/branding.css">\n</head>|' "$LS_SIMPLE_TEMPLATE"
+    sed -i 's|</body>|<script src="/static/i18n-inject.js"></script>\n</body>|' "$LS_SIMPLE_TEMPLATE"
+    echo "simple.html patched"
+fi
+
+# --- Patch user_base.html templates ---
+find /label-studio/label_studio/users -name "*.html" -exec grep -l "</head>" {} \; 2>/dev/null | while read tpl; do
+    if ! grep -q "branding.css" "$tpl" 2>/dev/null; then
+        sed -i 's|</head>|<link rel="stylesheet" href="/static/branding.css">\n</head>|' "$tpl"
+        sed -i 's|</body>|<script src="/static/i18n-inject.js"></script>\n</body>|' "$tpl" 2>/dev/null
+        echo "Patched: $tpl"
+    fi
+done
+
+# --- Always ensure custom static files are in static_build (Django's served directory) ---
+if [ -d "$LS_STATIC_BUILD_DIR" ]; then
+    [ -f "$CUSTOM_DIR/i18n-inject.js" ] && cp "$CUSTOM_DIR/i18n-inject.js" "$LS_STATIC_BUILD_DIR/i18n-inject.js"
+    [ -f "$CUSTOM_DIR/branding.css" ] && cp "$CUSTOM_DIR/branding.css" "$LS_STATIC_BUILD_DIR/branding.css"
+    echo "Custom static files synced to static_build"
 fi
 
 # Run original entrypoint

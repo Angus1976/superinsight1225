@@ -62,6 +62,7 @@ const AIAssistant: React.FC = () => {
   const [gatewayAvailable, setGatewayAvailable] = useState(false);
   const [skills, setSkills] = useState<SkillInfo[]>([]);
   const [selectedSkillIds, setSelectedSkillIds] = useState<string[]>([]);
+  const [isCheckingGateway, setIsCheckingGateway] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -101,22 +102,40 @@ const AIAssistant: React.FC = () => {
 
   const handleModeChange = async (value: string | number) => {
     const newMode = value as ChatMode;
+    console.log('[AIAssistant] Mode change requested:', newMode);
+    
     if (newMode === 'openclaw') {
+      setIsCheckingGateway(true);
       try {
+        console.log('[AIAssistant] Fetching OpenClaw status...');
         const status = await getOpenClawStatus();
+        console.log('[AIAssistant] OpenClaw status received:', status);
+        
         if (!status.available) {
-          message.warning('OpenClaw 网关不可用，请检查网关状态');
+          console.warn('[AIAssistant] OpenClaw not available:', status.error);
+          message.warning(`OpenClaw 网关不可用: ${status.error || '请检查网关状态'}`);
+          // Don't change mode - keep it as 'direct'
+          setIsCheckingGateway(false);
           return;
         }
+        
+        console.log('[AIAssistant] Setting OpenClaw mode with gateway:', status.gateway_id);
         setChatMode('openclaw');
         setGatewayId(status.gateway_id);
         setGatewayAvailable(true);
         setSkills(status.skills);
-      } catch {
+        message.success('已切换到 OpenClaw 模式');
+      } catch (error) {
+        console.error('[AIAssistant] Failed to get OpenClaw status:', error);
         message.error('无法连接 OpenClaw 服务');
+        // Don't change mode - keep it as 'direct'
+      } finally {
+        setIsCheckingGateway(false);
       }
       return;
     }
+    
+    console.log('[AIAssistant] Switching to direct mode');
     setChatMode('direct');
     setGatewayId(null);
     setGatewayAvailable(false);
@@ -257,7 +276,9 @@ const AIAssistant: React.FC = () => {
                     { label: 'OpenClaw', value: 'openclaw' },
                   ]}
                   onChange={handleModeChange}
+                  disabled={isCheckingGateway}
                 />
+                {isCheckingGateway && <Spin size="small" />}
                 <Tag color={chatMode === 'openclaw' && gatewayAvailable ? 'success' : 'default'}>
                   {chatMode === 'openclaw' ? (gatewayAvailable ? '网关在线' : '网关离线') : '在线'}
                 </Tag>

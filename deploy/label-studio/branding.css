@@ -1,192 +1,73 @@
 /**
- * 问视间品牌覆盖样式 — Label Studio
+ * 问视间品牌样式 — Label Studio
  *
- * 通过 entrypoint-sso.sh 注入到 Label Studio HTML 模板中。
- * 所有规则使用非破坏性覆盖：如果此文件加载失败，
- * Label Studio 原始界面正常显示，不影响标注功能。
- *
- * 需求: 5.1 (Logo 替换), 5.3 (主题色), 5.5 (降级兼容)
+ * 设计原则：只用不依赖 LS 内部类名的选择器，确保 LS 升级兼容。
+ * - 主题色：CSS 变量覆盖
+ * - 链接隐藏：基于 href 属性（稳定）
+ * - Logo/文本替换：全部交给 i18n-inject.js（基于文本内容匹配）
+ * - 加载失败静默降级，不影响标注功能
  */
 
 /* ============================================================
-   1. Logo 替换 — 隐藏原始 Logo，显示问视间品牌文字
-   需求 5.1: 隐藏标注系统原始 Logo 并替换为问视间 Logo
+   1. 主题色 — 问视间品牌色 #1890ff
    ============================================================ */
-
-/* 顶部导航栏中的 Logo 图片 */
-.ls-header__logo img,
-.ls-header .ls-logo img,
-header [class*="logo"] img,
-.dm-header [class*="logo"] img {
-  display: none !important;
-}
-
-/* 用 ::after 伪元素替换为问视间品牌文字 */
-.ls-header__logo,
-.ls-header .ls-logo,
-header [class*="logo"] a:first-child,
-.dm-header [class*="logo"] a:first-child {
-  display: flex !important;
-  align-items: center;
-  min-width: auto;
-}
-
-.ls-header__logo::after,
-.ls-header .ls-logo::after,
-header [class*="logo"] a:first-child::after,
-.dm-header [class*="logo"] a:first-child::after {
-  content: "问视间";
-  font-size: 18px;
-  font-weight: 600;
-  color: #ffffff;
-  letter-spacing: 0.5px;
-}
-
-/* ============================================================
-   2. 主题色调整 — 与问视间品牌色 (#1890ff) 保持一致
-   需求 5.3: 将标注系统的主题色调整为与问视间品牌色一致
-   ============================================================ */
-
 :root {
-  /* 问视间品牌色 */
   --ls-brand-primary: #1890ff;
   --ls-brand-primary-hover: #40a9ff;
   --ls-brand-primary-active: #096dd9;
   --ls-brand-primary-light: #e6f7ff;
 }
 
-/* 顶部导航栏背景色 */
-.ls-header,
-header[class*="header"],
-.dm-header {
-  background-color: var(--ls-brand-primary) !important;
+/* ============================================================
+   2. Logo 替换 — 隐藏 SVG logo，用 ::after 显示品牌名
+   选择器基于 SVG alt 属性 + viewBox 尺寸，升级相对安全
+   ============================================================ */
+svg[alt*="Label Studio" i],
+svg[alt*="logo" i].lsf-menu-header__logo,
+svg[viewBox="0 0 194 30"] {
+  display: none !important;
 }
-
-/* 主要按钮 */
-.ls-button_look_primary,
-button[class*="primary"],
-.dm-content button[class*="primary"] {
-  background-color: var(--ls-brand-primary) !important;
-  border-color: var(--ls-brand-primary) !important;
+/* 在 logo 的父容器上注入品牌文字 */
+.lsf-menu-header__trigger::before {
+  content: "问视间" !important;
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  color: var(--ls-brand-primary, #1890ff) !important;
+  letter-spacing: 2px !important;
+  white-space: nowrap !important;
+  line-height: 30px !important;
 }
-
-.ls-button_look_primary:hover,
-button[class*="primary"]:hover,
-.dm-content button[class*="primary"]:hover {
-  background-color: var(--ls-brand-primary-hover) !important;
-  border-color: var(--ls-brand-primary-hover) !important;
+/* 兜底：a[href="/"] 内的 logo（登录页等非 SPA 页面） */
+a[href="/"] svg {
+  display: none !important;
 }
-
-.ls-button_look_primary:active,
-button[class*="primary"]:active,
-.dm-content button[class*="primary"]:active {
-  background-color: var(--ls-brand-primary-active) !important;
-  border-color: var(--ls-brand-primary-active) !important;
-}
-
-/* 链接与文本高亮色 */
-a[class*="ls-"],
-.ls-link,
-.dm-content a {
-  color: var(--ls-brand-primary);
-}
-
-a[class*="ls-"]:hover,
-.ls-link:hover,
-.dm-content a:hover {
-  color: var(--ls-brand-primary-hover);
-}
-
-/* 选中/激活状态 */
-.ls-tab_active,
-[class*="tab"][class*="active"],
-.dm-tab_active {
-  border-bottom-color: var(--ls-brand-primary) !important;
-  color: var(--ls-brand-primary) !important;
-}
-
-/* 复选框与单选框选中态 */
-input[type="checkbox"]:checked + *,
-input[type="radio"]:checked + * {
-  color: var(--ls-brand-primary);
-}
-
-/* 选中行高亮 */
-.dm-content tr[class*="selected"],
-.dm-content tr[class*="highlighted"] {
-  background-color: var(--ls-brand-primary-light) !important;
+a[href="/"]::after {
+  content: "问视间" !important;
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
+  letter-spacing: 2px !important;
+  white-space: nowrap !important;
 }
 
 /* ============================================================
-   3. 侧边栏品牌隐藏 — 隐藏 Label Studio 原始 Logo
-   需求 2.1: 侧边栏左上角不显示原始 Label Studio 品牌
+   3. JS 注入的品牌文字样式（由 i18n-inject.js 创建，作为兜底）
    ============================================================ */
-
-/* 侧边栏 Logo 图片隐藏 */
-[class*="sidebar"] [class*="logo"] img,
-.ls-sidebar [class*="logo"] img,
-.ls-menu [class*="logo"] img,
-nav[class*="sidebar"] [class*="logo"] img {
-  display: none !important;
-}
-
-/* 侧边栏 Logo 区域用 ::after 伪元素替换为问视间品牌文字 */
-[class*="sidebar"] [class*="logo"],
-.ls-sidebar [class*="logo"],
-.ls-menu [class*="logo"],
-nav[class*="sidebar"] [class*="logo"] {
-  display: flex !important;
-  align-items: center;
-  min-width: auto;
-}
-
-[class*="sidebar"] [class*="logo"]::after,
-.ls-sidebar [class*="logo"]::after,
-.ls-menu [class*="logo"]::after,
-nav[class*="sidebar"] [class*="logo"]::after {
-  content: "问视间";
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--ls-brand-primary, #1890ff);
-  letter-spacing: 0.5px;
+.si-brand-text {
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
+  letter-spacing: 1px !important;
+  white-space: nowrap !important;
+  display: inline-block !important;
 }
 
 /* ============================================================
-   4. 侧边栏底部链接隐藏 — 移除外部链接（API、Docs、GitHub、Slack）
-   需求 2.2: 侧边栏底部不显示 Label Studio 外部链接
+   4. 隐藏外部链接 — 基于 href 属性，升级安全
    ============================================================ */
-
-/* 侧边栏底部 footer 区域 */
-[class*="sidebar"] [class*="footer"],
-.ls-sidebar [class*="footer"],
-.ls-menu [class*="footer"],
-nav[class*="sidebar"] [class*="footer"] {
-  display: none !important;
-}
-
-/* 侧边栏中指向外部服务的链接 */
-[class*="sidebar"] a[href*="github"],
-[class*="sidebar"] a[href*="slack"],
-[class*="sidebar"] a[href*="community"],
-[class*="sidebar"] a[href*="docs.humansignal"],
-[class*="sidebar"] a[href*="labelstud.io"],
-.ls-sidebar a[href*="github"],
-.ls-sidebar a[href*="slack"],
-.ls-sidebar a[href*="community"],
-.ls-menu a[href*="github"],
-.ls-menu a[href*="slack"],
-.ls-menu a[href*="community"] {
-  display: none !important;
-}
-
-/* ============================================================
-   5. 侧边栏版本号隐藏 — 移除 Label Studio 版本号显示
-   需求 2.2: 侧边栏底部不显示 Label Studio 版本号
-   ============================================================ */
-
-[class*="sidebar"] [class*="version"],
-.ls-sidebar [class*="version"],
-.ls-menu [class*="version"],
-nav[class*="sidebar"] [class*="version"] {
+a[href*="labelstud.io"],
+a[href*="humansignal"],
+a[href*="github.com/HumanSignal"],
+a[href*="slack.labelstud.io"] {
   display: none !important;
 }

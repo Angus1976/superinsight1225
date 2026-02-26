@@ -137,6 +137,15 @@ export default defineConfig(({ mode }) => ({
       '/api': {
         target: 'http://superinsight-app:8000',
         changeOrigin: true,
+        // Enable SSE streaming support
+        configure: (proxy, _options) => {
+          proxy.on('proxyReq', (proxyReq, req, _res) => {
+            // Disable buffering for SSE endpoints
+            if (req.url?.includes('/stream')) {
+              proxyReq.setHeader('X-Accel-Buffering', 'no');
+            }
+          });
+        },
       },
       '/health': {
         target: 'http://superinsight-app:8000',

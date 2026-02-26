@@ -113,6 +113,36 @@
 - [x] 9. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
+- [x] 10. Fix runtime errors in AI Assistant
+  - [x] 10.1 Fix LLM direct mode stream response issue
+    - Debug why LLMSwitcher.stream_generate() returns no content
+    - Check Ollama connection and model availability
+    - Verify SSE chunk formatting in generate_stream()
+    - Add error logging to identify where stream breaks
+    - Test with simple prompt to verify end-to-end flow
+    - _Requirements: 1.1, 2.1, 2.2_
+  - [x] 10.2 Fix OpenClaw mode switch button
+    - Debug handleModeChange() in AIAssistant component
+    - Verify getOpenClawStatus() API call succeeds
+    - Check if status.available is correctly evaluated
+    - Add console logging to track state changes
+    - Verify gateway_id is set correctly after status check
+    - _Requirements: 4.1, 4.2, 4.3_
+  - [x] 10.3 Fix CORS configuration
+    - Change allow_origins from ["*"] to specific origins
+    - Remove allow_credentials=True when using wildcard origins
+    - Add proper CORS headers for SSE streaming
+    - Verify Vite proxy configuration is working
+    - Test cross-origin requests from frontend
+    - _Requirements: 11.1_
+  - [x] 10.4 Fix BaseException error in stream
+    - Wrap all exceptions in generate_stream() properly
+    - Ensure LLMError inherits from Exception
+    - Add try-except around switcher.stream_generate()
+    - Convert non-Exception errors to proper Exception types
+    - Test error handling with unreachable Ollama
+    - _Requirements: 6.1, 7.1, 8.1_
+
 ## Notes
 
 - Tasks marked with `*` are optional and can be skipped for faster MVP

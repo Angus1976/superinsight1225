@@ -86,7 +86,7 @@ class MetricsCollector:
         self.collection_interval = 10  # seconds
         self.is_collecting = False
         self._collection_task: Optional[asyncio.Task] = None
-        self._lock = asyncio.Lock()
+        self._lock = threading.Lock()
         self.alerts: List[PerformanceAlert] = []
         self.bottleneck_analyses: List[BottleneckAnalysis] = []
         self.alert_handlers: List[Callable] = []

@@ -4,6 +4,7 @@ LLM Integration Schemas for SuperInsight platform.
 Defines Pydantic models for LLM configuration, requests, responses, and errors.
 """
 
+import os
 from typing import Dict, Any, List, Optional, Union
 from enum import Enum
 from datetime import datetime
@@ -103,11 +104,54 @@ class LLMError(BaseModel):
     timestamp: datetime = Field(default_factory=datetime.utcnow, description="Error timestamp")
 
 
+class LLMException(Exception):
+    """Exception class for LLM errors that can be raised.
+    
+    This wraps the LLMError data model to make it raiseable as an exception.
+    """
+    
+    def __init__(self, error: LLMError):
+        """Initialize with an LLMError data model."""
+        self.error = error
+        super().__init__(error.message)
+    
+    @property
+    def error_code(self) -> LLMErrorCode:
+        """Get the error code."""
+        return self.error.error_code
+    
+    @property
+    def provider(self) -> str:
+        """Get the provider name."""
+        return self.error.provider
+    
+    @property
+    def details(self) -> Optional[Dict[str, Any]]:
+        """Get error details."""
+        return self.error.details
+    
+    @property
+    def retry_after(self) -> Optional[int]:
+        """Get retry_after value."""
+        return self.error.retry_after
+    
+    @property
+    def suggestions(self) -> List[str]:
+        """Get suggestions."""
+        return self.error.suggestions
+
+
 class LocalConfig(BaseModel):
     """Configuration for local LLM (Ollama)."""
     
-    ollama_url: str = Field(default="http://localhost:11434", description="Ollama service URL")
-    default_model: str = Field(default="qwen:7b", description="Default model name")
+    ollama_url: str = Field(
+        default_factory=lambda: os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
+        description="Ollama service URL"
+    )
+    default_model: str = Field(
+        default="qwen2.5:1.5b",
+        description="Default model name"
+    )
     timeout: int = Field(default=30, ge=1, le=300, description="Request timeout in seconds")
     max_retries: int = Field(default=3, ge=0, le=10, description="Maximum retry attempts")
     

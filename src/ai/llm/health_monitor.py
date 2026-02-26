@@ -233,19 +233,13 @@ class HealthMonitor:
         """
         Get provider ID from database for a given method.
         
-        Args:
-            method: LLM method to look up
-            
-        Returns:
-            Provider ID as string, or None if not found
+        Returns a fallback string ID when database is unavailable or query fails.
         """
         db = await self._get_db()
         if db is None:
-            # Use method value as a fallback ID when no database
             return f"provider_{method.value}"
         
         try:
-            # Query for the configuration with this method
             stmt = select(LLMConfiguration).where(
                 LLMConfiguration.default_method == method.value,
                 LLMConfiguration.is_active == True
@@ -256,8 +250,6 @@ class HealthMonitor:
             if config:
                 return str(config.id)
             
-            # If no exact match, try to find any active configuration
-            # This handles cases where multiple methods share a configuration
             stmt = select(LLMConfiguration).where(
                 LLMConfiguration.is_active == True
             ).limit(1)
@@ -268,6 +260,11 @@ class HealthMonitor:
             
         except Exception as e:
             logger.warning(f"Failed to get provider ID for {method}: {e}")
+            # Rollback to clear failed transaction state
+            try:
+                await db.rollback()
+            except Exception:
+                pass
             return f"provider_{method.value}"
     
     # ==================== Health Status Management ====================
@@ -348,29 +345,24 @@ class HealthMonitor:
         error_message: Optional[str],
         consecutive_failures: int
     ) -> None:
-        """
-        Persist health status to database.
-        
-        Uses upsert to create or update the health status record.
-        
-        Args:
-            provider_id: Provider UUID as string
-            is_healthy: Current health status
-            error_message: Error message if unhealthy
-            consecutive_failures: Number of consecutive failures
-        """
+        """Persist health status to database. Skips when no DB or invalid provider_id."""
         db = await self._get_db()
         if db is None:
-            # Skip persistence when no database available
             logger.debug(f"Skipping health status persistence (no database): {provider_id}")
+            return
+        
+        # Validate provider_id is a valid UUID before attempting persistence
+        try:
+            provider_uuid = UUID(provider_id)
+        except (ValueError, AttributeError):
+            logger.debug(f"Skipping health status persistence (non-UUID provider_id): {provider_id}")
             return
         
         try:
             now = datetime.utcnow()
             
-            # Use PostgreSQL upsert (INSERT ... ON CONFLICT UPDATE)
             stmt = pg_insert(LLMHealthStatus).values(
-                provider_id=UUID(provider_id),
+                provider_id=provider_uuid,
                 is_healthy=is_healthy,
                 last_check_at=now,
                 last_error=error_message[:500] if error_message else None,
@@ -392,6 +384,10 @@ class HealthMonitor:
             
         except Exception as e:
             logger.error(f"Failed to persist health status for {provider_id}: {e}")
+            try:
+                await db.rollback()
+            except Exception:
+                pass
     
     async def _send_alert(
         self,

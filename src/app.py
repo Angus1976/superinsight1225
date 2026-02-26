@@ -900,12 +900,37 @@ app = FastAPI(
 app.add_middleware(MonitoringMiddleware)
 
 # Add CORS middleware
+# Configure CORS based on environment settings
+# Note: When using wildcard origins ["*"], credentials cannot be enabled
+cors_origins = settings.app.cors_origins
+allow_credentials = "*" not in cors_origins
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=cors_origins,
+    allow_credentials=allow_credentials,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allow_headers=[
+        "Content-Type",
+        "Authorization",
+        "Accept",
+        "Origin",
+        "User-Agent",
+        "DNT",
+        "Cache-Control",
+        "X-Requested-With",
+        # SSE streaming headers
+        "X-Accel-Buffering",
+    ],
+    expose_headers=[
+        "Content-Type",
+        "Cache-Control",
+        "Content-Encoding",
+        "Content-Length",
+        # SSE streaming headers
+        "X-Accel-Buffering",
+    ],
+    max_age=600,
 )
 
 # Add automatic desensitization middleware
@@ -1153,15 +1178,8 @@ except ImportError as e:
 except Exception as e:
     logger.error(f"Tasks API failed to load: {e}")
 
-# Include structuring API router
-try:
-    from src.api.structuring import router as structuring_router
-    app.include_router(structuring_router)
-    logger.info("Structuring API loaded successfully")
-except ImportError as e:
-    logger.error(f"Structuring API not available: {e}")
-except Exception as e:
-    logger.error(f"Structuring API failed to load: {e}")
+# Structuring API is registered later in the API registration section (line ~2270)
+# Removed duplicate import to avoid table definition conflicts
 
 # Include Label Studio API router
 try:

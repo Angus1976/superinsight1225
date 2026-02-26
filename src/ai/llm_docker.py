@@ -15,13 +15,13 @@ import httpx
 try:
     from src.ai.llm_schemas import (
         LLMMethod, LocalConfig, GenerateOptions, LLMResponse, EmbeddingResponse,
-        LLMError, LLMErrorCode, TokenUsage, HealthStatus
+        LLMError, LLMErrorCode, TokenUsage, HealthStatus, LLMException
     )
     from src.ai.llm_switcher import LLMProvider
 except ImportError:
     from ai.llm_schemas import (
         LLMMethod, LocalConfig, GenerateOptions, LLMResponse, EmbeddingResponse,
-        LLMError, LLMErrorCode, TokenUsage, HealthStatus
+        LLMError, LLMErrorCode, TokenUsage, HealthStatus, LLMException
     )
     from ai.llm_switcher import LLMProvider
 
@@ -130,20 +130,20 @@ class LocalLLMProvider(LLMProvider):
                 )
                 
             except httpx.TimeoutException:
-                raise LLMError(
+                raise LLMException(LLMError(
                     error_code=LLMErrorCode.TIMEOUT,
                     message=f"Request timed out after {self._timeout} seconds",
                     provider=self.method.value,
                     suggestions=["Increase timeout", "Use a smaller model", "Reduce max_tokens"]
-                )
+                ))
             except httpx.HTTPStatusError as e:
                 raise self._handle_http_error(e)
             except Exception as e:
-                raise LLMError(
+                raise LLMException(LLMError(
                     error_code=LLMErrorCode.GENERATION_FAILED,
                     message=str(e),
                     provider=self.method.value
-                )
+                ))
     
     async def stream_generate(
         self,
@@ -188,17 +188,17 @@ class LocalLLMProvider(LLMProvider):
                                 break
                                 
             except httpx.TimeoutException:
-                raise LLMError(
+                raise LLMException(LLMError(
                     error_code=LLMErrorCode.TIMEOUT,
                     message=f"Stream timed out after {self._timeout} seconds",
                     provider=self.method.value
-                )
+                ))
             except Exception as e:
-                raise LLMError(
+                raise LLMException(LLMError(
                     error_code=LLMErrorCode.GENERATION_FAILED,
                     message=str(e),
                     provider=self.method.value
-                )
+                ))
     
     async def embed(
         self,
@@ -245,17 +245,17 @@ class LocalLLMProvider(LLMProvider):
                 )
                 
             except httpx.TimeoutException:
-                raise LLMError(
+                raise LLMException(LLMError(
                     error_code=LLMErrorCode.TIMEOUT,
                     message=f"Embedding request timed out after {self._timeout} seconds",
                     provider=self.method.value
-                )
+                ))
             except Exception as e:
-                raise LLMError(
+                raise LLMException(LLMError(
                     error_code=LLMErrorCode.GENERATION_FAILED,
                     message=str(e),
                     provider=self.method.value
-                )
+                ))
     
     # ==================== Health & Model Management ====================
     

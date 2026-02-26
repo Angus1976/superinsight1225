@@ -24,6 +24,7 @@ from src.ai_integration.openclaw_chat_service import (
     OpenClawUnavailableError,
 )
 from src.ai_integration.openclaw_llm_bridge import get_openclaw_llm_bridge
+from src.ai_integration.schemas import SkillInfoResponse, OpenClawStatusResponse
 from src.database.connection import get_db
 
 logger = logging.getLogger(__name__)
@@ -74,24 +75,6 @@ class ChatResponse(BaseModel):
     content: str
     model: str
     usage: Optional[dict] = None
-
-
-class SkillInfoResponse(BaseModel):
-    """Single skill info returned by OpenClaw status endpoint."""
-    id: str
-    name: str
-    version: str
-    status: str
-    description: Optional[str] = None
-
-
-class OpenClawStatusResponse(BaseModel):
-    """OpenClaw gateway availability and deployed skills."""
-    available: bool
-    gateway_id: Optional[str] = None
-    gateway_name: Optional[str] = None
-    skills: list[SkillInfoResponse] = []
-    error: Optional[str] = None
 
 
 # --- Helper Functions ---
@@ -239,9 +222,15 @@ async def generate_stream(
         ):
             yield f"data: {json.dumps({'content': chunk, 'done': False})}\n\n"
         yield f"data: {json.dumps({'content': '', 'done': True})}\n\n"
-    except Exception as e:
-        logger.error("AI stream error: %s", e)
-        yield f"data: {json.dumps({'error': str(e), 'done': True})}\n\n"
+    except BaseException as e:
+        # Catch BaseException to handle all exceptions including SystemExit, KeyboardInterrupt
+        # Convert to proper Exception type for logging and response
+        logger.error("AI stream error: %s (type: %s)", e, type(e).__name__)
+        error_message = str(e) if str(e) else f"Stream error: {type(e).__name__}"
+        yield f"data: {json.dumps({'error': error_message, 'done': True})}\n\n"
+        # Re-raise if it's a system exception (SystemExit, KeyboardInterrupt)
+        if isinstance(e, (SystemExit, KeyboardInterrupt)):
+            raise
 
 
 async def openclaw_stream(
@@ -271,9 +260,15 @@ async def openclaw_stream(
     except OpenClawUnavailableError as e:
         logger.warning("OpenClaw unavailable during stream: %s", e)
         yield f"data: {json.dumps({'error': str(e), 'done': True})}\n\n"
-    except Exception as e:
-        logger.error("OpenClaw stream error: %s", e)
-        yield f"data: {json.dumps({'error': str(e), 'done': True})}\n\n"
+    except BaseException as e:
+        # Catch BaseException to handle all exceptions including SystemExit, KeyboardInterrupt
+        # Convert to proper Exception type for logging and response
+        logger.error("OpenClaw stream error: %s (type: %s)", e, type(e).__name__)
+        error_message = str(e) if str(e) else f"Stream error: {type(e).__name__}"
+        yield f"data: {json.dumps({'error': error_message, 'done': True})}\n\n"
+        # Re-raise if it's a system exception (SystemExit, KeyboardInterrupt)
+        if isinstance(e, (SystemExit, KeyboardInterrupt)):
+            raise
 
 
 @router.post("/chat/stream")

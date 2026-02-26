@@ -31,13 +31,13 @@ from collections import defaultdict
 try:
     from src.ai.llm_schemas import (
         LLMConfig, LLMMethod, GenerateOptions, LLMResponse, EmbeddingResponse,
-        LLMError, LLMErrorCode, TokenUsage, HealthStatus, MethodInfo
+        LLMError, LLMErrorCode, TokenUsage, HealthStatus, MethodInfo, LLMException
     )
     from src.ai.llm_config_manager import LLMConfigManager, get_config_manager
 except ImportError:
     from ai.llm_schemas import (
         LLMConfig, LLMMethod, GenerateOptions, LLMResponse, EmbeddingResponse,
-        LLMError, LLMErrorCode, TokenUsage, HealthStatus, MethodInfo
+        LLMError, LLMErrorCode, TokenUsage, HealthStatus, MethodInfo, LLMException
     )
     from ai.llm_config_manager import LLMConfigManager, get_config_manager
 
@@ -617,7 +617,7 @@ class LLMSwitcher:
                 logger.error(f"Fallback provider {self._fallback_method} also failed: {fallback_error}")
                 
                 # Return comprehensive error with both failure details (Requirement 4.3)
-                raise LLMError(
+                raise LLMException(LLMError(
                     error_code=LLMErrorCode.SERVICE_UNAVAILABLE,
                     message=(
                         f"Both primary and fallback providers failed. "
@@ -637,7 +637,7 @@ class LLMSwitcher:
                         "Check network connectivity",
                         "Review provider health status"
                     ]
-                )
+                ))
         
         # No fallback configured, raise the primary error
         raise self._create_error(primary_error, target_method)
@@ -889,7 +889,7 @@ class LLMSwitcher:
                 
             except Exception as fallback_error:
                 logger.error(f"Fallback provider stream also failed: {fallback_error}")
-                raise LLMError(
+                raise LLMException(LLMError(
                     error_code=LLMErrorCode.SERVICE_UNAVAILABLE,
                     message=(
                         f"Both primary and fallback providers failed for streaming. "
@@ -898,7 +898,7 @@ class LLMSwitcher:
                     ),
                     provider=f"{target_method.value},{self._fallback_method.value}",
                     suggestions=["Check provider configurations", "Verify network connectivity"]
-                )
+                ))
         
         raise self._create_error(primary_error, target_method)
     
@@ -953,12 +953,14 @@ class LLMSwitcher:
             except Exception as e:
                 last_error = str(e)
                 logger.warning(f"Stream error on attempt {attempt + 1}/{max_retries}: {e}")
+                logger.debug(f"Exception type: {type(e).__name__}, details: {e}", exc_info=True)
                 
                 retry_after = self._extract_retry_after(e)
                 if retry_after is not None:
                     await asyncio.sleep(retry_after)
                     continue
             
+            # Backoff before retry
             if attempt < max_retries - 1:
                 backoff_delay = EXPONENTIAL_BACKOFF_BASE ** attempt
                 await asyncio.sleep(backoff_delay)
@@ -1023,7 +1025,7 @@ class LLMSwitcher:
                 
             except Exception as fallback_error:
                 logger.error(f"Fallback provider embed also failed: {fallback_error}")
-                raise LLMError(
+                raise LLMException(LLMError(
                     error_code=LLMErrorCode.SERVICE_UNAVAILABLE,
                     message=(
                         f"Both primary and fallback providers failed for embedding. "
@@ -1032,7 +1034,7 @@ class LLMSwitcher:
                     ),
                     provider=f"{target_method.value},{self._fallback_method.value}",
                     suggestions=["Check provider configurations", "Verify network connectivity"]
-                )
+                ))
         
         raise self._create_error(primary_error, target_method)
     
@@ -1274,16 +1276,16 @@ class LLMSwitcher:
     def _get_provider(self, method: LLMMethod) -> LLMProvider:
         """Get provider for the specified method."""
         if method not in self._providers:
-            raise LLMError(
+            raise LLMException(LLMError(
                 error_code=LLMErrorCode.SERVICE_UNAVAILABLE,
                 message=f"Provider for {method} is not available",
                 provider=method.value,
                 suggestions=["Check if the method is enabled", "Verify provider configuration"]
-            )
+            ))
         return self._providers[method]
     
-    def _create_error(self, exception: Exception, method: LLMMethod) -> LLMError:
-        """Create an LLMError from an exception."""
+    def _create_error(self, exception: Exception, method: LLMMethod) -> Exception:
+        """Create an LLMException from an exception."""
         error_code = LLMErrorCode.GENERATION_FAILED
         message = str(exception)
         retry_after = None
@@ -1309,13 +1311,19 @@ class LLMSwitcher:
             error_code = LLMErrorCode.NETWORK_ERROR
             suggestions = ["Check network connectivity", "Verify service URL"]
         
-        return LLMError(
+        # Create LLMError data model
+        error_data = LLMError(
             error_code=error_code,
             message=message,
             provider=method.value,
             retry_after=retry_after,
             suggestions=suggestions
         )
+        
+        # Wrap in LLMException to make it raiseable
+        from src.ai.llm_schemas import LLMException
+        return LLMException(error_data)
+
     
     async def _log_usage(
         self,

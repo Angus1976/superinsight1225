@@ -21,6 +21,8 @@ from .base import (
 
 from .database import DatabaseExtractor
 from .file import FileExtractor, WebExtractor, detect_file_type
+from .ppt import PPTExtractor
+from .media import MediaTranscriber
 from .api import APIExtractor, GraphQLExtractor, WebhookExtractor
 from .factory import ExtractorFactory
 
@@ -45,6 +47,8 @@ __all__ = [
     'DatabaseExtractor',
     'FileExtractor',
     'WebExtractor',
+    'PPTExtractor',
+    'MediaTranscriber',
     'APIExtractor',
     'GraphQLExtractor',
     'WebhookExtractor',

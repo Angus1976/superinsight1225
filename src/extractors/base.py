@@ -56,6 +56,9 @@ class FileType(str, Enum):
     DOCX = "docx"
     TXT = "txt"
     HTML = "html"
+    PPT = "ppt"
+    VIDEO = "video"
+    AUDIO = "audio"
 
 
 @dataclass

@@ -18,6 +18,8 @@ from src.services.structuring_pipeline import (
     _fail_job,
     _TABULAR_TYPES,
     _TEXT_TYPES,
+    _PPT_TYPES,
+    _MEDIA_TYPES,
     _VALID_TRANSITIONS,
 )
 
@@ -101,12 +103,21 @@ class TestFileTypeRouting:
     def test_text_types(self):
         assert _TEXT_TYPES == {"pdf", "docx", "txt", "html"}
 
+    def test_ppt_types(self):
+        assert _PPT_TYPES == {"ppt"}
+
+    def test_media_types(self):
+        assert _MEDIA_TYPES == {"video", "audio"}
+
     def test_no_overlap(self):
-        assert _TABULAR_TYPES & _TEXT_TYPES == set()
+        all_sets = [_TABULAR_TYPES, _TEXT_TYPES, _PPT_TYPES, _MEDIA_TYPES]
+        for i, a in enumerate(all_sets):
+            for b in all_sets[i + 1:]:
+                assert a & b == set()
 
     def test_all_structuring_file_types_covered(self):
         all_types = {ft.value for ft in StructuringFileType}
-        covered = _TABULAR_TYPES | _TEXT_TYPES
+        covered = _TABULAR_TYPES | _TEXT_TYPES | _PPT_TYPES | _MEDIA_TYPES
         assert all_types == covered
 
 
@@ -146,6 +157,68 @@ class TestExtractContent:
 
         assert result.headers == ["a", "b"]
         assert result.row_count == 1
+
+    @patch("src.services.structuring_pipeline._update_job_status")
+    @patch("src.extractors.ppt.PPTExtractor.extract", return_value="Slide 1 text\n\nSlide 2 text")
+    def test_ppt_routes_to_ppt_extractor(self, mock_extract, mock_update):
+        from src.services.structuring_pipeline import _extract_content
+
+        session = MagicMock()
+        job = self._make_job("ppt", "/tmp/test.pptx")
+        result = _extract_content(session, job)
+
+        assert result == "Slide 1 text\n\nSlide 2 text"
+        assert job.raw_content == "Slide 1 text\n\nSlide 2 text"
+        mock_extract.assert_called_once_with("/tmp/test.pptx")
+
+    @patch("src.services.structuring_pipeline._update_job_status")
+    @patch("src.extractors.ppt.PPTExtractor.extract", return_value="  ")
+    def test_ppt_empty_content_raises(self, mock_extract, mock_update):
+        from src.services.structuring_pipeline import _extract_content
+
+        session = MagicMock()
+        job = self._make_job("ppt", "/tmp/empty.pptx")
+        with pytest.raises(RuntimeError, match="PPT extraction returned empty content"):
+            _extract_content(session, job)
+
+    @patch("src.services.structuring_pipeline._update_job_status")
+    @patch("src.services.structuring_pipeline.asyncio")
+    def test_video_routes_to_media_transcriber(self, mock_asyncio, mock_update):
+        from src.services.structuring_pipeline import _extract_content
+
+        mock_asyncio.run.return_value = "transcribed video text"
+        session = MagicMock()
+        job = self._make_job("video", "/tmp/test.mp4")
+        result = _extract_content(session, job)
+
+        assert result == "transcribed video text"
+        assert job.raw_content == "transcribed video text"
+        mock_asyncio.run.assert_called_once()
+
+    @patch("src.services.structuring_pipeline._update_job_status")
+    @patch("src.services.structuring_pipeline.asyncio")
+    def test_audio_routes_to_media_transcriber(self, mock_asyncio, mock_update):
+        from src.services.structuring_pipeline import _extract_content
+
+        mock_asyncio.run.return_value = "transcribed audio text"
+        session = MagicMock()
+        job = self._make_job("audio", "/tmp/test.mp3")
+        result = _extract_content(session, job)
+
+        assert result == "transcribed audio text"
+        assert job.raw_content == "transcribed audio text"
+        mock_asyncio.run.assert_called_once()
+
+    @patch("src.services.structuring_pipeline._update_job_status")
+    @patch("src.services.structuring_pipeline.asyncio")
+    def test_media_empty_transcription_raises(self, mock_asyncio, mock_update):
+        from src.services.structuring_pipeline import _extract_content
+
+        mock_asyncio.run.return_value = "  "
+        session = MagicMock()
+        job = self._make_job("video", "/tmp/test.mp4")
+        with pytest.raises(RuntimeError, match="Media transcription returned empty"):
+            _extract_content(session, job)
 
     @patch("src.services.structuring_pipeline._update_job_status")
     def test_unsupported_type_raises(self, mock_update):

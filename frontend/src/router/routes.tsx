@@ -107,6 +107,9 @@ const AIAssistantPage = lazyWithPreload(() => import('@/pages/AIAssistant'));
 // AI Annotation pages
 const AIAnnotationPage = lazyWithPreload(() => import('@/pages/AIAnnotation'));
 
+// AI Processing page
+const AIProcessingPage = lazyWithPreload(() => import('@/pages/AIProcessing'));
+
 // Data Structuring pages
 const DataStructuringUploadPage = lazyWithPreload(() => import('@/pages/DataStructuring/Upload'));
 const DataStructuringPreviewPage = lazyWithPreload(() => import('@/pages/DataStructuring/Preview'));
@@ -500,6 +503,11 @@ export const routes: RouteObject[] = [
       {
         path: 'ai-annotation/*',
         element: withSuspense(AIAnnotationPage, 'dashboard'),
+      },
+      // AI Processing
+      {
+        path: 'ai-processing',
+        element: withSuspense(AIProcessingPage, 'page'),
       },
       // Data Structuring workflow
       {

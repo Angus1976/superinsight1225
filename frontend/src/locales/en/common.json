@@ -442,5 +442,52 @@
     "noMore": "No more items",
     "loadFailed": "Load failed"
   },
-  "unknown": "Unknown"
+  "unknown": "Unknown",
+  "action": {
+    "goToUpload": "Go to Upload",
+    "refresh": "Refresh"
+  },
+  "aiProcessing": {
+    "title": "AI Data Processing",
+    "description": "Manage structuring, vectorization, and semantic processing workflows in one place.",
+    "tabs": {
+      "structuring": "Structuring",
+      "vectorization": "Vectorization",
+      "semantic": "Semantic"
+    },
+    "uploadSuccess": "File uploaded successfully",
+    "uploadFailed": "File upload failed",
+    "dragText": "Click or drag file to this area to upload",
+    "viewRecords": "View",
+    "columns": {
+      "fileName": "File Name",
+      "fileType": "Type",
+      "status": "Status",
+      "chunkCount": "Chunks",
+      "createdAt": "Created At",
+      "actions": "Actions",
+      "chunkIndex": "Index",
+      "chunkText": "Text Content",
+      "recordType": "Type",
+      "content": "Content",
+      "confidence": "Confidence"
+    },
+    "vectorization": {
+      "uploadTitle": "Upload File",
+      "hint": "Supports PDF, Word, Excel, CSV, PPT, HTML, TXT, audio and video formats",
+      "jobListTitle": "Job List",
+      "recordsTitle": "Vector Records"
+    },
+    "semantic": {
+      "uploadTitle": "Upload File",
+      "hint": "Supports PDF, Word, Excel, CSV, PPT, HTML, TXT, audio and video formats",
+      "jobListTitle": "Job List",
+      "recordsTitle": "Semantic Records",
+      "filterLabel": "Filter by type:",
+      "allTypes": "All",
+      "entity": "Entity",
+      "relationship": "Relationship",
+      "summary": "Summary"
+    }
+  }
 }

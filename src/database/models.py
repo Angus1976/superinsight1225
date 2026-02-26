@@ -277,7 +277,8 @@ from src.models.ai_integration import (
 
 # Import structuring models to ensure they are registered with SQLAlchemy
 from src.models.structuring import (  # noqa: F401
-    StructuringJob, StructuredRecord
+    StructuringJob, StructuredRecord, ProcessingType,
+    VectorRecord, SemanticRecord,
 )
 
 # Import datalake metrics model to ensure it is registered with SQLAlchemy

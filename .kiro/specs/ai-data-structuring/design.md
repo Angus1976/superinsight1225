@@ -1,407 +1,231 @@
-# 设计文档：AI 驱动的结构化数据分析
+# 设计文档: AI 数据处理（ai-data-structuring）
 
-## Overview
+## 概述
 
-对上传的非结构化文件（PDF/CSV/Excel/Word/HTML）进行 AI 结构化分析，包括文本提取、Schema 推断、字段提取和实体识别，将结构化结果存入 PostgreSQL，并自动创建标注任务。
+扩展现有 AI 结构化功能，对 PDF、PPT、Word、Excel、CSV、HTML、TXT、视频、音频等非结构化/半结构化数据，提供结构化、向量化、语义化三种处理能力。新增 PPT 提取器和音视频转录器，扩展文件类型支持。在 DataSync 页面新增"AI 数据处理"Tab，包含结构化/向量化/语义化三个子 Tab。复用现有 Celery 管道架构和 LLM Switcher 的 `embed()` 方法。
 
-设计原则：
-- **复用现有基础设施**：FileExtractor 处理 PDF/DOCX/TXT/HTML，pandas 处理 CSV/Excel
-- **LLM 驱动**：通过 instructor + OpenAI 实现 Schema 推断和实体识别，返回结构化 Pydantic 模型
-- **异步管道**：Celery 任务编排，支持大文件异步处理
-
-## Architecture
+## 架构
 
 ```mermaid
-graph TB
-    subgraph 前端["前端（React + Ant Design）"]
-        Upload[文件上传页]
-        Preview[内容预览页]
-        SchemaEditor[Schema 编辑器]
-        ResultView[结构化结果页]
+graph TD
+    subgraph 前端
+        A[DataSync] -->|新 Tab| B[AI 数据处理]
+        B --> B1[结构化]
+        B --> B2[向量化]
+        B --> B3[语义化]
     end
 
-    subgraph 现有模块["现有模块（复用）"]
-        FileExtractor[FileExtractor<br/>PDF/DOCX/TXT/HTML]
-        SyncPush[sync_push API<br/>文件上传]
-        DocModel[Document Model]
-        LLMConfig[LLMConfiguration]
-        TaskModel[Task Model]
+    subgraph 后端 API
+        C[/api/structuring/jobs] --> D[Celery]
+        E[/api/vectorization/jobs] --> D
+        F[/api/semantic/jobs] --> D
     end
 
-    subgraph 新增后端["新增后端"]
-        StructAPI[Structuring API<br/>FastAPI Router]
-        TabularParser[TabularParser<br/>CSV/Excel 解析]
-        SchemaInferrer[SchemaInferrer<br/>LLM Schema 推断]
-        EntityExtractor[EntityExtractor<br/>LLM 实体识别]
-        Pipeline[StructuringPipeline<br/>Celery 编排]
+    subgraph 处理管道
+        D --> P1[内容提取]
+        P1 --> P2A[Schema推断→实体提取]
+        P1 --> P2B[文本分块→Embedding→pgvector]
+        P1 --> P2C[LLM语义分析→实体/关系/摘要]
     end
 
-    subgraph 存储["存储"]
-        PG[(PostgreSQL)]
-        Redis[(Redis/Celery)]
+    subgraph 提取器
+        P1 --> EX1[FileExtractor 现有: PDF/DOCX/HTML/TXT]
+        P1 --> EX2[TabularParser 现有: CSV/Excel]
+        P1 --> EX3[PPTExtractor 新增: PPT/PPTX]
+        P1 --> EX4[MediaTranscriber 新增: Video/Audio]
     end
-
-    Upload -->|上传文件| StructAPI
-    StructAPI -->|文本文件| FileExtractor
-    StructAPI -->|表格文件| TabularParser
-    FileExtractor -->|文本内容| SchemaInferrer
-    TabularParser -->|表格数据| SchemaInferrer
-    SchemaInferrer -->|推断 Schema| EntityExtractor
-    EntityExtractor -->|结构化数据| PG
-    Pipeline -->|编排| SchemaInferrer
-    Pipeline -->|编排| EntityExtractor
-    Pipeline -->|创建| TaskModel
-    Preview --> StructAPI
-    SchemaEditor --> StructAPI
-    ResultView --> StructAPI
 ```
 
-## 主要数据流
+## 时序图：向量化流程
 
 ```mermaid
 sequenceDiagram
     participant U as 用户
-    participant API as Structuring API
-    participant P as Pipeline (Celery)
-    participant FE as FileExtractor/TabularParser
-    participant LLM as SchemaInferrer + EntityExtractor
-    participant DB as PostgreSQL
+    participant FE as 前端
+    participant API as FastAPI
+    participant CQ as Celery
+    participant LLM as LLM/Embedding
+    participant DB as PostgreSQL+pgvector
 
-    U->>API: POST /structuring/jobs (上传文件)
-    API->>DB: 创建 StructuringJob(status=pending)
-    API->>P: 提交 Celery 任务
-    API-->>U: 返回 job_id
-
-    P->>FE: 提取文本/解析表格
-    FE-->>P: 原始内容
-    P->>LLM: 推断 Schema
-    LLM-->>P: InferredSchema
-    P->>DB: 存储 Schema
-    P->>LLM: 按 Schema 提取实体
-    LLM-->>P: StructuredRecord[]
-    P->>DB: 存储结构化数据
-    P->>DB: 创建标注 Task
-    P->>DB: 更新 Job(status=completed)
-
-    U->>API: GET /structuring/jobs/{id}
-    API-->>U: 返回结果 + Schema + 结构化数据
+    U->>FE: 上传文件，选择"向量化"
+    FE->>API: POST /api/vectorization/jobs
+    API->>DB: 创建 ProcessingJob(type=vectorization)
+    API->>CQ: 提交任务
+    CQ->>CQ: 提取文本内容
+    CQ->>CQ: 文本分块(chunk_size=512)
+    CQ->>LLM: embed(chunks)
+    CQ->>DB: 批量写入 vector_records
+    FE->>API: GET /api/vectorization/jobs/:id
+    API-->>FE: 状态+向量记录数
 ```
 
-## Components and Interfaces
-
-### 1. TabularParser（表格解析器 — 新增）
-
-**文件**: `src/extractors/tabular.py`
-
-复用 pandas + openpyxl 解析 CSV/Excel，输出统一的 TabularData。
+## 数据模型扩展
 
 ```python
-@dataclass
-class TabularData:
-    headers: list[str]
-    rows: list[dict[str, Any]]
-    row_count: int
-    file_type: str  # "csv" | "excel"
-    sheet_name: str | None = None
+# 扩展 FileType 枚举
+class FileType(str, Enum):
+    PDF = "pdf"; CSV = "csv"; EXCEL = "excel"
+    DOCX = "docx"; HTML = "html"; TXT = "txt"
+    PPT = "ppt"      # 新增
+    VIDEO = "video"   # 新增
+    AUDIO = "audio"   # 新增
 
-class TabularParser:
-    def parse(self, file_path: str, file_type: str) -> TabularData: ...
-    def _parse_csv(self, file_path: str) -> TabularData: ...
-    def _parse_excel(self, file_path: str) -> TabularData: ...
+# 新增处理类型
+class ProcessingType(str, Enum):
+    STRUCTURING = "structuring"
+    VECTORIZATION = "vectorization"
+    SEMANTIC = "semantic"
+
+# StructuringJob 扩展字段
+# processing_type: String(20), default="structuring"
+# chunk_count: Integer, nullable (向量化用)
+
+# 新增表: vector_records
+class VectorRecord(Base):
+    __tablename__ = "vector_records"
+    id: UUID (PK)
+    job_id: UUID (FK → structuring_jobs)
+    chunk_index: Integer
+    chunk_text: Text
+    embedding: Vector(1536)  # pgvector
+    metadata_: JSONB
+    created_at: DateTime
+
+# 新增表: semantic_records
+class SemanticRecord(Base):
+    __tablename__ = "semantic_records"
+    id: UUID (PK)
+    job_id: UUID (FK → structuring_jobs)
+    record_type: String  # entity/relationship/summary
+    content: JSONB  # {name, type, properties} 或 {source, target, relation} 或 {text}
+    confidence: Float
+    created_at: DateTime
 ```
 
-### 2. SchemaInferrer（Schema 推断器 — 新增）
-
-**文件**: `src/ai/schema_inferrer.py`
-
-通过 instructor + OpenAI 从文本/表格数据推断结构化 Schema。
+## 关键函数签名
 
 ```python
-class FieldType(str, Enum):
-    STRING = "string"
-    INTEGER = "integer"
-    FLOAT = "float"
-    BOOLEAN = "boolean"
-    DATE = "date"
-    ENTITY = "entity"      # 命名实体（人名、地名等）
-    LIST = "list"
+# src/extractors/ppt.py — PPT 提取器
+class PPTExtractor:
+    def extract(self, file_path: str) -> str:
+        """用 python-pptx 提取幻灯片文本，按页拼接"""
+        # 前置: file_path 存在且为 .pptx
+        # 后置: 返回非空字符串，包含所有幻灯片文本
 
-class SchemaField(BaseModel):
-    name: str
-    field_type: FieldType
-    description: str
-    required: bool = True
-    entity_type: str | None = None  # PERSON, ORG, LOCATION 等
+# src/extractors/media.py — 音视频转录
+class MediaTranscriber:
+    async def transcribe(self, file_path: str) -> str:
+        """用 Whisper API (OpenAI/Ollama) 转录音视频为文本"""
+        # 前置: file_path 为支持的音视频格式
+        # 后置: 返回转录文本; 视频先用 ffmpeg 提取音轨
 
-class InferredSchema(BaseModel):
-    fields: list[SchemaField]
-    confidence: float          # 0.0-1.0
-    source_description: str    # LLM 对数据源的描述
+# src/services/vectorization_pipeline.py
+def run_vectorization_pipeline(job_id: str) -> dict:
+    """向量化管道: 提取→分块→embedding→存储"""
+    # 步骤: extract_content → chunk_text(512 tokens, 50 overlap)
+    #       → LLMSwitcher.embed(chunks) → 批量写入 vector_records
 
-class SchemaInferrer:
-    def __init__(self, llm_config: LLMConfiguration): ...
-    async def infer_from_text(self, text: str, hint: str | None = None) -> InferredSchema: ...
-    async def infer_from_tabular(self, data: TabularData) -> InferredSchema: ...
+def chunk_text(text: str, size: int = 512, overlap: int = 50) -> list[str]:
+    """按 token 数分块，相邻块有 overlap 重叠"""
+    # 前置: text 非空, size > overlap > 0
+    # 后置: len(result) >= 1, 每块 <= size tokens
+    # 循环不变量: 已处理 chunks 覆盖 text[:current_pos]
+
+# src/services/semantic_pipeline.py
+def run_semantic_pipeline(job_id: str) -> dict:
+    """语义化管道: 提取→LLM分析→存储实体/关系/摘要"""
+    # 步骤: extract_content → LLM提取实体和关系
+    #       → LLM生成摘要 → 写入 semantic_records
 ```
 
-### 3. EntityExtractor（实体提取器 — 新增）
-
-**文件**: `src/ai/entity_extractor.py`
-
-按 Schema 定义从原始内容中提取结构化记录。
-
-```python
-class StructuredRecord(BaseModel):
-    fields: dict[str, Any]
-    confidence: float
-    source_span: str | None = None  # 原文片段引用
-
-class ExtractionResult(BaseModel):
-    records: list[StructuredRecord]
-    total_extracted: int
-    avg_confidence: float
-
-class EntityExtractor:
-    def __init__(self, llm_config: LLMConfiguration): ...
-    async def extract(self, content: str, schema: InferredSchema) -> ExtractionResult: ...
-    async def extract_batch(self, contents: list[str], schema: InferredSchema) -> ExtractionResult: ...
-```
-
-### 4. StructuringPipeline（管道编排 — 新增）
-
-**文件**: `src/services/structuring_pipeline.py`
-
-Celery 任务，编排完整的结构化流程。
-
-```python
-@celery_app.task(bind=True)
-def run_structuring_pipeline(self, job_id: str) -> dict:
-    """
-    管道步骤：
-    1. 根据文件类型选择解析器（FileExtractor 或 TabularParser）
-    2. 调用 SchemaInferrer 推断 Schema
-    3. 用户确认/编辑 Schema（可选，通过 API 轮询）
-    4. 调用 EntityExtractor 提取结构化数据
-    5. 存储结构化结果到 structured_records 表
-    6. 自动创建标注 Task
-    """
-    ...
-```
-
-### 5. Structuring API（API 路由 — 新增）
-
-**文件**: `src/api/structuring.py`
-
-```python
-# POST /api/structuring/jobs          — 创建结构化任务（上传文件）
-# GET  /api/structuring/jobs/{id}     — 查询任务状态和结果
-# PUT  /api/structuring/jobs/{id}/schema — 用户确认/编辑 Schema
-# POST /api/structuring/jobs/{id}/extract — 确认 Schema 后执行提取
-# GET  /api/structuring/jobs/{id}/records — 获取结构化记录
-# POST /api/structuring/jobs/{id}/create-tasks — 创建标注任务
-```
-
-## Data Models
-
-### 后端数据库模型（SQLAlchemy）
-
-**文件**: `src/models/structuring.py`
-
-```python
-class StructuringJob(Base):
-    __tablename__ = "structuring_jobs"
-    id: Mapped[str]             # UUID PK
-    tenant_id: Mapped[str]      # 租户隔离
-    file_name: Mapped[str]
-    file_path: Mapped[str]
-    file_type: Mapped[str]      # pdf/csv/excel/docx/html/txt
-    status: Mapped[str]         # pending/extracting/inferring/confirming/extracting_entities/completed/failed
-    raw_content: Mapped[str | None]     # 提取的原始文本（Text）
-    inferred_schema: Mapped[dict | None]  # JSONB
-    confirmed_schema: Mapped[dict | None] # 用户确认后的 Schema（JSONB）
-    record_count: Mapped[int]
-    error_message: Mapped[str | None]
-    created_at: Mapped[datetime]
-    updated_at: Mapped[datetime]
-
-class StructuredRecord(Base):
-    __tablename__ = "structured_records"
-    id: Mapped[str]             # UUID PK
-    job_id: Mapped[str]         # FK → structuring_jobs.id
-    fields: Mapped[dict]        # JSONB，按 Schema 提取的字段
-    confidence: Mapped[float]
-    source_span: Mapped[str | None]
-    created_at: Mapped[datetime]
-```
-
-### 前端 Store（Zustand）
+## 前端设计
 
 ```typescript
-// frontend/src/stores/structuringStore.ts
-interface StructuringStore {
-  currentJob: StructuringJob | null;
-  jobs: StructuringJob[];
-  schema: InferredSchema | null;
-  records: StructuredRecord[];
-  uploadFile: (file: File) => Promise<string>;
-  fetchJob: (jobId: string) => Promise<void>;
-  confirmSchema: (jobId: string, schema: InferredSchema) => Promise<void>;
-  startExtraction: (jobId: string) => Promise<void>;
-  createAnnotationTasks: (jobId: string) => Promise<void>;
+// DataSync/index.tsx 新增 Tab
+<TabPane tab="AI 数据处理" key="aiProcessing">
+  <AIProcessingTab />
+</TabPane>
+
+// AIProcessingTab 内部子 Tab
+interface AIProcessingTabProps {}
+// 子 Tab: 结构化(复用现有) | 向量化 | 语义化
+// 每个子 Tab: 上传 → 任务列表 → 结果查看
+
+// stores/vectorizationStore.ts
+interface VectorizationJob {
+  job_id: string; status: JobStatus;
+  file_name: string; chunk_count: number;
 }
 ```
 
+## 正确性属性
 
-## Key Functions with Formal Specifications
+*属性是对系统行为的形式化描述，应在所有合法输入上成立。属性连接了人类可读的需求和机器可验证的正确性保证。*
 
-### Function 1: TabularParser.parse()
+### Property 1: 分块覆盖完整性
 
-```python
-def parse(self, file_path: str, file_type: str) -> TabularData
-```
+*For any* 非空文本和合法的 chunk_size/overlap 参数，chunk_text 返回的所有分块拼接后应覆盖原始文本的全部内容，无遗漏。
 
-**Preconditions:**
-- `file_path` 指向存在的文件
-- `file_type` ∈ {"csv", "excel"}
-- 文件大小 ≤ 100MB
+**Validates: Requirement 4.1**
 
-**Postconditions:**
-- 返回 TabularData，headers 非空，rows 中每行的 key 集合 = headers 集合
-- row_count = len(rows)
-- 不修改原始文件
+### Property 2: 分块大小上限
 
-### Function 2: SchemaInferrer.infer_from_text()
+*For any* 非空文本和合法的 chunk_size 参数，chunk_text 返回的每个分块的 token 数应不超过 chunk_size。
 
-```python
-async def infer_from_text(self, text: str, hint: str | None = None) -> InferredSchema
-```
+**Validates: Requirements 2.3, 4.2**
 
-**Preconditions:**
-- `text` 非空且长度 ≤ 50000 字符（超长文本截断前 50000 字符）
-- LLM 配置有效（API key、model 可用）
+### Property 3: 分块重叠正确性
 
-**Postconditions:**
-- 返回 InferredSchema，fields 长度 ≥ 1
-- 每个 SchemaField 的 name 唯一
-- 0.0 ≤ confidence ≤ 1.0
-- LLM 调用失败时抛出 SchemaInferenceError
+*For any* 非空文本且 chunk_size > overlap > 0 时，chunk_text 返回的相邻分块应有 overlap 个 token 的重叠。
 
-### Function 3: EntityExtractor.extract()
+**Validates: Requirement 4.4**
 
-```python
-async def extract(self, content: str, schema: InferredSchema) -> ExtractionResult
-```
+### Property 4: Embedding 维度一致性
 
-**Preconditions:**
-- `content` 非空
-- `schema.fields` 长度 ≥ 1
-- 每个 field 的 field_type 是有效的 FieldType 枚举值
+*For any* 向量记录，其 embedding 字段的维度应恒等于 1536。
 
-**Postconditions:**
-- 返回的每条 StructuredRecord.fields 的 key 集合 ⊆ schema.fields 的 name 集合
-- required 字段必须存在于每条记录中
-- avg_confidence = mean(record.confidence for record in records)
-- total_extracted = len(records)
+**Validates: Requirements 2.4, 5.5**
 
-### Function 4: run_structuring_pipeline()
+### Property 5: 状态机转换合法性
 
-```python
-def run_structuring_pipeline(self, job_id: str) -> dict
-```
+*For any* 当前状态和目标状态的组合，JobStateMachine 应正确判断转换是否合法：仅允许前向路径转换和任意状态到 failed 的转换，拒绝所有其他转换。
 
-**Preconditions:**
-- job_id 对应的 StructuringJob 存在且 status = "pending"
+**Validates: Requirements 1.7, 5.2**
 
-**Postconditions:**
-- 成功时：status 变为 "completed"，record_count > 0，创建对应的 Task 记录
-- 失败时：status 变为 "failed"，error_message 非空
-- 状态转换路径：pending → extracting → inferring → confirming → extracting_entities → completed
+### Property 6: processing_type 枚举约束
 
-**Loop Invariants:**
-- 批量提取时：已处理的 chunk 数单调递增，每个 chunk 的结构化结果已持久化
+*For any* 处理任务，其 processing_type 字段的值应为 structuring、vectorization 或 semantic 之一。
 
-## Correctness Properties
+**Validates: Requirement 5.1**
 
-### Property 1: Schema 字段名唯一性
+### Property 7: record_type 枚举约束
 
-*For any* 输入文本 text，SchemaInferrer.infer_from_text(text) 返回的 InferredSchema 中，所有 field.name 互不相同。
+*For any* 语义记录，其 record_type 字段的值应为 entity、relationship 或 summary 之一。
 
-### Property 2: 结构化记录符合 Schema
+**Validates: Requirement 3.3**
 
-*For any* InferredSchema schema 和提取结果 ExtractionResult，每条 StructuredRecord 的 fields 中，所有 required=True 的 SchemaField 对应的 key 都存在。
+### Property 8: 向量记录数据完整性
 
-### Property 3: 表格解析行数一致性
+*For any* 向量记录，其 job_id、chunk_index、chunk_text、embedding 字段应均为非空值。
 
-*For any* 有效的 CSV/Excel 文件，TabularParser.parse() 返回的 TabularData 满足 row_count == len(rows)，且每行的 key 数量 == len(headers)。
+**Validates: Requirement 5.3**
 
-### Property 4: Job 状态机合法转换
+### Property 9: 语义记录数据完整性
 
-*For any* StructuringJob 的状态序列，状态只能按 pending → extracting → inferring → confirming → extracting_entities → completed 顺序转换，或从任意状态转为 failed。
+*For any* 语义记录，其 job_id、record_type、content、confidence 字段应均为非空值。
 
-### Property 5: 置信度范围约束
+**Validates: Requirement 5.4**
 
-*For any* SchemaInferrer 或 EntityExtractor 返回的 confidence 值，满足 0.0 ≤ confidence ≤ 1.0。
+### Property 10: 文件类型路由正确性
 
-### Property 6: 标注任务自动创建
+*For any* 支持的文件类型，Processing_System 应将其路由到正确的提取器：PDF/DOCX/HTML/TXT → FileExtractor，CSV/Excel → TabularParser，PPT → PPTExtractor，Video/Audio → MediaTranscriber。
 
-*For any* status="completed" 的 StructuringJob，数据库中存在至少一条关联的 Task 记录，且 Task.metadata 包含 job_id。
+**Validates: Requirements 1.1, 1.2, 1.3, 1.4, 1.5, 1.6**
 
-### Property 7: 文件类型路由正确性
+## 依赖
 
-*For any* 上传文件，file_type ∈ {csv, excel} 时路由到 TabularParser，file_type ∈ {pdf, docx, txt, html} 时路由到 FileExtractor。
-
-## Error Handling
-
-| 场景 | 处理策略 |
-|------|---------|
-| 文件格式不支持 | 返回 400，提示支持的格式列表 |
-| 文件解析失败（损坏/加密） | Job status → failed，error_message 记录具体原因 |
-| LLM API 调用失败 | 重试 3 次（指数退避），仍失败则 Job → failed |
-| LLM 返回非法 Schema | 校验失败，记录原始响应，Job → failed |
-| Schema 推断置信度 < 0.3 | 标记为低置信度，前端提示用户手动编辑 Schema |
-| 实体提取部分失败 | 跳过失败记录，记录到 Job.metadata.skipped_records |
-| Celery Worker 崩溃 | 任务自动重试（max_retries=3），超时 30 分钟 |
-
-## Testing Strategy
-
-### 属性测试（fast-check，≥100 次迭代）
-
-```typescript
-// Property 3: 表格解析行数一致性
-fc.assert(fc.property(
-  fc.array(fc.array(fc.string(), { minLength: 1 }), { minLength: 1 }),
-  (rows) => {
-    const result = parseTabularData(rows);
-    return result.rowCount === result.rows.length
-      && result.rows.every(r => Object.keys(r).length === result.headers.length);
-  }
-), { numRuns: 100 });
-
-// Property 5: 置信度范围约束
-fc.assert(fc.property(
-  fc.float({ min: -100, max: 100 }),
-  (raw) => {
-    const clamped = clampConfidence(raw);
-    return clamped >= 0.0 && clamped <= 1.0;
-  }
-), { numRuns: 100 });
-
-// Property 4: Job 状态机合法转换
-fc.assert(fc.property(
-  arbitraryStatusTransition(),
-  (transition) => {
-    return isValidTransition(transition.from, transition.to)
-      || transition.to === 'failed';
-  }
-), { numRuns: 100 });
-```
-
-### 单元测试
-- TabularParser：CSV/Excel 解析、空文件、超大文件、编码处理
-- SchemaInferrer：Mock LLM 响应、字段去重、置信度校验
-- EntityExtractor：Mock LLM 响应、required 字段校验、批量提取
-- Pipeline 状态机：合法/非法状态转换
-
-### 集成测试
-- 完整管道：上传 CSV → Schema 推断 → 确认 → 提取 → 创建任务
-- API 端到端：文件上传 → 轮询状态 → 获取结果
+- `python-pptx`: PPT 文本提取
+- `openai` Whisper API 或 `faster-whisper`: 音视频转录
+- `ffmpeg`: 视频音轨提取
+- `pgvector`: PostgreSQL 向量扩展
+- `tiktoken`: 文本分块 token 计数

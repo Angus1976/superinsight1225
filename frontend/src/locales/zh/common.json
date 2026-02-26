@@ -442,5 +442,52 @@
     "noMore": "没有更多了",
     "loadFailed": "加载失败"
   },
-  "unknown": "未知"
+  "unknown": "未知",
+  "action": {
+    "goToUpload": "前往上传页面",
+    "refresh": "刷新"
+  },
+  "aiProcessing": {
+    "title": "AI 数据处理",
+    "description": "统一管理结构化、向量化、语义化三种数据处理流程。",
+    "tabs": {
+      "structuring": "结构化",
+      "vectorization": "向量化",
+      "semantic": "语义化"
+    },
+    "uploadSuccess": "文件上传成功",
+    "uploadFailed": "文件上传失败",
+    "dragText": "点击或拖拽文件到此区域上传",
+    "viewRecords": "查看",
+    "columns": {
+      "fileName": "文件名",
+      "fileType": "类型",
+      "status": "状态",
+      "chunkCount": "分块数",
+      "createdAt": "创建时间",
+      "actions": "操作",
+      "chunkIndex": "序号",
+      "chunkText": "文本内容",
+      "recordType": "类型",
+      "content": "内容",
+      "confidence": "置信度"
+    },
+    "vectorization": {
+      "uploadTitle": "上传文件",
+      "hint": "支持 PDF、Word、Excel、CSV、PPT、HTML、TXT、音视频格式",
+      "jobListTitle": "任务列表",
+      "recordsTitle": "向量记录"
+    },
+    "semantic": {
+      "uploadTitle": "上传文件",
+      "hint": "支持 PDF、Word、Excel、CSV、PPT、HTML、TXT、音视频格式",
+      "jobListTitle": "任务列表",
+      "recordsTitle": "语义记录",
+      "filterLabel": "按类型筛选：",
+      "allTypes": "全部",
+      "entity": "实体",
+      "relationship": "关系",
+      "summary": "摘要"
+    }
+  }
 }

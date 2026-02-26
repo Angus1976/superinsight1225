@@ -40,6 +40,8 @@ _TEXT_TYPES = {
     StructuringFileType.TXT.value,
     StructuringFileType.HTML.value,
 }
+_PPT_TYPES = {StructuringFileType.PPT.value}
+_MEDIA_TYPES = {StructuringFileType.VIDEO.value, StructuringFileType.AUDIO.value}
 
 # Celery app singleton (lazy)
 _celery_app = None
@@ -126,6 +128,28 @@ def _extract_content(session, job: StructuringJob) -> str | dict:
             )
 
         text = "\n\n".join(doc.content for doc in result.documents)
+        job.raw_content = text
+        session.flush()
+        return text
+
+    if file_type in _PPT_TYPES:
+        from src.extractors.ppt import PPTExtractor
+
+        extractor = PPTExtractor()
+        text = extractor.extract(job.file_path)
+        if not text.strip():
+            raise RuntimeError("PPT extraction returned empty content")
+        job.raw_content = text
+        session.flush()
+        return text
+
+    if file_type in _MEDIA_TYPES:
+        from src.extractors.media import MediaTranscriber
+
+        transcriber = MediaTranscriber()
+        text = asyncio.run(transcriber.transcribe(job.file_path))
+        if not text.strip():
+            raise RuntimeError("Media transcription returned empty content")
         job.raw_content = text
         session.flush()
         return text

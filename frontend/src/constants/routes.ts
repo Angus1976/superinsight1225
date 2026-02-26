@@ -44,6 +44,9 @@ export const ROUTES = {
   // Data Sync
   DATA_SYNC: '/data-sync',
 
+  // AI Processing
+  AI_PROCESSING: '/ai-processing',
+
   // Error pages
   NOT_FOUND: '/404',
   FORBIDDEN: '/403',

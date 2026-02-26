@@ -2293,6 +2293,26 @@ async def include_optional_routers():
     except Exception as e:
         logger.error(f"❌ Data Structuring API failed to load: {e}")
 
+    # Vectorization API
+    try:
+        from src.api.vectorization import router as vectorization_router
+        app.include_router(vectorization_router)
+        logger.info("✅ Vectorization API loaded successfully")
+    except ImportError as e:
+        logger.warning(f"⚠️ Vectorization API not available: {e}")
+    except Exception as e:
+        logger.error(f"❌ Vectorization API failed to load: {e}")
+
+    # Semantic API
+    try:
+        from src.api.semantic import router as semantic_router
+        app.include_router(semantic_router)
+        logger.info("✅ Semantic API loaded successfully")
+    except ImportError as e:
+        logger.warning(f"⚠️ Semantic API not available: {e}")
+    except Exception as e:
+        logger.error(f"❌ Semantic API failed to load: {e}")
+
     # Output API registration summary
     # Validates: Requirements 3.2 - 详细的日志记录每个 API 的注册状态
     _log_api_registration_summary()

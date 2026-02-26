@@ -1,0 +1,289 @@
+/**
+ * Vectorization Store
+ *
+ * Manages AI vectorization workflow state: jobs and vector records.
+ * Handles API interactions for the vectorization pipeline.
+ */
+
+import { create } from 'zustand';
+import { devtools } from 'zustand/middleware';
+import apiClient from '@/services/api/client';
+import type { AxiosError } from 'axios';
+
+// ============================================================================
+// Types
+// ============================================================================
+
+export type VecJobStatus =
+  | 'pending'
+  | 'extracting'
+  | 'processing'
+  | 'completed'
+  | 'failed';
+
+export interface VectorizationJob {
+  job_id: string;
+  status: VecJobStatus;
+  file_name: string;
+  file_type: string;
+  chunk_count: number | null;
+  error_message: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface VectorRecord {
+  id: string;
+  chunk_index: number;
+  chunk_text: string;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export interface VecRecordPagination {
+  page: number;
+  size: number;
+  total: number;
+}
+
+// ============================================================================
+// API Response Types
+// ============================================================================
+
+interface VecJobCreateResponse {
+  job_id: string;
+  status: string;
+  file_name: string;
+  file_type: string;
+  created_at: string;
+  message: string;
+}
+
+interface VecJobListItem {
+  job_id: string;
+  status: string;
+  file_name: string;
+  file_type: string;
+  chunk_count: number | null;
+  created_at: string;
+}
+
+interface VecJobListResponse {
+  items: VecJobListItem[];
+  total: number;
+}
+
+interface VecRecordListResponse {
+  items: VectorRecord[];
+  total: number;
+  page: number;
+  size: number;
+}
+
+// ============================================================================
+// Store Interface
+// ============================================================================
+
+interface VectorizationState {
+  // Data
+  currentJob: VectorizationJob | null;
+  jobs: VectorizationJob[];
+  records: VectorRecord[];
+  recordPagination: VecRecordPagination;
+
+  // Loading states
+  isUploading: boolean;
+  isLoadingJob: boolean;
+  isLoadingJobs: boolean;
+  isLoadingRecords: boolean;
+
+  // Error
+  error: string | null;
+}
+
+interface VectorizationActions {
+  // API actions
+  uploadFile: (file: File) => Promise<string>;
+  fetchJob: (jobId: string) => Promise<void>;
+  fetchJobs: () => Promise<void>;
+  fetchRecords: (jobId: string, page?: number, size?: number) => Promise<void>;
+
+  // Local state actions
+  setCurrentJob: (job: VectorizationJob | null) => void;
+  clearError: () => void;
+  reset: () => void;
+}
+
+export type VectorizationStore = VectorizationState & VectorizationActions;
+
+// ============================================================================
+// Helpers
+// ============================================================================
+
+const API_BASE = '/api/vectorization';
+
+function extractErrorMessage(err: unknown): string {
+  const axiosErr = err as AxiosError<{ detail?: string }>;
+  if (axiosErr.response?.data?.detail) {
+    return axiosErr.response.data.detail;
+  }
+  if (err instanceof Error) {
+    return err.message;
+  }
+  return 'Unknown error';
+}
+
+// ============================================================================
+// Initial State
+// ============================================================================
+
+const initialPagination: VecRecordPagination = {
+  page: 1,
+  size: 20,
+  total: 0,
+};
+
+const initialState: VectorizationState = {
+  currentJob: null,
+  jobs: [],
+  records: [],
+  recordPagination: initialPagination,
+  isUploading: false,
+  isLoadingJob: false,
+  isLoadingJobs: false,
+  isLoadingRecords: false,
+  error: null,
+};
+
+// ============================================================================
+// Store
+// ============================================================================
+
+export const useVectorizationStore = create<VectorizationStore>()(
+  devtools(
+    (set) => ({
+      ...initialState,
+
+      // ------------------------------------------------------------------
+      // uploadFile — POST /api/vectorization/jobs (multipart/form-data)
+      // ------------------------------------------------------------------
+      uploadFile: async (file: File): Promise<string> => {
+        set({ isUploading: true, error: null }, false, 'uploadFile/start');
+        try {
+          const formData = new FormData();
+          formData.append('file', file);
+
+          const { data } = await apiClient.post<VecJobCreateResponse>(
+            `${API_BASE}/jobs`,
+            formData,
+            { headers: { 'Content-Type': 'multipart/form-data' } },
+          );
+
+          const newJob: VectorizationJob = {
+            job_id: data.job_id,
+            status: data.status as VecJobStatus,
+            file_name: data.file_name,
+            file_type: data.file_type,
+            chunk_count: null,
+            error_message: null,
+            created_at: data.created_at,
+            updated_at: data.created_at,
+          };
+
+          set((state) => ({
+            currentJob: newJob,
+            jobs: [newJob, ...state.jobs],
+            isUploading: false,
+          }), false, 'uploadFile/success');
+
+          return data.job_id;
+        } catch (err) {
+          set({ isUploading: false, error: extractErrorMessage(err) }, false, 'uploadFile/error');
+          throw err;
+        }
+      },
+
+      // ------------------------------------------------------------------
+      // fetchJob — GET /api/vectorization/jobs/{id}
+      // ------------------------------------------------------------------
+      fetchJob: async (jobId: string): Promise<void> => {
+        set({ isLoadingJob: true, error: null }, false, 'fetchJob/start');
+        try {
+          const { data } = await apiClient.get<VectorizationJob>(`${API_BASE}/jobs/${jobId}`);
+
+          const job: VectorizationJob = {
+            ...data,
+            status: data.status as VecJobStatus,
+          };
+
+          set((state) => ({
+            currentJob: job,
+            jobs: state.jobs.some((j) => j.job_id === jobId)
+              ? state.jobs.map((j) => (j.job_id === jobId ? job : j))
+              : [job, ...state.jobs],
+            isLoadingJob: false,
+          }), false, 'fetchJob/success');
+        } catch (err) {
+          set({ isLoadingJob: false, error: extractErrorMessage(err) }, false, 'fetchJob/error');
+          throw err;
+        }
+      },
+
+      // ------------------------------------------------------------------
+      // fetchJobs — GET /api/vectorization/jobs
+      // ------------------------------------------------------------------
+      fetchJobs: async (): Promise<void> => {
+        set({ isLoadingJobs: true, error: null }, false, 'fetchJobs/start');
+        try {
+          const { data } = await apiClient.get<VecJobListResponse>(`${API_BASE}/jobs`);
+
+          const jobs: VectorizationJob[] = data.items.map((item) => ({
+            job_id: item.job_id,
+            status: item.status as VecJobStatus,
+            file_name: item.file_name,
+            file_type: item.file_type,
+            chunk_count: item.chunk_count,
+            error_message: null,
+            created_at: item.created_at,
+            updated_at: item.created_at,
+          }));
+
+          set({ jobs, isLoadingJobs: false }, false, 'fetchJobs/success');
+        } catch (err) {
+          set({ isLoadingJobs: false, error: extractErrorMessage(err) }, false, 'fetchJobs/error');
+          throw err;
+        }
+      },
+
+      // ------------------------------------------------------------------
+      // fetchRecords — GET /api/vectorization/jobs/{id}/records (paginated)
+      // ------------------------------------------------------------------
+      fetchRecords: async (jobId: string, page = 1, size = 20): Promise<void> => {
+        set({ isLoadingRecords: true, error: null }, false, 'fetchRecords/start');
+        try {
+          const { data } = await apiClient.get<VecRecordListResponse>(
+            `${API_BASE}/jobs/${jobId}/records`,
+            { params: { page, size } },
+          );
+
+          set({
+            records: data.items,
+            recordPagination: { page: data.page, size: data.size, total: data.total },
+            isLoadingRecords: false,
+          }, false, 'fetchRecords/success');
+        } catch (err) {
+          set({ isLoadingRecords: false, error: extractErrorMessage(err) }, false, 'fetchRecords/error');
+          throw err;
+        }
+      },
+
+      // ------------------------------------------------------------------
+      // Local state actions
+      // ------------------------------------------------------------------
+      setCurrentJob: (job) => set({ currentJob: job }, false, 'setCurrentJob'),
+      clearError: () => set({ error: null }, false, 'clearError'),
+      reset: () => set(initialState, false, 'reset'),
+    }),
+    { name: 'VectorizationStore' },
+  ),
+);

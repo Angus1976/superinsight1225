@@ -46,6 +46,18 @@ _EXTENSION_MAP: dict[str, str] = {
     ".html": FileType.HTML.value,
     ".htm": FileType.HTML.value,
     ".txt": FileType.TXT.value,
+    ".pptx": FileType.PPT.value,
+    ".ppt": FileType.PPT.value,
+    ".mp4": FileType.VIDEO.value,
+    ".avi": FileType.VIDEO.value,
+    ".mov": FileType.VIDEO.value,
+    ".mkv": FileType.VIDEO.value,
+    ".webm": FileType.VIDEO.value,
+    ".mp3": FileType.AUDIO.value,
+    ".wav": FileType.AUDIO.value,
+    ".flac": FileType.AUDIO.value,
+    ".ogg": FileType.AUDIO.value,
+    ".m4a": FileType.AUDIO.value,
 }
 
 SUPPORTED_EXTENSIONS = set(_EXTENSION_MAP.keys())

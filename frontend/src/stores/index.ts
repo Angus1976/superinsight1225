@@ -31,6 +31,8 @@ export * from './trialStore';
 export * from './batchStore';
 export * from './rhythmStore';
 export * from './structuringStore';
+export * from './vectorizationStore';
+export * from './semanticStore';
 export * from './helpStore';
 
 // ============================================================================

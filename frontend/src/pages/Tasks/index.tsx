@@ -190,7 +190,7 @@ const TasksPage: React.FC = () => {
       search: false,
       sorter: true,
       render: (_, record) => (
-        <Space direction="vertical" size={0} style={{ width: '100%' }}>
+        <div style={{ width: '100%' }}>
           <Progress
             percent={record.progress}
             size="small"
@@ -199,11 +199,12 @@ const TasksPage: React.FC = () => {
               record.progress >= 80 ? '#52c41a' : record.progress >= 50 ? '#1890ff' :
               record.progress >= 20 ? '#faad14' : '#ff4d4f'
             }
+            format={(percent) => `${percent}%`}
           />
-          <span style={{ fontSize: 12, color: '#999' }}>
+          <div style={{ fontSize: 12, color: '#999', marginTop: 4 }}>
             {record.completed_items} / {record.total_items}
-          </span>
-        </Space>
+          </div>
+        </div>
       ),
     },
     {

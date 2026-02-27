@@ -1,12 +1,12 @@
 /**
  * LogoIcon Component
- * 圆形渐变背景 + W 形 SVG Logo
+ * 使用新的问视间 LOGO 图片
  *
- * 内联 SVG，支持 CSS 变量主题切换（light/dark）
+ * 根据尺寸自动选择合适的 LOGO 文件
  * 渲染失败时回退到 "问" Avatar
  */
 
-import React, { Component } from 'react';
+import React, { Component, useState } from 'react';
 import { Avatar } from 'antd';
 
 export interface LogoIconProps {
@@ -14,7 +14,7 @@ export interface LogoIconProps {
   className?: string;
 }
 
-/** Error boundary for SVG render failures */
+/** Error boundary for image load failures */
 class LogoIconErrorBoundary extends Component<
   { size: number; children: React.ReactNode },
   { hasError: boolean }
@@ -43,38 +43,47 @@ class LogoIconErrorBoundary extends Component<
   }
 }
 
-const LogoIconSVG: React.FC<LogoIconProps> = ({ size = 32, className }) => {
-  const gradientId = `logo-gradient-${size}`;
+const LogoIconImage: React.FC<LogoIconProps> = ({ size = 32, className }) => {
+  const [imageError, setImageError] = useState(false);
+
+  // 根据尺寸选择合适的 LOGO 文件
+  const getLogoSrc = () => {
+    if (size <= 48) {
+      return '/logo-wenshijian-simple.svg'; // 简化版 64x64
+    } else if (size <= 128) {
+      return '/logo-wenshijian.svg'; // 标准版 128x128
+    } else {
+      return '/logo-wenshijian.svg'; // 大尺寸也用标准版
+    }
+  };
+
+  if (imageError) {
+    return (
+      <Avatar
+        size={size}
+        style={{
+          background: 'linear-gradient(135deg, var(--brand-primary, #1890ff), var(--brand-accent, #722ed1))',
+          fontSize: size * 0.5,
+        }}
+      >
+        问
+      </Avatar>
+    );
+  }
 
   return (
-    <svg
+    <img
+      src={getLogoSrc()}
+      alt="问视间 SuperInsight Logo"
       width={size}
       height={size}
-      viewBox="0 0 32 32"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
       className={className}
-      role="img"
-      aria-label="问视间 SuperInsight Logo"
-    >
-      <defs>
-        <linearGradient id={gradientId} x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="var(--brand-primary, #1890ff)" />
-          <stop offset="100%" stopColor="var(--brand-accent, #722ed1)" />
-        </linearGradient>
-      </defs>
-      {/* Circular background */}
-      <circle cx="16" cy="16" r="16" fill={`url(#${gradientId})`} />
-      {/* W shape */}
-      <path
-        d="M8 11L11.2 22L16 15L20.8 22L24 11"
-        stroke="#ffffff"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      />
-    </svg>
+      onError={() => setImageError(true)}
+      style={{
+        display: 'block',
+        objectFit: 'contain',
+      }}
+    />
   );
 };
 
@@ -82,7 +91,7 @@ export const LogoIcon: React.FC<LogoIconProps> = (props) => {
   const size = props.size ?? 32;
   return (
     <LogoIconErrorBoundary size={size}>
-      <LogoIconSVG {...props} />
+      <LogoIconImage {...props} />
     </LogoIconErrorBoundary>
   );
 };

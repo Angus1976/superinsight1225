@@ -109,6 +109,7 @@ const AnnotationStatsComponent: React.FC<AnnotationStatsProps> = ({
           percent={progress}
           status={progressStatus}
           size="small"
+          showInfo={false}
         />
       </div>
       

@@ -23,6 +23,255 @@
       "title": "Export Tasks",
       "description": "Export the task list to CSV or Excel format.",
       "shortcut": "Ctrl+E"
+    },
+    "detail": {
+      "title": "Task Detail",
+      "description": "View task details, progress, and annotation results."
+    },
+    "edit": {
+      "title": "Edit Task",
+      "description": "Modify task name, description, assignees, and deadlines."
+    },
+    "annotate": {
+      "title": "Annotation View",
+      "description": "Annotate data with support for multiple annotation types."
+    }
+  },
+  "admin": {
+    "title": "System Admin",
+    "description": "Manage tenants, users, permissions, and system configuration.",
+
+    "console": {
+      "title": "Admin Console",
+      "description": "System status overview with key metrics and alerts."
+    },
+    "tenants": {
+      "title": "Tenant Management",
+      "description": "Create and manage tenants, configure tenant-level resources and permissions."
+    },
+    "users": {
+      "title": "User Management",
+      "description": "Manage user accounts, role assignments, and access permissions."
+    },
+    "system": {
+      "title": "System Configuration",
+      "description": "Configure system-level parameters, email services, and global settings."
+    },
+    "llm-config": {
+      "title": "LLM Configuration",
+      "description": "Configure LLM API keys, model selection, and parameter tuning."
+    },
+    "text-to-sql": {
+      "title": "Text-to-SQL Configuration",
+      "description": "Configure natural language to SQL models and database connections."
+    },
+    "permissions": {
+      "title": "Permission Configuration",
+      "description": "Manage role permission matrices and feature access control."
+    },
+    "quota": {
+      "title": "Quota Management",
+      "description": "Set and monitor tenant resource quotas and usage limits."
+    },
+    "billing-management": {
+      "title": "Billing Management",
+      "description": "Manage billing rules, pricing plans, and invoice generation."
+    },
+    "config-dashboard": {
+      "title": "Configuration Overview",
+      "description": "View status and health of all system configurations."
+    },
+    "config-llm": {
+      "title": "LLM Config Management",
+      "description": "Manage multiple LLM provider configurations and switching strategies."
+    },
+    "config-db": {
+      "title": "Database Configuration",
+      "description": "Manage database connections, connection pools, and performance parameters."
+    },
+    "config-sync": {
+      "title": "Configuration Sync",
+      "description": "Synchronize system configurations across environments."
+    },
+    "sql-builder": {
+      "title": "SQL Builder",
+      "description": "Visually build and test SQL queries."
+    },
+    "config-history": {
+      "title": "Configuration History",
+      "description": "View configuration change logs and rollback operations."
+    },
+    "third-party": {
+      "title": "Third-Party Integration",
+      "description": "Configure external service integrations like storage and message queues."
+    },
+    "ai-integration": {
+      "title": "AI Integration",
+      "description": "Configure AI model access, inference services, and model management."
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "description": "Update personal info, language preferences, and notifications."
+  },
+  "billing": {
+    "title": "Billing",
+    "description": "View usage statistics, billing details, and cost reports."
+  },
+  "security": {
+    "title": "Security Center",
+    "description": "Manage audit logs, permissions, SSO, and session security.",
+    "audit": {
+      "title": "Audit Logs",
+      "description": "View system operation logs, filter by time, user, and action type."
+    },
+    "permissions": {
+      "title": "Permission Management",
+      "description": "Configure feature permissions and data access control policies."
+    },
+    "dashboard": {
+      "title": "Security Overview",
+      "description": "View security event statistics, risk assessments, and compliance status."
+    },
+    "rbac": {
+      "title": "Role Management (RBAC)",
+      "description": "Define roles, assign permissions, and manage role-based access control."
+    },
+    "sso": {
+      "title": "Single Sign-On (SSO)",
+      "description": "Configure SAML/OIDC single sign-on and identity provider integration."
+    },
+    "sessions": {
+      "title": "Session Management",
+      "description": "View active sessions, manage session timeouts and forced logout policies."
+    },
+    "data-permissions": {
+      "title": "Data Permissions",
+      "description": "Configure data-level access control and field masking rules."
+    }
+  },
+  "quality": {
+    "title": "Quality Management",
+    "description": "Configure quality rules, view reports, and improvement tasks.",
+    "rules": {
+      "title": "Quality Rules",
+      "description": "Define and manage data quality check rules and thresholds."
+    },
+    "reports": {
+      "title": "Quality Reports",
+      "description": "View quality check results, trend analysis, and improvement suggestions."
+    },
+    "improvement": {
+      "title": "Improvement Tasks",
+      "description": "Manage creation, assignment, and tracking of quality improvement tasks."
+    }
+  },
+  "augmentation": {
+    "title": "Data Augmentation",
+    "description": "Manage sample data, augmentation strategies, and AI processing.",
+    "samples": {
+      "title": "Sample Management",
+      "description": "Upload and manage sample datasets for data augmentation."
+    },
+    "config": {
+      "title": "Augmentation Configuration",
+      "description": "Configure data augmentation strategies, parameters, and automation rules."
+    }
+  },
+  "data-sync": {
+    "title": "Data Sync",
+    "description": "Manage data sources, sync history, scheduling, and exports.",
+    "sources": {
+      "title": "Data Source Management",
+      "description": "Add and configure external data source connections."
+    },
+    "history": {
+      "title": "Sync History",
+      "description": "View data sync execution records and error details."
+    },
+    "scheduler": {
+      "title": "Scheduler",
+      "description": "Configure scheduled sync tasks and cron expressions."
+    },
+    "security": {
+      "title": "Sync Security",
+      "description": "Manage encryption, authentication, and access control for data sync."
+    },
+    "export": {
+      "title": "Data Export",
+      "description": "Export synced data in multiple formats."
+    },
+    "datalake": {
+      "title": "Data Lake",
+      "description": "Manage data lake storage, source connections, and schema browsing."
+    }
+  },
+  "license": {
+    "title": "License Management",
+    "description": "Activate licenses, monitor usage, and configure alerts.",
+    "activate": {
+      "title": "License Activation",
+      "description": "Enter license key to complete the activation process."
+    },
+    "usage": {
+      "title": "Usage Monitor",
+      "description": "View license usage and resource consumption trends."
+    },
+    "report": {
+      "title": "License Report",
+      "description": "Generate license usage reports and compliance audits."
+    },
+    "alerts": {
+      "title": "Alert Configuration",
+      "description": "Set up license expiration and usage limit alert rules."
+    }
+  },
+  "ai-assistant": {
+    "title": "AI Assistant",
+    "description": "Chat with the AI assistant for smart data analysis and suggestions."
+  },
+  "ai-annotation": {
+    "title": "AI Annotation",
+    "description": "Use AI-assisted data annotation and review."
+  },
+  "ai-processing": {
+    "title": "AI Processing",
+    "description": "Configure and run AI batch data processing tasks."
+  },
+  "data-structuring": {
+    "title": "Data Structuring",
+    "description": "Upload unstructured data, define schemas, and extract structured results.",
+    "upload": {
+      "title": "Data Upload",
+      "description": "Upload files or paste text, supports PDF, Word, images, and more."
+    },
+    "preview": {
+      "title": "Data Preview",
+      "description": "Preview uploaded data content and initial parsing results."
+    },
+    "schema": {
+      "title": "Schema Editor",
+      "description": "Define field structures and type constraints for data extraction."
+    },
+    "results": {
+      "title": "Extraction Results",
+      "description": "View and export structured data extraction results."
+    }
+  },
+  "ls-workspaces": {
+    "title": "Label Workspaces",
+    "description": "Manage Label Studio enterprise annotation workspaces."
+  },
+  "workspace": {
+    "title": "Workspace",
+    "description": "Manage workspaces and team members.",
+    "management": {
+      "title": "Workspace Management",
+      "description": "Create and configure workspaces, manage resource allocation."
+    },
+    "members": {
+      "title": "Member Management",
+      "description": "Invite members, assign roles, and manage team permissions."
     }
   },
   "shortcuts": {

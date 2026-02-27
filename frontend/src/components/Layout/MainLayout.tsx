@@ -51,6 +51,11 @@ const menuItems = [
         path: `${ROUTES.AUGMENTATION}/config`,
         name: 'config',
       },
+      {
+        path: `${ROUTES.AUGMENTATION}/ai-processing`,
+        name: 'dataProcessing',
+        access: 'admin',
+      },
     ],
   },
   {
@@ -153,15 +158,25 @@ export const MainLayout: React.FC = () => {
   const { theme, sidebarCollapsed, toggleSidebar } = useUIStore();
   const { breadcrumbItems, pageTitle } = useBreadcrumb();
 
-  const filteredMenuItems = menuItems.filter((item) => {
-    if (item.access === 'admin') {
-      return user?.role === 'admin';
-    }
-    return true;
-  });
+  const filteredMenuItems = menuItems
+    .filter((item) => {
+      if (item.access === 'admin') {
+        return user?.role === 'admin';
+      }
+      return true;
+    })
+    .map((item) => ({
+      ...item,
+      children: item.children?.filter((child) => {
+        if ((child as { access?: string }).access === 'admin') {
+          return user?.role === 'admin';
+        }
+        return true;
+      }),
+    }));
 
   // Transform menu items for ProLayout
-  const transformMenuItems = (items: typeof menuItems) => {
+  const transformMenuItems = (items: typeof filteredMenuItems) => {
     return items.map((item) => ({
       ...item,
       name: t(`menu.${item.name}`),

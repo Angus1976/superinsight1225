@@ -53,12 +53,12 @@ const HelpOverlay: React.FC = () => {
   useEffect(() => {
     if (!visible) return;
 
-    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown, { capture: true });
     // 聚焦浮层以支持键盘导航
     overlayRef.current?.focus();
 
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keydown', handleKeyDown, { capture: true });
     };
   }, [visible, handleKeyDown]);
 
@@ -67,9 +67,16 @@ const HelpOverlay: React.FC = () => {
 
   const safeKey = validateHelpKey(currentHelpKey) ? currentHelpKey : 'general';
 
-  const title = String(t(`${safeKey}.title`, { defaultValue: '' }));
-  const description = String(t(`${safeKey}.description`, { defaultValue: '' }));
-  const shortcut = String(t(`${safeKey}.shortcut`, { defaultValue: '' }));
+  let title = String(t(`${safeKey}.title`, { defaultValue: '' }));
+  let description = String(t(`${safeKey}.description`, { defaultValue: '' }));
+  let shortcut = String(t(`${safeKey}.shortcut`, { defaultValue: '' }));
+
+  // 回退：如果解析到的键无内容，显示通用帮助
+  if (!title && !description) {
+    title = String(t('general.title', { defaultValue: '' }));
+    description = String(t('general.description', { defaultValue: '' }));
+    shortcut = '';
+  }
 
   const positionStyle = computePositionStyle(position);
 

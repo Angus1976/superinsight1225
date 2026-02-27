@@ -24,6 +24,7 @@ export function resolveHelpKey(context: HelpContext): string {
     element && component ? `${page}.${component}.${element}` : null,
     component ? `${page}.${component}` : null,
     page,
+    'general', // 最终回退到通用帮助
   ].filter(Boolean) as string[];
 
   for (const key of candidates) {
@@ -32,7 +33,8 @@ export function resolveHelpKey(context: HelpContext): string {
     }
   }
 
-  return page;
+  // 兜底：即使 'general' 也不存在，仍返回 'general'
+  return 'general';
 }
 
 /**

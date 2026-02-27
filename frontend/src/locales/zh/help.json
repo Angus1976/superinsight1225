@@ -23,6 +23,255 @@
       "title": "导出任务",
       "description": "将任务列表导出为 CSV 或 Excel 格式。",
       "shortcut": "Ctrl+E"
+    },
+    "detail": {
+      "title": "任务详情",
+      "description": "查看任务的详细信息、进度和标注结果。"
+    },
+    "edit": {
+      "title": "编辑任务",
+      "description": "修改任务名称、描述、分配人员和截止日期。"
+    },
+    "annotate": {
+      "title": "标注界面",
+      "description": "对数据进行标注操作，支持多种标注类型。"
+    }
+  },
+  "admin": {
+    "title": "系统管理",
+    "description": "管理租户、用户、权限和系统配置。",
+    "console": {
+      "title": "管理控制台",
+      "description": "系统运行状态总览，查看关键指标和告警。"
+    },
+    "tenants": {
+      "title": "租户管理",
+      "description": "创建和管理租户，配置租户级别的资源和权限。"
+    },
+    "users": {
+      "title": "用户管理",
+      "description": "管理用户账号、角色分配和访问权限。"
+    },
+    "system": {
+      "title": "系统配置",
+      "description": "配置系统级参数、邮件服务和全局设置。"
+    },
+
+    "llm-config": {
+      "title": "LLM 配置",
+      "description": "配置大语言模型的 API 密钥、模型选择和参数调优。"
+    },
+    "text-to-sql": {
+      "title": "Text-to-SQL 配置",
+      "description": "配置自然语言转 SQL 的模型和数据库连接。"
+    },
+    "permissions": {
+      "title": "权限配置",
+      "description": "管理角色权限矩阵和功能访问控制。"
+    },
+    "quota": {
+      "title": "配额管理",
+      "description": "设置和监控租户资源配额和使用限制。"
+    },
+    "billing-management": {
+      "title": "计费管理",
+      "description": "管理计费规则、价格方案和账单生成。"
+    },
+    "config-dashboard": {
+      "title": "配置总览",
+      "description": "查看所有系统配置的状态和健康度。"
+    },
+    "config-llm": {
+      "title": "LLM 配置管理",
+      "description": "管理多个 LLM 提供商的配置和切换策略。"
+    },
+    "config-db": {
+      "title": "数据库配置",
+      "description": "管理数据库连接、连接池和性能参数。"
+    },
+    "config-sync": {
+      "title": "配置同步",
+      "description": "在多环境间同步系统配置。"
+    },
+    "sql-builder": {
+      "title": "SQL 构建器",
+      "description": "可视化构建和测试 SQL 查询语句。"
+    },
+    "config-history": {
+      "title": "配置历史",
+      "description": "查看配置变更记录和回滚操作。"
+    },
+    "third-party": {
+      "title": "第三方集成",
+      "description": "配置外部服务集成，如存储、消息队列等。"
+    },
+    "ai-integration": {
+      "title": "AI 集成",
+      "description": "配置 AI 模型接入、推理服务和模型管理。"
+    }
+  },
+  "settings": {
+    "title": "个人设置",
+    "description": "修改个人信息、语言偏好和通知设置。"
+  },
+  "billing": {
+    "title": "计费管理",
+    "description": "查看用量统计、账单明细和费用报告。"
+  },
+  "security": {
+    "title": "安全中心",
+    "description": "管理审计日志、权限配置、SSO 和会话安全。",
+    "audit": {
+      "title": "审计日志",
+      "description": "查看系统操作日志，支持按时间、用户和操作类型筛选。"
+    },
+    "permissions": {
+      "title": "权限管理",
+      "description": "配置功能权限和数据访问控制策略。"
+    },
+    "dashboard": {
+      "title": "安全总览",
+      "description": "查看安全事件统计、风险评估和合规状态。"
+    },
+    "rbac": {
+      "title": "角色管理 (RBAC)",
+      "description": "定义角色、分配权限，管理基于角色的访问控制。"
+    },
+    "sso": {
+      "title": "单点登录 (SSO)",
+      "description": "配置 SAML/OIDC 单点登录和身份提供商集成。"
+    },
+    "sessions": {
+      "title": "会话管理",
+      "description": "查看活跃会话，管理会话超时和强制登出策略。"
+    },
+    "data-permissions": {
+      "title": "数据权限",
+      "description": "配置数据级别的访问控制和字段脱敏规则。"
+    }
+  },
+  "quality": {
+    "title": "质量管理",
+    "description": "配置质量规则、查看质量报告和改进任务。",
+    "rules": {
+      "title": "质量规则",
+      "description": "定义和管理数据质量检查规则和阈值。"
+    },
+    "reports": {
+      "title": "质量报告",
+      "description": "查看质量检查结果、趋势分析和改进建议。"
+    },
+    "improvement": {
+      "title": "改进任务",
+      "description": "管理质量改进任务的创建、分配和跟踪。"
+    }
+  },
+  "augmentation": {
+    "title": "数据增强",
+    "description": "管理样本数据、配置增强策略和 AI 处理。",
+    "samples": {
+      "title": "样本管理",
+      "description": "上传和管理用于数据增强的样本数据集。"
+    },
+    "config": {
+      "title": "增强配置",
+      "description": "配置数据增强策略、参数和自动化规则。"
+    }
+  },
+  "data-sync": {
+    "title": "数据同步",
+    "description": "管理数据源、同步历史、调度和导出。",
+    "sources": {
+      "title": "数据源管理",
+      "description": "添加和配置外部数据源连接。"
+    },
+    "history": {
+      "title": "同步历史",
+      "description": "查看数据同步执行记录和错误详情。"
+    },
+    "scheduler": {
+      "title": "调度管理",
+      "description": "配置定时同步任务和 Cron 表达式。"
+    },
+    "security": {
+      "title": "同步安全",
+      "description": "管理数据同步的加密、认证和访问控制。"
+    },
+    "export": {
+      "title": "数据导出",
+      "description": "将同步数据导出为多种格式。"
+    },
+    "datalake": {
+      "title": "数据湖",
+      "description": "管理数据湖存储、数据源接入和 Schema 浏览。"
+    }
+  },
+  "license": {
+    "title": "许可证管理",
+    "description": "激活许可证、监控用量和配置告警。",
+    "activate": {
+      "title": "许可证激活",
+      "description": "输入许可证密钥完成激活流程。"
+    },
+    "usage": {
+      "title": "用量监控",
+      "description": "查看许可证使用情况和资源消耗趋势。"
+    },
+    "report": {
+      "title": "许可证报告",
+      "description": "生成许可证使用报告和合规审计。"
+    },
+    "alerts": {
+      "title": "告警配置",
+      "description": "设置许可证到期和用量超限告警规则。"
+    }
+  },
+  "ai-assistant": {
+    "title": "AI 助手",
+    "description": "与 AI 助手对话，获取智能数据分析和建议。"
+  },
+  "ai-annotation": {
+    "title": "AI 标注",
+    "description": "使用 AI 辅助进行数据标注和审核。"
+  },
+  "ai-processing": {
+    "title": "AI 处理",
+    "description": "配置和运行 AI 批量数据处理任务。"
+  },
+  "data-structuring": {
+    "title": "数据结构化",
+    "description": "上传非结构化数据，定义 Schema 并提取结构化结果。",
+    "upload": {
+      "title": "数据上传",
+      "description": "上传文件或粘贴文本，支持 PDF、Word、图片等格式。"
+    },
+    "preview": {
+      "title": "数据预览",
+      "description": "预览上传数据的内容和初步解析结果。"
+    },
+    "schema": {
+      "title": "Schema 编辑器",
+      "description": "定义数据提取的字段结构和类型约束。"
+    },
+    "results": {
+      "title": "提取结果",
+      "description": "查看和导出结构化数据提取结果。"
+    }
+  },
+  "ls-workspaces": {
+    "title": "标注工作区",
+    "description": "管理 Label Studio 企业版标注工作区。"
+  },
+  "workspace": {
+    "title": "工作空间",
+    "description": "管理工作空间和团队成员。",
+    "management": {
+      "title": "工作空间管理",
+      "description": "创建和配置工作空间，管理资源分配。"
+    },
+    "members": {
+      "title": "成员管理",
+      "description": "邀请成员、分配角色和管理团队权限。"
     }
   },
   "shortcuts": {

@@ -2100,6 +2100,16 @@ async def include_optional_routers():
     except Exception as e:
         logger.error(f"❌ AI Assistant API failed to load: {e}")
 
+    # Skill Admin API (OpenClaw skill management)
+    try:
+        from src.api.skill_admin import router as skill_admin_router
+        app.include_router(skill_admin_router)
+        logger.info("✅ Skill Admin API loaded successfully")
+    except ImportError as e:
+        logger.warning(f"⚠️ Skill Admin API not available: {e}")
+    except Exception as e:
+        logger.error(f"❌ Skill Admin API failed to load: {e}")
+
     # Datalake/Warehouse API
     # Validates: Requirements 2.1 - 数据湖/数仓数据源管理
     try:

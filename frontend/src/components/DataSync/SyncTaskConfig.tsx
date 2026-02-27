@@ -440,8 +440,9 @@ const SyncTaskConfig: React.FC = () => {
       render: (_, record) => (
         <Space direction="vertical" size="small" style={{ width: '100%' }}>
           <Progress
-            percent={Math.round((record.processedRecords / record.totalRecords) * 100) || 0}
+            percent={record.totalRecords > 0 ? Math.round((record.processedRecords / record.totalRecords) * 100) : 0}
             size="small"
+            showInfo={false}
             status={record.errorRecords > 0 ? 'exception' : 'normal'}
           />
           <Text type="secondary" style={{ fontSize: '12px' }}>
@@ -887,7 +888,7 @@ const SyncTaskConfig: React.FC = () => {
 
                 <Card size="small" title={t('dataSync:syncTask.progress')}>
                   <Progress
-                    percent={Math.round((selectedTask.processedRecords / selectedTask.totalRecords) * 100) || 0}
+                    percent={selectedTask.totalRecords > 0 ? Math.round((selectedTask.processedRecords / selectedTask.totalRecords) * 100) : 0}
                     status={selectedTask.errorRecords > 0 ? 'exception' : 'normal'}
                   />
                   <Row gutter={16} style={{ marginTop: 16 }}>

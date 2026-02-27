@@ -39,6 +39,13 @@ export default defineConfig({
     testTimeout: 10000,
     passWithNoTests: true,
   },
+  css: {
+    preprocessorOptions: {
+      scss: {
+        additionalData: `@use "@/styles/theme/designSystem.scss" as *;`,
+      },
+    },
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

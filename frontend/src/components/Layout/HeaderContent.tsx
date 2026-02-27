@@ -6,7 +6,7 @@ import {
   LogoutOutlined,
   SettingOutlined,
   GlobalOutlined,
-  BulbOutlined,
+
   SunOutlined,
   MoonOutlined,
 } from '@ant-design/icons';
@@ -15,6 +15,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUIStore } from '@/stores/uiStore';
 import { TenantSelector } from '@/components/Auth/TenantSelector';
 import { WorkspaceSwitcher } from '@/components/Auth/WorkspaceSwitcher';
+import { GlobalSearch } from './GlobalSearch';
+import { NotificationBell } from './NotificationBell';
+import { HelpButton } from './HelpButton';
 import { THEMES } from '@/constants';
 
 export const HeaderContent: React.FC = () => {
@@ -81,6 +84,15 @@ export const HeaderContent: React.FC = () => {
         paddingRight: 24,
       }}
     >
+      {/* Global search */}
+      <GlobalSearch onSearch={(q) => console.log('Search:', q)} />
+
+      {/* Notification bell */}
+      <NotificationBell count={0} onClick={() => console.log('Notifications')} />
+
+      {/* Help button */}
+      <HelpButton />
+
       {/* Theme switch */}
       <Tooltip title={theme === THEMES.DARK ? t('theme.light') : t('theme.dark')}>
         <Switch

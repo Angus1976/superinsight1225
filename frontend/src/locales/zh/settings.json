@@ -81,5 +81,25 @@
       "title": "紧凑模式",
       "description": "使用更紧凑的界面布局"
     }
+  },
+  "branding": {
+    "tab": "品牌配置",
+    "title": "客户品牌配置",
+    "companyName": "公司名称",
+    "companyNamePlaceholder": "请输入公司名称",
+    "companyNameRequired": "请输入公司名称",
+    "companyNameEn": "公司英文名",
+    "companyNameEnPlaceholder": "请输入公司英文名",
+    "companyNameEnRequired": "请输入公司英文名",
+    "logoUrl": "Logo 地址",
+    "logoUrlPlaceholder": "https://example.com/logo.svg",
+    "logoUrlHint": "支持 HTTP/HTTPS 链接或以 / 开头的相对路径",
+    "label": "标签",
+    "labelPlaceholder": "如：企业版",
+    "preview": "预览",
+    "save": "保存配置",
+    "resetDefault": "恢复默认",
+    "saveSuccess": "品牌配置已保存",
+    "resetSuccess": "已恢复默认品牌"
   }
 }

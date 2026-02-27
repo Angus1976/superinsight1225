@@ -166,7 +166,7 @@ export default defineConfig(({ mode }) => ({
   css: {
     preprocessorOptions: {
       scss: {
-        additionalData: `@use "@/styles/variables" as *;`,
+        additionalData: `@use "@/styles/theme/designSystem.scss" as *;`,
       },
     },
     // Enable CSS modules

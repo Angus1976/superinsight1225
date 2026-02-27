@@ -3,11 +3,19 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { THEMES, DEFAULT_LANGUAGE, type Theme, type SupportedLanguage } from '@/constants';
 
+export interface ClientCompany {
+  name: string;
+  nameEn: string;
+  logo?: string;
+  label?: string;
+}
+
 interface UIState {
   theme: Theme;
   language: SupportedLanguage;
   sidebarCollapsed: boolean;
   loading: boolean;
+  clientCompany: ClientCompany | null;
 
   // Actions
   setTheme: (theme: Theme) => void;
@@ -16,6 +24,7 @@ interface UIState {
   setSidebarCollapsed: (collapsed: boolean) => void;
   toggleSidebar: () => void;
   setLoading: (loading: boolean) => void;
+  setClientCompany: (company: ClientCompany | null) => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -25,6 +34,7 @@ export const useUIStore = create<UIState>()(
       language: DEFAULT_LANGUAGE,
       sidebarCollapsed: false,
       loading: false,
+      clientCompany: null,
 
       setTheme: (theme) => {
         set({ theme });
@@ -52,6 +62,10 @@ export const useUIStore = create<UIState>()(
       setLoading: (loading) => {
         set({ loading });
       },
+
+      setClientCompany: (company) => {
+        set({ clientCompany: company });
+      },
     }),
     {
       name: 'ui-storage',
@@ -60,6 +74,7 @@ export const useUIStore = create<UIState>()(
         theme: state.theme,
         language: state.language,
         sidebarCollapsed: state.sidebarCollapsed,
+        clientCompany: state.clientCompany,
       }),
     }
   )

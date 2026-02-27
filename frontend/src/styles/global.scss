@@ -1,7 +1,6 @@
 // Global styles
-@use './variables' as *;
+@use './theme/designSystem.scss' as *;
 @import './responsive.scss';
-@import './theme/designSystem.scss';
 @import './components.scss';
 @import './interactions.scss';
 @import './accessibility.scss';

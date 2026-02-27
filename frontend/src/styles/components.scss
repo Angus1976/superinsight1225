@@ -5,7 +5,7 @@
  * to ensure beautiful and consistent UI across the application.
  */
 
-@import './theme/designSystem.scss';
+// Variables provided by designSystem.scss via global.scss
 
 // ============================================
 // Button Styles
@@ -264,29 +264,40 @@
 }
 
 // ============================================
-// Menu Styles
+// Menu Styles — unified hover/active/selected
 // ============================================
 .ant-menu {
   .ant-menu-item {
-    border-radius: $radius-base;
-    margin: $spacing-xxs 0;
+    border-radius: $radius-lg;
+    margin: 2px $spacing-xs;
     transition: all $duration-base $ease-in-out;
-    
+
     &:hover {
-      background: $color-fill;
+      background: linear-gradient(135deg, rgba($color-primary, 0.06) 0%, rgba($color-primary, 0.02) 100%);
     }
-    
+
     &.ant-menu-item-selected {
       font-weight: $font-weight-medium;
+      background: linear-gradient(135deg, $color-primary-light 0%, rgba($color-primary, 0.08) 100%);
+      color: $color-primary;
+      box-shadow: inset 3px 0 0 0 $color-primary;
+      border-radius: $radius-lg;
     }
   }
-  
+
   .ant-menu-submenu-title {
-    border-radius: $radius-base;
-    
+    border-radius: $radius-lg;
+    margin: 2px $spacing-xs;
+
     &:hover {
-      background: $color-fill;
+      background: linear-gradient(135deg, rgba($color-primary, 0.06) 0%, rgba($color-primary, 0.02) 100%);
     }
+  }
+
+  // Expanded submenu active indicator
+  .ant-menu-submenu-selected > .ant-menu-submenu-title {
+    color: $color-primary;
+    font-weight: $font-weight-medium;
   }
 }
 

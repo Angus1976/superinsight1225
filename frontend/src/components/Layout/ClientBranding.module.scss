@@ -1,0 +1,49 @@
+/**
+ * ClientBranding styles.
+ *
+ * - Container: flex row, vertically centered
+ * - Logo image: rounded, object-fit cover
+ * - Company info: name + optional label tag
+ */
+
+.container {
+  @include flex-start;
+  gap: $spacing-xs;
+  padding: $spacing-sm $spacing-md;
+  min-height: 48px;
+  overflow: hidden;
+}
+
+.logoImage {
+  border-radius: $radius-base;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.brandName {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+  @include text-truncate;
+}
+
+.info {
+  @include flex-start;
+  gap: $spacing-xxs;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.companyName {
+  font-size: $font-size-base;
+  font-weight: $font-weight-semibold;
+  color: $color-text;
+  @include text-truncate;
+}
+
+.label {
+  font-size: $font-size-xs;
+  line-height: 1;
+  margin: 0;
+  flex-shrink: 0;
+}

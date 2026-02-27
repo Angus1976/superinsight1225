@@ -53,6 +53,40 @@
   "loose": "Loose",
   "pleaseInput": "Please enter {{field}}",
   "pleaseSelect": "Please select {{field}}",
+  "navGroup": {
+    "workbench": "Workbench",
+    "dataManage": "Data Management",
+    "aiCapability": "AI Capabilities",
+    "qualitySec": "Quality & Security",
+    "system": "System"
+  },
+  "header": {
+    "search": "Search",
+    "searchPlaceholder": "Search content...",
+    "notifications": "Notifications",
+    "help": "Help"
+  },
+  "footer": {
+    "poweredBy": "Powered by WinsAI Co., LTD.",
+    "companyName": "WinsAI (Shanghai) Co., LTD."
+  },
+  "branding": {
+    "configButton": "Branding",
+    "configTitle": "Client Branding",
+    "companyName": "Company Name",
+    "companyNamePlaceholder": "Enter company name",
+    "companyNameEn": "English Name",
+    "companyNameEnPlaceholder": "Enter English name",
+    "logoUrl": "Logo URL",
+    "logoUrlPlaceholder": "Enter logo image URL or path",
+    "logoUrlHint": "Supports http/https URLs or local paths like /logos/xxx.svg",
+    "label": "Label",
+    "labelPlaceholder": "e.g. Enterprise, Pro",
+    "preview": "Preview",
+    "resetDefault": "Reset to Default",
+    "saveSuccess": "Branding saved",
+    "resetSuccess": "Branding reset to default"
+  },
   "menu": {
     "dashboard": "Dashboard",
     "aiAssistant": "AI Assistant",

@@ -151,8 +151,9 @@ const DataSyncSources: React.FC = () => {
         return (
           <div>
             <Progress 
-              percent={progress} 
+              percent={Math.round(progress)} 
               size="small" 
+              showInfo={false}
               status={errorCount > 0 ? 'exception' : 'normal'}
             />
             <div style={{ fontSize: '12px', color: '#666' }}>

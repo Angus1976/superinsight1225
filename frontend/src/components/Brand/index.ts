@@ -24,3 +24,18 @@ export {
   ThemePreview,
   type ThemePreviewProps
 } from './ThemePreview';
+
+export {
+  LogoIcon,
+  type LogoIconProps
+} from './LogoIcon';
+
+export {
+  LogoIconSimple,
+  type LogoIconSimpleProps
+} from './LogoIconSimple';
+
+export {
+  LogoFull,
+  type LogoFullProps
+} from './LogoFull';

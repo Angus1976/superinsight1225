@@ -81,5 +81,25 @@
       "title": "Compact Mode",
       "description": "Use a more compact UI layout"
     }
+  },
+  "branding": {
+    "tab": "Branding",
+    "title": "Client Branding",
+    "companyName": "Company Name",
+    "companyNamePlaceholder": "Enter company name",
+    "companyNameRequired": "Please enter company name",
+    "companyNameEn": "Company Name (English)",
+    "companyNameEnPlaceholder": "Enter English company name",
+    "companyNameEnRequired": "Please enter English company name",
+    "logoUrl": "Logo URL",
+    "logoUrlPlaceholder": "https://example.com/logo.svg",
+    "logoUrlHint": "Supports HTTP/HTTPS URLs or root-relative paths starting with /",
+    "label": "Label",
+    "labelPlaceholder": "e.g. Enterprise",
+    "preview": "Preview",
+    "save": "Save",
+    "resetDefault": "Reset to Default",
+    "saveSuccess": "Branding saved",
+    "resetSuccess": "Branding reset to default"
   }
 }

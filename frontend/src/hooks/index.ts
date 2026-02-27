@@ -111,3 +111,7 @@ export type { LabelStudioError, UseLabelStudioReturn } from './useLabelStudio';
 export { useHelpShortcut } from './useHelpShortcut';
 export { useHelpContext, extractPageFromRoute } from './useHelpContext';
 
+// Global Search hook
+export { useGlobalSearch } from './useGlobalSearch';
+export type { UseGlobalSearchReturn } from './useGlobalSearch';
+

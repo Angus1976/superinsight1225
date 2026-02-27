@@ -150,7 +150,7 @@ const ExportConfig: React.FC = () => {
             {status.toUpperCase()}
           </Tag>
           {status === 'processing' && (
-            <Progress percent={record.progress} size="small" style={{ width: 100 }} />
+            <Progress percent={record.progress} size="small" showInfo={false} style={{ width: 100 }} />
           )}
         </Space>
       ),

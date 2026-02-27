@@ -1,0 +1,32 @@
+/**
+ * LayoutFooter styles.
+ *
+ * - Flex column layout, centered
+ * - Muted text, small font
+ * - Collapsed mode: logo only, no text
+ */
+
+.container {
+  @include flex-column;
+  align-items: center;
+  gap: $spacing-xxs;
+  padding: $spacing-sm $spacing-xs;
+  border-top: 1px solid $color-border-secondary;
+}
+
+.brandRow {
+  @include flex-center;
+  gap: $spacing-xxs;
+}
+
+.poweredText {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  white-space: nowrap;
+}
+
+.copyright {
+  font-size: $font-size-xs;
+  color: $color-text-disabled;
+  white-space: nowrap;
+}

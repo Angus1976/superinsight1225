@@ -1,24 +1,23 @@
-// Login page
-import { Card, Typography, Spin } from 'antd';
+// Login page — redesigned with animated background and social login placeholders
+import { Card, Typography, Spin, Tooltip } from 'antd';
+import { SafetyCertificateOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { Navigate, useLocation } from 'react-router-dom';
 import { LoginForm } from '@/components/Auth/LoginForm';
+import { LogoFull } from '@/components/Brand/LogoFull';
 import { useAuthStore } from '@/stores/authStore';
 import { ROUTES } from '@/constants';
 import { isTokenExpired } from '@/utils/token';
 import styles from './style.module.scss';
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 const LoginPage: React.FC = () => {
   const { t } = useTranslation('auth');
   const { isAuthenticated, token, _hasHydrated } = useAuthStore();
   const location = useLocation();
-
-  // Get the intended destination from location state
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || ROUTES.DASHBOARD;
 
-  // Show loading spinner while store is hydrating
   if (!_hasHydrated) {
     return (
       <div className={styles.container}>
@@ -29,22 +28,39 @@ const LoginPage: React.FC = () => {
     );
   }
 
-  // Redirect if already authenticated with valid token
   if (isAuthenticated && token && !isTokenExpired(token)) {
     return <Navigate to={from} replace />;
   }
 
   return (
     <div className={styles.container}>
+      {/* Animated gradient blobs — pure CSS */}
+      <div className={styles.blobs}>
+        <div className={`${styles.blob} ${styles.blob1}`} />
+        <div className={`${styles.blob} ${styles.blob2}`} />
+        <div className={`${styles.blob} ${styles.blob3}`} />
+        <div className={`${styles.blob} ${styles.blob4}`} />
+      </div>
+
       <Card className={styles.card}>
         <div className={styles.header}>
-          <img src="/logo-wenshijian.svg" alt={t('login.logoAlt')} className={styles.logo} />
-          <Title level={2} className={styles.title}>
-            {t('login.appName')}
-          </Title>
+          <LogoFull height={40} className={styles.logoFull} />
           <Text type="secondary">{t('login.subtitle')}</Text>
         </div>
+
         <LoginForm />
+
+        {/* Social login placeholders */}
+        <div className={styles.divider}>{t('login.socialDivider', 'Or continue with')}</div>
+        <div className={styles.socialButtons}>
+          <Tooltip title={t('login.comingSoon', 'Coming Soon')}>
+            <button type="button" className={styles.socialBtn} disabled>
+              <SafetyCertificateOutlined />
+              {t('login.enterpriseSSO', 'Enterprise SSO')}
+            </button>
+          </Tooltip>
+        </div>
+
         <div className={styles.footer}>
           <a href={ROUTES.REGISTER}>{t('login.registerLink')}</a>
         </div>

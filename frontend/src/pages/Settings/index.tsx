@@ -23,10 +23,12 @@ import {
   GlobalOutlined,
   UploadOutlined,
   SaveOutlined,
+  SkinOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/authStore';
-import { useUIStore } from '@/stores/uiStore';
+import { useUIStore, type ClientCompany } from '@/stores/uiStore';
+import { isValidLogoUrl } from '@/components/Layout/ClientBranding';
 
 const { TabPane } = Tabs;
 const { Option } = Select;
@@ -34,9 +36,10 @@ const { Option } = Select;
 const SettingsPage: React.FC = () => {
   const { t, i18n } = useTranslation('settings');
   const { user } = useAuthStore();
-  const { theme, setTheme } = useUIStore();
+  const { theme, setTheme, clientCompany, setClientCompany } = useUIStore();
   const [profileForm] = Form.useForm();
   const [passwordForm] = Form.useForm();
+  const [brandingForm] = Form.useForm();
   const [loading, setLoading] = useState(false);
 
   const handleProfileSubmit = async (values: Record<string, string>) => {
@@ -78,6 +81,50 @@ const SettingsPage: React.FC = () => {
     setTheme(isDark ? 'dark' : 'light');
     const themeName = isDark ? t('appearance.darkMode.dark') : t('appearance.darkMode.light');
     message.success(t('appearance.darkMode.changeSuccess', { theme: themeName }));
+  };
+
+  const handleBrandingSave = (values: { name: string; nameEn: string; logo: string; label: string }) => {
+    const company: ClientCompany = {
+      name: values.name.trim(),
+      nameEn: values.nameEn.trim(),
+    };
+    if (values.logo?.trim()) company.logo = values.logo.trim();
+    if (values.label?.trim()) company.label = values.label.trim();
+    setClientCompany(company);
+    message.success(t('branding.saveSuccess'));
+  };
+
+  const handleBrandingReset = () => {
+    setClientCompany(null);
+    brandingForm.resetFields();
+    message.success(t('branding.resetSuccess'));
+  };
+
+  // Preview for branding form
+  const BrandingPreview: React.FC = () => {
+    const name = Form.useWatch('name', brandingForm) || t('common:appName', '问视间');
+    const logo = Form.useWatch('logo', brandingForm) || '';
+    const label = Form.useWatch('label', brandingForm) || '';
+    const showLogo = logo && isValidLogoUrl(logo);
+
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0' }}>
+        {showLogo ? (
+          <img
+            src={logo}
+            alt={name}
+            style={{ width: 32, height: 32, borderRadius: 6, objectFit: 'cover' }}
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+          />
+        ) : (
+          <Avatar size={32} style={{ background: 'linear-gradient(135deg, #1890ff, #722ed1)', flexShrink: 0 }}>
+            {name.charAt(0)}
+          </Avatar>
+        )}
+        <span style={{ fontWeight: 600 }}>{name}</span>
+        {label && <span style={{ color: '#1890ff', fontSize: 12 }}>{label}</span>}
+      </div>
+    );
   };
 
   return (
@@ -377,6 +424,76 @@ const SettingsPage: React.FC = () => {
                 </Col>
               </Row>
             </Space>
+          </TabPane>
+
+          {/* Branding Tab */}
+          <TabPane
+            tab={
+              <span>
+                <SkinOutlined />
+                {t('branding.tab')}
+              </span>
+            }
+            key="branding"
+          >
+            <h3>{t('branding.title')}</h3>
+            <Divider />
+
+            <Form
+              form={brandingForm}
+              layout="vertical"
+              initialValues={{
+                name: clientCompany?.name ?? '',
+                nameEn: clientCompany?.nameEn ?? '',
+                logo: clientCompany?.logo ?? '',
+                label: clientCompany?.label ?? '',
+              }}
+              onFinish={handleBrandingSave}
+              style={{ maxWidth: 480 }}
+            >
+              <Form.Item
+                name="name"
+                label={t('branding.companyName')}
+                rules={[{ required: true, message: t('branding.companyNameRequired') }]}
+              >
+                <Input placeholder={t('branding.companyNamePlaceholder')} />
+              </Form.Item>
+
+              <Form.Item
+                name="nameEn"
+                label={t('branding.companyNameEn')}
+                rules={[{ required: true, message: t('branding.companyNameEnRequired') }]}
+              >
+                <Input placeholder={t('branding.companyNameEnPlaceholder')} />
+              </Form.Item>
+
+              <Form.Item
+                name="logo"
+                label={t('branding.logoUrl')}
+                extra={t('branding.logoUrlHint')}
+              >
+                <Input placeholder={t('branding.logoUrlPlaceholder')} />
+              </Form.Item>
+
+              <Form.Item name="label" label={t('branding.label')}>
+                <Input placeholder={t('branding.labelPlaceholder')} />
+              </Form.Item>
+
+              <Form.Item label={t('branding.preview')}>
+                <BrandingPreview />
+              </Form.Item>
+
+              <Form.Item>
+                <Space>
+                  <Button type="primary" htmlType="submit" icon={<SaveOutlined />}>
+                    {t('branding.save')}
+                  </Button>
+                  <Button onClick={handleBrandingReset}>
+                    {t('branding.resetDefault')}
+                  </Button>
+                </Space>
+              </Form.Item>
+            </Form>
           </TabPane>
         </Tabs>
       </Card>

@@ -53,6 +53,40 @@
   "loose": "宽松",
   "pleaseInput": "请输入{{field}}",
   "pleaseSelect": "请选择{{field}}",
+  "navGroup": {
+    "workbench": "工作台",
+    "dataManage": "数据管理",
+    "aiCapability": "AI 能力",
+    "qualitySec": "质量与安全",
+    "system": "系统管理"
+  },
+  "header": {
+    "search": "搜索",
+    "searchPlaceholder": "搜索内容...",
+    "notifications": "通知",
+    "help": "帮助"
+  },
+  "footer": {
+    "poweredBy": "Powered by WinsAI Co., LTD.",
+    "companyName": "问视间（上海）科技有限公司"
+  },
+  "branding": {
+    "configButton": "品牌配置",
+    "configTitle": "客户品牌配置",
+    "companyName": "公司名称",
+    "companyNamePlaceholder": "请输入公司名称",
+    "companyNameEn": "英文名称",
+    "companyNameEnPlaceholder": "请输入英文名称",
+    "logoUrl": "Logo 地址",
+    "logoUrlPlaceholder": "请输入 Logo 图片 URL 或路径",
+    "logoUrlHint": "支持 http/https 链接或 /logos/xxx.svg 本地路径",
+    "label": "标签",
+    "labelPlaceholder": "如：企业版、专业版",
+    "preview": "预览",
+    "resetDefault": "恢复默认",
+    "saveSuccess": "品牌配置已保存",
+    "resetSuccess": "已恢复默认品牌"
+  },
   "menu": {
     "dashboard": "仪表盘",
     "aiAssistant": "AI 智能助手",

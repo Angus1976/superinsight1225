@@ -1,0 +1,36 @@
+.trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--ant-color-text-secondary, rgba(0, 0, 0, 0.45));
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: var(--ant-color-bg-text-hover, rgba(0, 0, 0, 0.06));
+  }
+}
+
+.triggerText {
+  font-size: 14px;
+}
+
+.shortcutBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 6px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--ant-color-text-tertiary, rgba(0, 0, 0, 0.25));
+  background: var(--ant-color-bg-container, #fff);
+  border: 1px solid var(--ant-color-border, #d9d9d9);
+  border-radius: 4px;
+  font-family: -apple-system, BlinkMacSystemFont, monospace;
+}
+
+.searchInput {
+  width: 100%;
+}

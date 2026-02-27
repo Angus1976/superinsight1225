@@ -1,0 +1,37 @@
+/**
+ * Sidebar navigation styles.
+ *
+ * - Group header section titles
+ * - Menu item wrapper (no custom active styling — handled by ProLayout tokens)
+ */
+
+// ============================================
+// Group Header
+// ============================================
+
+.navGroupHeader {
+  padding: $spacing-sm $spacing-md $spacing-xxs;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-tertiary;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: $line-height-sm;
+  user-select: none;
+  cursor: default;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.navGroupHeaderCollapsed {
+  display: none;
+}
+
+// ============================================
+// Menu Items — thin wrapper, no border/background
+// ============================================
+
+.menuItem {
+  position: relative;
+}

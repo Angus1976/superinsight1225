@@ -1,154 +1,19 @@
 // Main layout component
+import { useMemo } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { ProLayout, PageContainer } from '@ant-design/pro-components';
-import { Breadcrumb } from 'antd';
-import {
-  DashboardOutlined,
-  OrderedListOutlined,
-  DollarOutlined,
-  SettingOutlined,
-  SafetyOutlined,
-  ThunderboltOutlined,
-  SafetyCertificateOutlined,
-  AuditOutlined,
-  HomeOutlined,
-  SyncOutlined,
-  RobotOutlined,
-} from '@ant-design/icons';
+import { HomeOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/authStore';
 import { useUIStore } from '@/stores/uiStore';
 import { HeaderContent } from './HeaderContent';
+import { ClientBranding } from './ClientBranding';
+import { SidebarMenuItem } from './SidebarGroupHeader';
+import { LayoutFooter } from './LayoutFooter';
+import { LogoIcon } from '@/components/Brand/LogoIcon';
+import { NAV_GROUPS, buildMenuRoutes } from '@/config/navGroups';
 import { ROUTES } from '@/constants';
 import { useBreadcrumb } from '@/hooks/useBreadcrumb';
-
-const menuItems = [
-  {
-    path: ROUTES.DASHBOARD,
-    name: 'dashboard',
-    icon: <DashboardOutlined />,
-  },
-  {
-    path: '/ai-assistant',
-    name: 'aiAssistant',
-    icon: <RobotOutlined />,
-  },
-  {
-    path: ROUTES.TASKS,
-    name: 'tasks',
-    icon: <OrderedListOutlined />,
-  },
-  {
-    path: ROUTES.AUGMENTATION,
-    name: 'augmentation',
-    icon: <ThunderboltOutlined />,
-    children: [
-      {
-        path: `${ROUTES.AUGMENTATION}/samples`,
-        name: 'samples',
-      },
-      {
-        path: `${ROUTES.AUGMENTATION}/config`,
-        name: 'config',
-      },
-      {
-        path: `${ROUTES.AUGMENTATION}/ai-processing`,
-        name: 'dataProcessing',
-        access: 'admin',
-      },
-    ],
-  },
-  {
-    path: ROUTES.QUALITY,
-    name: 'quality',
-    icon: <SafetyCertificateOutlined />,
-    children: [
-      {
-        path: `${ROUTES.QUALITY}/rules`,
-        name: 'rules',
-      },
-      {
-        path: `${ROUTES.QUALITY}/reports`,
-        name: 'reports',
-      },
-    ],
-  },
-  {
-    path: ROUTES.BILLING,
-    name: 'billing',
-    icon: <DollarOutlined />,
-    children: [
-      {
-        path: `${ROUTES.BILLING}/overview`,
-        name: 'overview',
-      },
-      {
-        path: `${ROUTES.BILLING}/reports`,
-        name: 'reports',
-      },
-    ],
-  },
-  {
-    path: ROUTES.SECURITY,
-    name: 'security',
-    icon: <AuditOutlined />,
-    access: 'admin',
-    children: [
-      {
-        path: `${ROUTES.SECURITY}/audit`,
-        name: 'audit',
-      },
-      {
-        path: `${ROUTES.SECURITY}/permissions`,
-        name: 'permissions',
-      },
-    ],
-  },
-  {
-    path: ROUTES.DATA_SYNC,
-    name: 'dataSync',
-    icon: <SyncOutlined />,
-    children: [
-      {
-        path: `${ROUTES.DATA_SYNC}/sources`,
-        name: 'dataSources',
-      },
-      {
-        path: `${ROUTES.DATA_SYNC}/scheduler`,
-        name: 'syncTasks',
-      },
-      {
-        path: `${ROUTES.DATA_SYNC}/security`,
-        name: 'dataSecurity',
-      },
-    ],
-  },
-  {
-    path: ROUTES.SETTINGS,
-    name: 'settings',
-    icon: <SettingOutlined />,
-  },
-  {
-    path: ROUTES.ADMIN,
-    name: 'admin',
-    icon: <SafetyOutlined />,
-    access: 'admin',
-    children: [
-      {
-        path: `${ROUTES.ADMIN}/tenants`,
-        name: 'tenants',
-      },
-      {
-        path: `${ROUTES.ADMIN}/users`,
-        name: 'users',
-      },
-      {
-        path: `${ROUTES.ADMIN}/system`,
-        name: 'system',
-      },
-    ],
-  },
-];
 
 export const MainLayout: React.FC = () => {
   const navigate = useNavigate();
@@ -158,39 +23,15 @@ export const MainLayout: React.FC = () => {
   const { theme, sidebarCollapsed, toggleSidebar } = useUIStore();
   const { breadcrumbItems, pageTitle } = useBreadcrumb();
 
-  const filteredMenuItems = menuItems
-    .filter((item) => {
-      if (item.access === 'admin') {
-        return user?.role === 'admin';
-      }
-      return true;
-    })
-    .map((item) => ({
-      ...item,
-      children: item.children?.filter((child) => {
-        if ((child as { access?: string }).access === 'admin') {
-          return user?.role === 'admin';
-        }
-        return true;
-      }),
-    }));
-
-  // Transform menu items for ProLayout
-  const transformMenuItems = (items: typeof filteredMenuItems) => {
-    return items.map((item) => ({
-      ...item,
-      name: t(`menu.${item.name}`),
-      children: item.children?.map((child) => ({
-        ...child,
-        name: t(`menu.${child.name}`),
-      })),
-    }));
-  };
+  const routes = useMemo(
+    () => buildMenuRoutes(NAV_GROUPS, user?.role ?? 'user', t),
+    [user?.role, t],
+  );
 
   return (
     <ProLayout
       title="问视间"
-      logo="/logo-wenshijian-simple.svg"
+      logo={<LogoIcon size={28} />}
       navTheme={theme === 'dark' ? 'realDark' : 'light'}
       layout="mix"
       splitMenus={false}
@@ -199,14 +40,33 @@ export const MainLayout: React.FC = () => {
       collapsed={sidebarCollapsed}
       onCollapse={toggleSidebar}
       location={{ pathname: location.pathname }}
-      route={{
-        path: '/',
-        routes: transformMenuItems(filteredMenuItems),
+      route={{ path: '/', routes }}
+      token={{
+        sider: {
+          colorMenuBackground: 'transparent',
+          colorMenuItemDivider: 'transparent',
+          colorTextMenuSelected: '#1890ff',
+          colorBgMenuItemSelected: 'transparent',
+          colorBgMenuItemHover: 'transparent',
+          colorTextMenuItemHover: '#1890ff',
+          colorBgMenuItemActive: 'transparent',
+        },
       }}
+      menuHeaderRender={() => <ClientBranding collapsed={sidebarCollapsed} />}
       menuItemRender={(item, dom) => (
-        <div onClick={() => item.path && navigate(item.path)}>{dom}</div>
+        <SidebarMenuItem
+          item={item}
+          dom={dom}
+          collapsed={sidebarCollapsed}
+          isActive={
+            location.pathname === item.path ||
+            location.pathname.startsWith(item.path + '/')
+          }
+          onNavigate={navigate}
+        />
       )}
       headerContentRender={() => <HeaderContent />}
+      footerRender={() => <LayoutFooter collapsed={sidebarCollapsed} />}
       breadcrumbRender={(routers = []) => [
         {
           path: '/',

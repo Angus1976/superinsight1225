@@ -1,0 +1,77 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sqBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1890FF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#096DD9;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="sqLabel" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#52C41A;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#389E0D;stop-opacity:1" />
+    </linearGradient>
+    <filter id="sqGlow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background Circle -->
+  <circle cx="128" cy="128" r="112" fill="url(#sqBg)" opacity="0.1"/>
+
+  <!-- Data Grid Lines -->
+  <g stroke="#1890FF" stroke-width="2.5" opacity="0.3">
+    <line x1="48" y1="48" x2="208" y2="48"/>
+    <line x1="48" y1="88" x2="208" y2="88"/>
+    <line x1="48" y1="128" x2="208" y2="128"/>
+    <line x1="48" y1="168" x2="208" y2="168"/>
+    <line x1="48" y1="208" x2="208" y2="208"/>
+    <line x1="48" y1="48" x2="48" y2="208"/>
+    <line x1="208" y1="48" x2="208" y2="208"/>
+  </g>
+
+  <!-- W Shape (Main Brand) -->
+  <path d="M 64 80 L 88 168 L 112 80 L 128 168 L 144 80 L 168 168 L 192 80" 
+        stroke="#1890FF" 
+        stroke-width="10" 
+        fill="none" 
+        stroke-linecap="round" 
+        stroke-linejoin="round"/>
+
+  <!-- Data Points (Highlighted) -->
+  <circle cx="88" cy="168" r="10" fill="white" filter="url(#sqGlow)"/>
+  <circle cx="128" cy="168" r="10" fill="white" filter="url(#sqGlow)"/>
+  <circle cx="168" cy="168" r="10" fill="white" filter="url(#sqGlow)"/>
+
+  <!-- Annotation Label Icon -->
+  <g transform="translate(168, 56)">
+    <rect x="0" y="0" width="48" height="32" rx="6" fill="url(#sqLabel)"/>
+    <circle cx="24" cy="40" r="8" fill="url(#sqLabel)"/>
+    <line x1="24" y1="32" x2="24" y2="40" stroke="url(#sqLabel)" stroke-width="5"/>
+  </g>
+
+  <!-- Data Flow Curves -->
+  <g stroke="#1890FF" stroke-width="5" fill="none" opacity="0.4">
+    <path d="M 72 192 Q 88 176, 104 192"/>
+    <path d="M 112 192 Q 128 176, 144 192"/>
+    <path d="M 152 192 Q 168 176, 184 192"/>
+  </g>
+
+  <!-- AI Indicator (3-layer) -->
+  <g opacity="0.6">
+    <circle cx="192" cy="96" r="18" fill="none" stroke="#722ED1" stroke-width="2.5"/>
+    <circle cx="192" cy="96" r="13" fill="none" stroke="#722ED1" stroke-width="2.5"/>
+    <circle cx="192" cy="96" r="7" fill="#722ED1"/>
+  </g>
+
+  <!-- Text: 问视间 -->
+  <text x="128" y="230" font-family="PingFang SC, Microsoft YaHei, sans-serif" font-size="28" font-weight="600" fill="currentColor" text-anchor="middle">
+    问视间
+  </text>
+
+  <!-- Text: SuperInsight -->
+  <text x="128" y="248" font-family="Arial, sans-serif" font-size="16" font-weight="500" fill="currentColor" opacity="0.7" text-anchor="middle">
+    SuperInsight
+  </text>
+</svg>

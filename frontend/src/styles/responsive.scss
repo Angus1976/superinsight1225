@@ -1,13 +1,7 @@
 // Responsive styles for layout
-@import './variables.scss';
+// Variables provided by designSystem.scss via global.scss
 
 // Breakpoints (matching design system)
-$breakpoint-xs: 480px;
-$breakpoint-sm: 576px;
-$breakpoint-md: 768px;
-$breakpoint-lg: 992px;
-$breakpoint-xl: 1200px;
-$breakpoint-xxl: 1600px;
 
 // Legacy breakpoint aliases
 $mobile: $breakpoint-sm;
@@ -552,100 +546,100 @@ $xlarge: $breakpoint-xxl;
 
 // Responsive padding
 .p-responsive {
-  padding: $padding-lg;
+  padding: $spacing-lg;
   
   @include tablet {
-    padding: $padding-md;
+    padding: $spacing-md;
   }
   
   @include mobile {
-    padding: $padding-sm;
+    padding: $spacing-sm;
   }
 }
 
 .px-responsive {
-  padding-left: $padding-lg;
-  padding-right: $padding-lg;
+  padding-left: $spacing-lg;
+  padding-right: $spacing-lg;
   
   @include tablet {
-    padding-left: $padding-md;
-    padding-right: $padding-md;
+    padding-left: $spacing-md;
+    padding-right: $spacing-md;
   }
   
   @include mobile {
-    padding-left: $padding-sm;
-    padding-right: $padding-sm;
+    padding-left: $spacing-sm;
+    padding-right: $spacing-sm;
   }
 }
 
 .py-responsive {
-  padding-top: $padding-lg;
-  padding-bottom: $padding-lg;
+  padding-top: $spacing-lg;
+  padding-bottom: $spacing-lg;
   
   @include tablet {
-    padding-top: $padding-md;
-    padding-bottom: $padding-md;
+    padding-top: $spacing-md;
+    padding-bottom: $spacing-md;
   }
   
   @include mobile {
-    padding-top: $padding-sm;
-    padding-bottom: $padding-sm;
+    padding-top: $spacing-sm;
+    padding-bottom: $spacing-sm;
   }
 }
 
 // Responsive margin
 .m-responsive {
-  margin: $margin-lg;
+  margin: $spacing-lg;
   
   @include tablet {
-    margin: $margin-md;
+    margin: $spacing-md;
   }
   
   @include mobile {
-    margin: $margin-sm;
+    margin: $spacing-sm;
   }
 }
 
 .mx-responsive {
-  margin-left: $margin-lg;
-  margin-right: $margin-lg;
+  margin-left: $spacing-lg;
+  margin-right: $spacing-lg;
   
   @include tablet {
-    margin-left: $margin-md;
-    margin-right: $margin-md;
+    margin-left: $spacing-md;
+    margin-right: $spacing-md;
   }
   
   @include mobile {
-    margin-left: $margin-sm;
-    margin-right: $margin-sm;
+    margin-left: $spacing-sm;
+    margin-right: $spacing-sm;
   }
 }
 
 .my-responsive {
-  margin-top: $margin-lg;
-  margin-bottom: $margin-lg;
+  margin-top: $spacing-lg;
+  margin-bottom: $spacing-lg;
   
   @include tablet {
-    margin-top: $margin-md;
-    margin-bottom: $margin-md;
+    margin-top: $spacing-md;
+    margin-bottom: $spacing-md;
   }
   
   @include mobile {
-    margin-top: $margin-sm;
-    margin-bottom: $margin-sm;
+    margin-top: $spacing-sm;
+    margin-bottom: $spacing-sm;
   }
 }
 
 // Responsive gap
 .gap-responsive {
-  gap: $padding-lg;
+  gap: $spacing-lg;
   
   @include tablet {
-    gap: $padding-md;
+    gap: $spacing-md;
   }
   
   @include mobile {
-    gap: $padding-sm;
+    gap: $spacing-sm;
   }
 }
 
@@ -759,27 +753,27 @@ $xlarge: $breakpoint-xxl;
   width: 100%;
   max-width: 1600px;
   margin: 0 auto;
-  padding: 0 $padding-lg;
+  padding: 0 $spacing-lg;
   
   @include tablet {
-    padding: 0 $padding-md;
+    padding: 0 $spacing-md;
   }
   
   @include mobile {
-    padding: 0 $padding-sm;
+    padding: 0 $spacing-sm;
   }
 }
 
 .container-fluid {
   width: 100%;
-  padding: 0 $padding-lg;
+  padding: 0 $spacing-lg;
   
   @include tablet {
-    padding: 0 $padding-md;
+    padding: 0 $spacing-md;
   }
   
   @include mobile {
-    padding: 0 $padding-sm;
+    padding: 0 $spacing-sm;
   }
 }
 
@@ -799,8 +793,8 @@ $xlarge: $breakpoint-xxl;
 
 .touch-spacing {
   @include touch {
-    padding: $padding-md !important;
-    margin: $margin-sm 0 !important;
+    padding: $spacing-md !important;
+    margin: $spacing-sm 0 !important;
   }
 }
 

@@ -29,3 +29,6 @@ export * from './hooks';
 
 // Label Studio logger
 export * from './labelStudioLogger';
+
+// Sanitization utilities
+export * from './sanitize';

@@ -186,26 +186,31 @@ const TasksPage: React.FC = () => {
       title: t('columns.progress'),
       dataIndex: 'progress',
       key: 'progress',
-      width: 180,
+      width: 200,
       search: false,
       sorter: true,
-      render: (_, record) => (
-        <div style={{ width: '100%' }}>
-          <Progress
-            percent={record.progress}
-            size="small"
-            status={record.status === 'completed' ? 'success' : 'active'}
-            strokeColor={
-              record.progress >= 80 ? '#52c41a' : record.progress >= 50 ? '#1890ff' :
-              record.progress >= 20 ? '#faad14' : '#ff4d4f'
-            }
-            format={(percent) => `${percent}%`}
-          />
-          <div style={{ fontSize: 12, color: '#999', marginTop: 4 }}>
-            {record.completed_items} / {record.total_items}
+      render: (_, record) => {
+        const percent = Math.round(record.progress || 0);
+        return (
+          <div style={{ minWidth: 150 }}>
+            <div style={{ marginBottom: 4 }}>
+              <Progress
+                percent={percent}
+                size="small"
+                status={record.status === 'completed' ? 'success' : 'active'}
+                strokeColor={
+                  percent >= 80 ? '#52c41a' : percent >= 50 ? '#1890ff' :
+                  percent >= 20 ? '#faad14' : '#ff4d4f'
+                }
+                showInfo={true}
+              />
+            </div>
+            <div style={{ fontSize: 12, color: '#8c8c8c', textAlign: 'center' }}>
+              {record.completed_items || 0} / {record.total_items || 0}
+            </div>
           </div>
-        </div>
-      ),
+        );
+      },
     },
     {
       title: t('assignee'),

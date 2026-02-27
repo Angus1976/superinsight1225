@@ -37,37 +37,37 @@
 - [x] 7. 检查点 - 确保提取器和模型扩展正确
   - 确保所有测试通过，如有疑问请询问用户。
 
-- [ ] 8. 向量化管道
+- [x] 8. 向量化管道
   - [x] 8.1 实现 `chunk_text()` 函数（tiktoken 分词，token 级分块，overlap 重叠）
     - _需求: 2.3, 4.1, 4.2, 4.3, 4.4_
-  - [ ]* 8.2 属性测试: 分块覆盖完整性
+  - [x]* 8.2 属性测试: 分块覆盖完整性
     - **Property 1: 分块覆盖完整性**
     - **Validates: 需求 4.1**
-  - [ ]* 8.3 属性测试: 分块大小上限
+  - [x]* 8.3 属性测试: 分块大小上限
     - **Property 2: 分块大小上限**
     - **Validates: 需求 2.3, 4.2**
-  - [ ]* 8.4 属性测试: 分块重叠正确性
+  - [x]* 8.4 属性测试: 分块重叠正确性
     - **Property 3: 分块重叠正确性**
     - **Validates: 需求 4.4**
   - [x] 8.5 创建 `src/services/vectorization_pipeline.py`，实现提取→分块→embed→批量写入 vector_records
     - _需求: 2.1, 2.2, 2.4_
-  - [ ]* 8.6 属性测试: Embedding 维度一致性
+  - [x]* 8.6 属性测试: Embedding 维度一致性
     - **Property 4: Embedding 维度一致性**
     - **Validates: 需求 2.4, 5.5**
 
-- [ ] 9. 语义化管道
+- [x] 9. 语义化管道
   - [x] 9.1 创建 `src/services/semantic_pipeline.py`，实现提取→LLM 分析→存储实体/关系/摘要
     - _需求: 3.1, 3.2, 3.3_
-  - [ ]* 9.2 属性测试: record_type 枚举约束
+  - [x]* 9.2 属性测试: record_type 枚举约束
     - **Property 7: record_type 枚举约束**
     - **Validates: 需求 3.3**
 
-- [ ] 10. API 端点
+- [x] 10. API 端点
   - [x] 10.1 创建向量化 API（POST/GET /api/vectorization/jobs, GET .../records）
     - _需求: 2.1, 2.5_
   - [x] 10.2 创建语义化 API（POST/GET /api/semantic/jobs, GET .../records）
     - _需求: 3.1, 3.4_
-  - [ ]* 10.3 属性测试: processing_type 枚举约束
+  - [x]* 10.3 属性测试: processing_type 枚举约束
     - **Property 6: processing_type 枚举约束**
     - **Validates: 需求 5.1**
 
@@ -84,14 +84,14 @@
   - [x] 12.4 添加新增功能的 i18n 翻译 key（zh + en）
     - _需求: 6.1, 6.2, 6.3_
 
-- [ ] 13. 补充属性测试
-  - [ ]* 13.1 属性测试: 文件类型路由正确性（含 PPT/Video/Audio）
+- [x] 13. 补充属性测试
+  - [x]* 13.1 属性测试: 文件类型路由正确性（含 PPT/Video/Audio）
     - **Property 10: 文件类型路由正确性**
     - **Validates: 需求 1.1, 1.2, 1.3, 1.4, 1.5, 1.6**
-  - [ ]* 13.2 属性测试: 向量记录数据完整性
+  - [x]* 13.2 属性测试: 向量记录数据完整性
     - **Property 8: 向量记录数据完整性**
     - **Validates: 需求 5.3**
-  - [ ]* 13.3 属性测试: 语义记录数据完整性
+  - [x]* 13.3 属性测试: 语义记录数据完整性
     - **Property 9: 语义记录数据完整性**
     - **Validates: 需求 5.4**
 

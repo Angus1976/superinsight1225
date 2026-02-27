@@ -378,6 +378,10 @@ export const routes: RouteObject[] = [
             path: 'config',
             element: withSuspense(AugmentationConfigPage, 'form'),
           },
+          {
+            path: 'ai-processing',
+            element: withSuspense(AIProcessingPage, 'page'),
+          },
         ],
       },
       {
@@ -504,11 +508,7 @@ export const routes: RouteObject[] = [
         path: 'ai-annotation/*',
         element: withSuspense(AIAnnotationPage, 'dashboard'),
       },
-      // AI Processing
-      {
-        path: 'ai-processing',
-        element: withSuspense(AIProcessingPage, 'page'),
-      },
+      // AI Processing moved to /augmentation/ai-processing
       // Data Structuring workflow
       {
         path: 'data-structuring/upload',

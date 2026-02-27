@@ -23,38 +23,26 @@ import {
 } from 'antd';
 import {
   RocketOutlined,
-  PlusOutlined,
   ApiOutlined,
   ThunderboltOutlined,
   SettingOutlined,
-  CheckCircleOutlined,
-  CloseCircleOutlined,
   SyncOutlined,
   DashboardOutlined,
   ReloadOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
-import { useTranslation } from 'react-i18next';
+import { listSkills, syncSkills, executeSkill, toggleSkillStatus } from '@/services/skillAdminApi';
+import type { SkillDetail } from '@/types/aiAssistant';
 
 const { Title, Paragraph, Text } = Typography;
 
 // ---------------------------------------------------------------------------
-// Types
+// Types (service health only — skill types come from @/types/aiAssistant)
 // ---------------------------------------------------------------------------
 interface ServiceStatus {
   healthy: boolean;
   label: string;
   url: string;
-}
-
-interface Skill {
-  id: string;
-  name: string;
-  description: string;
-  version: string;
-  category: string;
-  status: 'active' | 'inactive';
-  deployed_at: string;
 }
 
 interface OllamaStatus {
@@ -64,34 +52,22 @@ interface OllamaStatus {
   model: string;
 }
 
-// ---------------------------------------------------------------------------
-// API helpers
-// ---------------------------------------------------------------------------
+// Service URLs for health checks only
 const GATEWAY_URL = 'http://localhost:3000';
 const AGENT_URL = 'http://localhost:8081';
-
-async function fetchJSON<T>(url: string, init?: RequestInit): Promise<T> {
-  const resp = await fetch(url, { ...init, headers: { 'Content-Type': 'application/json', ...init?.headers } });
-  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-  return resp.json();
-}
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 const AIIntegration: React.FC = () => {
-  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(false);
-  const [isSkillModalVisible, setIsSkillModalVisible] = useState(false);
-  const [skillForm] = Form.useForm();
 
   // State
   const [gatewayStatus, setGatewayStatus] = useState<ServiceStatus>({ healthy: false, label: '检测中…', url: GATEWAY_URL });
   const [agentStatus, setAgentStatus] = useState<ServiceStatus>({ healthy: false, label: '检测中…', url: AGENT_URL });
   const [ollamaStatus, setOllamaStatus] = useState<OllamaStatus | null>(null);
-  const [skills, setSkills] = useState<Skill[]>([]);
-  const [catalog, setCatalog] = useState<Skill[]>([]);
+  const [skills, setSkills] = useState<SkillDetail[]>([]);
 
   // ---------------------------------------------------------------------------
   // Data fetching
@@ -108,14 +84,16 @@ const AIIntegration: React.FC = () => {
   async function refreshServices() {
     // Gateway
     try {
-      await fetchJSON(`${GATEWAY_URL}/health`);
+      const resp = await fetch(`${GATEWAY_URL}/health`);
+      if (!resp.ok) throw new Error();
       setGatewayStatus({ healthy: true, label: '运行中', url: GATEWAY_URL });
     } catch {
       setGatewayStatus({ healthy: false, label: '离线', url: GATEWAY_URL });
     }
     // Agent
     try {
-      await fetchJSON(`${AGENT_URL}/health`);
+      const resp = await fetch(`${AGENT_URL}/health`);
+      if (!resp.ok) throw new Error();
       setAgentStatus({ healthy: true, label: '运行中', url: AGENT_URL });
     } catch {
       setAgentStatus({ healthy: false, label: '离线', url: AGENT_URL });
@@ -124,18 +102,16 @@ const AIIntegration: React.FC = () => {
 
   async function refreshSkills() {
     try {
-      const data = await fetchJSON<{ skills: Skill[] }>(`${AGENT_URL}/api/skills`);
-      setSkills(data.skills || []);
-    } catch { /* ignore */ }
-    try {
-      const data = await fetchJSON<{ catalog: Skill[] }>(`${AGENT_URL}/api/skills/catalog`);
-      setCatalog(data.catalog || []);
+      const data = await listSkills();
+      setSkills(data.skills);
     } catch { /* ignore */ }
   }
 
   async function refreshLLM() {
     try {
-      const data = await fetchJSON<OllamaStatus>(`${AGENT_URL}/api/llm/status`);
+      const resp = await fetch(`${AGENT_URL}/api/llm/status`);
+      if (!resp.ok) throw new Error();
+      const data: OllamaStatus = await resp.json();
       setOllamaStatus(data);
     } catch {
       setOllamaStatus(null);
@@ -147,52 +123,49 @@ const AIIntegration: React.FC = () => {
   // ---------------------------------------------------------------------------
   // Skill actions
   // ---------------------------------------------------------------------------
-  const handleDeploySkill = async (values: { skill_id: string }) => {
+  const handleSync = async () => {
+    setLoading(true);
     try {
-      await fetchJSON(`${AGENT_URL}/api/skills/deploy`, {
-        method: 'POST',
-        body: JSON.stringify({ skill_id: values.skill_id }),
-      });
-      message.success('技能部署成功');
-      setIsSkillModalVisible(false);
-      skillForm.resetFields();
-      await refreshSkills();
+      const result = await syncSkills();
+      message.success(`同步完成：新增 ${result.added}，更新 ${result.updated}，移除 ${result.removed}`);
+      setSkills(result.skills);
     } catch {
-      message.error('技能部署失败');
-    }
-  };
-
-  const handleUndeploySkill = async (skillId: string) => {
-    try {
-      await fetchJSON(`${AGENT_URL}/api/skills/undeploy`, {
-        method: 'POST',
-        body: JSON.stringify({ skill_id: skillId }),
-      });
-      message.success('技能已卸载');
-      await refreshSkills();
-    } catch {
-      message.error('卸载失败');
+      message.error('同步失败');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleExecuteSkill = async (skillId: string) => {
     message.loading({ content: '执行中…', key: 'exec' });
     try {
-      const result = await fetchJSON<{ success: boolean; result: unknown }>(`${AGENT_URL}/api/skills/execute`, {
-        method: 'POST',
-        body: JSON.stringify({ skill_name: skillId, parameters: { query: '测试查询', text: '这是一段测试文本' } }),
-      });
-      message.success({ content: '执行完成', key: 'exec' });
-      Modal.info({ title: '执行结果', width: 600, content: <pre style={{ maxHeight: 400, overflow: 'auto' }}>{JSON.stringify(result.result, null, 2)}</pre> });
+      const result = await executeSkill(skillId, { query: '测试查询', text: '这是一段测试文本' });
+      if (result.success) {
+        message.success({ content: `执行完成 (${result.execution_time_ms}ms)`, key: 'exec' });
+        Modal.info({ title: '执行结果', width: 600, content: <pre style={{ maxHeight: 400, overflow: 'auto' }}>{JSON.stringify(result.result, null, 2)}</pre> });
+      } else {
+        message.error({ content: result.error || '执行失败', key: 'exec' });
+      }
     } catch {
       message.error({ content: '执行失败', key: 'exec' });
+    }
+  };
+
+  const handleToggleStatus = async (skill: SkillDetail) => {
+    const newStatus = skill.status === 'deployed' ? 'pending' : 'deployed';
+    try {
+      await toggleSkillStatus(skill.id, newStatus);
+      message.success(`技能状态已更新为 ${newStatus === 'deployed' ? '已部署' : '待部署'}`);
+      await refreshSkills();
+    } catch {
+      message.error('状态更新失败');
     }
   };
 
   // ---------------------------------------------------------------------------
   // Table columns
   // ---------------------------------------------------------------------------
-  const skillColumns: ColumnsType<Skill> = [
+  const skillColumns: ColumnsType<SkillDetail> = [
     { title: '技能名称', dataIndex: 'name', key: 'name' },
     { title: '描述', dataIndex: 'description', key: 'description', ellipsis: true },
     {
@@ -205,14 +178,32 @@ const AIIntegration: React.FC = () => {
     { title: '版本', dataIndex: 'version', key: 'version', render: (v: string) => <Tag>{v}</Tag> },
     {
       title: '状态', dataIndex: 'status', key: 'status',
-      render: (s: string) => <Tag color={s === 'active' ? 'green' : 'default'}>{s === 'active' ? '活跃' : '未激活'}</Tag>,
+      render: (s: string) => {
+        const map: Record<string, { color: string; label: string }> = {
+          deployed: { color: 'green', label: '已部署' },
+          pending: { color: 'orange', label: '待部署' },
+          removed: { color: 'red', label: '已移除' },
+        };
+        const info = map[s] || { color: 'default', label: s };
+        return <Tag color={info.color}>{info.label}</Tag>;
+      },
+    },
+    {
+      title: '部署时间', dataIndex: 'deployed_at', key: 'deployed_at',
+      render: (v: string) => v ? new Date(v).toLocaleString() : '-',
     },
     {
       title: '操作', key: 'action',
-      render: (_: unknown, record: Skill) => (
+      render: (_: unknown, record: SkillDetail) => (
         <Space>
           <Button type="link" size="small" onClick={() => handleExecuteSkill(record.id)}>测试</Button>
-          <Button type="link" size="small" danger onClick={() => handleUndeploySkill(record.id)}>卸载</Button>
+          <Switch
+            size="small"
+            checked={record.status === 'deployed'}
+            onChange={() => handleToggleStatus(record)}
+            checkedChildren="启用"
+            unCheckedChildren="禁用"
+          />
         </Space>
       ),
     },
@@ -251,10 +242,10 @@ const AIIntegration: React.FC = () => {
                     {/* Statistics */}
                     <Row gutter={16}>
                       <Col span={6}>
-                        <Card><Statistic title="活跃技能" value={skills.filter(s => s.status === 'active').length} prefix={<ThunderboltOutlined />} valueStyle={{ color: '#1890ff' }} /></Card>
+                        <Card><Statistic title="活跃技能" value={skills.filter(s => s.status === 'deployed').length} prefix={<ThunderboltOutlined />} valueStyle={{ color: '#1890ff' }} /></Card>
                       </Col>
                       <Col span={6}>
-                        <Card><Statistic title="可用技能" value={catalog.length} prefix={<ApiOutlined />} valueStyle={{ color: '#3f8600' }} /></Card>
+                        <Card><Statistic title="可用技能" value={skills.length} prefix={<ApiOutlined />} valueStyle={{ color: '#3f8600' }} /></Card>
                       </Col>
                       <Col span={6}>
                         <Card><Statistic title="LLM 模型" value={ollamaStatus?.models?.length ?? 0} suffix="个" /></Card>
@@ -291,7 +282,7 @@ const AIIntegration: React.FC = () => {
                     {/* Quick Actions */}
                     <Card title="快速操作">
                       <Space wrap>
-                        <Button type="primary" icon={<ThunderboltOutlined />} onClick={() => setIsSkillModalVisible(true)}>部署技能</Button>
+                        <Button type="primary" icon={<SyncOutlined />} onClick={handleSync}>同步技能</Button>
                         <Button icon={<ReloadOutlined />} onClick={refreshAll}>刷新状态</Button>
                       </Space>
                     </Card>
@@ -305,7 +296,7 @@ const AIIntegration: React.FC = () => {
                   <Space direction="vertical" size="middle" style={{ width: '100%' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                       <Text strong>已部署技能 ({skills.length})</Text>
-                      <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsSkillModalVisible(true)}>部署技能</Button>
+                      <Button type="primary" icon={<SyncOutlined />} onClick={handleSync}>同步技能</Button>
                     </div>
                     <Table columns={skillColumns} dataSource={skills} rowKey="id" pagination={false} />
                   </Space>
@@ -354,27 +345,6 @@ const AIIntegration: React.FC = () => {
           </Card>
         </Space>
       </Spin>
-
-      {/* Deploy Skill Modal */}
-      <Modal title="部署技能" open={isSkillModalVisible} onCancel={() => setIsSkillModalVisible(false)} footer={null} width={600}>
-        <Form form={skillForm} layout="vertical" onFinish={handleDeploySkill}>
-          <Form.Item label="选择技能" name="skill_id" rules={[{ required: true, message: '请选择技能' }]}>
-            <Select placeholder="选择要部署的技能">
-              {catalog.map(s => (
-                <Select.Option key={s.id} value={s.id}>
-                  {s.name} - {s.description}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-          <Form.Item>
-            <Space>
-              <Button type="primary" htmlType="submit">部署</Button>
-              <Button onClick={() => setIsSkillModalVisible(false)}>取消</Button>
-            </Space>
-          </Form.Item>
-        </Form>
-      </Modal>
     </div>
   );
 };

@@ -44,8 +44,8 @@ export const ROUTES = {
   // Data Sync
   DATA_SYNC: '/data-sync',
 
-  // AI Processing
-  AI_PROCESSING: '/ai-processing',
+  // AI Processing (under augmentation)
+  AI_PROCESSING: '/augmentation/ai-processing',
 
   // Error pages
   NOT_FOUND: '/404',

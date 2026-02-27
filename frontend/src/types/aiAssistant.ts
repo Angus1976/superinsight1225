@@ -49,3 +49,40 @@ export interface StreamChunk {
   error?: string;
   done: boolean;
 }
+
+// --- Skill Admin types (mirrors backend schemas) ---
+
+export interface SkillDetail extends SkillInfo {
+  category?: string;
+  gateway_id: string;
+  gateway_name: string;
+  deployed_at?: string;
+  created_at: string;
+}
+
+export interface SkillListResponse {
+  skills: SkillDetail[];
+  total: number;
+}
+
+export interface SyncResult {
+  added: number;
+  updated: number;
+  removed: number;
+  skills: SkillDetail[];
+}
+
+export interface ExecuteResult {
+  success: boolean;
+  result?: Record<string, unknown>;
+  error?: string;
+  execution_time_ms?: number;
+}
+
+export interface ExecuteRequest {
+  parameters: Record<string, unknown>;
+}
+
+export interface StatusToggleRequest {
+  status: 'deployed' | 'pending';
+}

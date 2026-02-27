@@ -309,43 +309,40 @@ const AIAssistant: React.FC = () => {
                   dataSource={messages}
                   renderItem={(msg) => (
                     <div className={`message-item ${msg.role}`}>
-                      <Space align="start" size={12}>
-                        <Avatar
-                          icon={msg.role === 'user' ? <UserOutlined /> : <RobotOutlined />}
-                          style={{
-                            backgroundColor: msg.role === 'user' ? '#52c41a' : '#1890ff',
-                          }}
-                        />
-                        <div className="message-content">
-                          <div className="message-header">
-                            <Text strong>{msg.role === 'user' ? '您' : 'AI 助手'}</Text>
-                            <Text type="secondary" style={{ fontSize: 12 }}>
-                              {msg.timestamp.toLocaleTimeString()}
-                            </Text>
-                          </div>
-                          <Paragraph style={{ whiteSpace: 'pre-wrap', marginBottom: 0 }}>
-                            {msg.content}
-                          </Paragraph>
-                          {msg.type === 'workflow' && (
-                            <Space style={{ marginTop: 12 }}>
-                              <Button type="primary" size="small">
-                                创建工作流
-                              </Button>
-                              <Button size="small">查看详情</Button>
-                            </Space>
-                          )}
+                      <Avatar
+                        icon={msg.role === 'user' ? <UserOutlined /> : <RobotOutlined />}
+                        style={{
+                          backgroundColor: msg.role === 'user' ? '#52c41a' : '#1890ff',
+                          flexShrink: 0,
+                        }}
+                      />
+                      <div className="message-content">
+                        <div className="message-header">
+                          <Text strong>{msg.role === 'user' ? '您' : 'AI 助手'}</Text>
+                          <Text type="secondary" style={{ fontSize: 12 }}>
+                            {msg.timestamp.toLocaleTimeString()}
+                          </Text>
                         </div>
-                      </Space>
+                        <Paragraph style={{ whiteSpace: 'pre-wrap', marginBottom: 0 }}>
+                          {msg.content}
+                        </Paragraph>
+                        {msg.type === 'workflow' && (
+                          <Space style={{ marginTop: 12 }}>
+                            <Button type="primary" size="small">
+                              创建工作流
+                            </Button>
+                            <Button size="small">查看详情</Button>
+                          </Space>
+                        )}
+                      </div>
                     </div>
                   )}
                 />
               )}
               {isLoading && messages.length > 0 && messages[messages.length - 1].content === '' && (
                 <div className="message-item assistant">
-                  <Space align="start" size={12}>
-                    <Avatar icon={<RobotOutlined />} style={{ backgroundColor: '#1890ff' }} />
-                    <Spin tip="AI 正在思考..." />
-                  </Space>
+                  <Avatar icon={<RobotOutlined />} style={{ backgroundColor: '#1890ff', flexShrink: 0 }} />
+                  <Spin tip="AI 正在思考..." />
                 </div>
               )}
               <div ref={messagesEndRef} />
@@ -381,6 +378,26 @@ const AIAssistant: React.FC = () => {
                   发送
                 </Button>
               )}
+            </div>
+
+            {/* 快捷操作 - 紧凑排列在输入框下方 */}
+            <div className="quick-actions-inline">
+              <Text type="secondary" style={{ fontSize: 12, marginBottom: 8, display: 'block' }}>快捷操作</Text>
+              <Row gutter={[8, 8]}>
+                {quickActions.map((action, index) => (
+                  <Col key={index} xs={12} sm={12} md={6}>
+                    <div
+                      className="quick-action-compact"
+                      onClick={() => handleQuickAction(action.prompt)}
+                    >
+                      <Space size={6}>
+                        <span className="quick-action-icon">{action.icon}</span>
+                        <Text style={{ fontSize: 13 }}>{action.title}</Text>
+                      </Space>
+                    </div>
+                  </Col>
+                ))}
+              </Row>
             </div>
           </Card>
         </Col>
@@ -427,32 +444,6 @@ const AIAssistant: React.FC = () => {
                   <Statistic title="工作流创建" value={0} suffix="个" />
                 </Col>
               </Row>
-            </Card>
-
-            {/* 快捷操作 */}
-            <Card title="快捷操作">
-              <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-                {quickActions.map((action, index) => (
-                  <Card
-                    key={index}
-                    size="small"
-                    hoverable
-                    onClick={() => handleQuickAction(action.prompt)}
-                    className="quick-action-card"
-                  >
-                    <Space>
-                      <Avatar icon={action.icon} style={{ backgroundColor: '#1890ff' }} />
-                      <div>
-                        <Text strong>{action.title}</Text>
-                        <br />
-                        <Text type="secondary" style={{ fontSize: 12 }}>
-                          {action.description}
-                        </Text>
-                      </div>
-                    </Space>
-                  </Card>
-                ))}
-              </Space>
             </Card>
 
             {/* 使用提示 */}

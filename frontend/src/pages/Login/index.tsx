@@ -6,6 +6,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { LoginForm } from '@/components/Auth/LoginForm';
 import { LogoFull } from '@/components/Brand/LogoFull';
 import { useAuthStore } from '@/stores/authStore';
+import { useHealthCheck } from '@/hooks/useHealthCheck';
 import { ROUTES } from '@/constants';
 import { isTokenExpired } from '@/utils/token';
 import styles from './style.module.scss';
@@ -15,6 +16,7 @@ const { Text } = Typography;
 const LoginPage: React.FC = () => {
   const { t } = useTranslation('auth');
   const { isAuthenticated, token, _hasHydrated } = useAuthStore();
+  const { isHealthy } = useHealthCheck();
   const location = useLocation();
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || ROUTES.DASHBOARD;
 
@@ -34,13 +36,28 @@ const LoginPage: React.FC = () => {
 
   return (
     <div className={styles.container}>
-      {/* Animated gradient blobs — pure CSS */}
-      <div className={styles.blobs}>
-        <div className={`${styles.blob} ${styles.blob1}`} />
-        <div className={`${styles.blob} ${styles.blob2}`} />
-        <div className={`${styles.blob} ${styles.blob3}`} />
-        <div className={`${styles.blob} ${styles.blob4}`} />
-      </div>
+      {/* Background video when services are healthy */}
+      {isHealthy && (
+        <video
+          className={styles.backgroundVideo}
+          autoPlay
+          loop
+          muted
+          playsInline
+        >
+          <source src="/login-background.mp4" type="video/mp4" />
+        </video>
+      )}
+
+      {/* Animated gradient blobs — fallback when no video or services unhealthy */}
+      {!isHealthy && (
+        <div className={styles.blobs}>
+          <div className={`${styles.blob} ${styles.blob1}`} />
+          <div className={`${styles.blob} ${styles.blob2}`} />
+          <div className={`${styles.blob} ${styles.blob3}`} />
+          <div className={`${styles.blob} ${styles.blob4}`} />
+        </div>
+      )}
 
       <Card className={styles.card}>
         <div className={styles.header}>

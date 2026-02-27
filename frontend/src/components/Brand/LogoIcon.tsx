@@ -49,11 +49,13 @@ const LogoIconImage: React.FC<LogoIconProps> = ({ size = 32, className }) => {
   // 根据尺寸选择合适的 LOGO 文件
   const getLogoSrc = () => {
     if (size <= 48) {
-      return '/logo-wenshijian-simple.svg'; // 简化版 64x64
+      return '/logos/logo-simple-48.svg'; // 简化版 48x48
+    } else if (size <= 64) {
+      return '/logos/logo-icon-64.svg'; // 图标版 64x64
     } else if (size <= 128) {
-      return '/logo-wenshijian.svg'; // 标准版 128x128
+      return '/logos/logo-icon-128.svg'; // 图标版 128x128
     } else {
-      return '/logo-wenshijian.svg'; // 大尺寸也用标准版
+      return '/logos/logo-square-256.svg'; // 大尺寸方形版
     }
   };
 

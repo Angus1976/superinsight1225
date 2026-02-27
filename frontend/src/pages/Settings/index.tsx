@@ -105,15 +105,19 @@ const SettingsPage: React.FC = () => {
     const name = Form.useWatch('name', brandingForm) || t('common:appName', '问视间');
     const logo = Form.useWatch('logo', brandingForm) || '';
     const label = Form.useWatch('label', brandingForm) || '';
-    const showLogo = logo && isValidLogoUrl(logo);
+    
+    // Use default logo if no custom logo is provided
+    const defaultLogo = '/logos/logo-icon-64.svg';
+    const displayLogo = logo || defaultLogo;
+    const showLogo = isValidLogoUrl(displayLogo);
 
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0' }}>
         {showLogo ? (
           <img
-            src={logo}
+            src={displayLogo}
             alt={name}
-            style={{ width: 32, height: 32, borderRadius: 6, objectFit: 'cover' }}
+            style={{ width: 32, height: 32, borderRadius: 6, objectFit: 'contain' }}
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
           />
         ) : (

@@ -149,6 +149,7 @@
   "nav": {
     "overview": "概览",
     "samples": "样本管理",
-    "config": "配置管理"
+    "config": "配置管理",
+    "dataProcessing": "数据处理"
   }
 }

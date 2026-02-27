@@ -149,6 +149,7 @@
   "nav": {
     "overview": "Overview",
     "samples": "Sample Management",
-    "config": "Configuration"
+    "config": "Configuration",
+    "dataProcessing": "Data Processing"
   }
 }

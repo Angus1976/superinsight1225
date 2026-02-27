@@ -62,6 +62,7 @@
     "augmentation": "数据增强",
     "samples": "样本管理",
     "config": "配置管理",
+    "dataProcessing": "数据处理",
     "quality": "质量管理",
     "rules": "质量规则",
     "reports": "质量报表",

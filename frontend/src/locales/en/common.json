@@ -62,6 +62,7 @@
     "augmentation": "Data Augmentation",
     "samples": "Sample Management",
     "config": "Configuration",
+    "dataProcessing": "Data Processing",
     "quality": "Quality Management",
     "rules": "Quality Rules",
     "reports": "Quality Reports",

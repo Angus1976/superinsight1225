@@ -34,6 +34,7 @@ import {
   PlusOutlined,
   SettingOutlined,
   ExperimentOutlined,
+  RocketOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import type { ColumnsType } from 'antd/es/table';
@@ -173,6 +174,11 @@ const AugmentationPage: React.FC = () => {
             <Menu.Item key="config">
               <Link to="/augmentation/config">
                 <SettingOutlined /> {t('nav.config')}
+              </Link>
+            </Menu.Item>
+            <Menu.Item key="ai-processing">
+              <Link to="/augmentation/ai-processing">
+                <RocketOutlined /> {t('nav.dataProcessing', { defaultValue: '数据处理' })}
               </Link>
             </Menu.Item>
           </Menu>

@@ -37,13 +37,13 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - APP_ENV=${APP_ENV:-development}
-      - DATABASE_URL=${DATABASE_URL:-postgresql://superinsight:password@postgres:5432/superinsight}
-      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
-      - LABEL_STUDIO_URL=${LABEL_STUDIO_URL:-http://label-studio:8080}
+      - APP_ENV=development
+      - DATABASE_URL=postgresql://superinsight:password@postgres:5432/superinsight
+      - REDIS_URL=redis://redis:6379/0
+      - LABEL_STUDIO_URL=http://label-studio:8080
       - LABEL_STUDIO_API_TOKEN=${LABEL_STUDIO_API_TOKEN}
-      - ARGILLA_URL=${ARGILLA_URL:-http://argilla:6900}
-      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama:11434}
+      - ARGILLA_URL=http://argilla:6900
+      - OLLAMA_BASE_URL=http://ollama:11434
     depends_on:
       - postgres
       - redis
@@ -59,7 +59,7 @@ services:
   # Database
   # ===========================================================================
   postgres:
-    image: postgres:15-alpine
+    image: pgvector/pgvector:pg15
     container_name: superinsight-postgres
     environment:
       - POSTGRES_USER=superinsight
@@ -143,7 +143,7 @@ services:
       - ARGILLA_REDIS_URL=redis://redis:6379/0
     depends_on:
       - elasticsearch
-      - postgres
+      # - postgres  # 已禁用，使用宿主机 PostgreSQL
       - redis
     volumes:
       - argilla_data:/argilla

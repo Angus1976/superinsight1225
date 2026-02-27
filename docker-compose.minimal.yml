@@ -30,7 +30,10 @@ services:
   # Database
   # ===========================================================================
   postgres:
-    image: postgres:15-alpine
+    build:
+      context: ./docker/postgres
+      dockerfile: Dockerfile
+    image: superinsight-postgres:pg15-pgvector
     container_name: superinsight-postgres
     environment:
       - POSTGRES_USER=superinsight

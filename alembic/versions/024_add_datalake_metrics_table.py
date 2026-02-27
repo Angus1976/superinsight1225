@@ -17,7 +17,7 @@ from sqlalchemy.dialects.postgresql import UUID, JSONB
 
 # revision identifiers, used by Alembic.
 revision: str = "024_add_datalake_metrics"
-down_revision: Union[str, Sequence[str], None] = "023_merge_structuring_head"
+down_revision: Union[str, Sequence[str], None] = "023_merge_heads"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

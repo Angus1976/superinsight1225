@@ -58,8 +58,8 @@ describe('LoginForm', () => {
   it('renders login form with all required elements', () => {
     render(<LoginForm />)
 
-    // Check for username input
-    expect(screen.getByPlaceholderText('请输入用户名')).toBeInTheDocument()
+    // Check for username input (placeholder is hardcoded in component)
+    expect(screen.getByPlaceholderText('admin@superinsight.local')).toBeInTheDocument()
 
     // Check for password input
     expect(screen.getByPlaceholderText('请输入密码')).toBeInTheDocument()
@@ -121,8 +121,8 @@ describe('LoginForm', () => {
 
     render(<LoginForm onSuccess={onSuccess} />)
 
-    // Fill in the form
-    await user.type(screen.getByPlaceholderText('请输入用户名'), 'testuser')
+    // Fill in the form (input type="email" requires valid email format)
+    await user.type(screen.getByPlaceholderText('admin@superinsight.local'), 'testuser@example.com')
     await user.type(screen.getByPlaceholderText('请输入密码'), 'password123')
 
     // Submit the form
@@ -131,7 +131,7 @@ describe('LoginForm', () => {
     // Wait for login to be called
     await waitFor(() => {
       expect(mockLogin).toHaveBeenCalledWith({
-        username: 'testuser',
+        username: 'testuser@example.com',
         password: 'password123',
       })
     })
@@ -155,7 +155,7 @@ describe('LoginForm', () => {
     })
 
     // Fill in the form
-    await user.type(screen.getByPlaceholderText('请输入用户名'), 'testuser')
+    await user.type(screen.getByPlaceholderText('admin@superinsight.local'), 'testuser@example.com')
     await user.type(screen.getByPlaceholderText('请输入密码'), 'password123')
     
     // Select a tenant
@@ -168,7 +168,7 @@ describe('LoginForm', () => {
     // Wait for login to be called with tenant_id
     await waitFor(() => {
       expect(mockLogin).toHaveBeenCalledWith({
-        username: 'testuser',
+        username: 'testuser@example.com',
         password: 'password123',
         tenant_id: 'tenant1',
       })
@@ -183,7 +183,7 @@ describe('LoginForm', () => {
     render(<LoginForm onSuccess={onSuccess} />)
 
     // Fill and submit form
-    await user.type(screen.getByPlaceholderText('请输入用户名'), 'testuser')
+    await user.type(screen.getByPlaceholderText('admin@superinsight.local'), 'testuser@example.com')
     await user.type(screen.getByPlaceholderText('请输入密码'), 'password123')
     await user.click(screen.getByRole('button', { name: /登录|登 录/ }))
 
@@ -200,7 +200,7 @@ describe('LoginForm', () => {
     render(<LoginForm />)
 
     // Fill and submit form
-    await user.type(screen.getByPlaceholderText('请输入用户名'), 'wronguser')
+    await user.type(screen.getByPlaceholderText('admin@superinsight.local'), 'wrong@example.com')
     await user.type(screen.getByPlaceholderText('请输入密码'), 'wrongpass')
     await user.click(screen.getByRole('button', { name: /登录|登 录/ }))
 
@@ -226,7 +226,7 @@ describe('LoginForm', () => {
     render(<LoginForm />)
 
     // Fill and submit form
-    await user.type(screen.getByPlaceholderText('请输入用户名'), 'testuser')
+    await user.type(screen.getByPlaceholderText('admin@superinsight.local'), 'testuser@example.com')
     await user.type(screen.getByPlaceholderText('请输入密码'), 'password123')
     await user.click(screen.getByRole('button', { name: /登录|登 录/ }))
 

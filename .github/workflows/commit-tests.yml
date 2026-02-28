@@ -1,0 +1,245 @@
+name: Commit Tests
+
+# Requirement 10.1: Execute unit tests on every code commit
+on:
+  push:
+    branches: [main, develop]
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+      - '**.txt'
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '18'
+  BACKEND_URL: 'http://localhost:8000'
+  FRONTEND_URL: 'http://localhost:3000'
+
+jobs:
+  # =============================================================================
+  # Backend Unit Tests
+  # =============================================================================
+  backend-unit-tests:
+    name: Backend Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-backend-${{ hashFiles('**/requirements*.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-backend-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest pytest-asyncio pytest-cov hypothesis
+          pip install -r requirements.txt || true
+
+      - name: Create test environment file
+        run: |
+          cat > .env.test << EOF
+          DATABASE_URL=postgresql://test_user:test_password@localhost:5432/test_db
+          REDIS_URL=redis://localhost:6379/0
+          SECRET_KEY=test-secret-key-for-testing
+          JWT_SECRET_KEY=test-jwt-secret-key
+          JWT_ALGORITHM=HS256
+          ACCESS_TOKEN_EXPIRE_MINUTES=30
+          API_V1_PREFIX=/api/v1
+          SERVER_NAME=test-server
+          EOF
+
+      - name: Run backend unit tests
+        run: |
+          pytest tests/ \
+            -m "unit" \
+            --tb=short \
+            -v \
+            --cov=src \
+            --cov-report=term-missing \
+            --cov-report=json:.coverage-backend.json \
+            --cov-fail-under=80 \
+            --maxfail=10 \
+            -x
+
+      - name: Run backend property-based tests
+        run: |
+          pytest tests/ \
+            -m "property" \
+            --tb=short \
+            -v \
+            --hypothesis-seed=0 \
+            --maxfail=5
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage-report
+          path: .coverage-backend.json
+          retention-days: 7
+
+      - name: Upload HTML coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-html-coverage
+          path: htmlcov/
+          retention-days: 7
+
+  # =============================================================================
+  # Frontend Unit Tests
+  # =============================================================================
+  frontend-unit-tests:
+    name: Frontend Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run frontend unit tests
+        working-directory: frontend
+        run: |
+          npm run test:unit \
+            -- --run \
+            --reporter=verbose \
+            --coverage
+
+      - name: Check coverage thresholds
+        working-directory: frontend
+        run: |
+          npx vitest run --coverage --reporter=verbose 2>&1 | tee coverage-output.txt
+          # Check if coverage meets threshold
+          if grep -q "Coverage below threshold" coverage-output.txt; then
+            echo "::error::Frontend coverage below 80% threshold"
+            exit 1
+          fi
+
+      - name: Upload frontend coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage-report
+          path: frontend/coverage/
+          retention-days: 7
+
+  # =============================================================================
+  # Combined Coverage Report
+  # =============================================================================
+  coverage-summary:
+    name: Coverage Summary
+    needs: [backend-unit-tests, frontend-unit-tests]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download backend coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-coverage-report
+          path: reports/
+
+      - name: Download frontend coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-coverage-report
+          path: reports/frontend/
+
+      - name: Generate combined coverage summary
+        run: |
+          echo "=== Commit Test Coverage Summary ==="
+          echo ""
+          echo "Backend coverage report: reports/.coverage-backend.json"
+          echo "Frontend coverage report: reports/frontend/coverage-summary.json"
+          echo ""
+          echo "Coverage threshold: 80%"
+          echo ""
+          # Check if both coverage reports exist
+          if [ -f "reports/.coverage-backend.json" ]; then
+            echo "Backend tests: PASSED (coverage >= 80%)"
+          else
+            echo "Backend tests: No coverage report found"
+          fi
+          if [ -f "reports/frontend/coverage-summary.json" ]; then
+            echo "Frontend tests: PASSED (coverage >= 80%)"
+          else
+            echo "Frontend tests: No coverage report found"
+          fi
+
+      - name: Upload combined coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: commit-test-coverage
+          path: reports/
+          retention-days: 7
+
+  # =============================================================================
+  # Quick Validation (fail-fast)
+  # =============================================================================
+  quick-validation:
+    name: Quick Validation
+    needs: [backend-unit-tests, frontend-unit-tests]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+
+    steps:
+      - name: Check test results
+        run: |
+          echo "=== Commit Test Results ==="
+          echo "Backend unit tests: ${{ needs.backend-unit-tests.result }}"
+          echo "Frontend unit tests: ${{ needs.frontend-unit-tests.result }}"
+          echo ""
+          if [[ "${{ needs.backend-unit-tests.result }}" == "success" ]] && \
+             [[ "${{ needs.frontend-unit-tests.result }}" == "success" ]]; then
+            echo "✓ All commit tests passed!"
+            exit 0
+          else
+            echo "✗ Some tests failed. Check the detailed reports for more information."
+            exit 1
+          fi

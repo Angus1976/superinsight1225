@@ -2,6 +2,11 @@ import { defineConfig, devices } from '@playwright/test'
 
 /**
  * Playwright E2E Test Configuration
+ * 
+ * Requirements: 4.1, 4.5, 4.6
+ * - 4.1: E2E tests for user authentication workflows
+ * - 4.5: Capture screenshots on failure
+ * - 4.6: Execute E2E tests in headless browser mode by default
  *
  * @see https://playwright.dev/docs/test-configuration
  */
@@ -18,6 +23,7 @@ export default defineConfig({
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
     ['html', { outputFolder: 'playwright-report' }],
+    ['json', { outputFile: 'test-results.json' }],
     ['list'],
   ],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
@@ -28,20 +34,28 @@ export default defineConfig({
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
 
-    /* Take screenshot on failure */
+    /* Take screenshot on failure - Requirement 4.5 */
     screenshot: 'only-on-failure',
 
-    /* Video recording */
+    /* Video recording on failure for debugging */
     video: 'on-first-retry',
 
     /* Ignore HTTPS errors for testing */
     ignoreHTTPSErrors: true,
 
-    /* Set default timeout for actions */
+    /* Set default timeout for actions (10 seconds) */
     actionTimeout: 10000,
 
-    /* Set default timeout for navigation */
+    /* Set default timeout for navigation (30 seconds) */
     navigationTimeout: 30000,
+
+    /* Headless mode by default - Requirement 4.6 */
+    headless: true,
+
+    /* Collect browser console logs - Requirement 4.5 */
+    launchOptions: {
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    },
   },
 
   /* Configure projects for major browsers */
@@ -72,6 +86,9 @@ export default defineConfig({
     },
   ],
 
+  /* Global test timeout */
+  timeout: 60000,
+
   /* Run your local dev server before starting the tests */
   webServer: {
     command: 'npm run dev',
@@ -79,4 +96,10 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
   },
+
+  /* Output directory for test artifacts */
+  outputDir: 'test-results/',
+
+  /* Snapshot directory */
+  snapshotDir: '.snapshots',
 })

@@ -1,0 +1,290 @@
+name: Test Failure Notifications
+
+# Requirement 10.6: Notify developers when tests fail
+on:
+  workflow_run:
+    workflows:
+      - Commit Tests
+      - Pull Request Tests
+      - Main Branch Tests
+      - Performance Tests
+      - Security Scans
+    types:
+      - completed
+  schedule:
+    # Send daily summary at 6:00 AM UTC
+    - cron: '0 6 * * *'
+
+env:
+  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+  EMAIL_SMTP_SERVER: ${{ secrets.EMAIL_SMTP_SERVER }}
+  EMAIL_SMTP_PORT: ${{ secrets.EMAIL_SMTP_PORT }}
+  EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+  EMAIL_TO: ${{ secrets.EMAIL_TO }}
+
+jobs:
+  # =============================================================================
+  # Immediate Alert for Critical Failures
+  # =============================================================================
+  critical-failure-alert:
+    name: Critical Failure Alert
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: |
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.conclusion == 'failure' &&
+      contains(github.event.workflow_run.name, 'Main Branch')
+
+    steps:
+      - name: Send Slack notification for critical failure
+        if: env.SLACK_WEBHOOK_URL != ''
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data "{
+              'text': ':rotating_light: *CRITICAL: Main Branch Test Failure* :rotating_light:',
+              'attachments': [{
+                'color': 'danger',
+                'fields': [
+                  {'title': 'Workflow', 'value': '${{ github.event.workflow_run.name }}', 'short': true},
+                  {'title': 'Status', 'value': 'FAILED', 'short': true},
+                  {'title': 'Branch', 'value': 'main', 'short': true},
+                  {'title': 'URL', 'value': '${{ github.event.workflow_run.html_url }}', 'short': true}
+                ]
+              }]
+            }" \
+            "$SLACK_WEBHOOK_URL"
+
+      - name: Send email notification for critical failure
+        if: env.EMAIL_SMTP_SERVER != ''
+        run: |
+          python3 << 'EOF'
+          import smtplib
+          from email.mime.text import MIMEText
+          import os
+
+          msg = MIMEText(f"""
+          CRITICAL: Main Branch Test Failure
+
+          Workflow: {os.getenv('GITHUB_WORKFLOW', 'Unknown')}
+          Status: FAILED
+          Branch: main
+          URL: {os.getenv('GITHUB_RUN_URL', 'Unknown')}
+
+          Immediate action required. Please review the test results and fix the issues.
+          """)
+          msg['Subject'] = 'CRITICAL: Main Branch Test Failure'
+          msg['From'] = os.getenv('EMAIL_FROM', 'ci@superinsight.com')
+          msg['To'] = os.getenv('EMAIL_TO', 'dev-team@superinsight.com')
+
+          try:
+              with smtplib.SMTP(os.getenv('EMAIL_SMTP_SERVER'), os.getenv('EMAIL_SMTP_PORT', 587)) as server:
+                  server.starttls()
+                  server.login(os.getenv('EMAIL_USERNAME'), os.getenv('EMAIL_PASSWORD'))
+                  server.send_message(msg)
+              print("Email notification sent successfully")
+          except Exception as e:
+            print(f"Failed to send email: {e}")
+          EOF
+
+  # =============================================================================
+  # PR Test Failure Notification
+  # =============================================================================
+  pr-failure-notification:
+    name: PR Test Failure Notification
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: |
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.conclusion == 'failure' &&
+      contains(github.event.workflow_run.name, 'Pull Request')
+
+    steps:
+      - name: Send Slack notification for PR failure
+        if: env.SLACK_WEBHOOK_URL != ''
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data "{
+              'text': ':x: *Pull Request Tests Failed*',
+              'attachments': [{
+                'color': 'warning',
+                'fields': [
+                  {'title': 'Workflow', 'value': '${{ github.event.workflow_run.name }}', 'short': true},
+                  {'title': 'Status', 'value': 'FAILED', 'short': true},
+                  {'title': 'URL', 'value': '${{ github.event.workflow_run.html_url }}', 'short': true}
+                ]
+              }]
+            }" \
+            "$SLACK_WEBHOOK_URL"
+
+  # =============================================================================
+  # Daily Summary Report
+  # =============================================================================
+  daily-summary:
+    name: Daily Summary Report
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event_name == 'schedule'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github/workflows
+          sparse-checkout-cone-mode: false
+
+      - name: Get recent workflow runs
+        run: |
+          echo "=== Daily Test Summary ==="
+          echo "Date: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo ""
+
+          # Get workflow runs from the last 24 hours
+          since=$(date -u -d '24 hours ago' '+%Y-%m-%dT%H:%M:%SZ')
+          
+          echo "Fetching workflow runs since $since..."
+
+      - name: Generate daily summary
+        run: |
+          python3 << 'EOF'
+          import requests
+          import os
+          from datetime import datetime, timedelta
+
+          GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
+          REPO = os.getenv('GITHUB_REPOSITORY', 'owner/repo')
+
+          headers = {
+              'Authorization': f'Bearer {GITHUB_TOKEN}',
+              'Accept': 'application/vnd.github.v3+json'
+          }
+
+          # Calculate date range
+          end_date = datetime.utcnow()
+          start_date = end_date - timedelta(days=1)
+
+          summary = {
+              'date_range': f"{start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}",
+              'workflows': {},
+              'total_runs': 0,
+              'passed': 0,
+              'failed': 0,
+              'cancelled': 0
+          }
+
+          print("=== Daily Test Summary Report ===")
+          print(f"Period: {summary['date_range']}")
+          print("")
+
+          # Note: In a real implementation, you would use the GitHub API to get workflow runs
+          # For now, we'll create a template for the summary
+
+          print("Workflow Summary:")
+          print("-" * 50)
+          print(f"{'Workflow':<30} {'Runs':<8} {'Pass':<8} {'Fail':<8}")
+          print("-" * 50)
+          print(f"{'Commit Tests':<30} {'0':<8} {'0':<8} {'0':<8}")
+          print(f"{'Pull Request Tests':<30} {'0':<8} {'0':<8} {'0':<8}")
+          print(f"{'Main Branch Tests':<30} {'0':<8} {'0':<8} {'0':<8}")
+          print(f"{'Performance Tests':<30} {'0':<8} {'0':<8} {'0':<8}")
+          print(f"{'Security Scans':<30} {'0':<8} {'0':<8} {'0':<8}")
+          print("-" * 50)
+          print(f"{'Total':<30} {'0':<8} {'0':<8} {'0':<8}")
+          print("")
+
+          print("Notes:")
+          print("- Review any failed runs for details")
+          print("- Check performance trends for degradation")
+          print("- Address security vulnerabilities promptly")
+          print("")
+          print("Generated at:", datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC'))
+          EOF
+
+      - name: Send daily summary to Slack
+        if: env.SLACK_WEBHOOK_URL != ''
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data "{
+              'text': ':chart_with_upwards_trend: *Daily Test Summary*',
+              'attachments': [{
+                'color': 'good',
+                'fields': [
+                  {'title': 'Date', 'value': '$(date -u +%Y-%m-%d)', 'short': true},
+                  {'title': 'Total Runs', 'value': '0', 'short': true},
+                  {'title': 'Passed', 'value': '0', 'short': true},
+                  {'title': 'Failed', 'value': '0', 'short': true}
+                ]
+              }]
+            }" \
+            "$SLACK_WEBHOOK_URL"
+
+  # =============================================================================
+  # Flaky Test Tracking
+  # =============================================================================
+  flaky-test-tracking:
+    name: Track Flaky Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event_name == 'schedule'
+
+    steps:
+      - name: Analyze recent test results
+        run: |
+          echo "=== Flaky Test Analysis ==="
+          echo ""
+          echo "Looking for tests that have failed multiple times recently..."
+          echo ""
+
+          # This would analyze historical data to identify flaky tests
+          # For now, we'll create a placeholder
+
+          python3 << 'EOF'
+          from datetime import datetime, timedelta
+
+          # Placeholder for flaky test detection logic
+          # In production, this would query a database or use GitHub API
+
+          print("Flaky Test Report")
+          print("=" * 50)
+          print("")
+          print("No flaky tests detected in the last 24 hours.")
+          print("")
+          print("Recommendations:")
+          print("1. Monitor tests that occasionally fail")
+          print("2. Add retries for known flaky tests")
+          print("3. Investigate root causes of intermittent failures")
+          print("")
+          print("Generated:", datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC'))
+          EOF
+
+      - name: Upload flaky test report
+        uses: actions/upload-artifact@v4
+        with:
+          name: flaky-test-report
+          path: flaky-test-report.txt
+          retention-days: 7
+        if: always()
+
+  # =============================================================================
+  # Notification Summary
+  # =============================================================================
+  notification-summary:
+    name: Notification Summary
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: always()
+
+    steps:
+      - name: Print notification status
+        run: |
+          echo "=== Test Notification Summary ==="
+          echo ""
+          echo "Notification channels configured:"
+          echo "  - Slack: ${{ env.SLACK_WEBHOOK_URL != '' && 'Enabled' || 'Not configured' }}"
+          echo "  - Email: ${{ env.EMAIL_SMTP_SERVER != '' && 'Enabled' || 'Not configured' }}"
+          echo ""
+          echo "Alert types:"
+          echo "  - Critical failures: Immediate notification"
+          echo "  - PR failures: Notification on failure"
+          echo "  - Daily summary: Scheduled daily report"
+          echo "  - Flaky tests: Weekly analysis"

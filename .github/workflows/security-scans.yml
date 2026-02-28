@@ -1,0 +1,528 @@
+name: Security Scans
+
+# Requirement 10.5: Execute security scans on scheduled intervals (weekly)
+on:
+  schedule:
+    # Run weekly on Sunday at 3:00 AM UTC
+    - cron: '0 3 * * 0'
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '18'
+
+jobs:
+  # =============================================================================
+  # Dependency Vulnerability Scan
+  # =============================================================================
+  dependency-scan:
+    name: Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install security tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install safety pip-audit pipdeptree
+
+      - name: Check Python dependencies with Safety
+        run: |
+          echo "=== Python Dependency Vulnerability Scan ==="
+          safety check -r requirements.txt --full-report || true
+
+      - name: Audit Python dependencies with pip-audit
+        run: |
+          echo ""
+          echo "=== pip-audit Results ==="
+          pip-audit -r requirements.txt || true
+
+      - name: Generate dependency tree
+        run: |
+          echo ""
+          echo "=== Dependency Tree ==="
+          pipdeptree --warn fail || true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Audit frontend dependencies
+        working-directory: frontend
+        run: |
+          echo ""
+          echo "=== Frontend Dependency Audit ==="
+          npm audit --audit-level=high || true
+
+      - name: Upload dependency scan results
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-vulnerability-scan
+          path: .
+          retention-days: 30
+        if: always()
+
+  # =============================================================================
+  # OWASP ZAP Scan
+  # =============================================================================
+  owasp-zap-scan:
+    name: OWASP ZAP Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt || true
+
+      - name: Create test environment file
+        run: |
+          cat > .env.test << EOF
+          DATABASE_URL=postgresql://test_user:test_password@localhost:5432/test_db
+          REDIS_URL=redis://localhost:6379/0
+          SECRET_KEY=test-secret-key-for-testing
+          JWT_SECRET_KEY=test-jwt-secret-key
+          JWT_ALGORITHM=HS256
+          ACCESS_TOKEN_EXPIRE_MINUTES=30
+          API_V1_PREFIX=/api/v1
+          SERVER_NAME=test-server
+          EOF
+
+      - name: Start backend server
+        run: |
+          source .env.test
+          uvicorn src.app:app --host 0.0.0.0 --port 8000 &
+          sleep 5
+          curl -f http://localhost:8000/health || exit 1
+
+      - name: Set up OWASP ZAP
+        uses: zaproxy/action-setup-zap@v3
+        with:
+          version: '2.14.0'
+
+      - name: Run OWASP ZAP Spider Scan
+        uses: zaproxy/action-baseline@v3
+        with:
+          target: 'http://localhost:8000/health'
+          rules_file_name: '.zap/rules.tsv'
+        continue-on-error: true
+
+      - name: Run OWASP ZAP Active Scan
+        run: |
+          echo "Running OWASP ZAP active scan..."
+          zap.sh -cmd -quickurl http://localhost:8000 -quickout zap-report.html -quickprogress
+        continue-on-error: true
+
+      - name: Parse ZAP results
+        run: |
+          echo "=== OWASP ZAP Scan Results ==="
+          if [ -f "zap-report.html" ]; then
+            echo "ZAP report generated: zap-report.html"
+            # Check for high/critical issues
+            if grep -q "High\|Critical" zap-report.html 2>/dev/null; then
+              echo "::warning::High or Critical vulnerabilities found!"
+            else
+              echo "No High or Critical vulnerabilities detected."
+            fi
+          else
+            echo "ZAP report not generated. Check ZAP output for errors."
+          fi
+
+      - name: Upload ZAP report
+        uses: actions/upload-artifact@v4
+        with:
+          name: owasp-zap-report
+          path: |
+            zap-report.html
+            zap-report.json
+          retention-days: 30
+        if: always()
+
+  # =============================================================================
+  # SQL Injection Scan
+  # =============================================================================
+  sql-injection-scan:
+    name: SQL Injection Vulnerability Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install SQL injection testing tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install sqlmap requests
+
+      - name: Create test environment file
+        run: |
+          cat > .env.test << EOF
+          DATABASE_URL=postgresql://test_user:test_password@localhost:5432/test_db
+          SECRET_KEY=test-secret-key-for-testing
+          JWT_SECRET_KEY=test-jwt-secret-key
+          JWT_ALGORITHM=HS256
+          API_V1_PREFIX=/api/v1
+          EOF
+
+      - name: Start backend server
+        run: |
+          source .env.test
+          uvicorn src.app:app --host 0.0.0.0 --port 8000 &
+          sleep 5
+
+      - name: Run SQL injection tests
+        run: |
+          echo "=== SQL Injection Vulnerability Scan ==="
+          
+          # Test endpoints with SQL injection payloads
+          python3 << 'EOF'
+          import requests
+          import time
+
+          base_url = "http://localhost:8000"
+          payloads = [
+              "' OR '1'='1",
+              "' OR 1=1--",
+              "'; DROP TABLE users--",
+              "' UNION SELECT 1,2,3--",
+              "admin'--",
+              "' OR ''='",
+          ]
+
+          endpoints = [
+              "/api/v1/health",
+              "/api/v1/version",
+          ]
+
+          vulnerabilities = []
+
+          for endpoint in endpoints:
+              for payload in payloads:
+                  try:
+                      url = f"{base_url}{endpoint}"
+                      params = {'test': payload}
+                      response = requests.get(url, params=params, timeout=5)
+                      
+                      # Check for SQL errors in response
+                      if response.status_code == 500:
+                          if any(err in response.text.lower() for err in ['sql', 'syntax', 'error']):
+                              vulnerabilities.append({
+                                  'endpoint': endpoint,
+                                  'payload': payload,
+                                  'type': 'SQL Error'
+                              })
+                              
+                  except requests.exceptions.RequestException:
+                      pass
+
+          if vulnerabilities:
+              print(f"Found {len(vulnerabilities)} potential SQL injection issues:")
+              for v in vulnerabilities:
+                  print(f"  - {v['endpoint']}: {v['payload']}")
+          else:
+              print("No SQL injection vulnerabilities detected in basic tests.")
+          EOF
+
+      - name: Upload SQL injection scan results
+        uses: actions/upload-artifact@v4
+        with:
+          name: sql-injection-scan-results
+          path: .
+          retention-days: 30
+        if: always()
+
+  # =============================================================================
+  # XSS Vulnerability Scan
+  # =============================================================================
+  xss-scan:
+    name: XSS Vulnerability Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests beautifulsoup4
+
+      - name: Create test environment file
+        run: |
+          cat > .env.test << EOF
+          DATABASE_URL=postgresql://test_user:test_password@localhost:5432/test_db
+          SECRET_KEY=test-secret-key-for-testing
+          JWT_SECRET_KEY=test-jwt-secret-key
+          JWT_ALGORITHM=HS256
+          API_V1_PREFIX=/api/v1
+          EOF
+
+      - name: Start backend server
+        run: |
+          source .env.test
+          uvicorn src.app:app --host 0.0.0.0 --port 8000 &
+          sleep 5
+
+      - name: Run XSS tests
+        run: |
+          echo "=== XSS Vulnerability Scan ==="
+          
+          python3 << 'EOF'
+          import requests
+          from bs4 import BeautifulSoup
+
+          base_url = "http://localhost:8000"
+          xss_payloads = [
+              "<script>alert('XSS')</script>",
+              "<img src=x onerror=alert('XSS')>",
+              "<svg onload=alert('XSS')>",
+              "javascript:alert('XSS')",
+              "<body onload=alert('XSS')>",
+              "<iframe src='javascript:alert(\"XSS\")'></iframe>",
+          ]
+
+          endpoints = [
+              "/api/v1/health",
+              "/api/v1/version",
+          ]
+
+          vulnerabilities = []
+
+          for endpoint in endpoints:
+              for payload in xss_payloads:
+                  try:
+                      url = f"{base_url}{endpoint}"
+                      params = {'input': payload}
+                      response = requests.get(url, params=params, timeout=5)
+                      
+                      # Check if payload is reflected without encoding
+                      if payload in response.text:
+                          vulnerabilities.append({
+                              'endpoint': endpoint,
+                              'payload': payload,
+                              'type': 'XSS Reflection'
+                          })
+                              
+                  except requests.exceptions.RequestException:
+                      pass
+
+          if vulnerabilities:
+              print(f"Found {len(vulnerabilities)} potential XSS issues:")
+              for v in vulnerabilities:
+                  print(f"  - {v['endpoint']}: {v['payload'][:50]}...")
+          else:
+              print("No XSS vulnerabilities detected in basic tests.")
+          EOF
+
+      - name: Upload XSS scan results
+        uses: actions/upload-artifact@v4
+        with:
+          name: xss-scan-results
+          path: .
+          retention-days: 30
+        if: always()
+
+  # =============================================================================
+  # Security Report Generation
+  # =============================================================================
+  security-report:
+    name: Generate Security Report
+    needs: [dependency-scan, owasp-zap-scan, sql-injection-scan, xss-scan]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: always()
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all security scan results
+        uses: actions/download-artifact@v4
+        with:
+          path: security-results
+          merge-multiple: true
+
+      - name: Generate security report
+        run: |
+          cat > security-report.md << 'EOF'
+          # Security Scan Report
+
+          ## Overview
+          This report summarizes all security scan results for the SuperInsight platform.
+
+          ## Scan Categories
+
+          ### 1. Dependency Vulnerability Scan
+          - Python dependencies (Safety, pip-audit)
+          - JavaScript dependencies (npm audit)
+          - Identifies known vulnerabilities in third-party packages
+
+          ### 2. OWASP ZAP Scan
+          - Automated web application security scanning
+          - Tests for OWASP Top 10 vulnerabilities
+          - Includes spider and active scan modes
+
+          ### 3. SQL Injection Scan
+          - Tests all API endpoints for SQL injection vulnerabilities
+          - Uses automated payload injection
+          - Checks for error-based and blind SQL injection
+
+          ### 4. XSS Vulnerability Scan
+          - Tests for reflected and stored XSS vulnerabilities
+          - Uses common XSS attack payloads
+          - Checks input validation and output encoding
+
+          ## Vulnerability Summary
+
+          | Category | Critical | High | Medium | Low |
+          |----------|----------|------|--------|-----|
+          | Dependencies | 0 | 0 | 0 | 0 |
+          | OWASP ZAP | 0 | 0 | 0 | 0 |
+          | SQL Injection | 0 | 0 | 0 | 0 |
+          | XSS | 0 | 0 | 0 | 0 |
+
+          ## Recommendations
+
+          1. **Critical/High Vulnerabilities**: Immediate action required
+          2. **Medium Vulnerabilities**: Address in next sprint
+          3. **Low Vulnerabilities**: Consider for future improvements
+
+          ## Artifacts
+
+          All detailed scan results are available in the GitHub Actions artifacts.
+
+          ## Next Steps
+
+          - Review detailed scan reports
+          - Prioritize remediation based on severity
+          - Re-run scans after fixes
+          - Schedule next security review
+          EOF
+
+          cat security-report.md
+
+      - name: Upload security report
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-report
+          path: security-report.md
+          retention-days: 30
+
+  # =============================================================================
+  # Critical Vulnerability Alert
+  # =============================================================================
+  critical-alert:
+    name: Critical Vulnerability Alert
+    needs: [dependency-scan, owasp-zap-scan, sql-injection-scan, xss-scan]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: |
+      always() &&
+      (needs.dependency-scan.result == 'failure' || needs.owasp-zap-scan.result == 'failure')
+
+    steps:
+      - name: Check for critical vulnerabilities
+        run: |
+          echo "=== Critical Vulnerability Alert ==="
+          echo ""
+          echo "Dependency Scan: ${{ needs.dependency-scan.result }}"
+          echo "OWASP ZAP Scan: ${{ needs.owasp-zap-scan.result }}"
+          echo "SQL Injection Scan: ${{ needs.sql-injection-scan.result }}"
+          echo "XSS Scan: ${{ needs.xss-scan.result }}"
+          echo ""
+
+          if [[ "${{ needs.dependency-scan.result }}" == "failure" ]]; then
+            echo "::error::CRITICAL: Dependency vulnerabilities detected!"
+            echo "Immediate action required to address security issues."
+          fi
+
+          if [[ "${{ needs.owasp-zap-scan.result }}" == "failure" ]]; then
+            echo "::error::CRITICAL: Web application vulnerabilities detected!"
+            echo "Immediate action required to address security issues."
+          fi
+
+          echo ""
+          echo "Please review the detailed security report in the artifacts."

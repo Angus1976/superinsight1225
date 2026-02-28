@@ -10,10 +10,12 @@ import type { User, Tenant } from '@/types'
 vi.mock('@/utils/token', () => ({
   setToken: vi.fn(),
   clearAuthTokens: vi.fn(),
+  isTokenExpired: vi.fn().mockReturnValue(false),
+  getToken: vi.fn().mockReturnValue(null),
 }))
 
 // Get the mocked functions
-import { setToken, clearAuthTokens } from '@/utils/token'
+import { setToken, clearAuthTokens, isTokenExpired } from '@/utils/token'
 
 describe('authStore', () => {
   const mockUser: User = {
@@ -44,7 +46,10 @@ describe('authStore', () => {
       user: null,
       token: null,
       currentTenant: null,
+      currentWorkspace: null,
+      workspaces: [],
       isAuthenticated: false,
+      _hasHydrated: false,
     })
     vi.clearAllMocks()
   })
@@ -175,6 +180,112 @@ describe('authStore', () => {
       clearAuth()
 
       expect(clearAuthTokens).toHaveBeenCalled()
+    })
+  })
+
+  describe('setWorkspace', () => {
+    it('updates current workspace', () => {
+      const { setAuth, setWorkspace } = useAuthStore.getState()
+      setAuth(mockUser, mockToken, mockTenant)
+
+      const workspace = { id: 'ws-1', name: 'Test Workspace', tenant_id: 'tenant-1' }
+      setWorkspace(workspace)
+
+      const { currentWorkspace } = useAuthStore.getState()
+      expect(currentWorkspace).toEqual(workspace)
+    })
+  })
+
+  describe('setWorkspaces', () => {
+    it('updates workspaces list', () => {
+      const { setWorkspaces } = useAuthStore.getState()
+      const workspaces = [
+        { id: 'ws-1', name: 'Workspace 1', tenant_id: 'tenant-1' },
+        { id: 'ws-2', name: 'Workspace 2', tenant_id: 'tenant-1' },
+      ]
+      setWorkspaces(workspaces)
+
+      const { workspaces: stored } = useAuthStore.getState()
+      expect(stored).toEqual(workspaces)
+    })
+  })
+
+  describe('clearAuth', () => {
+    it('clears all auth state', () => {
+      const { setAuth, clearAuth } = useAuthStore.getState()
+
+      // First set auth
+      setAuth(mockUser, mockToken, mockTenant)
+
+      // Then clear
+      clearAuth()
+
+      const state = useAuthStore.getState()
+      expect(state.user).toBeNull()
+      expect(state.token).toBeNull()
+      expect(state.currentTenant).toBeNull()
+      expect(state.isAuthenticated).toBe(false)
+    })
+
+    it('calls clearAuthTokens utility', () => {
+      const { setAuth, clearAuth } = useAuthStore.getState()
+
+      setAuth(mockUser, mockToken, mockTenant)
+      clearAuth()
+
+      expect(clearAuthTokens).toHaveBeenCalled()
+    })
+
+    it('clears workspace state on logout', () => {
+      const { setAuth, setWorkspace, setWorkspaces, clearAuth } = useAuthStore.getState()
+
+      setAuth(mockUser, mockToken, mockTenant)
+      setWorkspace({ id: 'ws-1', name: 'WS', tenant_id: 'tenant-1' })
+      setWorkspaces([{ id: 'ws-1', name: 'WS', tenant_id: 'tenant-1' }])
+
+      clearAuth()
+
+      const state = useAuthStore.getState()
+      expect(state.currentWorkspace).toBeNull()
+      expect(state.workspaces).toEqual([])
+    })
+  })
+
+  describe('validateAndHydrate', () => {
+    it('sets _hasHydrated to true when token is valid', () => {
+      const { setAuth, validateAndHydrate } = useAuthStore.getState()
+      setAuth(mockUser, mockToken, mockTenant)
+
+      vi.mocked(isTokenExpired).mockReturnValue(false)
+
+      validateAndHydrate()
+
+      const { _hasHydrated } = useAuthStore.getState()
+      expect(_hasHydrated).toBe(true)
+    })
+
+    it('clears auth state when token is expired', () => {
+      const { setAuth, validateAndHydrate } = useAuthStore.getState()
+      setAuth(mockUser, mockToken, mockTenant)
+
+      vi.mocked(isTokenExpired).mockReturnValue(true)
+
+      validateAndHydrate()
+
+      const state = useAuthStore.getState()
+      expect(state.user).toBeNull()
+      expect(state.token).toBeNull()
+      expect(state.isAuthenticated).toBe(false)
+      expect(state._hasHydrated).toBe(true)
+    })
+
+    it('sets _hasHydrated when no token exists', () => {
+      // Store starts with no token
+      const { validateAndHydrate } = useAuthStore.getState()
+      validateAndHydrate()
+
+      const { _hasHydrated } = useAuthStore.getState()
+      expect(_hasHydrated).toBe(true)
     })
   })
 

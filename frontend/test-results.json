@@ -1,0 +1,1583 @@
+{
+  "config": {
+    "configFile": "/Users/angusliu/superdata/frontend/playwright.config.ts",
+    "rootDir": "/Users/angusliu/superdata/frontend/e2e",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {},
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "html",
+        {
+          "outputFolder": "playwright-report"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results.json"
+        }
+      ],
+      [
+        "list",
+        null
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "/Users/angusliu/superdata/frontend/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/angusliu/superdata/frontend/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/Users/angusliu/superdata/frontend/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "firefox",
+        "name": "firefox",
+        "testDir": "/Users/angusliu/superdata/frontend/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/Users/angusliu/superdata/frontend/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "webkit",
+        "name": "webkit",
+        "testDir": "/Users/angusliu/superdata/frontend/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/Users/angusliu/superdata/frontend/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "Mobile Chrome",
+        "name": "Mobile Chrome",
+        "testDir": "/Users/angusliu/superdata/frontend/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      },
+      {
+        "outputDir": "/Users/angusliu/superdata/frontend/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "Mobile Safari",
+        "name": "Mobile Safari",
+        "testDir": "/Users/angusliu/superdata/frontend/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.57.0",
+    "workers": 5,
+    "webServer": {
+      "command": "npm run dev",
+      "url": "http://localhost:3000",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [
+    {
+      "title": "annotation-data-workflows.spec.ts",
+      "file": "annotation-data-workflows.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Complete Annotation Workflow",
+          "file": "annotation-data-workflows.spec.ts",
+          "line": 192,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should complete full workflow from task selection to submission",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-63317fdc6e8c52c4abe3",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 202,
+              "column": 3
+            },
+            {
+              "title": "should navigate between annotation tasks",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-84580ea2d0e5702f005f",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 246,
+              "column": 3
+            },
+            {
+              "title": "should track annotation progress",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-a6209c68a71f7538a4c8",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 267,
+              "column": 3
+            },
+            {
+              "title": "should complete full workflow from task selection to submission",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-096b8204f2e9a2ad7587",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 202,
+              "column": 3
+            },
+            {
+              "title": "should navigate between annotation tasks",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-a851e51a0f0b7a8a1795",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 246,
+              "column": 3
+            },
+            {
+              "title": "should track annotation progress",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-54fdfdfe5fc204df17a3",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 267,
+              "column": 3
+            },
+            {
+              "title": "should complete full workflow from task selection to submission",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-8bf7859c9c69b926e818",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 202,
+              "column": 3
+            },
+            {
+              "title": "should navigate between annotation tasks",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-1d4f5ce82e4d7e0cfafb",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 246,
+              "column": 3
+            },
+            {
+              "title": "should track annotation progress",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-2b07c9568bdea051fdeb",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 267,
+              "column": 3
+            },
+            {
+              "title": "should complete full workflow from task selection to submission",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-cf75d2fd24a3253110e7",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 202,
+              "column": 3
+            },
+            {
+              "title": "should navigate between annotation tasks",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-cf2a452a9aeafe97b13e",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 246,
+              "column": 3
+            },
+            {
+              "title": "should track annotation progress",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-8875088a0578f054304e",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 267,
+              "column": 3
+            },
+            {
+              "title": "should complete full workflow from task selection to submission",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-0eb35a2ee5736e1ee824",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 202,
+              "column": 3
+            },
+            {
+              "title": "should navigate between annotation tasks",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-92f2f9548ba6027552e9",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 246,
+              "column": 3
+            },
+            {
+              "title": "should track annotation progress",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-b0a173cdaa443c5a837e",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 267,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "Annotation Editing and Updates",
+          "file": "annotation-data-workflows.spec.ts",
+          "line": 290,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should allow editing existing annotations",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-0780cd44d1bf762d99e3",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 300,
+              "column": 3
+            },
+            {
+              "title": "should support undo and redo operations",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-5509717f816e8f7692dc",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 321,
+              "column": 3
+            },
+            {
+              "title": "should sync annotation progress manually",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-1389790e301c24f28d6d",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 347,
+              "column": 3
+            },
+            {
+              "title": "should allow editing existing annotations",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-fa210a9cf41e2e1ac284",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 300,
+              "column": 3
+            },
+            {
+              "title": "should support undo and redo operations",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-4bd58522dcdcb600ae84",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 321,
+              "column": 3
+            },
+            {
+              "title": "should sync annotation progress manually",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-000a366e4838526c7d02",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 347,
+              "column": 3
+            },
+            {
+              "title": "should allow editing existing annotations",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-b051781ad20575aeb951",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 300,
+              "column": 3
+            },
+            {
+              "title": "should support undo and redo operations",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-56b6f73afefbbca82f60",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 321,
+              "column": 3
+            },
+            {
+              "title": "should sync annotation progress manually",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-d9e1815190b691b09e43",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 347,
+              "column": 3
+            },
+            {
+              "title": "should allow editing existing annotations",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-122aa85f5467c74d2deb",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 300,
+              "column": 3
+            },
+            {
+              "title": "should support undo and redo operations",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-a083b372571cabe9b4a7",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 321,
+              "column": 3
+            },
+            {
+              "title": "should sync annotation progress manually",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-b8f422616b8f0e65d860",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 347,
+              "column": 3
+            },
+            {
+              "title": "should allow editing existing annotations",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-6639d13106336588392e",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 300,
+              "column": 3
+            },
+            {
+              "title": "should support undo and redo operations",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-fb918a08fcef609ac6c8",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 321,
+              "column": 3
+            },
+            {
+              "title": "should sync annotation progress manually",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-7365723a6c3efe66145b",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 347,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "Annotation Validation and Error Handling",
+          "file": "annotation-data-workflows.spec.ts",
+          "line": 370,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should handle missing Label Studio project gracefully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-b67bab3fcc9271ab679f",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 379,
+              "column": 3
+            },
+            {
+              "title": "should handle annotation save errors",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-810465979cb902de5357",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 422,
+              "column": 3
+            },
+            {
+              "title": "should handle network errors gracefully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-90f4caaeca5c27ac52b4",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 454,
+              "column": 3
+            },
+            {
+              "title": "should show permission warning for unauthorized users",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-b570cf162c857e93dba9",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 486,
+              "column": 3
+            },
+            {
+              "title": "should handle missing Label Studio project gracefully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-de0de58315c28e5ce8d8",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 379,
+              "column": 3
+            },
+            {
+              "title": "should handle annotation save errors",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-7e32265da57c6e23a45e",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 422,
+              "column": 3
+            },
+            {
+              "title": "should handle network errors gracefully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-2945b2f23b3ea3508234",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 454,
+              "column": 3
+            },
+            {
+              "title": "should show permission warning for unauthorized users",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-11bb4f37083c919d2075",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 486,
+              "column": 3
+            },
+            {
+              "title": "should handle missing Label Studio project gracefully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-2b8a9adf28ab35367b60",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 379,
+              "column": 3
+            },
+            {
+              "title": "should handle annotation save errors",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-4fd671b080d4b37e6ecf",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 422,
+              "column": 3
+            },
+            {
+              "title": "should handle network errors gracefully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-3c39dfa0c0f885959e62",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 454,
+              "column": 3
+            },
+            {
+              "title": "should show permission warning for unauthorized users",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-d4ca913cd8874c7cebf0",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 486,
+              "column": 3
+            },
+            {
+              "title": "should handle missing Label Studio project gracefully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-c8d426cbdd3aca65d4f4",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 379,
+              "column": 3
+            },
+            {
+              "title": "should handle annotation save errors",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-f72c540d2c3cb7dcbc0e",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 422,
+              "column": 3
+            },
+            {
+              "title": "should handle network errors gracefully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-d9f393101b9863564b5a",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 454,
+              "column": 3
+            },
+            {
+              "title": "should show permission warning for unauthorized users",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-82ef6cca29783c0f931c",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 486,
+              "column": 3
+            },
+            {
+              "title": "should handle missing Label Studio project gracefully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-d71759d32e868dc5f243",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 379,
+              "column": 3
+            },
+            {
+              "title": "should handle annotation save errors",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-472de56b4004e50c0646",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 422,
+              "column": 3
+            },
+            {
+              "title": "should handle network errors gracefully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-d139af1346f5fab245e5",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 454,
+              "column": 3
+            },
+            {
+              "title": "should show permission warning for unauthorized users",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-da58cc6a3706ba001488",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 486,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "Annotation Export",
+          "file": "annotation-data-workflows.spec.ts",
+          "line": 507,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should support annotation export from task page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-2842a21b7f09634d8554",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 517,
+              "column": 3
+            },
+            {
+              "title": "should trigger download when exporting annotations",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-8db4e2a5ffe1fa02b494",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 540,
+              "column": 3
+            },
+            {
+              "title": "should support batch export from task list",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-52b2ff8adb0b8ed4f433",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 576,
+              "column": 3
+            },
+            {
+              "title": "should support annotation export from task page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-e94d595c776bec09ebaa",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 517,
+              "column": 3
+            },
+            {
+              "title": "should trigger download when exporting annotations",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-c6285dcc33f30f4f148f",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 540,
+              "column": 3
+            },
+            {
+              "title": "should support batch export from task list",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-8830bbdb225fdc3ffbee",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 576,
+              "column": 3
+            },
+            {
+              "title": "should support annotation export from task page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-b156f119935f20aa68af",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 517,
+              "column": 3
+            },
+            {
+              "title": "should trigger download when exporting annotations",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-6a944f2d2d55a9b37899",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 540,
+              "column": 3
+            },
+            {
+              "title": "should support batch export from task list",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-7ca228c9d9be58fb7160",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 576,
+              "column": 3
+            },
+            {
+              "title": "should support annotation export from task page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-613748d411dc462685bd",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 517,
+              "column": 3
+            },
+            {
+              "title": "should trigger download when exporting annotations",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-448eda889a3c845331db",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 540,
+              "column": 3
+            },
+            {
+              "title": "should support batch export from task list",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-53b33c7a75dc10c79252",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 576,
+              "column": 3
+            },
+            {
+              "title": "should support annotation export from task page",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-bb6f27ae53ed386fd082",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 517,
+              "column": 3
+            },
+            {
+              "title": "should trigger download when exporting annotations",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-e9304e3eb07b5e34d596",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 540,
+              "column": 3
+            },
+            {
+              "title": "should support batch export from task list",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-68acfa2fa6fa61984e38",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 576,
+              "column": 3
+            }
+          ]
+        },
+        {
+          "title": "Failure Artifacts",
+          "file": "annotation-data-workflows.spec.ts",
+          "line": 593,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should have screenshot-on-failure configured",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-835369b7e42327c16104",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 598,
+              "column": 3
+            },
+            {
+              "title": "should have screenshot-on-failure configured",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-92f181f4cbe233093b92",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 598,
+              "column": 3
+            },
+            {
+              "title": "should have screenshot-on-failure configured",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-7d0db2b2ef3d65067475",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 598,
+              "column": 3
+            },
+            {
+              "title": "should have screenshot-on-failure configured",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-6bf3d955da78ad661dba",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 598,
+              "column": 3
+            },
+            {
+              "title": "should have screenshot-on-failure configured",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "8121a0940f57da099ccf-e4f327cd032c3cde8ac0",
+              "file": "annotation-data-workflows.spec.ts",
+              "line": 598,
+              "column": 3
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-02-28T15:03:04.297Z",
+    "duration": 64.41800000000006,
+    "expected": 0,
+    "skipped": 70,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

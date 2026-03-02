@@ -14,11 +14,14 @@ import {
   ApartmentOutlined,
   NodeIndexOutlined,
   RocketOutlined,
+  TagsOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import VectorizationContent from './VectorizationContent';
 import SemanticContent from './SemanticContent';
+import AIAnnotationWorkflowContent from './AIAnnotationWorkflowContent';
+import AIAnnotationTaskList from './AIAnnotationTaskList';
 
 const { Title, Paragraph } = Typography;
 
@@ -51,6 +54,37 @@ const StructuringContent: React.FC = () => {
         {t('common:action.goToUpload', { defaultValue: '前往上传页面' })}
       </Button>
     </Space>
+  );
+};
+
+// ============================================================================
+// AI Annotation Content with sub-tabs
+// ============================================================================
+
+const AIAnnotationContent: React.FC = () => {
+  const { t } = useTranslation(['common']);
+  const [annotationActiveKey, setAnnotationActiveKey] = useState('workflow');
+
+  const annotationTabItems = [
+    {
+      key: 'workflow',
+      label: t('common:aiProcessing.aiAnnotation.workflow', { defaultValue: '工作流' }),
+      children: <AIAnnotationWorkflowContent />,
+    },
+    {
+      key: 'tasks',
+      label: t('common:aiProcessing.aiAnnotation.taskList', { defaultValue: '任务清单' }),
+      children: <AIAnnotationTaskList />,
+    },
+  ];
+
+  return (
+    <Tabs
+      activeKey={annotationActiveKey}
+      onChange={setAnnotationActiveKey}
+      items={annotationTabItems}
+      tabBarStyle={{ marginBottom: 16 }}
+    />
   );
 };
 
@@ -92,6 +126,16 @@ const AIProcessingTab: React.FC = () => {
         </Space>
       ),
       children: <SemanticContent />,
+    },
+    {
+      key: 'ai-annotation',
+      label: (
+        <Space>
+          <TagsOutlined />
+          {t('common:aiProcessing.tabs.aiAnnotation', { defaultValue: 'AI 智能标注' })}
+        </Space>
+      ),
+      children: <AIAnnotationContent />,
     },
   ];
 

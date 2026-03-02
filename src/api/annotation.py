@@ -998,3 +998,351 @@ async def get_switch_history():
     except Exception as e:
         logger.error(f"Get switch history failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
+# AI Annotation Workflow Endpoints
+# ============================================================================
+
+@router.get("/workflow/data-sources")
+async def get_workflow_data_sources(
+    project_id: Optional[str] = Query(None),
+):
+    """
+    Get available data sources for AI annotation workflow.
+    
+    Requirement 10.2, 11.1: 数据源列表
+    """
+    try:
+        # In real implementation, query from database
+        # Return both unstructured processed data and raw data
+        return {
+            "data_sources": [
+                {
+                    "id": "ds_1",
+                    "name": "非结构化处理后数据 - 批次 A",
+                    "type": "unstructured_processed",
+                    "record_count": 1500,
+                    "created_at": "2026-03-01T10:00:00Z",
+                },
+                {
+                    "id": "ds_2",
+                    "name": "原始数据 - 批次 B",
+                    "type": "raw",
+                    "record_count": 2000,
+                    "created_at": "2026-03-02T10:00:00Z",
+                },
+            ],
+            "count": 2,
+        }
+        
+    except Exception as e:
+        logger.error(f"Get data sources failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/workflow/annotated-samples")
+async def get_annotated_samples_info(
+    project_id: str = Query(...),
+    data_source_id: Optional[str] = Query(None),
+):
+    """
+    Get annotated samples information for AI learning.
+    
+    Requirement 10.3, 11.2: 样本信息
+    """
+    try:
+        # In real implementation, query from database
+        return {
+            "total_count": 45,
+            "average_quality": 0.92,
+            "annotation_types": ["entity", "relation", "classification"],
+            "coverage_rate": 0.15,
+            "quality_distribution": {
+                "high": 35,  # quality >= 0.9
+                "medium": 8,  # 0.7 <= quality < 0.9
+                "low": 2,  # quality < 0.7
+            },
+            "samples": [
+                {
+                    "id": f"sample_{i}",
+                    "annotation_type": "entity",
+                    "quality_score": 0.90 + (i % 10) / 100,
+                    "annotator": "user_1",
+                    "created_at": "2026-03-01T10:00:00Z",
+                }
+                for i in range(10)
+            ],
+        }
+        
+    except Exception as e:
+        logger.error(f"Get annotated samples failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class AILearnRequest(BaseModel):
+    """Request to start AI learning."""
+    project_id: str = Field(..., description="Project ID")
+    sample_ids: List[str] = Field(..., description="Sample IDs (min 10)")
+    annotation_type: str = Field(..., description="Annotation type")
+
+
+@router.post("/workflow/ai-learn")
+async def start_ai_learning(request: AILearnRequest):
+    """
+    Start AI learning from annotated samples.
+    
+    Requirement 10.3, 11.3: AI 学习触发
+    """
+    try:
+        # Validate sample count
+        if len(request.sample_ids) < 10:
+            raise HTTPException(
+                status_code=400,
+                detail=f"At least 10 samples required, got {len(request.sample_ids)}"
+            )
+        
+        from src.ai.ai_learning_engine import get_ai_learning_engine
+        
+        engine = get_ai_learning_engine()
+        
+        job_id = await engine.start_learning(
+            project_id=request.project_id,
+            sample_ids=request.sample_ids,
+            annotation_type=request.annotation_type,
+        )
+        
+        return {
+            "job_id": job_id,
+            "status": "started",
+            "sample_count": len(request.sample_ids),
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Start AI learning failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/workflow/ai-learn/{job_id}")
+async def get_ai_learning_progress(job_id: str):
+    """
+    Get AI learning progress.
+    
+    Requirement 10.5, 11.4: 学习进度显示
+    """
+    try:
+        from src.ai.ai_learning_engine import get_ai_learning_engine
+        
+        engine = get_ai_learning_engine()
+        progress = await engine.get_learning_progress(job_id)
+        
+        return progress.dict() if hasattr(progress, 'dict') else progress
+        
+    except Exception as e:
+        logger.error(f"Get learning progress failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class BatchAnnotateRequest(BaseModel):
+    """Request to start batch annotation."""
+    project_id: str = Field(..., description="Project ID")
+    learning_job_id: str = Field(..., description="Learning job ID")
+    target_dataset_id: str = Field(..., description="Target dataset ID")
+    annotation_type: str = Field(..., description="Annotation type")
+    confidence_threshold: float = Field(0.7, ge=0.0, le=1.0, description="Confidence threshold")
+
+
+@router.post("/workflow/batch-annotate")
+async def start_batch_annotation(request: BatchAnnotateRequest):
+    """
+    Start batch annotation using AI learning results.
+    
+    Requirement 10.7, 11.5: 批量标注启动
+    """
+    try:
+        from src.ai.batch_annotation_engine import get_batch_annotation_engine, BatchAnnotationConfig
+        from src.ai.pre_annotation import get_pre_annotation_engine
+        from src.ai.annotation_schemas import AnnotationType
+        
+        # Get engines
+        pre_engine = get_pre_annotation_engine()
+        batch_engine = get_batch_annotation_engine(db=None, pre_annotation_engine=pre_engine)
+        
+        # Create config
+        config = BatchAnnotationConfig(
+            project_id=request.project_id,
+            learning_job_id=request.learning_job_id,
+            target_dataset_id=request.target_dataset_id,
+            annotation_type=AnnotationType(request.annotation_type),
+            confidence_threshold=request.confidence_threshold,
+        )
+        
+        # Start batch annotation
+        job_id = await batch_engine.start_batch_annotation(config)
+        
+        return {
+            "job_id": job_id,
+            "status": "started",
+        }
+        
+    except Exception as e:
+        logger.error(f"Start batch annotation failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/workflow/batch-annotate/{job_id}")
+async def get_batch_annotation_progress(job_id: str):
+    """
+    Get batch annotation progress.
+    
+    Requirement 10.6, 11.6: 批量标注进度
+    """
+    try:
+        from src.ai.batch_annotation_engine import get_batch_annotation_engine
+        from src.ai.pre_annotation import get_pre_annotation_engine
+        
+        pre_engine = get_pre_annotation_engine()
+        batch_engine = get_batch_annotation_engine(db=None, pre_annotation_engine=pre_engine)
+        
+        progress = await batch_engine.get_batch_progress(job_id)
+        
+        return progress.dict() if hasattr(progress, 'dict') else progress
+        
+    except Exception as e:
+        logger.error(f"Get batch progress failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class ValidateEffectRequest(BaseModel):
+    """Request to validate AI annotation effect."""
+    project_id: str = Field(..., description="Project ID")
+    batch_job_id: str = Field(..., description="Batch job ID")
+    test_sample_count: int = Field(50, ge=1, description="Test sample count")
+    test_method: str = Field("random", description="Test method: random, low_confidence, diversity")
+
+
+@router.post("/workflow/validate-effect")
+async def validate_ai_effect(request: ValidateEffectRequest):
+    """
+    Validate AI annotation effect.
+    
+    Requirement 10.8, 10.9, 11.7: 效果验证
+    """
+    try:
+        from src.ai.post_validation import get_post_validation_engine
+        
+        engine = get_post_validation_engine()
+        
+        # In real implementation, call validate_ai_effect method
+        # For now, return mock validation results
+        result = {
+            "batch_job_id": request.batch_job_id,
+            "test_sample_count": request.test_sample_count,
+            "test_method": request.test_method,
+            "metrics": {
+                "accuracy": 0.85,
+                "recall": 0.82,
+                "f1_score": 0.83,
+                "consistency": 0.88,
+            },
+            "confusion_matrix": {
+                "true_positive": 42,
+                "false_positive": 5,
+                "true_negative": 38,
+                "false_negative": 8,
+            },
+            "error_cases": [
+                {
+                    "task_id": "task_123",
+                    "expected": "entity_A",
+                    "predicted": "entity_B",
+                    "confidence": 0.65,
+                }
+            ],
+            "improvement_suggestions": [
+                "增加更多 entity_B 类型的训练样本",
+                "调整置信度阈值到 0.75 以减少误报",
+            ],
+        }
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Validate effect failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/workflow/iterations")
+async def get_iteration_history(
+    project_id: str = Query(...),
+    limit: int = Query(100, ge=1, le=1000),
+):
+    """
+    Get iteration history for a project.
+    
+    Requirement 10.10, 11.8: 迭代历史
+    """
+    try:
+        from src.ai.iteration_manager import get_iteration_manager
+        
+        manager = get_iteration_manager(db=None)
+        
+        history = await manager.get_iteration_history(
+            project_id=project_id,
+            limit=limit,
+        )
+        
+        return {
+            "iterations": [h.dict() if hasattr(h, 'dict') else h for h in history],
+            "count": len(history),
+        }
+        
+    except Exception as e:
+        logger.error(f"Get iteration history failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class StartIterationRequest(BaseModel):
+    """Request to start a new iteration."""
+    project_id: str = Field(..., description="Project ID")
+    data_source_id: str = Field(..., description="Data source ID")
+    min_samples: int = Field(10, ge=1, description="Minimum samples required")
+    confidence_threshold: float = Field(0.7, ge=0.0, le=1.0, description="Confidence threshold")
+    test_sample_count: int = Field(50, ge=1, description="Test sample count")
+
+
+@router.post("/workflow/iterations/start")
+async def start_new_iteration(request: StartIterationRequest):
+    """
+    Start a new iteration.
+    
+    Requirement 10.12, 11.9: 新迭代
+    """
+    try:
+        from src.ai.iteration_manager import get_iteration_manager, IterationConfig
+        
+        manager = get_iteration_manager(db=None)
+        
+        config = IterationConfig(
+            data_source_id=request.data_source_id,
+            min_samples=request.min_samples,
+            confidence_threshold=request.confidence_threshold,
+            test_sample_count=request.test_sample_count,
+        )
+        
+        iteration_id = await manager.start_new_iteration(
+            project_id=request.project_id,
+            data_source_id=request.data_source_id,
+            config=config,
+        )
+        
+        return {
+            "iteration_id": iteration_id,
+            "status": "started",
+        }
+        
+    except Exception as e:
+        logger.error(f"Start new iteration failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

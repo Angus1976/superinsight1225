@@ -137,3 +137,40 @@
 5. THE Plugin_Config_UI SHALL 显示工具调用统计（调用次数、成功率、平均延迟、成本）
 6. THE Plugin_Config_UI SHALL 支持配置工具优先级，用于自动选择最优工具
 7. WHEN 配置标注类型映射 THEN THE Plugin_Config_UI SHALL 支持将内部标注类型映射到工具特定类型
+
+### Requirement 10: AI 标注工作流可视化
+
+**User Story:** 作为项目管理员，我希望有完整的 AI 标注工作流可视化界面，以便管理从数据准备到 AI 学习再到批量标注的完整循环流程。
+
+#### Acceptance Criteria
+
+1. THE AIProcessing_Page SHALL 提供工作流可视化展示（数据来源 → 人工样本 → AI 学习 → 批量标注 → 效果验证 → 循环迭代）
+2. THE AIProcessing_Page SHALL 支持选择数据来源（非结构化处理后的数据、原始数据）
+3. WHEN 已标注样本数量 >= 10 THEN THE AIProcessing_Page SHALL 允许触发 AI 学习
+4. IF 已标注样本数量 < 10 THEN THE AIProcessing_Page SHALL 显示错误提示"需要至少 10 个已标注样本"
+5. THE AIProcessing_Page SHALL 实时显示 AI 学习进度（百分比、识别的模式数量、平均置信度、推荐方法）
+6. THE AIProcessing_Page SHALL 实时显示批量标注进度（已标注数量/总数、平均置信度、需要人工审核数量）
+7. THE AIProcessing_Page SHALL 支持配置批量标注参数（目标数据集、标注类型、置信度阈值）
+8. THE AIProcessing_Page SHALL 显示效果验证结果（准确率、召回率、F1 分数、一致性、混淆矩阵、错误案例）
+9. THE AIProcessing_Page SHALL 支持配置效果验证参数（测试样本数、测试方式：随机/低置信度优先/多样性采样）
+10. THE AIProcessing_Page SHALL 显示迭代历史列表（迭代编号、样本数、标注数、准确率、F1 分数、耗时、时间）
+11. THE AIProcessing_Page SHALL 提供迭代对比图表（准确率和 F1 分数的变化趋势）
+12. THE AIProcessing_Page SHALL 支持启动新的迭代循环
+
+### Requirement 11: AI 标注工作流后端支持
+
+**User Story:** 作为系统，我需要提供完整的 AI 标注工作流后端 API，以便支持前端的可视化操作和循环迭代流程。
+
+#### Acceptance Criteria
+
+1. THE Workflow_API SHALL 提供获取数据源列表接口（包含非结构化处理后数据和原始数据）
+2. THE Workflow_API SHALL 提供获取已标注样本信息接口（总数、平均质量、标注类型、覆盖率、质量分布）
+3. THE Workflow_API SHALL 提供触发 AI 学习接口，接受项目 ID 和样本 ID 列表
+4. THE Workflow_API SHALL 提供获取 AI 学习进度接口（状态、百分比、识别的模式数量、平均置信度、推荐方法）
+5. THE Workflow_API SHALL 提供启动批量标注接口，接受项目 ID、学习任务 ID、目标数据集 ID、标注类型、置信度阈值
+6. THE Workflow_API SHALL 提供获取批量标注进度接口（状态、总数、已标注数、需要审核数、平均置信度、最近结果）
+7. THE Workflow_API SHALL 提供效果验证接口，接受项目 ID、批量任务 ID、测试样本数、测试方式
+8. THE Workflow_API SHALL 提供获取迭代历史接口，返回项目的所有迭代记录
+9. THE Workflow_API SHALL 提供启动新迭代接口，接受项目 ID、数据源 ID、迭代配置
+10. WHEN 完成一次完整迭代 THEN THE Workflow_API SHALL 自动记录迭代信息（样本数、标注数、质量指标、耗时）
+11. THE Workflow_API SHALL 确保工作流步骤顺序正确（数据来源 → AI 学习 → 批量标注 → 效果验证）

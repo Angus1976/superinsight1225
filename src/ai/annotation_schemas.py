@@ -484,3 +484,42 @@ class AnnotationError(BaseModel):
     message: str = Field(..., description="Error message")
     details: Optional[Dict[str, Any]] = Field(default=None, description="Error details")
     timestamp: datetime = Field(default_factory=datetime.utcnow, description="Error timestamp")
+
+
+# ============================================================================
+# AI Learning Schemas
+# ============================================================================
+
+class AILearningJobStatus(str, Enum):
+    """AI learning job status."""
+    PENDING = "pending"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
+class AILearningRequest(BaseModel):
+    """AI learning request."""
+    project_id: str = Field(..., description="Project ID")
+    sample_ids: List[str] = Field(..., min_length=1, description="Sample IDs to learn from")
+    learning_config: Optional[Dict[str, Any]] = Field(default_factory=dict, description="Learning config")
+
+
+class AILearningProgress(BaseModel):
+    """AI learning progress."""
+    job_id: str = Field(..., description="Job ID")
+    status: AILearningJobStatus = Field(..., description="Job status")
+    percentage: float = Field(default=0.0, ge=0.0, le=100.0, description="Progress percentage")
+    result: Optional["AILearningResult"] = Field(default=None, description="Learning result")
+
+
+class AILearningResult(BaseModel):
+    """AI learning result."""
+    pattern_count: int = Field(default=0, description="Number of patterns recognized")
+    average_confidence: float = Field(default=0.0, ge=0.0, le=1.0, description="Average confidence")
+    recommended_method: Optional[str] = Field(default=None, description="Recommended method")
+    patterns: List[AnnotationPattern] = Field(default_factory=list, description="Recognized patterns")
+    confidence_distribution: Dict[str, int] = Field(
+        default_factory=dict,
+        description="Confidence distribution (very_low, low, medium, high)"
+    )

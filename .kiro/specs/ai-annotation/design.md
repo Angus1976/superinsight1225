@@ -487,7 +487,161 @@ async def reject_review(review_id: str, request: RejectRequest) -> ReviewResult:
 @router.get("/review/history/{annotation_id}")
 async def get_review_history(annotation_id: str) -> List[ReviewRecord]:
     pass
+
+# AI 标注工作流 API
+@router.get("/workflow/data-sources")
+async def get_data_sources() -> List[DataSource]:
+    """获取可用数据源（非结构化处理后 + 原始数据）"""
+    pass
+
+@router.get("/workflow/annotated-samples")
+async def get_annotated_samples(project_id: str) -> AnnotatedSamplesInfo:
+    """获取已标注样本信息"""
+    pass
+
+@router.post("/workflow/ai-learn")
+async def trigger_ai_learning(request: AILearningRequest) -> AILearningJob:
+    """触发 AI 学习分析"""
+    pass
+
+@router.get("/workflow/ai-learn/{job_id}")
+async def get_learning_progress(job_id: str) -> AILearningProgress:
+    """获取 AI 学习进度"""
+    pass
+
+@router.post("/workflow/batch-annotate")
+async def start_batch_annotation(request: BatchAnnotationRequest) -> BatchAnnotationJob:
+    """启动批量标注"""
+    pass
+
+@router.get("/workflow/batch-annotate/{job_id}")
+async def get_batch_progress(job_id: str) -> BatchAnnotationProgress:
+    """获取批量标注进度"""
+    pass
+
+@router.post("/workflow/validate-effect")
+async def validate_ai_effect(request: EffectValidationRequest) -> EffectValidationResult:
+    """验证 AI 助手效果"""
+    pass
+
+@router.get("/workflow/iterations")
+async def get_iteration_history(project_id: str) -> List[IterationRecord]:
+    """获取迭代历史"""
+    pass
+
+@router.post("/workflow/iterations/start")
+async def start_new_iteration(request: NewIterationRequest) -> IterationRecord:
+    """启动新的迭代循环"""
+    pass
 ```
+
+### 8. AI Processing Page (AI 标注可视化操作页面)
+
+**文件**: `frontend/src/pages/Augmentation/AIProcessing.tsx`
+
+**路由**: `/augmentation/ai-processing`
+
+**职责**: 提供完整的 AI 标注工作流可视化操作界面，支持从数据准备到 AI 标注再到效果验证的循环迭代过程
+
+#### 页面架构
+
+```typescript
+interface AIProcessingPageState {
+  currentStep: 'data-source' | 'sample-review' | 'ai-learning' | 'batch-annotation' | 'effect-validation';
+  dataSource: DataSource | null;
+  annotatedSamples: AnnotatedSamplesInfo | null;
+  learningJob: AILearningJob | null;
+  batchJob: BatchAnnotationJob | null;
+  validationResult: EffectValidationResult | null;
+  iterations: IterationRecord[];
+}
+
+const AIProcessingPage: React.FC = () => {
+  const [state, setState] = useState<AIProcessingPageState>({...});
+  
+  return (
+    <div className="ai-processing-page">
+      {/* 工作流可视化 */}
+      <WorkflowVisualization state={state} />
+      
+      {/* 步骤导航 */}
+      <Steps current={getCurrentStepIndex(state.currentStep)} />
+      
+      {/* 当前步骤内容 */}
+      {renderStepContent(state)}
+      
+      {/* 迭代历史对比 */}
+      <IterationComparison iterations={state.iterations} />
+    </div>
+  );
+};
+```
+
+#### 子组件
+
+**8.1 WorkflowVisualization - 工作流可视化**
+
+使用流程图展示完整的循环工作流，包括：数据来源 → 人工样本 → AI 学习 → 批量标注 → 效果验证 → 循环迭代
+
+**8.2 DataSourceSelector - 数据来源选择**
+
+支持选择两类数据源：
+- 非结构化处理后的数据
+- 原始数据
+
+提供数据预览和统计信息
+
+**8.3 AnnotatedSamplesPanel - 已标注样本面板**
+
+显示：
+- 样本数量、平均质量、标注类型、覆盖率
+- 质量分布图表
+- 样本列表
+- 触发 AI 学习按钮
+
+**8.4 AILearningPanel - AI 学习面板**
+
+显示：
+- 学习进度条
+- 识别的标注模式数量
+- 平均置信度
+- 推荐标注方法
+- 模式可视化
+- 置信度分布图
+
+**8.5 BatchAnnotationPanel - 批量标注面板**
+
+配置项：
+- 目标数据集选择
+- 标注类型（文本分类/NER/情感分析）
+- 置信度阈值
+
+实时显示：
+- 已标注数量 / 总数
+- 平均置信度
+- 需要人工审核数量
+- 标注结果流
+
+**8.6 EffectValidationPanel - 效果验证面板**
+
+测试配置：
+- 测试样本数
+- 测试方式（随机/低置信度优先/多样性采样）
+
+验证结果：
+- 准确率、召回率、F1 分数、一致性
+- 混淆矩阵
+- 错误案例分析
+- 改进建议
+
+**8.7 IterationComparison - 迭代对比**
+
+表格展示历史迭代：
+- 迭代编号、样本数、标注数
+- 准确率、F1 分数
+- 耗时、时间
+
+质量趋势图：展示准确率和 F1 分数的变化趋势
 
 ## Data Models
 
@@ -532,6 +686,143 @@ class ReviewRecord(Base):
     action = Column(String(20), nullable=False)  # approve/reject/modify
     comments = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+class AILearningJob(Base):
+    """AI 学习任务表"""
+    __tablename__ = "ai_learning_jobs"
+    
+    id = Column(UUID, primary_key=True, default=uuid4)
+    project_id = Column(UUID, ForeignKey("projects.id"), nullable=False)
+    sample_ids = Column(ARRAY(UUID), nullable=False)
+    status = Column(String(20), default="pending")  # pending/running/completed/failed
+    pattern_count = Column(Integer, default=0)
+    average_confidence = Column(Float, default=0)
+    recommended_method = Column(String(50), nullable=True)
+    result_data = Column(JSONB, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    completed_at = Column(DateTime, nullable=True)
+
+class BatchAnnotationJob(Base):
+    """批量标注任务表"""
+    __tablename__ = "batch_annotation_jobs"
+    
+    id = Column(UUID, primary_key=True, default=uuid4)
+    project_id = Column(UUID, ForeignKey("projects.id"), nullable=False)
+    learning_job_id = Column(UUID, ForeignKey("ai_learning_jobs.id"), nullable=True)
+    target_dataset_id = Column(UUID, nullable=False)
+    annotation_type = Column(String(50), nullable=False)
+    confidence_threshold = Column(Float, default=0.7)
+    status = Column(String(20), default="pending")
+    total_count = Column(Integer, default=0)
+    annotated_count = Column(Integer, default=0)
+    needs_review_count = Column(Integer, default=0)
+    average_confidence = Column(Float, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    completed_at = Column(DateTime, nullable=True)
+
+class IterationRecord(Base):
+    """迭代记录表"""
+    __tablename__ = "iteration_records"
+    
+    id = Column(UUID, primary_key=True, default=uuid4)
+    project_id = Column(UUID, ForeignKey("projects.id"), nullable=False)
+    iteration_number = Column(Integer, nullable=False)
+    sample_count = Column(Integer, default=0)
+    annotated_count = Column(Integer, default=0)
+    accuracy = Column(Float, default=0)
+    recall = Column(Float, default=0)
+    f1_score = Column(Float, default=0)
+    consistency = Column(Float, default=0)
+    duration_seconds = Column(Integer, default=0)
+    learning_job_id = Column(UUID, ForeignKey("ai_learning_jobs.id"), nullable=True)
+    batch_job_id = Column(UUID, ForeignKey("batch_annotation_jobs.id"), nullable=True)
+    validation_result = Column(JSONB, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+```
+
+### API 数据模型
+
+```python
+class DataSource(BaseModel):
+    """数据来源"""
+    id: str
+    name: str
+    type: str  # 'processed' | 'raw'
+    record_count: int
+    created_at: datetime
+    metadata: Dict[str, Any]
+
+class AnnotatedSamplesInfo(BaseModel):
+    """已标注样本信息"""
+    total_count: int
+    average_quality: float
+    annotation_types: List[str]
+    coverage: float
+    quality_distribution: Dict[str, int]
+    samples: List[AnnotationSample]
+
+class AILearningRequest(BaseModel):
+    """AI 学习请求"""
+    project_id: str
+    sample_ids: List[str]
+    learning_config: Dict[str, Any]
+
+class AILearningProgress(BaseModel):
+    """AI 学习进度"""
+    job_id: str
+    status: str  # 'pending' | 'running' | 'completed' | 'failed'
+    percentage: float
+    result: Optional[AILearningResult]
+
+class AILearningResult(BaseModel):
+    """AI 学习结果"""
+    pattern_count: int
+    average_confidence: float
+    recommended_method: str
+    patterns: List[AnnotationPattern]
+    confidence_distribution: Dict[str, int]
+
+class BatchAnnotationRequest(BaseModel):
+    """批量标注请求"""
+    project_id: str
+    learning_job_id: Optional[str]
+    target_dataset_id: str
+    annotation_type: str
+    confidence_threshold: float
+    batch_size: int
+
+class BatchAnnotationProgress(BaseModel):
+    """批量标注进度"""
+    job_id: str
+    status: str
+    total_count: int
+    annotated_count: int
+    needs_review_count: int
+    average_confidence: float
+    recent_results: List[AnnotationResult]
+
+class EffectValidationRequest(BaseModel):
+    """效果验证请求"""
+    project_id: str
+    batch_job_id: str
+    sample_size: int
+    test_type: str  # 'random' | 'low_confidence' | 'diverse'
+
+class EffectValidationResult(BaseModel):
+    """效果验证结果"""
+    accuracy: float
+    recall: float
+    f1_score: float
+    consistency: float
+    confusion_matrix: Dict[str, Any]
+    error_cases: List[ErrorCase]
+    recommendations: List[str]
+
+class NewIterationRequest(BaseModel):
+    """新迭代请求"""
+    project_id: str
+    data_source_id: str
+    iteration_config: Dict[str, Any]
 ```
 
 ## Correctness Properties
@@ -580,6 +871,36 @@ class ReviewRecord(Base):
 
 **Validates: Requirements 3.2**
 
+### Property 8: 工作流步骤顺序
+
+*For any* AI 标注工作流执行，必须按照 数据来源 → 样本分析 → AI 学习 → 批量标注 → 效果验证 的顺序进行，不能跳过步骤。
+
+**Validates: Requirements 10.1, 10.3, 10.5, 10.7**
+
+### Property 9: 学习样本数量要求
+
+*For any* AI 学习任务，只有当已标注样本数量 >= 10 时才能触发学习，否则应返回错误提示。
+
+**Validates: Requirements 10.2, 10.3**
+
+### Property 10: 批量标注进度一致性
+
+*For any* 批量标注任务，已标注数量应等于高置信度标注数量 + 需要审核数量，且不超过总数量。
+
+**Validates: Requirements 10.6**
+
+### Property 11: 迭代记录完整性
+
+*For any* 完成的迭代，系统应记录样本数量、标注数量、质量指标（准确率、召回率、F1 分数）、耗时等完整信息。
+
+**Validates: Requirements 10.11**
+
+### Property 12: 效果验证指标完整性
+
+*For any* 效果验证结果，必须包含准确率、召回率、F1 分数、一致性四个核心指标。
+
+**Validates: Requirements 10.8**
+
 ## Error Handling
 
 | 错误类型 | 错误码 | 处理策略 |
@@ -589,6 +910,12 @@ class ReviewRecord(Base):
 | 验证失败 | ANN_VALIDATION_ERROR | 生成问题报告 |
 | 任务分配失败 | ANN_ASSIGNMENT_ERROR | 返回错误，建议手动分配 |
 | 审核流程错误 | ANN_REVIEW_ERROR | 返回错误详情 |
+| 样本数量不足 | ANN_INSUFFICIENT_SAMPLES | 提示需要至少 10 个样本 |
+| AI 学习失败 | ANN_LEARNING_ERROR | 记录错误，返回失败原因 |
+| 批量标注失败 | ANN_BATCH_ANNOTATION_ERROR | 记录失败任务，支持重试 |
+| 效果验证失败 | ANN_VALIDATION_FAILED | 返回验证错误详情 |
+| 工作流步骤错误 | ANN_WORKFLOW_STEP_ERROR | 提示正确的步骤顺序 |
+| 数据源不可用 | ANN_DATA_SOURCE_UNAVAILABLE | 提示选择其他数据源 |
 
 ## Testing Strategy
 
@@ -598,6 +925,10 @@ class ReviewRecord(Base):
 - 测试方法路由
 - 测试任务分配逻辑
 - 测试审核流程
+- 测试 AI 学习样本数量验证
+- 测试批量标注进度计算
+- 测试迭代记录生成
+- 测试效果验证指标计算
 
 ### 属性测试
 ```python
@@ -607,6 +938,48 @@ def test_confidence_threshold_marking(confidence: float):
     threshold = 0.7
     result = AnnotationResult(confidence=confidence)
     needs_review = pre_engine.mark_for_review(result, threshold)
+    assert needs_review == (confidence < threshold)
+
+@given(st.integers(min_value=0, max_value=100))
+def test_learning_sample_requirement(sample_count: int):
+    """Property 9: 学习样本数量要求"""
+    if sample_count < 10:
+        with pytest.raises(InsufficientSamplesError):
+            ai_learning_engine.start_learning(sample_count)
+    else:
+        result = ai_learning_engine.start_learning(sample_count)
+        assert result is not None
+
+@given(st.integers(min_value=0, max_value=1000), st.integers(min_value=0, max_value=1000))
+def test_batch_annotation_progress_consistency(high_conf: int, needs_review: int):
+    """Property 10: 批量标注进度一致性"""
+    total = high_conf + needs_review
+    progress = BatchAnnotationProgress(
+        annotated_count=total,
+        high_confidence_count=high_conf,
+        needs_review_count=needs_review,
+        total_count=total
+    )
+    assert progress.annotated_count == progress.high_confidence_count + progress.needs_review_count
+    assert progress.annotated_count <= progress.total_count
+```
+
+### 集成测试
+- 测试完整的预标注 → 审核流程
+- 测试人机协作场景
+- 测试 Label Studio 集成
+- 测试完整的 AI 标注工作流循环（数据来源 → AI 学习 → 批量标注 → 效果验证 → 新迭代）
+- 测试工作流步骤顺序验证
+- 测试迭代历史记录和对比
+
+### 前端测试
+- 测试 AIProcessingPage 组件渲染
+- 测试工作流步骤切换
+- 测试数据来源选择
+- 测试 AI 学习进度实时更新
+- 测试批量标注进度显示
+- 测试效果验证结果展示
+- 测试迭代对比图表
     assert needs_review == (confidence < threshold)
 ```
 

@@ -281,6 +281,253 @@
   - 验证所有需求已实现
   - 确保所有测试通过，如有问题请询问用户
 
+- [x] 17. AI 学习引擎实现
+  - [x] 17.1 创建 AI 学习引擎
+    - 创建 `src/ai/ai_learning_engine.py`
+    - 实现 `start_learning()` 方法，接受项目 ID 和样本 ID 列表
+    - 实现样本数量验证（最少 10 个样本）
+    - 实现模式识别和特征提取
+    - _需求 10.3, 11.3: AI 学习触发和样本数量验证_
+  
+  - [x] 17.2 实现学习进度跟踪
+    - 实现 `get_learning_progress()` 方法
+    - 实时计算识别的模式数量
+    - 实时计算平均置信度
+    - 推荐最优标注方法
+    - _需求 10.5, 11.4: 学习进度显示_
+  
+  - [x] 17.3 实现学习结果存储
+    - 创建 AILearningJob 数据库模型
+    - 存储学习任务状态和结果
+    - 存储识别的标注模式
+    - _需求 11.3, 11.4: 学习任务管理_
+  
+  - [x] 17.4 编写 AI 学习属性测试
+    - **Property 9: 学习样本数量要求**
+    - **Validates: Requirements 10.3**
+
+- [x] 18. 批量标注任务管理
+  - [x] 18.1 创建批量标注引擎
+    - 创建 `src/ai/batch_annotation_engine.py`
+    - 实现 `start_batch_annotation()` 方法
+    - 接受项目 ID、学习任务 ID、目标数据集 ID、标注类型、置信度阈值
+    - 集成 Pre-Annotation Engine
+    - _需求 10.7, 11.5: 批量标注启动_
+  
+  - [x] 18.2 实现批量标注进度跟踪
+    - 实现 `get_batch_progress()` 方法
+    - 实时统计已标注数量、需要审核数量
+    - 实时计算平均置信度
+    - 返回最近标注结果
+    - _需求 10.6, 11.6: 批量标注进度_
+  
+  - [x] 18.3 实现批量标注结果存储
+    - 创建 BatchAnnotationJob 数据库模型
+    - 存储批量任务状态和统计信息
+    - 关联学习任务和标注结果
+    - _需求 11.5, 11.6: 批量任务管理_
+  
+  - [x] 18.4 编写批量标注属性测试
+    - **Property 10: 批量标注进度一致性**
+    - **Validates: Requirements 10.6**
+
+- [x] 19. 效果验证引擎
+  - [x] 19.1 扩展 Post-Validation Engine
+    - 扩展 `src/ai/post_validation.py`
+    - 实现 `validate_ai_effect()` 方法
+    - 接受项目 ID、批量任务 ID、测试样本数、测试方式
+    - 支持三种测试方式：随机、低置信度优先、多样性采样
+    - _需求 10.9, 11.7: 效果验证_
+  
+  - [x] 19.2 实现质量指标计算
+    - 计算准确率、召回率、F1 分数、一致性
+    - 生成混淆矩阵
+    - 识别错误案例
+    - 生成改进建议
+    - _需求 10.8, 11.7: 验证结果_
+  
+  - [x] 19.3 编写效果验证属性测试
+    - **Property 12: 效果验证指标完整性**
+    - **Validates: Requirements 10.8**
+
+- [x] 20. 迭代管理
+  - [x] 20.1 创建迭代管理器
+    - 创建 `src/ai/iteration_manager.py`
+    - 实现 `record_iteration()` 方法
+    - 自动记录样本数、标注数、质量指标、耗时
+    - 关联学习任务和批量任务
+    - _需求 10.11, 11.10: 迭代记录_
+  
+  - [x] 20.2 实现迭代历史查询
+    - 实现 `get_iteration_history()` 方法
+    - 返回项目的所有迭代记录
+    - 支持按时间排序
+    - _需求 10.10, 11.8: 迭代历史_
+  
+  - [x] 20.3 实现新迭代启动
+    - 实现 `start_new_iteration()` 方法
+    - 接受项目 ID、数据源 ID、迭代配置
+    - 初始化新的迭代记录
+    - _需求 10.12, 11.9: 新迭代_
+  
+  - [x] 20.4 创建迭代记录数据库模型
+    - 创建 IterationRecord 数据库模型
+    - 存储迭代编号、样本数、标注数、质量指标
+    - 关联学习任务和批量任务
+    - _需求 11.10: 迭代数据存储_
+  
+  - [x] 20.5 编写迭代管理属性测试
+    - **Property 11: 迭代记录完整性**
+    - **Validates: Requirements 10.11**
+
+- [x] 21. Checkpoint - 确保 AI 工作流核心功能完成
+  - 验证 AI 学习引擎
+  - 验证批量标注引擎
+  - 验证效果验证引擎
+  - 验证迭代管理
+  - 确保所有测试通过，如有问题请询问用户
+
+- [x] 22. 工作流 API 实现
+  - [x] 22.1 实现数据源 API
+    - 扩展 `src/api/annotation.py`
+    - 实现 `GET /workflow/data-sources` 端点
+    - 返回非结构化处理后数据和原始数据列表
+    - _需求 10.2, 11.1: 数据源列表_
+  
+  - [x] 22.2 实现已标注样本 API
+    - 实现 `GET /workflow/annotated-samples` 端点
+    - 返回总数、平均质量、标注类型、覆盖率、质量分布
+    - _需求 10.3, 11.2: 样本信息_
+  
+  - [x] 22.3 实现 AI 学习 API
+    - 实现 `POST /workflow/ai-learn` 端点
+    - 实现 `GET /workflow/ai-learn/{job_id}` 端点
+    - 触发学习和查询进度
+    - _需求 10.3, 10.5, 11.3, 11.4: AI 学习 API_
+  
+  - [x] 22.4 实现批量标注 API
+    - 实现 `POST /workflow/batch-annotate` 端点
+    - 实现 `GET /workflow/batch-annotate/{job_id}` 端点
+    - 启动批量标注和查询进度
+    - _需求 10.6, 10.7, 11.5, 11.6: 批量标注 API_
+  
+  - [x] 22.5 实现效果验证 API
+    - 实现 `POST /workflow/validate-effect` 端点
+    - 触发效果验证并返回结果
+    - _需求 10.8, 10.9, 11.7: 效果验证 API_
+  
+  - [x] 22.6 实现迭代管理 API
+    - 实现 `GET /workflow/iterations` 端点
+    - 实现 `POST /workflow/iterations/start` 端点
+    - 查询迭代历史和启动新迭代
+    - _需求 10.10, 10.12, 11.8, 11.9: 迭代 API_
+  
+  - [x] 22.7 编写工作流 API 属性测试
+    - **Property 8: 工作流步骤顺序**
+    - **Validates: Requirements 11.11**
+
+- [x] 23. 数据库迁移 - AI 工作流表
+  - [x] 23.1 创建 AI 工作流数据库迁移
+    - 创建 Alembic 迁移脚本
+    - 添加 `ai_learning_jobs` 表
+    - 添加 `batch_annotation_jobs` 表
+    - 添加 `iteration_records` 表
+    - _需求 11.3, 11.5, 11.10: 数据库表_
+
+- [x] 24. 前端实现 - AIProcessingPage
+  - [x] 24.1 创建 AIProcessingPage 主页面
+    - 创建 `frontend/src/pages/Augmentation/AIProcessing.tsx`
+    - 实现页面状态管理
+    - 实现步骤导航
+    - 配置路由 `/augmentation/ai-processing`
+    - _需求 10.1: 主页面_
+  
+  - [x] 24.2 实现 WorkflowVisualization 组件
+    - 创建 `frontend/src/components/AIWorkflow/WorkflowVisualization.tsx`
+    - 使用流程图展示工作流（数据来源 → 人工样本 → AI 学习 → 批量标注 → 效果验证 → 循环迭代）
+    - 高亮当前步骤
+    - _需求 10.1: 工作流可视化_
+  
+  - [x] 24.3 实现 DataSourceSelector 组件
+    - 创建 `frontend/src/components/AIWorkflow/DataSourceSelector.tsx`
+    - 支持选择非结构化处理后数据或原始数据
+    - 显示数据预览和统计信息
+    - _需求 10.2: 数据来源选择_
+  
+  - [x] 24.4 实现 AnnotatedSamplesPanel 组件
+    - 创建 `frontend/src/components/AIWorkflow/AnnotatedSamplesPanel.tsx`
+    - 显示样本数量、平均质量、标注类型、覆盖率
+    - 显示质量分布图表
+    - 显示样本列表
+    - 实现触发 AI 学习按钮（样本数 >= 10）
+    - _需求 10.3, 10.4: 样本面板_
+  
+  - [x] 24.5 实现 AILearningPanel 组件
+    - 创建 `frontend/src/components/AIWorkflow/AILearningPanel.tsx`
+    - 显示学习进度条
+    - 显示识别的模式数量、平均置信度、推荐方法
+    - 显示模式可视化和置信度分布图
+    - _需求 10.5: AI 学习面板_
+  
+  - [x] 24.6 实现 BatchAnnotationPanel 组件
+    - 创建 `frontend/src/components/AIWorkflow/BatchAnnotationPanel.tsx`
+    - 实现配置表单（目标数据集、标注类型、置信度阈值）
+    - 实时显示已标注数量、平均置信度、需要审核数量
+    - 显示标注结果流
+    - _需求 10.6, 10.7: 批量标注面板_
+  
+  - [x] 24.7 实现 EffectValidationPanel 组件
+    - 创建 `frontend/src/components/AIWorkflow/EffectValidationPanel.tsx`
+    - 实现测试配置表单（测试样本数、测试方式）
+    - 显示验证结果（准确率、召回率、F1 分数、一致性）
+    - 显示混淆矩阵和错误案例
+    - 显示改进建议
+    - _需求 10.8, 10.9: 效果验证面板_
+  
+  - [x] 24.8 实现 IterationComparison 组件
+    - 创建 `frontend/src/components/AIWorkflow/IterationComparison.tsx`
+    - 表格展示历史迭代（迭代编号、样本数、标注数、准确率、F1 分数、耗时、时间）
+    - 显示质量趋势图（准确率和 F1 分数变化）
+    - 支持启动新迭代
+    - _需求 10.10, 10.11, 10.12: 迭代对比_
+  
+  - [x] 24.9 编写前端单元测试
+    - 测试 AIProcessingPage 组件渲染
+    - 测试工作流步骤切换
+    - 测试数据来源选择
+    - 测试 AI 学习进度更新
+    - 测试批量标注进度显示
+    - 测试效果验证结果展示
+    - 测试迭代对比图表
+    - _前端测试_
+
+- [x] 25. Checkpoint - 确保 AI 工作流前端完成
+  - 验证 AIProcessingPage 页面
+  - 验证所有子组件
+  - 验证工作流步骤流转
+  - 确保所有测试通过，如有问题请询问用户
+
+- [x] 26. 集成测试 - AI 工作流
+  - [x] 26.1 编写完整工作流集成测试
+    - 测试数据来源 → AI 学习 → 批量标注 → 效果验证 → 新迭代的完整流程
+    - 测试工作流步骤顺序验证
+    - 测试样本数量不足时的错误提示
+    - 测试批量标注进度一致性
+    - 测试迭代记录自动生成
+    - _需求 10.1-10.12, 11.1-11.11: 完整工作流_
+  
+  - [x] 26.2 更新 API 文档
+    - 更新 OpenAPI 文档
+    - 添加 9 个新的工作流 API 端点文档
+    - 添加 API 使用示例
+    - _文档更新_
+
+- [x] 27. Final Checkpoint - 确保 AI 工作流功能完成
+  - 运行完整测试套件
+  - 验证所有新需求已实现（需求 10 和 11）
+  - 验证所有新属性测试通过（Property 8-12）
+  - 确保所有测试通过，如有问题请询问用户
+
 ## Notes
 
 - 所有任务（包括测试任务）均为必须完成
@@ -290,3 +537,8 @@
 - 复用 llm-integration 模块的 LLM Switcher
 - 第三方工具适配器采用插件架构，便于扩展
 - 标注界面基于 Label Studio 集成，不重复开发
+- 任务标记 `*` 的为可选测试任务，可跳过以加快 MVP 开发
+- 新增任务 17-27 实现 AI 标注工作流可视化和循环迭代功能
+- AI 学习要求最少 10 个已标注样本
+- 工作流步骤必须按顺序执行：数据来源 → AI 学习 → 批量标注 → 效果验证
+- 每次完整迭代自动记录质量指标和耗时

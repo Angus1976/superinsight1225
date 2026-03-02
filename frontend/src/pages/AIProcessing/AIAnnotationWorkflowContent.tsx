@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { 
   Card, 
   Steps, 
@@ -80,6 +81,7 @@ interface BatchProgress {
 }
 
 const AIAnnotationWorkflowContent: React.FC = () => {
+  const { t } = useTranslation('aiAnnotation');
   const [currentStep, setCurrentStep] = useState<WorkflowStep>('data-source');
   const [loading, setLoading] = useState(false);
   
@@ -133,7 +135,7 @@ const AIAnnotationWorkflowContent: React.FC = () => {
       const data = await response.json();
       setDataSources(data.data_sources || []);
     } catch (error) {
-      message.error('加载数据源失败');
+      message.error(t('workflow.common.load_datasource_failed'));
     } finally {
       setLoading(false);
     }
@@ -148,7 +150,7 @@ const AIAnnotationWorkflowContent: React.FC = () => {
       const data = await response.json();
       setSampleInfo(data);
     } catch (error) {
-      message.error('加载样本信息失败');
+      message.error(t('workflow.common.load_samples_failed'));
     } finally {
       setLoading(false);
     }
@@ -156,7 +158,7 @@ const AIAnnotationWorkflowContent: React.FC = () => {
 
   const startAILearning = async () => {
     if (!sampleInfo || sampleInfo.total_count < 10) {
-      message.warning('至少需要 10 个已标注样本才能开始 AI 学习');
+      message.warning(t('workflow.samples.min_samples_warning'));
       return;
     }
 
@@ -174,9 +176,9 @@ const AIAnnotationWorkflowContent: React.FC = () => {
       const data = await response.json();
       setLearningJobId(data.job_id);
       setCurrentStep('learning');
-      message.success('AI 学习已启动');
+      message.success(t('workflow.learning.started'));
     } catch (error) {
-      message.error('启动 AI 学习失败');
+      message.error(t('workflow.learning.start_failed'));
     } finally {
       setLoading(false);
     }
@@ -189,7 +191,7 @@ const AIAnnotationWorkflowContent: React.FC = () => {
       setLearningProgress(data);
       
       if (data.status === 'completed') {
-        message.success('AI 学习完成');
+        message.success(t('workflow.learning.completed'));
       }
     } catch (error) {
       console.error('获取学习进度失败', error);
@@ -198,7 +200,7 @@ const AIAnnotationWorkflowContent: React.FC = () => {
 
   const startBatchAnnotation = async () => {
     if (!learningJobId) {
-      message.warning('请先完成 AI 学习');
+      message.warning(t('workflow.learning.complete_first'));
       return;
     }
 
@@ -218,9 +220,9 @@ const AIAnnotationWorkflowContent: React.FC = () => {
       const data = await response.json();
       setBatchJobId(data.job_id);
       setCurrentStep('annotation');
-      message.success('批量标注已启动');
+      message.success(t('workflow.batch.started'));
     } catch (error) {
-      message.error('启动批量标注失败');
+      message.error(t('workflow.batch.start_failed'));
     } finally {
       setLoading(false);
     }
@@ -233,7 +235,7 @@ const AIAnnotationWorkflowContent: React.FC = () => {
       setBatchProgress(data);
       
       if (data.status === 'completed') {
-        message.success('批量标注完成');
+        message.success(t('workflow.batch.completed'));
       }
     } catch (error) {
       console.error('获取批量标注进度失败', error);
@@ -242,7 +244,7 @@ const AIAnnotationWorkflowContent: React.FC = () => {
 
   const validateEffect = async () => {
     if (!batchJobId) {
-      message.warning('请先完成批量标注');
+      message.warning(t('workflow.batch.complete_first'));
       return;
     }
 
@@ -261,9 +263,9 @@ const AIAnnotationWorkflowContent: React.FC = () => {
       const data = await response.json();
       setValidationResult(data);
       setCurrentStep('validation');
-      message.success('效果验证完成');
+      message.success(t('workflow.validation.completed'));
     } catch (error) {
-      message.error('效果验证失败');
+      message.error(t('workflow.validation.failed'));
     } finally {
       setLoading(false);
     }
@@ -276,7 +278,7 @@ const AIAnnotationWorkflowContent: React.FC = () => {
 
   const handleNextFromDataSource = () => {
     if (!selectedDataSource) {
-      message.warning('请先选择数据源');
+      message.warning(t('workflow.data_source.select_warning'));
       return;
     }
     setCurrentStep('samples');
@@ -284,27 +286,27 @@ const AIAnnotationWorkflowContent: React.FC = () => {
 
   const steps = [
     {
-      title: '数据来源',
+      title: t('workflow.steps.data_source'),
       icon: <DatabaseOutlined />,
       key: 'data-source' as WorkflowStep,
     },
     {
-      title: '人工样本',
+      title: t('workflow.steps.samples'),
       icon: <ExperimentOutlined />,
       key: 'samples' as WorkflowStep,
     },
     {
-      title: 'AI 学习',
+      title: t('workflow.steps.learning'),
       icon: <RobotOutlined />,
       key: 'learning' as WorkflowStep,
     },
     {
-      title: '批量标注',
+      title: t('workflow.steps.annotation'),
       icon: <SyncOutlined />,
       key: 'annotation' as WorkflowStep,
     },
     {
-      title: '效果验证',
+      title: t('workflow.steps.validation'),
       icon: <CheckCircleOutlined />,
       key: 'validation' as WorkflowStep,
     },
@@ -320,16 +322,16 @@ const AIAnnotationWorkflowContent: React.FC = () => {
         <div>
           <Title level={4}>
             <RobotOutlined style={{ marginRight: 8 }} />
-            AI 智能标注工作流
+            {t('workflow.title')}
           </Title>
           <Paragraph type="secondary">
-            通过 AI 学习人工标注样本，实现批量自动标注，并持续迭代优化标注质量。
+            {t('workflow.description')}
           </Paragraph>
         </div>
 
         <Alert
-          message="工作流说明"
-          description="完整的 AI 标注循环：选择数据来源 → 提供人工标注样本（至少 10 个）→ AI 学习标注模式 → 批量自动标注 → 验证标注效果 → 开始新一轮迭代"
+          message={t('workflow.info_title')}
+          description={t('workflow.info_description')}
           type="info"
           showIcon
         />
@@ -348,28 +350,28 @@ const AIAnnotationWorkflowContent: React.FC = () => {
             {/* Step 1: Data Source Selection */}
             {currentStep === 'data-source' && (
               <Space direction="vertical" style={{ width: '100%' }} size="middle">
-                <Title level={5}>选择数据来源</Title>
+                <Title level={5}>{t('workflow.data_source.title')}</Title>
                 <Paragraph type="secondary">
-                  选择需要进行 AI 标注的数据源（非结构化处理后的数据或原始数据）
+                  {t('workflow.data_source.description')}
                 </Paragraph>
                 
                 <Select
                   style={{ width: '100%' }}
-                  placeholder="选择数据源"
+                  placeholder={t('workflow.data_source.placeholder')}
                   value={selectedDataSource}
                   onChange={handleDataSourceSelect}
                 >
                   {dataSources.map(ds => (
                     <Option key={ds.id} value={ds.id}>
-                      {ds.name} ({ds.record_count} 条记录)
+                      {ds.name} ({ds.record_count} {t('workflow.data_source.records')})
                     </Option>
                   ))}
                 </Select>
 
                 {selectedDataSource && (
                   <Alert
-                    message="数据源已选择"
-                    description={`已选择数据源，包含 ${dataSources.find(ds => ds.id === selectedDataSource)?.record_count} 条记录`}
+                    message={t('workflow.data_source.selected_title')}
+                    description={t('workflow.data_source.selected_desc', { count: dataSources.find(ds => ds.id === selectedDataSource)?.record_count })}
                     type="success"
                     showIcon
                   />
@@ -380,7 +382,7 @@ const AIAnnotationWorkflowContent: React.FC = () => {
                   onClick={handleNextFromDataSource}
                   disabled={!selectedDataSource}
                 >
-                  下一步：查看人工样本
+                  {t('workflow.data_source.next_button')}
                 </Button>
               </Space>
             )}
@@ -388,18 +390,18 @@ const AIAnnotationWorkflowContent: React.FC = () => {
             {/* Step 2: Annotated Samples */}
             {currentStep === 'samples' && sampleInfo && (
               <Space direction="vertical" style={{ width: '100%' }} size="middle">
-                <Title level={5}>人工标注样本</Title>
+                <Title level={5}>{t('workflow.samples.title')}</Title>
                 <Paragraph type="secondary">
-                  提供至少 10 个高质量的人工标注样本，AI 将学习这些样本的标注模式
+                  {t('workflow.samples.description')}
                 </Paragraph>
 
                 <Row gutter={16}>
                   <Col span={6}>
-                    <Statistic title="样本总数" value={sampleInfo.total_count} />
+                    <Statistic title={t('workflow.samples.total_count')} value={sampleInfo.total_count} />
                   </Col>
                   <Col span={6}>
                     <Statistic 
-                      title="平均质量" 
+                      title={t('workflow.samples.average_quality')} 
                       value={sampleInfo.average_quality} 
                       precision={2}
                       suffix="/ 1.0"
@@ -407,7 +409,7 @@ const AIAnnotationWorkflowContent: React.FC = () => {
                   </Col>
                   <Col span={6}>
                     <Statistic 
-                      title="覆盖率" 
+                      title={t('workflow.samples.coverage_rate')} 
                       value={sampleInfo.coverage_rate * 100} 
                       precision={1}
                       suffix="%"
@@ -415,7 +417,7 @@ const AIAnnotationWorkflowContent: React.FC = () => {
                   </Col>
                   <Col span={6}>
                     <Statistic 
-                      title="高质量样本" 
+                      title={t('workflow.samples.high_quality')} 
                       value={sampleInfo.quality_distribution.high} 
                     />
                   </Col>
@@ -423,21 +425,21 @@ const AIAnnotationWorkflowContent: React.FC = () => {
 
                 {sampleInfo.total_count < 10 && (
                   <Alert
-                    message="样本数量不足"
-                    description={`当前只有 ${sampleInfo.total_count} 个样本，至少需要 10 个样本才能开始 AI 学习`}
+                    message={t('workflow.samples.insufficient_title')}
+                    description={t('workflow.samples.insufficient_desc', { count: sampleInfo.total_count })}
                     type="warning"
                     showIcon
                   />
                 )}
 
                 <Space>
-                  <Button onClick={() => setCurrentStep('data-source')}>上一步</Button>
+                  <Button onClick={() => setCurrentStep('data-source')}>{t('workflow.common.previous_step')}</Button>
                   <Button 
                     type="primary" 
                     onClick={startAILearning}
                     disabled={sampleInfo.total_count < 10}
                   >
-                    开始 AI 学习
+                    {t('workflow.samples.start_learning')}
                   </Button>
                 </Space>
               </Space>
@@ -447,25 +449,25 @@ const AIAnnotationWorkflowContent: React.FC = () => {
             {currentStep === 'learning' && learningProgress && (
               <Space direction="vertical" style={{ width: '100%' }} size="middle">
                 <Title level={5}>
-                  AI 学习中
+                  {t('workflow.learning.title')}
                   {learningProgress.status === 'running' && (
-                    <Tag color="processing" style={{ marginLeft: 8 }}>进行中</Tag>
+                    <Tag color="processing" style={{ marginLeft: 8 }}>{t('workflow.common.running')}</Tag>
                   )}
                   {learningProgress.status === 'completed' && (
-                    <Tag color="success" style={{ marginLeft: 8 }}>已完成</Tag>
+                    <Tag color="success" style={{ marginLeft: 8 }}>{t('workflow.common.completed')}</Tag>
                   )}
                   {learningProgress.status === 'failed' && (
-                    <Tag color="error" style={{ marginLeft: 8 }}>失败</Tag>
+                    <Tag color="error" style={{ marginLeft: 8 }}>{t('workflow.common.failed')}</Tag>
                   )}
                 </Title>
                 <Paragraph type="secondary">
-                  AI 正在分析人工标注样本，识别标注模式和特征...
+                  {t('workflow.learning.description')}
                 </Paragraph>
 
                 <Card>
                   <Space direction="vertical" style={{ width: '100%' }} size="small">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Text strong>学习进度</Text>
+                      <Text strong>{t('workflow.learning.progress_label')}</Text>
                       <Text type="secondary">{Math.round(learningProgress.progress_percentage)}%</Text>
                     </div>
                     <Progress 
@@ -478,7 +480,7 @@ const AIAnnotationWorkflowContent: React.FC = () => {
                     />
                     {learningProgress.status === 'running' && (
                       <Text type="secondary" style={{ fontSize: 12 }}>
-                        预计剩余时间：{Math.round((100 - learningProgress.progress_percentage) / 25)} 秒
+                        {t('workflow.learning.estimated_time', { seconds: Math.round((100 - learningProgress.progress_percentage) / 25) })}
                       </Text>
                     )}
                   </Space>
@@ -488,7 +490,7 @@ const AIAnnotationWorkflowContent: React.FC = () => {
                   <Col span={8}>
                     <Card>
                       <Statistic 
-                        title="样本数量" 
+                        title={t('workflow.learning.sample_count')} 
                         value={learningProgress.sample_count}
                         prefix={<ExperimentOutlined />}
                       />
@@ -497,7 +499,7 @@ const AIAnnotationWorkflowContent: React.FC = () => {
                   <Col span={8}>
                     <Card>
                       <Statistic 
-                        title="识别模式" 
+                        title={t('workflow.learning.patterns_identified')} 
                         value={learningProgress.patterns_identified}
                         prefix={<RobotOutlined />}
                       />
@@ -506,8 +508,7 @@ const AIAnnotationWorkflowContent: React.FC = () => {
                   <Col span={8}>
                     <Card>
                       <Statistic 
-                        title="平均置信度" 
-                        value={learningProgress.average_confidence} 
+                        title={t('workflow.learning.average_confidence')} 
                         precision={2}
                         prefix={<CheckCircleOutlined />}
                       />
@@ -517,8 +518,8 @@ const AIAnnotationWorkflowContent: React.FC = () => {
 
                 {learningProgress.recommended_method && (
                   <Alert
-                    message="推荐方法"
-                    description={`通过分析 ${learningProgress.sample_count} 个样本，识别出 ${learningProgress.patterns_identified} 个标注模式，推荐使用 ${learningProgress.recommended_method} 方法进行标注`}
+                    message={t('workflow.learning.recommended_method')}
+                    description={t('workflow.learning.recommended_desc', { sampleCount: learningProgress.sample_count, patterns: learningProgress.patterns_identified, method: learningProgress.recommended_method })}
                     type="success"
                     showIcon
                   />
@@ -526,7 +527,7 @@ const AIAnnotationWorkflowContent: React.FC = () => {
 
                 {learningProgress.status === 'failed' && learningProgress.error_message && (
                   <Alert
-                    message="学习失败"
+                    message={t('workflow.learning.failed_title')}
                     description={learningProgress.error_message}
                     type="error"
                     showIcon
@@ -534,14 +535,14 @@ const AIAnnotationWorkflowContent: React.FC = () => {
                 )}
 
                 <Space>
-                  <Button onClick={() => setCurrentStep('samples')}>上一步</Button>
+                  <Button onClick={() => setCurrentStep('samples')}>{t('workflow.common.previous_step')}</Button>
                   <Button 
                     type="primary" 
                     onClick={startBatchAnnotation}
                     disabled={learningProgress.status !== 'completed'}
                     loading={learningProgress.status === 'running'}
                   >
-                    {learningProgress.status === 'completed' ? '开始批量标注' : '学习中...'}
+                    {learningProgress.status === 'completed' ? t('workflow.learning.start_batch') : t('workflow.learning.in_progress')}
                   </Button>
                 </Space>
               </Space>
@@ -551,25 +552,25 @@ const AIAnnotationWorkflowContent: React.FC = () => {
             {currentStep === 'annotation' && batchProgress && (
               <Space direction="vertical" style={{ width: '100%' }} size="middle">
                 <Title level={5}>
-                  批量标注
+                  {t('workflow.batch.title')}
                   {batchProgress.status === 'running' && (
-                    <Tag color="processing" style={{ marginLeft: 8 }}>进行中</Tag>
+                    <Tag color="processing" style={{ marginLeft: 8 }}>{t('workflow.common.running')}</Tag>
                   )}
                   {batchProgress.status === 'completed' && (
-                    <Tag color="success" style={{ marginLeft: 8 }}>已完成</Tag>
+                    <Tag color="success" style={{ marginLeft: 8 }}>{t('workflow.common.completed')}</Tag>
                   )}
                   {batchProgress.status === 'failed' && (
-                    <Tag color="error" style={{ marginLeft: 8 }}>失败</Tag>
+                    <Tag color="error" style={{ marginLeft: 8 }}>{t('workflow.common.failed')}</Tag>
                   )}
                 </Title>
                 <Paragraph type="secondary">
-                  AI 正在对目标数据集进行批量自动标注...
+                  {t('workflow.batch.description')}
                 </Paragraph>
 
                 <Card>
                   <Space direction="vertical" style={{ width: '100%' }} size="small">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Text strong>标注进度</Text>
+                      <Text strong>{t('workflow.batch.progress_label')}</Text>
                       <Text type="secondary">
                         {batchProgress.annotated_count} / {batchProgress.total_count}
                       </Text>
@@ -584,7 +585,7 @@ const AIAnnotationWorkflowContent: React.FC = () => {
                     />
                     {batchProgress.status === 'running' && (
                       <Text type="secondary" style={{ fontSize: 12 }}>
-                        预计剩余时间：{Math.round((batchProgress.total_count - batchProgress.annotated_count) / 50)} 秒
+                        {t('workflow.batch.estimated_time', { seconds: Math.round((batchProgress.total_count - batchProgress.annotated_count) / 50) })}
                       </Text>
                     )}
                   </Space>
@@ -594,7 +595,7 @@ const AIAnnotationWorkflowContent: React.FC = () => {
                   <Col span={6}>
                     <Card>
                       <Statistic 
-                        title="总任务数" 
+                        title={t('workflow.batch.total_tasks')} 
                         value={batchProgress.total_count}
                         prefix={<DatabaseOutlined />}
                       />
@@ -603,7 +604,7 @@ const AIAnnotationWorkflowContent: React.FC = () => {
                   <Col span={6}>
                     <Card>
                       <Statistic 
-                        title="已标注" 
+                        title={t('workflow.batch.annotated')} 
                         value={batchProgress.annotated_count}
                         prefix={<CheckCircleOutlined />}
                         valueStyle={{ color: '#3f8600' }}
@@ -613,7 +614,7 @@ const AIAnnotationWorkflowContent: React.FC = () => {
                   <Col span={6}>
                     <Card>
                       <Statistic 
-                        title="需要审核" 
+                        title={t('workflow.batch.needs_review')} 
                         value={batchProgress.needs_review_count}
                         prefix={<ExclamationCircleOutlined />}
                         valueStyle={{ color: '#cf1322' }}
@@ -623,8 +624,7 @@ const AIAnnotationWorkflowContent: React.FC = () => {
                   <Col span={6}>
                     <Card>
                       <Statistic 
-                        title="平均置信度" 
-                        value={batchProgress.average_confidence} 
+                        title={t('workflow.batch.average_confidence')} 
                         precision={2}
                         prefix={<RobotOutlined />}
                       />
@@ -634,7 +634,7 @@ const AIAnnotationWorkflowContent: React.FC = () => {
 
                 {batchProgress.status === 'failed' && batchProgress.error_message && (
                   <Alert
-                    message="标注失败"
+                    message={t('workflow.batch.failed_title')}
                     description={batchProgress.error_message}
                     type="error"
                     showIcon
@@ -642,14 +642,14 @@ const AIAnnotationWorkflowContent: React.FC = () => {
                 )}
 
                 <Space>
-                  <Button onClick={() => setCurrentStep('learning')}>上一步</Button>
+                  <Button onClick={() => setCurrentStep('learning')}>{t('workflow.common.previous_step')}</Button>
                   <Button 
                     type="primary" 
                     onClick={validateEffect}
                     disabled={batchProgress.status !== 'completed'}
                     loading={batchProgress.status === 'running'}
                   >
-                    {batchProgress.status === 'completed' ? '验证效果' : '标注中...'}
+                    {batchProgress.status === 'completed' ? t('workflow.batch.validate_effect') : t('workflow.batch.in_progress')}
                   </Button>
                 </Space>
               </Space>
@@ -658,15 +658,15 @@ const AIAnnotationWorkflowContent: React.FC = () => {
             {/* Step 5: Effect Validation */}
             {currentStep === 'validation' && validationResult && (
               <Space direction="vertical" style={{ width: '100%' }} size="middle">
-                <Title level={5}>效果验证</Title>
+                <Title level={5}>{t('workflow.validation.title')}</Title>
                 <Paragraph type="secondary">
-                  验证 AI 标注效果，查看准确率、召回率、F1 分数等指标
+                  {t('workflow.validation.description')}
                 </Paragraph>
 
                 <Row gutter={16}>
                   <Col span={6}>
                     <Statistic 
-                      title="准确率" 
+                      title={t('workflow.validation.accuracy')} 
                       value={validationResult.metrics.accuracy * 100} 
                       precision={1}
                       suffix="%"
@@ -674,7 +674,7 @@ const AIAnnotationWorkflowContent: React.FC = () => {
                   </Col>
                   <Col span={6}>
                     <Statistic 
-                      title="召回率" 
+                      title={t('workflow.validation.recall')} 
                       value={validationResult.metrics.recall * 100} 
                       precision={1}
                       suffix="%"
@@ -682,7 +682,7 @@ const AIAnnotationWorkflowContent: React.FC = () => {
                   </Col>
                   <Col span={6}>
                     <Statistic 
-                      title="F1 分数" 
+                      title={t('workflow.validation.f1_score')} 
                       value={validationResult.metrics.f1_score * 100} 
                       precision={1}
                       suffix="%"
@@ -690,7 +690,7 @@ const AIAnnotationWorkflowContent: React.FC = () => {
                   </Col>
                   <Col span={6}>
                     <Statistic 
-                      title="一致性" 
+                      title={t('workflow.validation.consistency')} 
                       value={validationResult.metrics.consistency * 100} 
                       precision={1}
                       suffix="%"
@@ -700,7 +700,7 @@ const AIAnnotationWorkflowContent: React.FC = () => {
 
                 {validationResult.improvement_suggestions && validationResult.improvement_suggestions.length > 0 && (
                   <Alert
-                    message="改进建议"
+                    message={t('workflow.validation.suggestions_title')}
                     description={
                       <ul style={{ marginBottom: 0, paddingLeft: 20 }}>
                         {validationResult.improvement_suggestions.map((suggestion: string, index: number) => (
@@ -714,7 +714,7 @@ const AIAnnotationWorkflowContent: React.FC = () => {
                 )}
 
                 <Space>
-                  <Button onClick={() => setCurrentStep('annotation')}>上一步</Button>
+                  <Button onClick={() => setCurrentStep('annotation')}>{t('workflow.common.previous_step')}</Button>
                   <Button 
                     type="primary" 
                     icon={<ReloadOutlined />}
@@ -724,10 +724,10 @@ const AIAnnotationWorkflowContent: React.FC = () => {
                       setLearningJobId(null);
                       setBatchJobId(null);
                       setValidationResult(null);
-                      message.info('开始新一轮迭代');
+                      message.info(t('workflow.validation.new_iteration_started'));
                     }}
                   >
-                    开始新迭代
+                    {t('workflow.validation.start_new_iteration')}
                   </Button>
                 </Space>
               </Space>

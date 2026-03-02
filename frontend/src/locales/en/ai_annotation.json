@@ -593,5 +593,159 @@
     "queue_depth": "Queue Depth",
     "resource_usage": "Resource Usage",
     "sync_failed": "Failed to sync rhythm config"
+  },
+
+  "workflow": {
+    "title": "AI Smart Annotation Workflow",
+    "description": "Learn from human-annotated samples via AI, enable batch auto-annotation, and continuously iterate to improve annotation quality.",
+    "info_title": "Workflow Guide",
+    "info_description": "Complete AI annotation cycle: Select data source → Provide human-annotated samples (at least 10) → AI learns annotation patterns → Batch auto-annotation → Validate annotation quality → Start new iteration",
+    "steps": {
+      "data_source": "Data Source",
+      "samples": "Samples",
+      "learning": "AI Learning",
+      "annotation": "Batch Annotation",
+      "validation": "Validation"
+    },
+    "data_source": {
+      "title": "Select Data Source",
+      "description": "Select the data source for AI annotation (post-processed unstructured data or raw data)",
+      "placeholder": "Select data source",
+      "records": "records",
+      "selected_title": "Data Source Selected",
+      "selected_desc": "Data source selected, containing {{count}} records",
+      "next_button": "Next: View Samples",
+      "select_warning": "Please select a data source first"
+    },
+    "samples": {
+      "title": "Human-Annotated Samples",
+      "description": "Provide at least 10 high-quality human-annotated samples for AI to learn annotation patterns",
+      "total_count": "Total Samples",
+      "average_quality": "Average Quality",
+      "coverage_rate": "Coverage Rate",
+      "high_quality": "High Quality Samples",
+      "insufficient_title": "Insufficient Samples",
+      "insufficient_desc": "Currently only {{count}} samples available, at least 10 samples are required to start AI learning",
+      "min_samples_warning": "At least 10 annotated samples are required to start AI learning",
+      "start_learning": "Start AI Learning"
+    },
+    "learning": {
+      "title": "AI Learning",
+      "description": "AI is analyzing human-annotated samples, identifying annotation patterns and features...",
+      "progress_label": "Learning Progress",
+      "estimated_time": "Estimated time remaining: {{seconds}} seconds",
+      "sample_count": "Sample Count",
+      "patterns_identified": "Patterns Identified",
+      "average_confidence": "Average Confidence",
+      "recommended_method": "Recommended Method",
+      "recommended_desc": "Analyzed {{sampleCount}} samples, identified {{patterns}} annotation patterns, recommended method: {{method}}",
+      "failed_title": "Learning Failed",
+      "complete_first": "Please complete AI learning first",
+      "start_batch": "Start Batch Annotation",
+      "in_progress": "Learning...",
+      "started": "AI learning started",
+      "completed": "AI learning completed",
+      "start_failed": "Failed to start AI learning"
+    },
+    "batch": {
+      "title": "Batch Annotation",
+      "description": "AI is performing batch auto-annotation on the target dataset...",
+      "progress_label": "Annotation Progress",
+      "estimated_time": "Estimated time remaining: {{seconds}} seconds",
+      "total_tasks": "Total Tasks",
+      "annotated": "Annotated",
+      "needs_review": "Needs Review",
+      "average_confidence": "Average Confidence",
+      "failed_title": "Annotation Failed",
+      "complete_first": "Please complete batch annotation first",
+      "validate_effect": "Validate Results",
+      "in_progress": "Annotating...",
+      "started": "Batch annotation started",
+      "completed": "Batch annotation completed",
+      "start_failed": "Failed to start batch annotation"
+    },
+    "validation": {
+      "title": "Validation",
+      "description": "Validate AI annotation quality, review accuracy, recall, F1 score and other metrics",
+      "accuracy": "Accuracy",
+      "recall": "Recall",
+      "f1_score": "F1 Score",
+      "consistency": "Consistency",
+      "suggestions_title": "Improvement Suggestions",
+      "start_new_iteration": "Start New Iteration",
+      "new_iteration_started": "Starting new iteration",
+      "completed": "Validation completed",
+      "failed": "Validation failed"
+    },
+    "common": {
+      "previous_step": "Previous",
+      "running": "Running",
+      "completed": "Completed",
+      "failed": "Failed",
+      "load_datasource_failed": "Failed to load data sources",
+      "load_samples_failed": "Failed to load sample info"
+    }
+  },
+
+  "task_list": {
+    "title": "AI Annotation Task List",
+    "refresh": "Refresh",
+    "create_task": "Create Task",
+    "create_task_wip": "Create task feature is under development",
+    "total_tasks": "{{total}} tasks in total",
+    "columns": {
+      "task_name": "Task Name",
+      "status": "Status",
+      "current_step": "Current Step",
+      "annotation_progress": "Annotation Progress",
+      "sample_count": "Samples",
+      "updated_at": "Updated At",
+      "actions": "Actions"
+    },
+    "annotation_types": {
+      "entity": "Entity Annotation",
+      "classification": "Classification"
+    },
+    "status": {
+      "pending": "Pending",
+      "learning": "AI Learning",
+      "annotating": "Annotating",
+      "validating": "Validating",
+      "completed": "Completed",
+      "failed": "Failed",
+      "paused": "Paused"
+    },
+    "confidence": "Confidence",
+    "avg_confidence": "Average Confidence",
+    "detail": "Detail",
+    "view_detail": "View Detail",
+    "start_task": "Start Task",
+    "pause_task": "Pause Task",
+    "delete_task": "Delete Task",
+    "confirm_delete_title": "Confirm Delete",
+    "confirm_delete_content": "Are you sure you want to delete this annotation task? This action cannot be undone.",
+    "delete_ok": "Delete",
+    "delete_cancel": "Cancel",
+    "task_started": "Task started",
+    "task_start_failed": "Failed to start task",
+    "task_paused": "Task paused",
+    "task_pause_failed": "Failed to pause task",
+    "task_deleted": "Task deleted",
+    "task_delete_failed": "Failed to delete task",
+    "modal": {
+      "title": "Task Detail",
+      "close": "Close",
+      "task_name": "Task Name:",
+      "annotation_type": "Annotation Type:",
+      "status": "Status:",
+      "current_step": "Current Step:",
+      "sample_count": "Sample Count:",
+      "annotation_progress": "Annotation Progress:",
+      "avg_confidence": "Average Confidence:",
+      "learning_job_id": "Learning Job ID:",
+      "batch_job_id": "Batch Job ID:",
+      "created_at": "Created At:",
+      "updated_at": "Updated At:"
+    }
   }
 }

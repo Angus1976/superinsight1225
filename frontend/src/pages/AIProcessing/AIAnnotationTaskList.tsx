@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Card,
   Table,
@@ -54,6 +55,7 @@ interface AnnotationTask {
 }
 
 const AIAnnotationTaskList: React.FC = () => {
+  const { t } = useTranslation('aiAnnotation');
   const [tasks, setTasks] = useState<AnnotationTask[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedTask, setSelectedTask] = useState<AnnotationTask | null>(null);
@@ -157,24 +159,24 @@ const AIAnnotationTaskList: React.FC = () => {
 
   const getStatusConfig = (status: AnnotationTask['status']) => {
     const configs = {
-      pending: { color: 'default', text: '待开始' },
-      learning: { color: 'processing', text: 'AI 学习中' },
-      annotating: { color: 'processing', text: '批量标注中' },
-      validating: { color: 'processing', text: '效果验证中' },
-      completed: { color: 'success', text: '已完成' },
-      failed: { color: 'error', text: '失败' },
-      paused: { color: 'warning', text: '已暂停' },
+      pending: { color: 'default', text: t('task_list.status.pending') },
+      learning: { color: 'processing', text: t('task_list.status.learning') },
+      annotating: { color: 'processing', text: t('task_list.status.annotating') },
+      validating: { color: 'processing', text: t('task_list.status.validating') },
+      completed: { color: 'success', text: t('task_list.status.completed') },
+      failed: { color: 'error', text: t('task_list.status.failed') },
+      paused: { color: 'warning', text: t('task_list.status.paused') },
     };
     return configs[status];
   };
 
   const getStepText = (step: AnnotationTask['progress']['current_step']) => {
     const steps = {
-      'data-source': '数据来源',
-      'samples': '人工样本',
-      'learning': 'AI 学习',
-      'annotation': '批量标注',
-      'validation': '效果验证',
+      'data-source': t('workflow.steps.data_source'),
+      'samples': t('workflow.steps.samples'),
+      'learning': t('workflow.steps.learning'),
+      'annotation': t('workflow.steps.annotation'),
+      'validation': t('workflow.steps.validation'),
     };
     return steps[step];
   };
@@ -188,10 +190,10 @@ const AIAnnotationTaskList: React.FC = () => {
     try {
       setLoading(true);
       // 调用 API 启动任务
-      message.success('任务已启动');
+      message.success(t('task_list.task_started'));
       await loadTasks();
     } catch (error) {
-      message.error('启动任务失败');
+      message.error(t('task_list.task_start_failed'));
     } finally {
       setLoading(false);
     }
@@ -201,10 +203,10 @@ const AIAnnotationTaskList: React.FC = () => {
     try {
       setLoading(true);
       // 调用 API 暂停任务
-      message.success('任务已暂停');
+      message.success(t('task_list.task_paused'));
       await loadTasks();
     } catch (error) {
-      message.error('暂停任务失败');
+      message.error(t('task_list.task_pause_failed'));
     } finally {
       setLoading(false);
     }
@@ -212,19 +214,19 @@ const AIAnnotationTaskList: React.FC = () => {
 
   const handleDeleteTask = async (taskId: string) => {
     Modal.confirm({
-      title: '确认删除',
-      content: '确定要删除这个标注任务吗？此操作不可恢复。',
-      okText: '删除',
+      title: t('task_list.confirm_delete_title'),
+      content: t('task_list.confirm_delete_content'),
+      okText: t('task_list.delete_ok'),
       okType: 'danger',
-      cancelText: '取消',
+      cancelText: t('task_list.delete_cancel'),
       onOk: async () => {
         try {
           setLoading(true);
           // 调用 API 删除任务
-          message.success('任务已删除');
+          message.success(t('task_list.task_deleted'));
           await loadTasks();
         } catch (error) {
-          message.error('删除任务失败');
+          message.error(t('task_list.task_delete_failed'));
         } finally {
           setLoading(false);
         }
@@ -239,7 +241,7 @@ const AIAnnotationTaskList: React.FC = () => {
         icon={<EyeOutlined />}
         onClick={() => handleViewDetail(task)}
       >
-        查看详情
+        {t('task_list.view_detail')}
       </Menu.Item>
       {(task.status === 'pending' || task.status === 'paused') && (
         <Menu.Item
@@ -247,7 +249,7 @@ const AIAnnotationTaskList: React.FC = () => {
           icon={<PlayCircleOutlined />}
           onClick={() => handleStartTask(task.id)}
         >
-          启动任务
+          {t('task_list.start_task')}
         </Menu.Item>
       )}
       {(task.status === 'learning' || task.status === 'annotating') && (
@@ -256,7 +258,7 @@ const AIAnnotationTaskList: React.FC = () => {
           icon={<PauseCircleOutlined />}
           onClick={() => handlePauseTask(task.id)}
         >
-          暂停任务
+          {t('task_list.pause_task')}
         </Menu.Item>
       )}
       <Menu.Divider />
@@ -266,14 +268,14 @@ const AIAnnotationTaskList: React.FC = () => {
         danger
         onClick={() => handleDeleteTask(task.id)}
       >
-        删除任务
+        {t('task_list.delete_task')}
       </Menu.Item>
     </Menu>
   );
 
   const columns: ColumnsType<AnnotationTask> = [
     {
-      title: '任务名称',
+      title: t('task_list.columns.task_name'),
       dataIndex: 'name',
       key: 'name',
       width: 200,
@@ -281,13 +283,13 @@ const AIAnnotationTaskList: React.FC = () => {
         <Space direction="vertical" size={0}>
           <Text strong>{name}</Text>
           <Text type="secondary" style={{ fontSize: 12 }}>
-            {record.annotation_type === 'entity' ? '实体标注' : '分类标注'}
+            {record.annotation_type === 'entity' ? t('task_list.annotation_types.entity') : t('task_list.annotation_types.classification')}
           </Text>
         </Space>
       ),
     },
     {
-      title: '状态',
+      title: t('task_list.columns.status'),
       dataIndex: 'status',
       key: 'status',
       width: 120,
@@ -297,7 +299,7 @@ const AIAnnotationTaskList: React.FC = () => {
       },
     },
     {
-      title: '当前步骤',
+      title: t('task_list.columns.current_step'),
       dataIndex: ['progress', 'current_step'],
       key: 'current_step',
       width: 120,
@@ -306,7 +308,7 @@ const AIAnnotationTaskList: React.FC = () => {
       ),
     },
     {
-      title: '标注进度',
+      title: t('task_list.columns.annotation_progress'),
       key: 'progress',
       width: 250,
       render: (_, record: AnnotationTask) => {
@@ -326,9 +328,9 @@ const AIAnnotationTaskList: React.FC = () => {
                 {annotated_count} / {total_count}
               </Text>
               {average_confidence > 0 && (
-                <Tooltip title="平均置信度">
+                <Tooltip title={t('task_list.avg_confidence')}>
                   <Text type="secondary" style={{ fontSize: 12 }}>
-                    置信度: {(average_confidence * 100).toFixed(0)}%
+                    {t('task_list.confidence')}: {(average_confidence * 100).toFixed(0)}%
                   </Text>
                 </Tooltip>
               )}
@@ -338,25 +340,25 @@ const AIAnnotationTaskList: React.FC = () => {
       },
     },
     {
-      title: '样本数',
+      title: t('task_list.columns.sample_count'),
       dataIndex: ['progress', 'sample_count'],
       key: 'sample_count',
       width: 100,
       render: (count: number) => <Text>{count}</Text>,
     },
     {
-      title: '更新时间',
+      title: t('task_list.columns.updated_at'),
       dataIndex: 'updated_at',
       key: 'updated_at',
       width: 180,
       render: (time: string) => (
         <Text type="secondary">
-          {new Date(time).toLocaleString('zh-CN')}
+          {new Date(time).toLocaleString()}
         </Text>
       ),
     },
     {
-      title: '操作',
+      title: t('task_list.columns.actions'),
       key: 'actions',
       width: 100,
       fixed: 'right',
@@ -368,7 +370,7 @@ const AIAnnotationTaskList: React.FC = () => {
             icon={<EyeOutlined />}
             onClick={() => handleViewDetail(record)}
           >
-            详情
+            {t('task_list.detail')}
           </Button>
           <Dropdown overlay={getActionMenu(record)} trigger={['click']}>
             <Button type="text" size="small" icon={<MoreOutlined />} />
@@ -383,21 +385,21 @@ const AIAnnotationTaskList: React.FC = () => {
       <Card>
         <Space direction="vertical" style={{ width: '100%' }} size="middle">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Title level={5} style={{ margin: 0 }}>AI 智能标注任务清单</Title>
+            <Title level={5} style={{ margin: 0 }}>{t('task_list.title')}</Title>
             <Space>
               <Button
                 icon={<ReloadOutlined />}
                 onClick={loadTasks}
                 loading={loading}
               >
-                刷新
+                {t('task_list.refresh')}
               </Button>
               <Button
                 type="primary"
                 icon={<PlusOutlined />}
-                onClick={() => message.info('创建新任务功能开发中')}
+                onClick={() => message.info(t('task_list.create_task_wip'))}
               >
-                创建任务
+                {t('task_list.create_task')}
               </Button>
             </Space>
           </div>
@@ -410,7 +412,7 @@ const AIAnnotationTaskList: React.FC = () => {
             pagination={{
               pageSize: 10,
               showSizeChanger: true,
-              showTotal: (total) => `共 ${total} 个任务`,
+              showTotal: (total) => t('task_list.total_tasks', { total }),
             }}
             scroll={{ x: 1200 }}
           />
@@ -419,12 +421,12 @@ const AIAnnotationTaskList: React.FC = () => {
 
       {/* 任务详情弹窗 */}
       <Modal
-        title="任务详情"
+        title={t('task_list.modal.title')}
         open={detailModalVisible}
         onCancel={() => setDetailModalVisible(false)}
         footer={[
           <Button key="close" onClick={() => setDetailModalVisible(false)}>
-            关闭
+            {t('task_list.modal.close')}
           </Button>,
         ]}
         width={700}
@@ -432,29 +434,29 @@ const AIAnnotationTaskList: React.FC = () => {
         {selectedTask && (
           <Space direction="vertical" style={{ width: '100%' }} size="middle">
             <div>
-              <Text strong>任务名称：</Text>
+              <Text strong>{t('task_list.modal.task_name')}</Text>
               <Text>{selectedTask.name}</Text>
             </div>
             <div>
-              <Text strong>标注类型：</Text>
-              <Text>{selectedTask.annotation_type === 'entity' ? '实体标注' : '分类标注'}</Text>
+              <Text strong>{t('task_list.modal.annotation_type')}</Text>
+              <Text>{selectedTask.annotation_type === 'entity' ? t('task_list.annotation_types.entity') : t('task_list.annotation_types.classification')}</Text>
             </div>
             <div>
-              <Text strong>状态：</Text>
+              <Text strong>{t('task_list.modal.status')}</Text>
               <Tag color={getStatusConfig(selectedTask.status).color}>
                 {getStatusConfig(selectedTask.status).text}
               </Tag>
             </div>
             <div>
-              <Text strong>当前步骤：</Text>
+              <Text strong>{t('task_list.modal.current_step')}</Text>
               <Text>{getStepText(selectedTask.progress.current_step)}</Text>
             </div>
             <div>
-              <Text strong>样本数量：</Text>
+              <Text strong>{t('task_list.modal.sample_count')}</Text>
               <Text>{selectedTask.progress.sample_count}</Text>
             </div>
             <div>
-              <Text strong>标注进度：</Text>
+              <Text strong>{t('task_list.modal.annotation_progress')}</Text>
               <Text>
                 {selectedTask.progress.annotated_count} / {selectedTask.progress.total_count}
                 {' '}({Math.round((selectedTask.progress.annotated_count / selectedTask.progress.total_count) * 100)}%)
@@ -462,29 +464,29 @@ const AIAnnotationTaskList: React.FC = () => {
             </div>
             {selectedTask.progress.average_confidence > 0 && (
               <div>
-                <Text strong>平均置信度：</Text>
+                <Text strong>{t('task_list.modal.avg_confidence')}</Text>
                 <Text>{(selectedTask.progress.average_confidence * 100).toFixed(1)}%</Text>
               </div>
             )}
             {selectedTask.learning_job_id && (
               <div>
-                <Text strong>学习任务 ID：</Text>
+                <Text strong>{t('task_list.modal.learning_job_id')}</Text>
                 <Text type="secondary">{selectedTask.learning_job_id}</Text>
               </div>
             )}
             {selectedTask.batch_job_id && (
               <div>
-                <Text strong>批量标注 ID：</Text>
+                <Text strong>{t('task_list.modal.batch_job_id')}</Text>
                 <Text type="secondary">{selectedTask.batch_job_id}</Text>
               </div>
             )}
             <div>
-              <Text strong>创建时间：</Text>
-              <Text>{new Date(selectedTask.created_at).toLocaleString('zh-CN')}</Text>
+              <Text strong>{t('task_list.modal.created_at')}</Text>
+              <Text>{new Date(selectedTask.created_at).toLocaleString()}</Text>
             </div>
             <div>
-              <Text strong>更新时间：</Text>
-              <Text>{new Date(selectedTask.updated_at).toLocaleString('zh-CN')}</Text>
+              <Text strong>{t('task_list.modal.updated_at')}</Text>
+              <Text>{new Date(selectedTask.updated_at).toLocaleString()}</Text>
             </div>
           </Space>
         )}

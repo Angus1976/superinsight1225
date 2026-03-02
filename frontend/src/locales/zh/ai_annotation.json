@@ -594,5 +594,159 @@
     "queue_depth": "队列深度",
     "resource_usage": "资源使用率",
     "sync_failed": "节奏配置同步失败"
+  },
+
+  "workflow": {
+    "title": "AI 智能标注工作流",
+    "description": "通过 AI 学习人工标注样本，实现批量自动标注，并持续迭代优化标注质量。",
+    "info_title": "工作流说明",
+    "info_description": "完整的 AI 标注循环：选择数据来源 → 提供人工标注样本（至少 10 个）→ AI 学习标注模式 → 批量自动标注 → 验证标注效果 → 开始新一轮迭代",
+    "steps": {
+      "data_source": "数据来源",
+      "samples": "人工样本",
+      "learning": "AI 学习",
+      "annotation": "批量标注",
+      "validation": "效果验证"
+    },
+    "data_source": {
+      "title": "选择数据来源",
+      "description": "选择需要进行 AI 标注的数据源（非结构化处理后的数据或原始数据）",
+      "placeholder": "选择数据源",
+      "records": "条记录",
+      "selected_title": "数据源已选择",
+      "selected_desc": "已选择数据源，包含 {{count}} 条记录",
+      "next_button": "下一步：查看人工样本",
+      "select_warning": "请先选择数据源"
+    },
+    "samples": {
+      "title": "人工标注样本",
+      "description": "提供至少 10 个高质量的人工标注样本，AI 将学习这些样本的标注模式",
+      "total_count": "样本总数",
+      "average_quality": "平均质量",
+      "coverage_rate": "覆盖率",
+      "high_quality": "高质量样本",
+      "insufficient_title": "样本数量不足",
+      "insufficient_desc": "当前只有 {{count}} 个样本，至少需要 10 个样本才能开始 AI 学习",
+      "min_samples_warning": "至少需要 10 个已标注样本才能开始 AI 学习",
+      "start_learning": "开始 AI 学习"
+    },
+    "learning": {
+      "title": "AI 学习中",
+      "description": "AI 正在分析人工标注样本，识别标注模式和特征...",
+      "progress_label": "学习进度",
+      "estimated_time": "预计剩余时间：{{seconds}} 秒",
+      "sample_count": "样本数量",
+      "patterns_identified": "识别模式",
+      "average_confidence": "平均置信度",
+      "recommended_method": "推荐方法",
+      "recommended_desc": "通过分析 {{sampleCount}} 个样本，识别出 {{patterns}} 个标注模式，推荐使用 {{method}} 方法进行标注",
+      "failed_title": "学习失败",
+      "complete_first": "请先完成 AI 学习",
+      "start_batch": "开始批量标注",
+      "in_progress": "学习中...",
+      "started": "AI 学习已启动",
+      "completed": "AI 学习完成",
+      "start_failed": "启动 AI 学习失败"
+    },
+    "batch": {
+      "title": "批量标注",
+      "description": "AI 正在对目标数据集进行批量自动标注...",
+      "progress_label": "标注进度",
+      "estimated_time": "预计剩余时间：{{seconds}} 秒",
+      "total_tasks": "总任务数",
+      "annotated": "已标注",
+      "needs_review": "需要审核",
+      "average_confidence": "平均置信度",
+      "failed_title": "标注失败",
+      "complete_first": "请先完成批量标注",
+      "validate_effect": "验证效果",
+      "in_progress": "标注中...",
+      "started": "批量标注已启动",
+      "completed": "批量标注完成",
+      "start_failed": "启动批量标注失败"
+    },
+    "validation": {
+      "title": "效果验证",
+      "description": "验证 AI 标注效果，查看准确率、召回率、F1 分数等指标",
+      "accuracy": "准确率",
+      "recall": "召回率",
+      "f1_score": "F1 分数",
+      "consistency": "一致性",
+      "suggestions_title": "改进建议",
+      "start_new_iteration": "开始新迭代",
+      "new_iteration_started": "开始新一轮迭代",
+      "completed": "效果验证完成",
+      "failed": "效果验证失败"
+    },
+    "common": {
+      "previous_step": "上一步",
+      "running": "进行中",
+      "completed": "已完成",
+      "failed": "失败",
+      "load_datasource_failed": "加载数据源失败",
+      "load_samples_failed": "加载样本信息失败"
+    }
+  },
+
+  "task_list": {
+    "title": "AI 智能标注任务清单",
+    "refresh": "刷新",
+    "create_task": "创建任务",
+    "create_task_wip": "创建新任务功能开发中",
+    "total_tasks": "共 {{total}} 个任务",
+    "columns": {
+      "task_name": "任务名称",
+      "status": "状态",
+      "current_step": "当前步骤",
+      "annotation_progress": "标注进度",
+      "sample_count": "样本数",
+      "updated_at": "更新时间",
+      "actions": "操作"
+    },
+    "annotation_types": {
+      "entity": "实体标注",
+      "classification": "分类标注"
+    },
+    "status": {
+      "pending": "待开始",
+      "learning": "AI 学习中",
+      "annotating": "批量标注中",
+      "validating": "效果验证中",
+      "completed": "已完成",
+      "failed": "失败",
+      "paused": "已暂停"
+    },
+    "confidence": "置信度",
+    "avg_confidence": "平均置信度",
+    "detail": "详情",
+    "view_detail": "查看详情",
+    "start_task": "启动任务",
+    "pause_task": "暂停任务",
+    "delete_task": "删除任务",
+    "confirm_delete_title": "确认删除",
+    "confirm_delete_content": "确定要删除这个标注任务吗？此操作不可恢复。",
+    "delete_ok": "删除",
+    "delete_cancel": "取消",
+    "task_started": "任务已启动",
+    "task_start_failed": "启动任务失败",
+    "task_paused": "任务已暂停",
+    "task_pause_failed": "暂停任务失败",
+    "task_deleted": "任务已删除",
+    "task_delete_failed": "删除任务失败",
+    "modal": {
+      "title": "任务详情",
+      "close": "关闭",
+      "task_name": "任务名称：",
+      "annotation_type": "标注类型：",
+      "status": "状态：",
+      "current_step": "当前步骤：",
+      "sample_count": "样本数量：",
+      "annotation_progress": "标注进度：",
+      "avg_confidence": "平均置信度：",
+      "learning_job_id": "学习任务 ID：",
+      "batch_job_id": "批量标注 ID：",
+      "created_at": "创建时间：",
+      "updated_at": "更新时间："
+    }
   }
 }

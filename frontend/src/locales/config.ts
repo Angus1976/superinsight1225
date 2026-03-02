@@ -29,6 +29,7 @@ import zhOntology from './zh/ontology.json';
 import zhLsWorkspace from './zh/lsWorkspace.json';
 import zhStructuring from './zh/structuring.json';
 import zhHelp from './zh/help.json';
+import zhAiAnnotation from './zh/ai_annotation.json';
 import enCommon from './en/common.json';
 import enAuth from './en/auth.json';
 import enDashboard from './en/dashboard.json';
@@ -55,6 +56,7 @@ import enOntology from './en/ontology.json';
 import enLsWorkspace from './en/lsWorkspace.json';
 import enStructuring from './en/structuring.json';
 import enHelp from './en/help.json';
+import enAiAnnotation from './en/ai_annotation.json';
 
 const resources = {
   zh: {
@@ -84,6 +86,7 @@ const resources = {
     lsWorkspace: zhLsWorkspace,
     structuring: zhStructuring,
     help: zhHelp,
+    aiAnnotation: zhAiAnnotation,
   },
   en: {
     common: enCommon,
@@ -112,6 +115,7 @@ const resources = {
     lsWorkspace: enLsWorkspace,
     structuring: enStructuring,
     help: enHelp,
+    aiAnnotation: enAiAnnotation,
   },
 };
 
@@ -123,7 +127,7 @@ i18n
     fallbackLng: 'zh',
     defaultNS: 'common',
     fallbackNS: 'common',
-    ns: ['common', 'auth', 'dashboard', 'tasks', 'billing', 'quality', 'security', 'dataSync', 'system', 'versioning', 'lineage', 'impact', 'snapshot', 'admin', 'workspace', 'license', 'settings', 'collaboration', 'crowdsource', 'augmentation', 'businessLogic', 'annotation', 'ontology', 'lsWorkspace', 'structuring', 'help'],
+    ns: ['common', 'auth', 'dashboard', 'tasks', 'billing', 'quality', 'security', 'dataSync', 'system', 'versioning', 'lineage', 'impact', 'snapshot', 'admin', 'workspace', 'license', 'settings', 'collaboration', 'crowdsource', 'augmentation', 'businessLogic', 'annotation', 'ontology', 'lsWorkspace', 'structuring', 'help', 'aiAnnotation'],
     interpolation: {
       escapeValue: false,
     },

@@ -488,7 +488,8 @@
     "tabs": {
       "structuring": "结构化",
       "vectorization": "向量化",
-      "semantic": "语义化"
+      "semantic": "语义化",
+      "aiAnnotation": "AI 智能标注"
     },
     "uploadSuccess": "文件上传成功",
     "uploadFailed": "文件上传失败",
@@ -523,6 +524,10 @@
       "entity": "实体",
       "relationship": "关系",
       "summary": "摘要"
+    },
+    "aiAnnotation": {
+      "workflow": "工作流",
+      "taskList": "任务清单"
     }
   }
 }

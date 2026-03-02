@@ -38,7 +38,11 @@
 - 新增页面、新增/修改功能时，所有用户可见字符串必须用 `t()` 包裹
 - 使用 `useTranslation('aiAnnotation')` 等命名空间 hook
 - 翻译 key 同步写入 `frontend/src/locales/zh/` 和 `frontend/src/locales/en/` 对应 JSON
-- 区分字符串与对象属性：HTML 属性用字符串 `t('key')`，JSX 子元素用 `{t('key')}`
+- 严格区分字符串与 JSX 表达式：
+  - HTML/组件属性（title, placeholder, content 等）→ 字符串：`title={t('key')}`
+  - JSX 子元素（标签内文本）→ 表达式：`<Button>{t('key')}</Button>`
+  - 错误写法：`<Button>t('key')</Button>`（渲染为字面文本 "t('key')"）
+  - 错误写法：`title={<span>{t('key')}</span>}`（属性期望字符串却给了 JSX）
 - 不国际化的内容：代码注释、console.log、mock 数据中的 name 字段
 - 详细规范 → `.kiro/rules/i18n-translation-rules.md`
 

@@ -14,7 +14,7 @@
     "validationError": "文件校验失败",
     "uploadError": "上传出错",
     "dragText": "点击或拖拽文件到此区域上传",
-    "hint": "支持 PDF、CSV、Excel、Word、HTML、TXT 格式，单文件最大 100MB",
+    "hint": "支持 PDF、CSV、Excel、Word、HTML、TXT、Markdown、JSON 格式，单文件最大 100MB",
     "uploading": "正在上传...",
     "supportedFormats": "支持的文件格式"
   },

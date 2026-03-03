@@ -42,7 +42,7 @@ const { Dragger } = Upload;
 const MAX_FILE_SIZE_MB = 100;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
-const ACCEPTED_EXTENSIONS = ['.pdf', '.csv', '.xlsx', '.xls', '.docx', '.html', '.htm', '.txt', '.md'];
+const ACCEPTED_EXTENSIONS = ['.pdf', '.csv', '.xlsx', '.xls', '.docx', '.html', '.htm', '.txt', '.md', '.json'];
 
 
 interface FormatInfo {
@@ -61,6 +61,7 @@ const FILE_FORMAT_MAP: Record<string, FormatInfo> = {
   htm:  { label: 'HTML',  icon: <Html5Outlined />,    color: 'orange' },
   txt:  { label: 'TXT',   icon: <FileTextOutlined />, color: 'default' },
   md:   { label: 'Markdown', icon: <FileTextOutlined />, color: 'purple' },
+  json: { label: 'JSON',  icon: <FileTextOutlined />, color: 'cyan' },
 };
 
 // ============================================================================

@@ -14,7 +14,7 @@
     "validationError": "Validation Failed",
     "uploadError": "Upload Error",
     "dragText": "Click or drag file to this area to upload",
-    "hint": "Supports PDF, CSV, Excel, Word, HTML, TXT. Max 100MB per file",
+    "hint": "Supports PDF, CSV, Excel, Word, HTML, TXT, Markdown, JSON. Max 100MB per file",
     "uploading": "Uploading...",
     "supportedFormats": "Supported Formats"
   },

@@ -57,6 +57,7 @@ class FileType(str, Enum):
     TXT = "txt"
     HTML = "html"
     MARKDOWN = "markdown"
+    JSON = "json"
     PPT = "ppt"
     VIDEO = "video"
     AUDIO = "audio"

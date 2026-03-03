@@ -56,6 +56,7 @@ class FileType(str, Enum):
     DOCX = "docx"
     TXT = "txt"
     HTML = "html"
+    MARKDOWN = "markdown"
     PPT = "ppt"
     VIDEO = "video"
     AUDIO = "audio"

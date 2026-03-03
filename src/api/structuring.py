@@ -46,6 +46,7 @@ _EXTENSION_MAP: dict[str, str] = {
     ".html": FileType.HTML.value,
     ".htm": FileType.HTML.value,
     ".txt": FileType.TXT.value,
+    ".md": FileType.MARKDOWN.value,
     ".pptx": FileType.PPT.value,
     ".ppt": FileType.PPT.value,
     ".mp4": FileType.VIDEO.value,
@@ -193,7 +194,7 @@ async def create_structuring_job(
 ) -> JobCreateResponse:
     """Upload a file and create a new structuring job.
 
-    Supported formats: PDF, CSV, Excel (.xlsx/.xls), DOCX, HTML, TXT.
+    Supported formats: PDF, CSV, Excel (.xlsx/.xls), DOCX, HTML, TXT, Markdown (.md).
     Max file size: 100 MB.
     """
     if not file.filename:

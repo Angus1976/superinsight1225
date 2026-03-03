@@ -77,9 +77,11 @@ class SyncTask:
 class CeleryConfig:
     """Celery configuration."""
     
-    # Broker settings
-    broker_url = "redis://localhost:6379/0"
-    result_backend = "redis://localhost:6379/0"
+    # Broker settings - use environment variable or default to localhost
+    import os
+    redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    broker_url = redis_url
+    result_backend = redis_url
     
     # Task settings
     task_serializer = "json"

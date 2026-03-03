@@ -39,6 +39,8 @@ _TEXT_TYPES = {
     StructuringFileType.DOCX.value,
     StructuringFileType.TXT.value,
     StructuringFileType.HTML.value,
+    StructuringFileType.MARKDOWN.value,
+    StructuringFileType.JSON.value,
 }
 _PPT_TYPES = {StructuringFileType.PPT.value}
 _MEDIA_TYPES = {StructuringFileType.VIDEO.value, StructuringFileType.AUDIO.value}

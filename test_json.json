@@ -1,0 +1,18 @@
+{
+  "products": [
+    {
+      "name": "可口可乐",
+      "brand": "可口可乐",
+      "category": "碳酸饮料",
+      "spec": "330ml",
+      "price": 3.5
+    },
+    {
+      "name": "康师傅方便面",
+      "brand": "康师傅",
+      "category": "方便食品",
+      "spec": "袋装",
+      "price": 4.0
+    }
+  ]
+}

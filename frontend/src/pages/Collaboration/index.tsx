@@ -186,7 +186,7 @@ const CollaborationPage: React.FC = () => {
       title: t('tasks.progress'),
       dataIndex: 'progress',
       key: 'progress',
-      render: (progress) => <Progress percent={progress} size="small" style={{ width: 100 }} />,
+      render: (progress) => <Progress percent={progress} size="small" style={{ width: 100 }} format={(percent) => `${percent}%`} />,
     },
     {
       title: t('tasks.deadline'),
@@ -381,7 +381,7 @@ const CollaborationPage: React.FC = () => {
                     {
                       title: t('ranking.accuracy'),
                       dataIndex: 'accuracy',
-                      render: (acc) => <Progress percent={acc * 100} size="small" style={{ width: 120 }} />,
+                      render: (acc) => <Progress percent={acc * 100} size="small" style={{ width: 120 }} format={(percent) => `${percent}%`} />,
                     },
                     { title: t('ranking.completedTasks'), dataIndex: 'tasksCompleted' },
                   ]}

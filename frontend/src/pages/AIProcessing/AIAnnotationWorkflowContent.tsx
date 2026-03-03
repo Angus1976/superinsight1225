@@ -468,7 +468,7 @@ const AIAnnotationWorkflowContent: React.FC = () => {
                   <Space direction="vertical" style={{ width: '100%' }} size="small">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Text strong>{t('workflow.learning.progress_label')}</Text>
-                      <Text type="secondary">{Math.round(learningProgress.progress_percentage)}%</Text>
+                      <Text strong style={{ fontSize: 16 }}>{Math.round(learningProgress.progress_percentage)}%</Text>
                     </div>
                     <Progress 
                       percent={Math.round(learningProgress.progress_percentage)} 
@@ -477,7 +477,8 @@ const AIAnnotationWorkflowContent: React.FC = () => {
                         '0%': '#108ee9',
                         '100%': '#87d068',
                       }}
-                      format={(percent) => `${percent}%`}
+                      showInfo={false}
+                    />
                     />
                     {learningProgress.status === 'running' && (
                       <Text type="secondary" style={{ fontSize: 12 }}>
@@ -573,7 +574,7 @@ const AIAnnotationWorkflowContent: React.FC = () => {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Text strong>{t('workflow.batch.progress_label')}</Text>
                       <Text type="secondary">
-                        {batchProgress.annotated_count} / {batchProgress.total_count}
+                        {batchProgress.annotated_count} / {batchProgress.total_count} ({Math.round((batchProgress.annotated_count / batchProgress.total_count) * 100)}%)
                       </Text>
                     </div>
                     <Progress 
@@ -583,6 +584,7 @@ const AIAnnotationWorkflowContent: React.FC = () => {
                         '0%': '#108ee9',
                         '100%': '#87d068',
                       }}
+                      showInfo={false}
                     />
                     {batchProgress.status === 'running' && (
                       <Text type="secondary" style={{ fontSize: 12 }}>

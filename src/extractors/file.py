@@ -75,6 +75,10 @@ class FileExtractor(BaseExtractor):
                 return self._extract_text()
             elif self.config.file_type == FileType.HTML:
                 return self._extract_html()
+            elif self.config.file_type == FileType.MARKDOWN:
+                return self._extract_text()  # Markdown is plain text
+            elif self.config.file_type == FileType.JSON:
+                return self._extract_text()  # JSON is plain text
             else:
                 return ExtractionResult(
                     success=False,

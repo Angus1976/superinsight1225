@@ -53,6 +53,34 @@ services:
     volumes:
       - ./src:/app/src
       - ./logs:/var/log/superinsight
+      - ./uploads:/app/uploads
+    restart: unless-stopped
+
+  # ===========================================================================
+  # Celery Worker (Background Tasks)
+  # ===========================================================================
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: superinsight-celery-worker
+    command: celery -A src.services.structuring_pipeline worker --loglevel=info
+    environment:
+      - APP_ENV=development
+      - DATABASE_URL=postgresql://superinsight:password@postgres:5432/superinsight
+      - REDIS_URL=redis://redis:6379/0
+      - LABEL_STUDIO_URL=http://label-studio:8080
+      - LABEL_STUDIO_API_TOKEN=${LABEL_STUDIO_API_TOKEN}
+      - ARGILLA_URL=http://argilla:6900
+      - OLLAMA_BASE_URL=http://ollama:11434
+    depends_on:
+      - postgres
+      - redis
+      - app
+    volumes:
+      - ./src:/app/src
+      - ./logs:/var/log/superinsight
+      - ./uploads:/app/uploads
     restart: unless-stopped
 
   # ===========================================================================

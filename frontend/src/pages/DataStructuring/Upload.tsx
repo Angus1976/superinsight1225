@@ -273,15 +273,18 @@ const UploadPage: React.FC = () => {
           {/* Upload progress */}
           {isUploading && (
             <div style={{ marginTop: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
+                <Text type="secondary" style={{ marginRight: 8 }}>
+                  {t('structuring:upload.uploading', { defaultValue: '正在上传...' })}
+                </Text>
+                <Text strong>{uploadProgress}%</Text>
+              </div>
               <Progress
                 percent={uploadProgress}
                 status="active"
                 strokeColor={{ from: '#108ee9', to: '#87d068' }}
-                format={(percent) => `${percent}%`}
+                showInfo={false}
               />
-              <Text type="secondary">
-                {t('structuring:upload.uploading', { defaultValue: '正在上传...' })}
-              </Text>
             </div>
           )}
         </Card>

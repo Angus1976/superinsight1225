@@ -284,11 +284,21 @@ def _load_cloud_config(tenant_id: str | None = None):
     """
     import os
     from src.ai.llm_schemas import CloudConfig
-
+    
+    # Get configuration from environment variables
+    # These should be set to use Ollama or other LLM providers
+    api_key = os.getenv("OPENAI_API_KEY", "")
+    base_url = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
+    model = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
+    
+    # If using Ollama, the API key can be any non-empty string
+    if "ollama" in base_url.lower() and not api_key:
+        api_key = "ollama"
+    
     return CloudConfig(
-        openai_api_key=os.getenv("OPENAI_API_KEY", ""),
-        openai_base_url=os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1"),
-        openai_model=os.getenv("OPENAI_MODEL", "gpt-3.5-turbo"),
+        openai_api_key=api_key,
+        openai_base_url=base_url,
+        openai_model=model,
     )
 
 

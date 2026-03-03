@@ -198,7 +198,10 @@ export const useStructuringStore = create<StructuringStore>()(
           const { data } = await apiClient.post<JobCreateResponse>(
             `${API_BASE}/jobs`,
             formData,
-            { headers: { 'Content-Type': 'multipart/form-data' } },
+            { 
+              headers: { 'Content-Type': 'multipart/form-data' },
+              timeout: 60000, // 60 seconds for file upload
+            },
           );
 
           const newJob: StructuringJob = {

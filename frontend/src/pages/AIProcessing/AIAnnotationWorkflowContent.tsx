@@ -479,7 +479,6 @@ const AIAnnotationWorkflowContent: React.FC = () => {
                       }}
                       showInfo={false}
                     />
-                    />
                     {learningProgress.status === 'running' && (
                       <Text type="secondary" style={{ fontSize: 12 }}>
                         {t('workflow.learning.estimated_time', { seconds: Math.round((100 - learningProgress.progress_percentage) / 25) })}

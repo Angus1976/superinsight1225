@@ -277,6 +277,7 @@ const UploadPage: React.FC = () => {
                 percent={uploadProgress}
                 status="active"
                 strokeColor={{ from: '#108ee9', to: '#87d068' }}
+                format={(percent) => `${percent}%`}
               />
               <Text type="secondary">
                 {t('structuring:upload.uploading', { defaultValue: '正在上传...' })}

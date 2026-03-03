@@ -477,6 +477,7 @@ const AIAnnotationWorkflowContent: React.FC = () => {
                         '0%': '#108ee9',
                         '100%': '#87d068',
                       }}
+                      format={(percent) => `${percent}%`}
                     />
                     {learningProgress.status === 'running' && (
                       <Text type="secondary" style={{ fontSize: 12 }}>

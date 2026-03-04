@@ -1,7 +1,7 @@
 """add ai annotation workflow tables
 
 Revision ID: ai_annotation_001
-Revises: merge_all_heads_2026_01_16
+Revises: 021_add_ai_integration
 Create Date: 2026-03-02 10:00:00.000000
 
 """
@@ -12,7 +12,7 @@ from datetime import datetime
 
 # revision identifiers, used by Alembic.
 revision = 'ai_annotation_001'
-down_revision = 'merge_all_heads_2026_01_16'
+down_revision = '021_add_ai_integration'
 branch_labels = None
 depends_on = None
 

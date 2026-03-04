@@ -34,6 +34,7 @@ export * from './structuringStore';
 export * from './vectorizationStore';
 export * from './semanticStore';
 export * from './helpStore';
+export * from './llmConfigStore';
 
 // ============================================================================
 // Store Hooks

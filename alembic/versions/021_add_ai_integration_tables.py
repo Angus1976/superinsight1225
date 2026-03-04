@@ -1,7 +1,7 @@
 """Add AI Integration tables
 
 Revision ID: 021_add_ai_integration
-Revises: merge_all_heads_2026_01_16
+Revises: 027_upgrade_embedding
 Create Date: 2026-02-04
 
 This migration adds tables for AI Application Integration System:
@@ -20,7 +20,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 
 # revision identifiers, used by Alembic.
 revision: str = '021_add_ai_integration'
-down_revision: Union[str, Sequence[str], None] = 'merge_2026_01_16'
+down_revision: Union[str, Sequence[str], None] = '027_upgrade_embedding'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

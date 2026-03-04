@@ -69,3 +69,6 @@ export * from './help';
 
 // Datalake/Warehouse types
 export * from './datalake';
+
+// LLM Configuration types
+export * from './llmConfig';

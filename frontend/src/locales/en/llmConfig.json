@@ -1,0 +1,238 @@
+{
+  "pageTitle": "LLM Configuration Management",
+  "pageDescription": "Manage large language model configurations and application bindings",
+  
+  "providers": {
+    "openai": "OpenAI",
+    "azure": "Azure OpenAI Service",
+    "anthropic": "Anthropic",
+    "ollama": "Ollama",
+    "custom": "Custom"
+  },
+  
+  "applications": {
+    "structuring": {
+      "name": "Data Structuring",
+      "description": "Schema inference and entity extraction"
+    },
+    "knowledge_graph": {
+      "name": "Knowledge Graph",
+      "description": "Knowledge graph construction"
+    },
+    "ai_assistant": {
+      "name": "AI Assistant",
+      "description": "Intelligent assistant services"
+    },
+    "semantic_analysis": {
+      "name": "Semantic Analysis",
+      "description": "Semantic analysis services"
+    },
+    "rag_agent": {
+      "name": "RAG Agent",
+      "description": "Retrieval-augmented generation"
+    },
+    "text_to_sql": {
+      "name": "Text to SQL",
+      "description": "Natural language to SQL conversion"
+    }
+  },
+  
+  "configList": {
+    "title": "LLM Configuration List",
+    "addButton": "Add Configuration",
+    "searchPlaceholder": "Search configuration name or model",
+    "columns": {
+      "name": "Name",
+      "provider": "Provider",
+      "model": "Model",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "actions": {
+      "edit": "Edit",
+      "delete": "Delete",
+      "test": "Test Connection"
+    },
+    "deleteConfirm": {
+      "title": "Confirm Delete",
+      "content": "Are you sure you want to delete configuration \"{{name}}\"? This action cannot be undone.",
+      "hasBindings": "This configuration is bound to applications and cannot be deleted. Please remove bindings first."
+    },
+    "emptyState": "No LLM configurations yet, click the button above to add one"
+  },
+  
+  "configForm": {
+    "createTitle": "Create LLM Configuration",
+    "editTitle": "Edit LLM Configuration",
+    "basicInfo": "Basic Information",
+    "advancedSettings": "Advanced Settings",
+    "fields": {
+      "name": {
+        "label": "Configuration Name",
+        "placeholder": "Enter configuration name",
+        "required": "Please enter configuration name"
+      },
+      "provider": {
+        "label": "Provider",
+        "placeholder": "Select provider",
+        "required": "Please select provider"
+      },
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "Enter API key",
+        "required": "Please enter API key",
+        "hint": "Key will be encrypted for storage"
+      },
+      "baseUrl": {
+        "label": "API Base URL",
+        "placeholder": "Enter API base URL (optional)",
+        "hint": "Leave empty to use default URL",
+        "invalid": "Please enter a valid URL"
+      },
+      "modelName": {
+        "label": "Model Name",
+        "placeholder": "Enter model name",
+        "required": "Please enter model name",
+        "hint": "e.g., gpt-4, claude-3-opus"
+      },
+      "parameters": {
+        "label": "Model Parameters",
+        "placeholder": "Enter parameters in JSON format (optional)",
+        "hint": "e.g., {\"temperature\": 0.7, \"max_tokens\": 2000}",
+        "invalid": "Please enter valid JSON format"
+      },
+      "isActive": {
+        "label": "Status",
+        "active": "Active",
+        "inactive": "Inactive"
+      }
+    },
+    "buttons": {
+      "submit": "Submit",
+      "cancel": "Cancel",
+      "test": "Test Connection"
+    },
+    "messages": {
+      "createSuccess": "Configuration created successfully",
+      "createFailed": "Failed to create configuration",
+      "updateSuccess": "Configuration updated successfully",
+      "updateFailed": "Failed to update configuration"
+    }
+  },
+  
+  "testConnection": {
+    "button": "Test Connection",
+    "testing": "Testing...",
+    "success": "Connection successful",
+    "failed": "Connection failed",
+    "latency": "Latency: {{ms}}ms",
+    "error": "Error: {{message}}"
+  },
+  
+  "bindings": {
+    "title": "Application Bindings",
+    "description": "Configure LLM providers and priorities for each application",
+    "addButton": "Add Binding",
+    "application": "Application",
+    "boundLLMs": "Bound LLMs",
+    "priority": "Priority",
+    "noBoundLLMs": "No bound LLMs",
+    "primaryLLM": "Primary",
+    "backupLLM": "Backup",
+    "dragToReorder": "Drag to reorder priority",
+    "actions": {
+      "edit": "Edit",
+      "delete": "Delete",
+      "reorder": "Reorder"
+    },
+    "deleteConfirm": {
+      "title": "Confirm Delete Binding",
+      "content": "Are you sure you want to delete this binding?"
+    },
+    "emptyState": "No bindings yet, click the button above to add one"
+  },
+  
+  "bindingForm": {
+    "createTitle": "Create Binding",
+    "editTitle": "Edit Binding",
+    "fields": {
+      "application": {
+        "label": "Application",
+        "placeholder": "Select application",
+        "required": "Please select application"
+      },
+      "llmConfig": {
+        "label": "LLM Configuration",
+        "placeholder": "Select LLM configuration",
+        "required": "Please select LLM configuration"
+      },
+      "priority": {
+        "label": "Priority",
+        "placeholder": "Enter priority (1-99)",
+        "required": "Please enter priority",
+        "hint": "Lower number means higher priority, 1 is the highest",
+        "range": "Priority must be between 1 and 99",
+        "duplicate": "This priority is already in use"
+      },
+      "maxRetries": {
+        "label": "Max Retries",
+        "placeholder": "Enter max retries",
+        "hint": "Number of retries on failure, between 0-10",
+        "range": "Max retries must be between 0 and 10"
+      },
+      "timeoutSeconds": {
+        "label": "Timeout (seconds)",
+        "placeholder": "Enter timeout in seconds",
+        "hint": "Request timeout, must be greater than 0",
+        "positive": "Timeout must be greater than 0"
+      },
+      "isActive": {
+        "label": "Status"
+      }
+    },
+    "buttons": {
+      "submit": "Submit",
+      "cancel": "Cancel"
+    },
+    "messages": {
+      "createSuccess": "Binding created successfully",
+      "createFailed": "Failed to create binding",
+      "updateSuccess": "Binding updated successfully",
+      "updateFailed": "Failed to update binding",
+      "reorderSuccess": "Priority reordered successfully",
+      "reorderFailed": "Failed to reorder priority"
+    }
+  },
+  
+  "errors": {
+    "loadConfigsFailed": "Failed to load configuration list",
+    "loadApplicationsFailed": "Failed to load application list",
+    "loadBindingsFailed": "Failed to load binding list",
+    "deleteConfigFailed": "Failed to delete configuration",
+    "deleteBindingFailed": "Failed to delete binding",
+    "testConnectionFailed": "Failed to test connection",
+    "networkError": "Network error, please check connection",
+    "serverError": "Server error, please try again later",
+    "validationError": "Data validation failed",
+    "unauthorized": "Unauthorized, please log in again",
+    "forbidden": "Insufficient permissions",
+    "notFound": "Resource not found",
+    "conflict": "Data conflict"
+  },
+  
+  "messages": {
+    "loading": "Loading...",
+    "noData": "No data",
+    "operationSuccess": "Operation successful",
+    "operationFailed": "Operation failed"
+  },
+  
+  "tabs": {
+    "configs": "Configuration Management",
+    "bindings": "Application Bindings"
+  }
+}

@@ -136,4 +136,23 @@ export const API_ENDPOINTS = {
     METRICS: '/system/metrics',
     SERVICES: '/system/services',
   },
+
+  // LLM Configuration
+  LLM_CONFIGS: {
+    BASE: '/api/llm-configs',
+    BY_ID: (id: string) => `/api/llm-configs/${id}`,
+    TEST: (id: string) => `/api/llm-configs/${id}/test`,
+  },
+
+  // Applications
+  APPLICATIONS: {
+    BASE: '/api/applications',
+    BY_CODE: (code: string) => `/api/applications/${code}`,
+  },
+
+  // LLM Bindings
+  LLM_BINDINGS: {
+    BASE: '/api/llm-bindings',
+    BY_ID: (id: string) => `/api/llm-bindings/${id}`,
+  },
 } as const;

@@ -1,0 +1,238 @@
+{
+  "pageTitle": "LLM 配置管理",
+  "pageDescription": "管理大语言模型配置和应用绑定",
+  
+  "providers": {
+    "openai": "OpenAI",
+    "azure": "Azure OpenAI 服务",
+    "anthropic": "Anthropic",
+    "ollama": "Ollama",
+    "custom": "自定义"
+  },
+  
+  "applications": {
+    "structuring": {
+      "name": "数据结构化",
+      "description": "模式推断和实体提取"
+    },
+    "knowledge_graph": {
+      "name": "知识图谱",
+      "description": "知识图谱构建"
+    },
+    "ai_assistant": {
+      "name": "AI 助手",
+      "description": "智能助手服务"
+    },
+    "semantic_analysis": {
+      "name": "语义分析",
+      "description": "语义分析服务"
+    },
+    "rag_agent": {
+      "name": "RAG 智能体",
+      "description": "检索增强生成"
+    },
+    "text_to_sql": {
+      "name": "文本转 SQL",
+      "description": "自然语言转 SQL 查询"
+    }
+  },
+  
+  "configList": {
+    "title": "LLM 配置列表",
+    "addButton": "添加配置",
+    "searchPlaceholder": "搜索配置名称或模型",
+    "columns": {
+      "name": "名称",
+      "provider": "提供商",
+      "model": "模型",
+      "status": "状态",
+      "actions": "操作"
+    },
+    "status": {
+      "active": "活跃",
+      "inactive": "未激活"
+    },
+    "actions": {
+      "edit": "编辑",
+      "delete": "删除",
+      "test": "测试连接"
+    },
+    "deleteConfirm": {
+      "title": "确认删除",
+      "content": "确定要删除配置 \"{{name}}\" 吗？此操作不可撤销。",
+      "hasBindings": "此配置已绑定到应用，无法删除。请先解除绑定。"
+    },
+    "emptyState": "暂无 LLM 配置，点击上方按钮添加"
+  },
+  
+  "configForm": {
+    "createTitle": "创建 LLM 配置",
+    "editTitle": "编辑 LLM 配置",
+    "basicInfo": "基本信息",
+    "advancedSettings": "高级设置",
+    "fields": {
+      "name": {
+        "label": "配置名称",
+        "placeholder": "请输入配置名称",
+        "required": "请输入配置名称"
+      },
+      "provider": {
+        "label": "提供商",
+        "placeholder": "请选择提供商",
+        "required": "请选择提供商"
+      },
+      "apiKey": {
+        "label": "API 密钥",
+        "placeholder": "请输入 API 密钥",
+        "required": "请输入 API 密钥",
+        "hint": "密钥将被加密存储"
+      },
+      "baseUrl": {
+        "label": "API 基础地址",
+        "placeholder": "请输入 API 基础地址（可选）",
+        "hint": "留空使用默认地址",
+        "invalid": "请输入有效的 URL 地址"
+      },
+      "modelName": {
+        "label": "模型名称",
+        "placeholder": "请输入模型名称",
+        "required": "请输入模型名称",
+        "hint": "例如：gpt-4, claude-3-opus"
+      },
+      "parameters": {
+        "label": "模型参数",
+        "placeholder": "请输入 JSON 格式的参数（可选）",
+        "hint": "例如：{\"temperature\": 0.7, \"max_tokens\": 2000}",
+        "invalid": "请输入有效的 JSON 格式"
+      },
+      "isActive": {
+        "label": "启用状态",
+        "active": "启用",
+        "inactive": "禁用"
+      }
+    },
+    "buttons": {
+      "submit": "提交",
+      "cancel": "取消",
+      "test": "测试连接"
+    },
+    "messages": {
+      "createSuccess": "配置创建成功",
+      "createFailed": "配置创建失败",
+      "updateSuccess": "配置更新成功",
+      "updateFailed": "配置更新失败"
+    }
+  },
+  
+  "testConnection": {
+    "button": "测试连接",
+    "testing": "测试中...",
+    "success": "连接成功",
+    "failed": "连接失败",
+    "latency": "延迟：{{ms}}ms",
+    "error": "错误：{{message}}"
+  },
+  
+  "bindings": {
+    "title": "应用绑定",
+    "description": "为每个应用配置 LLM 提供商和优先级",
+    "addButton": "添加绑定",
+    "application": "应用",
+    "boundLLMs": "已绑定 LLM",
+    "priority": "优先级",
+    "noBoundLLMs": "未绑定 LLM",
+    "primaryLLM": "主要",
+    "backupLLM": "备用",
+    "dragToReorder": "拖拽调整优先级",
+    "actions": {
+      "edit": "编辑",
+      "delete": "删除",
+      "reorder": "调整顺序"
+    },
+    "deleteConfirm": {
+      "title": "确认删除绑定",
+      "content": "确定要删除此绑定吗？"
+    },
+    "emptyState": "暂无绑定，点击上方按钮添加"
+  },
+  
+  "bindingForm": {
+    "createTitle": "创建绑定",
+    "editTitle": "编辑绑定",
+    "fields": {
+      "application": {
+        "label": "应用",
+        "placeholder": "请选择应用",
+        "required": "请选择应用"
+      },
+      "llmConfig": {
+        "label": "LLM 配置",
+        "placeholder": "请选择 LLM 配置",
+        "required": "请选择 LLM 配置"
+      },
+      "priority": {
+        "label": "优先级",
+        "placeholder": "请输入优先级（1-99）",
+        "required": "请输入优先级",
+        "hint": "数字越小优先级越高，1 为最高优先级",
+        "range": "优先级必须在 1-99 之间",
+        "duplicate": "此优先级已被使用"
+      },
+      "maxRetries": {
+        "label": "最大重试次数",
+        "placeholder": "请输入最大重试次数",
+        "hint": "失败后的重试次数，0-10 之间",
+        "range": "重试次数必须在 0-10 之间"
+      },
+      "timeoutSeconds": {
+        "label": "超时时间（秒）",
+        "placeholder": "请输入超时时间",
+        "hint": "请求超时时间，必须大于 0",
+        "positive": "超时时间必须大于 0"
+      },
+      "isActive": {
+        "label": "启用状态"
+      }
+    },
+    "buttons": {
+      "submit": "提交",
+      "cancel": "取消"
+    },
+    "messages": {
+      "createSuccess": "绑定创建成功",
+      "createFailed": "绑定创建失败",
+      "updateSuccess": "绑定更新成功",
+      "updateFailed": "绑定更新失败",
+      "reorderSuccess": "优先级调整成功",
+      "reorderFailed": "优先级调整失败"
+    }
+  },
+  
+  "errors": {
+    "loadConfigsFailed": "加载配置列表失败",
+    "loadApplicationsFailed": "加载应用列表失败",
+    "loadBindingsFailed": "加载绑定列表失败",
+    "deleteConfigFailed": "删除配置失败",
+    "deleteBindingFailed": "删除绑定失败",
+    "testConnectionFailed": "测试连接失败",
+    "networkError": "网络错误，请检查连接",
+    "serverError": "服务器错误，请稍后重试",
+    "validationError": "数据验证失败",
+    "unauthorized": "未授权，请重新登录",
+    "forbidden": "权限不足",
+    "notFound": "资源不存在",
+    "conflict": "数据冲突"
+  },
+  
+  "messages": {
+    "loading": "加载中...",
+    "noData": "暂无数据",
+    "operationSuccess": "操作成功",
+    "operationFailed": "操作失败"
+  },
+  
+  "tabs": {
+    "configs": "配置管理",
+    "bindings": "应用绑定"
+  }
+}

@@ -168,7 +168,7 @@ def _infer_schema(session, job: StructuringJob, content: Any) -> dict:
     _update_job_status(session, job, JobStatus.INFERRING.value)
 
     from src.ai.schema_inferrer import SchemaInferrer
-    cloud_config = _load_cloud_config(job.tenant_id)
+    cloud_config = asyncio.run(_load_cloud_config(job.tenant_id))
     inferrer = SchemaInferrer(cloud_config)
 
     from src.extractors.tabular import TabularData
@@ -213,7 +213,7 @@ def _extract_entities(
     from src.ai.entity_extractor import EntityExtractor
     from src.ai.schema_inferrer import InferredSchema
 
-    cloud_config = _load_cloud_config(job.tenant_id)
+    cloud_config = asyncio.run(_load_cloud_config(job.tenant_id))
     extractor = EntityExtractor(cloud_config)
     schema = InferredSchema.model_validate(schema_dict)
 
@@ -277,16 +277,41 @@ def _create_annotation_task(
 # Cloud config loader
 # ---------------------------------------------------------------------------
 
-def _load_cloud_config(tenant_id: str | None = None):
-    """Build a CloudConfig from environment / settings.
+async def _load_cloud_config(
+    tenant_id: str | None = None,
+    application_code: str = "structuring"
+):
+    """Build a CloudConfig from database or environment variables.
 
-    Falls back to env vars when no DB-stored config is available.
+    Priority order:
+    1. Database bindings for the application
+    2. Environment variables (backward compatibility)
+    
+    Args:
+        tenant_id: Optional tenant ID for multi-tenant isolation.
+        application_code: Application code (default: "structuring").
+    
+    Returns:
+        CloudConfig instance.
     """
     import os
     from src.ai.llm_schemas import CloudConfig
+    from src.ai.application_llm_manager import get_app_llm_manager
+    from src.database.connection import db_manager
     
-    # Get configuration from environment variables
-    # These should be set to use Ollama or other LLM providers
+    # Try database first
+    try:
+        async with db_manager.get_async_session() as session:
+            app_llm_manager = get_app_llm_manager(session)
+            configs = await app_llm_manager.get_llm_config(application_code, tenant_id)
+            
+            if configs:
+                # Return highest priority config
+                return configs[0]
+    except Exception as e:
+        logger.warning(f"Failed to load config from database: {e}, falling back to env vars")
+    
+    # Fallback to environment variables
     api_key = os.getenv("OPENAI_API_KEY", "")
     base_url = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
     model = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
@@ -294,6 +319,12 @@ def _load_cloud_config(tenant_id: str | None = None):
     # If using Ollama, the API key can be any non-empty string
     if "ollama" in base_url.lower() and not api_key:
         api_key = "ollama"
+    
+    if not api_key:
+        raise ValueError(
+            "No LLM configuration found. Please configure via database or set "
+            "OPENAI_API_KEY environment variable."
+        )
     
     return CloudConfig(
         openai_api_key=api_key,

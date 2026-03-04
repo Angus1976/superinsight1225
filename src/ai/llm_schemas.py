@@ -174,7 +174,7 @@ class CloudConfig(BaseModel):
     azure_api_key: Optional[str] = Field(default=None, description="Azure OpenAI API key")
     azure_deployment: Optional[str] = Field(default=None, description="Azure deployment name")
     azure_api_version: str = Field(default="2024-02-15-preview", description="Azure API version")
-    timeout: int = Field(default=60, ge=1, le=300, description="Request timeout in seconds")
+    timeout: int = Field(default=300, ge=1, le=600, description="Request timeout in seconds")
     max_retries: int = Field(default=3, ge=0, le=10, description="Maximum retry attempts")
 
 

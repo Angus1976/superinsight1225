@@ -101,11 +101,13 @@ def _extract_content(session, job: StructuringJob) -> str | dict:
     Returns:
         str for text files, TabularData-like dict for tabular files.
     """
+    logger.info(f"[Job {job.id}] 步骤 1/6: 开始提取文件内容 (file_type={job.file_type})")
     _update_job_status(session, job, JobStatus.EXTRACTING.value)
 
     file_type = job.file_type
 
     if file_type in _TABULAR_TYPES:
+        logger.info(f"[Job {job.id}] 使用 TabularParser 解析表格文件")
         from src.extractors.tabular import TabularParser
         parser = TabularParser()
         tabular_data = parser.parse(job.file_path, file_type)
@@ -113,9 +115,11 @@ def _extract_content(session, job: StructuringJob) -> str | dict:
         preview_rows = tabular_data.rows[:20]
         job.raw_content = str(preview_rows)
         session.flush()
+        logger.info(f"[Job {job.id}] 表格文件提取完成: {tabular_data.row_count} 行, {len(tabular_data.headers)} 列")
         return tabular_data
 
     if file_type in _TEXT_TYPES:
+        logger.info(f"[Job {job.id}] 使用 FileExtractor 解析文本文件")
         from src.extractors.base import FileConfig, FileType as ExtractorFileType
         from src.extractors.file import FileExtractor
 
@@ -132,9 +136,11 @@ def _extract_content(session, job: StructuringJob) -> str | dict:
         text = "\n\n".join(doc.content for doc in result.documents)
         job.raw_content = text
         session.flush()
+        logger.info(f"[Job {job.id}] 文本文件提取完成: {len(text)} 字符, {len(result.documents)} 个文档")
         return text
 
     if file_type in _PPT_TYPES:
+        logger.info(f"[Job {job.id}] 使用 PPTExtractor 解析 PPT 文件")
         from src.extractors.ppt import PPTExtractor
 
         extractor = PPTExtractor()
@@ -143,9 +149,11 @@ def _extract_content(session, job: StructuringJob) -> str | dict:
             raise RuntimeError("PPT extraction returned empty content")
         job.raw_content = text
         session.flush()
+        logger.info(f"[Job {job.id}] PPT 文件提取完成: {len(text)} 字符")
         return text
 
     if file_type in _MEDIA_TYPES:
+        logger.info(f"[Job {job.id}] 使用 MediaTranscriber 转录媒体文件")
         from src.extractors.media import MediaTranscriber
 
         transcriber = MediaTranscriber()
@@ -154,6 +162,7 @@ def _extract_content(session, job: StructuringJob) -> str | dict:
             raise RuntimeError("Media transcription returned empty content")
         job.raw_content = text
         session.flush()
+        logger.info(f"[Job {job.id}] 媒体文件转录完成: {len(text)} 字符")
         return text
 
     raise ValueError(f"Unsupported file type: {file_type}")
@@ -165,21 +174,29 @@ def _infer_schema(session, job: StructuringJob, content: Any) -> dict:
     Returns:
         InferredSchema serialised as dict.
     """
+    logger.info(f"[Job {job.id}] 步骤 2/6: 开始推断数据结构 Schema")
     _update_job_status(session, job, JobStatus.INFERRING.value)
 
     from src.ai.schema_inferrer import SchemaInferrer
+    logger.info(f"[Job {job.id}] 正在加载 LLM 配置...")
     cloud_config = asyncio.run(_load_cloud_config(job.tenant_id))
+    logger.info(f"[Job {job.id}] LLM 配置加载完成: model={cloud_config.openai_model}, base_url={cloud_config.openai_base_url}")
+    
     inferrer = SchemaInferrer(cloud_config)
 
     from src.extractors.tabular import TabularData
     if isinstance(content, TabularData):
+        logger.info(f"[Job {job.id}] 正在调用 LLM 推断表格数据 Schema...")
         schema = asyncio.run(inferrer.infer_from_tabular(content))
     else:
+        content_preview = str(content)[:200] + "..." if len(str(content)) > 200 else str(content)
+        logger.info(f"[Job {job.id}] 正在调用 LLM 推断文本数据 Schema (内容预览: {content_preview})")
         schema = asyncio.run(inferrer.infer_from_text(str(content)))
 
     schema_dict = schema.model_dump()
     job.inferred_schema = schema_dict
     session.flush()
+    logger.info(f"[Job {job.id}] Schema 推断完成: {len(schema_dict.get('fields', []))} 个字段, 置信度={schema_dict.get('confidence', 0)}")
     return schema_dict
 
 
@@ -189,12 +206,15 @@ def _wait_for_confirmation(session, job: StructuringJob) -> dict:
     If the user has already confirmed a schema (via API), use it.
     Otherwise, auto-confirm with the inferred schema.
     """
+    logger.info(f"[Job {job.id}] 步骤 3/6: 等待 Schema 确认")
     _update_job_status(session, job, JobStatus.CONFIRMING.value)
 
     if job.confirmed_schema:
+        logger.info(f"[Job {job.id}] 使用用户已确认的 Schema")
         return job.confirmed_schema
 
     # Auto-confirm: use inferred schema as-is
+    logger.info(f"[Job {job.id}] 自动确认推断的 Schema")
     job.confirmed_schema = job.inferred_schema
     session.flush()
     return job.confirmed_schema
@@ -208,11 +228,13 @@ def _extract_entities(
     Returns:
         List of record dicts (fields, confidence, source_span).
     """
+    logger.info(f"[Job {job.id}] 步骤 4/6: 开始提取结构化实体")
     _update_job_status(session, job, JobStatus.EXTRACTING_ENTITIES.value)
 
     from src.ai.entity_extractor import EntityExtractor
     from src.ai.schema_inferrer import InferredSchema
 
+    logger.info(f"[Job {job.id}] 正在加载 LLM 配置...")
     cloud_config = asyncio.run(_load_cloud_config(job.tenant_id))
     extractor = EntityExtractor(cloud_config)
     schema = InferredSchema.model_validate(schema_dict)
@@ -221,7 +243,9 @@ def _extract_entities(
     if not content.strip():
         raise RuntimeError("No raw content available for entity extraction")
 
+    logger.info(f"[Job {job.id}] 正在调用 LLM 提取实体 (内容长度: {len(content)} 字符)...")
     result = asyncio.run(extractor.extract(content, schema))
+    logger.info(f"[Job {job.id}] 实体提取完成: {len(result.records)} 条记录")
     return [r.model_dump() for r in result.records]
 
 
@@ -233,6 +257,7 @@ def _store_records(
     Returns:
         Number of records stored.
     """
+    logger.info(f"[Job {job.id}] 步骤 5/6: 开始存储结构化记录")
     for rec in records:
         db_record = StructuredRecord(
             job_id=job.id,
@@ -244,6 +269,7 @@ def _store_records(
 
     job.record_count = len(records)
     session.flush()
+    logger.info(f"[Job {job.id}] 记录存储完成: {len(records)} 条")
     return len(records)
 
 
@@ -255,6 +281,7 @@ def _create_annotation_task(
     Returns:
         Task dict with task_id and metadata.
     """
+    logger.info(f"[Job {job.id}] 步骤 6/6: 创建标注任务")
     from src.models.task import Task
 
     task = Task(
@@ -270,6 +297,7 @@ def _create_annotation_task(
             "record_count": job.record_count,
         },
     )
+    logger.info(f"[Job {job.id}] 标注任务创建完成: task_id={task.task_id}")
     return task.model_dump(mode="json")
 
 

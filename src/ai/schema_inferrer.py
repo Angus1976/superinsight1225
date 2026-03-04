@@ -148,14 +148,28 @@ class SchemaInferrer:
         from openai import AsyncOpenAI
 
         self._config = cloud_config
-        self._client = instructor.from_openai(
-            AsyncOpenAI(
-                api_key=cloud_config.openai_api_key,
-                base_url=cloud_config.openai_base_url,
-                timeout=cloud_config.timeout,
-                max_retries=0,  # retries handled externally
+        # Try TOOLS mode first, fallback to JSON if it fails
+        try:
+            self._client = instructor.from_openai(
+                AsyncOpenAI(
+                    api_key=cloud_config.openai_api_key,
+                    base_url=cloud_config.openai_base_url,
+                    timeout=cloud_config.timeout,
+                    max_retries=0,  # retries handled externally
+                ),
+                mode=instructor.Mode.TOOLS,
             )
-        )
+        except Exception:
+            logger.warning("TOOLS mode failed, using JSON mode")
+            self._client = instructor.from_openai(
+                AsyncOpenAI(
+                    api_key=cloud_config.openai_api_key,
+                    base_url=cloud_config.openai_base_url,
+                    timeout=cloud_config.timeout,
+                    max_retries=0,
+                ),
+                mode=instructor.Mode.JSON,
+            )
         self._model = cloud_config.openai_model
 
     async def infer_from_text(
@@ -225,6 +239,7 @@ class SchemaInferrer:
         user_content: str,
     ) -> InferredSchema:
         """Call the LLM via instructor with retry and post-process the result."""
+        logger.info("开始 Schema 推断 LLM 调用（带重试机制）")
         try:
             schema: InferredSchema = await retry_with_backoff(
                 self._raw_llm_call,
@@ -232,8 +247,9 @@ class SchemaInferrer:
                 user_content,
                 operation_name="SchemaInferrer",
             )
+            logger.info("Schema 推断 LLM 调用成功")
         except Exception as exc:
-            logger.error("Schema inference LLM call failed: %s", exc)
+            logger.error("Schema inference LLM call failed: %s", exc, exc_info=True)
             raise SchemaInferenceError(f"LLM call failed: {exc}") from exc
 
         return self._post_process(schema)
@@ -244,7 +260,10 @@ class SchemaInferrer:
         user_content: str,
     ) -> InferredSchema:
         """Single LLM call without retry (called by retry_with_backoff)."""
-        return await self._client.chat.completions.create(
+        logger.info(f"正在调用 LLM (model={self._model}, base_url={self._config.openai_base_url})")
+        logger.debug(f"LLM 请求内容长度: {len(user_content)} 字符")
+        
+        result = await self._client.chat.completions.create(
             model=self._model,
             response_model=InferredSchema,
             messages=[
@@ -253,6 +272,9 @@ class SchemaInferrer:
             ],
             temperature=0.1,
         )
+        
+        logger.info(f"LLM 调用成功，返回 {len(result.fields)} 个字段")
+        return result
 
     @staticmethod
     def _post_process(schema: InferredSchema) -> InferredSchema:

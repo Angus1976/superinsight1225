@@ -281,11 +281,11 @@ async def _load_cloud_config(
     tenant_id: str | None = None,
     application_code: str = "structuring"
 ):
-    """Build a CloudConfig from database or environment variables.
+    """Build a CloudConfig from environment variables or database.
 
     Priority order:
-    1. Database bindings for the application
-    2. Environment variables (backward compatibility)
+    1. Environment variables (for simplicity and reliability)
+    2. Database bindings for the application (future enhancement)
     
     Args:
         tenant_id: Optional tenant ID for multi-tenant isolation.
@@ -296,22 +296,8 @@ async def _load_cloud_config(
     """
     import os
     from src.ai.llm_schemas import CloudConfig
-    from src.ai.application_llm_manager import get_app_llm_manager
-    from src.database.connection import db_manager
     
-    # Try database first
-    try:
-        async with db_manager.get_async_session() as session:
-            app_llm_manager = get_app_llm_manager(session)
-            configs = await app_llm_manager.get_llm_config(application_code, tenant_id)
-            
-            if configs:
-                # Return highest priority config
-                return configs[0]
-    except Exception as e:
-        logger.warning(f"Failed to load config from database: {e}, falling back to env vars")
-    
-    # Fallback to environment variables
+    # Load from environment variables
     api_key = os.getenv("OPENAI_API_KEY", "")
     base_url = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
     model = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
@@ -322,9 +308,10 @@ async def _load_cloud_config(
     
     if not api_key:
         raise ValueError(
-            "No LLM configuration found. Please configure via database or set "
-            "OPENAI_API_KEY environment variable."
+            "No LLM configuration found. Please set OPENAI_API_KEY environment variable."
         )
+    
+    logger.info(f"Using LLM config: model={model}, base_url={base_url}")
     
     return CloudConfig(
         openai_api_key=api_key,

@@ -1261,6 +1261,258 @@ async def _load_cloud_config(
 
 ---
 
+## LLM-Application Configuration Matrix
+
+### System-Wide Configuration Status
+
+This matrix tracks which LLM configurations are bound to which applications, their priority order, and activation status. Use this as a checklist for managing production configurations.
+
+#### Configuration Matrix Template
+
+| Application | Priority 1 (Primary) | Priority 2 (Backup) | Priority 3 (Fallback) | Status | Notes |
+|-------------|---------------------|---------------------|----------------------|--------|-------|
+| Data Structuring | - | - | - | ⚠️ Not Configured | High-frequency, requires low latency |
+| Knowledge Graph | - | - | - | ⚠️ Not Configured | Medium-frequency, requires high quality |
+| AI Assistant | - | - | - | ⚠️ Not Configured | High-frequency, conversational |
+| Semantic Analysis | - | - | - | ⚠️ Not Configured | Medium-frequency, analytical |
+| RAG Agent | - | - | - | ⚠️ Not Configured | High-frequency, context-aware |
+| Text to SQL | - | - | - | ⚠️ Not Configured | Medium-frequency, requires precision |
+
+**Status Legend**:
+- ✅ Fully Configured: All priority levels set
+- ⚙️ Partially Configured: Primary only
+- ⚠️ Not Configured: No bindings
+- ❌ Inactive: Bindings exist but disabled
+
+#### Example Production Configuration
+
+| Application | Priority 1 (Primary) | Priority 2 (Backup) | Priority 3 (Fallback) | Status | Notes |
+|-------------|---------------------|---------------------|----------------------|--------|-------|
+| Data Structuring | GPT-4 Turbo (Azure) | GPT-3.5 Turbo (OpenAI) | Ollama Llama3 (Local) | ✅ Fully Configured | Timeout: 30s, Retries: 3 |
+| Knowledge Graph | Claude 3 Opus (Anthropic) | GPT-4 (OpenAI) | - | ⚙️ Partially Configured | Timeout: 60s, Retries: 2 |
+| AI Assistant | GPT-4 (OpenAI) | Claude 3 Sonnet (Anthropic) | GPT-3.5 Turbo (OpenAI) | ✅ Fully Configured | Timeout: 20s, Retries: 3 |
+| Semantic Analysis | Claude 3 Opus (Anthropic) | GPT-4 (OpenAI) | - | ⚙️ Partially Configured | Timeout: 45s, Retries: 2 |
+| RAG Agent | GPT-4 Turbo (Azure) | GPT-4 (OpenAI) | Ollama Llama3 (Local) | ✅ Fully Configured | Timeout: 30s, Retries: 3 |
+| Text to SQL | GPT-4 (OpenAI) | Claude 3 Sonnet (Anthropic) | - | ⚙️ Partially Configured | Timeout: 30s, Retries: 2 |
+
+### LLM Configuration Inventory
+
+Track all available LLM configurations in the system:
+
+#### Active LLM Configurations
+
+| Config Name | Provider | Model | Tenant | Base URL | Status | Used By Applications |
+|-------------|----------|-------|--------|----------|--------|---------------------|
+| - | - | - | - | - | - | - |
+
+**Example**:
+
+| Config Name | Provider | Model | Tenant | Base URL | Status | Used By Applications |
+|-------------|----------|-------|--------|----------|--------|---------------------|
+| Azure GPT-4 Turbo | Azure | gpt-4-turbo | Global | https://xxx.openai.azure.com | ✅ Active | Structuring, RAG Agent |
+| OpenAI GPT-4 | OpenAI | gpt-4 | Global | https://api.openai.com/v1 | ✅ Active | All applications |
+| OpenAI GPT-3.5 | OpenAI | gpt-3.5-turbo | Global | https://api.openai.com/v1 | ✅ Active | Structuring, AI Assistant |
+| Claude 3 Opus | Anthropic | claude-3-opus | Global | https://api.anthropic.com | ✅ Active | Knowledge Graph, Semantic Analysis |
+| Claude 3 Sonnet | Anthropic | claude-3-sonnet | Global | https://api.anthropic.com | ✅ Active | AI Assistant, Text to SQL |
+| Ollama Llama3 | Ollama | llama3:8b | Global | http://localhost:11434 | ✅ Active | Structuring, RAG Agent |
+
+### Application-LLM Binding Details
+
+Detailed mapping of each application's LLM bindings with configuration parameters:
+
+#### Data Structuring (structuring)
+
+| Priority | LLM Config | Provider | Model | Max Retries | Timeout | Status | Notes |
+|----------|-----------|----------|-------|-------------|---------|--------|-------|
+| 1 | Azure GPT-4 Turbo | Azure | gpt-4-turbo | 3 | 30s | ✅ Active | Primary for production |
+| 2 | OpenAI GPT-3.5 | OpenAI | gpt-3.5-turbo | 3 | 30s | ✅ Active | Cost-effective backup |
+| 3 | Ollama Llama3 | Ollama | llama3:8b | 2 | 45s | ✅ Active | Local fallback |
+
+**Usage Pattern**: High-frequency, low-latency schema inference and entity extraction  
+**Expected Load**: 1000+ requests/hour  
+**Critical Path**: Yes
+
+#### Knowledge Graph (knowledge_graph)
+
+| Priority | LLM Config | Provider | Model | Max Retries | Timeout | Status | Notes |
+|----------|-----------|----------|-------|-------------|---------|--------|-------|
+| 1 | Claude 3 Opus | Anthropic | claude-3-opus | 2 | 60s | ✅ Active | Best for complex reasoning |
+| 2 | OpenAI GPT-4 | OpenAI | gpt-4 | 2 | 60s | ✅ Active | Reliable backup |
+| - | - | - | - | - | - | - | No tertiary fallback |
+
+**Usage Pattern**: Medium-frequency, high-quality knowledge extraction  
+**Expected Load**: 100-500 requests/hour  
+**Critical Path**: No
+
+#### AI Assistant (ai_assistant)
+
+| Priority | LLM Config | Provider | Model | Max Retries | Timeout | Status | Notes |
+|----------|-----------|----------|-------|-------------|---------|--------|-------|
+| 1 | OpenAI GPT-4 | OpenAI | gpt-4 | 3 | 20s | ✅ Active | Best conversational quality |
+| 2 | Claude 3 Sonnet | Anthropic | claude-3-sonnet | 3 | 20s | ✅ Active | Alternative for variety |
+| 3 | OpenAI GPT-3.5 | OpenAI | gpt-3.5-turbo | 3 | 20s | ✅ Active | Fast fallback |
+
+**Usage Pattern**: High-frequency, conversational interactions  
+**Expected Load**: 500-2000 requests/hour  
+**Critical Path**: Yes
+
+#### Semantic Analysis (semantic_analysis)
+
+| Priority | LLM Config | Provider | Model | Max Retries | Timeout | Status | Notes |
+|----------|-----------|----------|-------|-------------|---------|--------|-------|
+| 1 | Claude 3 Opus | Anthropic | claude-3-opus | 2 | 45s | ✅ Active | Superior analytical capabilities |
+| 2 | OpenAI GPT-4 | OpenAI | gpt-4 | 2 | 45s | ✅ Active | Reliable alternative |
+| - | - | - | - | - | - | - | No tertiary fallback |
+
+**Usage Pattern**: Medium-frequency, deep semantic understanding  
+**Expected Load**: 200-800 requests/hour  
+**Critical Path**: No
+
+#### RAG Agent (rag_agent)
+
+| Priority | LLM Config | Provider | Model | Max Retries | Timeout | Status | Notes |
+|----------|-----------|----------|-------|-------------|---------|--------|-------|
+| 1 | Azure GPT-4 Turbo | Azure | gpt-4-turbo | 3 | 30s | ✅ Active | Optimized for RAG |
+| 2 | OpenAI GPT-4 | OpenAI | gpt-4 | 3 | 30s | ✅ Active | Standard backup |
+| 3 | Ollama Llama3 | Ollama | llama3:8b | 2 | 45s | ✅ Active | Local processing |
+
+**Usage Pattern**: High-frequency, context-aware retrieval and generation  
+**Expected Load**: 800-1500 requests/hour  
+**Critical Path**: Yes
+
+#### Text to SQL (text_to_sql)
+
+| Priority | LLM Config | Provider | Model | Max Retries | Timeout | Status | Notes |
+|----------|-----------|----------|-------|-------------|---------|--------|-------|
+| 1 | OpenAI GPT-4 | OpenAI | gpt-4 | 2 | 30s | ✅ Active | Excellent SQL generation |
+| 2 | Claude 3 Sonnet | Anthropic | claude-3-sonnet | 2 | 30s | ✅ Active | Good code understanding |
+| - | - | - | - | - | - | - | No tertiary fallback |
+
+**Usage Pattern**: Medium-frequency, precise SQL query generation  
+**Expected Load**: 100-400 requests/hour  
+**Critical Path**: No
+
+### Configuration Status Summary
+
+**Total Applications**: 6  
+**Total LLM Configurations**: 6  
+**Total Active Bindings**: 16
+
+**By Priority Level**:
+- Priority 1 (Primary): 6 bindings (100% coverage)
+- Priority 2 (Backup): 6 bindings (100% coverage)
+- Priority 3 (Fallback): 4 bindings (67% coverage)
+
+**By Application Criticality**:
+- Critical Path Applications: 3 (Structuring, AI Assistant, RAG Agent)
+- Non-Critical Applications: 3 (Knowledge Graph, Semantic Analysis, Text to SQL)
+
+**Configuration Health**:
+- ✅ Fully Configured: 3 applications (50%)
+- ⚙️ Partially Configured: 3 applications (50%)
+- ⚠️ Not Configured: 0 applications (0%)
+- ❌ Inactive: 0 applications (0%)
+
+### Recommended Actions
+
+**High Priority**:
+1. Add tertiary fallback for Knowledge Graph (consider GPT-3.5 or local model)
+2. Add tertiary fallback for Semantic Analysis (consider GPT-3.5 or local model)
+3. Add tertiary fallback for Text to SQL (consider GPT-3.5 or local model)
+
+**Medium Priority**:
+1. Set up monitoring alerts for failover events
+2. Implement circuit breaker for known-failing LLMs
+3. Configure tenant-specific overrides for enterprise customers
+
+**Low Priority**:
+1. Evaluate cost optimization opportunities (use GPT-3.5 where appropriate)
+2. Consider fine-tuned models for specific applications
+3. Implement A/B testing for LLM performance comparison
+
+### Configuration Management Checklist
+
+#### Initial Setup
+- [ ] Generate and set `LLM_ENCRYPTION_KEY` environment variable
+- [ ] Run database migration: `alembic upgrade head`
+- [ ] Verify 6 default applications are registered
+- [ ] Configure Redis connection (recommended for production)
+- [ ] Set up monitoring and alerting
+
+#### LLM Configuration Setup
+- [ ] Create primary LLM configurations for each provider
+- [ ] Test connectivity for each LLM configuration
+- [ ] Encrypt and store API keys securely
+- [ ] Document base URLs and model names
+- [ ] Set appropriate tenant scopes (global vs tenant-specific)
+
+#### Application Binding Setup
+- [ ] Bind primary LLM to each application (Priority 1)
+- [ ] Bind backup LLM to critical applications (Priority 2)
+- [ ] Bind fallback LLM to high-availability applications (Priority 3)
+- [ ] Configure retry counts per application requirements
+- [ ] Configure timeout values per application latency needs
+- [ ] Test failover behavior for each application
+
+#### Operational Readiness
+- [ ] Verify cache hit rate > 95%
+- [ ] Test hot reload (update config, verify next request uses new config)
+- [ ] Test failover (disable primary LLM, verify backup is used)
+- [ ] Load test with expected concurrent request volume
+- [ ] Set up audit logging for configuration changes
+- [ ] Document rollback procedures
+- [ ] Train team on admin UI usage
+
+#### Monitoring and Maintenance
+- [ ] Monitor LLM response times and error rates
+- [ ] Monitor failover frequency and patterns
+- [ ] Monitor cache performance metrics
+- [ ] Review and rotate API keys quarterly
+- [ ] Review and optimize binding priorities monthly
+- [ ] Review and update timeout/retry settings based on metrics
+
+### Configuration Change Workflow
+
+**Adding New LLM Configuration**:
+1. Create LLM config via API or UI
+2. Test connectivity using test endpoint
+3. Update configuration matrix above
+4. Create bindings for target applications
+5. Monitor for 24 hours
+6. Document in team wiki
+
+**Updating Existing Configuration**:
+1. Update config via API or UI
+2. System automatically invalidates cache
+3. Next request uses new configuration (hot reload)
+4. Monitor for errors or performance degradation
+5. Rollback if issues detected (restore previous values)
+
+**Removing LLM Configuration**:
+1. Check for active bindings (system prevents deletion if bindings exist)
+2. Remove or reassign all bindings
+3. Deactivate configuration (set `is_active = false`)
+4. Monitor for 7 days
+5. Delete configuration if no issues
+6. Update configuration matrix
+
+### Tenant-Specific Configuration
+
+For multi-tenant deployments, track tenant-specific overrides:
+
+| Tenant | Application | Custom LLM Config | Priority | Notes |
+|--------|-------------|-------------------|----------|-------|
+| - | - | - | - | - |
+
+**Example**:
+
+| Tenant | Application | Custom LLM Config | Priority | Notes |
+|--------|-------------|-------------------|----------|-------|
+| Tenant A | AI Assistant | Azure GPT-4 (Dedicated) | 1 | Dedicated instance for compliance |
+| Tenant B | Text to SQL | Custom Fine-tuned Model | 1 | Industry-specific SQL dialect |
+
+---
+
 ## Deployment Checklist
 
 - [ ] Set `LLM_ENCRYPTION_KEY` environment variable (32 bytes, base64)
@@ -1273,6 +1525,8 @@ async def _load_cloud_config(
 - [ ] Create bindings for critical applications
 - [ ] Verify hot reload works (update config, check next request)
 - [ ] Load test with expected concurrent request volume
+- [ ] Complete LLM-Application Configuration Matrix
+- [ ] Document configuration change procedures
 
 ---
 

@@ -6,10 +6,11 @@
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Tabs, Card } from 'antd';
-import { SettingOutlined, LinkOutlined } from '@ant-design/icons';
+import { SettingOutlined, LinkOutlined, AppstoreOutlined } from '@ant-design/icons';
 import { useLLMConfigStore } from '@/stores/llmConfigStore';
 import LLMConfigList from './LLMConfigList';
 import ApplicationBindings from './ApplicationBindings';
+import ConfigurationMatrix from './ConfigurationMatrix';
 
 const LLMApplicationBindingPage: React.FC = () => {
   const { t } = useTranslation('llmConfig');
@@ -27,7 +28,19 @@ const LLMApplicationBindingPage: React.FC = () => {
         <h1>{t('pageTitle')}</h1>
         <p>{t('pageDescription')}</p>
         
-        <Tabs defaultActiveKey="configs">
+        <Tabs defaultActiveKey="matrix">
+          <Tabs.TabPane
+            tab={
+              <span>
+                <AppstoreOutlined />
+                {t('tabs.matrix')}
+              </span>
+            }
+            key="matrix"
+          >
+            <ConfigurationMatrix />
+          </Tabs.TabPane>
+          
           <Tabs.TabPane
             tab={
               <span>

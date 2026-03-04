@@ -232,7 +232,46 @@
   },
   
   "tabs": {
+    "matrix": "应用配置",
     "configs": "配置管理",
     "bindings": "应用绑定"
+  },
+  
+  "matrix": {
+    "title": "配置矩阵",
+    "notConfigured": "未配置",
+    "noBackup": "无备用",
+    "priority": "优先级",
+    "retries": "重试",
+    "timeout": "超时",
+    "quickSetup": "快速设置",
+    "status": {
+      "configured": "已配置",
+      "partial": "部分配置",
+      "none": "未配置"
+    },
+    "stats": {
+      "total": "应用总数",
+      "configured": "已配置",
+      "partial": "部分配置",
+      "notConfigured": "未配置"
+    },
+    "columns": {
+      "application": "应用",
+      "status": "状态",
+      "primary": "主要 LLM",
+      "backups": "备用 LLM",
+      "config": "配置参数"
+    },
+    "alerts": {
+      "notConfigured": {
+        "title": "有应用未配置 LLM",
+        "description": "{{count}} 个应用尚未配置 LLM，这些应用将无法使用 AI 功能。"
+      },
+      "partial": {
+        "title": "有应用配置不完整",
+        "description": "{{count}} 个应用只配置了部分 LLM，建议至少配置 3 个 LLM 以确保高可用性。"
+      }
+    }
   }
 }

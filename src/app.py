@@ -2387,6 +2387,16 @@ except ImportError as e:
 except Exception as e:
     logger.error(f"❌ LLM Integration API failed to load: {e}")
 
+# LLM Configuration API
+try:
+    from src.api.llm_config import router as llm_config_router
+    app.include_router(llm_config_router)
+    logger.info("✅ LLM Configuration API loaded successfully")
+except ImportError as e:
+    logger.warning(f"⚠️ LLM Configuration API not available: {e}")
+except Exception as e:
+    logger.error(f"❌ LLM Configuration API failed to load: {e}")
+
 # Multi-Tenant Workspace API
 try:
     from src.api.multi_tenant import router as multi_tenant_router

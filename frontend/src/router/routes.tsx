@@ -83,7 +83,7 @@ const AdminConsolePage = lazyWithPreload(() => import('@/pages/Admin/Console'));
 const AdminTenantsPage = lazyWithPreload(() => import('@/pages/Admin/Tenants'));
 const AdminUsersPage = lazyWithPreload(() => import('@/pages/Admin/Users'));
 const AdminSystemPage = lazyWithPreload(() => import('@/pages/Admin/System'));
-const AdminLLMConfigPage = lazyWithPreload(() => import('@/pages/Admin/LLMConfig'));
+const AdminLLMConfigPage = lazyWithPreload(() => import('@/pages/Admin/LLMApplicationBinding'));
 const AdminTextToSQLConfigPage = lazyWithPreload(() => import('@/pages/Admin/TextToSQLConfig'));
 const AdminPermissionConfigPage = lazyWithPreload(() => import('@/pages/Admin/PermissionConfig'));
 const AdminQuotaManagementPage = lazyWithPreload(() => import('@/pages/Admin/QuotaManagement'));
@@ -91,7 +91,6 @@ const AdminBillingManagementPage = lazyWithPreload(() => import('@/pages/Admin/B
 
 // Admin Configuration pages (new admin-configuration module)
 const AdminConfigDashboardPage = lazyWithPreload(() => import('@/pages/Admin/ConfigDashboard'));
-const AdminConfigLLMPage = lazyWithPreload(() => import('@/pages/Admin/ConfigLLM'));
 const AdminConfigDBPage = lazyWithPreload(() => import('@/pages/Admin/ConfigDB'));
 const AdminConfigSyncPage = lazyWithPreload(() => import('@/pages/Admin/ConfigSync'));
 const AdminSQLBuilderPage = lazyWithPreload(() => import('@/pages/Admin/SQLBuilder'));
@@ -327,7 +326,7 @@ export const routes: RouteObject[] = [
           },
           {
             path: 'config/llm',
-            element: withSuspense(AdminConfigLLMPage, 'table'),
+            element: withSuspense(AdminLLMConfigPage, 'form'),
           },
           {
             path: 'config/databases',

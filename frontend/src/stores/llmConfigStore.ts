@@ -38,6 +38,7 @@ interface LLMConfigState {
   reorderBindings: (applicationId: string, newOrder: string[]) => Promise<void>;
 
   // Utility Actions
+  fetchAll: () => Promise<void>;
   clearError: () => void;
 }
 
@@ -252,6 +253,16 @@ export const useLLMConfigStore = create<LLMConfigState>((set, get) => ({
       });
       throw error;
     }
+  },
+
+  // Fetch all data (configs, applications, bindings)
+  fetchAll: async () => {
+    const { fetchConfigs, fetchApplications, fetchBindings } = get();
+    await Promise.all([
+      fetchConfigs(),
+      fetchApplications(),
+      fetchBindings(),
+    ]);
   },
 
   // Clear error state

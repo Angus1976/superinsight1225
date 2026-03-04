@@ -232,7 +232,46 @@
   },
   
   "tabs": {
+    "matrix": "Application Configuration",
     "configs": "Configuration Management",
     "bindings": "Application Bindings"
+  },
+  
+  "matrix": {
+    "title": "Configuration Matrix",
+    "notConfigured": "Not Configured",
+    "noBackup": "No Backup",
+    "priority": "Priority",
+    "retries": "Retries",
+    "timeout": "Timeout",
+    "quickSetup": "Quick Setup",
+    "status": {
+      "configured": "Configured",
+      "partial": "Partial",
+      "none": "Not Configured"
+    },
+    "stats": {
+      "total": "Total Applications",
+      "configured": "Configured",
+      "partial": "Partial",
+      "notConfigured": "Not Configured"
+    },
+    "columns": {
+      "application": "Application",
+      "status": "Status",
+      "primary": "Primary LLM",
+      "backups": "Backup LLMs",
+      "config": "Configuration"
+    },
+    "alerts": {
+      "notConfigured": {
+        "title": "Applications Not Configured",
+        "description": "{{count}} applications have not been configured with LLM. These applications will not be able to use AI features."
+      },
+      "partial": {
+        "title": "Incomplete Configuration",
+        "description": "{{count}} applications have partial LLM configuration. It is recommended to configure at least 3 LLMs for high availability."
+      }
+    }
   }
 }

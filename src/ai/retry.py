@@ -34,6 +34,14 @@ def _is_transient_error(exc: Exception) -> bool:
     exc_type_name = type(exc).__name__
     if exc_type_name == "ValidationError":
         return False
+    
+    # Never retry JSON parsing errors
+    if "JSONDecodeError" in exc_type_name:
+        return False
+    
+    # Never retry instructor parsing errors
+    if "InstructorRetryException" in exc_type_name:
+        return False
 
     # OpenAI-specific transient errors (lazy check by class name to
     # avoid hard dependency on openai at module level)
@@ -51,8 +59,9 @@ def _is_transient_error(exc: Exception) -> bool:
     if isinstance(exc, (ConnectionError, TimeoutError, OSError)):
         return True
 
-    # Default: treat unknown errors as transient (safer for LLM calls)
-    return True
+    # Default: do NOT retry unknown errors (safer to fail fast)
+    logger.warning(f"Unknown error type {exc_type_name}, not retrying: {exc}")
+    return False
 
 
 async def retry_with_backoff(

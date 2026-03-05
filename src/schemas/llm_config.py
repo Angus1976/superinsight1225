@@ -15,7 +15,7 @@ class LLMConfigCreate(BaseModel):
     """Request schema for creating LLM configuration."""
     
     name: str = Field(..., min_length=1, max_length=100, description="Configuration name")
-    provider: str = Field(..., pattern="^(openai|azure|anthropic|ollama|custom)$", description="Provider type")
+    provider: str = Field(..., min_length=1, max_length=50, description="Provider type")
     api_key: str = Field(..., min_length=1, description="API key (will be encrypted)")
     base_url: Optional[str] = Field(None, max_length=500, description="API base URL")
     model_name: str = Field(..., min_length=1, max_length=100, description="Model name")
@@ -35,7 +35,7 @@ class LLMConfigUpdate(BaseModel):
     """Request schema for updating LLM configuration."""
     
     name: Optional[str] = Field(None, min_length=1, max_length=100, description="Configuration name")
-    provider: Optional[str] = Field(None, pattern="^(openai|azure|anthropic|ollama|custom)$", description="Provider type")
+    provider: Optional[str] = Field(None, min_length=1, max_length=50, description="Provider type")
     api_key: Optional[str] = Field(None, min_length=1, description="API key (will be encrypted)")
     base_url: Optional[str] = Field(None, max_length=500, description="API base URL")
     model_name: Optional[str] = Field(None, min_length=1, max_length=100, description="Model name")

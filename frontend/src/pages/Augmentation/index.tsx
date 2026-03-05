@@ -48,6 +48,7 @@ interface AugmentationJob {
   source_count: number;
   output_count: number;
   progress: number;
+  quality_score?: number;
   created_at: string;
   completed_at?: string;
 }
@@ -71,6 +72,7 @@ const mockJobs: AugmentationJob[] = [
     source_count: 1000,
     output_count: 3500,
     progress: 100,
+    quality_score: 0.92,
     created_at: '2025-01-15T10:00:00Z',
     completed_at: '2025-01-15T12:30:00Z',
   },
@@ -82,6 +84,7 @@ const mockJobs: AugmentationJob[] = [
     source_count: 500,
     output_count: 850,
     progress: 68,
+    quality_score: 0.85,
     created_at: '2025-01-20T09:00:00Z',
   },
   {
@@ -246,6 +249,25 @@ const AugmentationPage: React.FC = () => {
           {record.source_count.toLocaleString()} → {record.output_count.toLocaleString()}
         </span>
       ),
+    },
+    {
+      title: t('jobs.qualityAccuracy'),
+      dataIndex: 'quality_score',
+      key: 'quality_score',
+      width: 150,
+      render: (score?: number) => {
+        if (score === undefined || score === null) {
+          return <span style={{ color: '#999' }}>--</span>;
+        }
+        const percentage = (score * 100).toFixed(1);
+        return (
+          <Progress
+            percent={Number(percentage)}
+            size="small"
+            status={score >= 0.9 ? 'success' : score >= 0.75 ? 'normal' : 'exception'}
+          />
+        );
+      },
     },
     {
       title: t('jobs.created'),

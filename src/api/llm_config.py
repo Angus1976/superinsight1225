@@ -276,6 +276,7 @@ def create_llm_config(
         
         llm_config = LLMConfiguration(
             name=request.name,
+            provider=request.provider,
             default_method=request.provider,
             config_data=config_data,
             tenant_id=request.tenant_id,

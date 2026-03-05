@@ -3,7 +3,7 @@
  * Create and edit LLM configurations
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Modal,
@@ -16,6 +16,7 @@ import {
 } from 'antd';
 import { useLLMConfigStore } from '@/stores/llmConfigStore';
 import type { LLMConfig, LLMConfigCreate, LLMConfigUpdate } from '@/types/llmConfig';
+import { ALL_LLM_PROVIDERS } from '@/constants/llmProviders';
 
 interface LLMConfigFormProps {
   visible: boolean;
@@ -28,9 +29,10 @@ const LLMConfigForm: React.FC<LLMConfigFormProps> = ({
   config,
   onClose,
 }) => {
-  const { t } = useTranslation('llmConfig');
+  const { t, i18n } = useTranslation('llmConfig');
   const [form] = Form.useForm();
   const { createConfig, updateConfig, loading } = useLLMConfigStore();
+  const [selectedProvider, setSelectedProvider] = useState<string>('');
 
   useEffect(() => {
     if (visible) {
@@ -43,12 +45,22 @@ const LLMConfigForm: React.FC<LLMConfigFormProps> = ({
           parameters: JSON.stringify(config.parameters, null, 2),
           is_active: config.is_active,
         });
+        setSelectedProvider(config.provider);
       } else {
         form.resetFields();
         form.setFieldsValue({ is_active: true });
+        setSelectedProvider('');
       }
     }
   }, [visible, config, form]);
+
+  const handleProviderChange = (value: string) => {
+    setSelectedProvider(value);
+    const provider = ALL_LLM_PROVIDERS.find(p => p.value === value);
+    if (provider?.defaultEndpoint) {
+      form.setFieldsValue({ base_url: provider.defaultEndpoint });
+    }
+  };
 
   const handleSubmit = async () => {
     try {
@@ -121,12 +133,17 @@ const LLMConfigForm: React.FC<LLMConfigFormProps> = ({
             { required: true, message: t('configForm.fields.provider.required') },
           ]}
         >
-          <Select placeholder={t('configForm.fields.provider.placeholder')}>
-            <Select.Option value="openai">{t('providers.openai')}</Select.Option>
-            <Select.Option value="azure">{t('providers.azure')}</Select.Option>
-            <Select.Option value="anthropic">{t('providers.anthropic')}</Select.Option>
-            <Select.Option value="ollama">{t('providers.ollama')}</Select.Option>
-            <Select.Option value="custom">{t('providers.custom')}</Select.Option>
+          <Select 
+            placeholder={t('configForm.fields.provider.placeholder')}
+            onChange={handleProviderChange}
+            showSearch
+            optionFilterProp="children"
+          >
+            {ALL_LLM_PROVIDERS.map(provider => (
+              <Select.Option key={provider.value} value={provider.value}>
+                {i18n.language === 'zh' ? provider.label : provider.labelEn}
+              </Select.Option>
+            ))}
           </Select>
         </Form.Item>
 
@@ -151,7 +168,25 @@ const LLMConfigForm: React.FC<LLMConfigFormProps> = ({
           ]}
           extra={t('configForm.fields.modelName.hint')}
         >
-          <Input placeholder={t('configForm.fields.modelName.placeholder')} />
+          {(() => {
+            const provider = ALL_LLM_PROVIDERS.find(p => p.value === selectedProvider);
+            if (selectedProvider && provider && provider.models.length > 0) {
+              return (
+                <Select 
+                  placeholder={t('configForm.fields.modelName.placeholder')}
+                  showSearch
+                  optionFilterProp="children"
+                >
+                  {provider.models.map(model => (
+                    <Select.Option key={model.value} value={model.value}>
+                      {model.label}
+                    </Select.Option>
+                  ))}
+                </Select>
+              );
+            }
+            return <Input placeholder={t('configForm.fields.modelName.placeholder')} />;
+          })()}
         </Form.Item>
 
         <Divider orientation="left">{t('configForm.advancedSettings')}</Divider>

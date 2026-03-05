@@ -93,6 +93,10 @@ class JobStatusResponse(BaseModel):
     error_message: Optional[str] = None
     created_at: datetime
     updated_at: datetime
+    progress_info: Optional[dict] = Field(
+        default=None,
+        description="Detailed progress information including steps, percentages, and timing"
+    )
 
 
 class SchemaConfirmRequest(BaseModel):
@@ -266,8 +270,13 @@ def get_structuring_job(
     current_user: SimpleUser = Depends(get_current_user),
     db: Session = Depends(get_db_session),
 ) -> JobStatusResponse:
-    """Query job status, schema, record count, and error message."""
+    """Query job status, schema, record count, error message, and progress."""
     job = _get_job_or_404(job_id, db, current_user.tenant_id)
+
+    # Get progress info if available
+    progress_info = None
+    if hasattr(job, 'progress_info') and job.progress_info:
+        progress_info = job.progress_info
 
     return JobStatusResponse(
         job_id=str(job.id),
@@ -281,6 +290,7 @@ def get_structuring_job(
         error_message=job.error_message,
         created_at=job.created_at,
         updated_at=job.updated_at,
+        progress_info=progress_info,
     )
 
 

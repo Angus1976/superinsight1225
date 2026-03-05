@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, Table, Button, Space, Tag, Upload, message, Modal, Form, Input, Select } from 'antd';
+import { Card, Table, Button, Space, Tag, Upload, message, Modal, Form, Input, Select, Progress } from 'antd';
 import { PlusOutlined, UploadOutlined, DownloadOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import type { ColumnsType } from 'antd/es/table';
@@ -13,6 +13,7 @@ interface AugmentationSample {
   status: 'pending' | 'processing' | 'completed' | 'failed';
   originalCount: number;
   augmentedCount: number;
+  qualityScore: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -111,6 +112,22 @@ const AugmentationSamples: React.FC = () => {
       title: t('sampleManagement.augmentedCount'),
       dataIndex: 'augmentedCount',
       key: 'augmentedCount',
+    },
+    {
+      title: t('sampleManagement.qualityAccuracy'),
+      dataIndex: 'qualityScore',
+      key: 'qualityScore',
+      width: 150,
+      render: (score: number) => {
+        const percentage = score ? (score * 100).toFixed(1) : 0;
+        return (
+          <Progress
+            percent={Number(percentage)}
+            size="small"
+            status={score >= 0.9 ? 'success' : score >= 0.75 ? 'normal' : 'exception'}
+          />
+        );
+      },
     },
     {
       title: t('sampleManagement.createdAt'),

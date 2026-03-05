@@ -95,19 +95,25 @@ def _fail_job(session, job: StructuringJob, error: str) -> None:
 # Pipeline step functions (each ≤ 40 lines)
 # ---------------------------------------------------------------------------
 
-def _extract_content(session, job: StructuringJob) -> str | dict:
+def _extract_content(session, job: StructuringJob, tracker=None) -> str | dict:
     """Step 1: Extract raw content based on file type.
 
     Returns:
         str for text files, TabularData-like dict for tabular files.
     """
     logger.info(f"[Job {job.id}] 步骤 1/6: 开始提取文件内容 (file_type={job.file_type})")
+    if tracker:
+        tracker.start_step(1, f"正在提取 {job.file_type} 文件内容...")
+        tracker.save_to_job(session, job)
     _update_job_status(session, job, JobStatus.EXTRACTING.value)
 
     file_type = job.file_type
 
     if file_type in _TABULAR_TYPES:
         logger.info(f"[Job {job.id}] 使用 TabularParser 解析表格文件")
+        if tracker:
+            tracker.update_step(1, 30, "正在解析表格文件...")
+            tracker.save_to_job(session, job)
         from src.extractors.tabular import TabularParser
         parser = TabularParser()
         tabular_data = parser.parse(job.file_path, file_type)
@@ -116,10 +122,16 @@ def _extract_content(session, job: StructuringJob) -> str | dict:
         job.raw_content = str(preview_rows)
         session.flush()
         logger.info(f"[Job {job.id}] 表格文件提取完成: {tabular_data.row_count} 行, {len(tabular_data.headers)} 列")
+        if tracker:
+            tracker.complete_step(1, f"提取完成: {tabular_data.row_count} 行, {len(tabular_data.headers)} 列")
+            tracker.save_to_job(session, job)
         return tabular_data
 
     if file_type in _TEXT_TYPES:
         logger.info(f"[Job {job.id}] 使用 FileExtractor 解析文本文件")
+        if tracker:
+            tracker.update_step(1, 30, "正在解析文本文件...")
+            tracker.save_to_job(session, job)
         from src.extractors.base import FileConfig, FileType as ExtractorFileType
         from src.extractors.file import FileExtractor
 
@@ -137,6 +149,9 @@ def _extract_content(session, job: StructuringJob) -> str | dict:
         job.raw_content = text
         session.flush()
         logger.info(f"[Job {job.id}] 文本文件提取完成: {len(text)} 字符, {len(result.documents)} 个文档")
+        if tracker:
+            tracker.complete_step(1, f"提取完成: {len(text)} 字符, {len(result.documents)} 个文档")
+            tracker.save_to_job(session, job)
         return text
 
     if file_type in _PPT_TYPES:
@@ -168,13 +183,16 @@ def _extract_content(session, job: StructuringJob) -> str | dict:
     raise ValueError(f"Unsupported file type: {file_type}")
 
 
-def _infer_schema(session, job: StructuringJob, content: Any) -> dict:
+def _infer_schema(session, job: StructuringJob, content: Any, tracker=None) -> dict:
     """Step 2: Use SchemaInferrer to infer schema from content.
 
     Returns:
         InferredSchema serialised as dict.
     """
     logger.info(f"[Job {job.id}] 步骤 2/6: 开始推断数据结构 Schema")
+    if tracker:
+        tracker.start_step(2, "正在加载 LLM 配置...")
+        tracker.save_to_job(session, job)
     _update_job_status(session, job, JobStatus.INFERRING.value)
 
     from src.ai.schema_inferrer import SchemaInferrer
@@ -182,21 +200,34 @@ def _infer_schema(session, job: StructuringJob, content: Any) -> dict:
     cloud_config = asyncio.run(_load_cloud_config(job.tenant_id))
     logger.info(f"[Job {job.id}] LLM 配置加载完成: model={cloud_config.openai_model}, base_url={cloud_config.openai_base_url}")
     
+    if tracker:
+        tracker.update_step(2, 30, f"正在调用 LLM ({cloud_config.openai_model})...")
+        tracker.save_to_job(session, job)
+    
     inferrer = SchemaInferrer(cloud_config)
 
     from src.extractors.tabular import TabularData
     if isinstance(content, TabularData):
         logger.info(f"[Job {job.id}] 正在调用 LLM 推断表格数据 Schema...")
+        if tracker:
+            tracker.update_step(2, 50, "正在推断表格 Schema...")
+            tracker.save_to_job(session, job)
         schema = asyncio.run(inferrer.infer_from_tabular(content))
     else:
         content_preview = str(content)[:200] + "..." if len(str(content)) > 200 else str(content)
         logger.info(f"[Job {job.id}] 正在调用 LLM 推断文本数据 Schema (内容预览: {content_preview})")
+        if tracker:
+            tracker.update_step(2, 50, "正在推断文本 Schema...")
+            tracker.save_to_job(session, job)
         schema = asyncio.run(inferrer.infer_from_text(str(content)))
 
     schema_dict = schema.model_dump()
     job.inferred_schema = schema_dict
     session.flush()
     logger.info(f"[Job {job.id}] Schema 推断完成: {len(schema_dict.get('fields', []))} 个字段, 置信度={schema_dict.get('confidence', 0)}")
+    if tracker:
+        tracker.complete_step(2, f"推断完成: {len(schema_dict.get('fields', []))} 个字段")
+        tracker.save_to_job(session, job)
     return schema_dict
 
 
@@ -221,7 +252,7 @@ def _wait_for_confirmation(session, job: StructuringJob) -> dict:
 
 
 def _extract_entities(
-    session, job: StructuringJob, schema_dict: dict,
+    session, job: StructuringJob, schema_dict: dict, tracker=None,
 ) -> list[dict]:
     """Step 4: Extract structured records using EntityExtractor.
 
@@ -229,6 +260,9 @@ def _extract_entities(
         List of record dicts (fields, confidence, source_span).
     """
     logger.info(f"[Job {job.id}] 步骤 4/6: 开始提取结构化实体")
+    if tracker:
+        tracker.start_step(4, "正在加载 LLM 配置...")
+        tracker.save_to_job(session, job)
     _update_job_status(session, job, JobStatus.EXTRACTING_ENTITIES.value)
 
     from src.ai.entity_extractor import EntityExtractor
@@ -244,8 +278,14 @@ def _extract_entities(
         raise RuntimeError("No raw content available for entity extraction")
 
     logger.info(f"[Job {job.id}] 正在调用 LLM 提取实体 (内容长度: {len(content)} 字符)...")
+    if tracker:
+        tracker.update_step(4, 50, f"正在提取实体 (内容: {len(content)} 字符)...")
+        tracker.save_to_job(session, job)
     result = asyncio.run(extractor.extract(content, schema))
     logger.info(f"[Job {job.id}] 实体提取完成: {len(result.records)} 条记录")
+    if tracker:
+        tracker.complete_step(4, f"提取完成: {len(result.records)} 条记录")
+        tracker.save_to_job(session, job)
     return [r.model_dump() for r in result.records]
 
 
@@ -392,6 +432,8 @@ def run_structuring_pipeline(self, job_id: str) -> dict:
 
 def _execute_pipeline(job_id: str) -> dict:
     """Run all pipeline steps inside a single DB session."""
+    from src.services.progress_tracker import ProgressTracker
+    
     with db_manager.get_session() as session:
         job = session.query(StructuringJob).filter_by(id=job_id).first()
         if not job:
@@ -401,36 +443,62 @@ def _execute_pipeline(job_id: str) -> dict:
                 f"Job {job_id} is not pending (current: {job.status})"
             )
 
-        # Step 1 — extract
-        content = _extract_content(session, job)
+        # Initialize progress tracker
+        tracker = ProgressTracker(job_id)
+        tracker.save_to_job(session, job)
 
-        # Step 2 — infer schema
-        schema_dict = _infer_schema(session, job, content)
+        try:
+            # Step 1 — extract
+            content = _extract_content(session, job, tracker)
 
-        # Step 3 — confirm schema
-        confirmed = _wait_for_confirmation(session, job)
+            # Step 2 — infer schema
+            schema_dict = _infer_schema(session, job, content, tracker)
 
-        # Step 4 — extract entities
-        records = _extract_entities(session, job, confirmed)
+            # Step 3 — confirm schema
+            tracker.start_step(3, "正在确认 Schema...")
+            tracker.save_to_job(session, job)
+            confirmed = _wait_for_confirmation(session, job)
+            tracker.complete_step(3, "Schema 已确认")
+            tracker.save_to_job(session, job)
 
-        # Step 5 — store records
-        count = _store_records(session, job, records)
+            # Step 4 — extract entities
+            records = _extract_entities(session, job, confirmed, tracker)
 
-        # Step 6 — create annotation task
-        task_info = _create_annotation_task(session, job, confirmed)
+            # Step 5 — store records
+            tracker.start_step(5, f"正在存储 {len(records)} 条记录...")
+            tracker.save_to_job(session, job)
+            count = _store_records(session, job, records)
+            tracker.complete_step(5, f"已存储 {count} 条记录")
+            tracker.save_to_job(session, job)
 
-        # Mark completed
-        _update_job_status(session, job, JobStatus.COMPLETED.value)
+            # Step 6 — create annotation task
+            tracker.start_step(6, "正在创建标注任务...")
+            tracker.save_to_job(session, job)
+            task_info = _create_annotation_task(session, job, confirmed)
+            tracker.complete_step(6, "标注任务已创建")
+            tracker.save_to_job(session, job)
 
-        logger.info(
-            "Pipeline completed for job %s: %d records", job_id, count,
-        )
-        return {
-            "job_id": str(job.id),
-            "status": JobStatus.COMPLETED.value,
-            "record_count": count,
-            "task": task_info,
-        }
+            # Mark completed
+            _update_job_status(session, job, JobStatus.COMPLETED.value)
+            tracker.complete_pipeline()
+            tracker.save_to_job(session, job)
+
+            logger.info(
+                "Pipeline completed for job %s: %d records", job_id, count,
+            )
+            return {
+                "job_id": str(job.id),
+                "status": JobStatus.COMPLETED.value,
+                "record_count": count,
+                "task": task_info,
+            }
+        except Exception as exc:
+            # Mark current step as failed
+            if tracker.progress.current_step > 0:
+                tracker.fail_step(tracker.progress.current_step, str(exc))
+            tracker.fail_pipeline(str(exc))
+            tracker.save_to_job(session, job)
+            raise
 
 
 def _mark_job_failed(job_id: str, error: str) -> None:

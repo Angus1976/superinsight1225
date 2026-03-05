@@ -20,6 +20,7 @@ class AugmentationSample(BaseModel):
     status: str = Field(..., description="Status: pending, processing, completed, failed")
     original_count: int
     augmented_count: int
+    quality_score: float = Field(default=0.0, description="Quality/Accuracy score (0-1)")
     created_at: str
     updated_at: str
 
@@ -54,6 +55,7 @@ async def get_samples(
             "status": "completed",
             "original_count": 1000,
             "augmented_count": 3500,
+            "quality_score": 0.92,
             "created_at": "2025-01-15T10:00:00Z",
             "updated_at": "2025-01-15T12:30:00Z"
         },
@@ -64,6 +66,7 @@ async def get_samples(
             "status": "processing",
             "original_count": 500,
             "augmented_count": 850,
+            "quality_score": 0.87,
             "created_at": "2025-01-20T09:00:00Z",
             "updated_at": "2025-01-20T10:00:00Z"
         }

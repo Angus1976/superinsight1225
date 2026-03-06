@@ -349,11 +349,11 @@ async def _load_cloud_config(
     tenant_id: str | None = None,
     application_code: str = "structuring"
 ):
-    """Build a CloudConfig from environment variables or database.
+    """Build a CloudConfig from database or environment variables.
 
     Priority order:
-    1. Environment variables (for simplicity and reliability)
-    2. Database bindings for the application (future enhancement)
+    1. Database bindings for the application (highest priority)
+    2. Environment variables (fallback only if database has no config)
     
     Args:
         tenant_id: Optional tenant ID for multi-tenant isolation.
@@ -361,11 +361,52 @@ async def _load_cloud_config(
     
     Returns:
         CloudConfig instance.
+    
+    Raises:
+        ValueError: If no valid LLM configuration is found.
     """
     import os
     from src.ai.llm_schemas import CloudConfig
+    from src.ai.application_llm_manager import ApplicationLLMManager
+    from src.ai.cache_manager import get_cache_manager
+    from src.ai.encryption_service import get_encryption_service
+    from src.database.connection import get_async_session
     
-    # Load from environment variables
+    # Try loading from database first (priority)
+    try:
+        logger.info(f"Attempting to load LLM config from database for application: {application_code}")
+        async for session in get_async_session():
+            cache_manager = get_cache_manager()
+            encryption_service = get_encryption_service()
+            
+            app_manager = ApplicationLLMManager(
+                db_session=session,
+                cache_manager=cache_manager,
+                encryption_service=encryption_service
+            )
+            
+            configs = await app_manager.get_llm_config(
+                application_code=application_code,
+                tenant_id=tenant_id
+            )
+            
+            if configs:
+                config = configs[0]  # Use highest priority config
+                logger.info(
+                    f"✓ Using database LLM config: provider={config.openai_model}, "
+                    f"base_url={config.openai_base_url}"
+                )
+                return config
+            else:
+                logger.info(f"No LLM config found in database for application: {application_code}")
+    except Exception as e:
+        logger.warning(
+            f"Failed to load LLM config from database: {e}. "
+            f"Will try environment variables as fallback."
+        )
+    
+    # Fallback to environment variables only if database has no config
+    logger.info("Falling back to environment variables for LLM config")
     api_key = os.getenv("OPENAI_API_KEY", "")
     base_url = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
     model = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
@@ -376,10 +417,14 @@ async def _load_cloud_config(
     
     if not api_key:
         raise ValueError(
-            "No LLM configuration found. Please set OPENAI_API_KEY environment variable."
+            "No LLM configuration found. Please configure in 'Management Console → "
+            "Configuration Management → LLM Configuration' or set OPENAI_API_KEY "
+            "environment variable."
         )
     
-    logger.info(f"Using LLM config: model={model}, base_url={base_url}")
+    logger.info(
+        f"✓ Using environment variable LLM config: model={model}, base_url={base_url}"
+    )
     
     return CloudConfig(
         openai_api_key=api_key,

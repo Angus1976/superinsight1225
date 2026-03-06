@@ -44,9 +44,9 @@ services:
       - LABEL_STUDIO_API_TOKEN=${LABEL_STUDIO_API_TOKEN}
       - ARGILLA_URL=http://argilla:6900
       - OLLAMA_BASE_URL=http://ollama:11434
-      - OPENAI_API_KEY=ollama
-      - OPENAI_BASE_URL=http://ollama:11434/v1
-      - OPENAI_MODEL=qwen2.5:1.5b
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL}
+      - OPENAI_MODEL=${OPENAI_MODEL}
       - LLM_ENCRYPTION_KEY=${LLM_ENCRYPTION_KEY}
     depends_on:
       - postgres
@@ -77,9 +77,9 @@ services:
       - LABEL_STUDIO_API_TOKEN=${LABEL_STUDIO_API_TOKEN}
       - ARGILLA_URL=http://argilla:6900
       - OLLAMA_BASE_URL=http://ollama:11434
-      - OPENAI_API_KEY=ollama
-      - OPENAI_BASE_URL=http://ollama:11434/v1
-      - OPENAI_MODEL=qwen2.5:1.5b
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL}
+      - OPENAI_MODEL=${OPENAI_MODEL}
     depends_on:
       - postgres
       - redis

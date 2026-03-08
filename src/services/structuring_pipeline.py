@@ -404,10 +404,25 @@ async def _load_cloud_config(
             
             # Apply tenant filter with fallback to global
             if tenant_id:
-                tenant_stmt = stmt.where(LLMConfiguration.tenant_id == tenant_id)
-                result = db.execute(tenant_stmt)
-                bindings = result.scalars().all()
+                # Try to convert tenant_id to UUID if it's a string
+                from uuid import UUID as UUIDType
+                try:
+                    # If tenant_id is a valid UUID string, convert it
+                    if isinstance(tenant_id, str):
+                        tenant_uuid = UUIDType(tenant_id)
+                    else:
+                        tenant_uuid = tenant_id
+                    
+                    tenant_stmt = stmt.where(LLMConfiguration.tenant_id == tenant_uuid)
+                    result = db.execute(tenant_stmt)
+                    bindings = result.scalars().all()
+                except (ValueError, AttributeError):
+                    # tenant_id is not a valid UUID (e.g., "system"), skip tenant filter
+                    logger.info(f"tenant_id '{tenant_id}' is not a valid UUID, using global config")
+                    bindings = []
+                
                 if not bindings:
+                    # Fallback to global config
                     global_stmt = stmt.where(LLMConfiguration.tenant_id == None)
                     result = db.execute(global_stmt)
                     bindings = result.scalars().all()

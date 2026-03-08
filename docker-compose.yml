@@ -80,6 +80,7 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OPENAI_BASE_URL=${OPENAI_BASE_URL}
       - OPENAI_MODEL=${OPENAI_MODEL}
+      - LLM_ENCRYPTION_KEY=${LLM_ENCRYPTION_KEY}
     depends_on:
       - postgres
       - redis

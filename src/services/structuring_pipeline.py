@@ -323,11 +323,23 @@ def _create_annotation_task(
     """
     logger.info(f"[Job {job.id}] 步骤 6/6: 创建标注任务")
     from src.models.task import Task
+    from uuid import UUID as UUIDType
+    
+    # Convert tenant_id to UUID if it's a string
+    if job.tenant_id:
+        try:
+            tenant_uuid = UUIDType(job.tenant_id) if isinstance(job.tenant_id, str) else job.tenant_id
+        except (ValueError, AttributeError):
+            # If tenant_id is not a valid UUID (e.g., "system"), generate a new one
+            logger.warning(f"tenant_id '{job.tenant_id}' is not a valid UUID, generating new UUID")
+            tenant_uuid = uuid4()
+    else:
+        tenant_uuid = uuid4()
 
     task = Task(
         task_id=uuid4(),
         project_id=uuid4(),  # placeholder — real project comes from caller
-        tenant_id=job.tenant_id if job.tenant_id else str(uuid4()),
+        tenant_id=tenant_uuid,
         title=f"标注任务: {job.file_name}",
         description=f"基于结构化 Job {job.id} 自动创建的标注任务",
         status="pending",

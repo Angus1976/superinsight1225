@@ -363,82 +363,82 @@ async def _load_cloud_config(
         CloudConfig instance.
     
     Raises:
-        ValueError: If no valid LLM configuration is found.
+        ValueError: If no valid LLM configuration is found or decryption fails.
     """
     import os
     from src.ai.llm_schemas import CloudConfig
-    from src.ai.application_llm_manager import ApplicationLLMManager
-    from src.ai.cache_manager import get_cache_manager
+    from src.database.connection import get_db_session
+    from src.models.llm_configuration import LLMConfiguration
+    from src.models.llm_application import LLMApplication, LLMApplicationBinding
     from src.ai.encryption_service import get_encryption_service
-    from src.database.connection import get_async_session
+    from sqlalchemy import select
+    from sqlalchemy.orm import selectinload
     
-    # Try loading from database first (priority)
+    logger.info(f"Loading LLM config for application: {application_code}")
+    
+    # Step 1: Check database for configuration
+    db = next(get_db_session())
+    has_db_config = False
+    
     try:
-        logger.info(f"Attempting to load LLM config from database for application: {application_code}")
-        from src.database.connection import get_db_session
-        from src.models.llm_configuration import LLMConfiguration
-        from src.models.llm_application import LLMApplication, LLMApplicationBinding
-        from sqlalchemy import select
-        from sqlalchemy.orm import selectinload
+        # Get application
+        stmt = select(LLMApplication).where(LLMApplication.code == application_code)
+        result = db.execute(stmt)
+        app = result.scalar_one_or_none()
         
-        # Get encryption service
-        encryption_service = get_encryption_service()
-        
-        # Use synchronous session
-        db = next(get_db_session())
-        try:
-            # Get application
-            stmt = select(LLMApplication).where(LLMApplication.code == application_code)
-            result = db.execute(stmt)
-            app = result.scalar_one_or_none()
-            
-            if not app:
-                logger.info(f"Application not found: {application_code}")
-            else:
-                # Get bindings ordered by priority
-                stmt = (
-                    select(LLMApplicationBinding)
-                    .options(selectinload(LLMApplicationBinding.llm_config))
-                    .where(
-                        LLMApplicationBinding.application_id == app.id,
-                        LLMApplicationBinding.is_active == True
-                    )
-                    .join(LLMConfiguration)
-                    .where(LLMConfiguration.is_active == True)
-                    .order_by(LLMApplicationBinding.priority.asc())
+        if not app:
+            logger.info(f"Application '{application_code}' not found in database")
+        else:
+            # Get bindings ordered by priority
+            stmt = (
+                select(LLMApplicationBinding)
+                .options(selectinload(LLMApplicationBinding.llm_config))
+                .where(
+                    LLMApplicationBinding.application_id == app.id,
+                    LLMApplicationBinding.is_active == True
                 )
-                
-                # Apply tenant filter with fallback to global
-                if tenant_id:
-                    tenant_stmt = stmt.where(LLMConfiguration.tenant_id == tenant_id)
-                    result = db.execute(tenant_stmt)
-                    bindings = result.scalars().all()
-                    if not bindings:
-                        # Fallback to global
-                        global_stmt = stmt.where(LLMConfiguration.tenant_id == None)
-                        result = db.execute(global_stmt)
-                        bindings = result.scalars().all()
-                else:
-                    # Use global configurations
+                .join(LLMConfiguration)
+                .where(LLMConfiguration.is_active == True)
+                .order_by(LLMApplicationBinding.priority.asc())
+            )
+            
+            # Apply tenant filter with fallback to global
+            if tenant_id:
+                tenant_stmt = stmt.where(LLMConfiguration.tenant_id == tenant_id)
+                result = db.execute(tenant_stmt)
+                bindings = result.scalars().all()
+                if not bindings:
                     global_stmt = stmt.where(LLMConfiguration.tenant_id == None)
                     result = db.execute(global_stmt)
                     bindings = result.scalars().all()
+            else:
+                global_stmt = stmt.where(LLMConfiguration.tenant_id == None)
+                result = db.execute(global_stmt)
+                bindings = result.scalars().all()
+            
+            if bindings:
+                has_db_config = True
+                binding = bindings[0]
+                llm_config = binding.llm_config
                 
-                if bindings:
-                    # Use highest priority binding
-                    binding = bindings[0]
-                    llm_config = binding.llm_config
-                    
-                    # Decrypt API key
+                logger.info(
+                    f"Found database config: {llm_config.name} "
+                    f"(priority={binding.priority}, provider={llm_config.provider})"
+                )
+                
+                # Step 2: If database has config, decrypt and use it (no fallback)
+                try:
+                    encryption_service = get_encryption_service()
                     config_data = llm_config.config_data or {}
                     api_key_encrypted = config_data.get("api_key_encrypted")
                     
                     if api_key_encrypted:
                         api_key = encryption_service.decrypt(api_key_encrypted)
+                        logger.info(f"✓ API key decrypted successfully (length={len(api_key)})")
                     else:
                         api_key = config_data.get("api_key", "")
+                        logger.warning("No encrypted API key found, using plain text key")
                     
-                    # Extract provider-specific fields
                     base_url = config_data.get("base_url", "https://api.openai.com/v1")
                     model_name = config_data.get("model_name", "gpt-3.5-turbo")
                     timeout = binding.timeout_seconds or 60
@@ -457,44 +457,48 @@ async def _load_cloud_config(
                         f"base_url={config.openai_base_url}, priority={binding.priority}"
                     )
                     return config
-                else:
-                    logger.info(f"No active bindings found for application: {application_code}")
-        finally:
-            db.close()
-    except Exception as e:
-        logger.warning(
-            f"Failed to load LLM config from database: {e}. "
-            f"Will try environment variables as fallback."
+                    
+                except Exception as decrypt_error:
+                    # Database has config but decryption failed - DO NOT fallback
+                    error_msg = (
+                        f"Database has LLM configuration but failed to decrypt: {decrypt_error}. "
+                        f"Please check LLM_ENCRYPTION_KEY environment variable."
+                    )
+                    logger.error(error_msg)
+                    raise ValueError(error_msg) from decrypt_error
+            else:
+                logger.info(f"No active bindings found for application: {application_code}")
+    
+    finally:
+        db.close()
+    
+    # Step 3: No database config found, fallback to environment variables
+    if not has_db_config:
+        logger.info("No database config found, falling back to environment variables")
+        api_key = os.getenv("OPENAI_API_KEY", "")
+        base_url = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
+        model = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
+        
+        # If using Ollama, the API key can be any non-empty string
+        if "ollama" in base_url.lower() and not api_key:
+            api_key = "ollama"
+        
+        if not api_key:
+            raise ValueError(
+                "No LLM configuration found. Please configure in 'Management Console → "
+                "Configuration Management → LLM Configuration' or set OPENAI_API_KEY "
+                "environment variable."
+            )
+        
+        logger.info(
+            f"✓ Using environment variable LLM config: model={model}, base_url={base_url}"
         )
-        import traceback
-        traceback.print_exc()
-    
-    # Fallback to environment variables only if database has no config
-    logger.info("Falling back to environment variables for LLM config")
-    api_key = os.getenv("OPENAI_API_KEY", "")
-    base_url = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
-    model = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
-    
-    # If using Ollama, the API key can be any non-empty string
-    if "ollama" in base_url.lower() and not api_key:
-        api_key = "ollama"
-    
-    if not api_key:
-        raise ValueError(
-            "No LLM configuration found. Please configure in 'Management Console → "
-            "Configuration Management → LLM Configuration' or set OPENAI_API_KEY "
-            "environment variable."
+        
+        return CloudConfig(
+            openai_api_key=api_key,
+            openai_base_url=base_url,
+            openai_model=model,
         )
-    
-    logger.info(
-        f"✓ Using environment variable LLM config: model={model}, base_url={base_url}"
-    )
-    
-    return CloudConfig(
-        openai_api_key=api_key,
-        openai_base_url=base_url,
-        openai_model=model,
-    )
 
 
 # ---------------------------------------------------------------------------

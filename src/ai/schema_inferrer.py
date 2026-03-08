@@ -148,29 +148,44 @@ class SchemaInferrer:
         from openai import AsyncOpenAI
 
         self._config = cloud_config
-        # Try TOOLS mode first, fallback to JSON if it fails
-        try:
+        self._model = cloud_config.openai_model
+        
+        # Determine instructor mode based on model capabilities
+        # DeepSeek Reasoner and some other models don't support function calling
+        model_lower = cloud_config.openai_model.lower()
+        use_json_mode = any(keyword in model_lower for keyword in [
+            'deepseek-reasoner',
+            'o1-',  # OpenAI o1 models
+            'o3-',  # OpenAI o3 models
+        ])
+        
+        openai_client = AsyncOpenAI(
+            api_key=cloud_config.openai_api_key,
+            base_url=cloud_config.openai_base_url,
+            timeout=cloud_config.timeout,
+            max_retries=0,  # retries handled externally
+        )
+        
+        if use_json_mode:
+            logger.info(f"Using JSON mode for model: {self._model}")
             self._client = instructor.from_openai(
-                AsyncOpenAI(
-                    api_key=cloud_config.openai_api_key,
-                    base_url=cloud_config.openai_base_url,
-                    timeout=cloud_config.timeout,
-                    max_retries=0,  # retries handled externally
-                ),
-                mode=instructor.Mode.TOOLS,
-            )
-        except Exception:
-            logger.warning("TOOLS mode failed, using JSON mode")
-            self._client = instructor.from_openai(
-                AsyncOpenAI(
-                    api_key=cloud_config.openai_api_key,
-                    base_url=cloud_config.openai_base_url,
-                    timeout=cloud_config.timeout,
-                    max_retries=0,
-                ),
+                openai_client,
                 mode=instructor.Mode.JSON,
             )
-        self._model = cloud_config.openai_model
+        else:
+            # Try TOOLS mode first, fallback to JSON if it fails
+            try:
+                self._client = instructor.from_openai(
+                    openai_client,
+                    mode=instructor.Mode.TOOLS,
+                )
+                logger.info(f"Using TOOLS mode for model: {self._model}")
+            except Exception as e:
+                logger.warning(f"TOOLS mode failed ({e}), using JSON mode")
+                self._client = instructor.from_openai(
+                    openai_client,
+                    mode=instructor.Mode.JSON,
+                )
 
     async def infer_from_text(
         self,

@@ -170,15 +170,34 @@ class EntityExtractor:
         from openai import AsyncOpenAI
 
         self._config = cloud_config
-        self._client = instructor.from_openai(
-            AsyncOpenAI(
-                api_key=cloud_config.openai_api_key,
-                base_url=cloud_config.openai_base_url,
-                timeout=cloud_config.timeout,
-                max_retries=0,
-            )
-        )
         self._model = cloud_config.openai_model
+        
+        # Determine instructor mode based on model capabilities
+        # DeepSeek Reasoner and some other models don't support function calling
+        model_lower = cloud_config.openai_model.lower()
+        use_json_mode = any(keyword in model_lower for keyword in [
+            'deepseek-reasoner',
+            'o1-',  # OpenAI o1 models
+            'o3-',  # OpenAI o3 models
+        ])
+        
+        openai_client = AsyncOpenAI(
+            api_key=cloud_config.openai_api_key,
+            base_url=cloud_config.openai_base_url,
+            timeout=cloud_config.timeout,
+            max_retries=0,
+        )
+        
+        if use_json_mode:
+            logger.info(f"Using JSON mode for model: {self._model}")
+            self._client = instructor.from_openai(
+                openai_client,
+                mode=instructor.Mode.JSON,
+            )
+        else:
+            # Use default mode (TOOLS) for models that support it
+            logger.info(f"Using default mode for model: {self._model}")
+            self._client = instructor.from_openai(openai_client)
 
     async def extract(
         self,

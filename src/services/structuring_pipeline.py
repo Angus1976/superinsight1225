@@ -375,35 +375,99 @@ async def _load_cloud_config(
     # Try loading from database first (priority)
     try:
         logger.info(f"Attempting to load LLM config from database for application: {application_code}")
-        async for session in get_async_session():
-            cache_manager = get_cache_manager()
-            encryption_service = get_encryption_service()
+        from src.database.connection import get_db_session
+        from src.models.llm_configuration import LLMConfiguration
+        from src.models.llm_application import LLMApplication, LLMApplicationBinding
+        from sqlalchemy import select
+        from sqlalchemy.orm import selectinload
+        
+        # Get encryption service
+        encryption_service = get_encryption_service()
+        
+        # Use synchronous session
+        db = next(get_db_session())
+        try:
+            # Get application
+            stmt = select(LLMApplication).where(LLMApplication.code == application_code)
+            result = db.execute(stmt)
+            app = result.scalar_one_or_none()
             
-            app_manager = ApplicationLLMManager(
-                db_session=session,
-                cache_manager=cache_manager,
-                encryption_service=encryption_service
-            )
-            
-            configs = await app_manager.get_llm_config(
-                application_code=application_code,
-                tenant_id=tenant_id
-            )
-            
-            if configs:
-                config = configs[0]  # Use highest priority config
-                logger.info(
-                    f"✓ Using database LLM config: provider={config.openai_model}, "
-                    f"base_url={config.openai_base_url}"
-                )
-                return config
+            if not app:
+                logger.info(f"Application not found: {application_code}")
             else:
-                logger.info(f"No LLM config found in database for application: {application_code}")
+                # Get bindings ordered by priority
+                stmt = (
+                    select(LLMApplicationBinding)
+                    .options(selectinload(LLMApplicationBinding.llm_config))
+                    .where(
+                        LLMApplicationBinding.application_id == app.id,
+                        LLMApplicationBinding.is_active == True
+                    )
+                    .join(LLMConfiguration)
+                    .where(LLMConfiguration.is_active == True)
+                    .order_by(LLMApplicationBinding.priority.asc())
+                )
+                
+                # Apply tenant filter with fallback to global
+                if tenant_id:
+                    tenant_stmt = stmt.where(LLMConfiguration.tenant_id == tenant_id)
+                    result = db.execute(tenant_stmt)
+                    bindings = result.scalars().all()
+                    if not bindings:
+                        # Fallback to global
+                        global_stmt = stmt.where(LLMConfiguration.tenant_id == None)
+                        result = db.execute(global_stmt)
+                        bindings = result.scalars().all()
+                else:
+                    # Use global configurations
+                    global_stmt = stmt.where(LLMConfiguration.tenant_id == None)
+                    result = db.execute(global_stmt)
+                    bindings = result.scalars().all()
+                
+                if bindings:
+                    # Use highest priority binding
+                    binding = bindings[0]
+                    llm_config = binding.llm_config
+                    
+                    # Decrypt API key
+                    config_data = llm_config.config_data or {}
+                    api_key_encrypted = config_data.get("api_key_encrypted")
+                    
+                    if api_key_encrypted:
+                        api_key = encryption_service.decrypt(api_key_encrypted)
+                    else:
+                        api_key = config_data.get("api_key", "")
+                    
+                    # Extract provider-specific fields
+                    base_url = config_data.get("base_url", "https://api.openai.com/v1")
+                    model_name = config_data.get("model_name", "gpt-3.5-turbo")
+                    timeout = binding.timeout_seconds or 60
+                    max_retries = binding.max_retries or 3
+                    
+                    config = CloudConfig(
+                        openai_api_key=api_key,
+                        openai_base_url=base_url,
+                        openai_model=model_name,
+                        timeout=timeout,
+                        max_retries=max_retries
+                    )
+                    
+                    logger.info(
+                        f"✓ Using database LLM config: model={config.openai_model}, "
+                        f"base_url={config.openai_base_url}, priority={binding.priority}"
+                    )
+                    return config
+                else:
+                    logger.info(f"No active bindings found for application: {application_code}")
+        finally:
+            db.close()
     except Exception as e:
         logger.warning(
             f"Failed to load LLM config from database: {e}. "
             f"Will try environment variables as fallback."
         )
+        import traceback
+        traceback.print_exc()
     
     # Fallback to environment variables only if database has no config
     logger.info("Falling back to environment variables for LLM config")

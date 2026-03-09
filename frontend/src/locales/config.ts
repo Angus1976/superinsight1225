@@ -31,6 +31,7 @@ import zhStructuring from './zh/structuring.json';
 import zhHelp from './zh/help.json';
 import zhAiAnnotation from './zh/ai_annotation.json';
 import zhLlmConfig from './zh/llmConfig.json';
+import zhDataLifecycle from './zh/dataLifecycle.json';
 import enCommon from './en/common.json';
 import enAuth from './en/auth.json';
 import enDashboard from './en/dashboard.json';
@@ -59,6 +60,7 @@ import enStructuring from './en/structuring.json';
 import enHelp from './en/help.json';
 import enAiAnnotation from './en/ai_annotation.json';
 import enLlmConfig from './en/llmConfig.json';
+import enDataLifecycle from './en/dataLifecycle.json';
 
 const resources = {
   zh: {
@@ -90,6 +92,7 @@ const resources = {
     help: zhHelp,
     aiAnnotation: zhAiAnnotation,
     llmConfig: zhLlmConfig,
+    dataLifecycle: zhDataLifecycle,
   },
   en: {
     common: enCommon,
@@ -120,6 +123,7 @@ const resources = {
     help: enHelp,
     aiAnnotation: enAiAnnotation,
     llmConfig: enLlmConfig,
+    dataLifecycle: enDataLifecycle,
   },
 };
 
@@ -131,7 +135,7 @@ i18n
     fallbackLng: 'zh',
     defaultNS: 'common',
     fallbackNS: 'common',
-    ns: ['common', 'auth', 'dashboard', 'tasks', 'billing', 'quality', 'security', 'dataSync', 'system', 'versioning', 'lineage', 'impact', 'snapshot', 'admin', 'workspace', 'license', 'settings', 'collaboration', 'crowdsource', 'augmentation', 'businessLogic', 'annotation', 'ontology', 'lsWorkspace', 'structuring', 'help', 'aiAnnotation', 'llmConfig'],
+    ns: ['common', 'auth', 'dashboard', 'tasks', 'billing', 'quality', 'security', 'dataSync', 'system', 'versioning', 'lineage', 'impact', 'snapshot', 'admin', 'workspace', 'license', 'settings', 'collaboration', 'crowdsource', 'augmentation', 'businessLogic', 'annotation', 'ontology', 'lsWorkspace', 'structuring', 'help', 'aiAnnotation', 'llmConfig', 'dataLifecycle'],
     interpolation: {
       escapeValue: false,
     },

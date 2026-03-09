@@ -125,6 +125,15 @@ const MemberManagementPage = lazyWithPreload(() => import('@/pages/Workspace/Mem
 // Label Studio Workspaces pages (Enterprise)
 const LSWorkspacesPage = lazyWithPreload(() => import('@/pages/LSWorkspaces'));
 
+// Data Lifecycle pages
+const DataLifecyclePage = lazyWithPreload(() => import('@/pages/DataLifecycle'));
+const TempDataPage = lazyWithPreload(() => import('@/pages/DataLifecycle/TempData'));
+const SampleLibraryPage = lazyWithPreload(() => import('@/pages/DataLifecycle/SampleLibrary'));
+const AnnotationTasksPage = lazyWithPreload(() => import('@/pages/DataLifecycle/AnnotationTasks'));
+const EnhancementPage = lazyWithPreload(() => import('@/pages/DataLifecycle/Enhancement'));
+const AITrialPage = lazyWithPreload(() => import('@/pages/DataLifecycle/AITrial'));
+const AuditLogPage = lazyWithPreload(() => import('@/pages/DataLifecycle/AuditLog'));
+
 const NotFoundPage = lazyWithPreload(() => import('@/pages/Error/404'));
 const ForbiddenPage = lazyWithPreload(() => import('@/pages/Error/403'));
 const ServerErrorPage = lazyWithPreload(() => import('@/pages/Error/500'));
@@ -524,6 +533,40 @@ export const routes: RouteObject[] = [
       {
         path: 'data-structuring/results/:jobId',
         element: withSuspense(DataStructuringResultsPage, 'table'),
+      },
+      // Data Lifecycle Management
+      {
+        path: 'data-lifecycle',
+        children: [
+          {
+            index: true,
+            element: withSuspense(DataLifecyclePage, 'dashboard'),
+          },
+          {
+            path: 'temp-data',
+            element: withSuspense(TempDataPage, 'table'),
+          },
+          {
+            path: 'samples',
+            element: withSuspense(SampleLibraryPage, 'table'),
+          },
+          {
+            path: 'tasks',
+            element: withSuspense(AnnotationTasksPage, 'table'),
+          },
+          {
+            path: 'enhancement',
+            element: withSuspense(EnhancementPage, 'table'),
+          },
+          {
+            path: 'trials',
+            element: withSuspense(AITrialPage, 'table'),
+          },
+          {
+            path: 'audit',
+            element: withSuspense(AuditLogPage, 'table'),
+          },
+        ],
       },
     ],
   },

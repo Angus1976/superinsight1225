@@ -1,0 +1,60 @@
+.state-transition-visualizer {
+  padding: 24px;
+  background: #fff;
+  border-radius: 8px;
+
+  .current-state-section {
+    margin-bottom: 24px;
+
+    h3 {
+      margin-bottom: 12px;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .current-state {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+  }
+
+  .available-transitions-section {
+    margin-bottom: 24px;
+
+    h4 {
+      margin-bottom: 12px;
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    .no-transitions {
+      color: #8c8c8c;
+      font-style: italic;
+    }
+  }
+
+  .state-history-section {
+    h4 {
+      margin-bottom: 12px;
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    .history-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .timestamp {
+        color: #8c8c8c;
+        font-size: 12px;
+      }
+
+      .reason {
+        color: #595959;
+        font-size: 12px;
+      }
+    }
+  }
+}

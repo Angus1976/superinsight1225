@@ -83,6 +83,9 @@
   "results": {
     "createTasksSuccess": "Annotation tasks created",
     "createTasksError": "Failed to create tasks, please retry",
+    "transferSuccess": "Successfully transferred {{count}} records to data lifecycle",
+    "transferError": "Failed to transfer to data lifecycle, please retry",
+    "transferToLifecycle": "Transfer to Lifecycle",
     "confidence": "Confidence",
     "sourceSpan": "Source Reference",
     "noJobId": "Job Not Found",

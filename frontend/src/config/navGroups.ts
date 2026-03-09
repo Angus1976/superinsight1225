@@ -17,6 +17,7 @@ import {
   SafetyOutlined,
   DollarOutlined,
   SettingOutlined,
+  DatabaseOutlined,
 } from '@ant-design/icons';
 import { ROUTES } from '@/constants';
 
@@ -145,13 +146,19 @@ const settings: MenuItem = {
   icon: React.createElement(SettingOutlined),
 };
 
+const dataLifecycle: MenuItem = {
+  path: '/data-lifecycle',
+  nameKey: 'dataLifecycle',
+  icon: React.createElement(DatabaseOutlined),
+};
+
 // ---------------------------------------------------------------------------
 // Group definitions
 // ---------------------------------------------------------------------------
 
 export const NAV_GROUPS: NavGroup[] = [
   { key: 'workbench', titleKey: 'navGroup.workbench', items: [dashboard, aiAssistant] },
-  { key: 'dataManage', titleKey: 'navGroup.dataManage', items: [tasks, dataSync] },
+  { key: 'dataManage', titleKey: 'navGroup.dataManage', items: [tasks, dataSync, dataLifecycle] },
   { key: 'aiCapability', titleKey: 'navGroup.aiCapability', items: [augmentation] },
   { key: 'qualitySec', titleKey: 'navGroup.qualitySec', items: [quality, security] },
   { key: 'system', titleKey: 'navGroup.system', items: [admin, billing, settings] },

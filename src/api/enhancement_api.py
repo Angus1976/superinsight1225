@@ -1,0 +1,418 @@
+"""
+Enhancement API Router for Data Lifecycle Management.
+
+Provides REST API endpoints for managing enhancement jobs,
+including job creation, status tracking, applying enhancements,
+rollback, cancellation, and listing with filters.
+
+Validates: Requirements 6.1, 6.2, 6.3, 6.5, 15.1, 15.3
+"""
+
+from typing import List, Optional, Dict, Any
+from datetime import datetime
+from uuid import UUID
+
+from fastapi import (
+    APIRouter, Depends, HTTPException, status, Query
+)
+from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session as DBSession
+
+from src.database.connection import get_db_session
+from src.services.enhancement_service import (
+    EnhancementService,
+    EnhancementConfig,
+)
+from src.models.data_lifecycle import EnhancementType, JobStatus
+
+
+router = APIRouter(prefix="/api/enhancements", tags=["Enhancements"])
+
+# Shared in-memory job storage across requests (service instances are per-request)
+_shared_jobs: Dict[str, Any] = {}
+
+
+# ============================================================================
+# Request/Response Schemas
+# ============================================================================
+
+class CreateEnhancementRequest(BaseModel):
+    """Create enhancement job request."""
+    data_id: str = Field(..., min_length=1, description="ID of data to enhance")
+    enhancement_type: EnhancementType = Field(..., description="Type of enhancement")
+    parameters: Optional[Dict[str, Any]] = Field(None, description="Enhancement parameters")
+    target_quality: Optional[float] = Field(None, ge=0.0, le=1.0, description="Target quality (0-1)")
+    created_by: str = Field(..., min_length=1, description="User ID who creates the job")
+
+
+class EnhancementJobResponse(BaseModel):
+    """Enhancement job response."""
+    id: str = Field(..., description="Job ID")
+    data_id: str = Field(..., description="Source data ID")
+    enhancement_type: EnhancementType = Field(..., description="Enhancement type")
+    parameters: Dict[str, Any] = Field(..., description="Enhancement parameters")
+    target_quality: Optional[float] = Field(None, description="Target quality score")
+    status: JobStatus = Field(..., description="Job status")
+    created_by: str = Field(..., description="Creator user ID")
+    started_at: Optional[datetime] = Field(None, description="Start timestamp")
+    completed_at: Optional[datetime] = Field(None, description="Completion timestamp")
+    error: Optional[str] = Field(None, description="Error message if failed")
+    enhanced_data_id: Optional[str] = Field(None, description="ID of enhanced data")
+
+
+class ApplyEnhancementRequest(BaseModel):
+    """Apply enhancement request."""
+    source_content: Dict[str, Any] = Field(..., description="Source content to enhance")
+
+
+class EnhancedDataResponse(BaseModel):
+    """Enhanced data response."""
+    id: str = Field(..., description="Enhanced data ID")
+    original_data_id: str = Field(..., description="Original data ID")
+    enhancement_job_id: str = Field(..., description="Enhancement job ID")
+    content: Dict[str, Any] = Field(..., description="Enhanced content")
+    enhancement_type: str = Field(..., description="Enhancement type")
+    quality_improvement: float = Field(..., description="Quality improvement score")
+    quality_overall: float = Field(..., description="Overall quality score")
+    quality_completeness: float = Field(..., description="Completeness score")
+    quality_accuracy: float = Field(..., description="Accuracy score")
+    quality_consistency: float = Field(..., description="Consistency score")
+    version: int = Field(..., description="Version number")
+    parameters: Dict[str, Any] = Field(..., description="Parameters used")
+    metadata: Dict[str, Any] = Field(..., description="Additional metadata")
+    created_at: datetime = Field(..., description="Creation timestamp")
+
+
+class ListEnhancementsResponse(BaseModel):
+    """List enhancement jobs response."""
+    items: List[EnhancementJobResponse] = Field(..., description="List of jobs")
+    total: int = Field(..., description="Total number of jobs")
+    page: int = Field(..., description="Current page number")
+    page_size: int = Field(..., description="Items per page")
+    total_pages: int = Field(..., description="Total number of pages")
+
+
+class AddToLibraryRequest(BaseModel):
+    """Request to add enhanced data to sample library."""
+    user_id: str = Field(..., min_length=1, description="User ID performing the operation")
+
+
+class AddToLibraryResponse(BaseModel):
+    """Response after adding enhanced data to sample library."""
+    id: str = Field(..., description="New sample ID")
+    data_id: str = Field(..., description="Source enhanced data ID")
+    content: Dict[str, Any] = Field(..., description="Sample content")
+    category: str = Field(..., description="Sample category")
+    quality_overall: float = Field(..., description="Overall quality score")
+    quality_completeness: float = Field(..., description="Completeness score")
+    quality_accuracy: float = Field(..., description="Accuracy score")
+    quality_consistency: float = Field(..., description="Consistency score")
+    version: int = Field(..., description="Version number")
+    tags: List[str] = Field(..., description="Sample tags")
+    metadata: Dict[str, Any] = Field(..., description="Sample metadata")
+    created_at: str = Field(..., description="Creation timestamp (ISO format)")
+
+
+
+# ============================================================================
+# Dependency Injection
+# ============================================================================
+
+def get_enhancement_service(
+    db: DBSession = Depends(get_db_session),
+) -> EnhancementService:
+    """Get enhancement service instance with shared job storage."""
+    service = EnhancementService(db)
+    service._jobs = _shared_jobs
+    return service
+
+
+# ============================================================================
+# Helper Functions
+# ============================================================================
+
+def _job_to_response(job) -> EnhancementJobResponse:
+    """Convert EnhancementJob to response model."""
+    return EnhancementJobResponse(
+        id=job.id,
+        data_id=job.config.data_id,
+        enhancement_type=job.config.enhancement_type,
+        parameters=job.config.parameters,
+        target_quality=job.config.target_quality,
+        status=job.status,
+        created_by=job.created_by,
+        started_at=job.started_at,
+        completed_at=job.completed_at,
+        error=job.error,
+        enhanced_data_id=job.enhanced_data_id,
+    )
+
+
+# ============================================================================
+# API Endpoints
+# ============================================================================
+
+@router.post("", response_model=EnhancementJobResponse, status_code=status.HTTP_201_CREATED)
+async def create_enhancement_job(
+    request: CreateEnhancementRequest,
+    service: EnhancementService = Depends(get_enhancement_service),
+):
+    """
+    Create a new enhancement job.
+
+    Validates: Requirements 6.1, 15.1
+    """
+    try:
+        config = EnhancementConfig(
+            data_id=request.data_id,
+            enhancement_type=request.enhancement_type,
+            parameters=request.parameters or {},
+            target_quality=request.target_quality,
+        )
+        job = service.create_enhancement_job(
+            config=config, created_by=request.created_by
+        )
+        return _job_to_response(job)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create enhancement job: {str(e)}",
+        )
+
+
+@router.get("/{job_id}", response_model=EnhancementJobResponse)
+async def get_enhancement_job(
+    job_id: str,
+    service: EnhancementService = Depends(get_enhancement_service),
+):
+    """
+    Get enhancement job status and details.
+
+    Validates: Requirements 6.2, 15.1
+    """
+    try:
+        job = service._jobs.get(job_id)
+        if not job:
+            raise ValueError(f"Enhancement job {job_id} not found")
+        return _job_to_response(job)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get enhancement job: {str(e)}",
+        )
+
+
+@router.post("/{job_id}/apply", response_model=EnhancedDataResponse)
+async def apply_enhancement(
+    job_id: str,
+    request: ApplyEnhancementRequest,
+    service: EnhancementService = Depends(get_enhancement_service),
+):
+    """
+    Apply enhancement algorithm to source content.
+
+    Validates: Requirements 6.2, 6.3
+    """
+    try:
+        result = service.apply_enhancement(
+            job_id=job_id, source_content=request.source_content
+        )
+        return EnhancedDataResponse(
+            id=result["id"],
+            original_data_id=result["original_data_id"],
+            enhancement_job_id=result["enhancement_job_id"],
+            content=result["content"],
+            enhancement_type=result["enhancement_type"],
+            quality_improvement=result["quality_improvement"],
+            quality_overall=result["quality_overall"],
+            quality_completeness=result["quality_completeness"],
+            quality_accuracy=result["quality_accuracy"],
+            quality_consistency=result["quality_consistency"],
+            version=result["version"],
+            parameters=result["parameters"],
+            metadata=result["metadata"],
+            created_at=datetime.fromisoformat(result["created_at"]),
+        )
+    except ValueError as e:
+        error_msg = str(e)
+        if "not found" in error_msg.lower():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail=error_msg
+            )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=error_msg
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to apply enhancement: {str(e)}",
+        )
+
+
+@router.post("/{job_id}/rollback", status_code=status.HTTP_200_OK)
+async def rollback_enhancement(
+    job_id: str,
+    service: EnhancementService = Depends(get_enhancement_service),
+):
+    """
+    Rollback an enhancement, restoring original data.
+
+    Validates: Requirements 6.5
+    """
+    try:
+        service.rollback_enhancement(job_id=job_id)
+        return {
+            "message": "Enhancement rolled back successfully",
+            "job_id": job_id,
+        }
+    except ValueError as e:
+        error_msg = str(e)
+        if "not found" in error_msg.lower():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail=error_msg
+            )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=error_msg
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to rollback enhancement: {str(e)}",
+        )
+
+
+@router.post("/{job_id}/cancel", status_code=status.HTTP_200_OK)
+async def cancel_enhancement_job(
+    job_id: str,
+    service: EnhancementService = Depends(get_enhancement_service),
+):
+    """
+    Cancel a running or queued enhancement job.
+
+    Validates: Requirements 15.3
+    """
+    try:
+        job = service._jobs.get(job_id)
+        if not job:
+            raise ValueError(f"Enhancement job {job_id} not found")
+        if job.status not in (JobStatus.QUEUED, JobStatus.RUNNING):
+            raise ValueError(
+                f"Cannot cancel job in {job.status.value} status. "
+                f"Only QUEUED or RUNNING jobs can be cancelled."
+            )
+        job.status = JobStatus.CANCELLED
+        job.completed_at = datetime.utcnow()
+        return {
+            "message": "Enhancement job cancelled successfully",
+            "job_id": job_id,
+        }
+    except ValueError as e:
+        error_msg = str(e)
+        if "not found" in error_msg.lower():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail=error_msg
+            )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=error_msg
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to cancel enhancement job: {str(e)}",
+        )
+
+
+@router.post(
+    "/{job_id}/add-to-library",
+    response_model=AddToLibraryResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def add_to_library(
+    job_id: str,
+    request: AddToLibraryRequest,
+    service: EnhancementService = Depends(get_enhancement_service),
+):
+    """
+    Add enhanced data to the sample library for iterative optimization.
+
+    Validates: Requirements 21.1
+    """
+    try:
+        result = service.add_to_sample_library(
+            job_id=job_id, user_id=request.user_id
+        )
+        return AddToLibraryResponse(**result)
+    except ValueError as e:
+        error_msg = str(e)
+        if "not found" in error_msg.lower():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail=error_msg
+            )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=error_msg
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to add enhanced data to library: {str(e)}",
+        )
+
+
+@router.get("", response_model=ListEnhancementsResponse)
+async def list_enhancement_jobs(
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(20, ge=1, le=100, description="Items per page"),
+    status_filter: Optional[JobStatus] = Query(None, description="Filter by job status"),
+    enhancement_type: Optional[EnhancementType] = Query(None, description="Filter by enhancement type"),
+    data_id: Optional[str] = Query(None, description="Filter by source data ID"),
+    service: EnhancementService = Depends(get_enhancement_service),
+):
+    """
+    List enhancement jobs with pagination and filters.
+
+    Validates: Requirements 15.1, 15.5
+    """
+    try:
+        all_jobs = list(service._jobs.values())
+
+        # Apply filters
+        if status_filter is not None:
+            all_jobs = [j for j in all_jobs if j.status == status_filter]
+        if enhancement_type is not None:
+            all_jobs = [
+                j for j in all_jobs
+                if j.config.enhancement_type == enhancement_type
+            ]
+        if data_id is not None:
+            all_jobs = [j for j in all_jobs if j.config.data_id == data_id]
+
+        # Sort by started_at descending (newest first)
+        all_jobs.sort(
+            key=lambda j: j.started_at or datetime.min, reverse=True
+        )
+
+        total = len(all_jobs)
+        total_pages = (total + page_size - 1) // page_size if total > 0 else 0
+        offset = (page - 1) * page_size
+        page_items = all_jobs[offset : offset + page_size]
+
+        return ListEnhancementsResponse(
+            items=[_job_to_response(j) for j in page_items],
+            total=total,
+            page=page,
+            page_size=page_size,
+            total_pages=total_pages,
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to list enhancement jobs: {str(e)}",
+        )

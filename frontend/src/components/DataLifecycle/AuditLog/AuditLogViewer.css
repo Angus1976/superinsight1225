@@ -1,0 +1,19 @@
+.audit-log-viewer {
+  padding: 16px;
+}
+
+.audit-log-filters {
+  margin-bottom: 16px;
+}
+
+.audit-log-details {
+  padding: 16px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+}
+
+.audit-log-details pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}

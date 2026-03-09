@@ -1,0 +1,538 @@
+{
+  "interface": {
+    "title": "数据生命周期管理",
+    "loading": "加载数据生命周期管理界面中...",
+    "pageTitle": "数据生命周期管理"
+  },
+  "tabs": {
+    "tempData": "临时数据",
+    "sampleLibrary": "样本库",
+    "review": "审核",
+    "annotation": "标注任务",
+    "enhancement": "数据增强",
+    "aiTrial": "AI 试用"
+  },
+  "tempData": {
+    "title": "临时数据管理",
+    "description": "管理待处理的数据草稿和临时文件",
+    "uploadDocument": "上传文档",
+    "columns": {
+      "id": "ID",
+      "name": "名称",
+      "content": "内容",
+      "state": "状态",
+      "uploadedBy": "上传者",
+      "uploadedAt": "上传时间",
+      "createdAt": "创建时间",
+      "updatedAt": "更新时间",
+      "actions": "操作"
+    },
+    "states": {
+      "draft": "草稿",
+      "processing": "处理中",
+      "ready": "就绪",
+      "archived": "已归档",
+      "deleted": "已删除"
+    },
+    "filters": {
+      "state": "状态",
+      "uploader": "上传者",
+      "startDate": "开始日期",
+      "endDate": "结束日期",
+      "all": "全部"
+    },
+    "actions": {
+      "create": "创建临时数据",
+      "edit": "编辑",
+      "delete": "删除",
+      "archive": "归档",
+      "restore": "恢复",
+      "viewDetails": "查看详情"
+    },
+    "messages": {
+      "createSuccess": "临时数据创建成功",
+      "createFailed": "临时数据创建失败",
+      "updateSuccess": "临时数据更新成功",
+      "updateFailed": "临时数据更新失败",
+      "deleteSuccess": "临时数据已删除",
+      "deleteFailed": "临时数据删除失败",
+      "archiveSuccess": "临时数据已归档",
+      "archiveFailed": "临时数据归档失败",
+      "restoreSuccess": "临时数据已恢复",
+      "restoreFailed": "临时数据恢复失败",
+      "noData": "暂无临时数据",
+      "confirmDelete": "确定要删除此临时数据吗？此操作不可恢复。",
+      "confirmArchive": "确定要归档此临时数据吗？",
+      "viewDetails": "查看详情"
+    }
+  },
+  "sampleLibrary": {
+    "title": "样本库",
+    "description": "管理和浏览高质量数据样本",
+    "columns": {
+      "id": "ID",
+      "name": "名称",
+      "description": "描述",
+      "dataType": "数据类型",
+      "qualityScore": "质量评分",
+      "usageCount": "使用次数",
+      "createdAt": "创建时间",
+      "updatedAt": "更新时间",
+      "actions": "操作"
+    },
+    "filters": {
+      "tags": "标签",
+      "category": "分类",
+      "quality": "质量分数",
+      "dateRange": "日期范围"
+    },
+    "actions": {
+      "addToLibrary": "添加到样本库",
+      "removeFromLibrary": "从样本库移除",
+      "viewSamples": "查看样本",
+      "search": "搜索样本",
+      "filter": "筛选",
+      "export": "导出",
+      "createTask": "从选中样本创建任务",
+      "addToTask": "添加到任务"
+    },
+    "messages": {
+      "addSuccess": "已添加到样本库",
+      "addFailed": "添加到样本库失败",
+      "removeSuccess": "已从样本库移除",
+      "removeFailed": "从样本库移除失败",
+      "noSamples": "样本库为空",
+      "confirmRemove": "确定要从样本库移除此样本吗？",
+      "searchPlaceholder": "搜索样本名称或描述...",
+      "componentPlaceholder": "样本库组件将在任务 25.2 中实现",
+      "noUsageHistory": "暂无使用历史"
+    },
+    "statistics": {
+      "totalSamples": "样本总数",
+      "categories": "分类数量",
+      "avgQuality": "平均质量分数",
+      "selected": "已选中 {{count}} 个样本"
+    },
+    "quality": {
+      "excellent": "优秀",
+      "good": "良好",
+      "average": "一般",
+      "poor": "较差"
+    },
+    "tabs": {
+      "overview": "概览",
+      "content": "内容",
+      "versions": "版本",
+      "usage": "使用记录"
+    }
+  },
+  "review": {
+    "title": "审核管理",
+    "description": "审核和批准数据变更请求",
+    "targetDetails": "目标详情",
+    "columns": {
+      "id": "ID",
+      "targetType": "目标类型",
+      "targetId": "目标ID",
+      "requester": "申请人",
+      "status": "状态",
+      "submittedAt": "提交时间",
+      "reviewedAt": "审核时间",
+      "reviewer": "审核人",
+      "actions": "操作"
+    },
+    "status": {
+      "pending": "待审核",
+      "approved": "已通过",
+      "rejected": "已拒绝",
+      "cancelled": "已取消"
+    },
+    "actions": {
+      "submit": "提交审核",
+      "approve": "通过",
+      "reject": "拒绝",
+      "cancel": "取消",
+      "viewDetails": "查看详情",
+      "addComment": "添加评论"
+    },
+    "messages": {
+      "submitSuccess": "审核请求已提交",
+      "submitFailed": "提交审核失败",
+      "approveSuccess": "已通过审核",
+      "approveFailed": "审核通过失败",
+      "rejectSuccess": "已拒绝审核",
+      "rejectFailed": "审核拒绝失败",
+      "cancelSuccess": "已取消审核请求",
+      "cancelFailed": "取消审核失败",
+      "noPendingReviews": "暂无待审核请求",
+      "confirmApprove": "确定要通过此审核吗？",
+      "confirmReject": "确定要拒绝此审核吗？",
+      "confirmCancel": "确定要取消此审核请求吗？",
+      "rejectionReason": "拒绝原因",
+      "rejectionReasonRequired": "请输入拒绝原因"
+    }
+  },
+  "annotationTask": {
+    "title": "标注任务",
+    "description": "管理和分配数据标注任务",
+    "columns": {
+      "id": "ID",
+      "name": "任务名称",
+      "description": "描述",
+      "dataId": "数据ID",
+      "status": "状态",
+      "priority": "优先级",
+      "assignee": "负责人",
+      "dueDate": "截止日期",
+      "progress": "进度",
+      "createdAt": "创建时间",
+      "actions": "操作"
+    },
+    "status": {
+      "pending": "待处理",
+      "inProgress": "进行中",
+      "completed": "已完成",
+      "cancelled": "已取消"
+    },
+    "priority": {
+      "low": "低",
+      "medium": "中",
+      "high": "高",
+      "urgent": "紧急"
+    },
+    "actions": {
+      "create": "创建任务",
+      "assign": "分配任务",
+      "start": "开始任务",
+      "complete": "完成任务",
+      "cancel": "取消任务",
+      "viewDetails": "查看详情",
+      "edit": "编辑"
+    },
+    "fields": {
+      "annotationType": "标注类型",
+      "instructions": "标注说明",
+      "completedAt": "完成时间"
+    },
+    "tabs": {
+      "samples": "样本列表",
+      "annotations": "标注结果",
+      "activityLog": "活动日志"
+    },
+    "types": {
+      "classification": "分类",
+      "entityRecognition": "实体识别",
+      "relationExtraction": "关系抽取",
+      "sentimentAnalysis": "情感分析",
+      "custom": "自定义"
+    },
+    "steps": {
+      "basicInfo": "基本信息",
+      "basicInfoDesc": "填写任务基本信息",
+      "selectSamples": "选择样本",
+      "selectSamplesDesc": "选择要标注的样本",
+      "assignAnnotators": "分配标注员",
+      "assignAnnotatorsDesc": "分配任务给标注员"
+    },
+    "placeholders": {
+      "name": "请输入任务名称",
+      "description": "请输入任务描述",
+      "selectType": "请选择标注类型",
+      "instructions": "请输入标注说明和要求",
+      "deadline": "请选择截止日期",
+      "selectAnnotators": "请选择标注员"
+    },
+    "validation": {
+      "nameRequired": "请输入任务名称",
+      "nameTooLong": "任务名称不能超过100个字符",
+      "typeRequired": "请选择标注类型",
+      "instructionsRequired": "请输入标注说明",
+      "deadlinePast": "截止日期不能早于当前时间"
+    },
+    "messages": {
+      "createSuccess": "标注任务创建成功",
+      "assignSuccess": "任务已分配",
+      "startSuccess": "任务已开始",
+      "startFailed": "任务开始失败",
+      "completeSuccess": "任务已完成",
+      "completeFailed": "任务完成失败",
+      "cancelSuccess": "任务已取消",
+      "cancelFailed": "任务取消失败",
+      "noTasks": "暂无标注任务",
+      "confirmCancel": "确定要取消此任务吗？",
+      "assignee": "请选择负责人",
+      "dueDate": "请选择截止日期",
+      "samplesSelected": "已选择 {{count}} 个样本",
+      "noSamplesSelected": "请先在样本库中选择样本",
+      "assignmentInfo": "任务将分配给选中的标注员，他们将收到通知",
+      "noAnnotations": "暂无标注结果",
+      "noActivityLog": "暂无活动记录"
+    },
+    "progress": {
+      "labeled": "已标注",
+      "total": "总数",
+      "percentage": "完成率"
+    }
+  },
+  "enhancement": {
+    "title": "数据增强",
+    "description": "使用 AI 增强和优化数据质量",
+    "statistics": {
+      "totalJobs": "总任务数",
+      "running": "运行中",
+      "completed": "已完成",
+      "avgQuality": "平均质量"
+    },
+    "columns": {
+      "id": "ID",
+      "name": "名称",
+      "type": "类型",
+      "status": "状态",
+      "progress": "进度",
+      "iterations": "迭代次数",
+      "version": "版本",
+      "createdAt": "创建时间",
+      "completedAt": "完成时间",
+      "actions": "操作"
+    },
+    "type": {
+      "grammar": "语法���化",
+      "style": "风格调整",
+      "content": "内容扩展",
+      "summary": "摘要生成",
+      "translation": "翻译",
+      "custom": "自定义"
+    },
+    "status": {
+      "pending": "等待中",
+      "running": "运行中",
+      "completed": "已完成",
+      "failed": "失败",
+      "cancelled": "已取消",
+      "paused": "已暂停"
+    },
+    "actions": {
+      "create": "创建增强任务",
+      "start": "开始",
+      "pause": "暂停",
+      "resume": "继续",
+      "cancel": "取消",
+      "rollback": "回滚",
+      "viewDetails": "查看详情",
+      "viewHistory": "查看历史"
+    },
+    "messages": {
+      "createSuccess": "增强任务创建成功",
+      "startSuccess": "增强任务已开始",
+      "startFailed": "增强任务开始失败",
+      "pauseSuccess": "增强任务已暂停",
+      "pauseFailed": "增强任务暂停失败",
+      "resumeSuccess": "增强任务已继续",
+      "resumeFailed": "增强任务继续失败",
+      "cancelSuccess": "增强任务已取消",
+      "cancelFailed": "增强任务取消失败",
+      "rollbackSuccess": "已回滚到上一版本",
+      "rollbackFailed": "回滚失败",
+      "noJobs": "暂无增强任务",
+      "confirmCancel": "确定要取消此增强任务吗？",
+      "confirmRollback": "确定要回滚到此版本吗？当前版本将被覆盖。",
+      "selectType": "请选择增强类型",
+      "iterationProgress": "迭代 {{current}}/{{total}}"
+    },
+    "progress": {
+      "processing": "正在处理...",
+      "success": "成功",
+      "partial": "部分成功",
+      "failed": "失败"
+    }
+  },
+  "aiTrial": {
+    "title": "AI 试用",
+    "description": "试用和评估 AI 模型效果",
+    "createNew": "创建试算任务",
+    "compare": "对比结果",
+    "columns": {
+      "id": "ID",
+      "name": "名称",
+      "dataStage": "数据阶段",
+      "aiModel": "AI模型",
+      "model": "模型",
+      "status": "状态",
+      "trialCount": "试用次数",
+      "successRate": "成功率",
+      "avgScore": "平均分",
+      "createdAt": "创建时间",
+      "completedAt": "完成时间",
+      "actions": "操作"
+    },
+    "dataStages": {
+      "temp_table": "临时表",
+      "sample_library": "样本库",
+      "data_source": "数据源",
+      "annotated": "已标注",
+      "enhanced": "已增强"
+    },
+    "status": {
+      "created": "已创建",
+      "pending": "等待中",
+      "running": "运行中",
+      "completed": "已完成",
+      "failed": "失败",
+      "cancelled": "已取消"
+    },
+    "actions": {
+      "create": "创建试用任务",
+      "execute": "执行",
+      "start": "开始试用",
+      "startTrial": "开始试用",
+      "stop": "停止",
+      "viewResults": "查看结果",
+      "exportResults": "导出结果",
+      "compare": "对比",
+      "cancel": "取消"
+    },
+    "statistics": {
+      "totalTrials": "试算总数",
+      "completedTrials": "已完成试算",
+      "runningTrials": "运行中试算"
+    },
+    "comparisonModal": {
+      "title": "试算对比",
+      "description": "对比选中的试算结果"
+    },
+    "messages": {
+      "createSuccess": "AI 试用任务创建成功",
+      "startSuccess": "AI 试用已开始",
+      "startFailed": "AI 试用开始失败",
+      "stopSuccess": "AI 试用已停止",
+      "stopFailed": "AI 试用停止失败",
+      "exportSuccess": "导出成功",
+      "exportFailed": "导出失败",
+      "noTrials": "暂无 AI 试用任务",
+      "confirmStop": "确定要停止此 AI 试用吗？",
+      "selectModel": "请选择 AI 模型",
+      "resultsTitle": "试用结果",
+      "noResults": "暂无试用结果"
+    },
+    "metrics": {
+      "totalTrials": "总试用次数",
+      "successful": "成功次数",
+      "failed": "失败次数",
+      "successRate": "成功率",
+      "avgProcessingTime": "平均处理时间"
+    }
+  },
+  "audit": {
+    "title": "审计日志",
+    "description": "查看和搜索审计日志以进行合规性检查和调试"
+  },
+  "common": {
+    "type": "类型",
+    "quickActions": "快捷操作",
+    "recentActivity": "最近活动",
+    "actions": {
+      "save": "保存",
+      "cancel": "取消",
+      "confirm": "确认",
+      "delete": "删除",
+      "edit": "编辑",
+      "view": "查看",
+      "refresh": "刷新",
+      "search": "搜索",
+      "filter": "筛选",
+      "export": "导出",
+      "import": "导入",
+      "download": "下载",
+      "upload": "上传",
+      "close": "关闭",
+      "back": "返回",
+      "next": "下一步",
+      "previous": "上一步",
+      "submit": "提交",
+      "reset": "重置"
+    },
+    "status": {
+      "loading": "加载中...",
+      "error": "错误",
+      "success": "成功",
+      "warning": "警告",
+      "empty": "暂无数据",
+      "current": "当前状态"
+    },
+    "messages": {
+      "confirmDelete": "确定要删除吗？此操作不可恢复。",
+      "confirmAction": "确定要执行此操作吗？",
+      "operationSuccess": "操作成功",
+      "operationFailed": "操作失败",
+      "saveSuccess": "保存成功",
+      "saveFailed": "保存失败",
+      "deleteSuccess": "删除成功",
+      "deleteFailed": "删除失败",
+      "networkError": "网络错误，请稍后重试",
+      "unknownError": "发生未知错误",
+      "noData": "暂无数据"
+    },
+    "placeholders": {
+      "search": "搜索...",
+      "select": "请选择...",
+      "input": "请输入{{field}}...",
+      "remark": "备注..."
+    },
+    "pagination": {
+      "total": "共 {{total}} 条",
+      "page": "第 {{current}} 页",
+      "pageSize": "每页 {{size}} 条"
+    }
+  },
+  "permissions": {
+    "view": "查看",
+    "create": "创建",
+    "edit": "编辑",
+    "delete": "删除",
+    "approve": "审批",
+    "admin": "管理"
+  },
+  "errors": {
+    "permissionDenied": "您没有执行此操作的权限",
+    "dataNotFound": "数据不存在或已被删除",
+    "invalidState": "无效的状态转换",
+    "validationError": "数据验证失败",
+    "concurrentModification": "数据已被其他用户修改，请刷新后重试",
+    "operationFailed": "操作失败",
+    "unknown": "发生未知错误"
+  },
+  "dataFlowVisualization": {
+    "title": "数据流可视化",
+    "stages": "阶段",
+    "clickToNavigate": "点击导航",
+    "legend": "图例",
+    "active": "活跃",
+    "completed": "已完成",
+    "rejected": "已拒绝",
+    "pending": "待处理",
+    "items": "项"
+  },
+  "stateTransition": {
+    "title": "数据状态管理",
+    "availableTransitions": "可用的状态转换",
+    "transitionTo": "转换到",
+    "history": "状态历史",
+    "noAvailableTransitions": "当前状态无可用转换"
+  },
+  "states": {
+    "raw": "原始",
+    "structured": "已结构化",
+    "temp_stored": "临时存储",
+    "under_review": "审核中",
+    "rejected": "已拒绝",
+    "approved": "已批准",
+    "in_sample_library": "样本库中",
+    "annotation_pending": "待标注",
+    "annotating": "标注中",
+    "annotated": "已标注",
+    "enhancing": "增强中",
+    "enhanced": "已增强",
+    "trial_calculation": "试算中",
+    "archived": "已归档"
+  }
+}

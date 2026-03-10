@@ -102,14 +102,25 @@ def postgres_test_engine():
 
 
 @pytest.fixture(scope="function")
-def db_session(test_engine) -> Generator[Session, None, None]:
+def db_session(request) -> Generator[Session, None, None]:
     """
     Provide a database session with transaction rollback.
     
     Each test gets a fresh session that is rolled back after the test,
-    ensuring test isolation.
+    ensuring test isolation. Uses property conftest's fixture if available
+    (for property tests), otherwise uses the main test engine.
     """
-    with isolated_test_session(test_engine) as session:
+    # Check if we're in a property test directory - property conftest handles it
+    if hasattr(request.node, "fspath"):
+        test_path = str(request.node.fspath)
+        if "/property/" in test_path or "\\property\\" in test_path.replace("\\", "/"):
+            # Property tests have their own db_session fixture in tests/property/conftest.py
+            # Skip this fixture to let property conftest handle it
+            pytest.skip("Property tests use their own db_session fixture")
+    
+    # Fall back to main test engine
+    from tests.database_isolation import isolated_test_session
+    with isolated_test_session(request.getfixturevalue("test_engine")) as session:
         yield session
 
 

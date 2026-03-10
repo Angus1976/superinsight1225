@@ -48,6 +48,15 @@ global.IntersectionObserver = vi.fn().mockImplementation(() => ({
 // Mock scrollTo
 window.scrollTo = vi.fn()
 
+// Mock getComputedStyle (required for Ant Design modals)
+window.getComputedStyle = vi.fn().mockImplementation(() => ({
+  getPropertyValue: vi.fn().mockReturnValue(''),
+  width: '0px',
+  height: '0px',
+  overflow: 'visible',
+  display: 'block',
+}))
+
 // Mock localStorage
 const localStorageMock = {
   getItem: vi.fn(),

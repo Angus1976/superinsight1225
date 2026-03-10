@@ -33,7 +33,9 @@ import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStructuringStore } from '@/stores/structuringStore';
 import type { SchemaField, StructuredRecord } from '@/stores/structuringStore';
-import { useTempData } from '@/hooks/useDataLifecycle';
+import TransferToLifecycleModal from '@/components/DataLifecycle/TransferToLifecycleModal';
+import type { TransferDataItem } from '@/components/DataLifecycle/TransferToLifecycleModal';
+import { useTransferToLifecycle } from '@/hooks/useTransferToLifecycle';
 
 const { Title, Text } = Typography;
 
@@ -81,7 +83,9 @@ const ResultsPage: React.FC = () => {
     clearError,
   } = useStructuringStore();
 
-  const { createTempData, loading: isTransferring } = useTempData();
+  const [transferModalVisible, setTransferModalVisible] = React.useState(false);
+  const [selectedDataForTransfer, setSelectedDataForTransfer] = React.useState<TransferDataItem[]>([]);
+  const { transferData, loading: isTransferring } = useTransferToLifecycle();
 
   // ---- Load job + records on mount ----
   useEffect(() => {
@@ -125,46 +129,46 @@ const ResultsPage: React.FC = () => {
     }
   }, [jobId, createAnnotationTasks, t]);
 
-  // ---- Transfer to lifecycle ----
-  const handleTransferToLifecycle = useCallback(async () => {
+  // ---- Open transfer modal ----
+  const handleOpenTransferModal = useCallback(() => {
     if (!currentJob || records.length === 0) return;
     
-    try {
-      // Create temp data entries for each record
-      const promises = records.map((record) =>
-        createTempData({
-          name: `${currentJob.file_name}_record_${record.id}`,
-          content: record.fields,
-          metadata: {
-            source_type: 'structuring',
-            source_id: currentJob.job_id,
-            file_name: currentJob.file_name,
-            file_type: currentJob.file_type,
-            confidence: record.confidence,
-            source_span: record.source_span,
-          },
-        })
-      );
+    // Prepare data for transfer
+    const dataForTransfer: TransferDataItem[] = records.map((record) => ({
+      id: record.id.toString(),
+      name: `${currentJob.file_name}_record_${record.id}`,
+      content: record.fields,
+      metadata: {
+        source_type: 'structuring',
+        source_id: currentJob.job_id,
+        file_name: currentJob.file_name,
+        file_type: currentJob.file_type,
+        confidence: record.confidence,
+        source_span: record.source_span,
+      },
+    }));
+    
+    setSelectedDataForTransfer(dataForTransfer);
+    setTransferModalVisible(true);
+  }, [currentJob, records]);
 
-      await Promise.all(promises);
-      
-      message.success(
-        t('structuring:results.transferSuccess', {
-          count: records.length,
-          defaultValue: `已成功转移 ${records.length} 条记录到数据生命周期`,
-        }),
-      );
-      
-      // Navigate to data lifecycle page
-      navigate('/data-lifecycle');
-    } catch {
-      message.error(
-        t('structuring:results.transferError', {
-          defaultValue: '转移到数据生命周期失败，请重试',
-        }),
-      );
-    }
-  }, [currentJob, records, createTempData, navigate, t]);
+  // ---- Handle transfer success ----
+  const handleTransferSuccess = useCallback(async () => {
+    setTransferModalVisible(false);
+    message.success(
+      t('aiProcessing:transfer.messages.success', {
+        count: selectedDataForTransfer.length,
+        stage: t('aiProcessing:transfer.stages.temp_data'),
+      }),
+    );
+    // Optionally navigate to data lifecycle page
+    // navigate('/data-lifecycle');
+  }, [selectedDataForTransfer.length, t]);
+
+  // ---- Close transfer modal ----
+  const handleCloseTransferModal = useCallback(() => {
+    setTransferModalVisible(false);
+  }, []);
 
   // ---- Navigation ----
   const handleGoBack = useCallback(() => {
@@ -322,10 +326,10 @@ const ResultsPage: React.FC = () => {
               <>
                 <Button
                   icon={<DatabaseOutlined />}
-                  onClick={handleTransferToLifecycle}
+                  onClick={handleOpenTransferModal}
                   loading={isTransferring}
                 >
-                  {t('structuring:results.transferToLifecycle', { defaultValue: '转移到生命周期' })}
+                  {t('aiProcessing:transfer.button')}
                 </Button>
                 <Button
                   type="primary"
@@ -423,6 +427,15 @@ const ResultsPage: React.FC = () => {
           </Card>
         )}
       </Space>
+
+      {/* Transfer to Lifecycle Modal */}
+      <TransferToLifecycleModal
+        visible={transferModalVisible}
+        onClose={handleCloseTransferModal}
+        onSuccess={handleTransferSuccess}
+        sourceType="structuring"
+        selectedData={selectedDataForTransfer}
+      />
     </div>
   );
 };

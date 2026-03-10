@@ -21,11 +21,14 @@ import {
   InboxOutlined,
   ReloadOutlined,
   EyeOutlined,
+  CloudUploadOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useVectorizationStore } from '@/stores/vectorizationStore';
 import type { VectorizationJob, VectorRecord } from '@/stores/vectorizationStore';
 import type { ColumnsType } from 'antd/es/table';
+import TransferToLifecycleModal from '@/components/DataLifecycle/TransferToLifecycleModal';
+import type { TransferDataItem } from '@/components/DataLifecycle/TransferToLifecycleModal';
 
 const { Dragger } = Upload;
 
@@ -44,7 +47,7 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 const VectorizationContent: React.FC = () => {
-  const { t } = useTranslation(['common']);
+  const { t } = useTranslation(['common', 'aiProcessing']);
   const {
     jobs, records, recordPagination,
     isUploading, isLoadingJobs, isLoadingRecords, error,
@@ -53,6 +56,8 @@ const VectorizationContent: React.FC = () => {
 
   const [recordModalOpen, setRecordModalOpen] = useState(false);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [selectedRecordKeys, setSelectedRecordKeys] = useState<React.Key[]>([]);
+  const [transferModalOpen, setTransferModalOpen] = useState(false);
 
   useEffect(() => { fetchJobs(); }, [fetchJobs]);
 
@@ -76,6 +81,45 @@ const VectorizationContent: React.FC = () => {
   const handleRecordPageChange = useCallback((page: number, pageSize: number) => {
     if (selectedJobId) fetchRecords(selectedJobId, page, pageSize);
   }, [selectedJobId, fetchRecords]);
+
+  const handleBatchTransfer = useCallback(() => {
+    if (selectedRecordKeys.length === 0) {
+      message.warning(t('aiProcessing:transfer.messages.noDataSelected'));
+      return;
+    }
+    setTransferModalOpen(true);
+  }, [selectedRecordKeys, t]);
+
+  const handleTransferSuccess = useCallback(() => {
+    setSelectedRecordKeys([]);
+    setTransferModalOpen(false);
+    message.success(t('aiProcessing:transfer.messages.success', { 
+      count: selectedRecordKeys.length,
+      stage: t('aiProcessing:transfer.stages.temp_data')
+    }));
+  }, [selectedRecordKeys, t]);
+
+  const handleTransferClose = useCallback(() => {
+    setTransferModalOpen(false);
+  }, []);
+
+  // Convert selected records to TransferDataItem format
+  const getSelectedTransferData = useCallback((): TransferDataItem[] => {
+    return records
+      .filter(record => selectedRecordKeys.includes(record.id))
+      .map(record => ({
+        id: record.id,
+        name: record.chunk_text.substring(0, 50) + (record.chunk_text.length > 50 ? '...' : ''),
+        content: {
+          text: record.chunk_text,
+          chunk_index: record.chunk_index,
+        },
+        metadata: {
+          ...record.metadata,
+          created_at: record.created_at,
+        },
+      }));
+  }, [records, selectedRecordKeys]);
 
   const jobColumns: ColumnsType<VectorizationJob> = [
     {
@@ -138,6 +182,13 @@ const VectorizationContent: React.FC = () => {
     },
   ];
 
+  const rowSelection = {
+    selectedRowKeys: selectedRecordKeys,
+    onChange: (selectedKeys: React.Key[]) => {
+      setSelectedRecordKeys(selectedKeys);
+    },
+  };
+
   return (
     <Space direction="vertical" style={{ width: '100%' }} size="middle">
       {error && (
@@ -192,20 +243,48 @@ const VectorizationContent: React.FC = () => {
         footer={null}
         width={720}
       >
-        <Table<VectorRecord>
-          rowKey="id"
-          columns={recordColumns}
-          dataSource={records}
-          loading={isLoadingRecords}
-          size="small"
-          pagination={{
-            current: recordPagination.page,
-            pageSize: recordPagination.size,
-            total: recordPagination.total,
-            onChange: handleRecordPageChange,
-          }}
-        />
+        <Space direction="vertical" style={{ width: '100%' }} size="middle">
+          {selectedRecordKeys.length > 0 && (
+            <Alert
+              message={t('aiProcessing:transfer.modal.selectedCount', { count: selectedRecordKeys.length })}
+              type="info"
+              showIcon
+              action={
+                <Button
+                  size="small"
+                  type="primary"
+                  icon={<CloudUploadOutlined />}
+                  onClick={handleBatchTransfer}
+                >
+                  {t('aiProcessing:transfer.button')}
+                </Button>
+              }
+            />
+          )}
+          <Table<VectorRecord>
+            rowKey="id"
+            columns={recordColumns}
+            dataSource={records}
+            loading={isLoadingRecords}
+            size="small"
+            rowSelection={rowSelection}
+            pagination={{
+              current: recordPagination.page,
+              pageSize: recordPagination.size,
+              total: recordPagination.total,
+              onChange: handleRecordPageChange,
+            }}
+          />
+        </Space>
       </Modal>
+
+      <TransferToLifecycleModal
+        visible={transferModalOpen}
+        onClose={handleTransferClose}
+        onSuccess={handleTransferSuccess}
+        sourceType="vectorization"
+        selectedData={getSelectedTransferData()}
+      />
     </Space>
   );
 };

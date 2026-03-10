@@ -160,7 +160,7 @@ The Data Lifecycle Management System provides comprehensive end-to-end managemen
 
 ### Requirement 11: Data Flow Visualization Interface
 
-**User Story:** As an administrator, I want to visualize data flow through lifecycle stages with real-time counts, so that I can monitor system status at a glance.
+**User Story:** As an administrator, I want to visualize data flow through lifecycle stages with real-time counts and quick actions, so that I can monitor system status and perform common operations efficiently.
 
 #### Acceptance Criteria
 
@@ -169,10 +169,13 @@ The Data Lifecycle Management System provides comprehensive end-to-end managemen
 3. WHEN a User clicks on a stage, THE System SHALL navigate to detailed management for that stage
 4. THE visualization SHALL update in real-time as data transitions between states
 5. THE Admin_Dashboard SHALL use internationalized labels for all UI elements
+6. THE Admin_Dashboard SHALL provide quick action buttons for common operations (create temp data, add to library, submit review, create task, create enhancement, create trial)
+7. WHEN a User clicks a quick action button, THE System SHALL open an appropriate modal with form fields for the operation
+8. THE System SHALL support flexible data flow allowing users to transfer data directly to any downstream stage without enforcing strict sequential processing
 
 ### Requirement 12: Temporary Data Management Interface
 
-**User Story:** As an administrator, I want to view and manage data in temporary storage, so that I can review, approve, or delete pending data.
+**User Story:** As an administrator, I want to view and manage data in temporary storage with quick actions, so that I can review, approve, or delete pending data efficiently.
 
 #### Acceptance Criteria
 
@@ -182,10 +185,12 @@ The Data Lifecycle Management System provides comprehensive end-to-end managemen
 4. WHEN approving data, THE System SHALL require optional comments and transfer data to Sample_Library
 5. WHEN rejecting data, THE System SHALL require a rejection reason
 6. THE interface SHALL support pagination for large datasets
+7. THE System SHALL provide a quick action button to create new temporary data
+8. WHEN the create temp data button is clicked, THE System SHALL open a modal with form fields for name, content, and metadata
 
 ### Requirement 13: Sample Library Search Interface
 
-**User Story:** As an administrator, I want to search and filter samples in the library, so that I can find relevant data for annotation tasks.
+**User Story:** As an administrator, I want to search and filter samples in the library with quick actions, so that I can find relevant data and perform operations efficiently.
 
 #### Acceptance Criteria
 
@@ -195,11 +200,14 @@ The Data Lifecycle Management System provides comprehensive end-to-end managemen
 4. WHEN samples are selected, THE System SHALL enable creating annotation tasks from selected samples
 5. THE table SHALL display sample ID, category, quality score, tags, and creation date
 6. THE System SHALL use internationalized labels for all filter options and column headers
+7. THE System SHALL provide a quick action button to add data to the sample library from any stage
+8. WHEN the add to library button is clicked, THE System SHALL open a modal allowing users to select data from any stage (temporary data, annotated data, enhanced data) and add them to the library
+9. THE System SHALL support flexible data flow allowing direct transfer to sample library without enforcing sequential stages
 
 
 ### Requirement 14: Annotation Task Management Interface
 
-**User Story:** As an administrator, I want to view, create, and monitor annotation tasks with progress tracking, so that I can coordinate annotation work effectively.
+**User Story:** As an administrator, I want to view, create, and monitor annotation tasks with progress tracking and quick actions, so that I can coordinate annotation work effectively.
 
 #### Acceptance Criteria
 
@@ -209,10 +217,13 @@ The Data Lifecycle Management System provides comprehensive end-to-end managemen
 4. THE System SHALL support expanding task rows to show detailed information and assignment controls
 5. WHEN a task status changes, THE interface SHALL update the display in real-time
 6. THE System SHALL use internationalized labels for all task-related UI elements
+7. THE System SHALL provide a quick action button to create annotation tasks
+8. WHEN the create task button is clicked, THE System SHALL open a modal allowing users to select data from any available stage as the task data source
+9. THE System SHALL support flexible data source selection without enforcing a strict sequential flow
 
 ### Requirement 15: Enhancement Job Monitoring Interface
 
-**User Story:** As an administrator, I want to monitor enhancement jobs and their status, so that I can track data quality improvement operations.
+**User Story:** As an administrator, I want to monitor enhancement jobs and their status with quick actions, so that I can track data quality improvement operations efficiently.
 
 #### Acceptance Criteria
 
@@ -222,19 +233,25 @@ The Data Lifecycle Management System provides comprehensive end-to-end managemen
 4. THE System SHALL display enhancement types with internationalized labels
 5. THE interface SHALL support filtering jobs by status and type
 6. WHEN a job completes, THE System SHALL display quality improvement metrics
+7. THE System SHALL provide a quick action button to create enhancement jobs
+8. WHEN the create enhancement button is clicked, THE System SHALL open a modal allowing users to select data from any available stage as the enhancement source
+9. THE System SHALL support flexible data source selection for enhancement operations
 
 ### Requirement 16: AI Trial Configuration and Execution Interface
 
-**User Story:** As an AI assistant or administrator, I want to configure and execute trial calculations on different data stages, so that I can validate data quality before production use.
+**User Story:** As an AI assistant or administrator, I want to configure and execute trial calculations on different data stages with quick actions, so that I can validate data quality before production use efficiently.
 
 #### Acceptance Criteria
 
 1. THE Admin_Dashboard SHALL provide a form to create trials with name, data stage, AI model, and parameters
-2. THE interface SHALL support selecting data sources from any lifecycle stage
+2. THE interface SHALL support selecting data sources from any lifecycle stage (temporary table, sample library, data source, annotated data, enhanced data)
 3. WHEN a trial is created, THE System SHALL provide an execute action
 4. WHEN a trial completes, THE System SHALL provide a view results action
 5. THE interface SHALL support multi-selecting trials for comparison
 6. THE System SHALL display trial metrics including accuracy, precision, recall, and execution time
+7. THE System SHALL provide a quick action button to create AI trials
+8. WHEN the create trial button is clicked, THE System SHALL open a modal with flexible data stage selection allowing users to select data from any of the 5 lifecycle stages
+9. THE System SHALL support flexible data source selection for AI trial operations without enforcing sequential flow
 
 
 ### Requirement 17: Audit Log Viewing and Export Interface
@@ -355,3 +372,23 @@ The Data Lifecycle Management System provides comprehensive end-to-end managemen
 4. WHEN an enhancement job fails, THE System SHALL preserve original data and provide retry options
 5. THE System SHALL support rollback operations for failed enhancements
 6. THE System SHALL log all errors with sufficient context for debugging
+
+### Requirement 26: Quick Actions and Flexible Data Flow
+
+**User Story:** As an administrator, I want quick action buttons on the dashboard that support flexible data flow, so that I can perform common operations efficiently without following a strict sequential process.
+
+#### Acceptance Criteria
+
+1. THE Admin_Dashboard SHALL provide 6 quick action buttons: Create Temp Data, Add to Library, Submit Review, Create Task, Create Enhancement, Create Trial
+2. WHEN a user clicks any quick action button, THE System SHALL open an appropriate modal with form fields for the operation
+3. THE System SHALL support flexible data flow allowing users to transfer data directly to any downstream stage without enforcing strict sequential processing
+4. WHEN adding data to library, THE System SHALL allow users to select data from any stage (temporary data, annotated data, enhanced data)
+5. WHEN submitting for review, THE System SHALL allow users to select data from any stage and specify a target stage (sample library, annotation task, enhancement task, etc.)
+6. WHEN creating annotation tasks, THE System SHALL allow users to select data from any available stage as the task data source
+7. WHEN creating enhancement jobs, THE System SHALL allow users to select data from any available stage as the enhancement source
+8. WHEN creating AI trials, THE System SHALL allow users to select data from any of the 5 lifecycle stages (temporary table, sample library, data source, annotated data, enhanced data)
+9. WHEN data is submitted for review with a target stage, THE System SHALL make the data visible in the target stage after approval
+10. THE System SHALL NOT enforce a strict sequential flow and SHALL allow direct jumps to any downstream stage
+11. ALL quick action modals SHALL use internationalized labels and messages
+12. WHEN a quick action operation succeeds, THE System SHALL close the modal, refresh the dashboard, and show a success message
+13. WHEN a quick action operation fails, THE System SHALL show an error message and keep the modal open for correction

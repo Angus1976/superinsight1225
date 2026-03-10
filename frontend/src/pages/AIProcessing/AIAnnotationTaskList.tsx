@@ -29,8 +29,10 @@ import {
   EyeOutlined,
   MoreOutlined,
   PlusOutlined,
+  ExportOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
+import TransferToLifecycleModal, { TransferDataItem } from '@/components/DataLifecycle/TransferToLifecycleModal';
 
 const { Title, Text } = Typography;
 
@@ -60,6 +62,8 @@ const AIAnnotationTaskList: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [selectedTask, setSelectedTask] = useState<AnnotationTask | null>(null);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
+  const [transferModalVisible, setTransferModalVisible] = useState(false);
+  const [taskToTransfer, setTaskToTransfer] = useState<AnnotationTask | null>(null);
 
   useEffect(() => {
     loadTasks();
@@ -232,6 +236,46 @@ const AIAnnotationTaskList: React.FC = () => {
         }
       },
     });
+  };
+
+  const handleTransferToLifecycle = (task: AnnotationTask) => {
+    setTaskToTransfer(task);
+    setTransferModalVisible(true);
+  };
+
+  const handleTransferSuccess = () => {
+    message.success(t('transfer.messages.success'));
+    setTransferModalVisible(false);
+    setTaskToTransfer(null);
+  };
+
+  const handleTransferClose = () => {
+    setTransferModalVisible(false);
+    setTaskToTransfer(null);
+  };
+
+  // Convert task to transfer data format
+  const getTransferData = (task: AnnotationTask): TransferDataItem[] => {
+    return [{
+      id: task.id,
+      name: task.name,
+      content: {
+        annotationType: task.annotation_type,
+        progress: task.progress,
+        learningJobId: task.learning_job_id,
+        batchJobId: task.batch_job_id,
+      },
+      metadata: {
+        projectId: task.project_id,
+        dataSourceId: task.data_source_id,
+        status: task.status,
+        annotatedCount: task.progress.annotated_count,
+        totalCount: task.progress.total_count,
+        averageConfidence: task.progress.average_confidence,
+        createdAt: task.created_at,
+        updatedAt: task.updated_at,
+      },
+    }];
   };
 
   const getActionMenu = (task: AnnotationTask) => (
@@ -425,10 +469,25 @@ const AIAnnotationTaskList: React.FC = () => {
         open={detailModalVisible}
         onCancel={() => setDetailModalVisible(false)}
         footer={[
+          selectedTask?.status === 'completed' ? (
+            <Button 
+              key="transfer" 
+              type="primary"
+              icon={<ExportOutlined />}
+              onClick={() => {
+                if (selectedTask) {
+                  handleTransferToLifecycle(selectedTask);
+                  setDetailModalVisible(false);
+                }
+              }}
+            >
+              {t('transfer.button')}
+            </Button>
+          ) : null,
           <Button key="close" onClick={() => setDetailModalVisible(false)}>
             {t('task_list.modal.close')}
           </Button>,
-        ]}
+        ].filter(Boolean)}
         width={700}
       >
         {selectedTask && (
@@ -491,6 +550,17 @@ const AIAnnotationTaskList: React.FC = () => {
           </Space>
         )}
       </Modal>
+
+      {/* Transfer to Lifecycle Modal */}
+      {taskToTransfer && (
+        <TransferToLifecycleModal
+          visible={transferModalVisible}
+          onClose={handleTransferClose}
+          onSuccess={handleTransferSuccess}
+          sourceType="ai_annotation"
+          selectedData={getTransferData(taskToTransfer)}
+        />
+      )}
     </Space>
   );
 };

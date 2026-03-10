@@ -1,0 +1,104 @@
+{
+  "transfer": {
+    "title": "Transfer to Data Lifecycle",
+    "button": "Transfer to Data Lifecycle",
+    "modal": {
+      "title": "Transfer Data to Data Lifecycle",
+      "selectStage": "Select Target Stage",
+      "dataType": "Data Type",
+      "tags": "Tags",
+      "tagsPlaceholder": "Enter tags and press Enter",
+      "remark": "Remark",
+      "remarkPlaceholder": "Add remark (optional)",
+      "qualityThreshold": "Quality Threshold",
+      "qualityThresholdTooltip": "Only transfer annotations above this confidence threshold",
+      "confidenceRange": "(0-1)",
+      "selectedCount": "{{count}} item(s) selected",
+      "preview": "Data Preview",
+      "typeGrouping": "Grouped by Type",
+      "annotationInfo": "Annotation Task Info",
+      "taskName": "Task Name",
+      "annotationCount": "Annotation Data Count",
+      "qualityDistribution": "Quality Distribution",
+      "highQuality": "High Quality",
+      "mediumQuality": "Medium Quality",
+      "lowQuality": "Low Quality"
+    },
+    "stages": {
+      "temp_data": "Temporary Data",
+      "sample_library": "Sample Library",
+      "annotated": "Annotated",
+      "enhanced": "Enhanced"
+    },
+    "dataTypes": {
+      "text": "Text",
+      "image": "Image",
+      "audio": "Audio",
+      "video": "Video"
+    },
+    "messages": {
+      "transferring": "Transferring...",
+      "success": "Successfully transferred {{count}} item(s) to {{stage}}",
+      "partialSuccess": "Transfer completed: {{success}} succeeded, {{failed}} failed",
+      "failed": "Transfer failed: {{reason}}",
+      "noDataSelected": "Please select data to transfer",
+      "noStageSelected": "Please select target stage",
+      "validationFailed": "Data validation failed",
+      "permissionDenied": "Permission denied, cannot transfer to this stage"
+    },
+    "progress": {
+      "title": "Transfer Progress",
+      "processing": "Processing {{current}}/{{total}}",
+      "estimatedTime": "Estimated time remaining: {{time}}",
+      "cancel": "Cancel Transfer"
+    },
+    "result": {
+      "title": "Transfer Result",
+      "summary": "Success: {{success}}, Failed: {{failed}}, Skipped: {{skipped}}",
+      "failedItems": "Failed Items",
+      "downloadReport": "Download Report"
+    },
+    "approval": {
+      "title": "Approval Request",
+      "submitApproval": "Submit for Approval",
+      "directTransfer": "Direct Transfer",
+      "reason": "Reason",
+      "reasonPlaceholder": "Please explain the reason for transfer",
+      "status": {
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      },
+      "messages": {
+        "submitted": "Approval request submitted, waiting for approval",
+        "approved": "Approval granted, data transferred successfully",
+        "rejected": "Approval rejected: {{reason}}",
+        "noPermission": "You don't have transfer permission"
+      },
+      "management": {
+        "title": "Approval Management",
+        "pendingCount": "{{count}} pending approval(s)",
+        "approve": "Approve",
+        "reject": "Reject",
+        "comment": "Comment",
+        "approver": "Approver",
+        "approvedAt": "Approved At"
+      },
+      "notification": {
+        "newRequest": "You have a new transfer approval request",
+        "approved": "Your transfer request has been approved",
+        "rejected": "Your transfer request has been rejected",
+        "reminder": "You have {{count}} pending approval request(s)"
+      }
+    },
+    "permission": {
+      "level": {
+        "administrator": "Administrator",
+        "directTransfer": "Direct Transfer",
+        "approvalRequired": "Approval Required",
+        "noPermission": "No Permission"
+      },
+      "yourLevel": "Your permission level: {{level}}"
+    }
+  }
+}

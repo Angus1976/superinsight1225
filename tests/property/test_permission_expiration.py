@@ -9,7 +9,7 @@ honored after the expiration date.
 """
 
 import pytest
-from hypothesis import given, strategies as st, assume, settings
+from hypothesis import given, strategies as st, assume, settings, HealthCheck
 from datetime import datetime, timedelta
 from uuid import uuid4
 from sqlalchemy.orm import Session
@@ -77,7 +77,7 @@ def expiring_permission_strategy(draw):
 @given(
     grant_data=expiring_permission_strategy()
 )
-@settings(max_examples=50, deadline=None)
+@settings(max_examples=50, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
 def test_permission_expiration_before_expiry(
     db_session: Session,
     grant_data: dict
@@ -115,7 +115,7 @@ def test_permission_expiration_before_expiry(
 @given(
     grant_data=expiring_permission_strategy()
 )
-@settings(max_examples=50, deadline=None)
+@settings(max_examples=50, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
 def test_permission_expiration_after_expiry(
     db_session: Session,
     grant_data: dict
@@ -159,7 +159,7 @@ def test_permission_expiration_after_expiry(
 @given(
     grant_data=expiring_permission_strategy()
 )
-@settings(max_examples=50, deadline=None)
+@settings(max_examples=50, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
 def test_permission_expiration_at_exact_expiry(
     db_session: Session,
     grant_data: dict
@@ -201,7 +201,7 @@ def test_permission_expiration_at_exact_expiry(
 @given(
     grant_data=expiring_permission_strategy()
 )
-@settings(max_examples=50, deadline=None)
+@settings(max_examples=50, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
 def test_permission_expiration_one_second_before(
     db_session: Session,
     grant_data: dict
@@ -245,7 +245,7 @@ def test_permission_expiration_one_second_before(
 @given(
     grant_data=expiring_permission_strategy()
 )
-@settings(max_examples=50, deadline=None)
+@settings(max_examples=50, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
 def test_permission_expiration_cleanup(
     db_session: Session,
     grant_data: dict
@@ -292,7 +292,7 @@ def test_permission_expiration_cleanup(
 @given(
     grant_data=expiring_permission_strategy()
 )
-@settings(max_examples=50, deadline=None)
+@settings(max_examples=50, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
 def test_permission_expiration_get_user_permissions(
     db_session: Session,
     grant_data: dict
@@ -356,7 +356,7 @@ def test_permission_expiration_get_user_permissions(
 @given(
     grant_data=expiring_permission_strategy()
 )
-@settings(max_examples=50, deadline=None)
+@settings(max_examples=50, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
 def test_permission_expiration_get_resource_permissions(
     db_session: Session,
     grant_data: dict
@@ -423,7 +423,7 @@ def test_permission_expiration_get_resource_permissions(
     actions=st.lists(action_strategy(), min_size=1, max_size=3, unique=True),
     granted_by=user_id_strategy()
 )
-@settings(max_examples=50, deadline=None)
+@settings(max_examples=50, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
 def test_permission_no_expiration_always_valid(
     db_session: Session,
     user_id: str,

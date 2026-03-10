@@ -23,10 +23,13 @@ import {
   InboxOutlined,
   ReloadOutlined,
   EyeOutlined,
+  CloudUploadOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useSemanticStore } from '@/stores/semanticStore';
 import type { SemanticJob, SemanticRecord, SemanticRecordType } from '@/stores/semanticStore';
+import TransferToLifecycleModal from '@/components/DataLifecycle/TransferToLifecycleModal';
+import type { TransferDataItem } from '@/components/DataLifecycle/TransferToLifecycleModal';
 import type { ColumnsType } from 'antd/es/table';
 
 const { Dragger } = Upload;
@@ -53,7 +56,7 @@ const RECORD_TYPE_COLOR: Record<string, string> = {
 };
 
 const SemanticContent: React.FC = () => {
-  const { t } = useTranslation(['common']);
+  const { t } = useTranslation(['common', 'aiProcessing']);
   const {
     jobs, records, recordPagination,
     isUploading, isLoadingJobs, isLoadingRecords, error,
@@ -63,6 +66,8 @@ const SemanticContent: React.FC = () => {
   const [recordModalOpen, setRecordModalOpen] = useState(false);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [recordTypeFilter, setRecordTypeFilter] = useState<SemanticRecordType | undefined>(undefined);
+  const [selectedRecordKeys, setSelectedRecordKeys] = useState<React.Key[]>([]);
+  const [transferModalVisible, setTransferModalVisible] = useState(false);
 
   useEffect(() => { fetchJobs(); }, [fetchJobs]);
 
@@ -92,6 +97,42 @@ const SemanticContent: React.FC = () => {
   const handleRecordPageChange = useCallback((page: number, pageSize: number) => {
     if (selectedJobId) fetchRecords(selectedJobId, page, pageSize, recordTypeFilter);
   }, [selectedJobId, recordTypeFilter, fetchRecords]);
+
+  const handleOpenTransferModal = useCallback(() => {
+    if (selectedRecordKeys.length === 0) {
+      message.warning(t('aiProcessing:transfer.messages.noDataSelected'));
+      return;
+    }
+    setTransferModalVisible(true);
+  }, [selectedRecordKeys, t]);
+
+  const handleTransferSuccess = useCallback(() => {
+    setTransferModalVisible(false);
+    setSelectedRecordKeys([]);
+    message.success(t('aiProcessing:transfer.messages.success', { 
+      count: selectedRecordKeys.length,
+      stage: t('aiProcessing:transfer.stages.temp_data')
+    }));
+  }, [selectedRecordKeys, t]);
+
+  const getSelectedRecordsData = useCallback((): TransferDataItem[] => {
+    return records
+      .filter(record => selectedRecordKeys.includes(record.id))
+      .map(record => ({
+        id: record.id,
+        name: `${record.record_type}-${record.id.substring(0, 8)}`,
+        content: {
+          text: JSON.stringify(record.content),
+          recordType: record.record_type,
+          ...record.content,
+        },
+        metadata: {
+          recordType: record.record_type,
+          confidence: record.confidence,
+          createdAt: record.created_at,
+        },
+      }));
+  }, [records, selectedRecordKeys]);
 
   const jobColumns: ColumnsType<SemanticJob> = [
     {
@@ -162,6 +203,13 @@ const SemanticContent: React.FC = () => {
     },
   ];
 
+  const rowSelection = {
+    selectedRowKeys: selectedRecordKeys,
+    onChange: (selectedKeys: React.Key[]) => {
+      setSelectedRecordKeys(selectedKeys);
+    },
+  };
+
   return (
     <Space direction="vertical" style={{ width: '100%' }} size="middle">
       {error && (
@@ -216,35 +264,56 @@ const SemanticContent: React.FC = () => {
         footer={null}
         width={720}
       >
-        <Space style={{ marginBottom: 12 }}>
-          <Text>{t('common:aiProcessing.semantic.filterLabel', { defaultValue: '按类型筛选：' })}</Text>
-          <Select
-            allowClear
-            placeholder={t('common:aiProcessing.semantic.allTypes', { defaultValue: '全部' })}
-            value={recordTypeFilter}
-            onChange={handleRecordTypeChange}
-            style={{ width: 140 }}
-            options={[
-              { value: 'entity', label: t('common:aiProcessing.semantic.entity', { defaultValue: '实体' }) },
-              { value: 'relationship', label: t('common:aiProcessing.semantic.relationship', { defaultValue: '关系' }) },
-              { value: 'summary', label: t('common:aiProcessing.semantic.summary', { defaultValue: '摘要' }) },
-            ]}
+        <Space direction="vertical" style={{ width: '100%' }} size="middle">
+          <Space style={{ width: '100%', justifyContent: 'space-between' }}>
+            <Space>
+              <Text>{t('common:aiProcessing.semantic.filterLabel', { defaultValue: '按类型筛选：' })}</Text>
+              <Select
+                allowClear
+                placeholder={t('common:aiProcessing.semantic.allTypes', { defaultValue: '全部' })}
+                value={recordTypeFilter}
+                onChange={handleRecordTypeChange}
+                style={{ width: 140 }}
+                options={[
+                  { value: 'entity', label: t('common:aiProcessing.semantic.entity', { defaultValue: '实体' }) },
+                  { value: 'relationship', label: t('common:aiProcessing.semantic.relationship', { defaultValue: '关系' }) },
+                  { value: 'summary', label: t('common:aiProcessing.semantic.summary', { defaultValue: '摘要' }) },
+                ]}
+              />
+            </Space>
+            <Button
+              type="primary"
+              icon={<CloudUploadOutlined />}
+              disabled={selectedRecordKeys.length === 0}
+              onClick={handleOpenTransferModal}
+            >
+              {t('aiProcessing:transfer.button')}
+            </Button>
+          </Space>
+          <Table<SemanticRecord>
+            rowKey="id"
+            columns={recordColumns}
+            dataSource={records}
+            loading={isLoadingRecords}
+            size="small"
+            rowSelection={rowSelection}
+            pagination={{
+              current: recordPagination.page,
+              pageSize: recordPagination.size,
+              total: recordPagination.total,
+              onChange: handleRecordPageChange,
+            }}
           />
         </Space>
-        <Table<SemanticRecord>
-          rowKey="id"
-          columns={recordColumns}
-          dataSource={records}
-          loading={isLoadingRecords}
-          size="small"
-          pagination={{
-            current: recordPagination.page,
-            pageSize: recordPagination.size,
-            total: recordPagination.total,
-            onChange: handleRecordPageChange,
-          }}
-        />
       </Modal>
+
+      <TransferToLifecycleModal
+        visible={transferModalVisible}
+        onClose={() => setTransferModalVisible(false)}
+        onSuccess={handleTransferSuccess}
+        sourceType="semantic"
+        selectedData={getSelectedRecordsData()}
+      />
     </Space>
   );
 };

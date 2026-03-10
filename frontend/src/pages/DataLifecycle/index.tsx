@@ -22,6 +22,12 @@ import { useTranslation } from 'react-i18next';
 import { useTempData, useSampleLibrary, useReview, useAnnotationTask, useEnhancement, useAITrial } from '@/hooks/useDataLifecycle';
 import { useAuthStore } from '@/stores/authStore';
 import { HelpIcon } from '@/components/SmartHelp';
+import CreateTempDataModal from '@/components/DataLifecycle/CreateTempDataModal';
+import AddToLibraryModal from '@/components/DataLifecycle/AddToLibraryModal';
+import SubmitReviewModal from '@/components/DataLifecycle/SubmitReviewModal';
+import CreateTaskModal from '@/components/DataLifecycle/CreateTaskModal';
+import CreateEnhancementModal from '@/components/DataLifecycle/CreateEnhancementModal';
+import CreateTrialModal from '@/components/DataLifecycle/CreateTrialModal';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -161,9 +167,28 @@ const SummaryStats: React.FC<SummaryStatsProps> = ({
 // Quick Actions Component
 // ============================================================================
 
+interface ModalVisibility {
+  createTempData: boolean;
+  addToLibrary: boolean;
+  submitReview: boolean;
+  createTask: boolean;
+  createEnhancement: boolean;
+  createTrial: boolean;
+}
+
 const QuickActions: React.FC = () => {
   const { t } = useTranslation('dataLifecycle');
   const { hasPermission } = useAuthStore();
+
+  // Modal visibility state
+  const [modalVisibility, setModalVisibility] = useState<ModalVisibility>({
+    createTempData: false,
+    addToLibrary: false,
+    submitReview: false,
+    createTask: false,
+    createEnhancement: false,
+    createTrial: false,
+  });
 
   const actions = [
     { key: 'createTempData', label: t('tempData.actions.create'), icon: <DatabaseOutlined />, permission: 'dataLifecycle.create', color: '#1890ff' },
@@ -175,8 +200,11 @@ const QuickActions: React.FC = () => {
   ];
 
   const handleAction = (key: string) => {
-    // TODO: Implement action handlers
-    console.log('Quick action:', key);
+    setModalVisibility(prev => ({ ...prev, [key]: true }));
+  };
+
+  const closeModal = (key: keyof ModalVisibility) => {
+    setModalVisibility(prev => ({ ...prev, [key]: false }));
   };
 
   return (
@@ -200,6 +228,32 @@ const QuickActions: React.FC = () => {
           </Col>
         ))}
       </Row>
+
+      {/* Modal components */}
+      <CreateTempDataModal
+        visible={modalVisibility.createTempData}
+        onClose={() => closeModal('createTempData')}
+      />
+      <AddToLibraryModal
+        visible={modalVisibility.addToLibrary}
+        onClose={() => closeModal('addToLibrary')}
+      />
+      <SubmitReviewModal
+        visible={modalVisibility.submitReview}
+        onClose={() => closeModal('submitReview')}
+      />
+      <CreateTaskModal
+        visible={modalVisibility.createTask}
+        onClose={() => closeModal('createTask')}
+      />
+      <CreateEnhancementModal
+        visible={modalVisibility.createEnhancement}
+        onClose={() => closeModal('createEnhancement')}
+      />
+      <CreateTrialModal
+        visible={modalVisibility.createTrial}
+        onClose={() => closeModal('createTrial')}
+      />
     </Card>
   );
 };

@@ -1180,7 +1180,7 @@ Test complete workflows end-to-end:
 
 ### Admin Dashboard Overview
 
-The admin dashboard provides end-to-end visualization and management of the data lifecycle. All UI components follow the project's i18n standards.
+The admin dashboard provides end-to-end visualization and management of the data lifecycle with quick action buttons for common operations. All UI components follow the project's i18n standards and support flexible data flow without enforcing strict sequential processing.
 
 #### Dashboard Layout
 
@@ -1193,13 +1193,168 @@ The admin dashboard provides end-to-end visualization and management of the data
 │  │             │  │                                      │ │
 │  │  - Overview │  │  [Data Flow Visualization]           │ │
 │  │  - Temp     │  │                                      │ │
-│  │  - Samples  │  │  [Statistics Cards]                  │ │
+│  │  - Samples  │  │  [Quick Actions - 6 buttons]         │ │
 │  │  - Tasks    │  │                                      │ │
-│  │  - Enhanced │  │  [Recent Activities]                 │ │
+│  │  - Enhanced │  │  [Statistics Cards]                  │ │
 │  │  - AI Trial │  │                                      │ │
-│  │  - Audit    │  │                                      │ │
+│  │  - Audit    │  │  [Recent Activities]                 │ │
 │  └─────────────┘  └──────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────┘
+```
+
+#### Quick Actions Component
+
+**Purpose**: Provide quick access to common operations with flexible data flow support
+
+**Component Structure**:
+```typescript
+interface QuickActionsProps {
+  onRefresh: () => void
+}
+
+const QuickActions: React.FC<QuickActionsProps> = ({ onRefresh }) => {
+  const { t } = useTranslation('dataLifecycle')
+  
+  // Modal visibility state
+  const [createTempDataVisible, setCreateTempDataVisible] = useState(false)
+  const [addToLibraryVisible, setAddToLibraryVisible] = useState(false)
+  const [submitReviewVisible, setSubmitReviewVisible] = useState(false)
+  const [createTaskVisible, setCreateTaskVisible] = useState(false)
+  const [createEnhancementVisible, setCreateEnhancementVisible] = useState(false)
+  const [createTrialVisible, setCreateTrialVisible] = useState(false)
+  
+  const handleAction = (key: string) => {
+    switch (key) {
+      case 'createTempData':
+        setCreateTempDataVisible(true)
+        break
+      case 'addToLibrary':
+        setAddToLibraryVisible(true)
+        break
+      case 'submitReview':
+        setSubmitReviewVisible(true)
+        break
+      case 'createTask':
+        setCreateTaskVisible(true)
+        break
+      case 'createEnhancement':
+        setCreateEnhancementVisible(true)
+        break
+      case 'createTrial':
+        setCreateTrialVisible(true)
+        break
+    }
+  }
+  
+  return (
+    <div className="quick-actions">
+      <h3>{t('quickActions.title')}</h3>
+      <Space wrap>
+        <Button 
+          icon={<PlusOutlined />}
+          onClick={() => handleAction('createTempData')}
+        >
+          {t('quickActions.createTempData')}
+        </Button>
+        <Button 
+          icon={<DatabaseOutlined />}
+          onClick={() => handleAction('addToLibrary')}
+        >
+          {t('quickActions.addToLibrary')}
+        </Button>
+        <Button 
+          icon={<CheckCircleOutlined />}
+          onClick={() => handleAction('submitReview')}
+        >
+          {t('quickActions.submitReview')}
+        </Button>
+        <Button 
+          icon={<CheckSquareOutlined />}
+          onClick={() => handleAction('createTask')}
+        >
+          {t('quickActions.createTask')}
+        </Button>
+        <Button 
+          icon={<ThunderboltOutlined />}
+          onClick={() => handleAction('createEnhancement')}
+        >
+          {t('quickActions.createEnhancement')}
+        </Button>
+        <Button 
+          icon={<ExperimentOutlined />}
+          onClick={() => handleAction('createTrial')}
+        >
+          {t('quickActions.createTrial')}
+        </Button>
+      </Space>
+      
+      {/* Modal Components */}
+      <CreateTempDataModal
+        visible={createTempDataVisible}
+        onCancel={() => setCreateTempDataVisible(false)}
+        onSuccess={() => {
+          setCreateTempDataVisible(false)
+          onRefresh()
+        }}
+      />
+      <AddToLibraryModal
+        visible={addToLibraryVisible}
+        onCancel={() => setAddToLibraryVisible(false)}
+        onSuccess={() => {
+          setAddToLibraryVisible(false)
+          onRefresh()
+        }}
+      />
+      <SubmitReviewModal
+        visible={submitReviewVisible}
+        onCancel={() => setSubmitReviewVisible(false)}
+        onSuccess={() => {
+          setSubmitReviewVisible(false)
+          onRefresh()
+        }}
+      />
+      <CreateTaskModal
+        visible={createTaskVisible}
+        onCancel={() => setCreateTaskVisible(false)}
+        onSuccess={() => {
+          setCreateTaskVisible(false)
+          onRefresh()
+        }}
+      />
+      <CreateEnhancementModal
+        visible={createEnhancementVisible}
+        onCancel={() => setCreateEnhancementVisible(false)}
+        onSuccess={() => {
+          setCreateEnhancementVisible(false)
+          onRefresh()
+        }}
+      />
+      <CreateTrialModal
+        visible={createTrialVisible}
+        onCancel={() => setCreateTrialVisible(false)}
+        onSuccess={() => {
+          setCreateTrialVisible(false)
+          onRefresh()
+        }}
+      />
+    </div>
+  )
+}
+```
+
+**i18n Keys**:
+```json
+{
+  "quickActions": {
+    "title": "快速操作",
+    "createTempData": "创建临时数据",
+    "addToLibrary": "添加到样本库",
+    "submitReview": "提交审核",
+    "createTask": "创建标注任务",
+    "createEnhancement": "创建增强任务",
+    "createTrial": "创建AI试算"
+  }
+}
 ```
 
 ### UI Component 1: Data Flow Visualization

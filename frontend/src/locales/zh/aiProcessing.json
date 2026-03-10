@@ -1,0 +1,104 @@
+{
+  "transfer": {
+    "title": "转存至数据生命周期",
+    "button": "转存至数据生命周期",
+    "modal": {
+      "title": "转存数据到数据生命周期",
+      "selectStage": "选择目标阶段",
+      "dataType": "数据类型",
+      "tags": "标签",
+      "tagsPlaceholder": "输入标签后按回车",
+      "remark": "备注",
+      "remarkPlaceholder": "添加备注信息（可选）",
+      "qualityThreshold": "质量阈值",
+      "qualityThresholdTooltip": "只转存置信度高于此阈值的标注结果",
+      "confidenceRange": "(0-1)",
+      "selectedCount": "已选择 {{count}} 条数据",
+      "preview": "数据预览",
+      "typeGrouping": "按类型分组",
+      "annotationInfo": "标注任务信息",
+      "taskName": "任务名称",
+      "annotationCount": "标注数据数量",
+      "qualityDistribution": "质量分布",
+      "highQuality": "高质量",
+      "mediumQuality": "中等质量",
+      "lowQuality": "低质量"
+    },
+    "stages": {
+      "temp_data": "临时数据",
+      "sample_library": "样本库",
+      "annotated": "已标注",
+      "enhanced": "已增强"
+    },
+    "dataTypes": {
+      "text": "文本",
+      "image": "图像",
+      "audio": "音频",
+      "video": "视频"
+    },
+    "messages": {
+      "transferring": "正在转存...",
+      "success": "成功转存 {{count}} 条数据到{{stage}}",
+      "partialSuccess": "转存完成：成功 {{success}} 条，失败 {{failed}} 条",
+      "failed": "转存失败：{{reason}}",
+      "noDataSelected": "请先选择要转存的数据",
+      "noStageSelected": "请选择目标阶段",
+      "validationFailed": "数据验证失败",
+      "permissionDenied": "权限不足，无法转存到该阶段"
+    },
+    "progress": {
+      "title": "转存进度",
+      "processing": "正在处理 {{current}}/{{total}}",
+      "estimatedTime": "预计剩余时间：{{time}}",
+      "cancel": "取消转存"
+    },
+    "result": {
+      "title": "转存结果",
+      "summary": "成功：{{success}} 条，失败：{{failed}} 条，跳过：{{skipped}} 条",
+      "failedItems": "失败项目",
+      "downloadReport": "下载报告"
+    },
+    "approval": {
+      "title": "审批申请",
+      "submitApproval": "提交审批",
+      "directTransfer": "直接转存",
+      "reason": "申请理由",
+      "reasonPlaceholder": "请说明转存原因",
+      "status": {
+        "pending": "待审批",
+        "approved": "已批准",
+        "rejected": "已拒绝"
+      },
+      "messages": {
+        "submitted": "审批申请已提交，等待审批",
+        "approved": "审批已通过，数据转存成功",
+        "rejected": "审批已拒绝：{{reason}}",
+        "noPermission": "您没有转存权限"
+      },
+      "management": {
+        "title": "审批管理",
+        "pendingCount": "待审批 {{count}} 条",
+        "approve": "批准",
+        "reject": "拒绝",
+        "comment": "审批意见",
+        "approver": "审批人",
+        "approvedAt": "审批时间"
+      },
+      "notification": {
+        "newRequest": "您有新的转存审批申请",
+        "approved": "您的转存申请已批准",
+        "rejected": "您的转存申请已拒绝",
+        "reminder": "您有 {{count}} 条待审批申请"
+      }
+    },
+    "permission": {
+      "level": {
+        "administrator": "管理员",
+        "directTransfer": "直接转存",
+        "approvalRequired": "需要审批",
+        "noPermission": "无权限"
+      },
+      "yourLevel": "您的权限级别：{{level}}"
+    }
+  }
+}

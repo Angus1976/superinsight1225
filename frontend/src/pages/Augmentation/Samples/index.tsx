@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import type { ColumnsType } from 'antd/es/table';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
+import { TransferButton } from '@/components/DataLifecycle/TransferButton';
 
 interface AugmentationSample {
   id: string;
@@ -16,12 +17,21 @@ interface AugmentationSample {
   qualityScore: number;
   createdAt: string;
   updatedAt: string;
+  // Augmentation relationship fields
+  strategy?: string;
+  jobId?: string;
+  originalSampleIds?: string[];
+  // Augmentation method and parameters
+  enhancementType?: string;
+  augmentationParams?: Record<string, any>;
+  targetQuality?: number;
 }
 
 const AugmentationSamples: React.FC = () => {
   const { t } = useTranslation('augmentation');
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingSample, setEditingSample] = useState<AugmentationSample | null>(null);
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [form] = Form.useForm();
   const queryClient = useQueryClient();
 
@@ -67,6 +77,61 @@ const AugmentationSamples: React.FC = () => {
       message.error(t('sampleManagement.deleteFailed'));
     },
   });
+
+  // Get selected samples for transfer
+  const selectedSamples = samples?.filter(sample =>
+    selectedRowKeys.includes(sample.id)
+  ) || [];
+
+  // Convert selected samples to TransferRecord format with augmentation relationships
+  const transferRecords = selectedSamples.map(sample => ({
+    id: sample.id,
+    content: {
+      name: sample.name,
+      type: sample.type,
+      originalCount: sample.originalCount,
+      augmentedCount: sample.augmentedCount,
+      qualityScore: sample.qualityScore,
+    },
+    metadata: {
+      createdAt: sample.createdAt,
+      updatedAt: sample.updatedAt,
+      status: sample.status,
+      // Augmentation relationship metadata
+      is_augmented: sample.augmentedCount > 0,
+      augmentation_ratio: sample.originalCount > 0 
+        ? sample.augmentedCount / sample.originalCount 
+        : 0,
+      has_original_samples: sample.originalCount > 0,
+      augmentation_timestamp: sample.updatedAt,
+      // Include augmentation strategy if available
+      ...(sample.strategy && { augmentation_strategy: sample.strategy }),
+      // Include job ID for traceability
+      ...(sample.jobId && { augmentation_job_id: sample.jobId }),
+      // Include original sample IDs for relationship tracking
+      ...(sample.originalSampleIds && { original_sample_ids: sample.originalSampleIds }),
+      // Augmentation method and parameters (Task 3.2.3)
+      ...(sample.enhancementType && { 
+        augmentation_method: sample.enhancementType,
+        enhancement_type: sample.enhancementType 
+      }),
+      ...(sample.augmentationParams && { 
+        augmentation_params: sample.augmentationParams,
+        augmentation_config: sample.augmentationParams 
+      }),
+      ...(sample.targetQuality !== undefined && { 
+        target_quality: sample.targetQuality 
+      }),
+    },
+  }));
+
+  const handleTransferSuccess = (result: any) => {
+    message.success(t('sampleManagement.transferSuccess', {
+      count: result.transferred_count
+    }));
+    setSelectedRowKeys([]);
+    queryClient.invalidateQueries({ queryKey: ['augmentation-samples'] });
+  };
 
   const columns: ColumnsType<AugmentationSample> = [
     {
@@ -199,6 +264,13 @@ const AugmentationSamples: React.FC = () => {
     },
   };
 
+  const rowSelection = {
+    selectedRowKeys,
+    onChange: (newSelectedRowKeys: React.Key[]) => {
+      setSelectedRowKeys(newSelectedRowKeys);
+    },
+  };
+
   return (
     <div className="augmentation-samples">
       <Card
@@ -222,7 +294,22 @@ const AugmentationSamples: React.FC = () => {
           </Space>
         }
       >
+        {selectedRowKeys.length > 0 && (
+          <div style={{ marginBottom: 16 }}>
+            <Space>
+              <span>{t('sampleManagement.selectedCount', { count: selectedRowKeys.length })}</span>
+              <TransferButton
+                sourceType="augmentation"
+                sourceId="augmentation-samples-batch"
+                records={transferRecords}
+                disabled={selectedRowKeys.length === 0}
+                onTransferComplete={handleTransferSuccess}
+              />
+            </Space>
+          </div>
+        )}
         <Table
+          rowSelection={rowSelection}
           columns={columns}
           dataSource={samples}
           loading={isLoading}
@@ -276,6 +363,6 @@ const AugmentationSamples: React.FC = () => {
       </Modal>
     </div>
   );
-};
+}
 
 export default AugmentationSamples;

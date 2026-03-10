@@ -23,6 +23,14 @@ class AugmentationSample(BaseModel):
     quality_score: float = Field(default=0.0, description="Quality/Accuracy score (0-1)")
     created_at: str
     updated_at: str
+    # Augmentation relationship fields
+    strategy: Optional[str] = Field(None, description="Augmentation strategy used")
+    job_id: Optional[str] = Field(None, description="Enhancement job ID for traceability")
+    original_sample_ids: Optional[List[str]] = Field(None, description="IDs of original samples")
+    # Augmentation method and parameters (Task 3.2.3)
+    enhancement_type: Optional[str] = Field(None, description="Type of enhancement applied")
+    augmentation_params: Optional[Dict[str, Any]] = Field(None, description="Method-specific parameters")
+    target_quality: Optional[float] = Field(None, description="Target quality score (0-1)")
 
 
 class AugmentationConfig(BaseModel):
@@ -57,7 +65,18 @@ async def get_samples(
             "augmented_count": 3500,
             "quality_score": 0.92,
             "created_at": "2025-01-15T10:00:00Z",
-            "updated_at": "2025-01-15T12:30:00Z"
+            "updated_at": "2025-01-15T12:30:00Z",
+            "strategy": "synonym_replacement",
+            "job_id": "job-123",
+            "original_sample_ids": ["orig-1", "orig-2"],
+            "enhancement_type": "TEXT_ENHANCEMENT",
+            "augmentation_params": {
+                "synonym_replacement": True,
+                "random_insertion": True,
+                "augmentation_ratio": 1.5,
+                "temperature": 0.8
+            },
+            "target_quality": 0.9
         },
         {
             "id": "sample2",
@@ -68,7 +87,18 @@ async def get_samples(
             "augmented_count": 850,
             "quality_score": 0.87,
             "created_at": "2025-01-20T09:00:00Z",
-            "updated_at": "2025-01-20T10:00:00Z"
+            "updated_at": "2025-01-20T10:00:00Z",
+            "strategy": "rotation_flip",
+            "job_id": "job-456",
+            "original_sample_ids": ["orig-3"],
+            "enhancement_type": "IMAGE_ENHANCEMENT",
+            "augmentation_params": {
+                "rotation": True,
+                "flip": True,
+                "brightness_range": [0.8, 1.2],
+                "augmentation_ratio": 2.0
+            },
+            "target_quality": 0.85
         }
     ]
     return samples[skip:skip + limit]

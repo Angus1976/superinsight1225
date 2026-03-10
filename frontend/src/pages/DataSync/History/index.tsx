@@ -14,6 +14,7 @@ import {
   Timeline,
   Drawer,
   Descriptions,
+  message,
 } from 'antd';
 import {
   HistoryOutlined,
@@ -25,6 +26,8 @@ import {
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import type { ColumnsType } from 'antd/es/table';
+import { TransferButton } from '@/components/DataLifecycle/TransferButton';
+import type { TransferRecord } from '@/api/dataLifecycleAPI';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -47,6 +50,7 @@ interface SyncHistoryRecord {
 
 const SyncHistory: React.FC = () => {
   const { t } = useTranslation(['dataSync', 'common']);
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [history, setHistory] = useState<SyncHistoryRecord[]>([
     {
       id: 'h1',
@@ -222,6 +226,49 @@ const SyncHistory: React.FC = () => {
   const failedSyncs = history.filter(h => h.status === 'failed').length;
   const totalRows = history.reduce((sum, h) => sum + h.rowsSynced, 0);
 
+  // Row selection configuration
+  const rowSelection = {
+    selectedRowKeys,
+    onChange: (newSelectedRowKeys: React.Key[]) => {
+      setSelectedRowKeys(newSelectedRowKeys);
+    },
+    getCheckboxProps: (record: SyncHistoryRecord) => ({
+      disabled: record.status !== 'completed',
+      title: record.status !== 'completed' ? t('history.transfer.onlyCompleted') : '',
+    }),
+  };
+
+  // Get selected completed records for transfer
+  const selectedRecords = history.filter(
+    h => selectedRowKeys.includes(h.id) && h.status === 'completed'
+  );
+
+  // Convert sync records to transfer format
+  const transferRecords: TransferRecord[] = selectedRecords.map(record => ({
+    id: record.id,
+    content: {
+      job_id: record.jobId,
+      job_name: record.jobName,
+      source_name: record.sourceName,
+      rows_synced: record.rowsSynced,
+      bytes_processed: record.bytesProcessed,
+      started_at: record.startedAt,
+      completed_at: record.completedAt,
+    },
+    metadata: {
+      source_name: record.sourceName,
+      sync_time: record.completedAt,
+      rows_synced: record.rowsSynced,
+      checkpoint_value: record.checkpointValue,
+      duration_ms: record.durationMs,
+    },
+  }));
+
+  const handleTransferComplete = (result: any) => {
+    message.success(t('history.transfer.success', { count: result.transferred_count }));
+    setSelectedRowKeys([]);
+  };
+
   return (
     <div style={{ padding: 24 }}>
       <Title level={3}>
@@ -266,6 +313,14 @@ const SyncHistory: React.FC = () => {
         title={t('history.records')}
         extra={
           <Space>
+            {selectedRowKeys.length > 0 && (
+              <TransferButton
+                sourceType="sync"
+                sourceId={`batch-${Date.now()}`}
+                records={transferRecords}
+                onTransferComplete={handleTransferComplete}
+              />
+            )}
             <RangePicker />
             <Select
               placeholder={t('history.statusFilter')}
@@ -285,6 +340,7 @@ const SyncHistory: React.FC = () => {
           columns={columns}
           dataSource={filteredHistory}
           rowKey="id"
+          rowSelection={rowSelection}
           pagination={{ pageSize: 10 }}
         />
       </Card>

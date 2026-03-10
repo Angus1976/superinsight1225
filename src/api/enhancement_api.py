@@ -11,10 +11,12 @@ Validates: Requirements 6.1, 6.2, 6.3, 6.5, 15.1, 15.3
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 from uuid import UUID
+import logging
 
 from fastapi import (
-    APIRouter, Depends, HTTPException, status, Query
+    APIRouter, Depends, HTTPException, status, Query, Response
 )
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session as DBSession
 
@@ -24,12 +26,49 @@ from src.services.enhancement_service import (
     EnhancementConfig,
 )
 from src.models.data_lifecycle import EnhancementType, JobStatus
+from src.models.data_transfer import (
+    DataTransferRequest,
+    DataAttributes,
+    TransferRecord,
+)
+from src.services.data_transfer_service import DataTransferService, User
+from src.models.data_lifecycle import EnhancedDataModel
 
 
 router = APIRouter(prefix="/api/enhancements", tags=["Enhancements"])
+logger = logging.getLogger(__name__)
 
 # Shared in-memory job storage across requests (service instances are per-request)
 _shared_jobs: Dict[str, Any] = {}
+
+
+# ============================================================================
+# Custom Exception with Headers
+# ============================================================================
+
+class DeprecatedEndpointException(HTTPException):
+    """HTTPException that preserves deprecation headers."""
+    
+    def __init__(self, status_code: int, detail: str):
+        super().__init__(status_code=status_code, detail=detail)
+        self.headers = {
+            "X-Deprecated-Endpoint": "true",
+            "X-New-Endpoint": "/api/data-lifecycle/transfer",
+            "X-Deprecation-Date": "2026-06-10",
+            "X-Deprecation-Info": "https://docs.example.com/migration/data-transfer"
+        }
+
+
+# ============================================================================
+# Deprecation Header Helper
+# ============================================================================
+
+def _add_deprecation_headers(response: Response) -> None:
+    """Add deprecation headers to response."""
+    response.headers["X-Deprecated-Endpoint"] = "true"
+    response.headers["X-New-Endpoint"] = "/api/data-lifecycle/transfer"
+    response.headers["X-Deprecation-Date"] = "2026-06-10"
+    response.headers["X-Deprecation-Info"] = "https://docs.example.com/migration/data-transfer"
 
 
 # ============================================================================
@@ -90,6 +129,116 @@ class ListEnhancementsResponse(BaseModel):
     page: int = Field(..., description="Current page number")
     page_size: int = Field(..., description="Items per page")
     total_pages: int = Field(..., description="Total number of pages")
+
+
+async def _convert_to_new_api(
+    job_id: str,
+    user_id: str,
+    service: EnhancementService,
+    db: DBSession
+) -> Dict[str, Any]:
+    """
+    Convert old add-to-library request to new unified data transfer API.
+    
+    This function bridges the old endpoint to the new unified API, ensuring
+    consistency and reducing code duplication.
+    
+    Args:
+        job_id: Enhancement job ID
+        user_id: User performing the operation
+        service: Enhancement service instance
+        db: Database session
+        
+    Returns:
+        Dictionary matching AddToLibraryResponse format
+        
+    Raises:
+        ValueError: If job not found, not completed, or validation fails
+    """
+    # Validate job exists and is completed
+    job = service._jobs.get(job_id)
+    if not job:
+        raise ValueError(f"Enhancement job {job_id} not found")
+    if job.status != JobStatus.COMPLETED:
+        raise ValueError(
+            f"Cannot add to library: job is {job.status.value}, expected completed"
+        )
+    if not job.enhanced_data_id:
+        raise ValueError("No enhanced data available for this job")
+    
+    # Retrieve enhanced data from database
+    enhanced_record = db.query(EnhancedDataModel).filter(
+        EnhancedDataModel.id == UUID(job.enhanced_data_id)
+    ).first()
+    if not enhanced_record:
+        raise ValueError(
+            f"Enhanced data {job.enhanced_data_id} not found in database"
+        )
+    
+    # Build transfer request in new format
+    transfer_request = DataTransferRequest(
+        source_type="augmentation",
+        source_id=job_id,
+        target_state="in_sample_library",
+        data_attributes=DataAttributes(
+            category="enhanced",
+            tags=["enhanced", enhanced_record.enhancement_type.value],
+            quality_score=enhanced_record.quality_overall,
+            description=f"Enhanced data from job {job_id}"
+        ),
+        records=[
+            TransferRecord(
+                id=str(enhanced_record.id),
+                content=enhanced_record.content,
+                metadata={
+                    "original_data_id": enhanced_record.original_data_id,
+                    "enhancement_job_id": str(enhanced_record.enhancement_job_id),
+                    "enhancement_type": enhanced_record.enhancement_type.value,
+                    "augmentation_method": enhanced_record.enhancement_type.value,
+                    "augmentation_params": job.config.parameters,
+                    "target_quality": job.config.target_quality,
+                }
+            )
+        ]
+    )
+    
+    # Create mock user for transfer service
+    mock_user = User(id=user_id, role="admin")
+    
+    # Call new unified transfer API
+    transfer_service = DataTransferService(db)
+    result = await transfer_service.transfer(transfer_request, mock_user)
+    
+    # Convert new API response back to old format
+    if result.get("approval_required"):
+        raise ValueError(
+            "Transfer requires approval. Please use the new API endpoint "
+            "POST /api/data-lifecycle/transfer for approval workflow support."
+        )
+    
+    # Map to old response format
+    return {
+        "id": result["lifecycle_ids"][0],
+        "data_id": str(enhanced_record.id),
+        "content": enhanced_record.content,
+        "category": "enhanced",
+        "quality_overall": enhanced_record.quality_overall,
+        "quality_completeness": enhanced_record.quality_completeness,
+        "quality_accuracy": enhanced_record.quality_accuracy,
+        "quality_consistency": enhanced_record.quality_consistency,
+        "version": 1,
+        "tags": ["enhanced", enhanced_record.enhancement_type.value],
+        "metadata": {
+            "original_data_id": enhanced_record.original_data_id,
+            "enhancement_job_id": str(enhanced_record.enhancement_job_id),
+            "enhancement_type": enhanced_record.enhancement_type.value,
+            "augmentation_method": enhanced_record.enhancement_type.value,
+            "augmentation_params": job.config.parameters,
+            "target_quality": job.config.target_quality,
+            "transferred_by": user_id,
+        },
+        "created_at": datetime.utcnow().isoformat(),
+    }
 
 
 class AddToLibraryRequest(BaseModel):
@@ -334,33 +483,64 @@ async def cancel_enhancement_job(
     "/{job_id}/add-to-library",
     response_model=AddToLibraryResponse,
     status_code=status.HTTP_201_CREATED,
+    deprecated=True,
 )
 async def add_to_library(
     job_id: str,
     request: AddToLibraryRequest,
+    response: Response,
     service: EnhancementService = Depends(get_enhancement_service),
+    db: DBSession = Depends(get_db_session),
 ):
     """
     Add enhanced data to the sample library for iterative optimization.
 
+    **DEPRECATED**: This endpoint is deprecated and will be removed after 2026-06-10.
+    Please use POST /api/data-lifecycle/transfer instead.
+    
+    The new unified data transfer API provides:
+    - Consistent interface across all data sources
+    - Enhanced permission control
+    - Approval workflow support
+    - Complete internationalization
+    
+    Migration guide: See documentation at /docs/migration/data-transfer
+
     Validates: Requirements 21.1
+    
+    **Implementation Note**: This endpoint now internally calls the new unified
+    data transfer API to ensure consistency and reduce code duplication.
     """
+    # Add deprecation headers to response (will be present on all responses)
+    _add_deprecation_headers(response)
+    
+    # Log deprecation warning
+    logger.warning(
+        f"DEPRECATED ENDPOINT USED: /api/enhancements/{job_id}/add-to-library "
+        f"by user {request.user_id}. This endpoint will be removed after 2026-06-10. "
+        f"Please migrate to POST /api/data-lifecycle/transfer"
+    )
+    
     try:
-        result = service.add_to_sample_library(
-            job_id=job_id, user_id=request.user_id
+        # Convert old request to new unified format
+        result = await _convert_to_new_api(
+            job_id=job_id,
+            user_id=request.user_id,
+            service=service,
+            db=db
         )
         return AddToLibraryResponse(**result)
     except ValueError as e:
         error_msg = str(e)
         if "not found" in error_msg.lower():
-            raise HTTPException(
+            raise DeprecatedEndpointException(
                 status_code=status.HTTP_404_NOT_FOUND, detail=error_msg
             )
-        raise HTTPException(
+        raise DeprecatedEndpointException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=error_msg
         )
     except Exception as e:
-        raise HTTPException(
+        raise DeprecatedEndpointException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to add enhanced data to library: {str(e)}",
         )

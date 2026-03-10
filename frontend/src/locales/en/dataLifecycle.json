@@ -1,8 +1,8 @@
 {
   "interface": {
-    "title": "Data Lifecycle Management",
-    "loading": "Loading data lifecycle management interface...",
-    "pageTitle": "Data Lifecycle Management"
+    "title": "Data Flow",
+    "loading": "Loading data flow interface...",
+    "pageTitle": "Data Flow"
   },
   "tabs": {
     "tempData": "Temporary Data",
@@ -534,5 +534,85 @@
     "enhanced": "Enhanced",
     "trial_calculation": "Trial Calculation",
     "archived": "Archived"
+  },
+  "transfer": {
+    "button": "Transfer Data",
+    "modal": {
+      "title": "Data Transfer Configuration",
+      "description": "Transfer data to the data lifecycle system"
+    },
+    "fields": {
+      "sourceType": "Data Source",
+      "sourceId": "Source ID",
+      "targetState": "Target State",
+      "targetStateRequired": "Please select target state",
+      "category": "Data Category",
+      "categoryRequired": "Please enter category",
+      "categoryPlaceholder": "e.g., Product Information",
+      "tags": "Tags",
+      "tagsPlaceholder": "Add tag",
+      "qualityScore": "Quality Score",
+      "description": "Description",
+      "descriptionPlaceholder": "Enter data description (optional)",
+      "dataAttributes": "Data Attributes"
+    },
+    "sourceTypes": {
+      "structuring": "Data Structuring",
+      "augmentation": "Data Augmentation",
+      "sync": "Data Sync",
+      "annotation": "Data Annotation",
+      "ai_assistant": "AI Assistant",
+      "manual": "Manual Upload"
+    },
+    "targetStates": {
+      "temp_stored": "Temporary Storage",
+      "in_sample_library": "Sample Library",
+      "annotation_pending": "Pending Annotation"
+    },
+    "actions": {
+      "cancel": "Cancel",
+      "confirm": "Confirm Transfer",
+      "transferring": "Transferring..."
+    },
+    "messages": {
+      "success": "Successfully transferred {{count}} records to {{state}}",
+      "successWithNavigation": "Successfully transferred {{count}} records, click to view",
+      "error": "Transfer failed: {{error}}",
+      "approvalRequired": "Transfer request submitted for approval",
+      "approvalEstimatedTime": "Estimated approval time: {{time}}",
+      "permissionDenied": "You don't have permission for this operation",
+      "permissionDeniedDetail": "Requires {{requiredRole}} role, current role: {{currentRole}}",
+      "invalidSource": "Source data not found or incomplete",
+      "validationError": "Data validation failed: {{details}}",
+      "recordCountExceeded": "Record count exceeds limit (max {{max}} records)",
+      "batchTransferNotAllowed": "You don't have permission for batch transfer",
+      "needsApproval": "This operation requires approval",
+      "confirmTransfer": "Confirm transfer of {{count}} records to {{state}}?",
+      "internalError": "Internal server error"
+    },
+    "validation": {
+      "required": "This field is required",
+      "minRecords": "At least 1 record must be selected",
+      "categoryRequired": "Please enter data category",
+      "targetStateRequired": "Please select target state",
+      "invalidQualityScore": "Quality score must be between 0 and 1"
+    },
+    "summary": {
+      "title": "Data Summary",
+      "source": "Source",
+      "recordCount": "Record Count",
+      "fields": "Field List",
+      "preview": "Data Preview"
+    },
+    "permissions": {
+      "requiresApproval": "(Requires Approval)",
+      "noPermission": "(No Permission)",
+      "allowed": "(Allowed)"
+    },
+    "navigation": {
+      "viewData": "View Data Flow",
+      "createAnnotationTask": "Create Annotation Task",
+      "continueProcessing": "Continue Processing Other Data"
+    }
   }
 }

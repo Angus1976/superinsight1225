@@ -155,15 +155,35 @@ const ResultsPage: React.FC = () => {
   // ---- Handle transfer success ----
   const handleTransferSuccess = useCallback(async () => {
     setTransferModalVisible(false);
-    message.success(
-      t('aiProcessing:transfer.messages.success', {
-        count: selectedDataForTransfer.length,
-        stage: t('aiProcessing:transfer.stages.temp_data'),
-      }),
-    );
-    // Optionally navigate to data lifecycle page
-    // navigate('/data-lifecycle');
-  }, [selectedDataForTransfer.length, t]);
+    
+    // Show success message with navigation option
+    const successMessage = t('aiProcessing:transfer.messages.success', {
+      count: selectedDataForTransfer.length,
+      stage: t('aiProcessing:transfer.stages.temp_data'),
+    });
+    
+    message.success({
+      content: (
+        <Space direction="vertical" size="small">
+          <span>{successMessage}</span>
+          <Button
+            type="link"
+            size="small"
+            onClick={() => {
+              message.destroy();
+              navigate('/data-lifecycle');
+            }}
+            style={{ padding: 0, height: 'auto' }}
+          >
+            {t('aiProcessing:transfer.navigation.viewTransferredData', {
+              defaultValue: '查看已转存数据',
+            })}
+          </Button>
+        </Space>
+      ),
+      duration: 6,
+    });
+  }, [selectedDataForTransfer.length, t, navigate]);
 
   // ---- Close transfer modal ----
   const handleCloseTransferModal = useCallback(() => {

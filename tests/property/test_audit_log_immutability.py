@@ -8,7 +8,7 @@ For any audit log entry, attempts to modify or delete it should be prevented.
 """
 
 import pytest
-from hypothesis import given, strategies as st, settings
+from hypothesis import given, strategies as st, settings, HealthCheck
 from datetime import datetime
 from uuid import uuid4
 from sqlalchemy.orm import Session
@@ -126,7 +126,7 @@ class TestAuditLogImmutability:
         log_data=audit_log_data_strategy(),
         modification=field_modification_strategy()
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(max_examples=100, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_audit_log_fields_cannot_be_modified(
         self,
         db_session: Session,
@@ -229,7 +229,7 @@ class TestAuditLogImmutability:
                         f"Field '{field}' must preserve original value after failed modification"
     
     @given(log_data=audit_log_data_strategy())
-    @settings(max_examples=50, deadline=None)
+    @settings(max_examples=50, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_audit_log_cannot_be_deleted(
         self,
         db_session: Session,
@@ -301,7 +301,7 @@ class TestAuditLogImmutability:
                 "Audit log operation_type must be preserved"
     
     @given(log_data=audit_log_data_strategy())
-    @settings(max_examples=50, deadline=None)
+    @settings(max_examples=50, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_audit_log_timestamp_cannot_be_modified(
         self,
         db_session: Session,
@@ -368,7 +368,7 @@ class TestAuditLogImmutability:
         log_data1=audit_log_data_strategy(),
         log_data2=audit_log_data_strategy()
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(max_examples=50, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_multiple_audit_logs_all_immutable(
         self,
         db_session: Session,
@@ -500,7 +500,7 @@ class TestAuditLogImmutability:
             "AuditLogger must have 'get_audit_log' method"
     
     @given(log_data=audit_log_data_strategy())
-    @settings(max_examples=50, deadline=None)
+    @settings(max_examples=50, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_audit_log_details_cannot_be_modified(
         self,
         db_session: Session,

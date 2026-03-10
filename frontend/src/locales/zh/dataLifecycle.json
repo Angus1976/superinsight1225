@@ -1,8 +1,8 @@
 {
   "interface": {
-    "title": "数据生命周期管理",
-    "loading": "加载数据生命周期管理界面中...",
-    "pageTitle": "数据生命周期管理"
+    "title": "数据流转",
+    "loading": "加载数据流转界面中...",
+    "pageTitle": "数据流转"
   },
   "tabs": {
     "tempData": "临时数据",
@@ -534,5 +534,85 @@
     "enhanced": "已增强",
     "trial_calculation": "试算中",
     "archived": "已归档"
+  },
+  "transfer": {
+    "button": "转存数据",
+    "modal": {
+      "title": "数据转存配置",
+      "description": "将数据转存到数据流转系统"
+    },
+    "fields": {
+      "sourceType": "数据来源",
+      "sourceId": "来源ID",
+      "targetState": "目标状态",
+      "targetStateRequired": "请选择目标状态",
+      "category": "数据分类",
+      "categoryRequired": "请输入分类",
+      "categoryPlaceholder": "例如：商品信息",
+      "tags": "标签",
+      "tagsPlaceholder": "添加标签",
+      "qualityScore": "质量评分",
+      "description": "描述",
+      "descriptionPlaceholder": "输入数据描述（可选）",
+      "dataAttributes": "数据属性"
+    },
+    "sourceTypes": {
+      "structuring": "数据结构化",
+      "augmentation": "数据增强",
+      "sync": "数据同步",
+      "annotation": "数据标注",
+      "ai_assistant": "AI助手",
+      "manual": "手动上传"
+    },
+    "targetStates": {
+      "temp_stored": "临时存储",
+      "in_sample_library": "样本库",
+      "annotation_pending": "待标注"
+    },
+    "actions": {
+      "cancel": "取消",
+      "confirm": "确认转存",
+      "transferring": "正在转存..."
+    },
+    "messages": {
+      "success": "成功转存 {{count}} 条记录到{{state}}",
+      "successWithNavigation": "成功转存 {{count}} 条记录，点击查看",
+      "error": "转存失败：{{error}}",
+      "approvalRequired": "转存请求已提交，等待审批",
+      "approvalEstimatedTime": "预计审批时间：{{time}}",
+      "permissionDenied": "您没有权限执行此操作",
+      "permissionDeniedDetail": "需要 {{requiredRole}} 角色权限，当前角色：{{currentRole}}",
+      "invalidSource": "源数据不存在或未完成",
+      "validationError": "数据验证失败：{{details}}",
+      "recordCountExceeded": "记录数超过限制（最大 {{max}} 条）",
+      "batchTransferNotAllowed": "您没有批量转存权限",
+      "needsApproval": "此操作需要审批",
+      "confirmTransfer": "确认转存 {{count}} 条记录到{{state}}？",
+      "internalError": "内部服务器错误"
+    },
+    "validation": {
+      "required": "此字段为必填项",
+      "minRecords": "至少需要选择 1 条记录",
+      "categoryRequired": "请输入数据分类",
+      "targetStateRequired": "请选择目标状态",
+      "invalidQualityScore": "质量评分必须在 0 到 1 之间"
+    },
+    "summary": {
+      "title": "数据摘要",
+      "source": "来源",
+      "recordCount": "记录数",
+      "fields": "字段列表",
+      "preview": "数据预览"
+    },
+    "permissions": {
+      "requiresApproval": "（需要审批）",
+      "noPermission": "（无权限）",
+      "allowed": "（允许）"
+    },
+    "navigation": {
+      "viewData": "查看数据流转",
+      "createAnnotationTask": "创建标注任务",
+      "continueProcessing": "继续处理其他数据"
+    }
   }
 }

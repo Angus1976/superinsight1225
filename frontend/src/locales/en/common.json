@@ -113,7 +113,8 @@
     "admin": "Admin Console",
     "tenants": "Tenant Management",
     "users": "User Management",
-    "system": "System Monitoring"
+    "system": "System Monitoring",
+    "dataLifecycle": "Data Flow"
   },
   "tasks": {
     "create": "Create Task",

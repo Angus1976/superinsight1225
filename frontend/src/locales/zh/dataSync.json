@@ -326,7 +326,11 @@
     "timelineConnect": "连接数据源",
     "timelineRead": "读取数据",
     "timelineComplete": "完成",
-    "timelineFailed": "失败"
+    "timelineFailed": "失败",
+    "transfer": {
+      "onlyCompleted": "只能转存已完成的同步任务",
+      "success": "成功转存 {{count}} 条同步记录"
+    }
   },
   "scheduler": {
     "title": "同步调度管理",

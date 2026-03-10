@@ -326,7 +326,11 @@
     "timelineConnect": "Connect Data Source",
     "timelineRead": "Read Data",
     "timelineComplete": "Complete",
-    "timelineFailed": "Failed"
+    "timelineFailed": "Failed",
+    "transfer": {
+      "onlyCompleted": "Only completed sync tasks can be transferred",
+      "success": "Successfully transferred {{count}} sync records"
+    }
   },
   "scheduler": {
     "title": "Sync Scheduler Management",

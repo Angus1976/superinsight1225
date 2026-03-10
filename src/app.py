@@ -1714,6 +1714,16 @@ async def include_optional_routers():
     except Exception as e:
         logger.error(f"❌ Security API failed to load: {e}")
     
+    # Data Lifecycle API
+    try:
+        from src.api.data_lifecycle_api import router as data_lifecycle_router
+        app.include_router(data_lifecycle_router)
+        logger.info("✅ Data Lifecycle API loaded successfully")
+    except ImportError as e:
+        logger.warning(f"⚠️ Data Lifecycle API not available: {e}")
+    except Exception as e:
+        logger.error(f"❌ Data Lifecycle API failed to load: {e}")
+    
     # RBAC (Role-Based Access Control) API
     try:
         from src.api.rbac import router as rbac_router

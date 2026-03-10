@@ -62,6 +62,12 @@ def get_service_alert_manager():
     return service_alert_manager
 
 
+def get_data_transfer_metrics():
+    """Get data transfer monitoring helpers with lazy import."""
+    from . import data_transfer_metrics
+    return data_transfer_metrics
+
+
 __all__ = [
     "get_quality_monitor",
     "get_alert_manager",
@@ -71,4 +77,5 @@ __all__ = [
     "get_alert_config_manager",
     "get_health_check_manager",
     "get_service_alert_manager",
+    "get_data_transfer_metrics",
 ]

@@ -46,6 +46,10 @@
       "validationFailed": "Data validation failed",
       "permissionDenied": "Permission denied, cannot transfer to this stage"
     },
+    "navigation": {
+      "viewTransferredData": "View Transferred Data",
+      "continueProcessing": "Continue Processing Other Data"
+    },
     "progress": {
       "title": "Transfer Progress",
       "processing": "Processing {{current}}/{{total}}",

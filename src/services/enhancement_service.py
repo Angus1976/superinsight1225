@@ -480,12 +480,17 @@ class EnhancementService:
         ).count()
 
         # Build sample metadata for traceability (Req 21.3, 21.6)
+        # Include augmentation method and parameters (Task 3.2.3)
         sample_metadata = {
             'original_data_id': enhanced_record.original_data_id,
             'enhancement_job_id': str(enhanced_record.enhancement_job_id),
             'enhancement_type': enhanced_record.enhancement_type.value,
             'iteration_count': iteration_count,
             'added_by': user_id,
+            # Augmentation method and parameters
+            'augmentation_method': enhanced_record.enhancement_type.value,
+            'augmentation_params': job.config.parameters,
+            'target_quality': job.config.target_quality,
         }
 
         # Create new sample in the library (Req 21.1, 21.2)
@@ -523,6 +528,10 @@ class EnhancementService:
                 'enhancement_job_id': str(enhanced_record.enhancement_job_id),
                 'iteration_count': iteration_count,
                 'source': 'add_to_sample_library',
+                # Augmentation method and parameters (Task 3.2.3)
+                'augmentation_method': enhanced_record.enhancement_type.value,
+                'augmentation_params': job.config.parameters,
+                'target_quality': job.config.target_quality,
             }
         )
 

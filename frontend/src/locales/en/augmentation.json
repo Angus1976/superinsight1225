@@ -146,7 +146,9 @@
     "uploadSuccess": "{{name}} uploaded successfully",
     "uploadFailed": "{{name}} upload failed",
     "editSample": "Edit Sample",
-    "pagination": "{{start}}-{{end}} of {{total}} items"
+    "pagination": "{{start}}-{{end}} of {{total}} items",
+    "selectedCount": "{{count}} samples selected",
+    "transferSuccess": "Successfully transferred {{count}} samples"
   },
   "nav": {
     "overview": "Overview",

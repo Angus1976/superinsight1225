@@ -46,6 +46,10 @@
       "validationFailed": "数据验证失败",
       "permissionDenied": "权限不足，无法转存到该阶段"
     },
+    "navigation": {
+      "viewTransferredData": "查看已转存数据",
+      "continueProcessing": "继续处理其他数据"
+    },
     "progress": {
       "title": "转存进度",
       "processing": "正在处理 {{current}}/{{total}}",

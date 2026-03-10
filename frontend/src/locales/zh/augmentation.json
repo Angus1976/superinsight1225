@@ -146,7 +146,9 @@
     "uploadSuccess": "{{name}} 文件上传成功",
     "uploadFailed": "{{name}} 文件上传失败",
     "editSample": "编辑样本",
-    "pagination": "第 {{start}}-{{end}} 条，共 {{total}} 条"
+    "pagination": "第 {{start}}-{{end}} 条，共 {{total}} 条",
+    "selectedCount": "已选择 {{count}} 个样本",
+    "transferSuccess": "成功转存 {{count}} 个样本"
   },
   "nav": {
     "overview": "概览",

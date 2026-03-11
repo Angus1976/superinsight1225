@@ -1,0 +1,117 @@
+{
+  "version": "1.0",
+  "last_updated": "2026-03-11",
+  "updated_by": "Angus Liu",
+  "progress": {
+    "percentage": 70,
+    "stage": "near_delivery",
+    "description": "接近交付阶段"
+  },
+  "milestones": [
+    {
+      "name": "项目启动",
+      "percentage": 0,
+      "date": "2025-01-01",
+      "status": "completed"
+    },
+    {
+      "name": "核心功能开发",
+      "percentage": 30,
+      "date": "2025-06-01",
+      "status": "completed"
+    },
+    {
+      "name": "功能完善",
+      "percentage": 50,
+      "date": "2025-12-01",
+      "status": "completed"
+    },
+    {
+      "name": "接近交付",
+      "percentage": 70,
+      "date": "2026-03-11",
+      "status": "current"
+    },
+    {
+      "name": "测试优化",
+      "percentage": 85,
+      "date": "2026-04-01",
+      "status": "planned"
+    },
+    {
+      "name": "正式交付",
+      "percentage": 100,
+      "date": "2026-05-01",
+      "status": "planned"
+    }
+  ],
+  "stage_rules": {
+    "early_stage": {
+      "range": "0-30%",
+      "description": "项目初期",
+      "allowed": [
+        "大胆尝试新技术",
+        "架构设计和调整",
+        "快速迭代和试错",
+        "重构和优化"
+      ],
+      "focus": "探索和建立基础"
+    },
+    "mid_stage": {
+      "range": "30-60%",
+      "description": "项目中期",
+      "allowed": [
+        "功能开发",
+        "局部重构",
+        "架构微调",
+        "性能优化"
+      ],
+      "focus": "功能实现和完善"
+    },
+    "near_delivery": {
+      "range": "60-85%",
+      "description": "接近交付",
+      "allowed": [
+        "在原有基础上扩展",
+        "修复 bug",
+        "增加小功能",
+        "优化现有代码"
+      ],
+      "forbidden": [
+        "推倒重来",
+        "大面积重构",
+        "改变核心架构",
+        "重复开发已有功能"
+      ],
+      "focus": "稳定性和完整性"
+    },
+    "final_stage": {
+      "range": "85-100%",
+      "description": "最终阶段",
+      "allowed": [
+        "修复关键 bug",
+        "文档完善",
+        "性能微调",
+        "用户体验优化"
+      ],
+      "forbidden": [
+        "新增功能",
+        "架构调整",
+        "大规模改动"
+      ],
+      "focus": "交付准备和质量保证"
+    }
+  },
+  "update_triggers": [
+    "完成重要里程碑时",
+    "每月第一个工作日",
+    "用户明确要求更新时",
+    "项目阶段发生重大变化时"
+  ],
+  "notes": [
+    "进度百分比由用户或 AI 根据实际完成情况更新",
+    "每次更新需记录更新日期和更新人",
+    "AI 会在每月初主动询问是否需要更新进度",
+    "用户可随时要求更新进度信息"
+  ]
+}

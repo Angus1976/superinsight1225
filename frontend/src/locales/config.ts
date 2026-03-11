@@ -61,6 +61,8 @@ import enHelp from './en/help.json';
 import enAiAnnotation from './en/ai_annotation.json';
 import enLlmConfig from './en/llmConfig.json';
 import enDataLifecycle from './en/dataLifecycle.json';
+import zhDataToolkit from './zh/dataToolkit.json';
+import enDataToolkit from './en/dataToolkit.json';
 
 const resources = {
   zh: {
@@ -93,6 +95,7 @@ const resources = {
     aiAnnotation: zhAiAnnotation,
     llmConfig: zhLlmConfig,
     dataLifecycle: zhDataLifecycle,
+    dataToolkit: zhDataToolkit,
   },
   en: {
     common: enCommon,
@@ -124,6 +127,7 @@ const resources = {
     aiAnnotation: enAiAnnotation,
     llmConfig: enLlmConfig,
     dataLifecycle: enDataLifecycle,
+    dataToolkit: enDataToolkit,
   },
 };
 
@@ -135,7 +139,7 @@ i18n
     fallbackLng: 'zh',
     defaultNS: 'common',
     fallbackNS: 'common',
-    ns: ['common', 'auth', 'dashboard', 'tasks', 'billing', 'quality', 'security', 'dataSync', 'system', 'versioning', 'lineage', 'impact', 'snapshot', 'admin', 'workspace', 'license', 'settings', 'collaboration', 'crowdsource', 'augmentation', 'businessLogic', 'annotation', 'ontology', 'lsWorkspace', 'structuring', 'help', 'aiAnnotation', 'llmConfig', 'dataLifecycle'],
+    ns: ['common', 'auth', 'dashboard', 'tasks', 'billing', 'quality', 'security', 'dataSync', 'system', 'versioning', 'lineage', 'impact', 'snapshot', 'admin', 'workspace', 'license', 'settings', 'collaboration', 'crowdsource', 'augmentation', 'businessLogic', 'annotation', 'ontology', 'lsWorkspace', 'structuring', 'help', 'aiAnnotation', 'llmConfig', 'dataLifecycle', 'dataToolkit'],
     interpolation: {
       escapeValue: false,
     },

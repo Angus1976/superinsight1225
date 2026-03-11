@@ -1,0 +1,73 @@
+{
+  "title": "Intelligent Data Toolkit",
+  "description": "Automatically analyze data characteristics and select optimal processing strategies",
+  "upload": {
+    "title": "Data Upload",
+    "dragText": "Click or drag files to this area to upload",
+    "supportedFormats": "Supports CSV, JSON, Excel, PDF, Text and more",
+    "preview": "Data Preview",
+    "fileInfo": "File Information",
+    "fileName": "File Name",
+    "fileSize": "File Size",
+    "fileType": "File Type",
+    "encoding": "Encoding",
+    "recordCount": "Record Count",
+    "columnCount": "Column Count"
+  },
+  "strategy": {
+    "title": "Strategy Configuration",
+    "recommended": "Recommended Strategy",
+    "explanation": "Strategy Explanation",
+    "customize": "Customize Strategy",
+    "estimatedCost": "Estimated Cost",
+    "estimatedTime": "Estimated Time",
+    "estimatedMemory": "Estimated Memory",
+    "monetaryCost": "Monetary Cost",
+    "confirm": "Confirm Execution",
+    "stages": "Processing Stages"
+  },
+  "stage": {
+    "parse": "Data Parsing",
+    "clean": "Data Cleaning",
+    "transform": "Transformation",
+    "store": "Storage"
+  },
+  "monitor": {
+    "title": "Execution Monitor",
+    "progress": "Execution Progress",
+    "stage": "Current Stage",
+    "status": "Status",
+    "elapsed": "Elapsed Time",
+    "remaining": "Remaining Time",
+    "pause": "Pause",
+    "resume": "Resume",
+    "cancel": "Cancel",
+    "running": "Running",
+    "paused": "Paused",
+    "completed": "Completed",
+    "failed": "Failed",
+    "cancelled": "Cancelled"
+  },
+  "results": {
+    "title": "Processing Results",
+    "summary": "Results Summary",
+    "visualization": "Data Visualization",
+    "export": "Export",
+    "exportCSV": "Export CSV",
+    "exportJSON": "Export JSON",
+    "exportExcel": "Export Excel",
+    "exportPDF": "Export PDF",
+    "totalRecords": "Total Records",
+    "storageType": "Storage Type",
+    "processingTime": "Processing Time",
+    "lineage": "Data Lineage"
+  },
+  "common": {
+    "back": "Back",
+    "next": "Next",
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "retry": "Retry",
+    "noData": "No data"
+  }
+}

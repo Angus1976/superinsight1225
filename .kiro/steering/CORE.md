@@ -49,7 +49,7 @@
 ### 项目进度管理（CRITICAL）
 **当前进度：查看 `.kiro/project-progress.json`**
 
-- 进度信息动态存储，AI 每月初主动询问更新
+- 进度信息动态存储，AI 每日初主动询问更新
 - 不同阶段有不同的工作策略和风险承受度
 - 当前阶段（60-85%）：只允许扩展、修复、优化，禁止推倒重来
 - 详细规范 → `.kiro/rules/project-progress-management.md`

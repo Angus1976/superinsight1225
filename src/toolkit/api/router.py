@@ -5,11 +5,15 @@ Upload → Profile → Route → Execute → Store → Results
 """
 
 from fastapi import APIRouter, UploadFile, File, HTTPException
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
 from uuid import uuid4
+import logging
+
+logger = logging.getLogger(__name__)
 
 from src.toolkit.interfaces.profiler import DataSource
-from src.toolkit.models.processing_plan import Requirements
+from src.toolkit.models.dto import RouteResponse, StrategyCandidateDTO
+from src.toolkit.models.processing_plan import Requirements, Constraints
 from src.toolkit.profiling.simple_profiler import SimpleDataProfiler
 from src.toolkit.routing.strategy_router import StrategyRouter
 from src.toolkit.orchestration.pipeline_executor import PipelineExecutor
@@ -70,25 +74,114 @@ async def profile_file(file_id: str):
     return profile.model_dump(mode="json")
 
 
-@router.post("/route/{file_id}")
-async def route_file(file_id: str, needs_semantic_search: bool = False):
-    """Generate a ProcessingPlan for a profiled file."""
-    if file_id not in _profiles:
-        raise HTTPException(
-            status_code=404, detail="Profile not found. Run /profile first.",
-        )
+def _build_requirements_from_origin(origin: str) -> Requirements:
+    """Map upload origin tab to processing Requirements."""
+    return Requirements(
+        needs_semantic_search=(origin == "vectorization"),
+        needs_graph_traversal=(origin == "semantic"),
+    )
 
-    profile = _profiles[file_id]
-    requirements = Requirements(needs_semantic_search=needs_semantic_search)
+
+def _route_with_candidates(
+    profile: Any,
+    requirements: Requirements,
+    strategy_name: Optional[str] = None,
+) -> tuple:
+    """Select strategy and evaluate all candidates.
+
+    Returns (ProcessingPlan, list[StrategyCandidateDTO]).
+    """
+    ranked = _strategy_router._rank_candidates(profile, requirements)
+    candidates = [
+        StrategyCandidateDTO(
+            name=c.name,
+            score=c.score,
+            explanation="; ".join(c.explanations) if c.explanations else "No rules matched",
+            primary_storage=c.storage.primary_storage,
+        )
+        for c in ranked
+    ]
+
+    if strategy_name:
+        valid_names = {c.name for c in candidates}
+        if strategy_name not in valid_names:
+            raise HTTPException(
+                status_code=400,
+                detail=f"strategy_name '{strategy_name}' not in candidates: {sorted(valid_names)}",
+            )
+
     plan = _strategy_router.select_strategy(profile, requirements)
-    _plans[file_id] = plan
+    return plan, candidates
+
+
+@router.post("/route/{file_id}")
+async def route_file(
+    file_id: str,
+    origin: str = "vectorization",
+    strategy_name: Optional[str] = None,
+):
+    """Generate a ProcessingPlan for a profiled file.
+
+    Args:
+        file_id: ID of a previously profiled file.
+        origin: Upload origin tab — "vectorization" or "semantic".
+        strategy_name: Optional strategy name for manual mode override.
+    """
+    if origin not in ("vectorization", "semantic"):
+        raise HTTPException(status_code=400, detail="origin must be 'vectorization' or 'semantic'")
+
+    if file_id not in _profiles:
+        raise HTTPException(status_code=404, detail="Profile not found. Run /profile first.")
+
+    requirements = _build_requirements_from_origin(origin)
+    profile = _profiles[file_id]
+
+    try:
+        plan, candidates = _route_with_candidates(profile, requirements, strategy_name)
+    except HTTPException:
+        raise
+    except Exception:
+        logger.warning("Profiling/routing failed for %s, using fallback", file_id, exc_info=True)
+        plan = _strategy_router._create_default_plan(profile, Constraints())
+        candidates = []
+
+    _plans[file_id] = {"plan": plan, "origin": origin, "candidates": candidates}
     _audit.log_operation("system", "route", file_id)
-    return plan.model_dump(mode="json")
+    return RouteResponse(plan=plan, candidates=candidates, origin=origin)
+
+
+def _build_plan_for_strategy(
+    profile: Any, requirements: Requirements, strategy_name: str,
+) -> Any:
+    """Build a ProcessingPlan for a specific strategy by name.
+
+    Ranks all candidates, finds the one matching *strategy_name*,
+    and returns a fully-costed plan.  Raises 400 if the name is not
+    found among ranked candidates.
+    """
+    ranked = _strategy_router._rank_candidates(profile, requirements)
+    for candidate in ranked:
+        if candidate.name == strategy_name:
+            return _strategy_router._build_plan(candidate, profile)
+    raise HTTPException(
+        status_code=400,
+        detail=f"Strategy '{strategy_name}' not found in ranked candidates",
+    )
 
 
 @router.post("/execute/{file_id}")
-async def execute_pipeline(file_id: str):
-    """Start pipeline execution for a file."""
+async def execute_pipeline(
+    file_id: str,
+    strategy_name: Optional[str] = None,
+):
+    """Start pipeline execution for a file.
+
+    Args:
+        file_id: ID of a previously routed file.
+        strategy_name: Optional strategy override. When provided the
+            pipeline uses this strategy instead of the top-ranked one.
+            Must be present in the candidates returned by /route.
+    """
     if file_id not in _plans:
         raise HTTPException(
             status_code=404, detail="Plan not found. Run /route first.",
@@ -96,8 +189,24 @@ async def execute_pipeline(file_id: str):
     if file_id not in _files:
         raise HTTPException(status_code=404, detail="File not found")
 
+    plan_data = _plans[file_id]
+    plan = plan_data["plan"]
+
+    # --- strategy override ---------------------------------------------------
+    if strategy_name:
+        valid_names = {c.name for c in plan_data["candidates"]}
+        if strategy_name not in valid_names:
+            raise HTTPException(
+                status_code=400,
+                detail=f"strategy_name '{strategy_name}' not in candidates: {sorted(valid_names)}",
+            )
+        if strategy_name != plan.strategy_name:
+            profile = _profiles[file_id]
+            requirements = _build_requirements_from_origin(plan_data["origin"])
+            plan = _build_plan_for_strategy(profile, requirements, strategy_name)
+            plan_data["plan"] = plan
+
     execution_id = str(uuid4())
-    plan = _plans[file_id]
 
     _executions[execution_id] = {
         "file_id": file_id,

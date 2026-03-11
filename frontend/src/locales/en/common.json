@@ -529,6 +529,34 @@
     "aiAnnotation": {
       "workflow": "Workflow",
       "taskList": "Task List"
+    },
+    "strategy": {
+      "title": "Candidate Strategies",
+      "recommended": "Recommended",
+      "manualHint": "Click to select a strategy"
+    },
+    "storage": {
+      "label": "Target Storage",
+      "types": {
+        "postgresql": "PostgreSQL",
+        "vectordb": "VectorDB",
+        "graphdb": "GraphDB",
+        "elasticsearch": "Elasticsearch"
+      }
+    },
+    "processing": {
+      "title": "Processing Panel",
+      "modeLabel": "Processing Mode",
+      "modeAuto": "Auto",
+      "modeManual": "Manual",
+      "confirm": "Start Processing",
+      "progressLabel": "Processing",
+      "stage": "Stage: {{stage}}",
+      "successTitle": "Processing Completed",
+      "successDesc": "Data has been stored to: {{location}}",
+      "failedTitle": "Processing Failed",
+      "retry": "Retry",
+      "noFile": "Please upload a file first"
     }
   }
 }

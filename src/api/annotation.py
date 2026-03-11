@@ -1166,6 +1166,28 @@ async def start_batch_annotation(request: BatchAnnotateRequest):
         from src.ai.pre_annotation import get_pre_annotation_engine
         from src.ai.annotation_schemas import AnnotationType
         
+        # Map frontend annotation type names to backend AnnotationType enum values
+        _ANNOTATION_TYPE_MAP = {
+            "entity": AnnotationType.NER,
+            "ner": AnnotationType.NER,
+            "classification": AnnotationType.TEXT_CLASSIFICATION,
+            "text_classification": AnnotationType.TEXT_CLASSIFICATION,
+            "sentiment": AnnotationType.SENTIMENT,
+            "relation": AnnotationType.RELATION_EXTRACTION,
+            "relation_extraction": AnnotationType.RELATION_EXTRACTION,
+            "sequence_labeling": AnnotationType.SEQUENCE_LABELING,
+            "qa": AnnotationType.QA,
+            "summarization": AnnotationType.SUMMARIZATION,
+        }
+        
+        mapped_type = _ANNOTATION_TYPE_MAP.get(request.annotation_type)
+        if not mapped_type:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unknown annotation_type '{request.annotation_type}'. "
+                       f"Valid: {list(_ANNOTATION_TYPE_MAP.keys())}",
+            )
+        
         # Get engines
         pre_engine = get_pre_annotation_engine()
         batch_engine = get_batch_annotation_engine(db=None, pre_annotation_engine=pre_engine)
@@ -1175,7 +1197,7 @@ async def start_batch_annotation(request: BatchAnnotateRequest):
             project_id=request.project_id,
             learning_job_id=request.learning_job_id,
             target_dataset_id=request.target_dataset_id,
-            annotation_type=AnnotationType(request.annotation_type),
+            annotation_type=mapped_type,
             confidence_threshold=request.confidence_threshold,
         )
         

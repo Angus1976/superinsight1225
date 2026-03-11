@@ -29,6 +29,7 @@ import type { VectorizationJob, VectorRecord } from '@/stores/vectorizationStore
 import type { ColumnsType } from 'antd/es/table';
 import TransferToLifecycleModal from '@/components/DataLifecycle/TransferToLifecycleModal';
 import type { TransferDataItem } from '@/components/DataLifecycle/TransferToLifecycleModal';
+import ProcessingPanel from './components/ProcessingPanel';
 
 const { Dragger } = Upload;
 
@@ -216,6 +217,8 @@ const VectorizationContent: React.FC = () => {
           </p>
         </Dragger>
       </Card>
+
+      <ProcessingPanel origin="vectorization" />
 
       <Card
         size="small"

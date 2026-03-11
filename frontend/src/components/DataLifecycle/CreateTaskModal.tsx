@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { Modal, Form, Input, Select, Table, DatePicker, message } from 'antd';
+import { Modal, Form, Input, Select, Table, message } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useTempData, useAnnotationTask } from '@/hooks/useDataLifecycle';
 
@@ -57,16 +57,15 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ visible, onClose, onS
         return;
       }
 
-      // Create task for each selected data item
-      for (const dataId of selectedRowKeys) {
-        await createTask({
-          name: values.name,
-          description: values.description,
-          data_id: dataId as string,
-          priority: values.priority,
-          assignee: values.assignee,
-        });
-      }
+      // Create task with selected data items as sample_ids
+      await createTask({
+        name: values.name,
+        description: values.description,
+        sample_ids: selectedRowKeys.map(k => String(k)),
+        annotation_type: values.annotationType || 'classification',
+        instructions: values.instructions || values.name,
+        created_by: 'current_user',
+      });
 
       form.resetFields();
       setSelectedRowKeys([]);
@@ -147,30 +146,29 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ visible, onClose, onS
         </Form.Item>
 
         <Form.Item
-          name="priority"
-          label={t('annotationTask.columns.priority')}
-          initialValue="medium"
+          name="annotationType"
+          label={t('annotationTask.columns.annotationType', { defaultValue: '标注类型' })}
+          initialValue="classification"
+          rules={[{ required: true }]}
         >
           <Select>
-            <Option value="low">{t('annotationTask.priority.low')}</Option>
-            <Option value="medium">{t('annotationTask.priority.medium')}</Option>
-            <Option value="high">{t('annotationTask.priority.high')}</Option>
-            <Option value="urgent">{t('annotationTask.priority.urgent')}</Option>
+            <Option value="classification">{t('annotationTask.annotationType.classification', { defaultValue: '分类' })}</Option>
+            <Option value="entity_recognition">{t('annotationTask.annotationType.entityRecognition', { defaultValue: '实体识别' })}</Option>
+            <Option value="relation_extraction">{t('annotationTask.annotationType.relationExtraction', { defaultValue: '关系抽取' })}</Option>
+            <Option value="sentiment_analysis">{t('annotationTask.annotationType.sentimentAnalysis', { defaultValue: '情感分析' })}</Option>
+            <Option value="custom">{t('annotationTask.annotationType.custom', { defaultValue: '自定义' })}</Option>
           </Select>
         </Form.Item>
 
         <Form.Item
-          name="assignee"
-          label={t('annotationTask.columns.assignee')}
+          name="instructions"
+          label={t('annotationTask.columns.instructions', { defaultValue: '标注说明' })}
+          rules={[{ required: true, message: t('annotationTask.validation.instructionsRequired', { defaultValue: '请输入标注说明' }) }]}
         >
-          <Input placeholder={t('annotationTask.messages.assignee')} />
-        </Form.Item>
-
-        <Form.Item
-          name="dueDate"
-          label={t('annotationTask.columns.dueDate')}
-        >
-          <DatePicker style={{ width: '100%' }} />
+          <TextArea
+            rows={3}
+            placeholder={t('annotationTask.placeholders.instructions', { defaultValue: '请输入标注说明' })}
+          />
         </Form.Item>
       </Form>
 

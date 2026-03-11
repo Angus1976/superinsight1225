@@ -72,3 +72,7 @@ export * from './datalake';
 
 // LLM Configuration types
 export * from './llmConfig';
+
+// Toolkit smart processing routing types
+export * from './toolkit';
+

@@ -64,7 +64,7 @@ async def _upload(client: AsyncClient, filename: str, content: bytes, ctype: str
 
 
 async def _full_pipeline(client: AsyncClient, filename: str, content: bytes,
-                         ctype: str, *, needs_semantic_search: bool = False):
+                         ctype: str, *, origin: str = "vectorization"):
     """Run upload → profile → route → execute and return all responses."""
     file_id = await _upload(client, filename, content, ctype)
 
@@ -73,7 +73,7 @@ async def _full_pipeline(client: AsyncClient, filename: str, content: bytes,
 
     route_resp = await client.post(
         f"/api/toolkit/route/{file_id}",
-        params={"needs_semantic_search": needs_semantic_search},
+        params={"origin": origin},
     )
     assert route_resp.status_code == 200
 
@@ -83,7 +83,8 @@ async def _full_pipeline(client: AsyncClient, filename: str, content: bytes,
     return {
         "file_id": file_id,
         "profile": profile_resp.json(),
-        "plan": route_resp.json(),
+        "route": route_resp.json(),
+        "plan": route_resp.json()["plan"],
         "execution": exec_resp.json(),
     }
 
@@ -117,10 +118,12 @@ class TestTabularPipeline:
     async def test_route_produces_plan(self, client):
         file_id = await _upload(client, "data.csv", self.CSV_CONTENT, "text/csv")
         await client.post(f"/api/toolkit/profile/{file_id}")
-        plan = (await client.post(f"/api/toolkit/route/{file_id}")).json()
+        data = (await client.post(f"/api/toolkit/route/{file_id}")).json()
+        plan = data["plan"]
 
         assert len(plan["stages"]) > 0
         assert plan["explanation"]
+        assert "candidates" in data
 
     async def test_full_csv_pipeline(self, client):
         result = await _full_pipeline(
@@ -163,14 +166,15 @@ class TestTextSemanticPipeline:
     async def test_semantic_route_includes_vector_storage(self, client):
         file_id = await _upload(client, "doc.txt", self.TEXT_CONTENT, "text/plain")
         await client.post(f"/api/toolkit/profile/{file_id}")
-        plan = (await client.post(
+        data = (await client.post(
             f"/api/toolkit/route/{file_id}",
-            params={"needs_semantic_search": True},
+            params={"origin": "vectorization"},
         )).json()
+        plan = data["plan"]
 
         assert len(plan["stages"]) > 0
         assert plan["explanation"]
-        # With semantic search, storage strategy should reference vector
+        # With vectorization origin, storage strategy should reference vector
         storage = plan.get("storage_strategy", {})
         if storage:
             primary = storage.get("primary_storage", "")
@@ -179,7 +183,7 @@ class TestTextSemanticPipeline:
     async def test_full_text_pipeline(self, client):
         result = await _full_pipeline(
             client, "doc.txt", self.TEXT_CONTENT, "text/plain",
-            needs_semantic_search=True,
+            origin="vectorization",
         )
         assert result["execution"]["status"] == "completed"
 

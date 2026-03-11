@@ -529,6 +529,34 @@
     "aiAnnotation": {
       "workflow": "工作流",
       "taskList": "任务清单"
+    },
+    "strategy": {
+      "title": "候选策略",
+      "recommended": "推荐",
+      "manualHint": "点击选择一个策略"
+    },
+    "storage": {
+      "label": "目标存储",
+      "types": {
+        "postgresql": "PostgreSQL",
+        "vectordb": "向量数据库",
+        "graphdb": "图数据库",
+        "elasticsearch": "Elasticsearch"
+      }
+    },
+    "processing": {
+      "title": "处理面板",
+      "modeLabel": "处理模式",
+      "modeAuto": "自动",
+      "modeManual": "手动",
+      "confirm": "开始处理",
+      "progressLabel": "处理中",
+      "stage": "阶段：{{stage}}",
+      "successTitle": "处理完成",
+      "successDesc": "数据已存储至：{{location}}",
+      "failedTitle": "处理失败",
+      "retry": "重试",
+      "noFile": "请先上传文件"
     }
   }
 }

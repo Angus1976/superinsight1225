@@ -113,7 +113,11 @@ class TestRoute:
 
         resp = await client.post(f"/api/toolkit/route/{file_id}")
         assert resp.status_code == 200
-        plan = resp.json()
+        data = resp.json()
+        assert "plan" in data
+        assert "candidates" in data
+        assert "origin" in data
+        plan = data["plan"]
         assert "stages" in plan
         assert "explanation" in plan
 
@@ -142,6 +146,47 @@ class TestExecute:
         data = resp.json()
         assert "execution_id" in data
         assert data["status"] in ("completed", "failed")
+
+    async def test_execute_invalid_strategy_returns_400(self, client):
+        """Passing a strategy_name not in candidates → 400."""
+        upload = await client.post(
+            "/api/toolkit/upload",
+            files={"file": ("t.txt", b"hello", "text/plain")},
+        )
+        file_id = upload.json()["file_id"]
+        await client.post(f"/api/toolkit/profile/{file_id}")
+        await client.post(f"/api/toolkit/route/{file_id}")
+
+        resp = await client.post(
+            f"/api/toolkit/execute/{file_id}",
+            params={"strategy_name": "nonexistent_strategy"},
+        )
+        assert resp.status_code == 400
+        assert "nonexistent_strategy" in resp.json()["detail"]
+
+    async def test_execute_valid_strategy_override(self, client):
+        """Passing a valid candidate strategy_name succeeds."""
+        upload = await client.post(
+            "/api/toolkit/upload",
+            files={"file": ("data.csv", b"a,b\n1,2\n3,4", "text/csv")},
+        )
+        file_id = upload.json()["file_id"]
+        await client.post(f"/api/toolkit/profile/{file_id}")
+        route_resp = await client.post(f"/api/toolkit/route/{file_id}")
+        candidates = route_resp.json()["candidates"]
+
+        # Skip if no candidates available
+        if not candidates:
+            pytest.skip("No candidates returned by route")
+
+        # Pick the last candidate (likely different from top-ranked)
+        chosen = candidates[-1]["name"]
+        resp = await client.post(
+            f"/api/toolkit/execute/{file_id}",
+            params={"strategy_name": chosen},
+        )
+        assert resp.status_code == 200
+        assert resp.json()["status"] in ("completed", "failed")
 
 
 # ------------------------------------------------------------------

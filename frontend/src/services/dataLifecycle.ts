@@ -115,11 +115,12 @@ export interface AnnotationTask {
   id: string;
   name: string;
   description?: string;
-  data_id: string;
-  status: 'pending' | 'inProgress' | 'completed' | 'cancelled';
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  assignee?: string;
-  due_date?: string;
+  status: 'created' | 'in_progress' | 'completed' | 'cancelled';
+  annotation_type: 'classification' | 'entity_recognition' | 'relation_extraction' | 'sentiment_analysis' | 'custom';
+  sample_ids: string[];
+  instructions: string;
+  assigned_to?: string[];
+  deadline?: string;
   progress: number;
   created_by: string;
   created_at: string;
@@ -130,20 +131,21 @@ export interface AnnotationTask {
 export interface CreateAnnotationTaskPayload {
   name: string;
   description?: string;
-  data_id: string;
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  assignee?: string;
-  due_date?: string;
-  metadata?: Record<string, unknown>;
+  sample_ids: string[];
+  annotation_type: 'classification' | 'entity_recognition' | 'relation_extraction' | 'sentiment_analysis' | 'custom';
+  instructions: string;
+  created_by: string;
+  deadline?: string;
+  assigned_to?: string[];
 }
 
 export interface UpdateAnnotationTaskPayload {
   name?: string;
   description?: string;
-  priority?: 'low' | 'medium' | 'high' | 'urgent';
-  assignee?: string;
-  due_date?: string;
-  status?: 'pending' | 'inProgress' | 'completed' | 'cancelled';
+  instructions?: string;
+  assigned_to?: string[];
+  deadline?: string;
+  status?: 'created' | 'in_progress' | 'completed' | 'cancelled';
 }
 
 export interface AnnotationTaskListParams {
@@ -164,12 +166,12 @@ export interface AnnotationTaskListResponse {
 // Enhancement Types
 export interface EnhancementJob {
   id: string;
-  name: string;
-  type: 'grammar' | 'style' | 'content' | 'summary' | 'translation' | 'custom';
+  data_id: string;
+  enhancement_type: 'data_augmentation' | 'quality_improvement' | 'noise_reduction' | 'feature_extraction' | 'normalization';
   status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled' | 'paused';
   progress: number;
   current_version: number;
-  max_iterations?: number;
+  target_quality?: number;
   created_by: string;
   created_at: string;
   completed_at?: string;
@@ -177,11 +179,11 @@ export interface EnhancementJob {
 }
 
 export interface CreateEnhancementPayload {
-  name: string;
-  type: 'grammar' | 'style' | 'content' | 'summary' | 'translation' | 'custom';
-  target_data_id: string;
-  config?: Record<string, unknown>;
-  max_iterations?: number;
+  data_id: string;
+  enhancement_type: 'data_augmentation' | 'quality_improvement' | 'noise_reduction' | 'feature_extraction' | 'normalization';
+  created_by: string;
+  parameters?: Record<string, unknown>;
+  target_quality?: number;
 }
 
 export interface EnhancementListParams {

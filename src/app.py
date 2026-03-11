@@ -1735,6 +1735,56 @@ async def include_optional_routers():
     except Exception as e:
         logger.error(f"❌ Temp Data API failed to load: {e}")
     
+    # Sample Library API
+    try:
+        from src.api.sample_library_api import router as sample_library_router
+        app.include_router(sample_library_router)
+        logger.info("✅ Sample Library API loaded successfully")
+    except ImportError as e:
+        logger.warning(f"⚠️ Sample Library API not available: {e}")
+    except Exception as e:
+        logger.error(f"❌ Sample Library API failed to load: {e}")
+
+    # Review Workflow API
+    try:
+        from src.api.review_api import router as review_router
+        app.include_router(review_router)
+        logger.info("✅ Review Workflow API loaded successfully")
+    except ImportError as e:
+        logger.warning(f"⚠️ Review Workflow API not available: {e}")
+    except Exception as e:
+        logger.error(f"❌ Review Workflow API failed to load: {e}")
+
+    # Annotation Task API
+    try:
+        from src.api.annotation_task_api import router as annotation_task_router
+        app.include_router(annotation_task_router)
+        logger.info("✅ Annotation Task API loaded successfully")
+    except ImportError as e:
+        logger.warning(f"⚠️ Annotation Task API not available: {e}")
+    except Exception as e:
+        logger.error(f"❌ Annotation Task API failed to load: {e}")
+
+    # Enhancement Job API (data lifecycle enhancements)
+    try:
+        from src.api.enhancement_api import router as enhancement_job_router
+        app.include_router(enhancement_job_router)
+        logger.info("✅ Enhancement Job API loaded successfully")
+    except ImportError as e:
+        logger.warning(f"⚠️ Enhancement Job API not available: {e}")
+    except Exception as e:
+        logger.error(f"❌ Enhancement Job API failed to load: {e}")
+
+    # AI Trial API
+    try:
+        from src.api.ai_trial_api import router as ai_trial_router
+        app.include_router(ai_trial_router)
+        logger.info("✅ AI Trial API loaded successfully")
+    except ImportError as e:
+        logger.warning(f"⚠️ AI Trial API not available: {e}")
+    except Exception as e:
+        logger.error(f"❌ AI Trial API failed to load: {e}")
+    
     # RBAC (Role-Based Access Control) API
     try:
         from src.api.rbac import router as rbac_router
@@ -2343,6 +2393,16 @@ async def include_optional_routers():
         logger.warning(f"⚠️ Semantic API not available: {e}")
     except Exception as e:
         logger.error(f"❌ Semantic API failed to load: {e}")
+
+    # Toolkit API (Intelligent Data Processing Framework)
+    try:
+        from src.toolkit.api.router import router as toolkit_router
+        app.include_router(toolkit_router)
+        logger.info("✅ Toolkit API loaded successfully")
+    except ImportError as e:
+        logger.warning(f"⚠️ Toolkit API not available: {e}")
+    except Exception as e:
+        logger.error(f"❌ Toolkit API failed to load: {e}")
 
     # Output API registration summary
     # Validates: Requirements 3.2 - 详细的日志记录每个 API 的注册状态

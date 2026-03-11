@@ -25,7 +25,7 @@ from src.services.ai_trial_service import (
 from src.models.data_lifecycle import TrialStatus, DataStage
 
 
-router = APIRouter(prefix="/api/trials", tags=["AI Trials"])
+router = APIRouter(prefix="/api/ai-trials", tags=["AI Trials"])
 
 # Shared in-memory trial storage across requests
 _shared_trials: Dict[str, Any] = {}

@@ -71,10 +71,11 @@ const CreateEnhancementModal: React.FC<CreateEnhancementModalProps> = ({ visible
       // Create enhancement job for each selected data item
       for (const dataId of selectedRowKeys) {
         await createJob({
-          name: values.name,
-          type: values.type,
-          target_data_id: dataId as string,
-          config,
+          data_id: dataId as string,
+          enhancement_type: values.type,
+          created_by: 'current_user',
+          parameters: config,
+          target_quality: values.targetQuality,
         });
       }
 
@@ -129,12 +130,11 @@ const CreateEnhancementModal: React.FC<CreateEnhancementModalProps> = ({ visible
           rules={[{ required: true, message: t('enhancement.messages.selectType') }]}
         >
           <Select placeholder={t('enhancement.messages.selectType')}>
-            <Option value="grammar">{t('enhancement.type.grammar')}</Option>
-            <Option value="style">{t('enhancement.type.style')}</Option>
-            <Option value="content">{t('enhancement.type.content')}</Option>
-            <Option value="summary">{t('enhancement.type.summary')}</Option>
-            <Option value="translation">{t('enhancement.type.translation')}</Option>
-            <Option value="custom">{t('enhancement.type.custom')}</Option>
+            <Option value="data_augmentation">{t('enhancement.type.dataAugmentation', { defaultValue: '数据增强' })}</Option>
+            <Option value="quality_improvement">{t('enhancement.type.qualityImprovement', { defaultValue: '质量提升' })}</Option>
+            <Option value="noise_reduction">{t('enhancement.type.noiseReduction', { defaultValue: '降噪' })}</Option>
+            <Option value="feature_extraction">{t('enhancement.type.featureExtraction', { defaultValue: '特征提取' })}</Option>
+            <Option value="normalization">{t('enhancement.type.normalization', { defaultValue: '归一化' })}</Option>
           </Select>
         </Form.Item>
 

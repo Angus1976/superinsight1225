@@ -57,7 +57,7 @@ interface AnnotationTask {
 }
 
 const AIAnnotationTaskList: React.FC = () => {
-  const { t } = useTranslation('aiAnnotation');
+  const { t } = useTranslation(['aiAnnotation', 'aiProcessing']);
   const [tasks, setTasks] = useState<AnnotationTask[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedTask, setSelectedTask] = useState<AnnotationTask | null>(null);
@@ -244,7 +244,7 @@ const AIAnnotationTaskList: React.FC = () => {
   };
 
   const handleTransferSuccess = () => {
-    message.success(t('transfer.messages.success'));
+    message.success(t('aiProcessing:transfer.messages.success'));
     setTransferModalVisible(false);
     setTaskToTransfer(null);
   };
@@ -481,7 +481,7 @@ const AIAnnotationTaskList: React.FC = () => {
                 }
               }}
             >
-              {t('transfer.button')}
+              {t('aiProcessing:transfer.button')}
             </Button>
           ) : null,
           <Button key="close" onClick={() => setDetailModalVisible(false)}>

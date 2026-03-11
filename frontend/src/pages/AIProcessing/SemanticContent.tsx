@@ -31,6 +31,7 @@ import type { SemanticJob, SemanticRecord, SemanticRecordType } from '@/stores/s
 import TransferToLifecycleModal from '@/components/DataLifecycle/TransferToLifecycleModal';
 import type { TransferDataItem } from '@/components/DataLifecycle/TransferToLifecycleModal';
 import type { ColumnsType } from 'antd/es/table';
+import ProcessingPanel from './components/ProcessingPanel';
 
 const { Dragger } = Upload;
 const { Text } = Typography;
@@ -237,6 +238,8 @@ const SemanticContent: React.FC = () => {
           </p>
         </Dragger>
       </Card>
+
+      <ProcessingPanel origin="semantic" />
 
       <Card
         size="small"

@@ -276,7 +276,7 @@ async def create_temp_data(
         )
 
 
-@router.get("/temp-data", response_model=TempDataListResponse)
+@temp_data_router.get("", response_model=TempDataListResponse)
 async def list_temporary_data(
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(20, ge=1, le=100, description="Items per page"),
@@ -364,7 +364,7 @@ async def list_temporary_data(
         )
 
 
-@router.get("/temp-data/{temp_data_id}", response_model=TempDataResponse)
+@temp_data_router.get("/{temp_data_id}", response_model=TempDataResponse)
 async def get_temporary_data(
     temp_data_id: UUID,
     db: DBSession = Depends(get_db_session)
@@ -421,7 +421,7 @@ async def get_temporary_data(
         )
 
 
-@router.delete("/temp-data/{temp_data_id}", status_code=status.HTTP_204_NO_CONTENT)
+@temp_data_router.delete("/{temp_data_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_temporary_data(
     temp_data_id: UUID,
     db: DBSession = Depends(get_db_session)

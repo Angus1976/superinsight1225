@@ -28,6 +28,7 @@ from src.services.md_document_parser import (
 
 
 router = APIRouter(prefix="/api/documents", tags=["Temporary Data Storage"])
+temp_data_router = APIRouter(prefix="/api/temp-data", tags=["Temporary Data"])
 
 
 # ============================================================================
@@ -48,6 +49,21 @@ class UploadDocumentResponse(BaseModel):
     sections_count: int = Field(..., description="Number of sections parsed")
     metadata: Dict[str, Any] = Field(..., description="Extracted metadata")
     uploaded_at: datetime = Field(..., description="Upload timestamp")
+
+
+class CreateTempDataRequest(BaseModel):
+    """Create temp data request."""
+    name: str = Field(..., description="Data name")
+    content: Dict[str, Any] = Field(..., description="Data content")
+    metadata: Optional[Dict[str, Any]] = Field(None, description="Optional metadata")
+
+
+class CreateTempDataResponse(BaseModel):
+    """Create temp data response."""
+    id: UUID = Field(..., description="Temporary data ID")
+    name: str = Field(..., description="Data name")
+    state: DataState = Field(..., description="Current data state")
+    created_at: datetime = Field(..., description="Creation timestamp")
 
 
 class TempDataResponse(BaseModel):
@@ -208,6 +224,55 @@ async def upload_and_parse_document(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to store document: {str(e)}"
+        )
+@temp_data_router.post("", response_model=CreateTempDataResponse, status_code=status.HTTP_201_CREATED)
+async def create_temp_data(
+    request: CreateTempDataRequest,
+    db: DBSession = Depends(get_db_session)
+):
+    """
+    Create temporary data directly from JSON.
+
+    Accepts JSON data and stores it in the temporary table.
+
+    Args:
+        request: Create temp data request
+        db: Database session
+
+    Returns:
+        CreateTempDataResponse with temp data ID
+
+    Raises:
+        HTTPException 400: If request is invalid
+        HTTPException 500: If storage fails
+    """
+    try:
+        # Create temp data
+        temp_data = TempDataModel(
+            source_document_id=request.name,  # Use name as source_document_id
+            content=request.content,
+            state=DataState.TEMP_STORED,
+            uploaded_by="system",  # TODO: Get from auth context
+            uploaded_at=datetime.utcnow(),
+            metadata_=request.metadata or {}
+        )
+
+        db.add(temp_data)
+        db.commit()
+        db.refresh(temp_data)
+
+        return CreateTempDataResponse(
+            id=temp_data.id,
+            name=request.name,
+            state=temp_data.state,
+            created_at=temp_data.created_at
+        )
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create temp data: {str(e)}"
         )
 
 

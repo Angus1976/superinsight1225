@@ -1724,6 +1724,17 @@ async def include_optional_routers():
     except Exception as e:
         logger.error(f"❌ Data Lifecycle API failed to load: {e}")
     
+    # Temp Data API
+    try:
+        from src.api.temp_data_api import router as temp_data_router, temp_data_router as temp_data_api_router
+        app.include_router(temp_data_router)
+        app.include_router(temp_data_api_router)
+        logger.info("✅ Temp Data API loaded successfully")
+    except ImportError as e:
+        logger.warning(f"⚠️ Temp Data API not available: {e}")
+    except Exception as e:
+        logger.error(f"❌ Temp Data API failed to load: {e}")
+    
     # RBAC (Role-Based Access Control) API
     try:
         from src.api.rbac import router as rbac_router

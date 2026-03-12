@@ -86,6 +86,14 @@
     "allTenants": "All Tenants",
     "allWorkspaces": "All Workspaces"
   },
+  "loading": {
+    "workspace": "Loading workspace..."
+  },
+  "detailTable": {
+    "title": "Detail Data",
+    "close": "Close",
+    "total": "Total {{total}} items"
+  },
   "errors": {
     "dataLoadFailed": "Data Load Failed",
     "backendConnection": "Unable to connect to backend server. Please ensure backend service is running."

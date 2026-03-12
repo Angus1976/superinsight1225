@@ -23,6 +23,8 @@ interface MetricCardProps {
   onRefresh?: () => void;
   lastUpdated?: Date;
   extra?: ReactNode;
+  onClick?: () => void;
+  selected?: boolean;
 }
 
 export const MetricCard: React.FC<MetricCardProps> = ({
@@ -43,6 +45,8 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   onRefresh,
   lastUpdated,
   extra,
+  onClick,
+  selected = false,
 }) => {
   const { t } = useTranslation('dashboard');
 
@@ -93,7 +97,17 @@ export const MetricCard: React.FC<MetricCardProps> = ({
       text={status === 'error' ? t('common.error') : status === 'warning' ? t('common.warning') : undefined}
       color={status === 'error' ? 'red' : status === 'warning' ? 'orange' : undefined}
     >
-      <Card loading={loading} extra={cardExtra}>
+      <Card
+        loading={loading}
+        extra={cardExtra}
+        hoverable={!!onClick}
+        onClick={onClick}
+        style={{
+          cursor: onClick ? 'pointer' : undefined,
+          borderColor: selected ? getStatusColor() : undefined,
+          borderWidth: selected ? 2 : undefined,
+        }}
+      >
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
           <div style={{ flex: 1 }}>
             <Statistic

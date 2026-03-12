@@ -1,38 +1,91 @@
 // Enhanced Dashboard page with enterprise features
-import { Row, Col, Typography, Alert, Tabs, Spin } from 'antd';
+import { useState, useMemo } from 'react';
+import { Row, Col, Typography, Alert, Tabs, Spin, Card, Table, Tag, Space } from 'antd';
 import {
   DashboardOutlined,
   BarChartOutlined,
   NodeIndexOutlined,
+  CalendarOutlined,
+  PlayCircleOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  CloseOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import { 
-  RealTimeMetrics, 
-  TrendChart, 
-  QuickActions, 
-  QualityReports, 
-  KnowledgeGraph 
+import { useNavigate } from 'react-router-dom';
+import {
+  RealTimeMetrics,
+  TrendChart,
+  QuickActions,
+  QualityReports,
+  KnowledgeGraph,
 } from '@/components/Dashboard';
+import type { DashboardMetricKey } from '@/components/Dashboard/RealTimeMetrics';
 import { HelpIcon } from '@/components/SmartHelp';
 import { useDashboard } from '@/hooks/useDashboard';
+import { useTasks } from '@/hooks/useTask';
 import { useAuthStore } from '@/stores/authStore';
+import type { Task, TaskStatus } from '@/types';
 
 const { Title } = Typography;
-const { TabPane } = Tabs;
+
+// Map metric keys to task status filters
+const metricToStatusFilter: Partial<Record<DashboardMetricKey, TaskStatus | 'all'>> = {
+  activeTasks: 'in_progress',
+  todayAnnotations: 'completed',
+  totalCorpus: 'all',
+  completionRate: 'completed',
+};
+
+const statusColorMap: Record<TaskStatus, string> = {
+  pending: 'default', in_progress: 'processing', completed: 'success', cancelled: 'error',
+};
+const statusIconMap: Record<TaskStatus, React.ReactNode> = {
+  pending: <CalendarOutlined />, in_progress: <PlayCircleOutlined />,
+  completed: <CheckCircleOutlined />, cancelled: <CloseCircleOutlined />,
+};
 
 const DashboardPage: React.FC = () => {
-  const { t } = useTranslation('dashboard');
+  const { t } = useTranslation(['dashboard', 'tasks']);
   const { user } = useAuthStore();
+  const navigate = useNavigate();
   const { annotationEfficiency, isLoading, error, queriesEnabled } = useDashboard();
+  const [selectedMetric, setSelectedMetric] = useState<DashboardMetricKey | null>(null);
 
-  // Prepare chart data from annotation efficiency
+  // Build query params based on selected metric
+  const detailQueryParams = useMemo(() => {
+    if (!selectedMetric) return null;
+    const statusFilter = metricToStatusFilter[selectedMetric];
+    if (!statusFilter) return null;
+    const params: Record<string, unknown> = { page_size: 10 };
+    if (statusFilter !== 'all') params.status = statusFilter;
+    return params;
+  }, [selectedMetric]);
+
+  // Fetch detail data only when a metric card is clicked
+  const { data: detailData, isLoading: detailLoading } = useTasks(
+    detailQueryParams ?? {},
+  );
+
+  const handleMetricClick = (key: DashboardMetricKey) => {
+    // Toggle: click same card again to close detail
+    if (selectedMetric === key) {
+      setSelectedMetric(null);
+      return;
+    }
+    // Only open detail for metrics that have task data
+    if (metricToStatusFilter[key]) {
+      setSelectedMetric(key);
+    }
+  };
+
+  // Chart data from annotation efficiency
   const chartData = annotationEfficiency?.trends?.map((trend) => ({
     timestamp: trend.timestamp,
     datetime: trend.datetime,
     value: trend.annotations_per_hour,
   })) || [];
 
-  // Show loading state if queries are not enabled yet (tenant/workspace loading)
   if (!queriesEnabled) {
     return (
       <div style={{ textAlign: 'center', padding: '50px 20px' }}>
@@ -43,96 +96,144 @@ const DashboardPage: React.FC = () => {
 
   if (error) {
     return (
-      <Alert
-        type="warning"
-        message={t('errors.dataLoadFailed')}
-        description={t('errors.backendConnection')}
-        showIcon
-      />
+      <Alert type="warning" message={t('errors.dataLoadFailed')}
+        description={t('errors.backendConnection')} showIcon />
     );
   }
 
+  // Detail table columns
+  const detailColumns = [
+    {
+      title: t('tasks:columns.name'),
+      dataIndex: 'name',
+      key: 'name',
+      ellipsis: true,
+      render: (text: string, record: Task) => (
+        <a onClick={() => navigate(`/tasks/${record.id}`)} style={{ fontWeight: 500 }}>{text}</a>
+      ),
+    },
+    {
+      title: t('tasks:columns.status'),
+      dataIndex: 'status',
+      key: 'status',
+      width: 120,
+      render: (status: TaskStatus) => (
+        <Tag color={statusColorMap[status]} icon={statusIconMap[status]}>
+          {t(`tasks:status.${status === 'in_progress' ? 'inProgress' : status}`)}
+        </Tag>
+      ),
+    },
+    {
+      title: t('tasks:columns.priority'),
+      dataIndex: 'priority',
+      key: 'priority',
+      width: 100,
+      render: (priority: string) => {
+        const colorMap: Record<string, string> = { low: 'green', medium: 'blue', high: 'orange', urgent: 'red' };
+        return <Tag color={colorMap[priority] || 'default'}>{t(`tasks:priority.${priority}`)}</Tag>;
+      },
+    },
+    {
+      title: t('tasks:columns.progress'),
+      dataIndex: 'progress',
+      key: 'progress',
+      width: 100,
+      render: (val: number) => `${Math.round(val || 0)}%`,
+    },
+    {
+      title: t('tasks:dueDate'),
+      dataIndex: 'due_date',
+      key: 'due_date',
+      width: 120,
+      render: (val: string) => val ? new Date(val).toLocaleDateString() : '-',
+    },
+  ];
+
+  // Title for the detail card based on selected metric
+  const detailTitleMap: Partial<Record<DashboardMetricKey, string>> = {
+    activeTasks: t('metrics.activeTasks'),
+    todayAnnotations: t('metrics.todayAnnotations'),
+    totalCorpus: t('metrics.totalCorpus'),
+    completionRate: t('metrics.completionRate'),
+  };
+
+  const tabItems = [
+    {
+      key: 'overview',
+      label: (
+        <span><DashboardOutlined /> {t('tabs.overview')}</span>
+      ),
+      children: (
+        <Row gutter={[16, 16]}>
+          <Col span={24}>
+            <TrendChart title={t('charts.annotationTrend')} data={chartData} loading={isLoading} />
+          </Col>
+          <Col span={24}>
+            <QuickActions />
+          </Col>
+        </Row>
+      ),
+    },
+    {
+      key: 'quality',
+      label: (
+        <span><BarChartOutlined /> {t('tabs.qualityReports')}</span>
+      ),
+      children: <QualityReports />,
+    },
+    {
+      key: 'knowledgeGraph',
+      label: (
+        <span><NodeIndexOutlined /> {t('tabs.knowledgeGraph')}</span>
+      ),
+      children: <KnowledgeGraph />,
+    },
+  ];
+
   return (
-    <div data-help-key="dashboard">
-      <Title level={4} style={{ marginBottom: 24 }}>
-        {t('welcome', { name: user?.username || 'User' })}
-        {' '}
-        <HelpIcon helpKey="dashboard" size="small" />
-      </Title>
+    <div style={{ padding: '24px' }}>
+      <Space direction="vertical" size="large" style={{ width: '100%' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Title level={4} style={{ margin: 0 }}>
+            {t('welcome', { name: user?.username || '' })}
+            <HelpIcon helpKey="dashboard.overview" className="ml-2" />
+          </Title>
+        </div>
 
-      <Tabs defaultActiveKey="overview" size="large">
-        <TabPane
-          tab={
-            <span>
-              <DashboardOutlined />
-              {t('tabs.overview')}
-            </span>
-          }
-          key="overview"
-        >
-          {/* Real-time Metrics */}
-          <RealTimeMetrics 
-            refreshInterval={30000}
-            showTargets={true}
-          />
+        <RealTimeMetrics
+          selectedMetric={selectedMetric}
+          onMetricClick={handleMetricClick}
+        />
 
-          {/* Charts */}
-          <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
-            <Col xs={24} lg={16}>
-              <TrendChart
-                title={t('charts.annotationTrend')}
-                data={chartData.length > 0 ? chartData : generateMockChartData()}
-                loading={isLoading}
-                color="#1890ff"
-                height={300}
+        {selectedMetric && detailQueryParams && (
+          <Card
+            title={`${t('detailTable.title')} - ${detailTitleMap[selectedMetric] || ''}`}
+            extra={
+              <CloseOutlined
+                style={{ cursor: 'pointer' }}
+                onClick={() => setSelectedMetric(null)}
               />
-            </Col>
-            <Col xs={24} lg={8}>
-              <QuickActions />
-            </Col>
-          </Row>
-        </TabPane>
+            }
+          >
+            <Table
+              columns={detailColumns}
+              dataSource={detailData?.items || []}
+              rowKey="id"
+              loading={detailLoading}
+              pagination={{
+                pageSize: 10,
+                total: detailData?.total || 0,
+                showTotal: (total) => t('detailTable.total', { total }),
+              }}
+              size="middle"
+            />
+          </Card>
+        )}
 
-        <TabPane
-          tab={
-            <span>
-              <BarChartOutlined />
-              {t('tabs.qualityReports')}
-            </span>
-          }
-          key="quality"
-        >
-          <QualityReports loading={isLoading} />
-        </TabPane>
-
-        <TabPane
-          tab={
-            <span>
-              <NodeIndexOutlined />
-              {t('tabs.knowledgeGraph')}
-            </span>
-          }
-          key="knowledge"
-        >
-          <KnowledgeGraph 
-            loading={isLoading}
-            height={700}
-            interactive={true}
-          />
-        </TabPane>
-      </Tabs>
+        <Tabs defaultActiveKey="overview" items={tabItems} />
+      </Space>
     </div>
   );
 };
-
-// Generate mock chart data for demo
-function generateMockChartData() {
-  const now = Date.now();
-  return Array.from({ length: 24 }, (_, i) => ({
-    timestamp: now - (23 - i) * 3600000,
-    datetime: new Date(now - (23 - i) * 3600000).toISOString(),
-    value: Math.floor(Math.random() * 50) + 20,
-  }));
-}
 
 export default DashboardPage;

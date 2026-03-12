@@ -375,7 +375,14 @@
     "database": "数据库",
     "file": "文件",
     "api": "API",
-    "stream": "数据流"
+    "stream": "数据流",
+    "groupExternal": "外部数据源",
+    "groupLifecycle": "数据流转模块",
+    "lifecycle_temp_data": "临时数据",
+    "lifecycle_sample": "样本库",
+    "lifecycle_enhancement": "数据增强",
+    "lifecycle_annotation": "标注任务",
+    "lifecycle_ai_trial": "AI 试验"
   },
   "form": {
     "hostAddress": "主机地址",
@@ -399,6 +406,27 @@
     "requestHeaders": "请求头",
     "syncIntervalLabel": "同步间隔（分钟）",
     "enableStatus": "启用状态"
+  },
+  "lifecycleSource": {
+    "hint": "从数据流转模块同步数据",
+    "lifecycle_temp_data_desc": "同步临时数据中您有权限访问的数据，可按状态过滤。",
+    "lifecycle_sample_desc": "同步样本库中您有权限访问的样本数据。",
+    "lifecycle_enhancement_desc": "同步数据增强任务的结果数据。",
+    "lifecycle_annotation_desc": "同步标注任务中已完成的标注数据。",
+    "lifecycle_ai_trial_desc": "同步 AI 试验的结果数据。",
+    "stateFilter": "状态过滤",
+    "stateFilterPlaceholder": "不选则同步所有状态的数据",
+    "autoSyncNew": "自动同步新增数据",
+    "states": {
+      "temp_stored": "已暂存",
+      "approved": "已审核",
+      "ready": "就绪",
+      "active": "活跃",
+      "archived": "已归档",
+      "completed": "已完成",
+      "running": "运行中",
+      "in_progress": "进行中"
+    }
   },
   "common": {
     "totalRecords": "第 {{start}}-{{end}} 条，共 {{total}} 条"

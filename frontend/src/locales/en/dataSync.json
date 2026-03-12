@@ -375,7 +375,14 @@
     "database": "Database",
     "file": "File",
     "api": "API",
-    "stream": "Data Stream"
+    "stream": "Data Stream",
+    "groupExternal": "External Sources",
+    "groupLifecycle": "Data Lifecycle",
+    "lifecycle_temp_data": "Temp Data",
+    "lifecycle_sample": "Sample Library",
+    "lifecycle_enhancement": "Enhancement",
+    "lifecycle_annotation": "Annotation Task",
+    "lifecycle_ai_trial": "AI Trial"
   },
   "form": {
     "hostAddress": "Host Address",
@@ -399,6 +406,27 @@
     "requestHeaders": "Request Headers",
     "syncIntervalLabel": "Sync Interval (minutes)",
     "enableStatus": "Enable Status"
+  },
+  "lifecycleSource": {
+    "hint": "Sync data from Data Lifecycle module",
+    "lifecycle_temp_data_desc": "Sync temporary data you have permission to access, with optional state filtering.",
+    "lifecycle_sample_desc": "Sync sample data from the sample library you have access to.",
+    "lifecycle_enhancement_desc": "Sync result data from data enhancement jobs.",
+    "lifecycle_annotation_desc": "Sync completed annotation data from annotation tasks.",
+    "lifecycle_ai_trial_desc": "Sync result data from AI trials.",
+    "stateFilter": "State Filter",
+    "stateFilterPlaceholder": "Leave empty to sync all states",
+    "autoSyncNew": "Auto-sync new data",
+    "states": {
+      "temp_stored": "Temp Stored",
+      "approved": "Approved",
+      "ready": "Ready",
+      "active": "Active",
+      "archived": "Archived",
+      "completed": "Completed",
+      "running": "Running",
+      "in_progress": "In Progress"
+    }
   },
   "common": {
     "totalRecords": "{{start}}-{{end}} of {{total}} records"

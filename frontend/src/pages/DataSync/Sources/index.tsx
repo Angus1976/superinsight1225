@@ -1,15 +1,18 @@
-import React, { useState } from 'react';
-import { Card, Table, Button, Space, Tag, Modal, Form, Input, Select, Switch, message, Progress, Tooltip } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, SyncOutlined, PlayCircleOutlined, PauseCircleOutlined } from '@ant-design/icons';
+import React, { useState, useMemo } from 'react';
+import { Card, Table, Button, Space, Tag, Modal, Form, Input, Select, Switch, message, Progress, Tooltip, Alert } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined, SyncOutlined, InboxOutlined, StarOutlined, ThunderboltOutlined, FileTextOutlined, ExperimentOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/services/api';
+import { useAuthStore } from '@/stores/authStore';
+
+type SourceType = 'database' | 'file' | 'api' | 'stream' | 'lifecycle_temp_data' | 'lifecycle_sample' | 'lifecycle_enhancement' | 'lifecycle_annotation' | 'lifecycle_ai_trial';
 
 interface DataSource {
   id: string;
   name: string;
-  type: 'database' | 'file' | 'api' | 'stream';
+  type: SourceType;
   status: 'active' | 'inactive' | 'error' | 'syncing';
   connectionString: string;
   lastSyncTime: string;
@@ -23,16 +26,39 @@ interface DataSource {
   config: any;
 }
 
+/** 数据流转类型与所需权限的映射 */
+const LIFECYCLE_TYPE_PERMISSIONS: Record<string, string> = {
+  lifecycle_temp_data: 'dataLifecycle.create',
+  lifecycle_sample: 'dataLifecycle.create',
+  lifecycle_enhancement: 'enhancement.create',
+  lifecycle_annotation: 'annotationTask.create',
+  lifecycle_ai_trial: 'aiTrial.view',
+};
+
+/** 判断是否为数据流转类型 */
+const isLifecycleType = (type: string): boolean => type.startsWith('lifecycle_');
+
 const DataSyncSources: React.FC = () => {
   const { t } = useTranslation(['dataSync', 'common']);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingSource, setEditingSource] = useState<DataSource | null>(null);
   const [form] = Form.useForm();
   const queryClient = useQueryClient();
+  const { hasPermission } = useAuthStore();
 
-  const { data: sources = [], isLoading } = useQuery({
+  /** 根据用户权限过滤可用的数据流转类型 */
+  const availableLifecycleTypes = useMemo(() => {
+    return Object.entries(LIFECYCLE_TYPE_PERMISSIONS)
+      .filter(([, permission]) => hasPermission(permission))
+      .map(([type]) => type);
+  }, [hasPermission]);
+
+  const { data: sources = [], isLoading } = useQuery<DataSource[]>({
     queryKey: ['data-sources'],
-    queryFn: () => api.get('/api/v1/data-sync/sources').then(res => res.data),
+    queryFn: async () => {
+      const res = await api.get('/api/v1/data-sync/sources');
+      return res.data as DataSource[];
+    },
   });
 
   const createSourceMutation = useMutation({
@@ -117,13 +143,18 @@ const DataSyncSources: React.FC = () => {
       dataIndex: 'type',
       key: 'type',
       render: (type: string) => {
-        const colors = {
+        const colors: Record<string, string> = {
           database: 'blue',
           file: 'green',
           api: 'orange',
           stream: 'purple',
+          lifecycle_temp_data: 'cyan',
+          lifecycle_sample: 'gold',
+          lifecycle_enhancement: 'magenta',
+          lifecycle_annotation: 'geekblue',
+          lifecycle_ai_trial: 'volcano',
         };
-        return <Tag color={colors[type as keyof typeof colors]}>{t(`sourceTypes.${type}`)}</Tag>;
+        return <Tag color={colors[type] || 'default'}>{t(`sourceTypes.${type}`)}</Tag>;
       },
     },
     {
@@ -246,6 +277,74 @@ const DataSyncSources: React.FC = () => {
   };
 
   const renderConfigForm = (type: string) => {
+    // 数据流转类型：显示说明和可选的状态过滤
+    if (isLifecycleType(type)) {
+      return (
+        <>
+          <Alert
+            type="info"
+            showIcon
+            message={t('lifecycleSource.hint')}
+            description={t(`lifecycleSource.${type}_desc`)}
+            style={{ marginBottom: 16 }}
+          />
+          <Form.Item
+            name={['config', 'state_filter']}
+            label={t('lifecycleSource.stateFilter')}
+          >
+            <Select
+              mode="multiple"
+              allowClear
+              placeholder={t('lifecycleSource.stateFilterPlaceholder')}
+            >
+              {type === 'lifecycle_temp_data' && (
+                <>
+                  <Select.Option value="temp_stored">{t('lifecycleSource.states.temp_stored')}</Select.Option>
+                  <Select.Option value="approved">{t('lifecycleSource.states.approved')}</Select.Option>
+                  <Select.Option value="ready">{t('lifecycleSource.states.ready')}</Select.Option>
+                </>
+              )}
+              {type === 'lifecycle_sample' && (
+                <>
+                  <Select.Option value="active">{t('lifecycleSource.states.active')}</Select.Option>
+                  <Select.Option value="archived">{t('lifecycleSource.states.archived')}</Select.Option>
+                </>
+              )}
+              {type === 'lifecycle_enhancement' && (
+                <>
+                  <Select.Option value="completed">{t('lifecycleSource.states.completed')}</Select.Option>
+                  <Select.Option value="running">{t('lifecycleSource.states.running')}</Select.Option>
+                </>
+              )}
+              {type === 'lifecycle_annotation' && (
+                <>
+                  <Select.Option value="completed">{t('lifecycleSource.states.completed')}</Select.Option>
+                  <Select.Option value="in_progress">{t('lifecycleSource.states.in_progress')}</Select.Option>
+                </>
+              )}
+              {type === 'lifecycle_ai_trial' && (
+                <>
+                  <Select.Option value="completed">{t('lifecycleSource.states.completed')}</Select.Option>
+                  <Select.Option value="running">{t('lifecycleSource.states.running')}</Select.Option>
+                </>
+              )}
+            </Select>
+          </Form.Item>
+          <Form.Item
+            name={['config', 'auto_sync_new']}
+            label={t('lifecycleSource.autoSyncNew')}
+            valuePropName="checked"
+            initialValue={true}
+          >
+            <Switch
+              checkedChildren={t('schedule.enabled')}
+              unCheckedChildren={t('schedule.disabled')}
+            />
+          </Form.Item>
+        </>
+      );
+    }
+
     switch (type) {
       case 'database':
         return (
@@ -403,10 +502,41 @@ const DataSyncSources: React.FC = () => {
             rules={[{ required: true, message: t('dataSource.typePlaceholder') }]}
           >
             <Select placeholder={t('dataSource.typePlaceholder')}>
-              <Select.Option value="database">{t('sourceTypes.database')}</Select.Option>
-              <Select.Option value="file">{t('sourceTypes.file')}</Select.Option>
-              <Select.Option value="api">{t('sourceTypes.api')}</Select.Option>
-              <Select.Option value="stream">{t('sourceTypes.stream')}</Select.Option>
+              <Select.OptGroup label={t('sourceTypes.groupExternal')}>
+                <Select.Option value="database">{t('sourceTypes.database')}</Select.Option>
+                <Select.Option value="file">{t('sourceTypes.file')}</Select.Option>
+                <Select.Option value="api">{t('sourceTypes.api')}</Select.Option>
+                <Select.Option value="stream">{t('sourceTypes.stream')}</Select.Option>
+              </Select.OptGroup>
+              {availableLifecycleTypes.length > 0 && (
+                <Select.OptGroup label={t('sourceTypes.groupLifecycle')}>
+                  {availableLifecycleTypes.includes('lifecycle_temp_data') && (
+                    <Select.Option value="lifecycle_temp_data">
+                      <Space><InboxOutlined />{t('sourceTypes.lifecycle_temp_data')}</Space>
+                    </Select.Option>
+                  )}
+                  {availableLifecycleTypes.includes('lifecycle_sample') && (
+                    <Select.Option value="lifecycle_sample">
+                      <Space><StarOutlined />{t('sourceTypes.lifecycle_sample')}</Space>
+                    </Select.Option>
+                  )}
+                  {availableLifecycleTypes.includes('lifecycle_enhancement') && (
+                    <Select.Option value="lifecycle_enhancement">
+                      <Space><ThunderboltOutlined />{t('sourceTypes.lifecycle_enhancement')}</Space>
+                    </Select.Option>
+                  )}
+                  {availableLifecycleTypes.includes('lifecycle_annotation') && (
+                    <Select.Option value="lifecycle_annotation">
+                      <Space><FileTextOutlined />{t('sourceTypes.lifecycle_annotation')}</Space>
+                    </Select.Option>
+                  )}
+                  {availableLifecycleTypes.includes('lifecycle_ai_trial') && (
+                    <Select.Option value="lifecycle_ai_trial">
+                      <Space><ExperimentOutlined />{t('sourceTypes.lifecycle_ai_trial')}</Space>
+                    </Select.Option>
+                  )}
+                </Select.OptGroup>
+              )}
             </Select>
           </Form.Item>
 

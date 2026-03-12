@@ -465,7 +465,7 @@ export const dataLifecycleApi = {
     return response.data;
   },
 
-  async addToLibrary(id: string): Promise<Sample> {
+  async addEnhancementToLibrary(id: string): Promise<Sample> {
     const response = await apiClient.post<Sample>(`/api/enhancements/${id}/add-to-library`);
     return response.data;
   },

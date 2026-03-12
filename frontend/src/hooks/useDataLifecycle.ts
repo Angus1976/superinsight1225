@@ -757,7 +757,7 @@ export function useEnhancement(): UseEnhancementReturn {
   const addToLibrary = useCallback(async (id: string) => {
     try {
       setLoading(true);
-      await dataLifecycleApi.addToLibrary(id);
+      await dataLifecycleApi.addEnhancementToLibrary(id);
       message.success(t('sampleLibrary.messages.addSuccess'));
       fetchJobs({ page: enhancementPagination.page });
     } catch (err) {

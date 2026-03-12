@@ -19,6 +19,7 @@ import {
   ReloadOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { useTempData, useSampleLibrary, useReview, useAnnotationTask, useEnhancement, useAITrial } from '@/hooks/useDataLifecycle';
 import { useAuthStore } from '@/stores/authStore';
 import { HelpIcon } from '@/components/SmartHelp';
@@ -47,6 +48,7 @@ interface DashboardCardProps {
 
 const DashboardCard: React.FC<DashboardCardProps> = ({ title, icon, count, status, description, link, color }) => {
   const { t } = useTranslation('dataLifecycle');
+  const navigate = useNavigate();
   
   const getStatusColor = () => {
     switch (status) {
@@ -58,11 +60,18 @@ const DashboardCard: React.FC<DashboardCardProps> = ({ title, icon, count, statu
     }
   };
 
+  const handleClick = () => {
+    if (link) {
+      navigate(link);
+    }
+  };
+
   return (
     <Card
       hoverable
-      style={{ height: '100%' }}
+      style={{ height: '100%', cursor: 'pointer' }}
       className="data-lifecycle-card"
+      onClick={handleClick}
     >
       <Row align="middle" gutter={16}>
         <Col>
@@ -128,14 +137,15 @@ const SummaryStats: React.FC<SummaryStatsProps> = ({
   runningTrials,
 }) => {
   const { t } = useTranslation('dataLifecycle');
+  const navigate = useNavigate();
 
   const stats = [
-    { label: t('tempData.title'), value: tempDataCount, color: '#1890ff' },
-    { label: t('sampleLibrary.title'), value: sampleCount, color: '#52c41a' },
-    { label: t('review.title'), value: pendingReviews, color: '#faad14', suffix: t('review.status.pending') },
-    { label: t('annotationTask.title'), value: pendingTasks, color: '#722ed1', suffix: t('annotationTask.status.pending') },
-    { label: t('enhancement.title'), value: runningEnhancements, color: '#13c2c2', suffix: t('enhancement.status.running') },
-    { label: t('aiTrial.title'), value: runningTrials, color: '#eb2f96', suffix: t('aiTrial.status.running') },
+    { label: t('tempData.title'), value: tempDataCount, color: '#1890ff', link: '/data-lifecycle/temp-data' },
+    { label: t('sampleLibrary.title'), value: sampleCount, color: '#52c41a', link: '/data-lifecycle/samples' },
+    { label: t('review.title'), value: pendingReviews, color: '#faad14', suffix: t('review.status.pending'), link: '/data-lifecycle/review' },
+    { label: t('annotationTask.title'), value: pendingTasks, color: '#722ed1', suffix: t('annotationTask.status.pending'), link: '/data-lifecycle/tasks' },
+    { label: t('enhancement.title'), value: runningEnhancements, color: '#13c2c2', suffix: t('enhancement.status.running'), link: '/data-lifecycle/enhancement' },
+    { label: t('aiTrial.title'), value: runningTrials, color: '#eb2f96', suffix: t('aiTrial.status.running'), link: '/data-lifecycle/trials' },
   ];
 
   return (
@@ -143,7 +153,23 @@ const SummaryStats: React.FC<SummaryStatsProps> = ({
       <Row gutter={[16, 16]}>
         {stats.map((stat, index) => (
           <Col xs={24} sm={12} md={8} lg={4} key={index}>
-            <div style={{ textAlign: 'center', padding: '8px 0' }}>
+            <div 
+              style={{ 
+                textAlign: 'center', 
+                padding: '8px 0',
+                cursor: 'pointer',
+                transition: 'all 0.3s',
+              }}
+              onClick={() => navigate(stat.link)}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.backgroundColor = '#fafafa';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
+            >
               <div style={{ fontSize: 32, fontWeight: 600, color: stat.color }}>
                 {stat.value}
               </div>
@@ -272,7 +298,7 @@ interface ActivityItem {
 }
 
 const RecentActivity: React.FC = () => {
-  const { t } = useTranslation(['dataLifecycle', 'common']);
+  const { t } = useTranslation('dataLifecycle');
 
   // Mock activity data - in real implementation, this would come from API
   const activities: ActivityItem[] = [

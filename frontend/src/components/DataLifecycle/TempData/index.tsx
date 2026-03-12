@@ -5,7 +5,7 @@ import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
-  ArchiveOutlined,
+  InboxOutlined,
   RestoreOutlined,
   EyeOutlined,
 } from '@ant-design/icons';
@@ -155,7 +155,7 @@ export const TempDataList: React.FC = () => {
           {hasPermission('dataLifecycle.archive') && record.state === 'ready' && (
             <Button 
               type="text" 
-              icon={<ArchiveOutlined />}
+              icon={<InboxOutlined />}
               onClick={() => handleArchive(record)}
             />
           )}

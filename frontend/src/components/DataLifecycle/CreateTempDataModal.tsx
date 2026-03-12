@@ -4,7 +4,7 @@
  * Modal for creating new temporary data entries.
  */
 
-import { Modal, Form, Input, message } from 'antd';
+import { Modal, Form, Input } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useTempData } from '@/hooks/useDataLifecycle';
 
@@ -25,13 +25,16 @@ const CreateTempDataModal: React.FC<CreateTempDataModalProps> = ({ visible, onCl
     try {
       const values = await form.validateFields();
       
-      // Parse content as JSON
+      // Parse content: try JSON first, fallback to wrapping plain text
       let content: Record<string, unknown>;
       try {
-        content = JSON.parse(values.content);
-      } catch (err) {
-        message.error(t('tempData.messages.createFailed') + ': ' + t('common.messages.validationError'));
-        return;
+        const parsed = JSON.parse(values.content);
+        content = typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)
+          ? parsed
+          : { data: parsed };
+      } catch {
+        // Plain text input — wrap as JSON object
+        content = { text: values.content };
       }
 
       // Parse metadata if provided
@@ -39,9 +42,8 @@ const CreateTempDataModal: React.FC<CreateTempDataModalProps> = ({ visible, onCl
       if (values.metadata) {
         try {
           metadata = JSON.parse(values.metadata);
-        } catch (err) {
-          message.error(t('tempData.messages.createFailed') + ': ' + t('common.messages.validationError'));
-          return;
+        } catch {
+          metadata = { note: values.metadata };
         }
       }
 
@@ -55,7 +57,7 @@ const CreateTempDataModal: React.FC<CreateTempDataModalProps> = ({ visible, onCl
       onClose();
       onSuccess?.();
     } catch (err) {
-      // Error already handled by hook
+      // Form validation or hook error — already handled
     }
   };
 
@@ -94,7 +96,7 @@ const CreateTempDataModal: React.FC<CreateTempDataModalProps> = ({ visible, onCl
         >
           <TextArea
             rows={6}
-            placeholder='{"key": "value"}'
+            placeholder={t('tempData.contentPlaceholder')}
           />
         </Form.Item>
 
@@ -104,7 +106,7 @@ const CreateTempDataModal: React.FC<CreateTempDataModalProps> = ({ visible, onCl
         >
           <TextArea
             rows={4}
-            placeholder='{"key": "value"}'
+            placeholder={t('tempData.metadataPlaceholder')}
           />
         </Form.Item>
       </Form>

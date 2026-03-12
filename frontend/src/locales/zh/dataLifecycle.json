@@ -49,6 +49,8 @@
       "restore": "恢复",
       "viewDetails": "查看详情"
     },
+    "contentPlaceholder": "输入文本内容或 JSON 格式数据，如 {\"key\": \"value\"}",
+    "metadataPlaceholder": "可选，输入备注或 JSON 格式元数据",
     "messages": {
       "createSuccess": "临时数据创建成功",
       "createFailed": "临时数据创建失败",

@@ -49,6 +49,8 @@
       "restore": "Restore",
       "viewDetails": "View Details"
     },
+    "contentPlaceholder": "Enter text content or JSON format data, e.g. {\"key\": \"value\"}",
+    "metadataPlaceholder": "Optional, enter notes or JSON format metadata",
     "messages": {
       "createSuccess": "Temporary data created successfully",
       "createFailed": "Failed to create temporary data",

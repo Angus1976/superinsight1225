@@ -54,7 +54,7 @@ const TransferToLifecycleModal: React.FC<TransferToLifecycleModalProps> = ({
   sourceType,
   selectedData,
 }) => {
-  const { t } = useTranslation('aiProcessing');
+  const { t } = useTranslation(['aiProcessing', 'common']);
   const [form] = Form.useForm<TransferFormValues>();
   const [permissionLevel, setPermissionLevel] = useState<PermissionLevel>('approval_required');
   const { user } = useAuthStore();

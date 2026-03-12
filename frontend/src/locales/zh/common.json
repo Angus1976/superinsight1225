@@ -481,7 +481,8 @@
   "unknown": "未知",
   "action": {
     "goToUpload": "前往上传页面",
-    "refresh": "刷新"
+    "refresh": "刷新",
+    "cancel": "取消"
   },
   "aiProcessing": {
     "title": "AI 数据处理",
@@ -557,7 +558,7 @@
       "failedTitle": "处理失败",
       "retry": "重试",
       "noFile": "请先上传文件",
-      "transferToLifecycle": "转存到数据流转"
+      "transferToLifecycle": "转存至数据周转"
     }
   }
 }

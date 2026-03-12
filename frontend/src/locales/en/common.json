@@ -481,7 +481,8 @@
   "unknown": "Unknown",
   "action": {
     "goToUpload": "Go to Upload",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "cancel": "Cancel"
   },
   "aiProcessing": {
     "title": "AI Data Processing",
@@ -557,7 +558,7 @@
       "failedTitle": "Processing Failed",
       "retry": "Retry",
       "noFile": "Please upload a file first",
-      "transferToLifecycle": "Transfer to Data Lifecycle"
+      "transferToLifecycle": "Transfer to Data Turnover"
     }
   }
 }

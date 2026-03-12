@@ -249,6 +249,54 @@ export const hasPermission = (userRole: string, permission: Permission): boolean
   return permissions.includes(permission);
 };
 
+// ============================================================================
+// 数据流转模块权限（Data Lifecycle Permissions）
+// 使用 module.action 格式的权限字符串
+// ============================================================================
+
+/** 数据流转模块的角色权限映射 */
+export const DATA_LIFECYCLE_ROLE_PERMISSIONS: Record<string, string[]> = {
+  // 管理员：所有权限
+  ADMIN: [
+    'dataLifecycle.create', 'dataLifecycle.edit', 'dataLifecycle.delete',
+    'dataLifecycle.archive', 'dataLifecycle.restore',
+    'review.approve', 'review.reject', 'review.cancel',
+    'enhancement.create', 'enhancement.start', 'enhancement.pause',
+    'enhancement.resume', 'enhancement.cancel', 'enhancement.rollback',
+    'aiTrial.create', 'aiTrial.start', 'aiTrial.stop', 'aiTrial.view',
+    'annotationTask.create', 'annotationTask.start', 'annotationTask.complete',
+    'annotationTask.cancel',
+  ],
+  // 业务专家：除删除和回滚外的大部分权限
+  BUSINESS_EXPERT: [
+    'dataLifecycle.create', 'dataLifecycle.edit',
+    'dataLifecycle.archive', 'dataLifecycle.restore',
+    'review.approve', 'review.reject', 'review.cancel',
+    'enhancement.create', 'enhancement.start', 'enhancement.pause',
+    'enhancement.resume', 'enhancement.cancel',
+    'aiTrial.create', 'aiTrial.start', 'aiTrial.stop', 'aiTrial.view',
+    'annotationTask.create', 'annotationTask.start', 'annotationTask.complete',
+    'annotationTask.cancel',
+  ],
+  // 标注员：只能操作标注任务和查看
+  ANNOTATOR: [
+    'dataLifecycle.create', 'dataLifecycle.edit',
+    'aiTrial.view',
+    'annotationTask.start', 'annotationTask.complete',
+  ],
+  // 查看者：只读
+  VIEWER: [
+    'aiTrial.view',
+  ],
+};
+
+/** 检查用户角色是否有数据流转模块的特定权限 */
+export const hasDataLifecyclePermission = (userRole: string, permission: string): boolean => {
+  const role = userRole.toUpperCase();
+  const permissions = DATA_LIFECYCLE_ROLE_PERMISSIONS[role] || [];
+  return permissions.includes(permission);
+};
+
 // 租户隔离上下文接口
 export interface TenantContext {
   tenantId: string;

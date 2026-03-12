@@ -3,6 +3,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { User, Tenant, Workspace } from '@/types';
 import { setToken, clearAuthTokens, isTokenExpired, getToken } from '@/utils/token';
+import { hasPermission as checkPermission, hasDataLifecyclePermission, Permission } from '@/utils/permissions';
 
 interface AuthState {
   user: User | null;
@@ -22,6 +23,7 @@ interface AuthState {
   clearAuth: () => void;
   setHasHydrated: (state: boolean) => void;
   validateAndHydrate: () => void;
+  hasPermission: (permission: string) => boolean;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -76,6 +78,22 @@ export const useAuthStore = create<AuthState>()(
 
       setHasHydrated: (state) => {
         set({ _hasHydrated: state });
+      },
+
+      // 基于用户角色的权限检查
+      hasPermission: (permission: string) => {
+        const { user } = get();
+        if (!user?.role) return false;
+
+        const role = user.role;
+
+        // 先检查数据流转模块权限（module.action 格式）
+        if (permission.includes('.')) {
+          return hasDataLifecyclePermission(role, permission);
+        }
+
+        // 再检查系统级权限（Permission 枚举值）
+        return checkPermission(role, permission as Permission);
       },
 
       validateAndHydrate: () => {

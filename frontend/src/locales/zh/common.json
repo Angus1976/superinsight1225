@@ -204,10 +204,17 @@
   },
   "status": {
     "loading": "加载中...",
-    "success": "操作成功",
+    "success": "成功",
     "error": "操作失败",
-    "noData": "暂无数据"
+    "noData": "暂无数据",
+    "pending": "待处理",
+    "failed": "失败"
   },
+  "created": "创建",
+  "approved": "通过",
+  "started": "开始",
+  "added": "添加",
+  "completed": "完成",
   "validation": {
     "required": "此项为必填项",
     "invalidEmail": "请输入有效的邮箱地址",

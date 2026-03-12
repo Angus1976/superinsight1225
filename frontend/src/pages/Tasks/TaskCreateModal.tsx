@@ -33,7 +33,8 @@ import {
   Table,
   Tag
 } from 'antd';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { 
   InboxOutlined, 
   UserOutlined, 
@@ -50,10 +51,17 @@ import {
   CloudServerOutlined,
   UploadOutlined,
   DownloadOutlined,
-  WarningOutlined
+  WarningOutlined,
+  StarOutlined,
+  ThunderboltOutlined,
+  ExperimentOutlined,
+  SyncOutlined,
+  AppstoreOutlined
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useCreateTask } from '@/hooks/useTask';
+import { useAuthStore } from '@/stores/authStore';
+import { api } from '@/services/api';
 import labelStudioService from '@/services/labelStudioService';
 import type { AnnotationTemplateConfig } from '@/services/labelStudioService';
 import type { CreateTaskPayload, TaskPriority, AnnotationType } from '@/types';
@@ -76,12 +84,19 @@ interface TaskCreateModalProps {
 }
 
 
-interface DataSource {
-  id: string;
-  name: string;
-  type: 'file' | 'api' | 'database';
-  description?: string;
-}
+/** 三大模块数据源类型与所需权限的映射 */
+const MODULE_SOURCE_PERMISSIONS: Record<string, string> = {
+  // 数据同步模块
+  ds_sources: 'dataLifecycle.create',
+  // 数据流转模块
+  lc_temp_data: 'dataLifecycle.create',
+  lc_sample: 'dataLifecycle.create',
+  lc_annotation: 'annotationTask.create',
+  lc_enhancement: 'enhancement.create',
+  lc_ai_trial: 'aiTrial.view',
+  // 数据增强模块
+  aug_samples: 'enhancement.create',
+};
 
 interface User {
   id: string;
@@ -170,12 +185,6 @@ const annotationTypeOptions: {
 ];
 
 // Mock data for development - TODO: Replace with real API calls
-const mockDataSources: DataSource[] = [
-  { id: 'a0000001-0000-4000-8000-000000000001', name: 'Test Customer Reviews Dataset', type: 'file', description: 'CSV file containing customer reviews' },
-  { id: 'a0000002-0000-4000-8000-000000000002', name: 'Test Product Descriptions API', type: 'api', description: 'REST API endpoint for product descriptions' },
-  { id: 'a0000003-0000-4000-8000-000000000003', name: 'Test Support Tickets Database', type: 'database', description: 'PostgreSQL database with support tickets' },
-];
-
 const mockUsers: User[] = [
   { id: 'b0000001-0000-4000-8000-000000000001', name: 'John Doe', email: 'john.doe@company.com', role: 'Business Expert' },
   { id: 'b0000002-0000-4000-8000-000000000002', name: 'Jane Smith', email: 'jane.smith@company.com', role: 'Technical Expert' },
@@ -213,6 +222,10 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
   const { message, modal } = App.useApp();
   const [form] = Form.useForm();
   const createTask = useCreateTask();
+  const { hasPermission } = useAuthStore();
+  
+  // 数据源类型状态
+  const [selectedSourceType, setSelectedSourceType] = useState<string>('file');
   
   // State management
   const [currentStep, setCurrentStep] = useState(0);
@@ -234,6 +247,99 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
   const [importResult, setImportResult] = useState<ImportResult<ImportedTaskData> | null>(null);
   const [isImporting, setIsImporting] = useState(false);
 
+  // 根据权限过滤可用的模块数据源类型
+  const availableModuleTypes = useMemo(() => {
+    return Object.entries(MODULE_SOURCE_PERMISSIONS)
+      .filter(([, permission]) => hasPermission(permission))
+      .map(([type]) => type);
+  }, [hasPermission]);
+
+  // 查询数据同步模块数据源
+  const { data: syncSources = [] } = useQuery<{ id: string; name: string }[]>({
+    queryKey: ['task-create-sync-sources'],
+    queryFn: async () => {
+      const res = await api.get('/api/v1/data-sync/sources');
+      return (res.data as any[]).map(s => ({ id: s.id, name: s.name }));
+    },
+    enabled: open && availableModuleTypes.includes('ds_sources'),
+  });
+
+  // 查询数据流转模块各子类数据
+  const { data: tempDataList = [] } = useQuery<{ id: string; name: string }[]>({
+    queryKey: ['task-create-temp-data'],
+    queryFn: async () => {
+      const res = await api.get('/api/temp-data');
+      const data = res.data as any;
+      return ((data?.items ?? data) || []).map((d: any) => ({ id: d.id, name: d.name || d.id }));
+    },
+    enabled: open && availableModuleTypes.includes('lc_temp_data'),
+  });
+
+  const { data: sampleList = [] } = useQuery<{ id: string; name: string }[]>({
+    queryKey: ['task-create-samples'],
+    queryFn: async () => {
+      const res = await api.get('/api/samples');
+      const data = res.data as any;
+      return ((data?.items ?? data) || []).map((d: any) => ({ id: d.id, name: d.name || d.id }));
+    },
+    enabled: open && availableModuleTypes.includes('lc_sample'),
+  });
+
+  const { data: annotationTaskList = [] } = useQuery<{ id: string; name: string }[]>({
+    queryKey: ['task-create-annotation-tasks'],
+    queryFn: async () => {
+      const res = await api.get('/api/annotation-tasks');
+      const data = res.data as any;
+      return ((data?.items ?? data) || []).map((d: any) => ({ id: d.id, name: d.name || d.id }));
+    },
+    enabled: open && availableModuleTypes.includes('lc_annotation'),
+  });
+
+  const { data: enhancementList = [] } = useQuery<{ id: string; name: string }[]>({
+    queryKey: ['task-create-enhancements'],
+    queryFn: async () => {
+      const res = await api.get('/api/enhancements');
+      const data = res.data as any;
+      return ((data?.items ?? data) || []).map((d: any) => ({ id: d.id, name: d.name || d.id }));
+    },
+    enabled: open && availableModuleTypes.includes('lc_enhancement'),
+  });
+
+  const { data: aiTrialList = [] } = useQuery<{ id: string; name: string }[]>({
+    queryKey: ['task-create-ai-trials'],
+    queryFn: async () => {
+      const res = await api.get('/api/ai-trials');
+      const data = res.data as any;
+      return ((data?.items ?? data) || []).map((d: any) => ({ id: d.id, name: d.name || d.id }));
+    },
+    enabled: open && availableModuleTypes.includes('lc_ai_trial'),
+  });
+
+  // 查询数据增强模块样本
+  const { data: augSampleList = [] } = useQuery<{ id: string; name: string }[]>({
+    queryKey: ['task-create-aug-samples'],
+    queryFn: async () => {
+      const res = await api.get('/api/v1/augmentation/samples');
+      const data = res.data as any;
+      return ((data?.items ?? data) || []).map((d: any) => ({ id: d.id, name: d.name || d.id }));
+    },
+    enabled: open && availableModuleTypes.includes('aug_samples'),
+  });
+
+  /** 根据选中的数据源类型返回对应的数据列表 */
+  const currentSourceList = useMemo(() => {
+    switch (selectedSourceType) {
+      case 'ds_sources': return syncSources;
+      case 'lc_temp_data': return tempDataList;
+      case 'lc_sample': return sampleList;
+      case 'lc_annotation': return annotationTaskList;
+      case 'lc_enhancement': return enhancementList;
+      case 'lc_ai_trial': return aiTrialList;
+      case 'aug_samples': return augSampleList;
+      default: return [];
+    }
+  }, [selectedSourceType, syncSources, tempDataList, sampleList, annotationTaskList, enhancementList, aiTrialList, augSampleList]);
+
   // Load templates on mount
   useEffect(() => {
     setTemplates(loadTemplates());
@@ -247,6 +353,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
       setCreateMode('single');
       setBatchTasks([]);
       setSelectedAnnotationType('text_classification');
+      setSelectedSourceType('file');
       setImportResult(null);
       setImportModalOpen(false);
     }
@@ -765,37 +872,88 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
       <div style={{ display: currentStep === 1 ? 'block' : 'none' }}>
         <Card title={t('dataSource')} variant="borderless">
           <Form.Item name="data_source_type" label={t('dataSourceType')}>
-            <Radio.Group>
+            <Radio.Group
+              onChange={e => {
+                setSelectedSourceType(e.target.value);
+                form.setFieldValue('data_source_id', undefined);
+              }}
+            >
               <Space direction="vertical">
+                {/* 基础类型 */}
                 <Radio value="file"><Space><FileTextOutlined />{t('fileUpload')}</Space></Radio>
                 <Radio value="api"><Space><DatabaseOutlined />{t('apiEndpoint')}</Space></Radio>
                 <Radio value="database"><Space><DatabaseOutlined />{t('database')}</Space></Radio>
+
+                {/* 数据同步模块 */}
+                {availableModuleTypes.includes('ds_sources') && (
+                  <>
+                    <Divider style={{ margin: '8px 0' }} />
+                    <Text type="secondary" style={{ fontSize: 12 }}>{t('moduleSource.groupDataSync')}</Text>
+                    <Radio value="ds_sources"><Space><SyncOutlined />{t('moduleSource.dsSources')}</Space></Radio>
+                  </>
+                )}
+
+                {/* 数据流转模块 */}
+                {availableModuleTypes.some(t => t.startsWith('lc_')) && (
+                  <>
+                    <Divider style={{ margin: '8px 0' }} />
+                    <Text type="secondary" style={{ fontSize: 12 }}>{t('moduleSource.groupDataLifecycle')}</Text>
+                    {availableModuleTypes.includes('lc_temp_data') && (
+                      <Radio value="lc_temp_data"><Space><InboxOutlined />{t('moduleSource.lcTempData')}</Space></Radio>
+                    )}
+                    {availableModuleTypes.includes('lc_sample') && (
+                      <Radio value="lc_sample"><Space><StarOutlined />{t('moduleSource.lcSample')}</Space></Radio>
+                    )}
+                    {availableModuleTypes.includes('lc_annotation') && (
+                      <Radio value="lc_annotation"><Space><FileTextOutlined />{t('moduleSource.lcAnnotation')}</Space></Radio>
+                    )}
+                    {availableModuleTypes.includes('lc_enhancement') && (
+                      <Radio value="lc_enhancement"><Space><ThunderboltOutlined />{t('moduleSource.lcEnhancement')}</Space></Radio>
+                    )}
+                    {availableModuleTypes.includes('lc_ai_trial') && (
+                      <Radio value="lc_ai_trial"><Space><ExperimentOutlined />{t('moduleSource.lcAiTrial')}</Space></Radio>
+                    )}
+                  </>
+                )}
+
+                {/* 数据增强模块 */}
+                {availableModuleTypes.includes('aug_samples') && (
+                  <>
+                    <Divider style={{ margin: '8px 0' }} />
+                    <Text type="secondary" style={{ fontSize: 12 }}>{t('moduleSource.groupAugmentation')}</Text>
+                    <Radio value="aug_samples"><Space><AppstoreOutlined />{t('moduleSource.augSamples')}</Space></Radio>
+                  </>
+                )}
               </Space>
             </Radio.Group>
           </Form.Item>
 
-          <Form.Item name="data_source_id" label={t('selectDataSource')}>
-            <Select placeholder={t('dataSourcePlaceholder')}>
-              {mockDataSources.map(source => (
-                <Select.Option key={source.id} value={source.id}>
-                  <Space direction="vertical" size={0}>
-                    <span>{source.name}</span>
-                    <span style={{ fontSize: 12, color: '#999' }}>{source.description}</span>
-                  </Space>
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
+          {/* 模块数据源选择下拉 */}
+          {!['file', 'api', 'database'].includes(selectedSourceType) && currentSourceList.length > 0 && (
+            <Form.Item name="data_source_id" label={t('selectDataSource')}>
+              <Select placeholder={t('dataSourcePlaceholder')}>
+                {currentSourceList.map(item => (
+                  <Select.Option key={item.id} value={item.id}>
+                    {item.name}
+                  </Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+          )}
 
-          <Divider />
-
-          <Form.Item name="file_upload" label={t('uploadFile')}>
-            <Dragger name="file" multiple={false} accept=".csv,.json,.txt,.xlsx" beforeUpload={() => false}>
-              <p className="ant-upload-drag-icon"><InboxOutlined /></p>
-              <p className="ant-upload-text">{t('uploadText')}</p>
-              <p className="ant-upload-hint">{t('uploadHint')}</p>
-            </Dragger>
-          </Form.Item>
+          {/* 基础类型：文件上传 */}
+          {selectedSourceType === 'file' && (
+            <>
+              <Divider />
+              <Form.Item name="file_upload" label={t('uploadFile')}>
+                <Dragger name="file" multiple={false} accept=".csv,.json,.txt,.xlsx" beforeUpload={() => false}>
+                  <p className="ant-upload-drag-icon"><InboxOutlined /></p>
+                  <p className="ant-upload-text">{t('uploadText')}</p>
+                  <p className="ant-upload-hint">{t('uploadHint')}</p>
+                </Dragger>
+              </Form.Item>
+            </>
+          )}
         </Card>
       </div>
 

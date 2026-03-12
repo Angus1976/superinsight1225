@@ -784,6 +784,18 @@
   "database": "Database",
   "selectDataSource": "Select Data Source",
   "dataSourcePlaceholder": "Choose data source",
+  "moduleSource": {
+    "groupDataSync": "Data Sync",
+    "dsSources": "Data Sources",
+    "groupDataLifecycle": "Data Lifecycle",
+    "lcTempData": "Temp Data",
+    "lcSample": "Sample Library",
+    "lcAnnotation": "Annotation Tasks",
+    "lcEnhancement": "Data Enhancement",
+    "lcAiTrial": "AI Trials",
+    "groupAugmentation": "Augmentation Module",
+    "augSamples": "Sample Management"
+  },
   "uploadFile": "Upload File",
   "uploadText": "Click or drag file to this area to upload",
   "uploadHint": "Support CSV, JSON, TXT, XLSX formats",

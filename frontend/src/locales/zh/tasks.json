@@ -787,6 +787,18 @@
   "database": "数据库",
   "selectDataSource": "选择数据源",
   "dataSourcePlaceholder": "选择数据源",
+  "moduleSource": {
+    "groupDataSync": "数据同步",
+    "dsSources": "数据源",
+    "groupDataLifecycle": "数据流转",
+    "lcTempData": "临时数据",
+    "lcSample": "样本库",
+    "lcAnnotation": "标注任务",
+    "lcEnhancement": "数据增强",
+    "lcAiTrial": "AI试验",
+    "groupAugmentation": "数据增强模块",
+    "augSamples": "样本管理"
+  },
   "uploadFile": "上传文件",
   "uploadText": "点击或拖拽文件到此区域上传",
   "uploadHint": "支持 CSV、JSON、TXT、XLSX 格式",

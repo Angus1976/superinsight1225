@@ -432,6 +432,11 @@
     "type": "类型",
     "quickActions": "快捷操作",
     "recentActivity": "最近活动",
+    "created": "创建",
+    "approved": "通过",
+    "started": "开始",
+    "added": "添加",
+    "completed": "完成",
     "actions": {
       "save": "保存",
       "cancel": "取消",
@@ -459,7 +464,9 @@
       "success": "成功",
       "warning": "警告",
       "empty": "暂无数据",
-      "current": "当前状态"
+      "current": "当前状态",
+      "pending": "待处理",
+      "failed": "失败"
     },
     "messages": {
       "confirmDelete": "确定要删除吗？此操作不可恢复。",

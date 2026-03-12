@@ -432,6 +432,11 @@
     "type": "Type",
     "quickActions": "Quick Actions",
     "recentActivity": "Recent Activity",
+    "created": "Created",
+    "approved": "Approved",
+    "started": "Started",
+    "added": "Added",
+    "completed": "Completed",
     "actions": {
       "save": "Save",
       "cancel": "Cancel",
@@ -459,7 +464,9 @@
       "success": "Success",
       "warning": "Warning",
       "empty": "No data available",
-      "current": "Current Status"
+      "current": "Current Status",
+      "pending": "Pending",
+      "failed": "Failed"
     },
     "messages": {
       "confirmDelete": "Are you sure you want to delete? This action cannot be undone.",

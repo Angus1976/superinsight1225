@@ -272,7 +272,7 @@ interface ActivityItem {
 }
 
 const RecentActivity: React.FC = () => {
-  const { t } = useTranslation('dataLifecycle');
+  const { t } = useTranslation(['dataLifecycle', 'common']);
 
   // Mock activity data - in real implementation, this would come from API
   const activities: ActivityItem[] = [

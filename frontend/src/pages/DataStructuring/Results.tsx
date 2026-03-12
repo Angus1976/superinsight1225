@@ -433,15 +433,25 @@ const ResultsPage: React.FC = () => {
                 defaultValue: `共提取 ${recordPagination.total} 条结构化记录，可创建标注任务。`,
               })}
               extra={
-                <Button
-                  type="primary"
-                  size="large"
-                  icon={<PlusOutlined />}
-                  onClick={handleCreateTasks}
-                  loading={isCreatingTasks}
-                >
-                  {t('structuring:results.createTasks', { defaultValue: '创建标注任务' })}
-                </Button>
+                <Space>
+                  <Button
+                    size="large"
+                    icon={<DatabaseOutlined />}
+                    onClick={handleOpenTransferModal}
+                    loading={isTransferring}
+                  >
+                    {t('aiProcessing:transfer.button')}
+                  </Button>
+                  <Button
+                    type="primary"
+                    size="large"
+                    icon={<PlusOutlined />}
+                    onClick={handleCreateTasks}
+                    loading={isCreatingTasks}
+                  >
+                    {t('structuring:results.createTasks', { defaultValue: '创建标注任务' })}
+                  </Button>
+                </Space>
               }
             />
           </Card>

@@ -556,7 +556,8 @@
       "successDesc": "Data has been stored to: {{location}}",
       "failedTitle": "Processing Failed",
       "retry": "Retry",
-      "noFile": "Please upload a file first"
+      "noFile": "Please upload a file first",
+      "transferToLifecycle": "Transfer to Data Lifecycle"
     }
   }
 }

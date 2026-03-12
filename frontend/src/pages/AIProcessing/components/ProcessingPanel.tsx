@@ -5,7 +5,7 @@
  * Supports auto/manual mode toggle, execution progress, and error retry.
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   Card,
   Radio,
@@ -20,10 +20,13 @@ import {
   PlayCircleOutlined,
   ReloadOutlined,
   CheckCircleOutlined,
+  CloudUploadOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useToolkitStore } from '@/stores/toolkitStore';
 import type { ProcessingMode } from '@/types/toolkit';
+import TransferToLifecycleModal from '@/components/DataLifecycle/TransferToLifecycleModal';
+import type { TransferDataItem } from '@/components/DataLifecycle/TransferToLifecycleModal';
 import StrategySelector from './StrategySelector';
 import StorageIndicator from './StorageIndicator';
 
@@ -58,27 +61,55 @@ const ProgressSection: React.FC = () => {
   );
 };
 
-/** Render success result after pipeline completes */
-const SuccessSection: React.FC = () => {
+/** Render success result with transfer-to-lifecycle button */
+const SuccessSection: React.FC<{ origin: ProcessingPanelProps['origin'] }> = ({ origin }) => {
   const { t } = useTranslation(['common']);
-  const { executionStatus } = useToolkitStore();
+  const { executionStatus, fileId } = useToolkitStore();
+  const [transferOpen, setTransferOpen] = useState(false);
 
   if (!executionStatus || executionStatus.status !== 'completed') return null;
 
+  const transferData: TransferDataItem[] = fileId
+    ? [{
+        id: fileId,
+        name: executionStatus.storageLocation || fileId,
+        content: { storageLocation: executionStatus.storageLocation },
+        metadata: { origin, executionId: executionStatus.executionId },
+      }]
+    : [];
+
   return (
-    <Result
-      status="success"
-      icon={<CheckCircleOutlined />}
-      title={t('common:aiProcessing.processing.successTitle')}
-      subTitle={
-        executionStatus.storageLocation
-          ? t('common:aiProcessing.processing.successDesc', {
-              location: executionStatus.storageLocation,
-            })
-          : undefined
-      }
-      style={{ padding: '16px 0' }}
-    />
+    <>
+      <Result
+        status="success"
+        icon={<CheckCircleOutlined />}
+        title={t('common:aiProcessing.processing.successTitle')}
+        subTitle={
+          executionStatus.storageLocation
+            ? t('common:aiProcessing.processing.successDesc', {
+                location: executionStatus.storageLocation,
+              })
+            : undefined
+        }
+        extra={
+          <Button
+            type="primary"
+            icon={<CloudUploadOutlined />}
+            onClick={() => setTransferOpen(true)}
+          >
+            {t('common:aiProcessing.processing.transferToLifecycle')}
+          </Button>
+        }
+        style={{ padding: '16px 0' }}
+      />
+      <TransferToLifecycleModal
+        visible={transferOpen}
+        onClose={() => setTransferOpen(false)}
+        onSuccess={() => setTransferOpen(false)}
+        sourceType={origin === 'vectorization' ? 'vectorization' : 'semantic'}
+        selectedData={transferData}
+      />
+    </>
   );
 };
 
@@ -171,7 +202,7 @@ const ProcessingPanel: React.FC<ProcessingPanelProps> = ({ origin }) => {
         {candidates.length > 0 && <StrategySelector />}
 
         <ProgressSection />
-        <SuccessSection />
+        <SuccessSection origin={origin} />
         <FailureSection onRetry={handleRetry} />
 
         <Button

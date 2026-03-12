@@ -556,7 +556,8 @@
       "successDesc": "数据已存储至：{{location}}",
       "failedTitle": "处理失败",
       "retry": "重试",
-      "noFile": "请先上传文件"
+      "noFile": "请先上传文件",
+      "transferToLifecycle": "转存到数据流转"
     }
   }
 }

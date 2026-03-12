@@ -16,12 +16,14 @@ const DEFAULT_PAGE_SIZE = 10;
 export const taskService = {
   // Get task list with pagination and filters
   async getList(params: TaskListParams = {}): Promise<TaskListResponse> {
-    // Ensure pagination params have defaults
-    const paginatedParams = {
-      ...params,
+    const { status, page_size, ...rest } = params;
+    // Map frontend param names to backend query param names
+    const paginatedParams: Record<string, unknown> = {
+      ...rest,
       page: params.page || 1,
-      page_size: params.page_size || DEFAULT_PAGE_SIZE,
+      size: page_size || DEFAULT_PAGE_SIZE,
     };
+    if (status) paginatedParams.status_filter = status;
     const response = await apiClient.get<TaskListResponse>(API_ENDPOINTS.TASKS.BASE, { 
       params: paginatedParams 
     });

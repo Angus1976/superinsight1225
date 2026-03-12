@@ -632,6 +632,7 @@
     "totalTasks": "Total Tasks",
     "inProgress": "In Progress",
     "completed": "Completed",
+    "cancelled": "Cancelled",
     "overdue": "Overdue",
     "nearDue": "Due Soon",
     "unassigned": "Unassigned"

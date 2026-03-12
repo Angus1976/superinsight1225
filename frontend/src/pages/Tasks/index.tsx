@@ -316,20 +316,64 @@ const TasksPage: React.FC = () => {
 
   return (
     <>
-      {/* Statistics Cards */}
+      {/* Statistics Cards - clickable to filter table */}
       {stats && (
         <Row gutter={16} style={{ marginBottom: 16 }}>
           <Col span={6}>
-            <Card size="small"><Statistic title={t('totalTasks')} value={stats.total} prefix={<BarChartOutlined />} valueStyle={{ color: '#1890ff' }} /></Card>
+            <Card
+              size="small"
+              hoverable
+              style={{
+                cursor: 'pointer',
+                borderColor: activeTab === 'all' ? '#1890ff' : undefined,
+                borderWidth: activeTab === 'all' ? 2 : 1,
+              }}
+              onClick={() => { setActiveTab('all'); setSelectedRowKeys([]); }}
+            >
+              <Statistic title={t('totalTasks')} value={stats.total} prefix={<BarChartOutlined />} valueStyle={{ color: '#1890ff' }} />
+            </Card>
           </Col>
           <Col span={6}>
-            <Card size="small"><Statistic title={t('inProgress')} value={stats.in_progress} prefix={<PlayCircleOutlined />} valueStyle={{ color: '#52c41a' }} /></Card>
+            <Card
+              size="small"
+              hoverable
+              style={{
+                cursor: 'pointer',
+                borderColor: activeTab === 'in_progress' ? '#52c41a' : undefined,
+                borderWidth: activeTab === 'in_progress' ? 2 : 1,
+              }}
+              onClick={() => { setActiveTab('in_progress'); setSelectedRowKeys([]); }}
+            >
+              <Statistic title={t('inProgress')} value={stats.in_progress} prefix={<PlayCircleOutlined />} valueStyle={{ color: '#52c41a' }} />
+            </Card>
           </Col>
           <Col span={6}>
-            <Card size="small"><Statistic title={t('completed')} value={stats.completed} prefix={<CheckCircleOutlined />} valueStyle={{ color: '#52c41a' }} /></Card>
+            <Card
+              size="small"
+              hoverable
+              style={{
+                cursor: 'pointer',
+                borderColor: activeTab === 'completed' ? '#52c41a' : undefined,
+                borderWidth: activeTab === 'completed' ? 2 : 1,
+              }}
+              onClick={() => { setActiveTab('completed'); setSelectedRowKeys([]); }}
+            >
+              <Statistic title={t('completed')} value={stats.completed} prefix={<CheckCircleOutlined />} valueStyle={{ color: '#52c41a' }} />
+            </Card>
           </Col>
           <Col span={6}>
-            <Card size="small"><Statistic title={t('overdue')} value={stats.overdue} prefix={<ExclamationCircleOutlined />} valueStyle={{ color: '#ff4d4f' }} /></Card>
+            <Card
+              size="small"
+              hoverable
+              style={{
+                cursor: 'pointer',
+                borderColor: activeTab === 'cancelled' ? '#ff4d4f' : undefined,
+                borderWidth: activeTab === 'cancelled' ? 2 : 1,
+              }}
+              onClick={() => { setActiveTab('cancelled'); setSelectedRowKeys([]); }}
+            >
+              <Statistic title={t('statistics.cancelled')} value={stats.cancelled} prefix={<CloseCircleOutlined />} valueStyle={{ color: '#ff4d4f' }} />
+            </Card>
           </Col>
         </Row>
       )}

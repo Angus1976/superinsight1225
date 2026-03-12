@@ -9,8 +9,8 @@ import { Table, Button, Space, Tag, message, Modal, Dropdown, Typography, Toolti
 import {
   EditOutlined,
   DeleteOutlined,
-  ArchiveOutlined,
-  RestoreOutlined,
+  InboxOutlined,
+  RollbackOutlined,
   EyeOutlined,
   MoreOutlined,
   SearchOutlined,
@@ -250,7 +250,7 @@ const TempDataTable: React.FC<TempDataTableProps> = ({ onEdit, onView, refreshKe
           items.push({
             key: 'archive',
             label: t('tempData.actions.archive'),
-            icon: <ArchiveOutlined />,
+            icon: <InboxOutlined />,
             onClick: () => handleArchive(record),
           });
         }
@@ -259,7 +259,7 @@ const TempDataTable: React.FC<TempDataTableProps> = ({ onEdit, onView, refreshKe
           items.push({
             key: 'restore',
             label: t('tempData.actions.restore'),
-            icon: <RestoreOutlined />,
+            icon: <RollbackOutlined />,
             onClick: () => handleRestore(record),
           });
         }

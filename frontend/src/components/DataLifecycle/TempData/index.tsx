@@ -6,7 +6,7 @@ import {
   EditOutlined,
   DeleteOutlined,
   InboxOutlined,
-  RestoreOutlined,
+  RollbackOutlined,
   EyeOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
@@ -162,7 +162,7 @@ export const TempDataList: React.FC = () => {
           {hasPermission('dataLifecycle.restore') && record.state === 'archived' && (
             <Button 
               type="text" 
-              icon={<RestoreOutlined />}
+              icon={<RollbackOutlined />}
               onClick={() => handleRestore(record)}
             />
           )}

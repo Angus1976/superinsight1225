@@ -156,6 +156,17 @@ const TempDataTable: React.FC<TempDataTableProps> = ({ onEdit, onView, refreshKe
       ready: 'success',
       archived: 'warning',
       deleted: 'error',
+      temp_stored: 'blue',
+      under_review: 'orange',
+      rejected: 'red',
+      approved: 'green',
+      in_sample_library: 'cyan',
+      annotation_pending: 'gold',
+      annotating: 'processing',
+      annotated: 'success',
+      enhancing: 'processing',
+      enhanced: 'success',
+      trial_calculation: 'purple',
     };
     return colorMap[state] || 'default';
   };
@@ -204,6 +215,12 @@ const TempDataTable: React.FC<TempDataTableProps> = ({ onEdit, onView, refreshKe
       dataIndex: 'uploadedBy',
       key: 'uploadedBy',
       width: 120,
+      render: (userId: string) => {
+        if (!userId) return '-';
+        // 显示 UUID 前 8 位作为短 ID
+        return userId.length > 8 ? userId.substring(0, 8) + '...' : userId;
+      },
+      ellipsis: true,
     },
     {
       title: t('tempData.columns.uploadedAt'),

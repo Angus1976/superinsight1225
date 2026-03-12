@@ -32,7 +32,18 @@
       "processing": "处理中",
       "ready": "就绪",
       "archived": "已归档",
-      "deleted": "已删除"
+      "deleted": "已删除",
+      "temp_stored": "临时存储",
+      "under_review": "审核中",
+      "rejected": "已拒绝",
+      "approved": "已批准",
+      "in_sample_library": "样本库中",
+      "annotation_pending": "待标注",
+      "annotating": "标注中",
+      "annotated": "已标注",
+      "enhancing": "增强中",
+      "enhanced": "已增强",
+      "trial_calculation": "试算中"
     },
     "filters": {
       "state": "状态",

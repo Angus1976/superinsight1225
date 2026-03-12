@@ -32,7 +32,18 @@
       "processing": "Processing",
       "ready": "Ready",
       "archived": "Archived",
-      "deleted": "Deleted"
+      "deleted": "Deleted",
+      "temp_stored": "Temporary Storage",
+      "under_review": "Under Review",
+      "rejected": "Rejected",
+      "approved": "Approved",
+      "in_sample_library": "In Sample Library",
+      "annotation_pending": "Annotation Pending",
+      "annotating": "Annotating",
+      "annotated": "Annotated",
+      "enhancing": "Enhancing",
+      "enhanced": "Enhanced",
+      "trial_calculation": "Trial Calculation"
     },
     "filters": {
       "state": "State",

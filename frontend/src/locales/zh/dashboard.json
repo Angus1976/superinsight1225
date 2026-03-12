@@ -94,6 +94,12 @@
     "close": "关闭",
     "total": "共 {{total}} 条"
   },
+  "qualityDetail": {
+    "time": "时间",
+    "annotationsPerHour": "每小时标注数",
+    "sessionDuration": "会话时长",
+    "actionsPerSession": "每会话操作数"
+  },
   "errors": {
     "dataLoadFailed": "数据加载失败",
     "backendConnection": "无法连接到后端服务器。请确保后端服务正在运行。"

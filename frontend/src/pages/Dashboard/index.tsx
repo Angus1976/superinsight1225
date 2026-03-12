@@ -49,7 +49,7 @@ const DashboardPage: React.FC = () => {
   const { t } = useTranslation(['dashboard', 'tasks']);
   const { user } = useAuthStore();
   const navigate = useNavigate();
-  const { annotationEfficiency, isLoading, error, queriesEnabled } = useDashboard();
+  const { annotationEfficiency, userActivity, isLoading, error, queriesEnabled } = useDashboard();
   const [selectedMetric, setSelectedMetric] = useState<DashboardMetricKey | null>(null);
 
   // Build query params based on selected metric
@@ -179,7 +179,7 @@ const DashboardPage: React.FC = () => {
       label: (
         <span><BarChartOutlined /> {t('tabs.qualityReports')}</span>
       ),
-      children: <QualityReports />,
+      children: <QualityReports annotationEfficiency={annotationEfficiency} userActivity={userActivity} loading={isLoading} />,
     },
     {
       key: 'knowledgeGraph',

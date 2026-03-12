@@ -1,5 +1,5 @@
 // Quality reports and trend charts component with export functionality
-import { Card, Row, Col, Select, DatePicker, Space, Statistic, Alert, Tooltip, Button, Dropdown, message } from 'antd';
+import { Card, Row, Col, Select, DatePicker, Space, Statistic, Alert, Tooltip, Button, Dropdown, Table, message } from 'antd';
 import type { MenuProps } from 'antd';
 import {
   LineChart,
@@ -18,69 +18,37 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { 
-  TrophyOutlined, 
-  ExclamationCircleOutlined, 
+import {
+  TrophyOutlined,
+  ExclamationCircleOutlined,
   ClockCircleOutlined,
   UserOutlined,
   WarningOutlined,
   DownloadOutlined,
   FilePdfOutlined,
   FileExcelOutlined,
+  CloseOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useState, useCallback } from 'react';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
+import type { AnnotationEfficiency, UserActivityMetrics } from '@/types';
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
 
-interface QualityTrendData {
-  timestamp: number;
-  datetime: string;
-  qualityScore: number;
-  completionRate: number;
-  revisionRate: number;
-  avgAnnotationTime: number;
-}
-
-interface QualityDistributionData {
-  range: string;
-  count: number;
-  percentage: number;
-  color: string;
-}
-
-interface WorkTimeData {
-  user: string;
-  totalHours: number;
-  efficiency: number;
-  qualityScore: number;
-  tasksCompleted: number;
-}
-
-interface AnomalyData {
-  timestamp: number;
-  datetime: string;
-  type: 'quality' | 'efficiency' | 'time';
-  severity: 'low' | 'medium' | 'high';
-  description: string;
-  value: number;
-}
+export type QualityMetricKey = 'avgQualityScore' | 'avgCompletionRate' | 'avgRevisionRate' | 'totalWorkHours';
 
 interface QualityReportsProps {
-  data?: {
-    trends: QualityTrendData[];
-    distribution: QualityDistributionData[];
-    workTime: WorkTimeData[];
-    anomalies: AnomalyData[];
-  };
+  annotationEfficiency?: AnnotationEfficiency;
+  userActivity?: UserActivityMetrics;
   loading?: boolean;
 }
 
 export const QualityReports: React.FC<QualityReportsProps> = ({
-  data,
+  annotationEfficiency,
+  userActivity,
   loading = false,
 }) => {
   const { t } = useTranslation('dashboard');
@@ -89,63 +57,142 @@ export const QualityReports: React.FC<QualityReportsProps> = ({
     dayjs(),
   ]);
   const [chartType, setChartType] = useState<'line' | 'area'>('line');
+  const [selectedCard, setSelectedCard] = useState<QualityMetricKey | null>(null);
 
-  // Use real data or empty arrays
-  const trends = data?.trends || [];
-  const distribution = data?.distribution || [];
-  const workTime = data?.workTime || [];
-  const anomalies = data?.anomalies || [];
+  // Real data from backend
+  const trends = annotationEfficiency?.trends || [];
+  const summary = annotationEfficiency?.summary;
 
   // Format trend data for charts
   const formattedTrends = trends.map((item) => ({
     ...item,
-    time: dayjs(item.datetime).format('HH:mm'),
-    qualityPercent: (item.qualityScore * 100).toFixed(1),
-    completionPercent: (item.completionRate * 100).toFixed(1),
-    revisionPercent: (item.revisionRate * 100).toFixed(1),
+    time: dayjs(item.datetime).format('MM-DD HH:mm'),
+    qualityPercent: (item.quality_score * 100).toFixed(1),
+    completionPercent: (item.completion_rate * 100).toFixed(1),
+    revisionPercent: (item.revision_rate * 100).toFixed(1),
   }));
 
-  // Calculate summary statistics (handle empty data)
-  const avgQuality = trends.length > 0 
-    ? trends.reduce((sum, item) => sum + item.qualityScore, 0) / trends.length 
+  // Summary statistics from real data
+  const avgQuality = summary?.avg_quality_score ?? 0;
+  const avgCompletion = summary?.avg_completion_rate ?? 0;
+  const avgRevision = summary?.avg_revision_rate ?? 0;
+  const totalWorkHours = userActivity?.summary?.avg_session_duration
+    ? (userActivity.summary.avg_active_users * userActivity.summary.avg_session_duration / 3600)
     : 0;
-  const avgCompletion = trends.length > 0
-    ? trends.reduce((sum, item) => sum + item.completionRate, 0) / trends.length
-    : 0;
-  const avgRevision = trends.length > 0
-    ? trends.reduce((sum, item) => sum + item.revisionRate, 0) / trends.length
-    : 0;
-  const totalWorkHours = workTime.reduce((sum, item) => sum + item.totalHours, 0);
 
-  // Export to CSV/Excel
+  const handleCardClick = (key: QualityMetricKey) => {
+    setSelectedCard(selectedCard === key ? null : key);
+  };
+
+  const cardStyle = (key: QualityMetricKey, color: string) => ({
+    cursor: 'pointer' as const,
+    borderColor: selectedCard === key ? color : undefined,
+    borderWidth: selectedCard === key ? 2 : undefined,
+    transition: 'border-color 0.3s',
+  });
+
+  // Detail table columns for trend data
+  const trendDetailColumns = [
+    {
+      title: t('qualityDetail.time'),
+      dataIndex: 'datetime',
+      key: 'datetime',
+      width: 160,
+      render: (val: string) => dayjs(val).format('YYYY-MM-DD HH:mm'),
+    },
+    {
+      title: t('metrics.qualityScore'),
+      dataIndex: 'quality_score',
+      key: 'quality_score',
+      width: 120,
+      render: (val: number) => `${(val * 100).toFixed(1)}%`,
+      sorter: (a: any, b: any) => a.quality_score - b.quality_score,
+    },
+    {
+      title: t('metrics.completionRate'),
+      dataIndex: 'completion_rate',
+      key: 'completion_rate',
+      width: 120,
+      render: (val: number) => `${(val * 100).toFixed(1)}%`,
+      sorter: (a: any, b: any) => a.completion_rate - b.completion_rate,
+    },
+    {
+      title: t('metrics.revisionRate'),
+      dataIndex: 'revision_rate',
+      key: 'revision_rate',
+      width: 120,
+      render: (val: number) => `${(val * 100).toFixed(1)}%`,
+      sorter: (a: any, b: any) => a.revision_rate - b.revision_rate,
+    },
+    {
+      title: t('qualityDetail.annotationsPerHour'),
+      dataIndex: 'annotations_per_hour',
+      key: 'annotations_per_hour',
+      width: 140,
+      render: (val: number) => val.toFixed(1),
+      sorter: (a: any, b: any) => a.annotations_per_hour - b.annotations_per_hour,
+    },
+  ];
+
+  // User activity detail columns
+  const userActivityColumns = [
+    {
+      title: t('qualityDetail.time'),
+      dataIndex: 'datetime',
+      key: 'datetime',
+      width: 160,
+      render: (val: string) => dayjs(val).format('YYYY-MM-DD HH:mm'),
+    },
+    {
+      title: t('metrics.activeUsers'),
+      dataIndex: 'active_users_count',
+      key: 'active_users_count',
+      width: 120,
+    },
+    {
+      title: t('qualityDetail.sessionDuration'),
+      dataIndex: 'session_duration_avg',
+      key: 'session_duration_avg',
+      width: 140,
+      render: (val: number) => `${(val / 60).toFixed(1)} min`,
+    },
+    {
+      title: t('qualityDetail.actionsPerSession'),
+      dataIndex: 'actions_per_session',
+      key: 'actions_per_session',
+      width: 140,
+      render: (val: number) => val.toFixed(1),
+    },
+  ];
+
+  const detailTitleMap: Record<QualityMetricKey, string> = {
+    avgQualityScore: t('metrics.avgQualityScore'),
+    avgCompletionRate: t('metrics.avgCompletionRate'),
+    avgRevisionRate: t('metrics.avgRevisionRate'),
+    totalWorkHours: t('metrics.totalWorkHours'),
+  };
+
+  // Export to CSV
   const exportToCSV = useCallback(() => {
-    const headers = ['Time', 'Quality Score (%)', 'Completion Rate (%)', 'Revision Rate (%)', 'Avg Annotation Time (s)'];
+    const headers = ['Time', 'Quality Score (%)', 'Completion Rate (%)', 'Revision Rate (%)', 'Annotations/Hour'];
     const rows = formattedTrends.map(item => [
-      item.time,
-      item.qualityPercent,
-      item.completionPercent,
-      item.revisionPercent,
-      item.avgAnnotationTime.toFixed(1)
+      item.time, item.qualityPercent, item.completionPercent, item.revisionPercent,
+      item.annotations_per_hour.toFixed(1),
     ]);
-    
     const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = `quality_report_${dayjs().format('YYYY-MM-DD')}.csv`;
     link.click();
-    message.success(t('export.csvSuccess') || 'CSV exported successfully');
+    message.success(t('export.csvSuccess'));
   }, [formattedTrends, t]);
 
-  // Export to JSON (for PDF generation via backend)
   const exportToPDF = useCallback(async () => {
     try {
       const reportData = {
         generatedAt: dayjs().toISOString(),
-        period: {
-          start: timeRange[0].format('YYYY-MM-DD'),
-          end: timeRange[1].format('YYYY-MM-DD'),
-        },
+        period: { start: timeRange[0].format('YYYY-MM-DD'), end: timeRange[1].format('YYYY-MM-DD') },
         summary: {
           avgQualityScore: (avgQuality * 100).toFixed(1),
           avgCompletionRate: (avgCompletion * 100).toFixed(1),
@@ -153,38 +200,37 @@ export const QualityReports: React.FC<QualityReportsProps> = ({
           totalWorkHours: totalWorkHours.toFixed(1),
         },
         trends: formattedTrends,
-        distribution,
-        workTime,
-        anomalies,
       };
-      
-      // For now, export as JSON (PDF generation would require backend support)
       const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
       link.download = `quality_report_${dayjs().format('YYYY-MM-DD')}.json`;
       link.click();
-      message.success(t('export.pdfSuccess') || 'Report exported successfully');
-    } catch (error) {
-      message.error(t('export.error') || 'Export failed');
+      message.success(t('export.pdfSuccess'));
+    } catch {
+      message.error(t('export.error'));
     }
-  }, [avgQuality, avgCompletion, avgRevision, totalWorkHours, formattedTrends, distribution, workTime, anomalies, timeRange, t]);
+  }, [avgQuality, avgCompletion, avgRevision, totalWorkHours, formattedTrends, timeRange, t]);
 
-  // Export dropdown menu
   const exportMenuItems: MenuProps['items'] = [
-    {
-      key: 'csv',
-      icon: <FileExcelOutlined />,
-      label: t('export.csv') || 'Export CSV',
-      onClick: exportToCSV,
-    },
-    {
-      key: 'pdf',
-      icon: <FilePdfOutlined />,
-      label: t('export.pdf') || 'Export PDF',
-      onClick: exportToPDF,
-    },
+    { key: 'csv', icon: <FileExcelOutlined />, label: t('export.csv'), onClick: exportToCSV },
+    { key: 'pdf', icon: <FilePdfOutlined />, label: t('export.pdf'), onClick: exportToPDF },
   ];
+
+  // Quality distribution from trends (group by score ranges)
+  const distribution = (() => {
+    if (trends.length === 0) return [];
+    const ranges = [
+      { range: '90-100%', min: 0.9, max: 1.01, color: '#52c41a' },
+      { range: '80-90%', min: 0.8, max: 0.9, color: '#1890ff' },
+      { range: '70-80%', min: 0.7, max: 0.8, color: '#faad14' },
+      { range: '<70%', min: 0, max: 0.7, color: '#ff4d4f' },
+    ];
+    return ranges.map(r => {
+      const count = trends.filter(t => t.quality_score >= r.min && t.quality_score < r.max).length;
+      return { ...r, count, percentage: trends.length > 0 ? Math.round(count / trends.length * 100) : 0 };
+    }).filter(r => r.count > 0);
+  })();
 
   return (
     <div>
@@ -197,27 +243,21 @@ export const QualityReports: React.FC<QualityReportsProps> = ({
               onChange={(dates) => dates && setTimeRange(dates as [Dayjs, Dayjs])}
               format="YYYY-MM-DD"
             />
-            <Select
-              value={chartType}
-              onChange={setChartType}
-              style={{ width: 120 }}
-            >
+            <Select value={chartType} onChange={setChartType} style={{ width: 120 }}>
               <Option value="line">{t('charts.lineChart')}</Option>
               <Option value="area">{t('charts.areaChart')}</Option>
             </Select>
           </Space>
           <Dropdown menu={{ items: exportMenuItems }} placement="bottomRight">
-            <Button icon={<DownloadOutlined />}>
-              {t('export.button') || 'Export'}
-            </Button>
+            <Button icon={<DownloadOutlined />}>{t('export.button')}</Button>
           </Dropdown>
         </Space>
       </Card>
 
-      {/* Summary Statistics */}
+      {/* Summary Statistics - Clickable Cards */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={6}>
-          <Card>
+          <Card hoverable style={cardStyle('avgQualityScore', '#52c41a')} onClick={() => handleCardClick('avgQualityScore')}>
             <Statistic
               title={t('metrics.avgQualityScore')}
               value={(avgQuality * 100).toFixed(1)}
@@ -228,7 +268,7 @@ export const QualityReports: React.FC<QualityReportsProps> = ({
           </Card>
         </Col>
         <Col xs={24} sm={6}>
-          <Card>
+          <Card hoverable style={cardStyle('avgCompletionRate', '#1890ff')} onClick={() => handleCardClick('avgCompletionRate')}>
             <Statistic
               title={t('metrics.avgCompletionRate')}
               value={(avgCompletion * 100).toFixed(1)}
@@ -239,7 +279,7 @@ export const QualityReports: React.FC<QualityReportsProps> = ({
           </Card>
         </Col>
         <Col xs={24} sm={6}>
-          <Card>
+          <Card hoverable style={cardStyle('avgRevisionRate', '#ff4d4f')} onClick={() => handleCardClick('avgRevisionRate')}>
             <Statistic
               title={t('metrics.avgRevisionRate')}
               value={(avgRevision * 100).toFixed(1)}
@@ -250,7 +290,7 @@ export const QualityReports: React.FC<QualityReportsProps> = ({
           </Card>
         </Col>
         <Col xs={24} sm={6}>
-          <Card>
+          <Card hoverable style={cardStyle('totalWorkHours', '#1890ff')} onClick={() => handleCardClick('totalWorkHours')}>
             <Statistic
               title={t('metrics.totalWorkHours')}
               value={totalWorkHours.toFixed(1)}
@@ -261,6 +301,25 @@ export const QualityReports: React.FC<QualityReportsProps> = ({
           </Card>
         </Col>
       </Row>
+
+      {/* Detail Table - shown when a card is clicked */}
+      {selectedCard && (
+        <Card
+          title={`${t('detailTable.title')} - ${detailTitleMap[selectedCard]}`}
+          extra={<CloseOutlined style={{ cursor: 'pointer' }} onClick={() => setSelectedCard(null)} />}
+          style={{ marginBottom: 24 }}
+        >
+          <Table
+            columns={selectedCard === 'totalWorkHours' ? userActivityColumns : trendDetailColumns}
+            dataSource={selectedCard === 'totalWorkHours' ? (userActivity?.trends || []) : trends}
+            rowKey={(_, index) => String(index)}
+            loading={loading}
+            pagination={{ pageSize: 10, showTotal: (total) => t('detailTable.total', { total }) }}
+            size="middle"
+            scroll={{ x: 600 }}
+          />
+        </Card>
+      )}
 
       {/* Quality Trend Chart */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
@@ -277,31 +336,13 @@ export const QualityReports: React.FC<QualityReportsProps> = ({
                       `${value}%`,
                       name === 'qualityPercent' ? t('metrics.qualityScore') :
                       name === 'completionPercent' ? t('metrics.completionRate') :
-                      t('metrics.revisionRate')
+                      t('metrics.revisionRate'),
                     ]}
                   />
                   <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="qualityPercent"
-                    stroke="#52c41a"
-                    strokeWidth={2}
-                    name={t('metrics.qualityScore')}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="completionPercent"
-                    stroke="#1890ff"
-                    strokeWidth={2}
-                    name={t('metrics.completionRate')}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="revisionPercent"
-                    stroke="#ff4d4f"
-                    strokeWidth={2}
-                    name={t('metrics.revisionRate')}
-                  />
+                  <Line type="monotone" dataKey="qualityPercent" stroke="#52c41a" strokeWidth={2} name={t('metrics.qualityScore')} />
+                  <Line type="monotone" dataKey="completionPercent" stroke="#1890ff" strokeWidth={2} name={t('metrics.completionRate')} />
+                  <Line type="monotone" dataKey="revisionPercent" stroke="#ff4d4f" strokeWidth={2} name={t('metrics.revisionRate')} />
                 </LineChart>
               ) : (
                 <AreaChart data={formattedTrends}>
@@ -313,19 +354,11 @@ export const QualityReports: React.FC<QualityReportsProps> = ({
                       `${value}%`,
                       name === 'qualityPercent' ? t('metrics.qualityScore') :
                       name === 'completionPercent' ? t('metrics.completionRate') :
-                      t('metrics.revisionRate')
+                      t('metrics.revisionRate'),
                     ]}
                   />
                   <Legend />
-                  <Area
-                    type="monotone"
-                    dataKey="qualityPercent"
-                    stackId="1"
-                    stroke="#52c41a"
-                    fill="#52c41a"
-                    fillOpacity={0.6}
-                    name={t('metrics.qualityScore')}
-                  />
+                  <Area type="monotone" dataKey="qualityPercent" stackId="1" stroke="#52c41a" fill="#52c41a" fillOpacity={0.6} name={t('metrics.qualityScore')} />
                 </AreaChart>
               )}
             </ResponsiveContainer>
@@ -357,87 +390,6 @@ export const QualityReports: React.FC<QualityReportsProps> = ({
           </Card>
         </Col>
       </Row>
-
-      {/* Work Time Analysis */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col xs={24}>
-          <Card title={t('charts.workTimeAnalysis')} loading={loading}>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={workTime}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="user" />
-                <YAxis yAxisId="left" />
-                <YAxis yAxisId="right" orientation="right" />
-                <RechartsTooltip
-                  formatter={(value, name) => [
-                    name === 'totalHours' ? `${value}h` :
-                    name === 'efficiency' || name === 'qualityScore' ? `${(Number(value) * 100).toFixed(1)}%` :
-                    value,
-                    name === 'totalHours' ? t('metrics.totalHours') :
-                    name === 'efficiency' ? t('metrics.efficiency') :
-                    name === 'qualityScore' ? t('metrics.qualityScore') :
-                    t('metrics.tasksCompleted')
-                  ]}
-                />
-                <Legend />
-                <Bar
-                  yAxisId="left"
-                  dataKey="totalHours"
-                  fill="#1890ff"
-                  name={t('metrics.totalHours')}
-                />
-                <Bar
-                  yAxisId="right"
-                  dataKey="tasksCompleted"
-                  fill="#52c41a"
-                  name={t('metrics.tasksCompleted')}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </Card>
-        </Col>
-      </Row>
-
-      {/* Anomaly Detection */}
-      {anomalies.length > 0 && (
-        <Row gutter={[16, 16]}>
-          <Col xs={24}>
-            <Card 
-              title={
-                <Space>
-                  <WarningOutlined style={{ color: '#faad14' }} />
-                  {t('charts.anomalyDetection')}
-                </Space>
-              }
-            >
-              <Space direction="vertical" style={{ width: '100%' }}>
-                {anomalies.map((anomaly, index) => (
-                  <Alert
-                    key={index}
-                    type={anomaly.severity === 'high' ? 'error' : anomaly.severity === 'medium' ? 'warning' : 'info'}
-                    message={
-                      <Space>
-                        <span>{anomaly.description}</span>
-                        <span style={{ color: '#999' }}>
-                          {dayjs(anomaly.datetime).format('YYYY-MM-DD HH:mm')}
-                        </span>
-                      </Space>
-                    }
-                    description={
-                      <Tooltip title={t('anomaly.clickForDetails')}>
-                        <span style={{ cursor: 'pointer' }}>
-                          {t('anomaly.value')}: {(anomaly.value * 100).toFixed(1)}%
-                        </span>
-                      </Tooltip>
-                    }
-                    showIcon
-                  />
-                ))}
-              </Space>
-            </Card>
-          </Col>
-        </Row>
-      )}
     </div>
   );
 };

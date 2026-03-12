@@ -336,26 +336,36 @@ const DataLifecycleDashboard: React.FC = () => {
   const { hasPermission } = useAuthStore();
   
   // Use hooks for data fetching
-  const { data: tempData, loading: tempDataLoading } = useTempData();
-  const { samples: samples, loading: samplesLoading } = useSampleLibrary();
-  const { reviews, loading: reviewsLoading } = useReview();
-  const { tasks, loading: tasksLoading } = useAnnotationTask();
-  const { jobs: enhancements, loading: enhancementsLoading } = useEnhancement();
-  const { trials, loading: trialsLoading } = useAITrial();
+  const { data: tempData, loading: tempDataLoading, pagination: tempDataPagination, fetchTempData } = useTempData();
+  const { samples, loading: samplesLoading, pagination: samplePagination, fetchSamples } = useSampleLibrary();
+  const { reviews, loading: reviewsLoading, pagination: reviewPagination, fetchReviews } = useReview();
+  const { tasks, loading: tasksLoading, pagination: taskPagination, fetchTasks } = useAnnotationTask();
+  const { jobs: enhancements, loading: enhancementsLoading, pagination: enhancementPagination, fetchJobs } = useEnhancement();
+  const { trials, loading: trialsLoading, pagination: trialPagination, fetchTrials } = useAITrial();
 
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate initial data loading
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, []);
+    const fetchAll = async () => {
+      try {
+        await Promise.allSettled([
+          fetchTempData({ page: 1 }),
+          fetchSamples({ page: 1 }),
+          fetchReviews({ page: 1 }),
+          fetchTasks({ page: 1 }),
+          fetchJobs({ page: 1 }),
+          fetchTrials({ page: 1 }),
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAll();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Calculate summary statistics
-  const tempDataCount = tempData.length;
-  const sampleCount = samples.length;
+  // Calculate summary statistics using pagination.total for accurate counts
+  const tempDataCount = tempDataPagination.total;
+  const sampleCount = samplePagination.total;
   const pendingReviews = reviews.filter(r => r.status === 'pending').length;
   const pendingTasks = tasks.filter(t => t.status === 'pending').length;
   const runningEnhancements = enhancements.filter(e => e.status === 'running').length;

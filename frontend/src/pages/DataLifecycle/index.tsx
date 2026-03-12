@@ -142,7 +142,7 @@ const SummaryStats: React.FC<SummaryStatsProps> = ({
   const stats = [
     { label: t('tempData.title'), value: tempDataCount, color: '#1890ff', link: '/data-lifecycle/temp-data' },
     { label: t('sampleLibrary.title'), value: sampleCount, color: '#52c41a', link: '/data-lifecycle/samples' },
-    { label: t('review.title'), value: pendingReviews, color: '#faad14', suffix: t('review.status.pending'), link: '/data-lifecycle/review' },
+    { label: t('review.title'), value: pendingReviews, color: '#faad14', suffix: t('review.status.pending'), link: '/data-lifecycle' },
     { label: t('annotationTask.title'), value: pendingTasks, color: '#722ed1', suffix: t('annotationTask.status.pending'), link: '/data-lifecycle/tasks' },
     { label: t('enhancement.title'), value: runningEnhancements, color: '#13c2c2', suffix: t('enhancement.status.running'), link: '/data-lifecycle/enhancement' },
     { label: t('aiTrial.title'), value: runningTrials, color: '#eb2f96', suffix: t('aiTrial.status.running'), link: '/data-lifecycle/trials' },
@@ -456,7 +456,7 @@ const DataLifecycleDashboard: React.FC = () => {
             count={pendingReviews}
             status={pendingReviews > 0 ? 'warning' : 'success'}
             description={`${pendingReviews} ${t('review.status.pending')}`}
-            link="/data-lifecycle/review"
+            link="/data-lifecycle"
             color="#faad14"
           />
         </Col>

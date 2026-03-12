@@ -23,6 +23,9 @@ import {
   SyncOutlined,
   ReloadOutlined,
   InfoCircleOutlined,
+  ExportOutlined,
+  ImportOutlined,
+  SwapOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import type { ColumnsType } from 'antd/es/table';
@@ -46,6 +49,9 @@ interface SyncHistoryRecord {
   durationMs: number;
   errorMessage: string | null;
   checkpointValue: string | null;
+  syncDirection?: 'input' | 'output' | 'bidirectional';
+  rowsWritten?: number;
+  writeErrors?: Record<string, any>;
 }
 
 const SyncHistory: React.FC = () => {
@@ -93,6 +99,7 @@ const SyncHistory: React.FC = () => {
       durationMs: 195000,
       errorMessage: 'Connection timeout after 3 retries',
       checkpointValue: '2026-01-12T01:30:00Z',
+      syncDirection: 'input',
     },
     {
       id: 'h4',
@@ -107,6 +114,41 @@ const SyncHistory: React.FC = () => {
       durationMs: 30000,
       errorMessage: null,
       checkpointValue: '2026-01-13T10:49:59Z',
+      syncDirection: 'input',
+    },
+    {
+      id: 'h5',
+      jobId: 'job_3',
+      jobName: 'AI 数据输出同步',
+      sourceName: 'Target DB',
+      startedAt: '2026-01-13T14:00:00Z',
+      completedAt: '2026-01-13T14:02:15Z',
+      status: 'completed',
+      rowsSynced: 0,
+      bytesProcessed: 0,
+      durationMs: 135000,
+      errorMessage: null,
+      checkpointValue: null,
+      syncDirection: 'output',
+      rowsWritten: 5000,
+      writeErrors: {},
+    },
+    {
+      id: 'h6',
+      jobId: 'job_3',
+      jobName: 'AI 数据输出同步',
+      sourceName: 'Target DB',
+      startedAt: '2026-01-12T14:00:00Z',
+      completedAt: '2026-01-12T14:01:45Z',
+      status: 'failed',
+      rowsSynced: 0,
+      bytesProcessed: 0,
+      durationMs: 105000,
+      errorMessage: 'Target database connection failed',
+      checkpointValue: null,
+      syncDirection: 'output',
+      rowsWritten: 2300,
+      writeErrors: { failed_rows: 150, error_details: 'Schema mismatch on field "updated_at"' },
     },
   ]);
   const [selectedRecord, setSelectedRecord] = useState<SyncHistoryRecord | null>(null);
@@ -156,6 +198,31 @@ const SyncHistory: React.FC = () => {
       ),
     },
     {
+      title: t('history.syncDirection'),
+      dataIndex: 'syncDirection',
+      key: 'syncDirection',
+      render: (direction) => {
+        if (!direction) return '-';
+        const directionConfig = {
+          input: { icon: <ImportOutlined />, color: 'blue', text: t('history.directionInput') },
+          output: { icon: <ExportOutlined />, color: 'green', text: t('history.directionOutput') },
+          bidirectional: { icon: <SwapOutlined />, color: 'purple', text: t('history.directionBidirectional') },
+        };
+        const config = directionConfig[direction as keyof typeof directionConfig];
+        return config ? (
+          <Tag icon={config.icon} color={config.color}>
+            {config.text}
+          </Tag>
+        ) : '-';
+      },
+      filters: [
+        { text: t('history.directionInput'), value: 'input' },
+        { text: t('history.directionOutput'), value: 'output' },
+        { text: t('history.directionBidirectional'), value: 'bidirectional' },
+      ],
+      onFilter: (value, record) => record.syncDirection === value,
+    },
+    {
       title: t('history.startTime'),
       dataIndex: 'startedAt',
       key: 'startedAt',
@@ -183,7 +250,17 @@ const SyncHistory: React.FC = () => {
       title: t('history.rowsSynced'),
       dataIndex: 'rowsSynced',
       key: 'rowsSynced',
-      render: (count) => count.toLocaleString(),
+      render: (count, record) => {
+        // For output sync, show rows written instead
+        if (record.syncDirection === 'output' && record.rowsWritten !== undefined) {
+          return (
+            <Space direction="vertical" size="small">
+              <Text>{t('history.written')}: {record.rowsWritten.toLocaleString()}</Text>
+            </Space>
+          );
+        }
+        return count.toLocaleString();
+      },
       sorter: (a, b) => a.rowsSynced - b.rowsSynced,
     },
     {
@@ -225,6 +302,12 @@ const SyncHistory: React.FC = () => {
   const successfulSyncs = history.filter(h => h.status === 'completed').length;
   const failedSyncs = history.filter(h => h.status === 'failed').length;
   const totalRows = history.reduce((sum, h) => sum + h.rowsSynced, 0);
+  
+  // Output sync statistics
+  const outputSyncs = history.filter(h => h.syncDirection === 'output' || h.syncDirection === 'bidirectional');
+  const outputSuccessful = outputSyncs.filter(h => h.status === 'completed').length;
+  const outputFailed = outputSyncs.filter(h => h.status === 'failed').length;
+  const totalRowsWritten = outputSyncs.reduce((sum, h) => sum + (h.rowsWritten || 0), 0);
 
   // Row selection configuration
   const rowSelection = {
@@ -309,6 +392,49 @@ const SyncHistory: React.FC = () => {
         </Col>
       </Row>
 
+      {/* Output Sync Statistics */}
+      {outputSyncs.length > 0 && (
+        <Row gutter={16} style={{ marginBottom: 24 }}>
+          <Col span={6}>
+            <Card>
+              <Statistic 
+                title={t('history.outputSyncs')} 
+                value={outputSyncs.length}
+                prefix={<ExportOutlined />}
+              />
+            </Card>
+          </Col>
+          <Col span={6}>
+            <Card>
+              <Statistic
+                title={t('history.outputSuccessful')}
+                value={outputSuccessful}
+                valueStyle={{ color: '#3f8600' }}
+                suffix={<CheckCircleOutlined />}
+              />
+            </Card>
+          </Col>
+          <Col span={6}>
+            <Card>
+              <Statistic
+                title={t('history.outputFailed')}
+                value={outputFailed}
+                valueStyle={{ color: '#cf1322' }}
+                suffix={<CloseCircleOutlined />}
+              />
+            </Card>
+          </Col>
+          <Col span={6}>
+            <Card>
+              <Statistic 
+                title={t('history.totalRowsWritten')} 
+                value={totalRowsWritten}
+              />
+            </Card>
+          </Col>
+        </Row>
+      )}
+
       <Card
         title={t('history.records')}
         extra={
@@ -357,6 +483,26 @@ const SyncHistory: React.FC = () => {
             <Descriptions column={1} bordered size="small">
               <Descriptions.Item label={t('history.taskName')}>{selectedRecord.jobName}</Descriptions.Item>
               <Descriptions.Item label={t('history.sourceName')}>{selectedRecord.sourceName}</Descriptions.Item>
+              <Descriptions.Item label={t('history.syncDirection')}>
+                {selectedRecord.syncDirection ? (
+                  <Tag 
+                    icon={
+                      selectedRecord.syncDirection === 'input' ? <ImportOutlined /> :
+                      selectedRecord.syncDirection === 'output' ? <ExportOutlined /> :
+                      <SwapOutlined />
+                    }
+                    color={
+                      selectedRecord.syncDirection === 'input' ? 'blue' :
+                      selectedRecord.syncDirection === 'output' ? 'green' :
+                      'purple'
+                    }
+                  >
+                    {selectedRecord.syncDirection === 'input' ? t('history.directionInput') :
+                     selectedRecord.syncDirection === 'output' ? t('history.directionOutput') :
+                     t('history.directionBidirectional')}
+                  </Tag>
+                ) : '-'}
+              </Descriptions.Item>
               <Descriptions.Item label={t('history.status')}>
                 <Tag icon={statusIcons[selectedRecord.status]} color={statusColors[selectedRecord.status]}>
                   {selectedRecord.status.toUpperCase()}
@@ -373,9 +519,16 @@ const SyncHistory: React.FC = () => {
               <Descriptions.Item label={t('history.duration')}>
                 {formatDuration(selectedRecord.durationMs)}
               </Descriptions.Item>
-              <Descriptions.Item label={t('history.rowsSynced')}>
-                {selectedRecord.rowsSynced.toLocaleString()}
-              </Descriptions.Item>
+              {selectedRecord.syncDirection !== 'output' && (
+                <Descriptions.Item label={t('history.rowsSynced')}>
+                  {selectedRecord.rowsSynced.toLocaleString()}
+                </Descriptions.Item>
+              )}
+              {(selectedRecord.syncDirection === 'output' || selectedRecord.syncDirection === 'bidirectional') && selectedRecord.rowsWritten !== undefined && (
+                <Descriptions.Item label={t('history.rowsWritten')}>
+                  {selectedRecord.rowsWritten.toLocaleString()}
+                </Descriptions.Item>
+              )}
               <Descriptions.Item label={t('history.dataSize')}>
                 {formatSize(selectedRecord.bytesProcessed)}
               </Descriptions.Item>
@@ -390,6 +543,14 @@ const SyncHistory: React.FC = () => {
               </Card>
             )}
 
+            {selectedRecord.writeErrors && Object.keys(selectedRecord.writeErrors).length > 0 && (
+              <Card title={t('history.writeErrors')} size="small" type="inner">
+                <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
+                  {JSON.stringify(selectedRecord.writeErrors, null, 2)}
+                </pre>
+              </Card>
+            )}
+
             <Card title={t('history.timeline')} size="small" type="inner">
               <Timeline
                 items={[
@@ -401,9 +562,13 @@ const SyncHistory: React.FC = () => {
                     color: 'blue',
                     children: t('history.timelineConnect'),
                   },
-                  {
+                  selectedRecord.syncDirection !== 'output' && {
                     color: 'blue',
                     children: `${t('history.timelineRead')} - ${selectedRecord.rowsSynced.toLocaleString()} rows`,
+                  },
+                  (selectedRecord.syncDirection === 'output' || selectedRecord.syncDirection === 'bidirectional') && selectedRecord.rowsWritten !== undefined && {
+                    color: 'blue',
+                    children: `${t('history.timelineWrite')} - ${selectedRecord.rowsWritten.toLocaleString()} rows`,
                   },
                   {
                     color: selectedRecord.status === 'completed' ? 'green' : 'red',
@@ -411,7 +576,7 @@ const SyncHistory: React.FC = () => {
                       ? `${t('history.timelineComplete')} - ${selectedRecord.completedAt ? new Date(selectedRecord.completedAt).toLocaleTimeString() : ''}`
                       : `${t('history.timelineFailed')} - ${selectedRecord.errorMessage}`,
                   },
-                ]}
+                ].filter(Boolean)}
               />
             </Card>
           </Space>

@@ -254,6 +254,12 @@ class SyncJobModel(Base):
     # Source and target
     source_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("data_sources.id"), nullable=False)
     target_config: Mapped[dict] = mapped_column(JSONB, nullable=False, default={})
+    
+    # Output sync configuration (for output/bidirectional sync)
+    target_source_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("data_sources.id"), nullable=True)
+    field_mapping_rules: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True, default={})
+    output_sync_strategy: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # full/incremental
+    output_checkpoint: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True, default={})
 
     # Sync configuration
     direction: Mapped[SyncDirection] = mapped_column(SQLEnum(SyncDirection), default=SyncDirection.PULL)
@@ -347,6 +353,11 @@ class SyncExecutionModel(Base):
     records_deleted: Mapped[int] = mapped_column(BigInteger, default=0)
     records_skipped: Mapped[int] = mapped_column(BigInteger, default=0)
     records_failed: Mapped[int] = mapped_column(BigInteger, default=0)
+    
+    # Output sync metrics (for output/bidirectional sync)
+    sync_direction: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # input/output/bidirectional
+    rows_written: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True, default=0)
+    write_errors: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True, default={})
 
     # Data transfer metrics
     bytes_transferred: Mapped[int] = mapped_column(BigInteger, default=0)
@@ -699,4 +710,98 @@ class DataQualityScoreModel(Base):
 
     __table_args__ = (
         Index('idx_data_quality_scores_tenant_stage', 'tenant_id', 'stage'),
+    )
+
+
+# ============================================================================
+# API Key Status Enum
+# ============================================================================
+
+class APIKeyStatus(str, enum.Enum):
+    """API key status enumeration."""
+    ACTIVE = "active"
+    DISABLED = "disabled"
+    REVOKED = "revoked"
+
+
+# ============================================================================
+# API Key Model
+# ============================================================================
+
+class APIKeyModel(Base):
+    """
+    API keys table for external API access management.
+
+    Stores API keys with scopes, rate limits, and usage tracking.
+    """
+    __tablename__ = "api_keys"
+
+    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    tenant_id: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    
+    # Key identification
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    
+    # Key storage (security)
+    key_prefix: Mapped[str] = mapped_column(String(16), nullable=False)  # Plaintext prefix for identification
+    key_hash: Mapped[str] = mapped_column(String(128), nullable=False, unique=True)  # SHA-256 hash
+    
+    # Access control
+    scopes: Mapped[dict] = mapped_column(JSONB, nullable=False, default={})  # Accessible data scopes
+    
+    # Rate limiting
+    rate_limit_per_minute: Mapped[int] = mapped_column(Integer, default=60)
+    rate_limit_per_day: Mapped[int] = mapped_column(Integer, default=10000)
+    
+    # Status
+    status: Mapped[APIKeyStatus] = mapped_column(SQLEnum(APIKeyStatus), default=APIKeyStatus.ACTIVE)
+    expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    
+    # Usage tracking
+    last_used_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    total_calls: Mapped[int] = mapped_column(BigInteger, default=0)
+    
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    created_by: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    
+    # Relationships
+    call_logs: Mapped[List["APICallLogModel"]] = relationship("APICallLogModel", back_populates="api_key")
+
+    __table_args__ = (
+        Index('idx_api_keys_tenant_status', 'tenant_id', 'status'),
+        Index('idx_api_keys_key_hash', 'key_hash'),
+    )
+
+
+# ============================================================================
+# API Call Log Model
+# ============================================================================
+
+class APICallLogModel(Base):
+    """
+    API call logs table for tracking external API usage.
+
+    Records each API call with endpoint, status, and response time.
+    """
+    __tablename__ = "api_call_logs"
+
+    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    key_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("api_keys.id"), nullable=False, index=True)
+    
+    # Request information
+    endpoint: Mapped[str] = mapped_column(String(200), nullable=False)
+    status_code: Mapped[int] = mapped_column(Integer, nullable=False)
+    response_time_ms: Mapped[float] = mapped_column(Float, nullable=False)
+    
+    # Timestamp
+    called_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
+    
+    # Relationships
+    api_key: Mapped["APIKeyModel"] = relationship("APIKeyModel", back_populates="call_logs")
+
+    __table_args__ = (
+        Index('idx_api_call_logs_key_time', 'key_id', 'called_at'),
+        Index('idx_api_call_logs_endpoint', 'endpoint'),
     )

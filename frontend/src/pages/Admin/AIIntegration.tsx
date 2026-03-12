@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Card,
   Typography,
@@ -29,10 +30,13 @@ import {
   SyncOutlined,
   DashboardOutlined,
   ReloadOutlined,
+  DatabaseOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { listSkills, syncSkills, executeSkill, toggleSkillStatus } from '@/services/skillAdminApi';
+import { getDataSourceConfig, updateDataSourceConfig } from '@/services/aiAssistantApi';
 import type { SkillDetail } from '@/types/aiAssistant';
+import type { AIDataSource } from '@/types/aiAssistant';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -60,6 +64,7 @@ const AGENT_URL = 'http://localhost:8081';
 // Component
 // ---------------------------------------------------------------------------
 const AIIntegration: React.FC = () => {
+  const { t } = useTranslation('aiAssistant');
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(false);
 
@@ -68,6 +73,7 @@ const AIIntegration: React.FC = () => {
   const [agentStatus, setAgentStatus] = useState<ServiceStatus>({ healthy: false, label: '检测中…', url: AGENT_URL });
   const [ollamaStatus, setOllamaStatus] = useState<OllamaStatus | null>(null);
   const [skills, setSkills] = useState<SkillDetail[]>([]);
+  const [dsConfig, setDsConfig] = useState<AIDataSource[]>([]);
 
   // ---------------------------------------------------------------------------
   // Data fetching
@@ -75,7 +81,7 @@ const AIIntegration: React.FC = () => {
   const refreshAll = useCallback(async () => {
     setLoading(true);
     try {
-      await Promise.allSettled([refreshServices(), refreshSkills(), refreshLLM()]);
+      await Promise.allSettled([refreshServices(), refreshSkills(), refreshLLM(), refreshDsConfig()]);
     } finally {
       setLoading(false);
     }
@@ -117,6 +123,28 @@ const AIIntegration: React.FC = () => {
       setOllamaStatus(null);
     }
   }
+
+  async function refreshDsConfig() {
+    try {
+      const data = await getDataSourceConfig();
+      setDsConfig(data);
+    } catch { /* ignore */ }
+  }
+
+  const handleSaveDsConfig = async () => {
+    try {
+      const items = dsConfig.map(s => ({
+        id: s.id,
+        enabled: s.enabled,
+        access_mode: s.access_mode,
+      }));
+      const updated = await updateDataSourceConfig(items);
+      setDsConfig(updated);
+      message.success(t('configSaved'));
+    } catch {
+      message.error(t('configSaveFailed'));
+    }
+  };
 
   useEffect(() => { refreshAll(); }, [refreshAll]);
 
@@ -338,6 +366,77 @@ const AIIntegration: React.FC = () => {
                         <Button type="primary">保存设置</Button>
                       </Form>
                     </Card>
+                  </Space>
+                ),
+              },
+              {
+                key: 'datasources',
+                label: <span><DatabaseOutlined /> {t('dataSourceConfig')}</span>,
+                children: (
+                  <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+                    <Alert message={t('dataSourceConfigDesc')} type="info" showIcon />
+                    <Table<AIDataSource>
+                      dataSource={dsConfig}
+                      rowKey="id"
+                      pagination={false}
+                      columns={[
+                        {
+                          title: t('dataSource'),
+                          dataIndex: 'id',
+                          key: 'name',
+                          render: (_: unknown, record: AIDataSource) => (
+                            <Space direction="vertical" size={0}>
+                              <Text strong>{t(`source.${record.id}` as never, record.label)}</Text>
+                              <Text type="secondary" style={{ fontSize: 12 }}>{record.description}</Text>
+                            </Space>
+                          ),
+                        },
+                        {
+                          title: t('category', { ns: 'aiAssistant' }),
+                          dataIndex: 'category',
+                          key: 'category',
+                          width: 120,
+                          render: (cat: string) => (
+                            <Tag>{t(`category.${cat}` as never, cat)}</Tag>
+                          ),
+                        },
+                        {
+                          title: t('sourceEnabled'),
+                          dataIndex: 'enabled',
+                          key: 'enabled',
+                          width: 100,
+                          render: (enabled: boolean, record: AIDataSource) => (
+                            <Switch
+                              checked={enabled}
+                              checkedChildren={t('sourceEnabled')}
+                              unCheckedChildren={t('sourceDisabled')}
+                              onChange={(checked) => {
+                                setDsConfig(prev => prev.map(s => s.id === record.id ? { ...s, enabled: checked } : s));
+                              }}
+                            />
+                          ),
+                        },
+                        {
+                          title: t('outputMode'),
+                          dataIndex: 'access_mode',
+                          key: 'access_mode',
+                          width: 140,
+                          render: (mode: string, record: AIDataSource) => (
+                            <Select
+                              value={mode}
+                              style={{ width: 120 }}
+                              onChange={(val) => {
+                                setDsConfig(prev => prev.map(s => s.id === record.id ? { ...s, access_mode: val } : s));
+                              }}
+                            >
+                              <Select.Option value="read">{t('accessRead')}</Select.Option>
+                              <Select.Option value="read_write">{t('accessReadWrite')}</Select.Option>
+                            </Select>
+                          ),
+                        },
+                      ]}
+                    />
+                    <Button type="primary" onClick={handleSaveDsConfig}>{t('saveConfig')}</Button>
                   </Space>
                 ),
               },

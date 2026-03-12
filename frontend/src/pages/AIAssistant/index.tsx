@@ -1,35 +1,21 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  Card,
-  Input,
-  Button,
-  Space,
-  Typography,
-  Avatar,
-  List,
-  Tag,
-  Spin,
-  Empty,
-  Divider,
-  Row,
-  Col,
-  Statistic,
-  Segmented,
-  message,
-  Checkbox,
+  Card, Input, Button, Space, Typography, Avatar, List, Tag, Spin, Empty,
+  Divider, Row, Col, Statistic, Segmented, message, Checkbox,
 } from 'antd';
 import {
-  SendOutlined,
-  StopOutlined,
-  RobotOutlined,
-  UserOutlined,
-  ThunderboltOutlined,
-  LineChartOutlined,
-  BulbOutlined,
+  SendOutlined, StopOutlined, RobotOutlined, UserOutlined,
+  ThunderboltOutlined, LineChartOutlined, BulbOutlined,
   ClockCircleOutlined,
 } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import { sendMessageStream, getOpenClawStatus } from '@/services/aiAssistantApi';
-import type { ChatMessage as ApiChatMessage, ChatMode, SkillInfo } from '@/types/aiAssistant';
+import type { ChatMessage as ApiChatMessage, ChatMode, SkillInfo, OutputMode } from '@/types/aiAssistant';
+import { useAuthStore } from '@/stores/authStore';
+import ConfigPanel from './components/ConfigPanel';
+import DataSourceConfigModal from './components/DataSourceConfigModal';
+import PermissionTableModal from './components/PermissionTableModal';
+import OutputModeModal from './components/OutputModeModal';
 import './styles.css';
 
 const { TextArea } = Input;
@@ -43,20 +29,15 @@ interface Message {
   type?: 'text' | 'workflow' | 'analysis';
 }
 
-interface QuickAction {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  prompt: string;
-}
-
 const AIAssistant: React.FC = () => {
+  const { t } = useTranslation('aiAssistant');
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<(() => void) | null>(null);
 
+  // Chat mode state
   const [chatMode, setChatMode] = useState<ChatMode>('direct');
   const [gatewayId, setGatewayId] = useState<string | null>(null);
   const [gatewayAvailable, setGatewayAvailable] = useState(false);
@@ -64,78 +45,58 @@ const AIAssistant: React.FC = () => {
   const [selectedSkillIds, setSelectedSkillIds] = useState<string[]>([]);
   const [isCheckingGateway, setIsCheckingGateway] = useState(false);
 
+  // Data source state
+  const [selectedSourceIds, setSelectedSourceIds] = useState<string[]>([]);
+  const [outputMode, setOutputMode] = useState<OutputMode>('merge');
+
+  // Auth & modal state
+  const user = useAuthStore((s) => s.user);
+  const userRole = user?.role || 'viewer';
+  const [dsConfigOpen, setDsConfigOpen] = useState(false);
+  const [permTableOpen, setPermTableOpen] = useState(false);
+  const [outputModeOpen, setOutputModeOpen] = useState(false);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+  useEffect(() => { scrollToBottom(); }, [messages]);
 
-  // 快捷操作
-  const quickActions: QuickAction[] = [
-    {
-      icon: <LineChartOutlined />,
-      title: '销售预测分析',
-      description: '基于历史数据预测未来销售趋势',
-      prompt: '请根据最新的数据集，设计一个工作流，可以分析每日的销售预测，并根据实际销售额，实时修正预测能力。',
-    },
-    {
-      icon: <ThunderboltOutlined />,
-      title: '数据质量检查',
-      description: '自动检查数据集的质量问题',
-      prompt: '帮我分析当前数据集的质量，找出可能存在的问题，并给出改进建议。',
-    },
-    {
-      icon: <BulbOutlined />,
-      title: '智能标注建议',
-      description: '基于 AI 提供标注建议',
-      prompt: '请帮我分析未标注的数据，并提供智能标注建议。',
-    },
-    {
-      icon: <ClockCircleOutlined />,
-      title: '任务进度追踪',
-      description: '查看和分析任务完成情况',
-      prompt: '帮我分析当前所有任务的进度，找出可能延期的任务，并给出优化建议。',
-    },
+  // Quick actions
+  const quickActions = [
+    { icon: <LineChartOutlined />, titleKey: 'salesForecast', descKey: 'salesForecastDesc',
+      prompt: '请根据最新的数据集，设计一个工作流，可以分析每日的销售预测，并根据实际销售额，实时修正预测能力。' },
+    { icon: <ThunderboltOutlined />, titleKey: 'dataQualityCheck', descKey: 'dataQualityCheckDesc',
+      prompt: '帮我分析当前数据集的质量，找出可能存在的问题，并给出改进建议。' },
+    { icon: <BulbOutlined />, titleKey: 'smartAnnotation', descKey: 'smartAnnotationDesc',
+      prompt: '请帮我分析未标注的数据，并提供智能标注建议。' },
+    { icon: <ClockCircleOutlined />, titleKey: 'taskTracking', descKey: 'taskTrackingDesc',
+      prompt: '帮我分析当前所有任务的进度，找出可能延期的任务，并给出优化建议。' },
   ];
 
   const handleModeChange = async (value: string | number) => {
     const newMode = value as ChatMode;
-    console.log('[AIAssistant] Mode change requested:', newMode);
-    
     if (newMode === 'openclaw') {
       setIsCheckingGateway(true);
       try {
-        console.log('[AIAssistant] Fetching OpenClaw status...');
         const status = await getOpenClawStatus();
-        console.log('[AIAssistant] OpenClaw status received:', status);
-        
         if (!status.available) {
-          console.warn('[AIAssistant] OpenClaw not available:', status.error);
-          message.warning(`OpenClaw 网关不可用: ${status.error || '请检查网关状态'}`);
-          // Don't change mode - keep it as 'direct'
+          message.warning(`${t('openClawUnavailable')}: ${status.error || ''}`);
           setIsCheckingGateway(false);
           return;
         }
-        
-        console.log('[AIAssistant] Setting OpenClaw mode with gateway:', status.gateway_id);
         setChatMode('openclaw');
         setGatewayId(status.gateway_id);
         setGatewayAvailable(true);
         setSkills(status.skills);
-        message.success('已切换到 OpenClaw 模式');
-      } catch (error) {
-        console.error('[AIAssistant] Failed to get OpenClaw status:', error);
-        message.error('无法连接 OpenClaw 服务');
-        // Don't change mode - keep it as 'direct'
+        message.success(t('switchedToOpenClaw'));
+      } catch {
+        message.error(t('cannotConnectOpenClaw'));
       } finally {
         setIsCheckingGateway(false);
       }
       return;
     }
-    
-    console.log('[AIAssistant] Switching to direct mode');
     setChatMode('direct');
     setGatewayId(null);
     setGatewayAvailable(false);
@@ -181,6 +142,8 @@ const AIAssistant: React.FC = () => {
       mode: chatMode,
       gateway_id: chatMode === 'openclaw' ? gatewayId ?? undefined : undefined,
       skill_ids: chatMode === 'openclaw' ? selectedSkillIds : undefined,
+      data_source_ids: selectedSourceIds.length > 0 ? selectedSourceIds : undefined,
+      output_mode: selectedSourceIds.length > 0 ? outputMode : undefined,
     }, {
       onChunk: (chunk) => {
         if (!chunk.content) return;
@@ -198,34 +161,11 @@ const AIAssistant: React.FC = () => {
       },
       onError: (error) => {
         const errorMsg = error.message || '';
-
-        if (errorMsg.includes('503') || errorMsg.includes('网关') || errorMsg.includes('不可用')) {
-          message.error('OpenClaw 网关不可用，建议切换到 LLM 直连模式');
-        } else if (errorMsg.includes('504') || errorMsg.includes('超时') || errorMsg.includes('timeout')) {
-          message.warning('请求超时，请稍后重试或切换到 LLM 直连模式');
-        } else if (errorMsg.includes('404') || errorMsg.includes('not found')) {
-          message.warning('网关信息已过期，正在刷新...');
-          getOpenClawStatus()
-            .then((status) => {
-              if (status.available) {
-                setGatewayId(status.gateway_id);
-                setSkills(status.skills);
-              } else {
-                setChatMode('direct');
-                setGatewayId(null);
-                setGatewayAvailable(false);
-                setSkills([]);
-                setSelectedSkillIds([]);
-                message.info('已自动切换到 LLM 直连模式');
-              }
-            })
-            .catch(() => {
-              // Silently fail — user already saw the warning
-            });
+        if (errorMsg.includes('503') || errorMsg.includes('不可用')) {
+          message.error(t('openClawUnavailable'));
         } else {
-          message.error('AI 服务暂时不可用，请稍后重试');
+          message.error(errorMsg || 'AI service unavailable');
         }
-
         console.error('AI stream error:', error);
         setIsLoading(false);
         abortRef.current = null;
@@ -241,10 +181,6 @@ const AIAssistant: React.FC = () => {
     setIsLoading(false);
   };
 
-  const handleQuickAction = (prompt: string) => {
-    setInputValue(prompt);
-  };
-
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -252,19 +188,24 @@ const AIAssistant: React.FC = () => {
     }
   };
 
+  const handleOutputModeConfirm = (sourceIds: string[], mode: OutputMode) => {
+    setSelectedSourceIds(sourceIds);
+    setOutputMode(mode);
+  };
+
   return (
     <div className="ai-assistant-container">
       <Row gutter={16}>
-        {/* 左侧：对话区域 */}
+        {/* Left: Chat area */}
         <Col span={16}>
           <Card className="chat-card">
             <div className="chat-header">
               <Space>
                 <Avatar size={40} icon={<RobotOutlined />} style={{ backgroundColor: '#1890ff' }} />
                 <div>
-                  <Title level={4} style={{ margin: 0 }}>AI 智能助手</Title>
+                  <Title level={4} style={{ margin: 0 }}>{t('title')}</Title>
                   <Text type="secondary">
-                    {chatMode === 'openclaw' ? 'OpenClaw 技能增强' : 'LLM 直连'}
+                    {chatMode === 'openclaw' ? t('modeOpenClaw') : t('modeDirect')}
                   </Text>
                 </div>
               </Space>
@@ -272,7 +213,7 @@ const AIAssistant: React.FC = () => {
                 <Segmented
                   value={chatMode}
                   options={[
-                    { label: 'LLM 直连', value: 'direct' },
+                    { label: t('modeDirect'), value: 'direct' },
                     { label: 'OpenClaw', value: 'openclaw' },
                   ]}
                   onChange={handleModeChange}
@@ -280,27 +221,28 @@ const AIAssistant: React.FC = () => {
                 />
                 {isCheckingGateway && <Spin size="small" />}
                 <Tag color={chatMode === 'openclaw' && gatewayAvailable ? 'success' : 'default'}>
-                  {chatMode === 'openclaw' ? (gatewayAvailable ? '网关在线' : '网关离线') : '在线'}
+                  {chatMode === 'openclaw' ? (gatewayAvailable ? t('gatewayOnline') : t('gatewayOffline')) : t('online')}
                 </Tag>
               </Space>
             </div>
 
             <Divider />
 
+            {/* Messages */}
             <div className="messages-container">
               {messages.length === 0 ? (
                 <Empty
                   image={<RobotOutlined style={{ fontSize: 64, color: '#1890ff' }} />}
                   description={
                     <Space direction="vertical" size="large">
-                      <Text>您好！我是 AI 智能助手，可以帮您：</Text>
+                      <Text>{t('greeting')}</Text>
                       <Space direction="vertical" align="start">
-                        <Text>• 📊 分析数据和生成报告</Text>
-                        <Text>• 🔄 设计和优化工作流</Text>
-                        <Text>• 💡 提供智能建议</Text>
-                        <Text>• 📈 预测和趋势分析</Text>
+                        <Text>{t('capability1')}</Text>
+                        <Text>{t('capability2')}</Text>
+                        <Text>{t('capability3')}</Text>
+                        <Text>{t('capability4')}</Text>
                       </Space>
-                      <Text type="secondary">请选择下方的快捷操作或直接输入您的问题</Text>
+                      <Text type="secondary">{t('selectQuickAction')}</Text>
                     </Space>
                   }
                 />
@@ -318,7 +260,7 @@ const AIAssistant: React.FC = () => {
                       />
                       <div className="message-content">
                         <div className="message-header">
-                          <Text strong>{msg.role === 'user' ? '您' : 'AI 助手'}</Text>
+                          <Text strong>{msg.role === 'user' ? t('you') : t('assistant')}</Text>
                           <Text type="secondary" style={{ fontSize: 12 }}>
                             {msg.timestamp.toLocaleTimeString()}
                           </Text>
@@ -326,14 +268,6 @@ const AIAssistant: React.FC = () => {
                         <Paragraph style={{ whiteSpace: 'pre-wrap', marginBottom: 0 }}>
                           {msg.content}
                         </Paragraph>
-                        {msg.type === 'workflow' && (
-                          <Space style={{ marginTop: 12 }}>
-                            <Button type="primary" size="small">
-                              创建工作流
-                            </Button>
-                            <Button size="small">查看详情</Button>
-                          </Space>
-                        )}
                       </div>
                     </div>
                   )}
@@ -342,57 +276,43 @@ const AIAssistant: React.FC = () => {
               {isLoading && messages.length > 0 && messages[messages.length - 1].content === '' && (
                 <div className="message-item assistant">
                   <Avatar icon={<RobotOutlined />} style={{ backgroundColor: '#1890ff', flexShrink: 0 }} />
-                  <Spin tip="AI 正在思考..." />
+                  <Spin tip={t('thinking')} />
                 </div>
               )}
               <div ref={messagesEndRef} />
             </div>
 
+            {/* Input area */}
             <div className="input-area">
               <TextArea
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="输入您的问题... (Shift+Enter 换行，Enter 发送)"
+                placeholder={t('inputPlaceholder')}
                 autoSize={{ minRows: 2, maxRows: 6 }}
                 disabled={isLoading}
               />
               {isLoading ? (
-                <Button
-                  type="default"
-                  danger
-                  icon={<StopOutlined />}
-                  onClick={handleStopGeneration}
-                  style={{ marginTop: 8 }}
-                >
-                  停止
+                <Button type="default" danger icon={<StopOutlined />} onClick={handleStopGeneration} style={{ marginTop: 8 }}>
+                  {t('stop')}
                 </Button>
               ) : (
-                <Button
-                  type="primary"
-                  icon={<SendOutlined />}
-                  onClick={handleSendMessage}
-                  disabled={!inputValue.trim()}
-                  style={{ marginTop: 8 }}
-                >
-                  发送
+                <Button type="primary" icon={<SendOutlined />} onClick={handleSendMessage} disabled={!inputValue.trim()} style={{ marginTop: 8 }}>
+                  {t('send')}
                 </Button>
               )}
             </div>
 
-            {/* 快捷操作 - 紧凑排列在输入框下方 */}
+            {/* Quick actions */}
             <div className="quick-actions-inline">
-              <Text type="secondary" style={{ fontSize: 12, marginBottom: 8, display: 'block' }}>快捷操作</Text>
+              <Text type="secondary" style={{ fontSize: 12, marginBottom: 8, display: 'block' }}>{t('quickActions')}</Text>
               <Row gutter={[8, 8]}>
                 {quickActions.map((action, index) => (
                   <Col key={index} xs={12} sm={12} md={6}>
-                    <div
-                      className="quick-action-compact"
-                      onClick={() => handleQuickAction(action.prompt)}
-                    >
+                    <div className="quick-action-compact" onClick={() => setInputValue(action.prompt)}>
                       <Space size={6}>
                         <span className="quick-action-icon">{action.icon}</span>
-                        <Text style={{ fontSize: 13 }}>{action.title}</Text>
+                        <Text style={{ fontSize: 13 }}>{t(action.titleKey)}</Text>
                       </Space>
                     </div>
                   </Col>
@@ -402,14 +322,14 @@ const AIAssistant: React.FC = () => {
           </Card>
         </Col>
 
-        {/* 右侧：快捷操作和统计 */}
+        {/* Right sidebar */}
         <Col span={8}>
           <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-            {/* 技能面板 */}
+            {/* Skill panel (OpenClaw mode) */}
             {chatMode === 'openclaw' && (
-              <Card title="🛠 技能面板" size="small">
+              <Card title={t('skillPanel')} size="small">
                 {skills.length === 0 ? (
-                  <Text type="secondary">暂无可用技能</Text>
+                  <Text type="secondary">{t('noSkills')}</Text>
                 ) : (
                   <Space direction="vertical" size="small" style={{ width: '100%' }}>
                     {skills.map((skill) => (
@@ -434,30 +354,49 @@ const AIAssistant: React.FC = () => {
               </Card>
             )}
 
-            {/* 统计卡片 */}
-            <Card title="今日统计">
+            {/* Stats */}
+            <Card title={t('todayStats')}>
               <Row gutter={16}>
                 <Col span={12}>
-                  <Statistic title="对话次数" value={messages.length / 2} suffix="次" />
+                  <Statistic title={t('chatCount')} value={Math.floor(messages.length / 2)} suffix={t('chatUnit')} />
                 </Col>
                 <Col span={12}>
-                  <Statistic title="工作流创建" value={0} suffix="个" />
+                  <Statistic title={t('workflowCreated')} value={0} suffix={t('workflowUnit')} />
                 </Col>
               </Row>
             </Card>
 
-            {/* 使用提示 */}
-            <Card title="💡 使用提示" size="small">
+            {/* Tips */}
+            <Card title={t('usageTips')} size="small">
               <Space direction="vertical" size="small">
-                <Text>• 使用自然语言描述您的需求</Text>
-                <Text>• 可以要求 AI 设计工作流</Text>
-                <Text>• 支持数据分析和预测</Text>
-                <Text>• 可以实时修正和优化</Text>
+                <Text>• {t('tip1')}</Text>
+                <Text>• {t('tip2')}</Text>
+                <Text>• {t('tip3')}</Text>
+                <Text>• {t('tip4')}</Text>
               </Space>
             </Card>
+
+            {/* Config Panel */}
+            <ConfigPanel
+              userRole={userRole}
+              onOpenDataSourceConfig={() => setDsConfigOpen(true)}
+              onOpenPermissionTable={() => setPermTableOpen(true)}
+              onOpenOutputMode={() => setOutputModeOpen(true)}
+            />
           </Space>
         </Col>
       </Row>
+
+      {/* Config Modals */}
+      <DataSourceConfigModal open={dsConfigOpen} onClose={() => setDsConfigOpen(false)} />
+      <PermissionTableModal open={permTableOpen} onClose={() => setPermTableOpen(false)} />
+      <OutputModeModal
+        open={outputModeOpen}
+        onClose={() => setOutputModeOpen(false)}
+        onConfirm={handleOutputModeConfirm}
+        initialSourceIds={selectedSourceIds}
+        initialMode={outputMode}
+      />
     </div>
   );
 };

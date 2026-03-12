@@ -1201,6 +1201,16 @@ except ImportError as e:
 except Exception as e:
     logger.error(f"Data Sync API failed to load: {e}")
 
+# Include sync API keys management router
+try:
+    from src.api.sync_api_keys import router as sync_api_keys_router
+    app.include_router(sync_api_keys_router)
+    logger.info("Sync API Keys Management loaded successfully")
+except ImportError as e:
+    logger.error(f"Sync API Keys Management not available: {e}")
+except Exception as e:
+    logger.error(f"Sync API Keys Management failed to load: {e}")
+
 # Include dashboard API router
 try:
     from src.api.dashboard import router as dashboard_router
@@ -2160,6 +2170,16 @@ async def include_optional_routers():
         logger.warning(f"⚠️ Data Sync API not available: {e}")
     except Exception as e:
         logger.error(f"❌ Data Sync API failed to load: {e}")
+
+    # Sync API Keys Management
+    try:
+        from src.api.sync_api_keys import router as sync_api_keys_router
+        app.include_router(sync_api_keys_router)
+        logger.info("✅ Sync API Keys Management loaded successfully")
+    except ImportError as e:
+        logger.warning(f"⚠️ Sync API Keys Management not available: {e}")
+    except Exception as e:
+        logger.error(f"❌ Sync API Keys Management failed to load: {e}")
 
     # AI Assistant API
     try:

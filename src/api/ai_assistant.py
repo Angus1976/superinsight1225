@@ -61,6 +61,8 @@ class ChatRequest(BaseModel):
     mode: Literal["direct", "openclaw"] = "direct"
     gateway_id: Optional[str] = None
     skill_ids: Optional[list[str]] = None
+    data_source_ids: Optional[list[str]] = None
+    output_mode: Optional[Literal["merge", "compare"]] = None
 
     @model_validator(mode="after")
     def validate_openclaw_fields(self):
@@ -97,6 +99,32 @@ def build_prompt(messages: list[ChatMessage]) -> str:
     return f"{history}\n{last_message}" if history else last_message
 
 
+def build_data_context(
+    data_source_ids: list[str], output_mode: str, db: Session
+) -> str:
+    """Query selected data sources and build context string for LLM."""
+    if not data_source_ids:
+        return ""
+
+    from src.ai.data_source_config import AIDataSourceService
+    service = AIDataSourceService(db)
+    results = {}
+    for src_id in data_source_ids:
+        results[src_id] = service.query_source_data(src_id)
+
+    if output_mode == "compare":
+        parts = ["以下是各数据源的数据，请分别分析并对比："]
+        for src_id, data in results.items():
+            parts.append(f"\n--- 数据源: {src_id} ---\n{json.dumps(data, ensure_ascii=False, default=str)}")
+        return "\n".join(parts)
+
+    # merge mode (default)
+    parts = ["以下是所选数据源的汇总数据，请综合分析："]
+    for src_id, data in results.items():
+        parts.append(f"[{src_id}]: {json.dumps(data, ensure_ascii=False, default=str)}")
+    return "\n".join(parts)
+
+
 def build_options(request: ChatRequest, *, stream: bool = False) -> GenerateOptions:
     """Build GenerateOptions from a ChatRequest."""
     return GenerateOptions(
@@ -123,21 +151,30 @@ async def chat(
 ) -> ChatResponse:
     """Non-streaming chat endpoint. Routes to LLMSwitcher or OpenClaw."""
     prompt = build_prompt(request.messages)
+
+    # Inject data source context if selected
+    data_ctx = build_data_context(
+        request.data_source_ids or [], request.output_mode or "merge", db
+    )
+    effective_system = f"{SYSTEM_PROMPT}\n\n{data_ctx}" if data_ctx else SYSTEM_PROMPT
+
     options = build_options(request)
 
     if request.mode == "openclaw":
-        return await _chat_openclaw(request, prompt, options, current_user, db)
+        return await _chat_openclaw(request, prompt, options, current_user, db,
+                                    system_prompt=effective_system)
 
-    return await _chat_direct(prompt, options)
+    return await _chat_direct(prompt, options, system_prompt=effective_system)
 
 
-async def _chat_direct(prompt: str, options: GenerateOptions) -> ChatResponse:
+async def _chat_direct(prompt: str, options: GenerateOptions,
+                      system_prompt: str = SYSTEM_PROMPT) -> ChatResponse:
     """Handle direct mode: forward to LLMSwitcher."""
     switcher = get_llm_switcher()
     try:
         response = await asyncio.wait_for(
             switcher.generate(
-                prompt=prompt, options=options, system_prompt=SYSTEM_PROMPT,
+                prompt=prompt, options=options, system_prompt=system_prompt,
             ),
             timeout=REQUEST_TIMEOUT_SECONDS,
         )
@@ -159,6 +196,7 @@ async def _chat_openclaw(
     options: GenerateOptions,
     current_user: UserModel,
     db: Session,
+    system_prompt: str = SYSTEM_PROMPT,
 ) -> ChatResponse:
     """Handle openclaw mode: forward to OpenClawChatService."""
     service = get_openclaw_chat_service(db)
@@ -171,7 +209,7 @@ async def _chat_openclaw(
                 tenant_id=tenant_id,
                 prompt=prompt,
                 options=options,
-                system_prompt=SYSTEM_PROMPT,
+                system_prompt=system_prompt,
                 skill_ids=request.skill_ids,
             ),
             timeout=REQUEST_TIMEOUT_SECONDS,
@@ -205,20 +243,15 @@ def _build_chat_response(response) -> ChatResponse:
 
 
 async def generate_stream(
-    request: ChatRequest, switcher
+    request: ChatRequest, switcher, system_prompt: str = SYSTEM_PROMPT
 ) -> AsyncIterator[str]:
-    """Async generator that yields SSE-formatted chunks from LLMSwitcher.
-
-    Each chunk: ``data: {"content": "...", "done": false}\\n\\n``
-    Final:      ``data: {"content": "", "done": true}\\n\\n``
-    On error:   ``data: {"error": "...", "done": true}\\n\\n``
-    """
+    """Async generator that yields SSE-formatted chunks from LLMSwitcher."""
     prompt = build_prompt(request.messages)
     options = build_options(request, stream=True)
 
     try:
         async for chunk in switcher.stream_generate(
-            prompt=prompt, options=options, system_prompt=SYSTEM_PROMPT
+            prompt=prompt, options=options, system_prompt=system_prompt
         ):
             yield f"data: {json.dumps({'content': chunk, 'done': False})}\n\n"
         yield f"data: {json.dumps({'content': '', 'done': True})}\n\n"
@@ -237,12 +270,9 @@ async def openclaw_stream(
     request: ChatRequest,
     service: OpenClawChatService,
     current_user: UserModel,
+    system_prompt: str = SYSTEM_PROMPT,
 ) -> AsyncIterator[str]:
-    """Async generator that yields SSE chunks from OpenClawChatService.
-
-    Delegates to service.stream_chat() which already yields SSE-formatted strings.
-    Catches OpenClawUnavailableError and yields an error chunk.
-    """
+    """Async generator that yields SSE chunks from OpenClawChatService."""
     prompt = build_prompt(request.messages)
     options = build_options(request, stream=True)
     tenant_id = current_user.tenant_id
@@ -253,7 +283,7 @@ async def openclaw_stream(
             tenant_id=tenant_id,
             prompt=prompt,
             options=options,
-            system_prompt=SYSTEM_PROMPT,
+            system_prompt=system_prompt,
             skill_ids=request.skill_ids,
         ):
             yield chunk
@@ -278,12 +308,20 @@ async def chat_stream(
     db: Session = Depends(get_db),
 ) -> StreamingResponse:
     """Streaming chat endpoint. Routes to LLMSwitcher or OpenClaw SSE stream."""
+    # Inject data source context if selected
+    data_ctx = build_data_context(
+        request.data_source_ids or [], request.output_mode or "merge", db
+    )
+    effective_system = f"{SYSTEM_PROMPT}\n\n{data_ctx}" if data_ctx else SYSTEM_PROMPT
+
     if request.mode == "openclaw":
         service = get_openclaw_chat_service(db)
-        generator = openclaw_stream(request, service, current_user)
+        generator = openclaw_stream(request, service, current_user,
+                                    system_prompt=effective_system)
     else:
         switcher = get_llm_switcher()
-        generator = generate_stream(request, switcher)
+        generator = generate_stream(request, switcher,
+                                    system_prompt=effective_system)
 
     return StreamingResponse(
         generator,
@@ -299,4 +337,101 @@ async def openclaw_status(
     """Query OpenClaw gateway availability and deployed skills for current tenant."""
     service = get_openclaw_chat_service(db)
     return await service.get_status(tenant_id=current_user.tenant_id)
+
+
+
+# --- Data Source Configuration Endpoints ---
+
+
+class DataSourceConfigItem(BaseModel):
+    """Single data source config item for admin update."""
+    id: str
+    label: Optional[str] = None
+    enabled: Optional[bool] = None
+    access_mode: Optional[str] = None
+
+
+class DataSourceConfigRequest(BaseModel):
+    """Admin request to update data source configs."""
+    sources: list[DataSourceConfigItem]
+
+
+class RolePermissionItem(BaseModel):
+    """Single role-permission mapping item."""
+    role: str
+    source_id: str
+    allowed: bool
+
+
+class RolePermissionRequest(BaseModel):
+    """Request to batch update role-permission mappings."""
+    permissions: list[RolePermissionItem]
+
+
+
+@router.get("/data-sources/available")
+async def get_available_data_sources(
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[dict]:
+    """Get data sources available to the current user (filtered by role)."""
+    from src.ai.data_source_config import AIDataSourceService
+    service = AIDataSourceService(db)
+    return service.get_available_sources(role=current_user.role)
+
+
+@router.get("/data-sources/config")
+async def get_data_source_config(
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[dict]:
+    """Get all data source configs (admin)."""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    from src.ai.data_source_config import AIDataSourceService
+    service = AIDataSourceService(db)
+    return service.get_config()
+
+
+@router.post("/data-sources/config")
+async def update_data_source_config(
+    request: DataSourceConfigRequest,
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[dict]:
+    """Update data source configs (admin only)."""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    from src.ai.data_source_config import AIDataSourceService
+    service = AIDataSourceService(db)
+    items = [item.model_dump(exclude_none=True) for item in request.sources]
+    return service.update_config(items)
+
+@router.get("/data-sources/role-permissions")
+async def get_role_permissions(
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Get all role-permission mappings (admin only)."""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    from src.ai.role_permission_service import RolePermissionService
+    service = RolePermissionService(db)
+    return {"permissions": service.get_all_permissions()}
+
+
+@router.post("/data-sources/role-permissions")
+async def update_role_permissions(
+    request: RolePermissionRequest,
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Batch update role-permission mappings (admin only)."""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    from src.ai.role_permission_service import RolePermissionService
+    service = RolePermissionService(db)
+    items = [item.model_dump() for item in request.permissions]
+    service.update_permissions(items)
+    return {"permissions": service.get_all_permissions()}
 

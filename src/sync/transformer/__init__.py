@@ -15,6 +15,13 @@ from src.sync.transformer.cleanser import (
     CleansingRule,
     CleansingResult,
 )
+from src.sync.transformer.field_mapper import (
+    FieldMapper,
+    MappingRule,
+    MappedData,
+    ValidationError,
+    field_mapper,
+)
 
 __all__ = [
     "DataTransformer",
@@ -24,4 +31,9 @@ __all__ = [
     "DataCleanser",
     "CleansingRule",
     "CleansingResult",
+    "FieldMapper",
+    "MappingRule",
+    "MappedData",
+    "ValidationError",
+    "field_mapper",
 ]

@@ -14,6 +14,8 @@ export interface ChatRequest {
   mode?: ChatMode;
   gateway_id?: string;
   skill_ids?: string[];
+  data_source_ids?: string[];
+  output_mode?: OutputMode;
 }
 
 export interface SkillInfo {
@@ -85,4 +87,25 @@ export interface ExecuteRequest {
 
 export interface StatusToggleRequest {
   status: 'deployed' | 'pending';
+}
+
+
+// --- Data Source types ---
+
+export type OutputMode = 'merge' | 'compare';
+
+export interface AIDataSource {
+  id: string;
+  label: string;
+  description: string;
+  category: string;
+  enabled: boolean;
+  access_mode: string;
+}
+
+export interface DataSourceConfigItem {
+  id: string;
+  label?: string;
+  enabled?: boolean;
+  access_mode?: string;
 }

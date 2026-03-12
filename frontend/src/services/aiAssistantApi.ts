@@ -144,3 +144,61 @@ export function sendMessageStream(
 
   return { abort: () => controller.abort() };
 }
+
+
+// --- Data Source APIs ---
+
+import type { AIDataSource, DataSourceConfigItem } from '@/types/aiAssistant';
+
+/**
+ * Get available data sources for the current user.
+ */
+export async function getAvailableDataSources(): Promise<AIDataSource[]> {
+  const response = await apiClient.get<AIDataSource[]>(`${API_BASE}/data-sources/available`);
+  return response.data;
+}
+
+/**
+ * Get all data source configs (admin).
+ */
+export async function getDataSourceConfig(): Promise<AIDataSource[]> {
+  const response = await apiClient.get<AIDataSource[]>(`${API_BASE}/data-sources/config`);
+  return response.data;
+}
+
+/**
+ * Update data source configs (admin only).
+ */
+export async function updateDataSourceConfig(
+  sources: DataSourceConfigItem[],
+): Promise<AIDataSource[]> {
+  const response = await apiClient.post<AIDataSource[]>(`${API_BASE}/data-sources/config`, {
+    sources,
+  });
+  return response.data;
+}
+
+
+// --- Role Permission APIs ---
+
+export interface RolePermissionItem {
+  role: string;
+  source_id: string;
+  allowed: boolean;
+}
+
+/**
+ * Get all role-permission mappings (admin only).
+ */
+export async function getRolePermissions(): Promise<{ permissions: RolePermissionItem[] }> {
+  const response = await apiClient.get<{ permissions: RolePermissionItem[] }>(`${API_BASE}/data-sources/role-permissions`);
+  return response.data;
+}
+
+/**
+ * Update role-permission mappings (admin only).
+ */
+export async function updateRolePermissions(permissions: RolePermissionItem[]): Promise<{ permissions: RolePermissionItem[] }> {
+  const response = await apiClient.post<{ permissions: RolePermissionItem[] }>(`${API_BASE}/data-sources/role-permissions`, { permissions });
+  return response.data;
+}

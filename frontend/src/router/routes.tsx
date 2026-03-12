@@ -77,6 +77,7 @@ const DatalakePage = lazyWithPreload(() => import('@/pages/DataSync/Datalake'));
 const DatalakeSourcesPage = lazyWithPreload(() => import('@/pages/DataSync/Datalake/Sources'));
 const DatalakeDashboardPage = lazyWithPreload(() => import('@/pages/DataSync/Datalake/Dashboard'));
 const DatalakeSchemaBrowserPage = lazyWithPreload(() => import('@/pages/DataSync/Datalake/SchemaBrowser'));
+const APIManagementPage = lazyWithPreload(() => import('@/pages/DataSync/APIManagement'));
 
 // Admin pages
 const AdminConsolePage = lazyWithPreload(() => import('@/pages/Admin/Console'));
@@ -509,6 +510,10 @@ export const routes: RouteObject[] = [
                 element: withSuspense(DatalakeSchemaBrowserPage, 'table'),
               },
             ],
+          },
+          {
+            path: 'api-management',
+            element: withSuspense(APIManagementPage, 'table'),
           },
         ],
       },

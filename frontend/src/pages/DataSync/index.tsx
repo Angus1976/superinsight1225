@@ -11,6 +11,7 @@ import {
   ExportOutlined,
   HistoryOutlined,
   ScheduleOutlined,
+  ApiOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import DataSourceManager from '../../components/DataSync/DataSourceManager';
@@ -67,6 +68,11 @@ const DataSyncPage: React.FC = () => {
             <Menu.Item key="datalake">
               <Link to="/data-sync/datalake/sources">
                 <DatabaseOutlined /> {t('dataSync:datalake.title', '数据湖/数仓')}
+              </Link>
+            </Menu.Item>
+            <Menu.Item key="api-management">
+              <Link to="/data-sync/api-management">
+                <ApiOutlined /> {t('dataSync:nav.apiManagement', 'API 管理')}
               </Link>
             </Menu.Item>
           </Menu>

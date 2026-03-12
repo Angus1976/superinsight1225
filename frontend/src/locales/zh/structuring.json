@@ -83,8 +83,8 @@
   "results": {
     "createTasksSuccess": "标注任务创建成功",
     "createTasksError": "创建标注任务失败，请重试",
-    "transferSuccess": "已成功转移 {{count}} 条记录到数据生命周期",
-    "transferError": "转移到数据生命周期失败，请重试",
+    "transferSuccess": "已成功转移 {{count}} 条记录到数据周转",
+    "transferError": "转移到数据周转失败，请重试",
     "transferToLifecycle": "转移到生命周期",
     "confidence": "置信度",
     "sourceSpan": "原文引用",

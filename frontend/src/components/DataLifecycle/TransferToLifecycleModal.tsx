@@ -108,10 +108,11 @@ const TransferToLifecycleModal: React.FC<TransferToLifecycleModalProps> = ({
   }, [visible, user]);
 
   const checkPermissionLevel = async () => {
-    // TODO: Call permission service to get user's permission level
-    // For now, check if user is admin
+    // Backend handles permission checks via DataTransferSecurityMiddleware.
+    // Frontend defaults to direct_transfer for all authenticated users;
+    // if the backend rejects, the error is shown to the user.
     const isAdmin = user?.role === 'admin' || user?.role === 'administrator';
-    setPermissionLevel(isAdmin ? 'administrator' : 'approval_required');
+    setPermissionLevel(isAdmin ? 'administrator' : 'direct_transfer');
   };
 
   // Reset form when modal opens

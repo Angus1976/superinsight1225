@@ -1,9 +1,9 @@
 {
   "transfer": {
-    "title": "转存至数据生命周期",
-    "button": "转存至数据生命周期",
+    "title": "转存至数据周转",
+    "button": "转存至数据周转",
     "modal": {
-      "title": "转存数据到数据生命周期",
+      "title": "转存数据到数据周转",
       "selectStage": "选择目标阶段",
       "dataType": "数据类型",
       "tags": "标签",

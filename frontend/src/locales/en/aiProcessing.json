@@ -1,9 +1,9 @@
 {
   "transfer": {
-    "title": "Transfer to Data Lifecycle",
-    "button": "Transfer to Data Lifecycle",
+    "title": "Transfer to Data Turnover",
+    "button": "Transfer to Data Turnover",
     "modal": {
-      "title": "Transfer Data to Data Lifecycle",
+      "title": "Transfer Data to Data Turnover",
       "selectStage": "Select Target Stage",
       "dataType": "Data Type",
       "tags": "Tags",

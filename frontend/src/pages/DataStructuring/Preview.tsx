@@ -29,11 +29,14 @@ import {
   SyncOutlined,
   ArrowRightOutlined,
   ArrowLeftOutlined,
+  DatabaseOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStructuringStore } from '@/stores/structuringStore';
 import type { JobStatus } from '@/stores/structuringStore';
+import TransferToLifecycleModal from '@/components/DataLifecycle/TransferToLifecycleModal';
+import type { TransferDataItem } from '@/components/DataLifecycle/TransferToLifecycleModal';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -249,13 +252,14 @@ const TabularPreview: React.FC<TabularPreviewProps> = ({ content, t }) => {
 
 const PreviewPage: React.FC = () => {
   const { jobId } = useParams<{ jobId: string }>();
-  const { t } = useTranslation(['structuring', 'common']);
+  const { t } = useTranslation(['structuring', 'common', 'aiProcessing']);
   const navigate = useNavigate();
 
   const { currentJob, isLoadingJob, error, fetchJob, clearError } =
     useStructuringStore();
 
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [transferModalOpen, setTransferModalOpen] = React.useState(false);
 
   // ---- Fetch job on mount and when jobId changes ----
   const loadJob = useCallback(() => {
@@ -304,6 +308,27 @@ const PreviewPage: React.FC = () => {
   const handleGoBack = useCallback(() => {
     navigate('/data-structuring/upload');
   }, [navigate]);
+
+  const handleGoToResults = useCallback(() => {
+    if (jobId) {
+      navigate(`/data-structuring/results/${jobId}`);
+    }
+  }, [jobId, navigate]);
+
+  /** Build transfer data from the current job's raw content */
+  const getTransferData = useCallback((): TransferDataItem[] => {
+    if (!currentJob) return [];
+    return [{
+      id: currentJob.job_id,
+      name: currentJob.file_name,
+      content: { raw_content: currentJob.raw_content },
+      metadata: {
+        source_type: 'structuring',
+        file_type: currentJob.file_type,
+        status: currentJob.status,
+      },
+    }];
+  }, [currentJob]);
 
   // ---- Guard: no jobId ----
   if (!jobId) {
@@ -363,6 +388,7 @@ const PreviewPage: React.FC = () => {
     currentJob;
   const showContent = raw_content && raw_content.trim().length > 0;
   const canGoToSchema = status === 'confirming';
+  const isCompleted = status === 'completed';
   const jobIsProcessing = isProcessing(status);
 
   return (
@@ -486,7 +512,48 @@ const PreviewPage: React.FC = () => {
             />
           </Card>
         )}
+
+        {/* CTA when job is completed */}
+        {isCompleted && (
+          <Card>
+            <Result
+              icon={<CheckCircleOutlined style={{ color: '#52c41a' }} />}
+              title={t('structuring:preview.completedTitle', { defaultValue: '数据结构化完成' })}
+              subTitle={t('structuring:preview.completedHint', {
+                defaultValue: '可查看结构化结果或直接转存到数据流转模块。',
+              })}
+              extra={
+                <Space>
+                  <Button
+                    size="large"
+                    icon={<DatabaseOutlined />}
+                    onClick={() => setTransferModalOpen(true)}
+                  >
+                    {t('aiProcessing:transfer.button')}
+                  </Button>
+                  <Button
+                    type="primary"
+                    size="large"
+                    icon={<ArrowRightOutlined />}
+                    onClick={handleGoToResults}
+                  >
+                    {t('structuring:preview.viewResults', { defaultValue: '查看结构化结果' })}
+                  </Button>
+                </Space>
+              }
+            />
+          </Card>
+        )}
       </Space>
+
+      {/* Transfer to Lifecycle Modal */}
+      <TransferToLifecycleModal
+        visible={transferModalOpen}
+        onClose={() => setTransferModalOpen(false)}
+        onSuccess={() => setTransferModalOpen(false)}
+        sourceType="structuring"
+        selectedData={getTransferData()}
+      />
     </div>
   );
 };

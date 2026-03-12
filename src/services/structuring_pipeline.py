@@ -318,39 +318,43 @@ def _create_annotation_task(
 ) -> dict:
     """Step 6: Create an annotation Task linked to this job.
 
+    Persists an AnnotationTaskModel row so the task appears in task management.
+
     Returns:
         Task dict with task_id and metadata.
     """
     logger.info(f"[Job {job.id}] 步骤 6/6: 创建标注任务")
-    from src.models.task import Task
-    from uuid import UUID as UUIDType
-    
-    # Convert tenant_id to UUID if it's a string
-    if job.tenant_id:
-        try:
-            tenant_uuid = UUIDType(job.tenant_id) if isinstance(job.tenant_id, str) else job.tenant_id
-        except (ValueError, AttributeError):
-            # If tenant_id is not a valid UUID (e.g., "system"), generate a new one
-            logger.warning(f"tenant_id '{job.tenant_id}' is not a valid UUID, generating new UUID")
-            tenant_uuid = uuid4()
-    else:
-        tenant_uuid = uuid4()
+    from src.models.data_lifecycle import AnnotationTaskModel, AnnotationType, TaskStatus
 
-    task = Task(
-        task_id=uuid4(),
-        project_id=uuid4(),  # placeholder — real project comes from caller
-        tenant_id=tenant_uuid,
-        title=f"标注任务: {job.file_name}",
+    task_id = uuid4()
+    created_by = str(job.tenant_id) if job.tenant_id else "system"
+
+    task = AnnotationTaskModel(
+        id=task_id,
+        name=f"标注任务: {job.file_name}",
         description=f"基于结构化 Job {job.id} 自动创建的标注任务",
-        status="pending",
-        metadata={
+        sample_ids=[str(job.id)],
+        annotation_type=AnnotationType.CUSTOM,
+        instructions=f"请对 {job.file_name} 的结构化结果进行标注",
+        status=TaskStatus.CREATED,
+        created_by=created_by,
+        progress_total=job.record_count or 0,
+        metadata_={
             "job_id": str(job.id),
             "schema": schema_dict,
             "record_count": job.record_count,
+            "file_name": job.file_name,
         },
     )
-    logger.info(f"[Job {job.id}] 标注任务创建完成: task_id={task.task_id}")
-    return task.model_dump(mode="json")
+    session.add(task)
+
+    logger.info(f"[Job {job.id}] 标注任务创建完成: task_id={task_id}")
+    return {
+        "task_id": str(task_id),
+        "name": task.name,
+        "status": TaskStatus.CREATED.value,
+        "record_count": job.record_count,
+    }
 
 
 # ---------------------------------------------------------------------------

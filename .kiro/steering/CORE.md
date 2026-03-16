@@ -1,44 +1,18 @@
 # 核心开发规则
 
-## 🎯 核心原则
+## 原则
 
-**代码质量**: 可读性 > 可维护性 > 可测试性 > 健壮性 > 性能
-- 函数 20-40 行，卫语句提前返回，显式优于隐式
+- 代码质量: 可读性 > 可维护性 > 性能。函数 20-40 行，卫语句，显式优于隐式
+- 文档: 代码即文档，只生成 Spec 三件套，禁止生成报告
+- i18n: 前端用户可见文本必须 `t()`，翻译同步 `zh/` 和 `en/`
+- 项目 70% 进度: 只扩展/修复/优化，禁止重写，先分析后动手，最小改动
+- 文件: 后端 `src/`，前端 `frontend/src/`，文档 `文档/`
 
-**AI 开发**: 短而精 > 长而全
-- 每次只做一件事，拆小步，渐进式给上下文
+## 规则加载策略
 
-**文档**: 代码即文档 > 必要的文档 > 冗长的文档
-- 只生成 Spec 三件套，禁止生成诊断/执行报告
+**不要主动加载任何 `.kiro/rules/` 文件。** 只在以下情况读取：
+1. 用户明确要求（如"按照 i18n 规则检查"）
+2. 遇到具体技术问题且自身知识不足以解决时
+3. 需要项目特定约定（如导出规范、文件组织）时
 
-**i18n**: 所有前端用户可见文本必须用 `t()` 包裹
-- 翻译 key 同步写入 `frontend/src/locales/zh/` 和 `en/`
-
-**项目进度**: 当前 70%（60-85% 阶段）
-- 只允许扩展、修复、优化，禁止推倒重来
-- 先分析现有代码，优先复用，最小改动
-
-**文件组织**: 
-- 源代码: `src/`(后端) `frontend/src/`(前端)
-- 文档: `文档/` 目录（查 `文档/文档总索引.md`）
-
----
-
-## 📋 检查清单
-
-- [ ] 函数超 40 行？用卫语句？有魔法值？
-- [ ] 能拆更小步骤？只给必要上下文？
-- [ ] 用户可见文本用 `t()`？翻译 JSON 同步？
-- [ ] 先分析现有代码？优先复用？最小改动？
-
----
-
-## 🔗 按需加载
-
-遇到具体问题时，AI 自动加载 `.kiro/rules/` 下的详细规则：
-- TypeScript/导出 → `typescript-export-rules.md`
-- i18n/翻译 → `i18n-translation-rules.md`
-- 代码质量 → `coding-quality-standards.md`
-- 项目结构 → `structure.md`
-- 安全/OWASP → `security-review-checklist.md`
-- FastAPI → `python-fastapi-patterns.md`
+可用规则（按需读取）：`typescript-export-rules.md` `i18n-translation-rules.md` `coding-quality-standards.md` `structure.md` `security-review-checklist.md` `python-fastapi-patterns.md` `git-workflow-standards.md` `tdd-workflow.md` `api-design-patterns.md`

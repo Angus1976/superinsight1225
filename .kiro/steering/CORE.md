@@ -152,6 +152,13 @@
 ### INFO（工具指南）
 - `.kiro/rules/auto-approve-guide.md` - Kiro 自动确认配置
 
+### ECC-ADAPTED（来自 everything-claude-code 适配）
+- `.kiro/rules/security-review-checklist.md` - 安全审查清单（OWASP Top 10）
+- `.kiro/rules/git-workflow-standards.md` - Git 工作流规范
+- `.kiro/rules/python-fastapi-patterns.md` - Python/FastAPI 最佳实践
+- `.kiro/rules/tdd-workflow.md` - TDD 工作流
+- `.kiro/rules/api-design-patterns.md` - API 设计规范
+
 ### 项目文档（重要）
 - `文档/文档总索引.md` - **项目所有文档的总索引**（64 个文档，10 个分类）
 - `文档/快速开始/` - 快速启动和入门指南

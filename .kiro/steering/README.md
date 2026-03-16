@@ -65,6 +65,13 @@
 #### 🔵 INFO（工具指南）
 - **auto-approve-guide.md** - Kiro 自动确认配置
 
+#### 🟣 ECC-ADAPTED（来自 everything-claude-code 适配）
+- **security-review-checklist.md** - 安全审查清单（OWASP Top 10）
+- **git-workflow-standards.md** - Git 工作流规范（Conventional Commits）
+- **python-fastapi-patterns.md** - Python/FastAPI 最佳实践
+- **tdd-workflow.md** - TDD 工作流（RED-GREEN-REFACTOR）
+- **api-design-patterns.md** - API 设计规范（REST、分页、错误码）
+
 ---
 
 ## 📊 加载策略对比
@@ -151,6 +158,13 @@ AI：
 ---
 
 ## 📝 变更日志
+
+### 2026-03-16 - everything-claude-code 适配集成
+- ✅ 新增 5 个 ECC 适配规则文档到 `.kiro/rules/`
+- ✅ 新增 2 个 Kiro hooks（写入前安全扫描 + 任务完成后验证）
+- ✅ 更新智能加载映射表，添加 ECC 相关关键词
+- ✅ 更新 CORE.md 索引，添加 ECC-ADAPTED 分类
+- ✅ 完全保留原有项目结构、Spec 和规则
 
 ### 2026-02-04 - 按需加载策略（第二次优化）
 - ✅ 创建 `.kiro/rules/` 目录存放所有详细规则文档

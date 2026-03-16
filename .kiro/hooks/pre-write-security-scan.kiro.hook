@@ -1,0 +1,14 @@
+{
+  "enabled": true,
+  "name": "写入前安全扫描",
+  "description": "在写入代码文件前检查是否包含硬编码密钥、敏感信息或危险模式",
+  "version": "1.0.0",
+  "when": {
+    "type": "preToolUse",
+    "toolTypes": ["write"]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Before writing this file, verify: 1) No hardcoded secrets (sk-, ghp_, AKIA, password=, secret=). 2) No SQL string concatenation. 3) No dangerouslySetInnerHTML with user input. 4) .env files are not being created with real credentials. If any issue found, block the write and explain. If clean, proceed silently."
+  }
+}

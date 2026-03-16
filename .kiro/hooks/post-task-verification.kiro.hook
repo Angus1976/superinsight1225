@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "任务完成后验证",
+  "description": "Spec 任务完成后自动运行验证检查",
+  "version": "1.0.0",
+  "when": {
+    "type": "postTaskExecution"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Task completed. Run verification: 1) Check for type errors (getDiagnostics on changed files). 2) Verify no hardcoded strings in frontend (i18n compliance). 3) Confirm new API endpoints have auth decorators. 4) Report only failures, stay silent on success."
+  }
+}

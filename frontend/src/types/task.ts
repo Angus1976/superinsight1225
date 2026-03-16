@@ -4,14 +4,15 @@ export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled';
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
 export type AnnotationType = 'text_classification' | 'ner' | 'sentiment' | 'qa' | 'custom';
 
-// Re-export Label Studio types from dedicated module
-export type { LabelStudioSyncStatus } from './labelStudio';
+// Re-export Label Studio types from consolidated module
+// Note: API types (number IDs) are aliased for backward compatibility
+export type { LabelStudioSyncStatus } from './label-studio';
 export type {
-  LabelStudioProject,
-  LabelStudioTask,
-  LabelStudioTaskData,
-  LabelStudioUser,
-  LabelStudioAnnotation,
+  LabelStudioApiProject as LabelStudioProject,
+  LabelStudioApiTask as LabelStudioTask,
+  LabelStudioApiTaskData as LabelStudioTaskData,
+  LabelStudioApiUser as LabelStudioUser,
+  LabelStudioApiAnnotation as LabelStudioAnnotation,
   AnnotationResult,
   AnnotationValue,
   LabelStudioError,
@@ -21,11 +22,11 @@ export type {
   SyncProgress,
   SyncStatus,
   ExportAnnotationResult,
-} from './labelStudio';
-export { calculateAnnotationQuality } from './labelStudio';
+} from './label-studio';
+export { calculateAnnotationQuality } from './label-studio';
 
 // Import for local use
-import type { LabelStudioSyncStatus, LabelStudioTask } from './labelStudio';
+import type { LabelStudioSyncStatus, LabelStudioApiTask as LabelStudioTask } from './label-studio';
 
 export interface Task {
   id: string;

@@ -47,7 +47,7 @@ export * from './auth';
 export * from './user';
 export * from './dashboard';
 export * from './task';
-export * from './labelStudio';
+export * from './label-studio';
 export * from './billing';
 export * from './augmentation';
 export * from './quality';
@@ -56,7 +56,6 @@ export * from './system';
 export * from './error';
 export * from './components';
 export * from './guards';
-export * from './label-studio';
 
 // Label Studio Workspace types
 export * from './ls-workspace';

@@ -1,11 +1,12 @@
 """
-Data Version Control Module.
+Data Version Control Module (Legacy).
 
-Provides comprehensive data version control and management capabilities:
-- Version creation and tracking
-- Delta calculation and storage
-- Version comparison and querying
-- Rollback and recovery support
+NOTE: This module is maintained for backward compatibility.
+The primary versioning module is now `src.versioning`, which re-exports
+all symbols from this module plus advanced features (diff, snapshots,
+change tracking, lineage graphs, impact analysis).
+
+New code should import from `src.versioning` instead.
 """
 
 from src.version.models import (
@@ -14,9 +15,12 @@ from src.version.models import (
     DataVersionBranch,
     VersionStatus,
     VersionType,
+    DataLineageRecord,
+    LineageRelationType,
 )
 from src.version.version_manager import (
     VersionControlManager,
+    DeltaCalculator,
     version_manager,
 )
 from src.version.query_engine import (

@@ -1324,16 +1324,6 @@ except Exception as e:
     import traceback
     traceback.print_exc()
 
-# Include dashboard router
-try:
-    from src.api.dashboard import router as dashboard_router
-    app.include_router(dashboard_router)
-    logger.info("Dashboard API loaded successfully")
-except Exception as e:
-    logger.error(f"Dashboard API failed to load: {e}")
-    import traceback
-    traceback.print_exc()
-
 # Include workspace router for multi-tenant support
 try:
     from src.api.workspace import router as workspace_router
@@ -1987,16 +1977,6 @@ async def include_optional_routers():
         )
         logger.error(f"❌ Ontology Expert Collaboration WebSocket API failed to load: {e}")
     
-    # Business metrics router
-    try:
-        from src.api.business_metrics import router as business_metrics_router
-        app.include_router(business_metrics_router)
-        logger.info("✅ Business metrics API loaded successfully")
-    except ImportError as e:
-        logger.warning(f"⚠️ Business metrics API not available: {e}")
-    except Exception as e:
-        logger.error(f"❌ Business metrics API failed to load: {e}")
-
     # Text-to-SQL router
     try:
         from src.api.text_to_sql import router as text_to_sql_router
@@ -2423,6 +2403,46 @@ async def include_optional_routers():
         logger.warning(f"⚠️ Toolkit API not available: {e}")
     except Exception as e:
         logger.error(f"❌ Toolkit API failed to load: {e}")
+
+    # Reward API (Quality Governance rewards)
+    try:
+        from src.api.reward_api import router as reward_router
+        app.include_router(reward_router)
+        logger.info("✅ Reward API loaded successfully")
+    except ImportError as e:
+        logger.warning(f"⚠️ Reward API not available: {e}")
+    except Exception as e:
+        logger.error(f"❌ Reward API failed to load: {e}")
+
+    # Resource API (Resource management)
+    try:
+        from src.api.resource_api import router as resource_router
+        app.include_router(resource_router)
+        logger.info("✅ Resource API loaded successfully")
+    except ImportError as e:
+        logger.warning(f"⚠️ Resource API not available: {e}")
+    except Exception as e:
+        logger.error(f"❌ Resource API failed to load: {e}")
+
+    # Assessment API (Assessment reports)
+    try:
+        from src.api.assessment_api import router as assessment_router
+        app.include_router(assessment_router)
+        logger.info("✅ Assessment API loaded successfully")
+    except ImportError as e:
+        logger.warning(f"⚠️ Assessment API not available: {e}")
+    except Exception as e:
+        logger.error(f"❌ Assessment API failed to load: {e}")
+
+    # Assessment Application API (Assessment application management)
+    try:
+        from src.api.assessment_application_api import router as assessment_application_router
+        app.include_router(assessment_application_router)
+        logger.info("✅ Assessment Application API loaded successfully")
+    except ImportError as e:
+        logger.warning(f"⚠️ Assessment Application API not available: {e}")
+    except Exception as e:
+        logger.error(f"❌ Assessment Application API failed to load: {e}")
 
     # Output API registration summary
     # Validates: Requirements 3.2 - 详细的日志记录每个 API 的注册状态

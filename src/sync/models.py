@@ -766,6 +766,17 @@ class APIKeyModel(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     created_by: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     
+    # Smart Service Engine extensions
+    allowed_request_types: Mapped[dict] = mapped_column(
+        JSONB, nullable=False, default=list, server_default='["query","chat","decision","skill"]'
+    )
+    skill_whitelist: Mapped[dict] = mapped_column(
+        JSONB, nullable=False, default=list, server_default='[]'
+    )
+    webhook_config: Mapped[Optional[dict]] = mapped_column(
+        JSONB, nullable=True, default=None, server_default=None
+    )
+
     # Relationships
     call_logs: Mapped[List["APICallLogModel"]] = relationship("APICallLogModel", back_populates="api_key")
 

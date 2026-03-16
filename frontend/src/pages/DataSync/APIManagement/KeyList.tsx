@@ -13,7 +13,9 @@ import {
   Tooltip,
   Typography,
   Alert,
-  Popconfirm
+  Popconfirm,
+  Badge,
+  Divider
 } from 'antd';
 import {
   PlusOutlined,
@@ -21,7 +23,8 @@ import {
   CheckCircleOutlined,
   StopOutlined,
   DeleteOutlined,
-  EyeOutlined
+  EyeOutlined,
+  ClockCircleOutlined
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
@@ -41,6 +44,13 @@ interface APIKey {
   created_at: string;
   last_used_at?: string;
   total_calls: number;
+  allowed_request_types?: string[];
+  skill_whitelist?: string[];
+  webhook_config?: {
+    webhook_url: string;
+    webhook_secret: string;
+    webhook_events: string[];
+  } | null;
 }
 
 const KeyList: React.FC = () => {
@@ -77,13 +87,20 @@ const KeyList: React.FC = () => {
         experiments: values.scopes?.includes('experiments') || false
       };
 
+      const skillWhitelist = values.skill_whitelist
+        ? values.skill_whitelist.split(',').map((s: string) => s.trim()).filter(Boolean)
+        : [];
+
       const response = await axios.post('/api/v1/sync/api-keys/', {
         name: values.name,
         description: values.description,
         scopes,
         expires_in_days: values.expires_in_days,
         rate_limit_per_minute: values.rate_limit_per_minute || 60,
-        rate_limit_per_day: values.rate_limit_per_day || 10000
+        rate_limit_per_day: values.rate_limit_per_day || 10000,
+        allowed_request_types: values.allowed_request_types || [],
+        skill_whitelist: skillWhitelist,
+        webhook_config: null
       });
 
       setCreatedKey(response.data);
@@ -142,6 +159,22 @@ const KeyList: React.FC = () => {
     return <Tag color={config.color}>{config.text}</Tag>;
   };
 
+  const requestTypeNames: Record<string, string> = {
+    query: t('apiManagement.requestTypeQuery'),
+    chat: t('apiManagement.requestTypeChat'),
+    decision: t('apiManagement.requestTypeDecision'),
+    skill: t('apiManagement.requestTypeSkill')
+  };
+
+  const getRequestTypesList = (types?: string[]) => {
+    if (!types?.length) return '-';
+    return types.map((type) => (
+      <Tag key={type} color="green">
+        {requestTypeNames[type] || type}
+      </Tag>
+    ));
+  };
+
   const getScopesList = (scopes: Record<string, boolean>) => {
     const scopeNames: Record<string, string> = {
       annotations: t('apiManagement.scopeAnnotations'),
@@ -179,6 +212,13 @@ const KeyList: React.FC = () => {
       key: 'scopes',
       width: 300,
       render: (scopes: Record<string, boolean>) => getScopesList(scopes)
+    },
+    {
+      title: t('apiManagement.allowedRequestTypes'),
+      dataIndex: 'allowed_request_types',
+      key: 'allowed_request_types',
+      width: 280,
+      render: (types: string[]) => getRequestTypesList(types)
     },
     {
       title: t('status.status'),
@@ -291,7 +331,7 @@ const KeyList: React.FC = () => {
           dataSource={keys}
           rowKey="id"
           loading={loading}
-          scroll={{ x: 1400 }}
+          scroll={{ x: 1700 }}
           pagination={{
             pageSize: 10,
             showSizeChanger: true,
@@ -348,6 +388,78 @@ const KeyList: React.FC = () => {
               </Space>
             </Checkbox.Group>
           </Form.Item>
+
+          <Divider />
+
+          <Form.Item
+            name="allowed_request_types"
+            label={t('apiManagement.selectRequestTypes')}
+          >
+            <Checkbox.Group style={{ width: '100%' }}>
+              <Space direction="vertical">
+                <Checkbox value="query">{t('apiManagement.requestTypeQuery')}</Checkbox>
+                <Checkbox value="chat">{t('apiManagement.requestTypeChat')}</Checkbox>
+                <Checkbox value="decision">{t('apiManagement.requestTypeDecision')}</Checkbox>
+                <Checkbox value="skill">{t('apiManagement.requestTypeSkill')}</Checkbox>
+              </Space>
+            </Checkbox.Group>
+          </Form.Item>
+
+          <Form.Item
+            name="skill_whitelist"
+            label={t('apiManagement.skillWhitelist')}
+          >
+            <Input
+              placeholder={t('apiManagement.skillWhitelistPlaceholder')}
+            />
+          </Form.Item>
+
+          <Divider />
+
+          <div style={{ position: 'relative', opacity: 0.6 }}>
+            <Badge.Ribbon
+              text={t('apiManagement.comingSoon')}
+              color="orange"
+            >
+              <div style={{ padding: '12px', border: '1px dashed #d9d9d9', borderRadius: 8 }}>
+                <Text strong style={{ display: 'block', marginBottom: 12 }}>
+                  {t('apiManagement.webhookConfig')}
+                </Text>
+                <Form.Item
+                  label={t('apiManagement.webhookUrl')}
+                  style={{ marginBottom: 8 }}
+                >
+                  <Input
+                    placeholder={t('apiManagement.webhookUrlPlaceholder')}
+                    disabled
+                  />
+                </Form.Item>
+                <Form.Item
+                  label={t('apiManagement.webhookSecret')}
+                  style={{ marginBottom: 8 }}
+                >
+                  <Input.Password
+                    placeholder={t('apiManagement.webhookSecretPlaceholder')}
+                    disabled
+                  />
+                </Form.Item>
+                <Form.Item
+                  label={t('apiManagement.webhookEvents')}
+                  style={{ marginBottom: 0 }}
+                >
+                  <Checkbox.Group disabled style={{ width: '100%' }}>
+                    <Space direction="vertical">
+                      <Checkbox value="data_sync">{t('apiManagement.webhookEventDataSync')}</Checkbox>
+                      <Checkbox value="data_export">{t('apiManagement.webhookEventExport')}</Checkbox>
+                      <Checkbox value="alert">{t('apiManagement.webhookEventAlert')}</Checkbox>
+                    </Space>
+                  </Checkbox.Group>
+                </Form.Item>
+              </div>
+            </Badge.Ribbon>
+          </div>
+
+          <Divider />
 
           <Form.Item
             name="expires_in_days"

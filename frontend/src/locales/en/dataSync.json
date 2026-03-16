@@ -461,6 +461,7 @@
     "lastUsed": "Last Used",
     "totalCalls": "Total Calls",
     "createdAt": "Created At",
+    "status": "Status",
     "actions": "Actions",
     "enable": "Enable",
     "disable": "Disable",

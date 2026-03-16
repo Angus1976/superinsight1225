@@ -14,7 +14,6 @@ import {
   Typography,
   Alert,
   Popconfirm,
-  Badge,
   Divider
 } from 'antd';
 import {
@@ -91,6 +90,14 @@ const KeyList: React.FC = () => {
         ? values.skill_whitelist.split(',').map((s: string) => s.trim()).filter(Boolean)
         : [];
 
+      const webhookConfig = values.webhook_url
+        ? {
+            webhook_url: values.webhook_url,
+            webhook_secret: values.webhook_secret || '',
+            webhook_events: values.webhook_events || []
+          }
+        : null;
+
       const response = await axios.post('/api/v1/sync/api-keys/', {
         name: values.name,
         description: values.description,
@@ -100,7 +107,7 @@ const KeyList: React.FC = () => {
         rate_limit_per_day: values.rate_limit_per_day || 10000,
         allowed_request_types: values.allowed_request_types || [],
         skill_whitelist: skillWhitelist,
-        webhook_config: null
+        webhook_config: webhookConfig
       });
 
       setCreatedKey(response.data);
@@ -221,7 +228,7 @@ const KeyList: React.FC = () => {
       render: (types: string[]) => getRequestTypesList(types)
     },
     {
-      title: t('status.status'),
+      title: t('apiManagement.status'),
       dataIndex: 'status',
       key: 'status',
       width: 100,
@@ -416,38 +423,35 @@ const KeyList: React.FC = () => {
 
           <Divider />
 
-          <div style={{ position: 'relative', opacity: 0.6 }}>
-            <Badge.Ribbon
-              text={t('apiManagement.comingSoon')}
-              color="orange"
-            >
-              <div style={{ padding: '12px', border: '1px dashed #d9d9d9', borderRadius: 8 }}>
+          <div style={{ padding: '12px', border: '1px solid #d9d9d9', borderRadius: 8 }}>
                 <Text strong style={{ display: 'block', marginBottom: 12 }}>
                   {t('apiManagement.webhookConfig')}
                 </Text>
                 <Form.Item
+                  name="webhook_url"
                   label={t('apiManagement.webhookUrl')}
                   style={{ marginBottom: 8 }}
+                  rules={[{ type: 'url', message: t('apiManagement.webhookUrlPlaceholder') }]}
                 >
                   <Input
                     placeholder={t('apiManagement.webhookUrlPlaceholder')}
-                    disabled
                   />
                 </Form.Item>
                 <Form.Item
+                  name="webhook_secret"
                   label={t('apiManagement.webhookSecret')}
                   style={{ marginBottom: 8 }}
                 >
                   <Input.Password
                     placeholder={t('apiManagement.webhookSecretPlaceholder')}
-                    disabled
                   />
                 </Form.Item>
                 <Form.Item
+                  name="webhook_events"
                   label={t('apiManagement.webhookEvents')}
                   style={{ marginBottom: 0 }}
                 >
-                  <Checkbox.Group disabled style={{ width: '100%' }}>
+                  <Checkbox.Group style={{ width: '100%' }}>
                     <Space direction="vertical">
                       <Checkbox value="data_sync">{t('apiManagement.webhookEventDataSync')}</Checkbox>
                       <Checkbox value="data_export">{t('apiManagement.webhookEventExport')}</Checkbox>
@@ -456,8 +460,6 @@ const KeyList: React.FC = () => {
                   </Checkbox.Group>
                 </Form.Item>
               </div>
-            </Badge.Ribbon>
-          </div>
 
           <Divider />
 

@@ -461,6 +461,7 @@
     "lastUsed": "最后使用",
     "totalCalls": "总调用次数",
     "createdAt": "创建时间",
+    "status": "状态",
     "actions": "操作",
     "enable": "启用",
     "disable": "禁用",

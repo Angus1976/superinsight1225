@@ -1,0 +1,106 @@
+{
+  "report_date": "2026-03-16",
+  "store_id": "STORE-001",
+  "store_name": "朝阳路旗舰店",
+  "transactions": [
+    {
+      "transaction_id": "TXN20260316001",
+      "timestamp": "2026-03-16T08:15:32+08:00",
+      "member_id": "VIP100086",
+      "member_level": "金卡",
+      "cashier_id": "EMP-0023",
+      "payment_method": "微信支付",
+      "items": [
+        {"sku": "SKU001", "name": "伊利纯牛奶", "qty": 2, "unit_price": 59.90, "discount": 0.95, "amount": 113.81},
+        {"sku": "SKU006", "name": "海天酱油", "qty": 3, "unit_price": 9.90, "discount": 1.00, "amount": 29.70},
+        {"sku": "SKU007", "name": "维达抽纸", "qty": 1, "unit_price": 32.90, "discount": 0.90, "amount": 29.61}
+      ],
+      "subtotal": 173.12,
+      "coupon_deduction": 15.00,
+      "points_earned": 158,
+      "total_paid": 158.12
+    },
+    {
+      "transaction_id": "TXN20260316002",
+      "timestamp": "2026-03-16T09:42:18+08:00",
+      "member_id": "VIP200153",
+      "member_level": "银卡",
+      "cashier_id": "EMP-0015",
+      "payment_method": "支付宝",
+      "items": [
+        {"sku": "SKU004", "name": "农夫山泉饮用水", "qty": 3, "unit_price": 28.00, "discount": 1.00, "amount": 84.00},
+        {"sku": "SKU010", "name": "青岛啤酒", "qty": 2, "unit_price": 55.00, "discount": 0.92, "amount": 101.20},
+        {"sku": "SKU017", "name": "卫龙辣条", "qty": 5, "unit_price": 5.90, "discount": 1.00, "amount": 29.50},
+        {"sku": "SKU003", "name": "康师傅红烧牛肉面", "qty": 2, "unit_price": 12.90, "discount": 1.00, "amount": 25.80}
+      ],
+      "subtotal": 240.50,
+      "coupon_deduction": 0,
+      "points_earned": 240,
+      "total_paid": 240.50
+    },
+    {
+      "transaction_id": "TXN20260316003",
+      "timestamp": "2026-03-16T10:05:47+08:00",
+      "member_id": null,
+      "member_level": null,
+      "cashier_id": "EMP-0023",
+      "payment_method": "现金",
+      "items": [
+        {"sku": "SKU016", "name": "光明鲜牛奶", "qty": 2, "unit_price": 16.80, "discount": 1.00, "amount": 33.60},
+        {"sku": "SKU012", "name": "好丽友派", "qty": 1, "unit_price": 12.50, "discount": 1.00, "amount": 12.50}
+      ],
+      "subtotal": 46.10,
+      "coupon_deduction": 0,
+      "points_earned": 0,
+      "total_paid": 46.10
+    },
+    {
+      "transaction_id": "TXN20260316004",
+      "timestamp": "2026-03-16T11:30:22+08:00",
+      "member_id": "VIP100012",
+      "member_level": "钻石卡",
+      "cashier_id": "EMP-0008",
+      "payment_method": "微信支付",
+      "items": [
+        {"sku": "SKU015", "name": "鲁花花生油", "qty": 1, "unit_price": 139.90, "discount": 0.88, "amount": 123.11},
+        {"sku": "SKU002", "name": "金龙鱼调和油", "qty": 1, "unit_price": 69.90, "discount": 0.88, "amount": 61.51},
+        {"sku": "SKU009", "name": "三全水饺", "qty": 3, "unit_price": 15.90, "discount": 0.95, "amount": 45.32},
+        {"sku": "SKU019", "name": "思念汤圆", "qty": 2, "unit_price": 12.90, "discount": 0.95, "amount": 24.51},
+        {"sku": "SKU011", "name": "汰渍洗衣液", "qty": 1, "unit_price": 42.90, "discount": 0.88, "amount": 37.75},
+        {"sku": "SKU013", "name": "蓝月亮洗手液", "qty": 2, "unit_price": 14.90, "discount": 0.88, "amount": 26.22}
+      ],
+      "subtotal": 318.42,
+      "coupon_deduction": 30.00,
+      "points_earned": 576,
+      "total_paid": 288.42
+    },
+    {
+      "transaction_id": "TXN20260316005",
+      "timestamp": "2026-03-16T14:18:55+08:00",
+      "member_id": "VIP300421",
+      "member_level": "普通卡",
+      "cashier_id": "EMP-0015",
+      "payment_method": "银行卡",
+      "items": [
+        {"sku": "SKU020", "name": "百威啤酒", "qty": 1, "unit_price": 85.00, "discount": 1.00, "amount": 85.00},
+        {"sku": "SKU005", "name": "双汇王中王火腿肠", "qty": 2, "unit_price": 16.80, "discount": 1.00, "amount": 33.60},
+        {"sku": "SKU014", "name": "旺旺雪饼", "qty": 1, "unit_price": 15.80, "discount": 1.00, "amount": 15.80},
+        {"sku": "SKU018", "name": "舒肤佳香皂", "qty": 1, "unit_price": 13.90, "discount": 1.00, "amount": 13.90}
+      ],
+      "subtotal": 148.30,
+      "coupon_deduction": 0,
+      "points_earned": 148,
+      "total_paid": 148.30
+    }
+  ],
+  "daily_summary": {
+    "total_transactions": 1286,
+    "member_transactions": 892,
+    "member_ratio": "69.4%",
+    "total_revenue": 152380.50,
+    "avg_basket_size": 118.49,
+    "total_points_issued": 98520,
+    "total_coupons_redeemed": 326,
+    "coupon_deduction_total": 4890.00
+  }
+}

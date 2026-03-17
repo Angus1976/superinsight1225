@@ -101,7 +101,7 @@ class TestFileTypeRouting:
         assert _TABULAR_TYPES == {"csv", "excel"}
 
     def test_text_types(self):
-        assert _TEXT_TYPES == {"pdf", "docx", "txt", "html"}
+        assert _TEXT_TYPES == {"pdf", "docx", "txt", "html", "markdown", "json"}
 
     def test_ppt_types(self):
         assert _PPT_TYPES == {"ppt"}

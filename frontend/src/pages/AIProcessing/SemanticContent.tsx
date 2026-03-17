@@ -37,7 +37,7 @@ const { Dragger } = Upload;
 const { Text } = Typography;
 
 const ACCEPTED_EXTENSIONS = [
-  '.pdf', '.csv', '.xlsx', '.xls', '.docx', '.html', '.htm', '.txt', '.md',
+  '.pdf', '.csv', '.xlsx', '.xls', '.docx', '.html', '.htm', '.txt', '.md', '.json',
   '.pptx', '.ppt', '.mp4', '.avi', '.mov', '.mkv', '.webm',
   '.mp3', '.wav', '.flac', '.ogg', '.m4a',
 ];

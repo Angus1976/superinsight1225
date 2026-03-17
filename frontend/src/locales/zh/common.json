@@ -519,13 +519,13 @@
     },
     "vectorization": {
       "uploadTitle": "上传文件",
-      "hint": "支持 PDF、Word、Excel、CSV、PPT、HTML、TXT、音视频格式",
+      "hint": "支持 PDF、Word、Excel、CSV、PPT、HTML、TXT、Markdown、JSON、音视频格式",
       "jobListTitle": "任务列表",
       "recordsTitle": "向量记录"
     },
     "semantic": {
       "uploadTitle": "上传文件",
-      "hint": "支持 PDF、Word、Excel、CSV、PPT、HTML、TXT、音视频格式",
+      "hint": "支持 PDF、Word、Excel、CSV、PPT、HTML、TXT、Markdown、JSON、音视频格式",
       "jobListTitle": "任务列表",
       "recordsTitle": "语义记录",
       "filterLabel": "按类型筛选：",

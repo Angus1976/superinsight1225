@@ -81,11 +81,15 @@ class TestExtractText:
     @patch("src.extractors.tabular.TabularParser.parse")
     def test_csv_routes_to_tabular_parser(self, mock_parse):
         job = _make_job(file_type=StructuringFileType.CSV.value)
-        mock_parse.return_value = MagicMock(rows=[["a", "b"], ["c", "d"]])
+        mock_parse.return_value = MagicMock(
+            headers=["col1", "col2"],
+            rows=[{"col1": "a", "col2": "b"}, {"col1": "c", "col2": "d"}],
+        )
 
         text = _extract_text(job)
 
         assert "a" in text
+        assert "col1" in text  # header line
         mock_parse.assert_called_once()
 
     @patch("src.extractors.ppt.PPTExtractor.extract")
@@ -120,6 +124,34 @@ class TestExtractText:
 
         with pytest.raises(ValueError, match="Unsupported file type"):
             _extract_text(job)
+
+    @patch("src.extractors.file.FileExtractor")
+    @patch("src.extractors.base.FileConfig")
+    def test_markdown_routes_to_file_extractor(self, mock_config_cls, mock_ext_cls):
+        job = _make_job(file_type=StructuringFileType.MARKDOWN.value, file_path="/tmp/test.md")
+        mock_doc = MagicMock()
+        mock_doc.content = "# Heading\nSome markdown content"
+        mock_result = MagicMock(success=True, documents=[mock_doc])
+        mock_ext_cls.return_value.extract_data.return_value = mock_result
+
+        text = _extract_text(job)
+
+        assert "markdown content" in text
+        mock_ext_cls.return_value.extract_data.assert_called_once()
+
+    @patch("src.extractors.file.FileExtractor")
+    @patch("src.extractors.base.FileConfig")
+    def test_json_routes_to_file_extractor(self, mock_config_cls, mock_ext_cls):
+        job = _make_job(file_type=StructuringFileType.JSON.value, file_path="/tmp/test.json")
+        mock_doc = MagicMock()
+        mock_doc.content = '{"key": "value"}'
+        mock_result = MagicMock(success=True, documents=[mock_doc])
+        mock_ext_cls.return_value.extract_data.return_value = mock_result
+
+        text = _extract_text(job)
+
+        assert "key" in text
+        mock_ext_cls.return_value.extract_data.assert_called_once()
 
 
 # ---------------------------------------------------------------------------

@@ -91,6 +91,8 @@ _TEXT_TYPES = {
     StructuringFileType.DOCX.value,
     StructuringFileType.TXT.value,
     StructuringFileType.HTML.value,
+    StructuringFileType.MARKDOWN.value,
+    StructuringFileType.JSON.value,
 }
 _PPT_TYPES = {StructuringFileType.PPT.value}
 _MEDIA_TYPES = {StructuringFileType.VIDEO.value, StructuringFileType.AUDIO.value}
@@ -127,8 +129,10 @@ def _extract_text(job: StructuringJob) -> str:
         from src.extractors.tabular import TabularParser
 
         data = TabularParser().parse(job.file_path, file_type)
-        rows_text = [", ".join(str(v) for v in row) for row in data.rows[:500]]
-        return "\n".join(rows_text)
+        # Build text: header line + data rows (dict values, not keys)
+        header_line = ", ".join(data.headers)
+        rows_text = [", ".join(str(v) for v in row.values()) for row in data.rows[:500]]
+        return header_line + "\n" + "\n".join(rows_text)
 
     if file_type in _PPT_TYPES:
         from src.extractors.ppt import PPTExtractor

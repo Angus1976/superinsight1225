@@ -2,7 +2,7 @@
 Property-based test for file type routing correctness.
 
 Validates that every supported FileType is routed to exactly one correct
-extractor: PDF/DOCX/HTML/TXT → FileExtractor (_TEXT_TYPES),
+extractor: PDF/DOCX/HTML/TXT/Markdown/JSON → FileExtractor (_TEXT_TYPES),
 CSV/Excel → TabularParser (_TABULAR_TYPES), PPT → PPTExtractor (_PPT_TYPES),
 Video/Audio → MediaTranscriber (_MEDIA_TYPES).
 
@@ -25,7 +25,7 @@ from src.services.vectorization_pipeline import (
 # Expected mappings
 # ---------------------------------------------------------------------------
 
-EXPECTED_TEXT = {"pdf", "docx", "html", "txt"}
+EXPECTED_TEXT = {"pdf", "docx", "html", "txt", "markdown", "json"}
 EXPECTED_TABULAR = {"csv", "excel"}
 EXPECTED_PPT = {"ppt"}
 EXPECTED_MEDIA = {"video", "audio"}
@@ -78,7 +78,7 @@ class TestFileTypeRoutingCorrectness:
     # --- Specific mapping correctness ---
 
     def test_text_types_match_expected(self) -> None:
-        """_TEXT_TYPES must be exactly {pdf, docx, html, txt}."""
+        """_TEXT_TYPES must be exactly {pdf, docx, html, txt, markdown, json}."""
         assert _TEXT_TYPES == EXPECTED_TEXT, (
             f"_TEXT_TYPES={_TEXT_TYPES}, expected={EXPECTED_TEXT}"
         )

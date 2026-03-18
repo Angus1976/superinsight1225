@@ -330,7 +330,6 @@ const AIAssistant: React.FC = () => {
                 <Text>• {t('tip1')}</Text>
                 <Text>• {t('tip2')}</Text>
                 <Text>• {t('tip3')}</Text>
-                <Text>• {t('tip4')}</Text>
               </Space>
             </Card>
 

@@ -1,7 +1,7 @@
 # 智能服务引擎（Smart Service Engine）API 接口文档
 
-**最后更新**: 2026-03-16  
-**版本**: 1.0  
+**最后更新**: 2026-03-18  
+**版本**: 1.1  
 **模块路径**: `src/service_engine/`  
 **相关 Spec**: `.kiro/specs/smart-service-engine/`
 
@@ -34,6 +34,7 @@ X-API-Key: sk_xxxxxxxx
 | `user_id` | string | ✅ | — | 用户标识，不可为空 |
 | `business_context` | object | — | `null` | 业务上下文（JSON 序列化后 ≤ 100KB） |
 | `include_memory` | boolean | — | `true` | 是否启用用户记忆 |
+| `workflow_id` | string | — | `null` | 工作流 ID，指定后从工作流配置中提取执行参数 |
 | `extensions` | object | — | `null` | 扩展字段（预留），可传 `tenant_id` 等 |
 
 ### query 专用参数
@@ -180,6 +181,78 @@ LLM 降级时 `confidence` 为 `0`，`recommendations` 为空数组。
 
 ---
 
+## 工作流相关端点
+
+### 查询可用工作流
+
+```
+GET /api/v1/service/workflows
+X-API-Key: sk_xxxxxxxx
+```
+
+返回当前 API Key 有权访问的工作流列表。
+
+**响应示例**：
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "wf-001",
+      "name": "销售预测分析",
+      "name_en": "Sales Forecast Analysis",
+      "description": "基于历史数据进行销售趋势预测和分析",
+      "skill_ids": ["skill-001"],
+      "output_modes": ["merge"]
+    }
+  ]
+}
+```
+
+### 带工作流的对话请求
+
+当 `workflow_id` 存在时，系统从工作流配置中提取 `skill_ids`、`data_source_auth`、`output_modes`，替代手动配置。API Key 的 `scope` 和 `skill_whitelist` 与工作流配置取交集。
+
+```json
+{
+  "request_type": "chat",
+  "user_id": "user-001",
+  "workflow_id": "wf-001",
+  "messages": [
+    { "role": "user", "content": "分析最近一个月的销售趋势" }
+  ]
+}
+```
+
+### 动态授权请求（预留）
+
+```
+POST /api/v1/service/authorization-callback
+X-API-Key: sk_xxxxxxxx
+Content-Type: application/json
+```
+
+**状态**: 501 Not Implemented（预留端点）
+
+**请求体**：
+
+```json
+{
+  "request_id": "auth-req-uuid",
+  "granted": true,
+  "granted_permissions": {
+    "skills": ["skill-001"],
+    "data_sources": ["tasks"]
+  },
+  "expires_at": "2026-04-01T00:00:00Z"
+}
+```
+
+**说明**: 当工作流执行因权限不足返回 403 时，响应中包含 `authorization_request` 结构。客户系统可通过此回调端点授予临时权限。该功能当前为预留状态。
+
+---
+
 ## 错误码一览
 
 | HTTP 状态码 | error_code | 触发条件 |
@@ -198,6 +271,12 @@ LLM 降级时 `confidence` 为 `0`，`recommendations` 为空数组。
 | 500 | `SKILL_EXECUTION_ERROR` | 技能执行失败 |
 | 503 | `LLM_UNAVAILABLE` | LLM 服务不可用 |
 | 504 | `REQUEST_TIMEOUT` | 请求超时（60 秒） |
+| 404 | `WORKFLOW_NOT_FOUND` | 指定的 workflow_id 不存在 |
+| 403 | `WORKFLOW_DISABLED` | 工作流已禁用 |
+| 403 | `WORKFLOW_PERMISSION_DENIED` | API Key 无权访问该工作流 |
+| 403 | `WORKFLOW_SKILL_DENIED` | 工作流技能超出 API Key 权限范围 |
+| 403 | `WORKFLOW_DATASOURCE_DENIED` | 工作流数据源超出 API Key 权限范围 |
+| 501 | `AUTHORIZATION_NOT_IMPLEMENTED` | 动态授权请求功能尚未实现 |
 
 ---
 

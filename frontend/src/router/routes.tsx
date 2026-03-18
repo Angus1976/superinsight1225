@@ -101,6 +101,9 @@ const AdminThirdPartyConfigPage = lazyWithPreload(() => import('@/pages/Admin/Th
 // AI Integration pages
 const AdminAIIntegrationPage = lazyWithPreload(() => import('@/pages/Admin/AIIntegration'));
 
+// Workflow Admin page
+const AdminWorkflowPage = lazyWithPreload(() => import('@/pages/Admin/WorkflowAdmin'));
+
 // AI Assistant pages
 const AIAssistantPage = lazyWithPreload(() => import('@/pages/AIAssistant'));
 
@@ -362,6 +365,11 @@ export const routes: RouteObject[] = [
           {
             path: 'ai-integration',
             element: withSuspense(AdminAIIntegrationPage, 'page'),
+          },
+          // Workflow Admin
+          {
+            path: 'workflow-admin',
+            element: withSuspense(AdminWorkflowPage, 'page'),
           },
           // Label Studio Workspaces (Enterprise)
           {

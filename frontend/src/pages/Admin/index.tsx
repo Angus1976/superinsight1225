@@ -64,6 +64,7 @@ const AdminPage: React.FC = () => {
     if (path.includes('/system')) return 'system';
     if (path.includes('/llm-config')) return 'llm-config';
     if (path.includes('/ai-integration')) return 'ai-integration';
+    if (path.includes('/workflow-admin')) return 'workflow-admin';
     // Admin Configuration Module
     if (path.includes('/config/llm')) return 'config-llm';
     if (path.includes('/config/databases')) return 'config-db';
@@ -194,6 +195,11 @@ const AdminPage: React.FC = () => {
       key: 'ai-integration',
       label: <><RocketOutlined /> AI 应用集成</>,
       onClick: () => handleMenuClick('/admin/ai-integration'),
+    },
+    {
+      key: 'workflow-admin',
+      label: <><AppstoreOutlined /> {t('workflow:admin.title')}</>,
+      onClick: () => handleMenuClick('/admin/workflow-admin'),
     },
     {
       key: 'config-menu',

@@ -1,20 +1,75 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   Card, Table, Button, Modal, Form, Input, Select, Tag, Space,
-  message, Popconfirm, Typography,
+  message, Popconfirm, Typography, Tree, Divider, Spin, Switch,
 } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import type { ColumnsType } from 'antd/es/table';
 import {
   getWorkflows, createWorkflow, updateWorkflow, deleteWorkflow,
+  getAvailableDataSources, getOpenClawStatus,
 } from '@/services/aiAssistantApi';
-import type { WorkflowItem } from '@/types/aiAssistant';
+import type { WorkflowItem, AIDataSource, SkillInfo, DataSourceAuth } from '@/types/aiAssistant';
 
 const { Text } = Typography;
 
 const ROLES = ['admin', 'business_expert', 'annotator', 'viewer'];
 const OUTPUT_MODES = ['merge', 'compare'];
+
+// ---------------------------------------------------------------------------
+// Helper: DataSourceAuth[] → tree checked keys
+// ---------------------------------------------------------------------------
+function authToCheckedKeys(auth: DataSourceAuth[]): string[] {
+  const keys: string[] = [];
+  for (const item of auth) {
+    if (item.tables.length === 1 && item.tables[0] === '*') {
+      keys.push(`ds:${item.source_id}`);
+    } else {
+      for (const tbl of item.tables) {
+        keys.push(`tbl:${item.source_id}:${tbl}`);
+      }
+    }
+  }
+  return keys;
+}
+
+// ---------------------------------------------------------------------------
+// Helper: tree checked keys → DataSourceAuth[]
+// ---------------------------------------------------------------------------
+function checkedKeysToAuth(checkedKeys: string[]): DataSourceAuth[] {
+  const sourceMap = new Map<string, string[]>();
+  for (const key of checkedKeys) {
+    if (key.startsWith('ds:')) {
+      sourceMap.set(key.slice(3), ['*']);
+    } else if (key.startsWith('tbl:')) {
+      const parts = key.split(':');
+      const sourceId = parts[1];
+      const table = parts.slice(2).join(':');
+      if (sourceMap.get(sourceId)?.[0] === '*') continue;
+      const existing = sourceMap.get(sourceId) || [];
+      if (!existing.includes(table)) existing.push(table);
+      sourceMap.set(sourceId, existing);
+    } else if (key.startsWith('fld:')) {
+      // field-level: roll up to table level
+      const parts = key.split(':');
+      const sourceId = parts[1];
+      const table = parts[2];
+      if (sourceMap.get(sourceId)?.[0] === '*') continue;
+      const existing = sourceMap.get(sourceId) || [];
+      if (!existing.includes(table)) existing.push(table);
+      sourceMap.set(sourceId, existing);
+    }
+  }
+  return Array.from(sourceMap.entries()).map(([source_id, tables]) => ({ source_id, tables }));
+}
+
+// ---------------------------------------------------------------------------
+// Helper: translate skill name — if already Chinese keep it, else use i18n
+// ---------------------------------------------------------------------------
+function isChineseText(text: string): boolean {
+  return /[\u4e00-\u9fff]/.test(text);
+}
 
 const WorkflowAdmin: React.FC = () => {
   const { t } = useTranslation('workflow');
@@ -25,6 +80,20 @@ const WorkflowAdmin: React.FC = () => {
   const [searchText, setSearchText] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [form] = Form.useForm();
+
+  // Helper: translate skill name
+  const translateSkillName = (name: string): string => {
+    if (isChineseText(name)) return name;
+    const key = `skillNames.${name}`;
+    const translated = t(key);
+    return translated === key ? name : translated;
+  };
+
+  // --- Real data from backend ---
+  const [skills, setSkills] = useState<SkillInfo[]>([]);
+  const [dataSources, setDataSources] = useState<AIDataSource[]>([]);
+  const [dsCheckedKeys, setDsCheckedKeys] = useState<string[]>([]);
+  const [metaLoading, setMetaLoading] = useState(false);
 
   // ---------------------------------------------------------------------------
   // Data fetching
@@ -41,20 +110,65 @@ const WorkflowAdmin: React.FC = () => {
     }
   }, [t]);
 
+  const fetchMeta = useCallback(async () => {
+    setMetaLoading(true);
+    try {
+      const [clawStatus, dsList] = await Promise.all([
+        getOpenClawStatus(),
+        getAvailableDataSources(),
+      ]);
+      setSkills(clawStatus.skills || []);
+      setDataSources(dsList);
+    } catch {
+      // non-blocking
+    } finally {
+      setMetaLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchWorkflows();
-  }, [fetchWorkflows]);
+    fetchMeta();
+  }, [fetchWorkflows, fetchMeta]);
+
+  // ---------------------------------------------------------------------------
+  // Build data source tree nodes (multi-level: source → tables → fields)
+  // ---------------------------------------------------------------------------
+  const translateTableName = (name: string): string => {
+    const key = `tableNames.${name}`;
+    const translated = t(key);
+    return translated === key ? name : translated;
+  };
+
+  const dsTreeData = dataSources
+    .filter((ds) => ds.enabled)
+    .map((ds) => ({
+      title: `${ds.label} (${ds.id})`,
+      key: `ds:${ds.id}`,
+      children: (ds.tables || []).map((tbl) => {
+        const tblObj = typeof tbl === 'string' ? { id: tbl, label: tbl, fields: [] as string[] } : tbl;
+        return {
+          title: tblObj.label || translateTableName(tblObj.id),
+          key: `tbl:${ds.id}:${tblObj.id}`,
+          children: (tblObj.fields || []).map((field: string) => ({
+            title: field,
+            key: `fld:${ds.id}:${tblObj.id}:${field}`,
+          })),
+        };
+      }),
+    }));
 
   // ---------------------------------------------------------------------------
   // Handlers
   // ---------------------------------------------------------------------------
-  const handleCreate = () => {
+  const openCreateModal = () => {
     setEditingWorkflow(null);
     form.resetFields();
+    setDsCheckedKeys([]);
     setModalOpen(true);
   };
 
-  const handleEdit = (record: WorkflowItem) => {
+  const openEditModal = (record: WorkflowItem) => {
     setEditingWorkflow(record);
     form.setFieldsValue({
       name: record.name,
@@ -66,7 +180,19 @@ const WorkflowAdmin: React.FC = () => {
       visible_roles: record.visible_roles,
       preset_prompt: record.preset_prompt,
     });
+    setDsCheckedKeys(authToCheckedKeys(record.data_source_auth || []));
     setModalOpen(true);
+  };
+
+  const handleToggleStatus = async (record: WorkflowItem) => {
+    const newStatus = record.status === 'enabled' ? 'disabled' : 'enabled';
+    try {
+      await updateWorkflow(record.id, { status: newStatus });
+      message.success(t('admin.updateSuccess'));
+      fetchWorkflows();
+    } catch {
+      message.error(t('errors.saveFailed'));
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -84,20 +210,25 @@ const WorkflowAdmin: React.FC = () => {
       const values = await form.validateFields();
       setSubmitting(true);
 
+      const payload = {
+        ...values,
+        data_source_auth: checkedKeysToAuth(dsCheckedKeys),
+      };
+
       if (editingWorkflow) {
-        await updateWorkflow(editingWorkflow.id, values);
+        await updateWorkflow(editingWorkflow.id, payload);
         message.success(t('admin.updateSuccess'));
       } else {
-        await createWorkflow(values);
+        await createWorkflow(payload);
         message.success(t('admin.createSuccess'));
       }
 
       setModalOpen(false);
       form.resetFields();
+      setDsCheckedKeys([]);
       setEditingWorkflow(null);
       fetchWorkflows();
     } catch (err: unknown) {
-      // Form validation errors are handled by antd; only show API errors
       if (err && typeof err === 'object' && 'errorFields' in err) return;
       message.error(t('errors.saveFailed'));
     } finally {
@@ -108,6 +239,7 @@ const WorkflowAdmin: React.FC = () => {
   const handleModalCancel = () => {
     setModalOpen(false);
     form.resetFields();
+    setDsCheckedKeys([]);
     setEditingWorkflow(null);
   };
 
@@ -120,6 +252,23 @@ const WorkflowAdmin: React.FC = () => {
         (w.name_en ?? '').toLowerCase().includes(searchText.toLowerCase()),
       )
     : workflows;
+
+  // ---------------------------------------------------------------------------
+  // Helper: render data_source_auth summary
+  // ---------------------------------------------------------------------------
+  const renderDsAuth = (auth: DataSourceAuth[]) => {
+    if (!auth?.length) return <Text type="secondary">-</Text>;
+    return (
+      <Space size={4} wrap>
+        {auth.map((a) => {
+          const ds = dataSources.find((d) => d.id === a.source_id);
+          const label = ds?.label || a.source_id;
+          const suffix = a.tables[0] === '*' ? '' : ` (${a.tables.length})`;
+          return <Tag key={a.source_id}>{label}{suffix}</Tag>;
+        })}
+      </Space>
+    );
+  };
 
   // ---------------------------------------------------------------------------
   // Table columns
@@ -141,20 +290,38 @@ const WorkflowAdmin: React.FC = () => {
       dataIndex: 'status',
       key: 'status',
       width: 100,
-      render: (status: string) => (
-        <Tag color={status === 'enabled' ? 'green' : 'default'}>
-          {status === 'enabled' ? t('admin.enabled') : t('admin.disabled')}
-        </Tag>
+      render: (_: string, record: WorkflowItem) => (
+        <Switch
+          checked={record.status === 'enabled'}
+          checkedChildren={t('admin.enabled')}
+          unCheckedChildren={t('admin.disabled')}
+          onChange={() => handleToggleStatus(record)}
+        />
       ),
     },
     {
       title: t('admin.skills'),
       dataIndex: 'skill_ids',
       key: 'skill_ids',
-      width: 120,
-      render: (ids: string[]) => (
-        <Text>{ids?.length ? t('selector.skillCount', { count: ids.length }) : t('admin.noSkills')}</Text>
-      ),
+      width: 200,
+      render: (ids: string[]) => {
+        if (!ids?.length) return <Text type="secondary">{t('admin.noSkills')}</Text>;
+        return (
+          <Space size={4} wrap>
+            {ids.map((id) => {
+              const sk = skills.find((s) => s.id === id);
+              return <Tag key={id}>{sk ? translateSkillName(sk.name) : id.slice(0, 8)}</Tag>;
+            })}
+          </Space>
+        );
+      },
+    },
+    {
+      title: t('admin.dataSources'),
+      dataIndex: 'data_source_auth',
+      key: 'data_source_auth',
+      width: 220,
+      render: renderDsAuth,
     },
     {
       title: t('admin.visibleRoles'),
@@ -162,9 +329,7 @@ const WorkflowAdmin: React.FC = () => {
       key: 'visible_roles',
       render: (roles: string[]) => (
         <Space size={4} wrap>
-          {roles?.map((role) => (
-            <Tag key={role}>{t(`roles.${role}`)}</Tag>
-          ))}
+          {roles?.map((role) => <Tag key={role}>{t(`roles.${role}`)}</Tag>)}
         </Space>
       ),
     },
@@ -181,28 +346,16 @@ const WorkflowAdmin: React.FC = () => {
       width: 140,
       render: (_: unknown, record: WorkflowItem) => (
         <Space>
-          <Button
-            type="link"
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => handleEdit(record)}
-          >
+          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => openEditModal(record)}>
             {t('admin.edit')}
           </Button>
           {record.is_preset ? (
-            <Button type="link" size="small" disabled icon={<DeleteOutlined />}
-              title={t('admin.presetDeleteDenied')}
-            >
+            <Button type="link" size="small" disabled icon={<DeleteOutlined />} title={t('admin.presetDeleteDenied')}>
               {t('admin.delete')}
             </Button>
           ) : (
-            <Popconfirm
-              title={t('admin.deleteConfirm')}
-              onConfirm={() => handleDelete(record.id)}
-            >
-              <Button type="link" size="small" danger icon={<DeleteOutlined />}>
-                {t('admin.delete')}
-              </Button>
+            <Popconfirm title={t('admin.deleteConfirm')} onConfirm={() => handleDelete(record.id)}>
+              <Button type="link" size="small" danger icon={<DeleteOutlined />}>{t('admin.delete')}</Button>
             </Popconfirm>
           )}
         </Space>
@@ -214,41 +367,46 @@ const WorkflowAdmin: React.FC = () => {
   // Render
   // ---------------------------------------------------------------------------
   return (
-    <Card
-      title={t('admin.title')}
-      extra={
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-          {t('admin.create')}
-        </Button>
-      }
-    >
-      <Input
-        prefix={<SearchOutlined />}
-        placeholder={t('selector.searchPlaceholder')}
-        value={searchText}
-        onChange={(e) => setSearchText(e.target.value)}
-        allowClear
-        style={{ marginBottom: 16, maxWidth: 300 }}
-      />
+    <Spin spinning={metaLoading && !workflows.length}>
+      <Card
+        title={t('admin.title')}
+        extra={
+          <Button type="primary" icon={<PlusOutlined />} onClick={openCreateModal}>
+            {t('admin.create')}
+          </Button>
+        }
+      >
+        <Space style={{ marginBottom: 16 }}>
+          <Input
+            placeholder={t('selector.searchPlaceholder')}
+            prefix={<SearchOutlined />}
+            allowClear
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            style={{ width: 260 }}
+          />
+        </Space>
 
-      <Table
-        columns={columns}
-        dataSource={filtered}
-        rowKey="id"
-        loading={loading}
-        pagination={{ pageSize: 10 }}
-      />
+        <Table<WorkflowItem>
+          rowKey="id"
+          columns={columns}
+          dataSource={filtered}
+          loading={loading}
+          pagination={{ pageSize: 10 }}
+        />
+      </Card>
 
+      {/* Create / Edit Modal */}
       <Modal
         title={editingWorkflow ? t('admin.edit') : t('admin.create')}
         open={modalOpen}
-        onCancel={handleModalCancel}
         onOk={handleSubmit}
+        onCancel={handleModalCancel}
         confirmLoading={submitting}
-        destroyOnClose
         width={640}
+        destroyOnHidden
       >
-        <Form form={form} layout="vertical" preserve={false}>
+        <Form form={form} layout="vertical">
           <Form.Item
             name="name"
             label={t('admin.name')}
@@ -269,42 +427,57 @@ const WorkflowAdmin: React.FC = () => {
             <Input.TextArea rows={2} />
           </Form.Item>
 
+          <Divider />
+
+          {/* Skills */}
           <Form.Item name="skill_ids" label={t('admin.skills')}>
             <Select
-              mode="tags"
+              mode="multiple"
               placeholder={t('admin.selectSkills')}
-              allowClear
+              options={skills.map((s) => ({ label: `${translateSkillName(s.name)} (${s.version})`, value: s.id }))}
             />
           </Form.Item>
 
+          {/* Data Source Auth (Tree) */}
+          <Form.Item label={t('admin.dataSources')}>
+            <Tree
+              checkable
+              checkedKeys={dsCheckedKeys}
+              onCheck={(keys) => setDsCheckedKeys(keys as string[])}
+              treeData={dsTreeData}
+              defaultExpandAll
+            />
+            {!dsTreeData.length && <Text type="secondary">{t('admin.selectDataSources')}</Text>}
+          </Form.Item>
+
+          {/* Output Modes */}
           <Form.Item name="output_modes" label={t('admin.outputModes')}>
             <Select
               mode="multiple"
-              placeholder={t('admin.outputModes')}
-              allowClear
-              options={OUTPUT_MODES.map((m) => ({ label: m, value: m }))}
+              options={OUTPUT_MODES.map((m) => ({ label: t(`outputModeOptions.${m}`), value: m }))}
             />
           </Form.Item>
 
+          {/* Visible Roles */}
           <Form.Item
             name="visible_roles"
             label={t('admin.visibleRoles')}
-            rules={[{ required: true, message: t('admin.rolesRequired'), type: 'array', min: 1 }]}
+            rules={[{ required: true, message: t('admin.rolesRequired') }]}
           >
             <Select
               mode="multiple"
               placeholder={t('admin.selectRoles')}
-              allowClear
               options={ROLES.map((r) => ({ label: t(`roles.${r}`), value: r }))}
             />
           </Form.Item>
 
+          {/* Preset Prompt */}
           <Form.Item name="preset_prompt" label={t('admin.presetPrompt')}>
             <Input.TextArea rows={3} />
           </Form.Item>
         </Form>
       </Modal>
-    </Card>
+    </Spin>
   );
 };
 

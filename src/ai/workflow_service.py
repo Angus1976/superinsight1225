@@ -501,11 +501,15 @@ class WorkflowService:
         data_source_ids: set = set()
 
         for log in logs:
-            if log.event_type in ("skill_invoke", "data_access"):
+            # Chat = user interactions (skill calls + workflow runs)
+            if log.event_type in ("skill_invoke", "workflow_execute"):
                 chat_count += 1
             if log.event_type == "workflow_execute":
                 workflow_count += 1
-            # Collect unique data source IDs from details
+            # Collect data sources from data_access events
+            if log.event_type == "data_access" and log.resource_id:
+                data_source_ids.add(log.resource_id)
+            # Also collect from details.data_sources
             details = log.details or {}
             for src_id in details.get("data_sources", []):
                 if src_id:

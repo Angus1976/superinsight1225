@@ -42,7 +42,7 @@
     "deleteSuccess": "工作流已删除"
   },
   "stats": {
-    "title": "今日统计",
+    "title": "访问统计",
     "chatCount": "对话次数",
     "workflowCount": "工作流执行",
     "dataSourceCount": "数据源访问",

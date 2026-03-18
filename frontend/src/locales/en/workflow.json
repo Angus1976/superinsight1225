@@ -42,7 +42,7 @@
     "deleteSuccess": "Workflow deleted successfully"
   },
   "stats": {
-    "title": "Today's Statistics",
+    "title": "Access Statistics",
     "chatCount": "Chat Count",
     "workflowCount": "Workflow Executions",
     "dataSourceCount": "Data Source Access",

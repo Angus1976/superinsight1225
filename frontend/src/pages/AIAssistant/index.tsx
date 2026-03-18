@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Card, Input, Button, Space, Typography, Avatar, List, Tag, Spin, Empty,
-  Divider, Row, Col, Statistic, Segmented, message, Checkbox,
+  Divider, Row, Col, message,
 } from 'antd';
 import {
   SendOutlined, StopOutlined, RobotOutlined, UserOutlined,
@@ -9,13 +9,11 @@ import {
   ClockCircleOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import { sendMessageStream, getOpenClawStatus, getAvailableSkills } from '@/services/aiAssistantApi';
-import type { ChatMessage as ApiChatMessage, ChatMode, SkillInfo, OutputMode } from '@/types/aiAssistant';
+import { sendMessageStream, getWorkflows } from '@/services/aiAssistantApi';
+import type { ChatMessage as ApiChatMessage, WorkflowItem } from '@/types/aiAssistant';
 import { useAuthStore } from '@/stores/authStore';
-import ConfigPanel from './components/ConfigPanel';
-import DataSourceConfigModal from './components/DataSourceConfigModal';
-import PermissionTableModal from './components/PermissionTableModal';
-import OutputModeModal from './components/OutputModeModal';
+import WorkflowSelector from './components/WorkflowSelector';
+import StatsPanel from './components/StatsPanel';
 import './styles.css';
 
 const { TextArea } = Input;
@@ -37,24 +35,14 @@ const AIAssistant: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<(() => void) | null>(null);
 
-  // Chat mode state
-  const [chatMode, setChatMode] = useState<ChatMode>('direct');
-  const [gatewayId, setGatewayId] = useState<string | null>(null);
-  const [gatewayAvailable, setGatewayAvailable] = useState(false);
-  const [skills, setSkills] = useState<SkillInfo[]>([]);
-  const [selectedSkillIds, setSelectedSkillIds] = useState<string[]>([]);
-  const [isCheckingGateway, setIsCheckingGateway] = useState(false);
+  // Workflow state
+  const [workflows, setWorkflows] = useState<WorkflowItem[]>([]);
+  const [selectedWorkflowId, setSelectedWorkflowId] = useState<string | null>(null);
+  const [workflowsLoading, setWorkflowsLoading] = useState(false);
 
-  // Data source state
-  const [selectedSourceIds, setSelectedSourceIds] = useState<string[]>([]);
-  const [outputMode, setOutputMode] = useState<OutputMode>('merge');
-
-  // Auth & modal state
+  // Auth state
   const user = useAuthStore((s) => s.user);
   const userRole = user?.role || 'viewer';
-  const [dsConfigOpen, setDsConfigOpen] = useState(false);
-  const [permTableOpen, setPermTableOpen] = useState(false);
-  const [outputModeOpen, setOutputModeOpen] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -62,61 +50,42 @@ const AIAssistant: React.FC = () => {
 
   useEffect(() => { scrollToBottom(); }, [messages]);
 
+  // Load workflows on mount
+  useEffect(() => {
+    const loadWorkflows = async () => {
+      setWorkflowsLoading(true);
+      try {
+        const data = await getWorkflows();
+        setWorkflows(data);
+      } catch (err) {
+        console.error('Failed to load workflows:', err);
+      } finally {
+        setWorkflowsLoading(false);
+      }
+    };
+    loadWorkflows();
+  }, []);
+
   // Quick actions
   const quickActions = [
     { icon: <LineChartOutlined />, titleKey: 'salesForecast', descKey: 'salesForecastDesc',
-      prompt: '请根据最新的数据集，设计一个工作流，可以分析每日的销售预测，并根据实际销售额，实时修正预测能力。' },
+      promptKey: 'salesForecastPrompt' },
     { icon: <ThunderboltOutlined />, titleKey: 'dataQualityCheck', descKey: 'dataQualityCheckDesc',
-      prompt: '帮我分析当前数据集的质量，找出可能存在的问题，并给出改进建议。' },
+      promptKey: 'dataQualityCheckPrompt' },
     { icon: <BulbOutlined />, titleKey: 'smartAnnotation', descKey: 'smartAnnotationDesc',
-      prompt: '请帮我分析未标注的数据，并提供智能标注建议。' },
+      promptKey: 'smartAnnotationPrompt' },
     { icon: <ClockCircleOutlined />, titleKey: 'taskTracking', descKey: 'taskTrackingDesc',
-      prompt: '帮我分析当前所有任务的进度，找出可能延期的任务，并给出优化建议。' },
+      promptKey: 'taskTrackingPrompt' },
   ];
 
-  const handleModeChange = async (value: string | number) => {
-    const newMode = value as ChatMode;
-    if (newMode === 'openclaw') {
-      setIsCheckingGateway(true);
-      try {
-        const [status, availableSkills] = await Promise.all([
-          getOpenClawStatus(),
-          getAvailableSkills(),
-        ]);
-        if (!status.available) {
-          message.warning(`${t('openClawUnavailable')}: ${status.error || ''}`);
-          setIsCheckingGateway(false);
-          return;
-        }
-        setChatMode('openclaw');
-        setGatewayId(status.gateway_id);
-        setGatewayAvailable(true);
-
-        // Filter skills by role permissions
-        const allowedSet = new Set(availableSkills.skill_ids);
-        const filtered = status.skills.filter((s) => allowedSet.has(s.id));
-        setSkills(filtered);
-
-        message.success(t('switchedToOpenClaw'));
-      } catch {
-        message.error(t('cannotConnectOpenClaw'));
-      } finally {
-        setIsCheckingGateway(false);
-      }
-      return;
-    }
-    setChatMode('direct');
-    setGatewayId(null);
-    setGatewayAvailable(false);
-    setSkills([]);
-    setSelectedSkillIds([]);
-  };
-
-  const handleSkillToggle = (skillId: string) => {
-    setSelectedSkillIds((prev) =>
-      prev.includes(skillId) ? prev.filter((id) => id !== skillId) : [...prev, skillId]
+  // Filter quick actions by preset workflow visibility
+  const visibleQuickActions = quickActions.filter((action) => {
+    const presetWorkflow = workflows.find(
+      (w) => w.is_preset && w.preset_prompt === t(action.promptKey)
     );
-  };
+    if (!presetWorkflow) return true; // show if no matching preset found
+    return presetWorkflow.visible_roles.includes(userRole) || userRole === 'admin';
+  });
 
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
@@ -147,11 +116,7 @@ const AIAssistant: React.FC = () => {
 
     const { abort } = sendMessageStream({
       messages: apiMessages,
-      mode: chatMode,
-      gateway_id: chatMode === 'openclaw' ? gatewayId ?? undefined : undefined,
-      skill_ids: chatMode === 'openclaw' ? selectedSkillIds : undefined,
-      data_source_ids: selectedSourceIds.length > 0 ? selectedSourceIds : undefined,
-      output_mode: selectedSourceIds.length > 0 ? outputMode : undefined,
+      workflow_id: selectedWorkflowId ?? undefined,
     }, {
       onChunk: (chunk) => {
         if (!chunk.content) return;
@@ -172,7 +137,7 @@ const AIAssistant: React.FC = () => {
         if (errorMsg.includes('503') || errorMsg.includes('不可用')) {
           message.error(t('openClawUnavailable'));
         } else {
-          message.error(errorMsg || 'AI service unavailable');
+          message.error(errorMsg || t('aiServiceUnavailable'));
         }
         console.error('AI stream error:', error);
         setIsLoading(false);
@@ -196,11 +161,6 @@ const AIAssistant: React.FC = () => {
     }
   };
 
-  const handleOutputModeConfirm = (sourceIds: string[], mode: OutputMode) => {
-    setSelectedSourceIds(sourceIds);
-    setOutputMode(mode);
-  };
-
   return (
     <div className="ai-assistant-container">
       <Row gutter={16}>
@@ -213,24 +173,19 @@ const AIAssistant: React.FC = () => {
                 <div>
                   <Title level={4} style={{ margin: 0 }}>{t('title')}</Title>
                   <Text type="secondary">
-                    {chatMode === 'openclaw' ? t('modeOpenClaw') : t('modeDirect')}
+                    {selectedWorkflowId
+                      ? workflows.find(w => w.id === selectedWorkflowId)?.name || ''
+                      : t('modeDirect')}
                   </Text>
                 </div>
               </Space>
               <Space>
-                <Segmented
-                  value={chatMode}
-                  options={[
-                    { label: t('modeDirect'), value: 'direct' },
-                    { label: 'OpenClaw', value: 'openclaw' },
-                  ]}
-                  onChange={handleModeChange}
-                  disabled={isCheckingGateway}
-                />
-                {isCheckingGateway && <Spin size="small" />}
-                <Tag color={chatMode === 'openclaw' && gatewayAvailable ? 'success' : 'default'}>
-                  {chatMode === 'openclaw' ? (gatewayAvailable ? t('gatewayOnline') : t('gatewayOffline')) : t('online')}
-                </Tag>
+                {selectedWorkflowId && (
+                  <Tag color="blue">
+                    {workflows.find(w => w.id === selectedWorkflowId)?.name || ''}
+                  </Tag>
+                )}
+                <Tag color="success">{t('online')}</Tag>
               </Space>
             </div>
 
@@ -315,9 +270,9 @@ const AIAssistant: React.FC = () => {
             <div className="quick-actions-inline">
               <Text type="secondary" style={{ fontSize: 12, marginBottom: 8, display: 'block' }}>{t('quickActions')}</Text>
               <Row gutter={[8, 8]}>
-                {quickActions.map((action, index) => (
+                {visibleQuickActions.map((action, index) => (
                   <Col key={index} xs={12} sm={12} md={6}>
-                    <div className="quick-action-compact" onClick={() => setInputValue(action.prompt)}>
+                    <div className="quick-action-compact" onClick={() => setInputValue(t(action.promptKey))}>
                       <Space size={6}>
                         <span className="quick-action-icon">{action.icon}</span>
                         <Text style={{ fontSize: 13 }}>{t(action.titleKey)}</Text>
@@ -333,46 +288,16 @@ const AIAssistant: React.FC = () => {
         {/* Right sidebar */}
         <Col span={8}>
           <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-            {/* Skill panel (OpenClaw mode) */}
-            {chatMode === 'openclaw' && (
-              <Card title={t('skillPanel')} size="small">
-                {skills.length === 0 ? (
-                  <Text type="secondary">{t('noSkills')}</Text>
-                ) : (
-                  <Space direction="vertical" size="small" style={{ width: '100%' }}>
-                    {skills.map((skill) => (
-                      <Card key={skill.id} size="small" style={{ marginBottom: 4 }}>
-                        <Checkbox
-                          checked={selectedSkillIds.includes(skill.id)}
-                          onChange={() => handleSkillToggle(skill.id)}
-                        >
-                          <Text strong>{skill.name}</Text>
-                          <Tag color="blue" style={{ marginLeft: 8 }}>{skill.version}</Tag>
-                          <Tag color={skill.status === 'deployed' ? 'green' : 'default'}>{skill.status}</Tag>
-                        </Checkbox>
-                        {skill.description && (
-                          <div style={{ marginLeft: 24, marginTop: 4 }}>
-                            <Text type="secondary" style={{ fontSize: 12 }}>{skill.description}</Text>
-                          </div>
-                        )}
-                      </Card>
-                    ))}
-                  </Space>
-                )}
-              </Card>
-            )}
+            {/* Workflow Selector */}
+            <WorkflowSelector
+              workflows={workflows}
+              selectedId={selectedWorkflowId}
+              onSelect={setSelectedWorkflowId}
+              loading={workflowsLoading}
+            />
 
             {/* Stats */}
-            <Card title={t('todayStats')}>
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Statistic title={t('chatCount')} value={Math.floor(messages.length / 2)} suffix={t('chatUnit')} />
-                </Col>
-                <Col span={12}>
-                  <Statistic title={t('workflowCreated')} value={0} suffix={t('workflowUnit')} />
-                </Col>
-              </Row>
-            </Card>
+            <StatsPanel userRole={userRole} />
 
             {/* Tips */}
             <Card title={t('usageTips')} size="small">
@@ -384,27 +309,9 @@ const AIAssistant: React.FC = () => {
               </Space>
             </Card>
 
-            {/* Config Panel */}
-            <ConfigPanel
-              userRole={userRole}
-              onOpenDataSourceConfig={() => setDsConfigOpen(true)}
-              onOpenPermissionTable={() => setPermTableOpen(true)}
-              onOpenOutputMode={() => setOutputModeOpen(true)}
-            />
           </Space>
         </Col>
       </Row>
-
-      {/* Config Modals */}
-      <DataSourceConfigModal open={dsConfigOpen} onClose={() => setDsConfigOpen(false)} />
-      <PermissionTableModal open={permTableOpen} onClose={() => setPermTableOpen(false)} />
-      <OutputModeModal
-        open={outputModeOpen}
-        onClose={() => setOutputModeOpen(false)}
-        onConfirm={handleOutputModeConfirm}
-        initialSourceIds={selectedSourceIds}
-        initialMode={outputMode}
-      />
     </div>
   );
 };

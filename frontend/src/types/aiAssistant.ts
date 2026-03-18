@@ -16,6 +16,7 @@ export interface ChatRequest {
   skill_ids?: string[];
   data_source_ids?: string[];
   output_mode?: OutputMode;
+  workflow_id?: string;
 }
 
 export interface SkillInfo {
@@ -108,4 +109,46 @@ export interface DataSourceConfigItem {
   label?: string;
   enabled?: boolean;
   access_mode?: string;
+}
+
+
+// --- Workflow types ---
+
+export interface WorkflowItem {
+  id: string;
+  name: string;
+  description?: string;
+  status: 'enabled' | 'disabled';
+  is_preset: boolean;
+  skill_ids: string[];
+  data_source_auth: DataSourceAuth[];
+  output_modes: string[];
+  visible_roles: string[];
+  preset_prompt?: string;
+  name_en?: string;
+  description_en?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DataSourceAuth {
+  source_id: string;
+  tables: string[];  // ["*"] = all tables
+}
+
+export interface TodayStats {
+  chat_count: number;
+  workflow_count: number;
+  data_source_count: number;
+  details?: {
+    chats: StatsDetail[];
+    workflows: StatsDetail[];
+    data_sources: StatsDetail[];
+  };
+}
+
+export interface StatsDetail {
+  id: string;
+  name: string;
+  timestamp: string;
 }

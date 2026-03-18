@@ -6,7 +6,7 @@
 
 import apiClient from '@/services/api/client';
 import { getToken } from '@/utils/token';
-import type { ChatRequest, ChatResponse, StreamChunk, OpenClawStatus } from '@/types/aiAssistant';
+import type { ChatRequest, ChatResponse, StreamChunk, OpenClawStatus, WorkflowItem, TodayStats } from '@/types/aiAssistant';
 
 const API_BASE = '/api/v1/ai-assistant';
 
@@ -276,6 +276,30 @@ export interface AccessLogResponse {
   page_size: number;
 }
 
+// --- Service Status API ---
+
+export interface ServiceStatusItem {
+  healthy: boolean;
+  label: string;
+  models?: string[];
+  skills_count?: number;
+}
+
+export interface ServiceStatusResponse {
+  backend: ServiceStatusItem;
+  ollama: ServiceStatusItem;
+  openclaw: ServiceStatusItem;
+}
+
+/**
+ * Get service health status (backend-proxied, works from browser).
+ */
+export async function getServiceStatus(): Promise<ServiceStatusResponse> {
+  const response = await apiClient.get<ServiceStatusResponse>(`${API_BASE}/service-status`);
+  return response.data;
+}
+
+
 /**
  * Query AI access logs (admin only, newest first).
  */
@@ -287,5 +311,70 @@ export async function getAccessLogs(params?: {
   const response = await apiClient.get<AccessLogResponse>(`${API_BASE}/access-logs`, {
     params,
   });
+  return response.data;
+}
+
+
+// --- Workflow APIs ---
+
+/**
+ * Get workflow list (filtered by role for non-admin users).
+ * GET /api/v1/ai-assistant/workflows
+ */
+export async function getWorkflows(): Promise<WorkflowItem[]> {
+  const response = await apiClient.get<WorkflowItem[]>(`${API_BASE}/workflows`);
+  return response.data;
+}
+
+/**
+ * Create a new workflow (admin only).
+ * POST /api/v1/ai-assistant/workflows
+ */
+export async function createWorkflow(data: Omit<WorkflowItem, 'id' | 'status' | 'is_preset' | 'created_at' | 'updated_at'>): Promise<WorkflowItem> {
+  const response = await apiClient.post<WorkflowItem>(`${API_BASE}/workflows`, data);
+  return response.data;
+}
+
+/**
+ * Update an existing workflow (admin only).
+ * PUT /api/v1/ai-assistant/workflows/:id
+ */
+export async function updateWorkflow(id: string, data: Partial<WorkflowItem>): Promise<WorkflowItem> {
+  const response = await apiClient.put<WorkflowItem>(`${API_BASE}/workflows/${id}`, data);
+  return response.data;
+}
+
+/**
+ * Delete (disable) a workflow (admin only).
+ * DELETE /api/v1/ai-assistant/workflows/:id
+ */
+export async function deleteWorkflow(id: string): Promise<void> {
+  await apiClient.delete(`${API_BASE}/workflows/${id}`);
+}
+
+/**
+ * Get today's statistics for the current user.
+ * GET /api/v1/ai-assistant/stats/today
+ */
+export async function getTodayStats(): Promise<TodayStats> {
+  const response = await apiClient.get<TodayStats>(`${API_BASE}/stats/today`);
+  return response.data;
+}
+
+/**
+ * Get statistics for a specific workflow.
+ * GET /api/v1/ai-assistant/workflows/:id/stats
+ */
+export async function getWorkflowStats(id: string): Promise<Record<string, number>> {
+  const response = await apiClient.get<Record<string, number>>(`${API_BASE}/workflows/${id}/stats`);
+  return response.data;
+}
+
+/**
+ * Sync permissions for workflows (admin only).
+ * POST /api/v1/ai-assistant/workflows/sync-permissions
+ */
+export async function syncPermissions(permissionList: Array<{ workflow_id: string; data_source_auth: Array<{ source_id: string; tables: string[] }> }>): Promise<{ updated: number }> {
+  const response = await apiClient.post<{ updated: number }>(`${API_BASE}/workflows/sync-permissions`, { permissions: permissionList });
   return response.data;
 }

@@ -124,7 +124,7 @@ class WorkflowService:
         return workflow
 
     def delete_workflow(self, workflow_id: str) -> None:
-        """Soft-delete a workflow by setting status to 'disabled'.
+        """Hard-delete a workflow from the database.
 
         Preset workflows cannot be deleted.
         """
@@ -140,7 +140,7 @@ class WorkflowService:
                 },
             )
 
-        workflow.status = "disabled"
+        self.db.delete(workflow)
         self.db.commit()
 
     def get_workflow(self, workflow_id: str) -> AIWorkflow:

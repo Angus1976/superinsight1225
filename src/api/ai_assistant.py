@@ -50,12 +50,14 @@ REQUEST_TIMEOUT_SECONDS = 60
 
 class ChatMessage(BaseModel):
     """Single chat message."""
+
     role: Literal["user", "assistant", "system"]
     content: str
 
 
 class ChatRequest(BaseModel):
     """Chat request with message history and optional parameters."""
+
     messages: list[ChatMessage] = Field(..., min_length=1)
     max_tokens: Optional[int] = Field(None, ge=1, le=4096)
     temperature: Optional[float] = Field(None, ge=0.0, le=2.0)
@@ -76,6 +78,7 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     """Non-streaming chat response."""
+
     content: str
     model: str
     usage: Optional[dict] = None
@@ -109,6 +112,7 @@ def build_data_context(
         return ""
 
     from src.ai.data_source_config import AIDataSourceService
+
     service = AIDataSourceService(db)
     results = {}
     for src_id in data_source_ids:
@@ -117,7 +121,9 @@ def build_data_context(
     if output_mode == "compare":
         parts = ["以下是各数据源的数据，请分别分析并对比："]
         for src_id, data in results.items():
-            parts.append(f"\n--- 数据源: {src_id} ---\n{json.dumps(data, ensure_ascii=False, default=str)}")
+            parts.append(
+                f"\n--- 数据源: {src_id} ---\n{json.dumps(data, ensure_ascii=False, default=str)}"
+            )
         return "\n".join(parts)
 
     # merge mode (default)
@@ -150,6 +156,7 @@ def _log_skill_access(
 ) -> None:
     """Log skill invocation and any denied skills."""
     from src.ai.access_log_service import AIAccessLogService
+
     svc = AIAccessLogService(db)
     user_id = str(user.id)
 
@@ -185,6 +192,7 @@ def _log_data_access(
 ) -> None:
     """Log data source access from AI assistant."""
     from src.ai.access_log_service import AIAccessLogService
+
     svc = AIAccessLogService(db)
     svc.log_data_access(
         tenant_id=user.tenant_id,
@@ -203,6 +211,7 @@ def _log_permission_change(
 ) -> None:
     """Log a permission change (skill or data source)."""
     from src.ai.access_log_service import AIAccessLogService
+
     svc = AIAccessLogService(db)
     svc.log_permission_change(
         tenant_id=user.tenant_id,
@@ -214,7 +223,9 @@ def _log_permission_change(
 
 
 def _filter_skills_by_role(
-    skill_ids: list, user_role: str, db: Session,
+    skill_ids: list,
+    user_role: str,
+    db: Session,
 ) -> list:
     """Filter requested skill_ids by the user's role permissions.
 
@@ -222,6 +233,7 @@ def _filter_skills_by_role(
     Logs a warning for any denied skill IDs.
     """
     from src.ai.skill_permission_service import SkillPermissionService
+
     service = SkillPermissionService(db)
     allowed = service.get_allowed_skill_ids(user_role)
     allowed_set = set(allowed)
@@ -231,7 +243,8 @@ def _filter_skills_by_role(
     if denied:
         logger.warning(
             "Skill IDs denied by role permission (role=%s): %s",
-            user_role, denied,
+            user_role,
+            denied,
         )
     return filtered
 
@@ -256,19 +269,27 @@ async def chat(
     original_skill_ids = list(request.skill_ids or [])
     if request.skill_ids:
         request.skill_ids = _filter_skills_by_role(
-            request.skill_ids, current_user.role, db,
+            request.skill_ids,
+            current_user.role,
+            db,
         )
 
     # Log skill invocation
     if original_skill_ids:
         _log_skill_access(
-            db, current_user, original_skill_ids, request.skill_ids or [],
+            db,
+            current_user,
+            original_skill_ids,
+            request.skill_ids or [],
         )
 
     # Log data source access
     if request.data_source_ids:
         _log_data_access(
-            db, current_user, request.data_source_ids, request.output_mode,
+            db,
+            current_user,
+            request.data_source_ids,
+            request.output_mode,
         )
 
     # Inject data source context if selected
@@ -280,20 +301,24 @@ async def chat(
     options = build_options(request)
 
     if request.mode == "openclaw":
-        return await _chat_openclaw(request, prompt, options, current_user, db,
-                                    system_prompt=effective_system)
+        return await _chat_openclaw(
+            request, prompt, options, current_user, db, system_prompt=effective_system
+        )
 
     return await _chat_direct(prompt, options, system_prompt=effective_system)
 
 
-async def _chat_direct(prompt: str, options: GenerateOptions,
-                      system_prompt: str = SYSTEM_PROMPT) -> ChatResponse:
+async def _chat_direct(
+    prompt: str, options: GenerateOptions, system_prompt: str = SYSTEM_PROMPT
+) -> ChatResponse:
     """Handle direct mode: forward to LLMSwitcher."""
     switcher = get_llm_switcher()
     try:
         response = await asyncio.wait_for(
             switcher.generate(
-                prompt=prompt, options=options, system_prompt=system_prompt,
+                prompt=prompt,
+                options=options,
+                system_prompt=system_prompt,
             ),
             timeout=REQUEST_TIMEOUT_SECONDS,
         )
@@ -337,7 +362,8 @@ async def _chat_openclaw(
         raise HTTPException(status_code=404, detail=str(e))
     except asyncio.TimeoutError:
         raise HTTPException(
-            status_code=504, detail="OpenClaw 网关响应超时，请稍后重试",
+            status_code=504,
+            detail="OpenClaw 网关响应超时，请稍后重试",
         )
     except Exception as e:
         logger.error("OpenClaw chat error: %s", e)
@@ -374,7 +400,9 @@ def _build_workflow_api_overrides(request: ChatRequest) -> Optional[dict]:
 
 
 async def _chat_workflow(
-    request: ChatRequest, user: UserModel, db: Session,
+    request: ChatRequest,
+    user: UserModel,
+    db: Session,
 ) -> ChatResponse:
     """Handle workflow-routed non-streaming chat request."""
     from src.ai.workflow_service import WorkflowService
@@ -399,7 +427,9 @@ async def _chat_workflow(
 
 
 def _stream_workflow_response(
-    request: ChatRequest, user: UserModel, db: Session,
+    request: ChatRequest,
+    user: UserModel,
+    db: Session,
 ) -> StreamingResponse:
     """Build a StreamingResponse for workflow-routed streaming chat."""
     from src.ai.workflow_service import WorkflowService
@@ -500,19 +530,27 @@ async def chat_stream(
     original_skill_ids = list(request.skill_ids or [])
     if request.skill_ids:
         request.skill_ids = _filter_skills_by_role(
-            request.skill_ids, current_user.role, db,
+            request.skill_ids,
+            current_user.role,
+            db,
         )
 
     # Log skill invocation
     if original_skill_ids:
         _log_skill_access(
-            db, current_user, original_skill_ids, request.skill_ids or [],
+            db,
+            current_user,
+            original_skill_ids,
+            request.skill_ids or [],
         )
 
     # Log data source access
     if request.data_source_ids:
         _log_data_access(
-            db, current_user, request.data_source_ids, request.output_mode,
+            db,
+            current_user,
+            request.data_source_ids,
+            request.output_mode,
         )
 
     # Inject data source context if selected
@@ -523,18 +561,19 @@ async def chat_stream(
 
     if request.mode == "openclaw":
         service = get_openclaw_chat_service(db)
-        generator = openclaw_stream(request, service, current_user,
-                                    system_prompt=effective_system)
+        generator = openclaw_stream(
+            request, service, current_user, system_prompt=effective_system
+        )
     else:
         switcher = get_llm_switcher()
-        generator = generate_stream(request, switcher,
-                                    system_prompt=effective_system)
+        generator = generate_stream(request, switcher, system_prompt=effective_system)
 
     return StreamingResponse(
         generator,
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "Connection": "keep-alive"},
     )
+
 
 @router.get("/chat/openclaw-status", response_model=OpenClawStatusResponse)
 async def openclaw_status(
@@ -546,12 +585,12 @@ async def openclaw_status(
     return await service.get_status(tenant_id=current_user.tenant_id)
 
 
-
 # --- Data Source Configuration Endpoints ---
 
 
 class DataSourceConfigItem(BaseModel):
     """Single data source config item for admin update."""
+
     id: str
     label: Optional[str] = None
     enabled: Optional[bool] = None
@@ -560,11 +599,13 @@ class DataSourceConfigItem(BaseModel):
 
 class DataSourceConfigRequest(BaseModel):
     """Admin request to update data source configs."""
+
     sources: list[DataSourceConfigItem]
 
 
 class RolePermissionItem(BaseModel):
     """Single role-permission mapping item."""
+
     role: str
     source_id: str
     allowed: bool
@@ -572,11 +613,13 @@ class RolePermissionItem(BaseModel):
 
 class RolePermissionRequest(BaseModel):
     """Request to batch update role-permission mappings."""
+
     permissions: list[RolePermissionItem]
 
 
 class SkillPermissionItem(BaseModel):
     """Single role-skill permission mapping item."""
+
     role: str
     skill_id: str
     allowed: bool
@@ -584,8 +627,8 @@ class SkillPermissionItem(BaseModel):
 
 class SkillPermissionRequest(BaseModel):
     """Request to batch update role-skill permission mappings."""
-    permissions: list[SkillPermissionItem]
 
+    permissions: list[SkillPermissionItem]
 
 
 @router.get("/data-sources/available")
@@ -595,6 +638,7 @@ async def get_available_data_sources(
 ) -> list[dict]:
     """Get data sources available to the current user (filtered by role)."""
     from src.ai.data_source_config import AIDataSourceService
+
     service = AIDataSourceService(db)
     return service.get_available_sources(role=current_user.role)
 
@@ -608,6 +652,7 @@ async def get_data_source_config(
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     from src.ai.data_source_config import AIDataSourceService
+
     service = AIDataSourceService(db)
     return service.get_config()
 
@@ -622,9 +667,11 @@ async def update_data_source_config(
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     from src.ai.data_source_config import AIDataSourceService
+
     service = AIDataSourceService(db)
     items = [item.model_dump(exclude_none=True) for item in request.sources]
     return service.update_config(items)
+
 
 @router.get("/data-sources/role-permissions")
 async def get_role_permissions(
@@ -635,6 +682,7 @@ async def get_role_permissions(
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     from src.ai.role_permission_service import RolePermissionService
+
     service = RolePermissionService(db)
     return {"permissions": service.get_all_permissions()}
 
@@ -649,6 +697,7 @@ async def update_role_permissions(
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     from src.ai.role_permission_service import RolePermissionService
+
     service = RolePermissionService(db)
     items = [item.model_dump() for item in request.permissions]
     service.update_permissions(items)
@@ -666,6 +715,7 @@ async def get_available_skills(
 ) -> dict:
     """Get skills available to the current user (filtered by role permissions)."""
     from src.ai.skill_permission_service import SkillPermissionService
+
     service = SkillPermissionService(db)
     allowed_ids = service.get_allowed_skill_ids(current_user.role)
     return {"skill_ids": allowed_ids, "role": current_user.role}
@@ -680,6 +730,7 @@ async def get_skill_role_permissions(
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     from src.ai.skill_permission_service import SkillPermissionService
+
     service = SkillPermissionService(db)
     return {"permissions": service.get_all_permissions()}
 
@@ -694,6 +745,7 @@ async def update_skill_role_permissions(
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     from src.ai.skill_permission_service import SkillPermissionService
+
     service = SkillPermissionService(db)
     items = [item.model_dump() for item in request.permissions]
     service.update_permissions(items)
@@ -710,9 +762,13 @@ async def init_admin_skill_permissions(
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     from src.ai.skill_permission_service import SkillPermissionService
+
     service = SkillPermissionService(db)
     added = service.init_admin_all_skills()
-    return {"added": added, "message": f"Admin role initialized with {added} new skill permissions"}
+    return {
+        "added": added,
+        "message": f"Admin role initialized with {added} new skill permissions",
+    }
 
 
 # --- Access Log Endpoints ---
@@ -735,6 +791,7 @@ async def query_access_logs(
         raise HTTPException(status_code=403, detail="Admin access required")
 
     from src.ai.access_log_service import AIAccessLogService
+
     svc = AIAccessLogService(db)
     return svc.query_logs(
         tenant_id=current_user.tenant_id,
@@ -838,18 +895,20 @@ def _log_workflow_crud(
     """Record a workflow CRUD operation in AIAccessLog."""
     from src.models.ai_access_log import AIAccessLog as LogModel
 
-    db.add(LogModel(
-        tenant_id=user.tenant_id,
-        user_id=str(user.id),
-        user_role=user.role,
-        event_type=event_type,
-        resource_id=workflow_id,
-        resource_name=workflow_name,
-        request_type="chat",
-        success=success,
-        error_message=error_message,
-        details=details or {},
-    ))
+    db.add(
+        LogModel(
+            tenant_id=user.tenant_id,
+            user_id=str(user.id),
+            user_role=user.role,
+            event_type=event_type,
+            resource_id=workflow_id,
+            resource_name=workflow_name,
+            request_type="chat",
+            success=success,
+            error_message=error_message,
+            details=details or {},
+        )
+    )
     db.commit()
 
 
@@ -871,7 +930,8 @@ async def list_workflows(
     )
 
     _log_workflow_crud(
-        db, current_user,
+        db,
+        current_user,
         event_type="workflow_list",
         details={"count": len(workflows), "filter_status": status},
     )
@@ -895,7 +955,8 @@ async def create_workflow(
     workflow = service.create_workflow(request, creator_id=str(current_user.id))
 
     _log_workflow_crud(
-        db, current_user,
+        db,
+        current_user,
         event_type="workflow_create",
         workflow_id=workflow.id,
         workflow_name=workflow.name,
@@ -922,7 +983,8 @@ async def update_workflow(
     workflow = service.update_workflow(workflow_id, request)
 
     _log_workflow_crud(
-        db, current_user,
+        db,
+        current_user,
         event_type="workflow_update",
         workflow_id=workflow.id,
         workflow_name=workflow.name,
@@ -938,7 +1000,7 @@ async def delete_workflow(
     current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> dict:
-    """Disable a workflow (soft delete). Admin only."""
+    """Hard-delete a workflow. Admin only."""
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
 
@@ -948,13 +1010,14 @@ async def delete_workflow(
     service.delete_workflow(workflow_id)
 
     _log_workflow_crud(
-        db, current_user,
+        db,
+        current_user,
         event_type="workflow_delete",
         workflow_id=workflow_id,
         details={"workflow_id": workflow_id},
     )
 
-    return {"success": True, "message": f"Workflow {workflow_id} disabled"}
+    return {"success": True, "message": f"Workflow {workflow_id} deleted"}
 
 
 # --- Workflow Stats & Permission Sync Endpoints ---
@@ -973,7 +1036,8 @@ async def get_workflow_stats(
     stats = service.get_workflow_stats(workflow_id)
 
     _log_workflow_crud(
-        db, current_user,
+        db,
+        current_user,
         event_type="workflow_stats",
         workflow_id=workflow_id,
         details={"workflow_id": workflow_id},
@@ -1002,6 +1066,7 @@ async def get_today_stats(
 
 class SyncPermissionsRequest(BaseModel):
     """Request body for batch permission sync."""
+
     permissions: List[dict]
 
 
@@ -1021,7 +1086,8 @@ async def sync_permissions(
     result = service.sync_permissions(request.permissions)
 
     _log_workflow_crud(
-        db, current_user,
+        db,
+        current_user,
         event_type="workflow_permission_sync",
         details={
             "permission_count": len(request.permissions),

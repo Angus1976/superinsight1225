@@ -31,10 +31,12 @@ import {
   DashboardOutlined,
   ReloadOutlined,
   DatabaseOutlined,
+  FileSearchOutlined,
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
-import { listSkills, syncSkills, executeSkill, toggleSkillStatus } from '@/services/skillAdminApi';
-import { getDataSourceConfig, updateDataSourceConfig } from '@/services/aiAssistantApi';
+import { listSkills, syncSkills, executeSkill, toggleSkillStatus, seedClawHubSkills } from '@/services/skillAdminApi';
+import { getDataSourceConfig, updateDataSourceConfig, getAccessLogs } from '@/services/aiAssistantApi';
+import type { AccessLogItem } from '@/services/aiAssistantApi';
 import type { SkillDetail } from '@/types/aiAssistant';
 import type { AIDataSource } from '@/types/aiAssistant';
 
@@ -74,6 +76,14 @@ const AIIntegration: React.FC = () => {
   const [ollamaStatus, setOllamaStatus] = useState<OllamaStatus | null>(null);
   const [skills, setSkills] = useState<SkillDetail[]>([]);
   const [dsConfig, setDsConfig] = useState<AIDataSource[]>([]);
+
+  // Access log state
+  const [logModalOpen, setLogModalOpen] = useState(false);
+  const [logItems, setLogItems] = useState<AccessLogItem[]>([]);
+  const [logTotal, setLogTotal] = useState(0);
+  const [logPage, setLogPage] = useState(1);
+  const [logFilter, setLogFilter] = useState<string | undefined>(undefined);
+  const [logLoading, setLogLoading] = useState(false);
 
   // ---------------------------------------------------------------------------
   // Data fetching
@@ -155,10 +165,23 @@ const AIIntegration: React.FC = () => {
     setLoading(true);
     try {
       const result = await syncSkills();
-      message.success(`同步完成：新增 ${result.added}，更新 ${result.updated}，移除 ${result.removed}`);
+      message.success(`${t('syncComplete')}: ${t('syncAdded')} ${result.added}, ${t('syncUpdated')} ${result.updated}, ${t('syncRemoved')} ${result.removed}`);
       setSkills(result.skills);
     } catch {
-      message.error('同步失败');
+      message.error(t('syncFailed'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSeedClawHub = async () => {
+    setLoading(true);
+    try {
+      const result = await seedClawHubSkills();
+      message.success(`${t('seedComplete')}: ${t('syncAdded')} ${result.added}, ${t('seedSkipped')} ${result.skipped}`);
+      await refreshSkills();
+    } catch {
+      message.error(t('seedFailed'));
     } finally {
       setLoading(false);
     }
@@ -188,6 +211,27 @@ const AIIntegration: React.FC = () => {
     } catch {
       message.error('状态更新失败');
     }
+  };
+
+  // Access log helpers
+  const fetchAccessLogs = async (page = 1, eventType?: string) => {
+    setLogLoading(true);
+    try {
+      const data = await getAccessLogs({ page, page_size: 20, event_type: eventType });
+      setLogItems(data.items);
+      setLogTotal(data.total);
+      setLogPage(data.page);
+    } catch {
+      message.error(t('accessLog.loadFailed'));
+    } finally {
+      setLogLoading(false);
+    }
+  };
+
+  const handleOpenLogs = () => {
+    setLogModalOpen(true);
+    setLogFilter(undefined);
+    fetchAccessLogs(1);
   };
 
   // ---------------------------------------------------------------------------
@@ -308,10 +352,11 @@ const AIIntegration: React.FC = () => {
                     </Card>
 
                     {/* Quick Actions */}
-                    <Card title="快速操作">
+                    <Card title={t('quickActions')}>
                       <Space wrap>
-                        <Button type="primary" icon={<SyncOutlined />} onClick={handleSync}>同步技能</Button>
-                        <Button icon={<ReloadOutlined />} onClick={refreshAll}>刷新状态</Button>
+                        <Button type="primary" icon={<SyncOutlined />} onClick={handleSync}>{t('syncSkills')}</Button>
+                        <Button icon={<DatabaseOutlined />} onClick={handleSeedClawHub}>{t('seedClawHub')}</Button>
+                        <Button icon={<ReloadOutlined />} onClick={refreshAll}>{t('refreshStatus')}</Button>
                       </Space>
                     </Card>
                   </Space>
@@ -323,8 +368,12 @@ const AIIntegration: React.FC = () => {
                 children: (
                   <Space direction="vertical" size="middle" style={{ width: '100%' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Text strong>已部署技能 ({skills.length})</Text>
-                      <Button type="primary" icon={<SyncOutlined />} onClick={handleSync}>同步技能</Button>
+                      <Text strong>{t('deployedSkills')} ({skills.length})</Text>
+                      <Space>
+                        <Button icon={<FileSearchOutlined />} onClick={handleOpenLogs}>{t('accessLog.viewLogs')}</Button>
+                        <Button icon={<DatabaseOutlined />} onClick={handleSeedClawHub}>{t('seedClawHub')}</Button>
+                        <Button type="primary" icon={<SyncOutlined />} onClick={handleSync}>{t('syncSkills')}</Button>
+                      </Space>
                     </div>
                     <Table columns={skillColumns} dataSource={skills} rowKey="id" pagination={false} />
                   </Space>
@@ -392,7 +441,7 @@ const AIIntegration: React.FC = () => {
                           ),
                         },
                         {
-                          title: t('category', { ns: 'aiAssistant' }),
+                          title: t('categoryLabel'),
                           dataIndex: 'category',
                           key: 'category',
                           width: 120,
@@ -444,6 +493,117 @@ const AIIntegration: React.FC = () => {
           </Card>
         </Space>
       </Spin>
+
+      {/* Access Log Modal */}
+      <Modal
+        title={t('accessLog.title')}
+        open={logModalOpen}
+        onCancel={() => setLogModalOpen(false)}
+        footer={null}
+        width={900}
+      >
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          <Select
+            allowClear
+            placeholder={t('accessLog.allEvents')}
+            style={{ width: 200 }}
+            value={logFilter}
+            onChange={(val) => { setLogFilter(val); fetchAccessLogs(1, val); }}
+          >
+            <Select.Option value="skill_invoke">{t('accessLog.skillInvoke')}</Select.Option>
+            <Select.Option value="skill_denied">{t('accessLog.skillDenied')}</Select.Option>
+            <Select.Option value="data_access">{t('accessLog.dataAccess')}</Select.Option>
+            <Select.Option value="permission_change">{t('accessLog.permissionChange')}</Select.Option>
+          </Select>
+          <Table<AccessLogItem>
+            loading={logLoading}
+            dataSource={logItems}
+            rowKey="id"
+            size="small"
+            pagination={{
+              current: logPage,
+              total: logTotal,
+              pageSize: 20,
+              onChange: (p) => fetchAccessLogs(p, logFilter),
+              showTotal: (total) => `${total}`,
+              showSizeChanger: false,
+            }}
+            columns={[
+              {
+                title: t('accessLog.time'),
+                dataIndex: 'created_at',
+                key: 'created_at',
+                width: 170,
+                render: (v: string) => v ? new Date(v).toLocaleString() : '-',
+              },
+              {
+                title: t('accessLog.eventType'),
+                dataIndex: 'event_type',
+                key: 'event_type',
+                width: 120,
+                render: (v: string) => {
+                  const colorMap: Record<string, string> = {
+                    skill_invoke: 'blue',
+                    skill_denied: 'red',
+                    data_access: 'green',
+                    permission_change: 'orange',
+                  };
+                  const labelKey = v.replace('_', '') as string;
+                  const labelMap: Record<string, string> = {
+                    skillinvoke: t('accessLog.skillInvoke'),
+                    skilldenied: t('accessLog.skillDenied'),
+                    dataaccess: t('accessLog.dataAccess'),
+                    permissionchange: t('accessLog.permissionChange'),
+                  };
+                  return <Tag color={colorMap[v] || 'default'}>{labelMap[labelKey] || v}</Tag>;
+                },
+              },
+              {
+                title: t('accessLog.userId'),
+                dataIndex: 'user_id',
+                key: 'user_id',
+                width: 100,
+                ellipsis: true,
+              },
+              {
+                title: t('accessLog.userRole'),
+                dataIndex: 'user_role',
+                key: 'user_role',
+                width: 80,
+              },
+              {
+                title: t('accessLog.resource'),
+                dataIndex: 'resource_name',
+                key: 'resource_name',
+                width: 120,
+              },
+              {
+                title: t('accessLog.success'),
+                dataIndex: 'success',
+                key: 'success',
+                width: 70,
+                render: (v: boolean) => (
+                  <Tag color={v ? 'green' : 'red'}>
+                    {v ? t('accessLog.successLabel') : t('accessLog.failedLabel')}
+                  </Tag>
+                ),
+              },
+              {
+                title: t('accessLog.details'),
+                dataIndex: 'details',
+                key: 'details',
+                ellipsis: true,
+                render: (v: Record<string, unknown>) => (
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    {JSON.stringify(v)}
+                  </Text>
+                ),
+              },
+            ]}
+            locale={{ emptyText: t('accessLog.noLogs') }}
+          />
+        </Space>
+      </Modal>
     </div>
   );
 };

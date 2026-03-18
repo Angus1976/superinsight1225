@@ -58,6 +58,7 @@ class SemJobStatusResponse(BaseModel):
     file_type: str
     record_count: int = 0
     error_message: Optional[str] = None
+    progress_info: Optional[dict] = None
     created_at: datetime
     updated_at: datetime
 
@@ -68,6 +69,7 @@ class SemJobListItem(BaseModel):
     status: str
     file_name: str
     file_type: str
+    progress_info: Optional[dict] = None
     created_at: datetime
 
 
@@ -249,6 +251,7 @@ def list_semantic_jobs(
             status=j.status,
             file_name=j.file_name,
             file_type=j.file_type,
+            progress_info=j.progress_info,
             created_at=j.created_at,
         )
         for j in jobs
@@ -278,6 +281,7 @@ def get_semantic_job(
         file_type=job.file_type,
         record_count=record_count,
         error_message=job.error_message,
+        progress_info=job.progress_info,
         created_at=job.created_at,
         updated_at=job.updated_at,
     )

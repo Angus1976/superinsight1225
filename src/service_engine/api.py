@@ -50,9 +50,15 @@ async def handle_service_request(request: Request, body: ServiceRequest):
     """
     start = time.monotonic()
     api_key_scopes = _extract_scopes(request)
+    skill_whitelist = _extract_skill_whitelist(request)
+    user_roles = _extract_user_roles(request)
 
     try:
-        response = await _engine.route(body, api_key_scopes)
+        response = await _engine.route(
+            body, api_key_scopes,
+            skill_whitelist=skill_whitelist,
+            user_roles=user_roles,
+        )
         elapsed_ms = int((time.monotonic() - start) * 1000)
         _audit_log(body, 200, elapsed_ms)
         return response.model_dump()
@@ -100,6 +106,24 @@ def _extract_scopes(request: Request) -> dict:
         return {"query": True, "chat": True, "decision": True, "skill": True}
 
     return {rt: rt in allowed for rt in ["query", "chat", "decision", "skill"]}
+
+
+def _extract_skill_whitelist(request: Request) -> list:
+    """Extract skill whitelist from API key. Empty list = all skills allowed."""
+    api_key = getattr(request.state, "api_key", None)
+    if not api_key:
+        return []
+    return getattr(api_key, "skill_whitelist", None) or []
+
+
+def _extract_user_roles(request: Request) -> list:
+    """Extract user roles from auth middleware state."""
+    user = getattr(request.state, "user", None)
+    if not user:
+        return []
+    if isinstance(user, dict):
+        return user.get("roles", [])
+    return getattr(user, "roles", []) or []
 
 
 def _error_response(exc: ServiceEngineError) -> JSONResponse:

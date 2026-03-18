@@ -23,6 +23,13 @@ export type SemJobStatus =
 
 export type SemanticRecordType = 'entity' | 'relationship' | 'summary';
 
+export interface ProgressInfo {
+  stage: string;
+  current: number;
+  total: number;
+  percent: number;
+}
+
 export interface SemanticJob {
   job_id: string;
   status: SemJobStatus;
@@ -30,6 +37,7 @@ export interface SemanticJob {
   file_type: string;
   record_count: number;
   error_message: string | null;
+  progress_info: ProgressInfo | null;
   created_at: string;
   updated_at: string;
 }
@@ -66,6 +74,7 @@ interface SemJobListItem {
   status: string;
   file_name: string;
   file_type: string;
+  progress_info: ProgressInfo | null;
   created_at: string;
 }
 
@@ -187,6 +196,7 @@ export const useSemanticStore = create<SemanticStore>()(
             file_type: data.file_type,
             record_count: 0,
             error_message: null,
+            progress_info: null,
             created_at: data.created_at,
             updated_at: data.created_at,
           };
@@ -245,6 +255,7 @@ export const useSemanticStore = create<SemanticStore>()(
             file_type: item.file_type,
             record_count: 0,
             error_message: null,
+            progress_info: item.progress_info ?? null,
             created_at: item.created_at,
             updated_at: item.created_at,
           }));

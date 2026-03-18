@@ -202,3 +202,90 @@ export async function updateRolePermissions(permissions: RolePermissionItem[]): 
   const response = await apiClient.post<{ permissions: RolePermissionItem[] }>(`${API_BASE}/data-sources/role-permissions`, { permissions });
   return response.data;
 }
+
+
+// --- Skill Permission APIs ---
+
+export interface SkillPermissionItem {
+  role: string;
+  skill_id: string;
+  allowed: boolean;
+}
+
+/**
+ * Get skill IDs available to the current user (filtered by role).
+ */
+export async function getAvailableSkills(): Promise<{ skill_ids: string[]; role: string }> {
+  const response = await apiClient.get<{ skill_ids: string[]; role: string }>(`${API_BASE}/skills/available`);
+  return response.data;
+}
+
+/**
+ * Get all role-skill permission mappings (admin only).
+ */
+export async function getSkillRolePermissions(): Promise<{ permissions: SkillPermissionItem[] }> {
+  const response = await apiClient.get<{ permissions: SkillPermissionItem[] }>(`${API_BASE}/skills/role-permissions`);
+  return response.data;
+}
+
+/**
+ * Update role-skill permission mappings (admin only).
+ */
+export async function updateSkillRolePermissions(
+  permissions: SkillPermissionItem[],
+): Promise<{ permissions: SkillPermissionItem[] }> {
+  const response = await apiClient.post<{ permissions: SkillPermissionItem[] }>(
+    `${API_BASE}/skills/role-permissions`,
+    { permissions },
+  );
+  return response.data;
+}
+
+/**
+ * Initialize admin role with all deployed skills (admin only).
+ */
+export async function initAdminSkillPermissions(): Promise<{ added: number; message: string }> {
+  const response = await apiClient.post<{ added: number; message: string }>(`${API_BASE}/skills/init-admin`);
+  return response.data;
+}
+
+
+// --- Access Log APIs ---
+
+export interface AccessLogItem {
+  id: number;
+  tenant_id: string;
+  user_id: string;
+  user_role: string | null;
+  event_type: string;
+  resource_id: string | null;
+  resource_name: string | null;
+  api_key_id: string | null;
+  request_type: string | null;
+  success: boolean;
+  error_message: string | null;
+  details: Record<string, unknown>;
+  duration_ms: number | null;
+  created_at: string;
+}
+
+export interface AccessLogResponse {
+  items: AccessLogItem[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+/**
+ * Query AI access logs (admin only, newest first).
+ */
+export async function getAccessLogs(params?: {
+  page?: number;
+  page_size?: number;
+  event_type?: string;
+}): Promise<AccessLogResponse> {
+  const response = await apiClient.get<AccessLogResponse>(`${API_BASE}/access-logs`, {
+    params,
+  });
+  return response.data;
+}

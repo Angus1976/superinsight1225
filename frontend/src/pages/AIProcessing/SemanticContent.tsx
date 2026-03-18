@@ -5,7 +5,7 @@
  * with record_type filtering for the semantic pipeline.
  */
 
-import React, { useEffect, useCallback, useState } from 'react';
+import React, { useEffect, useCallback, useState, useRef } from 'react';
 import {
   Card,
   Upload,
@@ -18,6 +18,8 @@ import {
   Modal,
   Alert,
   Select,
+  Progress,
+  Tooltip,
 } from 'antd';
 import {
   InboxOutlined,
@@ -69,8 +71,26 @@ const SemanticContent: React.FC = () => {
   const [recordTypeFilter, setRecordTypeFilter] = useState<SemanticRecordType | undefined>(undefined);
   const [selectedRecordKeys, setSelectedRecordKeys] = useState<React.Key[]>([]);
   const [transferModalVisible, setTransferModalVisible] = useState(false);
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const hasActiveJobs = jobs.some(
+    (j) => j.status === 'pending' || j.status === 'extracting' || j.status === 'processing',
+  );
 
   useEffect(() => { fetchJobs(); }, [fetchJobs]);
+
+  // Auto-poll every 3s while there are active jobs
+  useEffect(() => {
+    if (hasActiveJobs) {
+      pollingRef.current = setInterval(() => { fetchJobs(); }, 3000);
+    }
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
+    };
+  }, [hasActiveJobs, fetchJobs]);
 
   const handleUpload = useCallback(async (file: File) => {
     try {
@@ -155,6 +175,40 @@ const SemanticContent: React.FC = () => {
       ),
     },
     {
+      title: t('common:aiProcessing.columns.progress', { defaultValue: '进度' }),
+      dataIndex: 'progress_info',
+      width: 180,
+      render: (_: unknown, record: SemanticJob) => {
+        const { status, progress_info } = record;
+        if (status === 'completed') {
+          return <Progress percent={100} size="small" status="success" />;
+        }
+        if (status === 'failed') {
+          return <Progress percent={progress_info?.percent ?? 0} size="small" status="exception" />;
+        }
+        const percent = progress_info?.percent ?? 0;
+        const stage = progress_info?.stage;
+        const total = progress_info?.total ?? 0;
+        if (total > 0) {
+          const stageLabel = t(
+            `common:aiProcessing.semantic.progressStage.${stage || 'processing'}`,
+            { defaultValue: stage || status },
+          );
+          return (
+            <div>
+              <Progress percent={percent} size="small" status="active" />
+              <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{stageLabel}</div>
+            </div>
+          );
+        }
+        return (
+          <div style={{ fontSize: 12, color: '#999' }}>
+            {t('common:aiProcessing.vectorization.progressStage.waiting', { defaultValue: '等待处理...' })}
+          </div>
+        );
+      },
+    },
+    {
       title: t('common:aiProcessing.columns.createdAt', { defaultValue: '创建时间' }),
       dataIndex: 'created_at',
       width: 180,
@@ -163,17 +217,25 @@ const SemanticContent: React.FC = () => {
     {
       title: t('common:aiProcessing.columns.actions', { defaultValue: '操作' }),
       width: 100,
-      render: (_: unknown, record: SemanticJob) => (
-        <Button
-          type="link"
-          size="small"
-          icon={<EyeOutlined />}
-          disabled={record.status !== 'completed'}
-          onClick={() => handleViewRecords(record.job_id)}
-        >
-          {t('common:aiProcessing.viewRecords', { defaultValue: '查看' })}
-        </Button>
-      ),
+      render: (_: unknown, record: SemanticJob) => {
+        const isCompleted = record.status === 'completed';
+        return (
+          <Tooltip title={!isCompleted ? t('common:aiProcessing.vectorization.waitComplete', { defaultValue: '任务完成后可操作' }) : ''}>
+            <span style={{ display: 'inline-block', cursor: !isCompleted ? 'not-allowed' : 'pointer' }}>
+              <Button
+                type="link"
+                size="small"
+                icon={<EyeOutlined />}
+                disabled={!isCompleted}
+                style={!isCompleted ? { pointerEvents: 'none' } : undefined}
+                onClick={() => handleViewRecords(record.job_id)}
+              >
+                {t('common:aiProcessing.viewRecords', { defaultValue: '查看' })}
+              </Button>
+            </span>
+          </Tooltip>
+        );
+      },
     },
   ];
 

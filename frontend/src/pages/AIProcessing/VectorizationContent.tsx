@@ -5,7 +5,7 @@
  * for the vectorization pipeline.
  */
 
-import React, { useEffect, useCallback, useState } from 'react';
+import React, { useEffect, useCallback, useState, useRef } from 'react';
 import {
   Card,
   Upload,
@@ -16,6 +16,8 @@ import {
   message,
   Modal,
   Alert,
+  Progress,
+  Tooltip,
 } from 'antd';
 import {
   InboxOutlined,
@@ -59,8 +61,29 @@ const VectorizationContent: React.FC = () => {
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [selectedRecordKeys, setSelectedRecordKeys] = useState<React.Key[]>([]);
   const [transferModalOpen, setTransferModalOpen] = useState(false);
+  const [jobTransferModalOpen, setJobTransferModalOpen] = useState(false);
+  const [transferJobId, setTransferJobId] = useState<string | null>(null);
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Check if any jobs are actively processing
+  const hasActiveJobs = jobs.some(
+    (j) => j.status === 'pending' || j.status === 'extracting' || j.status === 'processing',
+  );
 
   useEffect(() => { fetchJobs(); }, [fetchJobs]);
+
+  // Auto-poll every 3s while there are active jobs
+  useEffect(() => {
+    if (hasActiveJobs) {
+      pollingRef.current = setInterval(() => { fetchJobs(); }, 3000);
+    }
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
+    };
+  }, [hasActiveJobs, fetchJobs]);
 
   const handleUpload = useCallback(async (file: File) => {
     try {
@@ -104,6 +127,22 @@ const VectorizationContent: React.FC = () => {
     setTransferModalOpen(false);
   }, []);
 
+  const handleJobTransfer = useCallback((jobId: string) => {
+    setTransferJobId(jobId);
+    setJobTransferModalOpen(true);
+  }, []);
+
+  const handleJobTransferSuccess = useCallback(() => {
+    setJobTransferModalOpen(false);
+    setTransferJobId(null);
+    message.success(t('common:aiProcessing.vectorization.transferSuccess', { defaultValue: '数据已成功转存' }));
+  }, [t]);
+
+  const handleJobTransferClose = useCallback(() => {
+    setJobTransferModalOpen(false);
+    setTransferJobId(null);
+  }, []);
+
   // Convert selected records to TransferDataItem format
   const getSelectedTransferData = useCallback((): TransferDataItem[] => {
     return records
@@ -122,6 +161,26 @@ const VectorizationContent: React.FC = () => {
       }));
   }, [records, selectedRecordKeys]);
 
+  // Build transfer data for a completed job (all records)
+  const getJobTransferData = useCallback((): TransferDataItem[] => {
+    if (!transferJobId) return [];
+    const job = jobs.find((j) => j.job_id === transferJobId);
+    if (!job) return [];
+    return [{
+      id: job.job_id,
+      name: job.file_name,
+      content: {
+        file_name: job.file_name,
+        file_type: job.file_type,
+        chunk_count: job.chunk_count,
+      },
+      metadata: {
+        source: 'vectorization',
+        created_at: job.created_at,
+      },
+    }];
+  }, [transferJobId, jobs]);
+
   const jobColumns: ColumnsType<VectorizationJob> = [
     {
       title: t('common:aiProcessing.columns.fileName', { defaultValue: '文件名' }),
@@ -138,8 +197,46 @@ const VectorizationContent: React.FC = () => {
       dataIndex: 'status',
       width: 100,
       render: (status: string) => (
-        <Tag color={STATUS_COLOR[status] ?? 'default'}>{status}</Tag>
+        <Tag color={STATUS_COLOR[status] || 'default'}>{status}</Tag>
       ),
+    },
+    {
+      title: t('common:aiProcessing.columns.progress', { defaultValue: '进度' }),
+      dataIndex: 'progress_info',
+      width: 180,
+      render: (_: unknown, record: VectorizationJob) => {
+        const { status, progress_info } = record;
+        if (status === 'completed') {
+          return <Progress percent={100} size="small" status="success" />;
+        }
+        if (status === 'failed') {
+          return <Progress percent={progress_info?.percent ?? 0} size="small" status="exception" />;
+        }
+
+        const percent = progress_info?.percent ?? 0;
+        const stage = progress_info?.stage;
+        const current = progress_info?.current ?? 0;
+        const total = progress_info?.total ?? 0;
+
+        if (total > 0) {
+          const stageLabel = t(
+            `common:aiProcessing.vectorization.progressStage.${stage || 'processing'}`,
+            { defaultValue: stage || status },
+          );
+          return (
+            <div>
+              <Progress percent={percent} size="small" status="active" />
+              <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{stageLabel} {current}/{total}</div>
+            </div>
+          );
+        }
+
+        return (
+          <div style={{ fontSize: 12, color: '#999' }}>
+            {t('common:aiProcessing.vectorization.progressStage.waiting', { defaultValue: '等待处理...' })}
+          </div>
+        );
+      },
     },
     {
       title: t('common:aiProcessing.columns.chunkCount', { defaultValue: '分块数' }),
@@ -155,18 +252,42 @@ const VectorizationContent: React.FC = () => {
     },
     {
       title: t('common:aiProcessing.columns.actions', { defaultValue: '操作' }),
-      width: 100,
-      render: (_: unknown, record: VectorizationJob) => (
-        <Button
-          type="link"
-          size="small"
-          icon={<EyeOutlined />}
-          disabled={record.status !== 'completed'}
-          onClick={() => handleViewRecords(record.job_id)}
-        >
-          {t('common:aiProcessing.viewRecords', { defaultValue: '查看' })}
-        </Button>
-      ),
+      width: 160,
+      render: (_: unknown, record: VectorizationJob) => {
+        const isCompleted = record.status === 'completed';
+        return (
+          <Space size="small">
+            <Tooltip title={!isCompleted ? t('common:aiProcessing.vectorization.waitComplete', { defaultValue: '任务完成后可操作' }) : ''}>
+              <span style={{ display: 'inline-block', cursor: !isCompleted ? 'not-allowed' : 'pointer' }}>
+                <Button
+                  type="link"
+                  size="small"
+                  icon={<EyeOutlined />}
+                  disabled={!isCompleted}
+                  style={!isCompleted ? { pointerEvents: 'none' } : undefined}
+                  onClick={() => handleViewRecords(record.job_id)}
+                >
+                  {t('common:aiProcessing.viewRecords', { defaultValue: '查看' })}
+                </Button>
+              </span>
+            </Tooltip>
+            <Tooltip title={!isCompleted ? t('common:aiProcessing.vectorization.waitComplete', { defaultValue: '任务完成后可操作' }) : ''}>
+              <span style={{ display: 'inline-block', cursor: !isCompleted ? 'not-allowed' : 'pointer' }}>
+                <Button
+                  type="link"
+                  size="small"
+                  icon={<CloudUploadOutlined />}
+                  disabled={!isCompleted}
+                  style={!isCompleted ? { pointerEvents: 'none' } : undefined}
+                  onClick={() => handleJobTransfer(record.job_id)}
+                >
+                  {t('common:aiProcessing.vectorization.transfer', { defaultValue: '转存' })}
+                </Button>
+              </span>
+            </Tooltip>
+          </Space>
+        );
+      },
     },
   ];
 
@@ -287,6 +408,14 @@ const VectorizationContent: React.FC = () => {
         onSuccess={handleTransferSuccess}
         sourceType="vectorization"
         selectedData={getSelectedTransferData()}
+      />
+
+      <TransferToLifecycleModal
+        visible={jobTransferModalOpen}
+        onClose={handleJobTransferClose}
+        onSuccess={handleJobTransferSuccess}
+        sourceType="vectorization"
+        selectedData={getJobTransferData()}
       />
     </Space>
   );

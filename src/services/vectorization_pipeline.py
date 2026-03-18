@@ -21,6 +21,7 @@ from src.models.structuring import (
     StructuringJob,
     VectorRecord,
 )
+from src.services.structuring_pipeline import get_celery_app
 
 logger = logging.getLogger(__name__)
 
@@ -158,19 +159,93 @@ def _extract_text(job: StructuringJob) -> str:
 # ---------------------------------------------------------------------------
 
 
-def _embed_chunks(chunks: list[str], tenant_id: str | None) -> list[list[float]]:
-    """Generate embeddings for each chunk via LLMSwitcher.embed().
+def _embed_chunks(
+    chunks: list[str],
+    tenant_id: str | None,
+    session: Any = None,
+    job: Any = None,
+) -> list[list[float]]:
+    """Generate embeddings for each chunk via DB-configured providers.
 
-    Returns a list of 1536-dim float vectors, one per chunk.
+    Uses ``_load_all_cloud_configs(application_code="embedding")`` so the
+    model is controlled entirely from the LLM configuration tables.
+    Falls back to env vars only when no DB config exists.
     """
-    from src.ai.llm_switcher import get_llm_switcher
+    from src.services.structuring_pipeline import _load_all_cloud_configs
 
-    switcher = get_llm_switcher(tenant_id=tenant_id)
+    configs = asyncio.run(
+        _load_all_cloud_configs(tenant_id=tenant_id, application_code="embedding")
+    )
+
+    total = len(chunks)
     embeddings: list[list[float]] = []
-    for chunk in chunks:
-        response = asyncio.run(switcher.embed(chunk))
-        embeddings.append(response.embedding)
+
+    for idx, chunk in enumerate(chunks):
+        embedding = _embed_single_with_fallback(chunk, configs)
+        embeddings.append(embedding)
+
+        if session and job:
+            job.progress_info = {
+                "stage": "embedding",
+                "current": idx + 1,
+                "total": total,
+                "percent": round((idx + 1) / total * 100),
+            }
+            session.flush()
+
     return embeddings
+
+
+def _embed_single_with_fallback(text: str, configs: list) -> list[float]:
+    """Try each config in priority order until embedding succeeds.
+
+    DeepSeek doesn't support embeddings so it is skipped.  For Ollama
+    we use ``/api/embeddings``; for OpenAI-compatible providers the
+    standard ``/embeddings`` endpoint.  The model name comes from the
+    DB config (``cfg.openai_model``), no hardcoded defaults.
+    """
+    import httpx
+
+    last_error: Exception | None = None
+    for cfg in configs:
+        base_url = cfg.openai_base_url
+
+        # DeepSeek has no embedding endpoint — skip
+        if "deepseek" in base_url.lower():
+            logger.info("Skipping DeepSeek for embedding (not supported)")
+            continue
+
+        try:
+            # Ollama uses a different endpoint
+            if "ollama" in base_url.lower() or ":11434" in base_url:
+                ollama_base = base_url.rstrip("/")
+                if ollama_base.endswith("/v1"):
+                    ollama_base = ollama_base[:-3]
+                resp = httpx.post(
+                    f"{ollama_base}/api/embeddings",
+                    json={"model": cfg.openai_model, "prompt": text},
+                    timeout=120,
+                )
+                resp.raise_for_status()
+                return resp.json()["embedding"]
+
+            # Standard OpenAI-compatible embedding endpoint
+            embed_url = base_url.rstrip("/") + "/embeddings"
+            resp = httpx.post(
+                embed_url,
+                headers={"Authorization": f"Bearer {cfg.openai_api_key}"},
+                json={"input": text, "model": cfg.openai_model},
+                timeout=60,
+            )
+            resp.raise_for_status()
+            return resp.json()["data"][0]["embedding"]
+
+        except (httpx.HTTPStatusError, httpx.ConnectError, httpx.TimeoutException) as exc:
+            logger.warning("Embedding failed for %s (%s): %s — trying next",
+                           cfg.openai_model, base_url, exc)
+            last_error = exc
+
+    raise RuntimeError(f"All embedding configs failed. Last error: {last_error}")
 
 
 # ---------------------------------------------------------------------------
@@ -208,8 +283,18 @@ def _store_vector_records(
 # Main pipeline entry point
 # ---------------------------------------------------------------------------
 
+_app = get_celery_app()
 
-def run_vectorization_pipeline(job_id: str) -> dict:
+
+@_app.task(
+    bind=True,
+    name="vectorization.run_pipeline",
+    max_retries=2,
+    soft_time_limit=600,
+    time_limit=660,
+    acks_late=True,
+)
+def run_vectorization_pipeline(self, job_id: str) -> dict:
     """Execute the vectorization pipeline for a given job.
 
     Steps:
@@ -248,6 +333,7 @@ def _execute_vectorization(job_id: str) -> dict:
 
         # Step 1 — extract text
         job.status = JobStatus.EXTRACTING.value
+        job.progress_info = {"stage": "extracting", "current": 0, "total": 0, "percent": 0}
         session.flush()
         text = _extract_text(job)
         job.raw_content = text
@@ -255,15 +341,21 @@ def _execute_vectorization(job_id: str) -> dict:
 
         # Step 2 — chunk
         chunks = chunk_text(text, size=512, overlap=50)
+        job.status = "processing"
+        job.progress_info = {"stage": "chunking", "current": 0, "total": len(chunks), "percent": 0}
+        session.flush()
 
-        # Step 3 — embed
-        embeddings = _embed_chunks(chunks, job.tenant_id)
+        # Step 3 — embed (progress updated per-chunk inside helper)
+        embeddings = _embed_chunks(chunks, job.tenant_id, session=session, job=job)
 
         # Step 4 — store
+        job.progress_info = {"stage": "storing", "current": len(chunks), "total": len(chunks), "percent": 99}
+        session.flush()
         count = _store_vector_records(session, job, chunks, embeddings)
 
         # Mark completed
         job.status = JobStatus.COMPLETED.value
+        job.progress_info = {"stage": "completed", "current": count, "total": count, "percent": 100}
         session.flush()
 
         logger.info(

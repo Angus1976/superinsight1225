@@ -65,6 +65,7 @@
     "analytics": "Analytics",
     "data": "Data"
   },
+  "categoryLabel": "Category",
   "source": {
     "tasks": "Annotation Tasks",
     "annotation_efficiency": "Annotation Efficiency",
@@ -112,5 +113,38 @@
   },
   "permissionSaveFailed": "Failed to save permission config",
   "permissionSaved": "Permission config saved",
-  "dataSourceLoadFailed": "Failed to load data sources"
+  "dataSourceLoadFailed": "Failed to load data sources",
+  "syncComplete": "Sync complete",
+  "syncAdded": "added",
+  "syncUpdated": "updated",
+  "syncRemoved": "removed",
+  "syncFailed": "Sync failed",
+  "syncSkills": "Sync Skills",
+  "seedClawHub": "Import ClawHub Skills",
+  "seedComplete": "ClawHub skills imported",
+  "seedSkipped": "skipped",
+  "seedFailed": "ClawHub skill import failed",
+  "deployedSkills": "Deployed Skills",
+  "refreshStatus": "Refresh Status",
+  "skillPermissionDenied": "Some skills unavailable due to permission restrictions",
+  "accessLog": {
+    "title": "Skill Access Logs",
+    "viewLogs": "Access Logs",
+    "eventType": "Event Type",
+    "userId": "User",
+    "userRole": "Role",
+    "resource": "Resource",
+    "success": "Result",
+    "successLabel": "Success",
+    "failedLabel": "Failed",
+    "time": "Time",
+    "details": "Details",
+    "skillInvoke": "Skill Invoke",
+    "skillDenied": "Skill Denied",
+    "dataAccess": "Data Access",
+    "permissionChange": "Permission Change",
+    "allEvents": "All Events",
+    "noLogs": "No records",
+    "loadFailed": "Failed to load access logs"
+  }
 }

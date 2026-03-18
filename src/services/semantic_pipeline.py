@@ -19,6 +19,7 @@ from src.models.structuring import (
     SemanticRecord,
     StructuringJob,
 )
+from src.services.structuring_pipeline import get_celery_app
 
 logger = logging.getLogger(__name__)
 
@@ -58,14 +59,46 @@ _SUMMARY_SYSTEM_PROMPT = (
 
 
 def _call_llm(text: str, system_prompt: str, tenant_id: str | None) -> str:
-    """Call LLM with *system_prompt* and return the raw response text."""
-    from src.ai.llm_switcher import get_llm_switcher
+    """Call LLM with *system_prompt* and return the raw response text.
 
-    switcher = get_llm_switcher(tenant_id=tenant_id)
-    response = asyncio.run(
-        switcher.generate(prompt=text, system_prompt=system_prompt)
+    Iterates through all configured providers (priority order) and falls
+    back to the next one on HTTP / auth errors.
+    """
+    from src.services.structuring_pipeline import _load_all_cloud_configs
+
+    configs = asyncio.run(
+        _load_all_cloud_configs(tenant_id=tenant_id, application_code="semantic_analysis")
     )
-    return response.content
+
+    import httpx
+
+    last_error: Exception | None = None
+    for cfg in configs:
+        base_url = cfg.openai_base_url.rstrip("/")
+        try:
+            resp = httpx.post(
+                f"{base_url}/chat/completions",
+                headers={"Authorization": f"Bearer {cfg.openai_api_key}"},
+                json={
+                    "model": cfg.openai_model,
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": text},
+                    ],
+                    "temperature": 0.2,
+                },
+                timeout=120,
+            )
+            resp.raise_for_status()
+            return resp.json()["choices"][0]["message"]["content"]
+        except (httpx.HTTPStatusError, httpx.ConnectError, httpx.TimeoutException) as exc:
+            logger.warning(
+                "LLM call failed for %s (%s): %s — trying next config",
+                cfg.openai_model, base_url, exc,
+            )
+            last_error = exc
+
+    raise RuntimeError(f"All LLM configs failed. Last error: {last_error}")
 
 
 def _parse_json(raw: str) -> Any:
@@ -186,8 +219,18 @@ def _store_semantic_records(
 # Main pipeline entry point
 # ---------------------------------------------------------------------------
 
+_app = get_celery_app()
 
-def run_semantic_pipeline(job_id: str) -> dict:
+
+@_app.task(
+    bind=True,
+    name="semantic.run_pipeline",
+    max_retries=2,
+    soft_time_limit=600,
+    time_limit=660,
+    acks_late=True,
+)
+def run_semantic_pipeline(self, job_id: str) -> dict:
     """Execute the semantic analysis pipeline for a given job.
 
     Steps:
@@ -225,8 +268,11 @@ def _execute_semantic(job_id: str) -> dict:
                 f"Job {job_id} is not pending (current: {job.status})"
             )
 
+        total_steps = 5
+
         # Step 1 — extract text (reuse vectorization_pipeline helper)
         job.status = JobStatus.EXTRACTING.value
+        job.progress_info = {"stage": "extracting", "current": 1, "total": total_steps, "percent": 10}
         session.flush()
 
         from src.services.vectorization_pipeline import _extract_text
@@ -236,21 +282,31 @@ def _execute_semantic(job_id: str) -> dict:
         session.flush()
 
         # Step 2 — extract entities
+        job.status = "processing"
+        job.progress_info = {"stage": "entities", "current": 2, "total": total_steps, "percent": 30}
+        session.flush()
         entities = _extract_entities(text, job.tenant_id)
 
         # Step 3 — extract relationships
+        job.progress_info = {"stage": "relationships", "current": 3, "total": total_steps, "percent": 55}
+        session.flush()
         relationships = _extract_relationships(text, job.tenant_id)
 
         # Step 4 — generate summary
+        job.progress_info = {"stage": "summary", "current": 4, "total": total_steps, "percent": 75}
+        session.flush()
         summary = _generate_summary(text, job.tenant_id)
 
         # Step 5 — store records
+        job.progress_info = {"stage": "storing", "current": 5, "total": total_steps, "percent": 90}
+        session.flush()
         count = _store_semantic_records(
             session, job, entities, relationships, summary,
         )
 
         # Mark completed
         job.status = JobStatus.COMPLETED.value
+        job.progress_info = {"stage": "completed", "current": total_steps, "total": total_steps, "percent": 100}
         session.flush()
 
         logger.info(

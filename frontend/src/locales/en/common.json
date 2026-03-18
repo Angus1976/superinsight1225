@@ -515,13 +515,24 @@
       "chunkText": "Text Content",
       "recordType": "Type",
       "content": "Content",
-      "confidence": "Confidence"
+      "confidence": "Confidence",
+      "progress": "Progress"
     },
     "vectorization": {
       "uploadTitle": "Upload File",
       "hint": "Supports PDF, Word, Excel, CSV, PPT, HTML, TXT, Markdown, JSON, audio and video formats",
       "jobListTitle": "Job List",
-      "recordsTitle": "Vector Records"
+      "recordsTitle": "Vector Records",
+      "transfer": "Transfer",
+      "transferSuccess": "Data transferred successfully",
+      "waitComplete": "Available after job completes",
+      "progressStage": {
+        "extracting": "Extracting text",
+        "chunking": "Chunking text",
+        "embedding": "Embedding",
+        "storing": "Storing",
+        "completed": "Completed"
+      }
     },
     "semantic": {
       "uploadTitle": "Upload File",
@@ -532,7 +543,16 @@
       "allTypes": "All",
       "entity": "Entity",
       "relationship": "Relationship",
-      "summary": "Summary"
+      "summary": "Summary",
+      "progressStage": {
+        "extracting": "Extracting text",
+        "entities": "Extracting entities",
+        "relationships": "Extracting relationships",
+        "summary": "Generating summary",
+        "storing": "Storing",
+        "completed": "Completed",
+        "processing": "Processing"
+      }
     },
     "aiAnnotation": {
       "workflow": "Workflow",

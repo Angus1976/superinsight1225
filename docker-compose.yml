@@ -44,6 +44,7 @@ services:
       - LABEL_STUDIO_API_TOKEN=${LABEL_STUDIO_API_TOKEN}
       - ARGILLA_URL=http://argilla:6900
       - OLLAMA_BASE_URL=http://ollama:11434
+      - OLLAMA_MODEL=qwen2.5vl:7b
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OPENAI_BASE_URL=${OPENAI_BASE_URL}
       - OPENAI_MODEL=${OPENAI_MODEL}
@@ -68,7 +69,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: superinsight-celery-worker
-    command: celery -A src.services.structuring_pipeline worker --loglevel=info
+    command: celery -A src.services.structuring_pipeline worker --loglevel=info --include=src.services.vectorization_pipeline,src.services.semantic_pipeline
     environment:
       - APP_ENV=development
       - DATABASE_URL=postgresql://superinsight:password@postgres:5432/superinsight
@@ -77,6 +78,7 @@ services:
       - LABEL_STUDIO_API_TOKEN=${LABEL_STUDIO_API_TOKEN}
       - ARGILLA_URL=http://argilla:6900
       - OLLAMA_BASE_URL=http://ollama:11434
+      - OLLAMA_MODEL=qwen2.5vl:7b
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OPENAI_BASE_URL=${OPENAI_BASE_URL}
       - OPENAI_MODEL=${OPENAI_MODEL}
@@ -206,7 +208,12 @@ services:
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "ES_JAVA_OPTS=-Xms256m -Xmx512m"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '2'
     ports:
       - "9200:9200"
     volumes:
@@ -228,6 +235,17 @@ services:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_NUM_PARALLEL=2
+      - OLLAMA_MAX_LOADED_MODELS=1
+    deploy:
+      resources:
+        limits:
+          memory: 14G
+          cpus: '6'
+        reservations:
+          memory: 8G
+          cpus: '2'
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
       interval: 30s

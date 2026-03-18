@@ -65,6 +65,7 @@
     "analytics": "分析模块",
     "data": "数据模块"
   },
+  "categoryLabel": "分类",
   "source": {
     "tasks": "标注任务",
     "annotation_efficiency": "标注效率",
@@ -112,5 +113,38 @@
   },
   "permissionSaveFailed": "保存权限配置失败",
   "permissionSaved": "权限配置已保存",
-  "dataSourceLoadFailed": "加载数据源失败"
+  "dataSourceLoadFailed": "加载数据源失败",
+  "syncComplete": "同步完成",
+  "syncAdded": "新增",
+  "syncUpdated": "更新",
+  "syncRemoved": "移除",
+  "syncFailed": "同步失败",
+  "syncSkills": "同步技能",
+  "seedClawHub": "导入 ClawHub 技能",
+  "seedComplete": "ClawHub 技能导入完成",
+  "seedSkipped": "跳过",
+  "seedFailed": "ClawHub 技能导入失败",
+  "deployedSkills": "已部署技能",
+  "refreshStatus": "刷新状态",
+  "skillPermissionDenied": "部分技能因权限限制不可用",
+  "accessLog": {
+    "title": "技能调用记录",
+    "viewLogs": "调用记录",
+    "eventType": "事件类型",
+    "userId": "用户",
+    "userRole": "角色",
+    "resource": "资源",
+    "success": "结果",
+    "successLabel": "成功",
+    "failedLabel": "失败",
+    "time": "时间",
+    "details": "详情",
+    "skillInvoke": "技能调用",
+    "skillDenied": "技能拒绝",
+    "dataAccess": "数据访问",
+    "permissionChange": "权限变更",
+    "allEvents": "全部事件",
+    "noLogs": "暂无记录",
+    "loadFailed": "加载调用记录失败"
+  }
 }

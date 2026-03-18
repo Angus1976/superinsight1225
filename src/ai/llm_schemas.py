@@ -149,7 +149,7 @@ class LocalConfig(BaseModel):
         description="Ollama service URL"
     )
     default_model: str = Field(
-        default="qwen2.5:1.5b",
+        default="qwen2.5vl:7b",
         description="Default model name"
     )
     timeout: int = Field(default=30, ge=1, le=300, description="Request timeout in seconds")

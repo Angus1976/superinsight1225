@@ -58,6 +58,7 @@ class VecJobStatusResponse(BaseModel):
     file_type: str
     chunk_count: Optional[int] = None
     error_message: Optional[str] = None
+    progress_info: Optional[dict] = None
     created_at: datetime
     updated_at: datetime
 
@@ -69,6 +70,7 @@ class VecJobListItem(BaseModel):
     file_name: str
     file_type: str
     chunk_count: Optional[int] = None
+    progress_info: Optional[dict] = None
     created_at: datetime
 
 
@@ -245,6 +247,7 @@ def list_vectorization_jobs(
             file_name=j.file_name,
             file_type=j.file_type,
             chunk_count=j.chunk_count,
+            progress_info=j.progress_info,
             created_at=j.created_at,
         )
         for j in jobs
@@ -268,6 +271,7 @@ def get_vectorization_job(
         file_type=job.file_type,
         chunk_count=job.chunk_count,
         error_message=job.error_message,
+        progress_info=job.progress_info,
         created_at=job.created_at,
         updated_at=job.updated_at,
     )

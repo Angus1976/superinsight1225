@@ -88,18 +88,41 @@ class RequestRouter:
         self,
         request: ServiceRequest,
         api_key_scopes: dict,
+        *,
+        skill_whitelist: Optional[list] = None,
+        user_roles: Optional[list] = None,
     ) -> ServiceResponse:
-        """Full pipeline: disabled → scope → validate → build_context → execute."""
+        """Full pipeline: disabled → scope → whitelist → validate → build_context → execute."""
         rtype = request.request_type
 
         self._ensure_registered(rtype)
         self._ensure_enabled(rtype)
         self.check_scope(api_key_scopes, rtype)
 
+        # Skill whitelist check (admin bypasses)
+        if rtype == "skill" and request.skill_id:
+            self._check_skill_whitelist(
+                request.skill_id,
+                skill_whitelist or [],
+                user_roles or [],
+            )
+
         handler = self._handlers[rtype]
         await handler.validate(request)
         context = await handler.build_context(request)
         return await handler.execute(request, context)
+
+    # -- skill whitelist guard -----------------------------------------------
+
+    def _check_skill_whitelist(
+        self,
+        skill_id: str,
+        whitelist: list[str],
+        user_roles: list[str],
+    ) -> None:
+        """Check skill whitelist from API key. Empty whitelist = all allowed."""
+        from src.service_engine.handlers.skill import SkillHandler
+        SkillHandler.check_whitelist(skill_id, whitelist)
 
     # -- private guards ------------------------------------------------------
 

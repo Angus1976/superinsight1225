@@ -140,6 +140,100 @@ def get_openclaw_chat_service(db: Session) -> OpenClawChatService:
     return OpenClawChatService(bridge=bridge, db=db)
 
 
+def _log_skill_access(
+    db: Session,
+    user: "UserModel",
+    original_ids: list,
+    filtered_ids: list,
+) -> None:
+    """Log skill invocation and any denied skills."""
+    from src.ai.access_log_service import AIAccessLogService
+    svc = AIAccessLogService(db)
+    user_id = str(user.id)
+
+    # Log allowed skills
+    if filtered_ids:
+        svc.log_skill_invoke(
+            tenant_id=user.tenant_id,
+            user_id=user_id,
+            user_role=user.role,
+            skill_ids=filtered_ids,
+            success=True,
+        )
+
+    # Log denied skills
+    denied = list(set(original_ids) - set(filtered_ids))
+    if denied:
+        svc.log_skill_invoke(
+            tenant_id=user.tenant_id,
+            user_id=user_id,
+            user_role=user.role,
+            skill_ids=denied,
+            success=False,
+            error_message="Denied by role permission",
+            details={"denied_ids": denied, "requested_ids": original_ids},
+        )
+
+
+def _log_data_access(
+    db: Session,
+    user: "UserModel",
+    source_ids: list,
+    output_mode: Optional[str],
+) -> None:
+    """Log data source access from AI assistant."""
+    from src.ai.access_log_service import AIAccessLogService
+    svc = AIAccessLogService(db)
+    svc.log_data_access(
+        tenant_id=user.tenant_id,
+        user_id=str(user.id),
+        user_role=user.role,
+        source_ids=source_ids,
+        output_mode=output_mode,
+    )
+
+
+def _log_permission_change(
+    db: Session,
+    user: "UserModel",
+    target_type: str,
+    changes: list,
+) -> None:
+    """Log a permission change (skill or data source)."""
+    from src.ai.access_log_service import AIAccessLogService
+    svc = AIAccessLogService(db)
+    svc.log_permission_change(
+        tenant_id=user.tenant_id,
+        user_id=str(user.id),
+        user_role=user.role,
+        target_type=target_type,
+        changes=changes,
+    )
+
+
+def _filter_skills_by_role(
+    skill_ids: list, user_role: str, db: Session,
+) -> list:
+    """Filter requested skill_ids by the user's role permissions.
+
+    Returns only the skill IDs that the role is allowed to use.
+    Logs a warning for any denied skill IDs.
+    """
+    from src.ai.skill_permission_service import SkillPermissionService
+    service = SkillPermissionService(db)
+    allowed = service.get_allowed_skill_ids(user_role)
+    allowed_set = set(allowed)
+
+    filtered = [sid for sid in skill_ids if sid in allowed_set]
+    denied = set(skill_ids) - set(filtered)
+    if denied:
+        logger.warning(
+            "Skill IDs denied by role permission (role=%s): %s",
+            user_role, denied,
+        )
+    return filtered
+
+
 # --- Non-Streaming Endpoints ---
 
 
@@ -151,6 +245,25 @@ async def chat(
 ) -> ChatResponse:
     """Non-streaming chat endpoint. Routes to LLMSwitcher or OpenClaw."""
     prompt = build_prompt(request.messages)
+
+    # Filter skill_ids by role permissions
+    original_skill_ids = list(request.skill_ids or [])
+    if request.skill_ids:
+        request.skill_ids = _filter_skills_by_role(
+            request.skill_ids, current_user.role, db,
+        )
+
+    # Log skill invocation
+    if original_skill_ids:
+        _log_skill_access(
+            db, current_user, original_skill_ids, request.skill_ids or [],
+        )
+
+    # Log data source access
+    if request.data_source_ids:
+        _log_data_access(
+            db, current_user, request.data_source_ids, request.output_mode,
+        )
 
     # Inject data source context if selected
     data_ctx = build_data_context(
@@ -308,6 +421,25 @@ async def chat_stream(
     db: Session = Depends(get_db),
 ) -> StreamingResponse:
     """Streaming chat endpoint. Routes to LLMSwitcher or OpenClaw SSE stream."""
+    # Filter skill_ids by role permissions
+    original_skill_ids = list(request.skill_ids or [])
+    if request.skill_ids:
+        request.skill_ids = _filter_skills_by_role(
+            request.skill_ids, current_user.role, db,
+        )
+
+    # Log skill invocation
+    if original_skill_ids:
+        _log_skill_access(
+            db, current_user, original_skill_ids, request.skill_ids or [],
+        )
+
+    # Log data source access
+    if request.data_source_ids:
+        _log_data_access(
+            db, current_user, request.data_source_ids, request.output_mode,
+        )
+
     # Inject data source context if selected
     data_ctx = build_data_context(
         request.data_source_ids or [], request.output_mode or "merge", db
@@ -366,6 +498,18 @@ class RolePermissionItem(BaseModel):
 class RolePermissionRequest(BaseModel):
     """Request to batch update role-permission mappings."""
     permissions: list[RolePermissionItem]
+
+
+class SkillPermissionItem(BaseModel):
+    """Single role-skill permission mapping item."""
+    role: str
+    skill_id: str
+    allowed: bool
+
+
+class SkillPermissionRequest(BaseModel):
+    """Request to batch update role-skill permission mappings."""
+    permissions: list[SkillPermissionItem]
 
 
 
@@ -433,5 +577,94 @@ async def update_role_permissions(
     service = RolePermissionService(db)
     items = [item.model_dump() for item in request.permissions]
     service.update_permissions(items)
+    _log_permission_change(db, current_user, "datasource_permission", items)
     return {"permissions": service.get_all_permissions()}
 
+
+# --- Skill Role Permission Endpoints ---
+
+
+@router.get("/skills/available")
+async def get_available_skills(
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Get skills available to the current user (filtered by role permissions)."""
+    from src.ai.skill_permission_service import SkillPermissionService
+    service = SkillPermissionService(db)
+    allowed_ids = service.get_allowed_skill_ids(current_user.role)
+    return {"skill_ids": allowed_ids, "role": current_user.role}
+
+
+@router.get("/skills/role-permissions")
+async def get_skill_role_permissions(
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Get all role-skill permission mappings (admin only)."""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    from src.ai.skill_permission_service import SkillPermissionService
+    service = SkillPermissionService(db)
+    return {"permissions": service.get_all_permissions()}
+
+
+@router.post("/skills/role-permissions")
+async def update_skill_role_permissions(
+    request: SkillPermissionRequest,
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Batch update role-skill permission mappings (admin only)."""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    from src.ai.skill_permission_service import SkillPermissionService
+    service = SkillPermissionService(db)
+    items = [item.model_dump() for item in request.permissions]
+    service.update_permissions(items)
+    _log_permission_change(db, current_user, "skill_permission", items)
+    return {"permissions": service.get_all_permissions()}
+
+
+@router.post("/skills/init-admin")
+async def init_admin_skill_permissions(
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Initialize admin role with all deployed skills (idempotent, admin only)."""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    from src.ai.skill_permission_service import SkillPermissionService
+    service = SkillPermissionService(db)
+    added = service.init_admin_all_skills()
+    return {"added": added, "message": f"Admin role initialized with {added} new skill permissions"}
+
+
+# --- Access Log Endpoints ---
+
+
+@router.get("/access-logs")
+async def query_access_logs(
+    page: int = 1,
+    page_size: int = 50,
+    event_type: Optional[str] = None,
+    user_id: Optional[str] = None,
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Query AI access logs (newest first). Admin only.
+
+    Supports filtering by event_type and user_id with pagination.
+    """
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    from src.ai.access_log_service import AIAccessLogService
+    svc = AIAccessLogService(db)
+    return svc.query_logs(
+        tenant_id=current_user.tenant_id,
+        event_type=event_type,
+        user_id=user_id,
+        page=max(1, page),
+        page_size=min(max(1, page_size), 100),
+    )

@@ -515,13 +515,24 @@
       "chunkText": "文本内容",
       "recordType": "类型",
       "content": "内容",
-      "confidence": "置信度"
+      "confidence": "置信度",
+      "progress": "进度"
     },
     "vectorization": {
       "uploadTitle": "上传文件",
       "hint": "支持 PDF、Word、Excel、CSV、PPT、HTML、TXT、Markdown、JSON、音视频格式",
       "jobListTitle": "任务列表",
-      "recordsTitle": "向量记录"
+      "recordsTitle": "向量记录",
+      "transfer": "转存",
+      "transferSuccess": "数据已成功转存",
+      "waitComplete": "任务完成后可操作",
+      "progressStage": {
+        "extracting": "文本提取中",
+        "chunking": "文本分块中",
+        "embedding": "向量化中",
+        "storing": "存储中",
+        "completed": "已完成"
+      }
     },
     "semantic": {
       "uploadTitle": "上传文件",
@@ -532,7 +543,16 @@
       "allTypes": "全部",
       "entity": "实体",
       "relationship": "关系",
-      "summary": "摘要"
+      "summary": "摘要",
+      "progressStage": {
+        "extracting": "文本提取中",
+        "entities": "实体提取中",
+        "relationships": "关系提取中",
+        "summary": "摘要生成中",
+        "storing": "存储中",
+        "completed": "已完成",
+        "processing": "处理中"
+      }
     },
     "aiAnnotation": {
       "workflow": "工作流",

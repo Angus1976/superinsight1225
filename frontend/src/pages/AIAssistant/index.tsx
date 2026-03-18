@@ -9,7 +9,7 @@ import {
   ClockCircleOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import { sendMessageStream, getOpenClawStatus } from '@/services/aiAssistantApi';
+import { sendMessageStream, getOpenClawStatus, getAvailableSkills } from '@/services/aiAssistantApi';
 import type { ChatMessage as ApiChatMessage, ChatMode, SkillInfo, OutputMode } from '@/types/aiAssistant';
 import { useAuthStore } from '@/stores/authStore';
 import ConfigPanel from './components/ConfigPanel';
@@ -79,7 +79,10 @@ const AIAssistant: React.FC = () => {
     if (newMode === 'openclaw') {
       setIsCheckingGateway(true);
       try {
-        const status = await getOpenClawStatus();
+        const [status, availableSkills] = await Promise.all([
+          getOpenClawStatus(),
+          getAvailableSkills(),
+        ]);
         if (!status.available) {
           message.warning(`${t('openClawUnavailable')}: ${status.error || ''}`);
           setIsCheckingGateway(false);
@@ -88,7 +91,12 @@ const AIAssistant: React.FC = () => {
         setChatMode('openclaw');
         setGatewayId(status.gateway_id);
         setGatewayAvailable(true);
-        setSkills(status.skills);
+
+        // Filter skills by role permissions
+        const allowedSet = new Set(availableSkills.skill_ids);
+        const filtered = status.skills.filter((s) => allowedSet.has(s.id));
+        setSkills(filtered);
+
         message.success(t('switchedToOpenClaw'));
       } catch {
         message.error(t('cannotConnectOpenClaw'));

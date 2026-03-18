@@ -532,6 +532,133 @@ async def _load_cloud_config(
         )
 
 
+async def _load_all_cloud_configs(
+    tenant_id: str | None = None,
+    application_code: str = "structuring",
+) -> list:
+    """Return *all* CloudConfig objects for an application, ordered by priority.
+
+    Unlike ``_load_cloud_config`` (which returns only the highest-priority
+    config), this function returns the full fallback chain so callers can
+    iterate and retry on transient / auth errors.
+
+    Falls back to environment variables when no database configs exist.
+    """
+    import os
+    from src.ai.llm_schemas import CloudConfig
+    from src.database.connection import get_db_session
+    from src.models.llm_configuration import LLMConfiguration
+    from src.models.llm_application import LLMApplication, LLMApplicationBinding
+    from src.ai.encryption_service import get_encryption_service
+    from sqlalchemy import select
+    from sqlalchemy.orm import selectinload
+
+    configs: list[CloudConfig] = []
+    db = next(get_db_session())
+
+    try:
+        stmt = select(LLMApplication).where(LLMApplication.code == application_code)
+        app = db.execute(stmt).scalar_one_or_none()
+        if not app:
+            logger.info(f"Application '{application_code}' not found, using env fallback")
+        else:
+            bind_stmt = (
+                select(LLMApplicationBinding)
+                .options(selectinload(LLMApplicationBinding.llm_config))
+                .where(
+                    LLMApplicationBinding.application_id == app.id,
+                    LLMApplicationBinding.is_active == True,
+                )
+                .join(LLMConfiguration)
+                .where(LLMConfiguration.is_active == True)
+                .order_by(LLMApplicationBinding.priority.asc())
+            )
+
+            if tenant_id:
+                from uuid import UUID as UUIDType
+                try:
+                    tenant_uuid = UUIDType(tenant_id) if isinstance(tenant_id, str) else tenant_id
+                    bindings = db.execute(
+                        bind_stmt.where(LLMConfiguration.tenant_id == tenant_uuid)
+                    ).scalars().all()
+                except (ValueError, AttributeError):
+                    bindings = []
+                if not bindings:
+                    bindings = db.execute(
+                        bind_stmt.where(LLMConfiguration.tenant_id == None)
+                    ).scalars().all()
+            else:
+                bindings = db.execute(
+                    bind_stmt.where(LLMConfiguration.tenant_id == None)
+                ).scalars().all()
+
+            encryption_service = get_encryption_service()
+            for binding in bindings:
+                llm_cfg = binding.llm_config
+                config_data = llm_cfg.config_data or {}
+                try:
+                    # Handle Ollama / local_ollama configs (different structure)
+                    if llm_cfg.default_method == "local_ollama" or llm_cfg.provider == "ollama":
+                        local = config_data.get("local_config", {})
+                        ollama_url = local.get("ollama_url", "http://ollama:11434")
+                        ollama_model = local.get("ollama_model", "qwen2.5vl:7b")
+                        # Ollama supports OpenAI-compatible API at /v1
+                        if not ollama_url.rstrip("/").endswith("/v1"):
+                            ollama_url = ollama_url.rstrip("/") + "/v1"
+                        configs.append(CloudConfig(
+                            openai_api_key="ollama",
+                            openai_base_url=ollama_url,
+                            openai_model=ollama_model,
+                            timeout=local.get("timeout", 60),
+                            max_retries=local.get("max_retries", 3),
+                        ))
+                        logger.info(
+                            f"Loaded Ollama config: {llm_cfg.name} "
+                            f"(priority={binding.priority}, model={ollama_model})"
+                        )
+                        continue
+
+                    encrypted = config_data.get("api_key_encrypted")
+                    api_key = (
+                        encryption_service.decrypt(encrypted)
+                        if encrypted
+                        else config_data.get("api_key", "")
+                    )
+                    configs.append(CloudConfig(
+                        openai_api_key=api_key,
+                        openai_base_url=config_data.get("base_url", "https://api.openai.com/v1"),
+                        openai_model=config_data.get("model_name", "gpt-3.5-turbo"),
+                        timeout=binding.timeout_seconds or 60,
+                        max_retries=binding.max_retries or 3,
+                    ))
+                    logger.info(
+                        f"Loaded config: {llm_cfg.name} (priority={binding.priority})"
+                    )
+                except Exception as e:
+                    logger.warning(f"Skipping config {llm_cfg.name}: decrypt failed: {e}")
+    finally:
+        db.close()
+
+    # Env-var fallback when no DB configs were loaded
+    if not configs:
+        api_key = os.getenv("OPENAI_API_KEY", "")
+        base_url = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
+        model = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
+        if "ollama" in base_url.lower() and not api_key:
+            api_key = "ollama"
+        if api_key:
+            configs.append(CloudConfig(
+                openai_api_key=api_key,
+                openai_base_url=base_url,
+                openai_model=model,
+            ))
+
+    if not configs:
+        raise ValueError("No LLM configuration found for fallback chain.")
+
+    return configs
+
+
 # ---------------------------------------------------------------------------
 # Main Celery task
 # ---------------------------------------------------------------------------

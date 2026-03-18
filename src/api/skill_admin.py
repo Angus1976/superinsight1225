@@ -140,6 +140,31 @@ async def sync_skills(
     return SyncResultResponse(**result)
 
 
+@router.post("/seed-clawhub")
+async def seed_clawhub_skills(
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Seed ClawHub official data skills into the skill library.
+
+    Idempotent: skips already existing skills. Also initializes
+    admin role permissions for all newly added skills.
+    """
+    gateway = _get_active_gateway(db, current_user.tenant_id)
+
+    from src.ai_integration.clawhub_seed_skills import seed_clawhub_skills as do_seed
+    result = do_seed(db, gateway.id)
+
+    # Auto-init admin permissions for new skills
+    if result.get("added", 0) > 0:
+        from src.ai.skill_permission_service import SkillPermissionService
+        perm_service = SkillPermissionService(db)
+        perm_added = perm_service.init_admin_all_skills()
+        result["admin_permissions_added"] = perm_added
+
+    return result
+
+
 @router.post("/{skill_id}/execute", response_model=ExecuteResultResponse)
 async def execute_skill(
     skill_id: str,

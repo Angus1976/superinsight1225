@@ -28,8 +28,16 @@ export interface VectorizationJob {
   file_type: string;
   chunk_count: number | null;
   error_message: string | null;
+  progress_info: ProgressInfo | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface ProgressInfo {
+  stage: string;
+  current: number;
+  total: number;
+  percent: number;
 }
 
 export interface VectorRecord {
@@ -65,6 +73,7 @@ interface VecJobListItem {
   file_name: string;
   file_type: string;
   chunk_count: number | null;
+  progress_info: ProgressInfo | null;
   created_at: string;
 }
 
@@ -186,6 +195,7 @@ export const useVectorizationStore = create<VectorizationStore>()(
             file_type: data.file_type,
             chunk_count: null,
             error_message: null,
+            progress_info: null,
             created_at: data.created_at,
             updated_at: data.created_at,
           };
@@ -244,6 +254,7 @@ export const useVectorizationStore = create<VectorizationStore>()(
             file_type: item.file_type,
             chunk_count: item.chunk_count,
             error_message: null,
+            progress_info: item.progress_info ?? null,
             created_at: item.created_at,
             updated_at: item.created_at,
           }));

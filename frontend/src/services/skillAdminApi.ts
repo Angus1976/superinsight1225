@@ -48,3 +48,18 @@ export async function toggleSkillStatus(
   );
   return response.data;
 }
+
+
+/** Seed ClawHub official data skills into the skill library. */
+export async function seedClawHubSkills(): Promise<{
+  added: number;
+  skipped: number;
+  admin_permissions_added?: number;
+}> {
+  const response = await apiClient.post<{
+    added: number;
+    skipped: number;
+    admin_permissions_added?: number;
+  }>(`${API_BASE}/seed-clawhub`);
+  return response.data;
+}

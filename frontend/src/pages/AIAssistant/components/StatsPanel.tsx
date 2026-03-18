@@ -9,9 +9,10 @@ const { Text } = Typography;
 
 interface StatsPanelProps {
   userRole: string;
+  refreshKey?: number;
 }
 
-const StatsPanel: React.FC<StatsPanelProps> = ({ userRole }) => {
+const StatsPanel: React.FC<StatsPanelProps> = ({ userRole, refreshKey = 0 }) => {
   const { t } = useTranslation('workflow');
   const [stats, setStats] = useState<TodayStats | null>(null);
   const [loading, setLoading] = useState(false);
@@ -30,7 +31,7 @@ const StatsPanel: React.FC<StatsPanelProps> = ({ userRole }) => {
       }
     };
     loadStats();
-  }, []);
+  }, [refreshKey]);
 
   if (loading) {
     return (

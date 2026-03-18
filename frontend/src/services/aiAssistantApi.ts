@@ -357,8 +357,8 @@ export async function deleteWorkflow(id: string): Promise<void> {
  * GET /api/v1/ai-assistant/stats/today
  */
 export async function getTodayStats(): Promise<TodayStats> {
-  const response = await apiClient.get<TodayStats>(`${API_BASE}/stats/today`);
-  return response.data;
+  const response = await apiClient.get<{ success: boolean; data: TodayStats }>(`${API_BASE}/stats/today`);
+  return response.data.data;
 }
 
 /**

@@ -1,7 +1,7 @@
 # 智能服务引擎（Smart Service Engine）API 接口文档
 
 **最后更新**: 2026-03-18  
-**版本**: 1.1  
+**版本**: 2.0  
 **模块路径**: `src/service_engine/`  
 **相关 Spec**: `.kiro/specs/smart-service-engine/`
 
@@ -183,7 +183,7 @@ LLM 降级时 `confidence` 为 `0`，`recommendations` 为空数组。
 
 ## 工作流相关端点
 
-### 查询可用工作流
+### 查询可用工作流（外部通道）
 
 ```
 GET /api/v1/service/workflows
@@ -201,7 +201,6 @@ X-API-Key: sk_xxxxxxxx
     {
       "id": "wf-001",
       "name": "销售预测分析",
-      "name_en": "Sales Forecast Analysis",
       "description": "基于历史数据进行销售趋势预测和分析",
       "skill_ids": ["skill-001"],
       "output_modes": ["merge"]
@@ -225,7 +224,288 @@ X-API-Key: sk_xxxxxxxx
 }
 ```
 
-### 动态授权请求（预留）
+---
+
+## 工作流管理端点（内部通道，需登录认证）
+
+基础路径：`/api/v1/ai-assistant`
+
+### 查询工作流列表
+
+```
+GET /api/v1/ai-assistant/workflows?status=enabled
+Authorization: Bearer <token>
+```
+
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `status` | string | 否 | 按状态过滤：`enabled` / `disabled`（仅管理员可用） |
+
+- 管理员：返回所有工作流，支持 status 过滤
+- 非管理员：仅返回 `status=enabled` 且 `visible_roles` 包含当前角色的工作流
+
+**响应示例**：
+
+```json
+[
+  {
+    "id": "uuid-string",
+    "name": "销售预测分析",
+    "name_en": "Sales Forecast Analysis",
+    "description": "基于历史数据进行销售趋势预测和分析",
+    "description_en": "Predict and analyze sales trends based on historical data",
+    "status": "enabled",
+    "is_preset": true,
+    "skill_ids": ["skill-001", "skill-002"],
+    "data_source_auth": [
+      { "source_id": "tasks", "tables": ["*"] },
+      { "source_id": "annotation_efficiency", "tables": ["completion_rate", "quality_score"] }
+    ],
+    "output_modes": ["merge", "compare"],
+    "visible_roles": ["admin", "business_expert"],
+    "preset_prompt": "你是销售分析专家...",
+    "created_at": "2026-03-18T08:00:00",
+    "updated_at": "2026-03-18T08:00:00",
+    "created_by": "user-uuid"
+  }
+]
+```
+
+### 创建工作流
+
+```
+POST /api/v1/ai-assistant/workflows
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+仅管理员可用。
+
+**请求体（WorkflowCreateRequest）**：
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `name` | string | ✅ | 工作流名称（1-255 字符，唯一） |
+| `description` | string | 否 | 中文描述 |
+| `name_en` | string | 否 | 英文名称 |
+| `description_en` | string | 否 | 英文描述 |
+| `skill_ids` | string[] | 否 | 关联技能 ID 列表 |
+| `data_source_auth` | object[] | 否 | 数据源授权配置（见下方数据源授权结构） |
+| `output_modes` | string[] | 否 | 输出方式：`merge`（合并）/ `compare`（对比） |
+| `visible_roles` | string[] | ✅ | 可见角色（至少一个）：`admin` / `business_expert` / `annotator` / `viewer` |
+| `preset_prompt` | string | 否 | 预设系统提示词 |
+
+**请求示例**：
+
+```json
+{
+  "name": "数据质量检查",
+  "name_en": "Data Quality Check",
+  "description": "自动检测数据质量问题并生成改进建议",
+  "skill_ids": ["data-quality-check"],
+  "data_source_auth": [
+    { "source_id": "tasks", "tables": ["*"] },
+    { "source_id": "quality", "tables": ["quality_scores", "quality_reports"] }
+  ],
+  "output_modes": ["merge"],
+  "visible_roles": ["admin", "business_expert"]
+}
+```
+
+**响应**：201 Created，返回完整工作流对象（同查询响应格式）。
+
+**校验规则**：
+- `name` 不可重复
+- `skill_ids` 中的技能必须存在
+- `data_source_auth` 中的数据源必须存在且启用
+- `visible_roles` 中的角色必须合法
+
+### 更新工作流
+
+```
+PUT /api/v1/ai-assistant/workflows/{workflow_id}
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+仅管理员可用。所有字段均为可选，仅更新传入的字段。
+
+**请求体（WorkflowUpdateRequest）**：
+
+| 字段 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| `name` | string | 否 | 工作流名称 |
+| `description` | string | 否 | 中文描述 |
+| `name_en` | string | 否 | 英文名称 |
+| `description_en` | string | 否 | 英文描述 |
+| `skill_ids` | string[] | 否 | 关联技能 ID 列表 |
+| `data_source_auth` | object[] | 否 | 数据源授权配置 |
+| `output_modes` | string[] | 否 | 输出方式 |
+| `visible_roles` | string[] | 否 | 可见角色 |
+| `status` | string | 否 | 状态：`enabled` / `disabled` |
+| `preset_prompt` | string | 否 | 预设系统提示词 |
+
+**启停示例**（仅切换状态）：
+
+```json
+{ "status": "disabled" }
+```
+
+**响应**：200 OK，返回更新后的完整工作流对象。
+
+### 删除工作流
+
+```
+DELETE /api/v1/ai-assistant/workflows/{workflow_id}
+Authorization: Bearer <token>
+```
+
+仅管理员可用。执行硬删除（从数据库中永久移除）。预置工作流（`is_preset=true`）不可删除。
+
+**响应示例**：
+
+```json
+{ "success": true, "message": "Workflow wf-001 deleted" }
+```
+
+**错误响应**（预置工作流）：
+
+```json
+{
+  "success": false,
+  "error_code": "WORKFLOW_PRESET_DELETE_DENIED",
+  "message": "Preset workflows cannot be deleted"
+}
+```
+
+### 工作流执行统计
+
+```
+GET /api/v1/ai-assistant/workflows/{workflow_id}/stats
+Authorization: Bearer <token>
+```
+
+**响应示例**：
+
+```json
+{
+  "success": true,
+  "data": {
+    "total_executions": 42,
+    "success_count": 40,
+    "failure_count": 2,
+    "avg_processing_time_ms": 1200
+  }
+}
+```
+
+### 当日统计
+
+```
+GET /api/v1/ai-assistant/stats/today
+Authorization: Bearer <token>
+```
+
+非管理员仅返回自身数据，管理员可查看汇总。
+
+**响应示例**：
+
+```json
+{
+  "success": true,
+  "data": {
+    "chat_count": 15,
+    "workflow_count": 8,
+    "data_source_count": 3
+  }
+}
+```
+
+### 批量权限同步
+
+```
+POST /api/v1/ai-assistant/workflows/sync-permissions
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+仅管理员可用。批量更新工作流的数据源授权配置。
+
+**请求示例**：
+
+```json
+{
+  "permissions": [
+    {
+      "workflow_id": "wf-001",
+      "data_source_auth": [
+        { "source_id": "tasks", "tables": ["*"] }
+      ]
+    }
+  ]
+}
+```
+
+---
+
+## 数据源授权结构（data_source_auth）
+
+工作流通过 `data_source_auth` 字段控制可访问的数据源和数据表。采用三级树形结构：数据源 → 数据表 → 字段。
+
+### 授权格式
+
+```json
+[
+  {
+    "source_id": "tasks",
+    "tables": ["*"]
+  },
+  {
+    "source_id": "quality",
+    "tables": ["quality_scores", "quality_reports"]
+  }
+]
+```
+
+- `tables: ["*"]` — 授权该数据源下所有数据表
+- `tables: ["table_a", "table_b"]` — 仅授权指定数据表
+
+### 可用数据源及数据表
+
+| 数据源 ID | 名称 | 数据表 |
+|-----------|------|--------|
+| `tasks` | 标注任务 | `task_list`、`task_status`、`task_stats` |
+| `annotation_efficiency` | 标注效率 | `completion_rate`、`quality_score`、`revision_rate` |
+| `user_activity` | 用户活跃度 | `login_records`、`operations`、`online_duration` |
+| `data_sync` | 数据同步 | `sync_sources`、`sync_jobs`、`sync_history` |
+| `data_lifecycle` | 数据流转 | `temp_data`、`samples`、`annotation`、`enhancement`、`ai_trial` |
+| `augmentation` | 数据增强 | `augmentation_tasks`、`augmentation_samples` |
+| `quality` | 质量报表 | `quality_scores`、`quality_reports` |
+
+每个数据表包含字段级元数据（用于前端树形选择展示），例如：
+
+```json
+{
+  "id": "task_list",
+  "label": "任务列表",
+  "fields": ["task_id", "task_name", "project", "assignee", "deadline"]
+}
+```
+
+---
+
+## 动态授权请求（预留）
+
+### 内部通道
+
+```
+POST /api/v1/ai-assistant/workflows/request-authorization
+Authorization: Bearer <token>
+```
+
+**状态**: 501 Not Implemented
+
+### 外部通道回调
 
 ```
 POST /api/v1/service/authorization-callback
@@ -273,9 +553,11 @@ Content-Type: application/json
 | 504 | `REQUEST_TIMEOUT` | 请求超时（60 秒） |
 | 404 | `WORKFLOW_NOT_FOUND` | 指定的 workflow_id 不存在 |
 | 403 | `WORKFLOW_DISABLED` | 工作流已禁用 |
-| 403 | `WORKFLOW_PERMISSION_DENIED` | API Key 无权访问该工作流 |
-| 403 | `WORKFLOW_SKILL_DENIED` | 工作流技能超出 API Key 权限范围 |
-| 403 | `WORKFLOW_DATASOURCE_DENIED` | 工作流数据源超出 API Key 权限范围 |
+| 403 | `WORKFLOW_PERMISSION_DENIED` | API Key 或用户无权访问该工作流 |
+| 403 | `WORKFLOW_SKILL_DENIED` | 工作流技能超出权限范围 |
+| 403 | `WORKFLOW_DATASOURCE_DENIED` | 工作流数据源超出权限范围 |
+| 403 | `WORKFLOW_PRESET_DELETE_DENIED` | 预置工作流不可删除 |
+| 409 | `WORKFLOW_NAME_CONFLICT` | 工作流名称已存在 |
 | 501 | `AUTHORIZATION_NOT_IMPLEMENTED` | 动态授权请求功能尚未实现 |
 
 ---

@@ -110,6 +110,11 @@ class RequestRouter:
         handler = self._handlers[rtype]
         await handler.validate(request)
         context = await handler.build_context(request)
+
+        # Inject API-key metadata so handlers can use it for workflow routing
+        context["_skill_whitelist"] = skill_whitelist or []
+        context["_user_roles"] = user_roles or []
+
         return await handler.execute(request, context)
 
     # -- skill whitelist guard -----------------------------------------------

@@ -138,6 +138,48 @@ def _error_response(exc: ServiceEngineError) -> JSONResponse:
     )
 
 
+@router.get("/workflows")
+async def list_service_workflows(request: Request):
+    """List workflows accessible via API Key authentication."""
+    from src.database.connection import get_db_session
+    from src.ai.workflow_service import WorkflowService
+
+    user_roles = _extract_user_roles(request)
+
+    with next(get_db_session()) as db:
+        service = WorkflowService(db)
+        # Use the first role or "viewer" as default
+        role = user_roles[0] if user_roles else "viewer"
+        workflows = service.list_workflows(role=role, status="enabled", is_admin=False)
+
+    return {
+        "success": True,
+        "data": [
+            {
+                "id": wf.id,
+                "name": wf.name,
+                "description": wf.description or "",
+                "skill_ids": wf.skill_ids or [],
+                "output_modes": wf.output_modes or [],
+            }
+            for wf in workflows
+        ],
+    }
+
+
+@router.post("/authorization-callback", status_code=501)
+async def authorization_callback(request: Request):
+    """Authorization callback from customer systems (placeholder, not yet implemented)."""
+    return JSONResponse(
+        status_code=501,
+        content={
+            "success": False,
+            "error_code": "AUTHORIZATION_NOT_IMPLEMENTED",
+            "message": "Authorization callback is not yet implemented",
+        },
+    )
+
+
 def _audit_log(body: ServiceRequest, status_code: int, elapsed_ms: int) -> None:
     """Log audit entry for every request (Req 1.10)."""
     logger.info(

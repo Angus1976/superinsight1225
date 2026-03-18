@@ -74,6 +74,10 @@ class ChatHandler(BaseHandler):
         context: dict,
     ) -> ServiceResponse:
         """Non-streaming response: call LLM and return complete result."""
+        # Workflow routing: delegate when workflow_id is present
+        if request.workflow_id:
+            return await self._execute_via_workflow(request, context)
+
         start = time.monotonic()
         prompt = _build_prompt(context, request.messages)
 
@@ -126,6 +130,12 @@ class ChatHandler(BaseHandler):
         Final:        {"content": "", "done": true}
         Error:        {"error": "...", "done": true}
         """
+        # Workflow routing: delegate when workflow_id is present
+        if request.workflow_id:
+            async for chunk in self._stream_via_workflow(request, context):
+                yield chunk
+            return
+
         prompt = _build_prompt(context, request.messages)
         collected_content = ""
 
@@ -151,6 +161,65 @@ class ChatHandler(BaseHandler):
 
         # Append memory after successful stream
         await self._append_memory(request, context, collected_content)
+
+    # -- workflow delegation --------------------------------------------------
+
+    async def _execute_via_workflow(
+        self, request: ServiceRequest, context: dict,
+    ) -> ServiceResponse:
+        """Delegate to WorkflowService for non-streaming workflow execution."""
+        from src.database.connection import get_db_session
+        from src.ai.workflow_service import WorkflowService
+
+        skill_whitelist = context.get("_skill_whitelist", [])
+        api_overrides = _build_api_overrides(skill_whitelist)
+        user = _build_mock_user(request)
+        prompt = _build_prompt(context, request.messages)
+
+        start = time.monotonic()
+        with next(get_db_session()) as db:
+            service = WorkflowService(db)
+            result = await service.execute_workflow(
+                workflow_id=request.workflow_id,
+                user=user,
+                prompt=prompt,
+                api_overrides=api_overrides,
+            )
+
+        elapsed_ms = int((time.monotonic() - start) * 1000)
+        return ServiceResponse(
+            success=True,
+            request_type="chat",
+            data={"content": result.get("content", ""), **_workflow_extras(result)},
+            metadata=ResponseMetadata(
+                request_id=str(uuid.uuid4()),
+                timestamp=datetime.now(timezone.utc).isoformat(),
+                processing_time_ms=elapsed_ms,
+            ),
+        )
+
+    async def _stream_via_workflow(
+        self, request: ServiceRequest, context: dict,
+    ) -> AsyncIterator[dict]:
+        """Delegate to WorkflowService for streaming workflow execution."""
+        from src.database.connection import get_db_session
+        from src.ai.workflow_service import WorkflowService
+
+        skill_whitelist = context.get("_skill_whitelist", [])
+        api_overrides = _build_api_overrides(skill_whitelist)
+        user = _build_mock_user(request)
+        prompt = _build_prompt(context, request.messages)
+
+        with next(get_db_session()) as db:
+            service = WorkflowService(db)
+            async for chunk in service.stream_execute_workflow(
+                workflow_id=request.workflow_id,
+                user=user,
+                prompt=prompt,
+                api_overrides=api_overrides,
+            ):
+                yield {"content": chunk, "done": False}
+        yield {"content": "", "done": True}
 
     # -- private helpers -----------------------------------------------------
 
@@ -203,6 +272,45 @@ def _extract_tenant_id(request: ServiceRequest) -> str:
     if request.extensions and "tenant_id" in request.extensions:
         return str(request.extensions["tenant_id"])
     return _DEFAULT_TENANT
+
+
+class _MockUser:
+    """Lightweight user object for WorkflowService when called from Service Engine."""
+
+    __slots__ = ("user_id", "tenant_id", "role")
+
+    def __init__(self, user_id: str, tenant_id: str, role: str) -> None:
+        self.user_id = user_id
+        self.tenant_id = tenant_id
+        self.role = role
+
+
+def _build_mock_user(request: ServiceRequest) -> "_MockUser":
+    """Build a mock user from ServiceRequest fields."""
+    tenant_id = _extract_tenant_id(request)
+    role = "api"  # External API channel — role resolved by WorkflowService
+    if request.extensions and "role" in request.extensions:
+        role = str(request.extensions["role"])
+    return _MockUser(user_id=request.user_id, tenant_id=tenant_id, role=role)
+
+
+def _build_api_overrides(skill_whitelist: list) -> Optional[dict]:
+    """Build api_overrides dict from API key's skill_whitelist."""
+    if not skill_whitelist:
+        return None
+    return {"skill_ids": list(skill_whitelist)}
+
+
+def _workflow_extras(result: dict) -> dict:
+    """Extract optional workflow metadata from execution result."""
+    extras: dict = {}
+    if result.get("workflow_id"):
+        extras["workflow_id"] = result["workflow_id"]
+    if result.get("output_modes"):
+        extras["output_modes"] = result["output_modes"]
+    if result.get("failed_skills"):
+        extras["failed_skills"] = result["failed_skills"]
+    return extras
 
 
 def _build_prompt(context: dict, messages: list) -> str:

@@ -61,6 +61,9 @@ class ServiceRequest(BaseModel):
     skill_id: Optional[str] = None
     parameters: Optional[dict] = None
 
+    # --- workflow routing (shared across chat/query) ---
+    workflow_id: Optional[str] = None
+
     # -- validators ----------------------------------------------------------
 
     @field_validator("user_id")

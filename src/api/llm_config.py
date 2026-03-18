@@ -247,6 +247,107 @@ def create_binding(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.put("/bindings/{binding_id}", response_model=LLMBindingResponse)
+def update_binding(
+    binding_id: UUID,
+    request: LLMBindingUpdate,
+    db: Session = Depends(get_db_session)
+):
+    """Update an existing LLM-application binding."""
+    try:
+        stmt = (
+            select(LLMApplicationBinding)
+            .options(
+                selectinload(LLMApplicationBinding.llm_config),
+                selectinload(LLMApplicationBinding.application)
+            )
+            .where(LLMApplicationBinding.id == binding_id)
+        )
+        binding = db.execute(stmt).scalar_one_or_none()
+        if not binding:
+            raise HTTPException(status_code=404, detail="Binding not found")
+
+        # Check priority conflict if changing priority
+        if request.priority is not None and request.priority != binding.priority:
+            dup_stmt = select(LLMApplicationBinding).where(
+                LLMApplicationBinding.application_id == binding.application_id,
+                LLMApplicationBinding.priority == request.priority,
+                LLMApplicationBinding.id != binding_id,
+            )
+            if db.execute(dup_stmt).scalar_one_or_none():
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"Priority {request.priority} already exists for this application",
+                )
+
+        # Apply partial updates
+        update_data = request.model_dump(exclude_unset=True)
+        for field, value in update_data.items():
+            setattr(binding, field, value)
+
+        db.commit()
+        db.refresh(binding, ["llm_config", "application"])
+
+        logger.info(f"Updated binding: {binding.id}")
+
+        config_data = binding.llm_config.config_data or {}
+        return LLMBindingResponse(
+            id=binding.id,
+            llm_config=LLMConfigResponse(
+                id=binding.llm_config.id,
+                name=binding.llm_config.name or "",
+                provider=config_data.get("provider", binding.llm_config.default_method),
+                base_url=config_data.get("base_url"),
+                model_name=config_data.get("model_name", ""),
+                parameters={},
+                is_active=binding.llm_config.is_active,
+                tenant_id=binding.llm_config.tenant_id,
+                created_at=binding.llm_config.created_at,
+                updated_at=binding.llm_config.updated_at,
+            ),
+            application=ApplicationResponse.model_validate(binding.application),
+            priority=binding.priority,
+            max_retries=binding.max_retries,
+            timeout_seconds=binding.timeout_seconds,
+            is_active=binding.is_active,
+            created_at=binding.created_at,
+            updated_at=binding.updated_at,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Failed to update binding: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/bindings/{binding_id}")
+def delete_binding(
+    binding_id: UUID,
+    db: Session = Depends(get_db_session)
+):
+    """Delete an LLM-application binding."""
+    try:
+        stmt = select(LLMApplicationBinding).where(LLMApplicationBinding.id == binding_id)
+        binding = db.execute(stmt).scalar_one_or_none()
+        if not binding:
+            raise HTTPException(status_code=404, detail="Binding not found")
+
+        db.delete(binding)
+        db.commit()
+
+        logger.info(f"Deleted binding: {binding_id}")
+        return {"success": True, "message": f"Binding {binding_id} deleted"}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Failed to delete binding: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # LLM Configuration CRUD Endpoints
 
 @router.post("", response_model=LLMConfigResponse)

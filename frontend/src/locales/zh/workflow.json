@@ -13,7 +13,7 @@
     "create": "创建工作流",
     "edit": "编辑工作流",
     "delete": "删除工作流",
-    "deleteConfirm": "确定要禁用此工作流吗？",
+    "deleteConfirm": "确定要删除此工作流吗？此操作不可恢复。",
     "name": "名称",
     "nameEn": "英文名称",
     "description": "描述",
@@ -39,7 +39,7 @@
     "rolesRequired": "请至少选择一个可见角色",
     "createSuccess": "工作流创建成功",
     "updateSuccess": "工作流更新成功",
-    "deleteSuccess": "工作流已禁用"
+    "deleteSuccess": "工作流已删除"
   },
   "stats": {
     "title": "今日统计",
@@ -86,6 +86,43 @@
       "name": "任务进度追踪",
       "description": "追踪和分析任务完成进度"
     }
+  },
+  "outputModeOptions": {
+    "merge": "合并输出",
+    "compare": "对比输出"
+  },
+  "tableNames": {
+    "task_list": "任务列表",
+    "task_status": "任务状态",
+    "task_stats": "任务统计",
+    "completion_rate": "完成率",
+    "quality_score": "质量分",
+    "revision_rate": "修订率",
+    "login_records": "登录记录",
+    "operations": "操作记录",
+    "online_duration": "在线时长",
+    "sync_sources": "同步源",
+    "sync_jobs": "同步任务",
+    "sync_history": "同步历史",
+    "temp_data": "临时数据",
+    "samples": "样本库",
+    "annotation": "标注数据",
+    "enhancement": "增强数据",
+    "ai_trial": "AI试验",
+    "augmentation_tasks": "增强任务",
+    "augmentation_samples": "增强样本",
+    "quality_scores": "质量评分",
+    "quality_reports": "质量报表"
+  },
+  "skillNames": {
+    "data-export": "数据导出",
+    "data-quality-check": "数据质量检测",
+    "data-query": "数据查询",
+    "data-lineage": "数据血缘追踪",
+    "data-transform": "数据转换",
+    "data-summary": "数据摘要",
+    "data-comparison": "数据对比",
+    "data-annotation-assist": "AI标注辅助"
   },
   "roles": {
     "admin": "管理员",

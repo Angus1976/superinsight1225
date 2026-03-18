@@ -56,6 +56,8 @@
   "outputMode": "输出模式",
   "mergeOutput": "合并输出",
   "compareOutput": "对比输出",
+  "compareLeft": "结果 A",
+  "compareRight": "结果 B",
   "dataSourceConfig": "AI 数据源权限",
   "dataSourceConfigDesc": "配置 AI 助手可访问的数据源",
   "sourceEnabled": "已启用",

@@ -136,3 +136,26 @@
 .messages-container::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
+
+/* 对比输出双列布局 */
+.compare-output {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.compare-output .compare-column {
+  height: 100%;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+}
+
+.compare-output .compare-column .ant-card-head {
+  background: #fafafa;
+  min-height: 36px;
+  font-size: 13px;
+}
+
+.compare-output .compare-column .ant-card-body {
+  max-height: 400px;
+  overflow-y: auto;
+}

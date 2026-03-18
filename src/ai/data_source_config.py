@@ -38,42 +38,77 @@ DATA_SOURCE_REGISTRY = [
         "label": "标注任务",
         "description": "标注任务管理数据（任务列表、状态统计）",
         "category": "core",
+        "tables": [
+            {"id": "task_list", "label": "任务列表", "fields": ["task_id", "task_name", "project", "assignee", "deadline"]},
+            {"id": "task_status", "label": "任务状态", "fields": ["status", "progress", "updated_at"]},
+            {"id": "task_stats", "label": "任务统计", "fields": ["total", "completed", "pending", "overdue"]},
+        ],
     },
     {
         "id": "annotation_efficiency",
         "label": "标注效率",
         "description": "标注效率趋势数据（完成率、质量分、修订率）",
         "category": "analytics",
+        "tables": [
+            {"id": "completion_rate", "label": "完成率", "fields": ["daily_rate", "weekly_rate", "trend"]},
+            {"id": "quality_score", "label": "质量分", "fields": ["accuracy", "consistency", "avg_score"]},
+            {"id": "revision_rate", "label": "修订率", "fields": ["revision_count", "revision_ratio"]},
+        ],
     },
     {
         "id": "user_activity",
         "label": "用户活跃度",
         "description": "用户活跃度数据（登录、操作、在线时长）",
         "category": "analytics",
+        "tables": [
+            {"id": "login_records", "label": "登录记录", "fields": ["user_id", "login_time", "ip_address", "device"]},
+            {"id": "operations", "label": "操作记录", "fields": ["action", "target", "timestamp"]},
+            {"id": "online_duration", "label": "在线时长", "fields": ["daily_hours", "weekly_hours", "avg_session"]},
+        ],
     },
     {
         "id": "data_sync",
         "label": "数据同步",
         "description": "数据同步源和同步任务数据",
         "category": "data",
+        "tables": [
+            {"id": "sync_sources", "label": "同步源", "fields": ["source_name", "source_type", "connection_status"]},
+            {"id": "sync_jobs", "label": "同步任务", "fields": ["job_id", "schedule", "last_run", "status"]},
+            {"id": "sync_history", "label": "同步历史", "fields": ["run_id", "records_synced", "errors", "duration"]},
+        ],
     },
     {
         "id": "data_lifecycle",
         "label": "数据流转",
         "description": "数据流转模块（临时数据、样本库、标注、增强、AI试验）",
         "category": "data",
+        "tables": [
+            {"id": "temp_data", "label": "临时数据", "fields": ["file_name", "size", "upload_time", "expiry"]},
+            {"id": "samples", "label": "样本库", "fields": ["sample_id", "dataset", "label", "split"]},
+            {"id": "annotation", "label": "标注数据", "fields": ["annotation_id", "annotator", "label", "confidence"]},
+            {"id": "enhancement", "label": "增强数据", "fields": ["method", "source_count", "output_count"]},
+            {"id": "ai_trial", "label": "AI试验", "fields": ["model", "accuracy", "f1_score", "run_date"]},
+        ],
     },
     {
         "id": "augmentation",
         "label": "数据增强",
         "description": "数据增强任务和样本数据",
         "category": "data",
+        "tables": [
+            {"id": "augmentation_tasks", "label": "增强任务", "fields": ["task_id", "method", "status", "created_at"]},
+            {"id": "augmentation_samples", "label": "增强样本", "fields": ["sample_id", "original_id", "transform_type"]},
+        ],
     },
     {
         "id": "quality",
         "label": "质量报表",
         "description": "数据质量评分和质量报表数据",
         "category": "analytics",
+        "tables": [
+            {"id": "quality_scores", "label": "质量评分", "fields": ["dataset", "overall_score", "completeness", "accuracy"]},
+            {"id": "quality_reports", "label": "质量报表", "fields": ["report_id", "generated_at", "summary", "issues"]},
+        ],
     },
 ]
 

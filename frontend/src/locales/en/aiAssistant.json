@@ -56,6 +56,8 @@
   "outputMode": "Output Mode",
   "mergeOutput": "Merge",
   "compareOutput": "Compare",
+  "compareLeft": "Result A",
+  "compareRight": "Result B",
   "dataSourceConfig": "AI Data Source Permissions",
   "dataSourceConfigDesc": "Configure data sources accessible by AI Assistant",
   "sourceEnabled": "Enabled",

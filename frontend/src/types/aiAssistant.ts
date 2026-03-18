@@ -95,6 +95,12 @@ export interface StatusToggleRequest {
 
 export type OutputMode = 'merge' | 'compare';
 
+export interface AIDataSourceTable {
+  id: string;
+  label: string;
+  fields?: string[];
+}
+
 export interface AIDataSource {
   id: string;
   label: string;
@@ -102,6 +108,7 @@ export interface AIDataSource {
   category: string;
   enabled: boolean;
   access_mode: string;
+  tables?: AIDataSourceTable[];
 }
 
 export interface DataSourceConfigItem {

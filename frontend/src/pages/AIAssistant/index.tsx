@@ -25,6 +25,7 @@ interface Message {
   content: string;
   timestamp: Date;
   type?: 'text' | 'workflow' | 'analysis';
+  outputMode?: 'merge' | 'compare';
 }
 
 const AIAssistant: React.FC = () => {
@@ -43,6 +44,9 @@ const AIAssistant: React.FC = () => {
   // Auth state
   const user = useAuthStore((s) => s.user);
   const userRole = user?.role || 'viewer';
+
+  // Stats refresh counter — increments after each completed message
+  const [statsRefreshKey, setStatsRefreshKey] = useState(0);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -98,11 +102,17 @@ const AIAssistant: React.FC = () => {
     };
 
     const assistantMessageId = (Date.now() + 1).toString();
+    const selectedWorkflow = selectedWorkflowId
+      ? workflows.find(w => w.id === selectedWorkflowId)
+      : null;
+    const useCompare = selectedWorkflow?.output_modes?.includes('compare') ?? false;
+
     const assistantMessage: Message = {
       id: assistantMessageId,
       role: 'assistant',
       content: '',
       timestamp: new Date(),
+      outputMode: useCompare ? 'compare' : 'merge',
     };
 
     setMessages((prev) => [...prev, userMessage, assistantMessage]);
@@ -131,6 +141,7 @@ const AIAssistant: React.FC = () => {
       onDone: () => {
         setIsLoading(false);
         abortRef.current = null;
+        setStatsRefreshKey((k) => k + 1);
       },
       onError: (error) => {
         const errorMsg = error.message || '';
@@ -228,9 +239,23 @@ const AIAssistant: React.FC = () => {
                             {msg.timestamp.toLocaleTimeString()}
                           </Text>
                         </div>
-                        <Paragraph style={{ whiteSpace: 'pre-wrap', marginBottom: 0 }}>
-                          {msg.content}
-                        </Paragraph>
+                        {msg.outputMode === 'compare' && msg.role === 'assistant' && msg.content.includes('---COMPARE---') ? (
+                          <Row gutter={16} className="compare-output">
+                            {msg.content.split('---COMPARE---').map((part, idx) => (
+                              <Col span={12} key={idx}>
+                                <Card size="small" title={t(idx === 0 ? 'compareLeft' : 'compareRight')} className="compare-column">
+                                  <Paragraph style={{ whiteSpace: 'pre-wrap', marginBottom: 0 }}>
+                                    {part.trim()}
+                                  </Paragraph>
+                                </Card>
+                              </Col>
+                            ))}
+                          </Row>
+                        ) : (
+                          <Paragraph style={{ whiteSpace: 'pre-wrap', marginBottom: 0 }}>
+                            {msg.content}
+                          </Paragraph>
+                        )}
                       </div>
                     </div>
                   )}
@@ -297,7 +322,7 @@ const AIAssistant: React.FC = () => {
             />
 
             {/* Stats */}
-            <StatsPanel userRole={userRole} />
+            <StatsPanel userRole={userRole} refreshKey={statsRefreshKey} />
 
             {/* Tips */}
             <Card title={t('usageTips')} size="small">

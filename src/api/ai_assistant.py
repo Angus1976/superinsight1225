@@ -8,7 +8,7 @@ Supports mode routing: direct (LLMSwitcher) and openclaw (OpenClawChatService).
 import json
 import logging
 import asyncio
-from typing import AsyncIterator, Literal, Optional
+from typing import AsyncIterator, List, Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -26,6 +26,7 @@ from src.ai_integration.openclaw_chat_service import (
 from src.ai_integration.openclaw_llm_bridge import get_openclaw_llm_bridge
 from src.ai_integration.schemas import SkillInfoResponse, OpenClawStatusResponse
 from src.database.connection import get_db
+from src.api.workflow_schemas import WorkflowCreateRequest, WorkflowUpdateRequest
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +64,7 @@ class ChatRequest(BaseModel):
     skill_ids: Optional[list[str]] = None
     data_source_ids: Optional[list[str]] = None
     output_mode: Optional[Literal["merge", "compare"]] = None
+    workflow_id: Optional[str] = None
 
     @model_validator(mode="after")
     def validate_openclaw_fields(self):
@@ -244,6 +246,10 @@ async def chat(
     db: Session = Depends(get_db),
 ) -> ChatResponse:
     """Non-streaming chat endpoint. Routes to LLMSwitcher or OpenClaw."""
+    # Workflow routing: delegate to WorkflowService when workflow_id is present
+    if request.workflow_id:
+        return await _chat_workflow(request, current_user, db)
+
     prompt = build_prompt(request.messages)
 
     # Filter skill_ids by role permissions
@@ -352,6 +358,71 @@ def _build_chat_response(response) -> ChatResponse:
     return ChatResponse(content=response.content, model=response.model, usage=usage)
 
 
+# --- Workflow Routing Helpers ---
+
+
+def _build_workflow_api_overrides(request: ChatRequest) -> Optional[dict]:
+    """Build api_overrides dict from request fields when present."""
+    overrides = {}
+    if request.skill_ids:
+        overrides["skill_ids"] = request.skill_ids
+    if request.data_source_ids:
+        overrides["data_source_ids"] = request.data_source_ids
+    if request.output_mode:
+        overrides["output_mode"] = request.output_mode
+    return overrides or None
+
+
+async def _chat_workflow(
+    request: ChatRequest, user: UserModel, db: Session,
+) -> ChatResponse:
+    """Handle workflow-routed non-streaming chat request."""
+    from src.ai.workflow_service import WorkflowService
+
+    prompt = build_prompt(request.messages)
+    options = build_options(request)
+    api_overrides = _build_workflow_api_overrides(request)
+
+    service = WorkflowService(db)
+    result = await service.execute_workflow(
+        workflow_id=request.workflow_id,
+        user=user,
+        prompt=prompt,
+        options=options,
+        api_overrides=api_overrides,
+    )
+    return ChatResponse(
+        content=result.get("content", ""),
+        model=result.get("model", ""),
+        usage=result.get("usage"),
+    )
+
+
+def _stream_workflow_response(
+    request: ChatRequest, user: UserModel, db: Session,
+) -> StreamingResponse:
+    """Build a StreamingResponse for workflow-routed streaming chat."""
+    from src.ai.workflow_service import WorkflowService
+
+    prompt = build_prompt(request.messages)
+    options = build_options(request, stream=True)
+    api_overrides = _build_workflow_api_overrides(request)
+
+    service = WorkflowService(db)
+    generator = service.stream_execute_workflow(
+        workflow_id=request.workflow_id,
+        user=user,
+        prompt=prompt,
+        options=options,
+        api_overrides=api_overrides,
+    )
+    return StreamingResponse(
+        generator,
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "Connection": "keep-alive"},
+    )
+
+
 # --- Streaming ---
 
 
@@ -421,6 +492,10 @@ async def chat_stream(
     db: Session = Depends(get_db),
 ) -> StreamingResponse:
     """Streaming chat endpoint. Routes to LLMSwitcher or OpenClaw SSE stream."""
+    # Workflow routing: delegate to WorkflowService when workflow_id is present
+    if request.workflow_id:
+        return _stream_workflow_response(request, current_user, db)
+
     # Filter skill_ids by role permissions
     original_skill_ids = list(request.skill_ids or [])
     if request.skill_ids:
@@ -667,4 +742,306 @@ async def query_access_logs(
         user_id=user_id,
         page=max(1, page),
         page_size=min(max(1, page_size), 100),
+    )
+
+
+# --- Service Status Endpoint ---
+
+
+@router.get("/service-status")
+async def get_service_status(
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Check health of backend services from within Docker network.
+
+    Checks: App backend (self), Ollama, OpenClaw gateway (DB-based).
+    Returns status dict for each service.
+    """
+    import httpx
+    import os
+
+    results = {}
+
+    # 1. App backend — if we're responding, we're healthy
+    results["backend"] = {"healthy": True, "label": "running"}
+
+    # 2. Ollama health check
+    ollama_url = os.getenv("OLLAMA_BASE_URL", "http://ollama:11434")
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            resp = await client.get(f"{ollama_url}/api/tags")
+            if resp.status_code == 200:
+                data = resp.json()
+                models = [m.get("name", "") for m in data.get("models", [])]
+                results["ollama"] = {
+                    "healthy": True,
+                    "label": "running",
+                    "models": models,
+                }
+            else:
+                results["ollama"] = {"healthy": False, "label": "unhealthy"}
+    except Exception as exc:
+        logger.warning("Ollama health check failed: %s", exc)
+        results["ollama"] = {"healthy": False, "label": "offline"}
+
+    # 3. OpenClaw gateway (DB-based check)
+    try:
+        service = get_openclaw_chat_service(db)
+        status = await service.get_status(tenant_id=current_user.tenant_id)
+        results["openclaw"] = {
+            "healthy": status.available,
+            "label": "running" if status.available else "offline",
+            "skills_count": len(status.skills) if status.skills else 0,
+        }
+    except Exception as exc:
+        logger.warning("OpenClaw status check failed: %s", exc)
+        results["openclaw"] = {"healthy": False, "label": "offline"}
+
+    return results
+
+
+# --- Workflow CRUD Endpoints ---
+
+
+def _workflow_to_response(workflow) -> dict:
+    """Convert an AIWorkflow model instance to a response dict."""
+    return {
+        "id": workflow.id,
+        "name": workflow.name,
+        "description": workflow.description or "",
+        "status": workflow.status,
+        "is_preset": workflow.is_preset,
+        "skill_ids": workflow.skill_ids or [],
+        "data_source_auth": workflow.data_source_auth or [],
+        "output_modes": workflow.output_modes or [],
+        "visible_roles": workflow.visible_roles or [],
+        "preset_prompt": workflow.preset_prompt,
+        "name_en": workflow.name_en,
+        "description_en": workflow.description_en,
+        "created_at": workflow.created_at.isoformat() if workflow.created_at else "",
+        "updated_at": workflow.updated_at.isoformat() if workflow.updated_at else "",
+        "created_by": workflow.created_by,
+    }
+
+
+def _log_workflow_crud(
+    db: Session,
+    user: "UserModel",
+    event_type: str,
+    workflow_id: Optional[str] = None,
+    workflow_name: Optional[str] = None,
+    success: bool = True,
+    error_message: Optional[str] = None,
+    details: Optional[dict] = None,
+) -> None:
+    """Record a workflow CRUD operation in AIAccessLog."""
+    from src.models.ai_access_log import AIAccessLog as LogModel
+
+    db.add(LogModel(
+        tenant_id=user.tenant_id,
+        user_id=str(user.id),
+        user_role=user.role,
+        event_type=event_type,
+        resource_id=workflow_id,
+        resource_name=workflow_name,
+        request_type="chat",
+        success=success,
+        error_message=error_message,
+        details=details or {},
+    ))
+    db.commit()
+
+
+@router.get("/workflows")
+async def list_workflows(
+    status: Optional[str] = None,
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> List[dict]:
+    """List workflows. Non-admin users see only role-visible enabled workflows."""
+    from src.ai.workflow_service import WorkflowService
+
+    service = WorkflowService(db)
+    is_admin = current_user.role == "admin"
+    workflows = service.list_workflows(
+        role=current_user.role,
+        status=status,
+        is_admin=is_admin,
+    )
+
+    _log_workflow_crud(
+        db, current_user,
+        event_type="workflow_list",
+        details={"count": len(workflows), "filter_status": status},
+    )
+
+    return [_workflow_to_response(w) for w in workflows]
+
+
+@router.post("/workflows", status_code=201)
+async def create_workflow(
+    request: WorkflowCreateRequest,
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Create a new workflow. Admin only."""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    from src.ai.workflow_service import WorkflowService
+
+    service = WorkflowService(db)
+    workflow = service.create_workflow(request, creator_id=str(current_user.id))
+
+    _log_workflow_crud(
+        db, current_user,
+        event_type="workflow_create",
+        workflow_id=workflow.id,
+        workflow_name=workflow.name,
+        details={"workflow_id": workflow.id, "name": workflow.name},
+    )
+
+    return _workflow_to_response(workflow)
+
+
+@router.put("/workflows/{workflow_id}")
+async def update_workflow(
+    workflow_id: str,
+    request: WorkflowUpdateRequest,
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Update an existing workflow. Admin only."""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    from src.ai.workflow_service import WorkflowService
+
+    service = WorkflowService(db)
+    workflow = service.update_workflow(workflow_id, request)
+
+    _log_workflow_crud(
+        db, current_user,
+        event_type="workflow_update",
+        workflow_id=workflow.id,
+        workflow_name=workflow.name,
+        details={"workflow_id": workflow.id, "name": workflow.name},
+    )
+
+    return _workflow_to_response(workflow)
+
+
+@router.delete("/workflows/{workflow_id}")
+async def delete_workflow(
+    workflow_id: str,
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Disable a workflow (soft delete). Admin only."""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    from src.ai.workflow_service import WorkflowService
+
+    service = WorkflowService(db)
+    service.delete_workflow(workflow_id)
+
+    _log_workflow_crud(
+        db, current_user,
+        event_type="workflow_delete",
+        workflow_id=workflow_id,
+        details={"workflow_id": workflow_id},
+    )
+
+    return {"success": True, "message": f"Workflow {workflow_id} disabled"}
+
+
+# --- Workflow Stats & Permission Sync Endpoints ---
+
+
+@router.get("/workflows/{workflow_id}/stats")
+async def get_workflow_stats(
+    workflow_id: str,
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Get execution stats for a specific workflow."""
+    from src.ai.workflow_service import WorkflowService
+
+    service = WorkflowService(db)
+    stats = service.get_workflow_stats(workflow_id)
+
+    _log_workflow_crud(
+        db, current_user,
+        event_type="workflow_stats",
+        workflow_id=workflow_id,
+        details={"workflow_id": workflow_id},
+    )
+
+    return {"success": True, "data": stats}
+
+
+@router.get("/stats/today")
+async def get_today_stats(
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Get current user's today stats."""
+    from src.ai.workflow_service import WorkflowService
+
+    service = WorkflowService(db)
+    stats = service.get_today_stats(
+        user_id=str(current_user.id),
+        user_role=current_user.role,
+        tenant_id=current_user.tenant_id,
+    )
+
+    return {"success": True, "data": stats}
+
+
+class SyncPermissionsRequest(BaseModel):
+    """Request body for batch permission sync."""
+    permissions: List[dict]
+
+
+@router.post("/workflows/sync-permissions")
+async def sync_permissions(
+    request: SyncPermissionsRequest,
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Batch sync workflow permissions. Admin only."""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    from src.ai.workflow_service import WorkflowService
+
+    service = WorkflowService(db)
+    result = service.sync_permissions(request.permissions)
+
+    _log_workflow_crud(
+        db, current_user,
+        event_type="workflow_permission_sync",
+        details={
+            "permission_count": len(request.permissions),
+            "updated_count": result.get("updated_count", 0),
+        },
+    )
+
+    return {"success": True, "data": result}
+
+
+@router.post("/workflows/request-authorization", status_code=501)
+async def request_authorization(
+    current_user: UserModel = Depends(get_current_user),
+) -> dict:
+    """Dynamic authorization request (placeholder, not yet implemented)."""
+    raise HTTPException(
+        status_code=501,
+        detail={
+            "success": False,
+            "error_code": "AUTHORIZATION_NOT_IMPLEMENTED",
+            "message": "Dynamic authorization request is not yet implemented",
+        },
     )

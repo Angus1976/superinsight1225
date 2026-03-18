@@ -1,0 +1,96 @@
+{
+  "selector": {
+    "title": "Select Workflow",
+    "searchPlaceholder": "Search workflows...",
+    "noResults": "No matching workflows found",
+    "noWorkflows": "No workflows available",
+    "guideTip": "Please select a workflow to start chatting",
+    "skillCount": "{{count}} skills",
+    "preset": "Preset"
+  },
+  "admin": {
+    "title": "Workflow Management",
+    "create": "Create Workflow",
+    "edit": "Edit Workflow",
+    "delete": "Delete Workflow",
+    "deleteConfirm": "Are you sure you want to disable this workflow?",
+    "name": "Name",
+    "nameEn": "English Name",
+    "description": "Description",
+    "descriptionEn": "English Description",
+    "status": "Status",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "skills": "Associated Skills",
+    "dataSources": "Data Source Authorization",
+    "outputModes": "Output Modes",
+    "visibleRoles": "Visible Roles",
+    "presetPrompt": "Preset Prompt",
+    "isPreset": "Preset Workflow",
+    "presetDeleteDenied": "Preset workflows cannot be deleted",
+    "createdAt": "Created At",
+    "noSkills": "No associated skills",
+    "selectSkills": "Select Skills",
+    "selectDataSources": "Select Data Sources",
+    "selectRoles": "Select Roles",
+    "allTables": "All Tables",
+    "specificTables": "Specific Tables",
+    "nameRequired": "Please enter a workflow name",
+    "rolesRequired": "Please select at least one visible role",
+    "createSuccess": "Workflow created successfully",
+    "updateSuccess": "Workflow updated successfully",
+    "deleteSuccess": "Workflow disabled successfully"
+  },
+  "stats": {
+    "title": "Today's Statistics",
+    "chatCount": "Chat Count",
+    "workflowCount": "Workflow Executions",
+    "dataSourceCount": "Data Source Access",
+    "viewDetails": "View Details",
+    "noData": "No data available"
+  },
+  "execution": {
+    "running": "Executing...",
+    "completed": "Execution completed",
+    "partialFailure": "Some skills failed to execute",
+    "failedSkills": "Failed Skills"
+  },
+  "errors": {
+    "notFound": "Workflow not found",
+    "disabled": "Workflow is disabled",
+    "nameConflict": "Workflow name already exists",
+    "permissionDenied": "No permission to access this workflow",
+    "skillNotFound": "Associated skill not found",
+    "datasourceNotFound": "Associated data source not found",
+    "datasourceDisabled": "Associated data source is disabled",
+    "invalidRole": "Contains invalid role",
+    "skillDenied": "Skill exceeds permission scope",
+    "datasourceDenied": "Data source exceeds permission scope",
+    "loadFailed": "Failed to load workflow list",
+    "saveFailed": "Failed to save workflow"
+  },
+  "presets": {
+    "salesForecast": {
+      "name": "Sales Forecast Analysis",
+      "description": "Predict and analyze sales trends based on historical data"
+    },
+    "dataQuality": {
+      "name": "Data Quality Check",
+      "description": "Automatically detect data quality issues and generate improvement suggestions"
+    },
+    "smartAnnotation": {
+      "name": "Smart Annotation Suggestions",
+      "description": "Provide intelligent annotation suggestions based on context"
+    },
+    "taskProgress": {
+      "name": "Task Progress Tracking",
+      "description": "Track and analyze task completion progress"
+    }
+  },
+  "roles": {
+    "admin": "Admin",
+    "business_expert": "Business Expert",
+    "annotator": "Annotator",
+    "viewer": "Viewer"
+  }
+}

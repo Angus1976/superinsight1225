@@ -67,6 +67,8 @@ import zhAiProcessing from './zh/aiProcessing.json';
 import enAiProcessing from './en/aiProcessing.json';
 import zhAiAssistant from './zh/aiAssistant.json';
 import enAiAssistant from './en/aiAssistant.json';
+import zhWorkflow from './zh/workflow.json';
+import enWorkflow from './en/workflow.json';
 
 const resources = {
   zh: {
@@ -102,6 +104,7 @@ const resources = {
     dataToolkit: zhDataToolkit,
     aiProcessing: zhAiProcessing,
     aiAssistant: zhAiAssistant,
+    workflow: zhWorkflow,
   },
   en: {
     common: enCommon,
@@ -136,6 +139,7 @@ const resources = {
     dataToolkit: enDataToolkit,
     aiProcessing: enAiProcessing,
     aiAssistant: enAiAssistant,
+    workflow: enWorkflow,
   },
 };
 
@@ -147,7 +151,7 @@ i18n
     fallbackLng: 'zh',
     defaultNS: 'common',
     fallbackNS: 'common',
-    ns: ['common', 'auth', 'dashboard', 'tasks', 'billing', 'quality', 'security', 'dataSync', 'system', 'versioning', 'lineage', 'impact', 'snapshot', 'admin', 'workspace', 'license', 'settings', 'collaboration', 'crowdsource', 'augmentation', 'businessLogic', 'annotation', 'ontology', 'lsWorkspace', 'structuring', 'help', 'aiAnnotation', 'llmConfig', 'dataLifecycle', 'dataToolkit', 'aiProcessing', 'aiAssistant'],
+    ns: ['common', 'auth', 'dashboard', 'tasks', 'billing', 'quality', 'security', 'dataSync', 'system', 'versioning', 'lineage', 'impact', 'snapshot', 'admin', 'workspace', 'license', 'settings', 'collaboration', 'crowdsource', 'augmentation', 'businessLogic', 'annotation', 'ontology', 'lsWorkspace', 'structuring', 'help', 'aiAnnotation', 'llmConfig', 'dataLifecycle', 'dataToolkit', 'aiProcessing', 'aiAssistant', 'workflow'],
     interpolation: {
       escapeValue: false,
     },

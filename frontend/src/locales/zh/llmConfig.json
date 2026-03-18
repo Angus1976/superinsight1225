@@ -7,7 +7,10 @@
     "azure": "Azure OpenAI 服务",
     "anthropic": "Anthropic",
     "ollama": "Ollama",
-    "custom": "自定义"
+    "deepseek": "DeepSeek",
+    "baidu": "百度（文心一言）",
+    "custom": "自定义",
+    "local_olama": "本地 Ollama"
   },
   
   "applications": {
@@ -34,6 +37,14 @@
     "text_to_sql": {
       "name": "文本转 SQL",
       "description": "自然语言转 SQL 查询"
+    },
+    "vectorization": {
+      "name": "向量化",
+      "description": "文本向量化和语义搜索"
+    },
+    "embedding": {
+      "name": "文本嵌入",
+      "description": "文本嵌入向量生成"
     }
   },
   
@@ -120,7 +131,9 @@
       "createSuccess": "配置创建成功",
       "createFailed": "配置创建失败",
       "updateSuccess": "配置更新成功",
-      "updateFailed": "配置更新失败"
+      "updateFailed": "配置更新失败",
+      "deleteSuccess": "配置删除成功",
+      "deleteFailed": "配置删除失败"
     }
   },
   
@@ -204,7 +217,9 @@
       "updateSuccess": "绑定更新成功",
       "updateFailed": "绑定更新失败",
       "reorderSuccess": "优先级调整成功",
-      "reorderFailed": "优先级调整失败"
+      "reorderFailed": "优先级调整失败",
+      "deleteSuccess": "绑定删除成功",
+      "deleteFailed": "绑定删除失败"
     }
   },
   

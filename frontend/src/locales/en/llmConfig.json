@@ -7,7 +7,10 @@
     "azure": "Azure OpenAI Service",
     "anthropic": "Anthropic",
     "ollama": "Ollama",
-    "custom": "Custom"
+    "deepseek": "DeepSeek",
+    "baidu": "Baidu (ERNIE)",
+    "custom": "Custom",
+    "local_olama": "Local Ollama"
   },
   
   "applications": {
@@ -34,6 +37,14 @@
     "text_to_sql": {
       "name": "Text to SQL",
       "description": "Natural language to SQL conversion"
+    },
+    "vectorization": {
+      "name": "Vectorization",
+      "description": "Text vectorization and semantic search"
+    },
+    "embedding": {
+      "name": "Text Embedding",
+      "description": "Text embedding vector generation"
     }
   },
   
@@ -120,7 +131,9 @@
       "createSuccess": "Configuration created successfully",
       "createFailed": "Failed to create configuration",
       "updateSuccess": "Configuration updated successfully",
-      "updateFailed": "Failed to update configuration"
+      "updateFailed": "Failed to update configuration",
+      "deleteSuccess": "Configuration deleted successfully",
+      "deleteFailed": "Failed to delete configuration"
     }
   },
   
@@ -204,7 +217,9 @@
       "updateSuccess": "Binding updated successfully",
       "updateFailed": "Failed to update binding",
       "reorderSuccess": "Priority reordered successfully",
-      "reorderFailed": "Failed to reorder priority"
+      "reorderFailed": "Failed to reorder priority",
+      "deleteSuccess": "Binding deleted successfully",
+      "deleteFailed": "Failed to delete binding"
     }
   },
   

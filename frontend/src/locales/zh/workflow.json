@@ -1,0 +1,96 @@
+{
+  "selector": {
+    "title": "选择工作流",
+    "searchPlaceholder": "搜索工作流...",
+    "noResults": "没有找到匹配的工作流",
+    "noWorkflows": "暂无可用工作流",
+    "guideTip": "请选择一个工作流开始对话",
+    "skillCount": "{{count}} 个技能",
+    "preset": "预置"
+  },
+  "admin": {
+    "title": "工作流管理",
+    "create": "创建工作流",
+    "edit": "编辑工作流",
+    "delete": "删除工作流",
+    "deleteConfirm": "确定要禁用此工作流吗？",
+    "name": "名称",
+    "nameEn": "英文名称",
+    "description": "描述",
+    "descriptionEn": "英文描述",
+    "status": "状态",
+    "enabled": "启用",
+    "disabled": "已禁用",
+    "skills": "关联技能",
+    "dataSources": "数据源授权",
+    "outputModes": "输出方式",
+    "visibleRoles": "可见角色",
+    "presetPrompt": "预设提示词",
+    "isPreset": "预置工作流",
+    "presetDeleteDenied": "预置工作流不可删除",
+    "createdAt": "创建时间",
+    "noSkills": "无关联技能",
+    "selectSkills": "选择技能",
+    "selectDataSources": "选择数据源",
+    "selectRoles": "选择角色",
+    "allTables": "所有数据表",
+    "specificTables": "指定数据表",
+    "nameRequired": "请输入工作流名称",
+    "rolesRequired": "请至少选择一个可见角色",
+    "createSuccess": "工作流创建成功",
+    "updateSuccess": "工作流更新成功",
+    "deleteSuccess": "工作流已禁用"
+  },
+  "stats": {
+    "title": "今日统计",
+    "chatCount": "对话次数",
+    "workflowCount": "工作流执行",
+    "dataSourceCount": "数据源访问",
+    "viewDetails": "查看明细",
+    "noData": "暂无数据"
+  },
+  "execution": {
+    "running": "执行中...",
+    "completed": "执行完成",
+    "partialFailure": "部分技能执行失败",
+    "failedSkills": "失败技能"
+  },
+  "errors": {
+    "notFound": "工作流不存在",
+    "disabled": "工作流已禁用",
+    "nameConflict": "工作流名称已存在",
+    "permissionDenied": "无权访问此工作流",
+    "skillNotFound": "关联的技能不存在",
+    "datasourceNotFound": "关联的数据源不存在",
+    "datasourceDisabled": "关联的数据源已禁用",
+    "invalidRole": "包含无效的角色",
+    "skillDenied": "技能超出权限范围",
+    "datasourceDenied": "数据源超出权限范围",
+    "loadFailed": "加载工作流列表失败",
+    "saveFailed": "保存工作流失败"
+  },
+  "presets": {
+    "salesForecast": {
+      "name": "销售预测分析",
+      "description": "基于历史数据进行销售趋势预测和分析"
+    },
+    "dataQuality": {
+      "name": "数据质量检查",
+      "description": "自动检测数据质量问题并生成改进建议"
+    },
+    "smartAnnotation": {
+      "name": "智能标注建议",
+      "description": "基于上下文提供智能标注建议"
+    },
+    "taskProgress": {
+      "name": "任务进度追踪",
+      "description": "追踪和分析任务完成进度"
+    }
+  },
+  "roles": {
+    "admin": "管理员",
+    "business_expert": "业务专家",
+    "annotator": "标注员",
+    "viewer": "查看者"
+  }
+}

@@ -130,6 +130,7 @@ class LLMSwitcher:
         enable_response_cache: bool = True,
         rate_limiter: Optional[Any] = None,
         enable_rate_limiting: bool = True,
+        application_code: str = "ai_assistant",
     ):
         """
         Initialize the LLM Switcher.
@@ -141,9 +142,11 @@ class LLMSwitcher:
             enable_response_cache: Whether to enable response caching
             rate_limiter: Rate limiter instance for quota management (Requirement 10.3)
             enable_rate_limiting: Whether to enable rate limiting
+            application_code: Application code for DB binding lookup (default: ai_assistant)
         """
         self._config_manager = config_manager or get_config_manager()
         self._tenant_id = tenant_id
+        self._application_code = application_code
         self._providers: Dict[LLMMethod, LLMProvider] = {}
         self._config: Optional[LLMConfig] = None
         self._current_method: Optional[LLMMethod] = None
@@ -172,20 +175,234 @@ class LLMSwitcher:
         self._usage_stats: Dict[str, int] = defaultdict(int)
         self._stats_lock = asyncio.Lock()
 
+        # Failover tracking — set when stream_generate switches provider
+        self._failover_info: Optional[str] = None
+
         # Register for config changes
         self._config_manager.watch_config_changes(self._on_config_change)
     
     async def initialize(self) -> None:
-        """Initialize the switcher with current configuration."""
+        """Initialize the switcher with current configuration.
+        
+        Priority: DB application bindings > LLMConfigManager > default config.
+        """
         if self._initialized:
             return
         
-        self._config = await self._config_manager.get_config(self._tenant_id)
+        # Try DB application bindings first (priority-based)
+        db_config = await self._load_config_from_bindings()
+        if db_config:
+            self._config = db_config
+            logger.info("Using database application binding config")
+        else:
+            # Fallback to LLMConfigManager (env vars / legacy DB)
+            self._config = await self._config_manager.get_config(self._tenant_id)
+            logger.info("Using LLMConfigManager config (env fallback)")
+        
         self._current_method = self._config.default_method
         await self._initialize_providers()
         self._initialized = True
         logger.info(f"LLM Switcher initialized with method: {self._current_method}")
     
+    async def _load_config_from_bindings(self) -> Optional[LLMConfig]:
+        """Load LLMConfig from LLMApplicationBinding priority chain.
+        
+        Queries the DB for active bindings of self._application_code,
+        ordered by priority ASC. Constructs an LLMConfig from the
+        highest-priority binding and sets up fallback from the second.
+        
+        Returns:
+            LLMConfig if DB bindings found, None otherwise.
+        """
+        try:
+            from src.database.connection import get_db_session
+            from src.models.llm_configuration import LLMConfiguration
+            from src.models.llm_application import LLMApplication, LLMApplicationBinding
+            from src.ai.encryption_service import get_encryption_service
+            from src.ai.llm_schemas import LocalConfig, CloudConfig
+            from sqlalchemy import select
+            from sqlalchemy.orm import selectinload
+        except ImportError:
+            logger.debug("DB modules not available, skipping binding lookup")
+            return None
+
+        try:
+            db = next(get_db_session())
+        except Exception as e:
+            logger.debug(f"Cannot get DB session: {e}")
+            return None
+
+        try:
+            app = db.execute(
+                select(LLMApplication).where(
+                    LLMApplication.code == self._application_code
+                )
+            ).scalar_one_or_none()
+            if not app:
+                return None
+
+            bindings = db.execute(
+                select(LLMApplicationBinding)
+                .options(selectinload(LLMApplicationBinding.llm_config))
+                .where(
+                    LLMApplicationBinding.application_id == app.id,
+                    LLMApplicationBinding.is_active == True,
+                )
+                .join(LLMConfiguration)
+                .where(LLMConfiguration.is_active == True)
+                .order_by(LLMApplicationBinding.priority.asc())
+            ).scalars().all()
+
+            if not bindings:
+                return None
+
+            primary = bindings[0]
+            config = self._binding_to_llm_config(primary, get_encryption_service())
+            if not config:
+                return None
+
+            # Set up fallback from second-priority binding
+            if len(bindings) > 1:
+                fallback_binding = bindings[1]
+                fallback_method = self._provider_to_method(
+                    fallback_binding.llm_config.provider
+                )
+                if fallback_method and fallback_method != config.default_method:
+                    config.enabled_methods.append(fallback_method)
+                    self._fallback_method = fallback_method
+                    # Merge fallback config into the LLMConfig
+                    self._merge_binding_into_config(
+                        config, fallback_binding, get_encryption_service()
+                    )
+
+            logger.info(
+                f"Loaded DB binding: {primary.llm_config.name} "
+                f"(priority={primary.priority}, method={config.default_method})"
+            )
+            return config
+
+        except Exception as e:
+            logger.warning(f"Failed to load config from bindings: {e}")
+            return None
+        finally:
+            db.close()
+
+    def _provider_to_method(self, provider: str) -> Optional[LLMMethod]:
+        """Map provider string to LLMMethod enum."""
+        mapping = {
+            "ollama": LLMMethod.LOCAL_OLLAMA,
+            "local_ollama": LLMMethod.LOCAL_OLLAMA,
+            "openai": LLMMethod.CLOUD_OPENAI,
+            "cloud_openai": LLMMethod.CLOUD_OPENAI,
+            "azure": LLMMethod.CLOUD_AZURE,
+            "cloud_azure": LLMMethod.CLOUD_AZURE,
+            "china_qwen": LLMMethod.CHINA_QWEN,
+            "china_zhipu": LLMMethod.CHINA_ZHIPU,
+            "china_baidu": LLMMethod.CHINA_BAIDU,
+            "china_hunyuan": LLMMethod.CHINA_HUNYUAN,
+        }
+        return mapping.get(provider)
+
+    def _decrypt_api_key(self, config_data: dict, encryption_service) -> str:
+        """Decrypt API key from config_data, with fallback to plain text."""
+        encrypted = config_data.get("api_key_encrypted")
+        if encrypted:
+            try:
+                return encryption_service.decrypt(encrypted)
+            except Exception as e:
+                logger.warning(f"API key decryption failed: {e}")
+        return config_data.get("api_key", "")
+
+    def _binding_to_llm_config(
+        self, binding, encryption_service
+    ) -> Optional[LLMConfig]:
+        """Convert a single LLMApplicationBinding to an LLMConfig."""
+        from src.ai.llm_schemas import LocalConfig, CloudConfig
+
+        llm_cfg = binding.llm_config
+        config_data = llm_cfg.config_data or {}
+        method = self._provider_to_method(llm_cfg.provider or llm_cfg.default_method)
+        if not method:
+            logger.warning(f"Unknown provider: {llm_cfg.provider}")
+            return None
+
+        timeout = binding.timeout_seconds or 60
+        max_retries = binding.max_retries or 3
+
+        if method == LLMMethod.LOCAL_OLLAMA:
+            base_url = config_data.get("base_url", "http://localhost:11434")
+            # Strip /v1 suffix for LocalConfig (Ollama native URL)
+            ollama_url = base_url.rstrip("/").removesuffix("/v1")
+            local_config = LocalConfig(
+                ollama_url=ollama_url,
+                default_model=config_data.get("model_name", "qwen2.5:7b"),
+                timeout=timeout,
+                max_retries=max_retries,
+            )
+            return LLMConfig(
+                default_method=method,
+                local_config=local_config,
+                enabled_methods=[method],
+            )
+
+        # CLOUD_OPENAI / CLOUD_AZURE — use CloudConfig
+        api_key = self._decrypt_api_key(config_data, encryption_service)
+        if not api_key:
+            # Ollama-compatible endpoints don't need a real key
+            if "ollama" in config_data.get("base_url", "").lower():
+                api_key = "ollama"
+            else:
+                logger.warning(f"No API key for {llm_cfg.name}")
+                return None
+
+        cloud_config = CloudConfig(
+            openai_api_key=api_key,
+            openai_base_url=config_data.get("base_url", "https://api.openai.com/v1"),
+            openai_model=config_data.get("model_name", "gpt-3.5-turbo"),
+            timeout=timeout,
+            max_retries=max_retries,
+        )
+        return LLMConfig(
+            default_method=method,
+            cloud_config=cloud_config,
+            enabled_methods=[method],
+        )
+
+    def _merge_binding_into_config(
+        self, config: LLMConfig, binding, encryption_service
+    ) -> None:
+        """Merge a fallback binding's settings into an existing LLMConfig."""
+        from src.ai.llm_schemas import LocalConfig, CloudConfig
+
+        llm_cfg = binding.llm_config
+        config_data = llm_cfg.config_data or {}
+        method = self._provider_to_method(llm_cfg.provider or llm_cfg.default_method)
+        if not method:
+            return
+
+        timeout = binding.timeout_seconds or 60
+        max_retries = binding.max_retries or 3
+
+        if method == LLMMethod.LOCAL_OLLAMA:
+            base_url = config_data.get("base_url", "http://localhost:11434")
+            ollama_url = base_url.rstrip("/").removesuffix("/v1")
+            config.local_config = LocalConfig(
+                ollama_url=ollama_url,
+                default_model=config_data.get("model_name", "qwen2.5:7b"),
+                timeout=timeout,
+                max_retries=max_retries,
+            )
+        else:
+            api_key = self._decrypt_api_key(config_data, encryption_service)
+            if api_key:
+                config.cloud_config = CloudConfig(
+                    openai_api_key=api_key,
+                    openai_base_url=config_data.get("base_url", "https://api.openai.com/v1"),
+                    openai_model=config_data.get("model_name", "gpt-3.5-turbo"),
+                    timeout=timeout,
+                    max_retries=max_retries,
+                )
+
     async def _initialize_providers(self) -> None:
         """Initialize all enabled providers."""
         if not self._config:
@@ -844,6 +1061,7 @@ class LLMSwitcher:
         options = options or GenerateOptions()
         options.stream = True
         target_method = method or self._current_method
+        self._failover_info = None  # reset before each call
         
         # Store request context for potential failover
         request_context = {
@@ -872,6 +1090,7 @@ class LLMSwitcher:
         # Try fallback provider if configured
         if self._fallback_method and self._fallback_method != target_method:
             logger.info(f"Attempting stream failover to {self._fallback_method}")
+            self._failover_info = self._fallback_method.value
             
             try:
                 async for chunk in self._stream_generate_with_retry(
@@ -1395,6 +1614,7 @@ _switcher_instances: Dict[str, LLMSwitcher] = {}
 def get_llm_switcher(
     tenant_id: Optional[str] = None,
     cache_client: Optional[Any] = None,
+    application_code: str = "ai_assistant",
 ) -> LLMSwitcher:
     """
     Get or create an LLM Switcher instance for the tenant.
@@ -1402,6 +1622,7 @@ def get_llm_switcher(
     Args:
         tenant_id: Tenant ID for multi-tenant support
         cache_client: Redis client for response caching
+        application_code: Application code for DB binding lookup
         
     Returns:
         LLMSwitcher instance
@@ -1412,6 +1633,7 @@ def get_llm_switcher(
         _switcher_instances[key] = LLMSwitcher(
             tenant_id=tenant_id,
             cache_client=cache_client,
+            application_code=application_code,
         )
     elif cache_client is not None:
         # Update cache client if provided

@@ -105,3 +105,9 @@
 - 后端使用 Python（FastAPI + Pydantic），前端使用 TypeScript
 - 每个任务引用具体需求条款以确保可追溯性
 - 属性测试验证设计文档中定义的 Correctness Properties
+
+## Spec 外增强（已实现）
+
+1. **SSE 状态事件扩展**：`StreamChunk` 新增 `status`/`progress` 字段，支持在流式响应中穿插处理步骤状态事件（`data: {"status": "...", "progress": 50}\n\n`）
+2. **前端停止 → 后端取消**：`chat_stream` 端点新增 `_disconnect_aware()` 包装器，前端 abort 时后端及时关闭生成器，避免 Token 浪费
+3. **LLM 故障转移通知**：`LLMSwitcher._failover_info` 记录备用模型切换，流式响应中通知前端当前使用的模型

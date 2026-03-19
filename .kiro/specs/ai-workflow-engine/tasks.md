@@ -360,3 +360,25 @@
 - Alembic 多头问题：数据库迁移使用直接 SQL + stamp 方式
 - 前端所有可见文本必须使用 `t()` 国际化函数
 - 翻译文件同步写入 `frontend/src/locales/zh/` 和 `en/`
+
+## Spec 外增强（已实现）
+
+以下功能在原始 Spec 范围之外实施，作为工作流执行体验的增量优化：
+
+1. **处理步骤进度指示器**（涉及 `workflow_service.py`、前端 `ProcessingSteps.tsx`、`styles.css`）
+   - 后端 `_sse_status()` 在权限校验、数据加载、技能/LLM 执行等关键节点 yield SSE status 事件
+   - 前端新增 `ProcessingSteps` 组件，实时渲染处理步骤和进度条
+   - `StreamChunk` 类型扩展 `status`/`progress` 字段，`consumeStream()` 新增 `onStatus` 回调
+
+2. **LLM 故障转移状态通知**（涉及 `llm_switcher.py`、`workflow_service.py`）
+   - `LLMSwitcher` 新增 `_failover_info` 属性，记录备用模型切换信息
+   - `_stream_direct_llm` 在 chunk 迭代中检测并 yield "已切换至备用模型: xxx" 状态事件
+
+3. **前端停止 → 后端取消**（涉及 `ai_assistant.py`、前端 `index.tsx`）
+   - 后端 `_disconnect_aware()` 异步生成器包装器，轮询 `http_request.is_disconnected()`，断连时调用 `generator.aclose()`
+   - 前端 `handleStopGeneration` 同步清除 `statusSteps` 状态
+
+4. **技能网关连接优化**（涉及 `openclaw_chat_service.py`）
+   - `_call_gateway_as_stream` 超时拆分：connect=10s + read=60s（`httpx.Timeout`）
+   - `stream_chat` 新增 `ConnectTimeout` 异常处理
+   - 技能执行前 yield "连接技能网关" 状态事件

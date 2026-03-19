@@ -151,3 +151,9 @@
 - Property tests use hypothesis (Python) and fast-check (TypeScript)
 - All backend async operations follow existing patterns in ai_assistant.py
 - Frontend uses Ant Design components and react-i18next for i18n
+
+## Spec 外增强（已实现）
+
+1. **技能网关超时拆分**：`_call_gateway_as_stream` 从单一 60s 超时改为 connect=10s + read=60s（`httpx.Timeout`），`stream_chat` 新增 `ConnectTimeout` 异常处理
+2. **技能执行状态事件**：`_stream_single_skill` 在调用 `stream_chat` 前 yield "连接技能网关" 状态事件；`_fallback_stream` yield "LLM 生成中（非流式）" 状态事件
+3. **`OpenClawChatService` 新增 `_sse_status()` 辅助方法**，统一 SSE 状态事件格式

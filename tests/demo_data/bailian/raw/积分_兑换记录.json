@@ -1,0 +1,17 @@
+[
+  {"record_id": "PT-20260301-0001", "card_no": "BH-2019-00381", "type": "earn", "points": 128, "source": "百货消费", "channel": "POS", "time": "2026-03-01 15:30:00", "store_info": "第一百货"},
+  {"record_id": "PT-20260318-0002", "card_no": "LH-M-20190322-0001", "type": "EARN", "points": 24, "source": "超市购物", "channel": "ONLINE", "time": "2026-03-18 08:30:22", "store_info": "联华南京路"},
+  {"record_id": "PT-20260312-0003", "card_no": "BLSC-000381", "type": "积累", "points": 152, "source": "购物中心", "channel": "APP", "time": "2026-03-12 14:20:00", "store_info": "百联南方"},
+  {"record_id": "PT-20260315-0004", "card_no": "BH-2019-00381", "type": "redeem", "points": -500, "source": "积分兑券", "channel": "APP", "time": "2026-03-15 10:00:00", "store_info": "百联通用"},
+  {"record_id": "PT-20260312-0005", "card_no": "BH-2021-02890", "type": "earn", "points": 2850, "source": "百货消费", "channel": "POS", "time": "2026-03-12 16:00:00", "store_info": "第一百货"},
+  {"record_id": "PT-20260317-0006", "card_no": "LH-M-20210110-0003", "type": "EARN", "points": 46, "source": "超市购物", "channel": "WECHAT_MINI", "time": "2026-03-17 11:05:28", "store_info": "联华南京路"},
+  {"record_id": "PT-20260318-0007", "card_no": "BLSC-002890", "type": "积累", "points": 420, "source": "购物中心", "channel": "POS", "time": "2026-03-18 13:45:00", "store_info": "百联南方"},
+  {"record_id": "PT-20260310-0008", "card_no": "BH-2021-02890", "type": "REDEEM", "points": -2000, "source": "积分抵现", "channel": "POS", "time": "2026-03-10 11:30:00", "store_info": "第一百货"},
+  {"record_id": "PT-20250615-0009", "card_no": "BH-2017-00058", "type": "earn", "points": 5200, "source": "百货消费", "channel": "POS", "time": "2025-06-15 17:00:00", "store_info": "东方商厦"},
+  {"record_id": "PT-20250530-0010", "card_no": "BLSC-000058", "type": "兑换", "points": -3000, "source": "停车券兑换", "channel": "APP", "time": "2025-05-30 18:20:00", "store_info": "百联西郊"},
+  {"record_id": "PT-20260105-0011", "card_no": "BH-2020-01567", "type": "earn", "points": 360, "source": "百货消费", "channel": "POS", "time": "2026-01-05 14:30:00", "store_info": "东方商厦"},
+  {"record_id": "PT-20260220-0012", "card_no": "LH-M-20201111-0008", "type": "EARN", "points": 23, "source": "超市购物", "channel": "ALIPAY_MINI", "time": "2026-02-20 10:45:30", "store_info": "世纪联华"},
+  {"record_id": "PT-20260310-0013", "card_no": "BH-2019-00890", "type": "earn", "points": 159, "source": "百货消费", "channel": "POS", "time": "2026-03-10 15:20:00", "store_info": "第一百货"},
+  {"record_id": "PT-20260228-0014", "card_no": "BH-2022-04521", "type": "earn", "points": 85, "source": "百货消费", "channel": "POS", "time": "2026-02-28 16:10:00", "store_info": "第一百货"},
+  {"record_id": "PT-20240315-0015", "card_no": "BH-2024-08901", "type": "earn", "points": 130, "source": "百货消费", "channel": "POS", "time": "2024-03-15 13:00:00", "store_info": "东方商厦"}
+]

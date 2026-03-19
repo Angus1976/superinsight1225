@@ -1,0 +1,17 @@
+[
+  {"txn_id": "BH-TXN-20260301-001", "vip_no": "BH-2019-00381", "txn_date": "2026-03-01", "store": "第一百货南京东路店", "dept": "化妆品", "brand": "兰蔻", "item": "小黑瓶精华50ml", "amt": 1280.00, "pay_type": "微信支付", "points_earned": 128},
+  {"txn_id": "BH-TXN-20260215-002", "vip_no": "BH-2019-00381", "txn_date": "2026-02-15", "store": "第一百货南京东路店", "dept": "女装", "brand": "MAXMARA", "item": "羊绒大衣", "amt": 8960.00, "pay_type": "银联卡", "points_earned": 896},
+  {"txn_id": "BH-TXN-20260110-003", "vip_no": "BH-2019-00381", "txn_date": "2026-01-10", "store": "第一百货南京东路店", "dept": "珠宝", "brand": "周大福", "item": "黄金手链", "amt": 5680.00, "pay_type": "支付宝", "points_earned": 568},
+  {"txn_id": "BH-TXN-20251120-004", "vip_no": "BH-2020-01205", "txn_date": "2025-11-20", "store": "东方商厦徐汇店", "dept": "男装", "brand": "BOSS", "item": "西装套装", "amt": 4200.00, "pay_type": "银联卡", "points_earned": 420},
+  {"txn_id": "BH-TXN-20260315-005", "vip_no": "BH-2021-02890", "txn_date": "2026-03-15", "store": "第一百货南京东路店", "dept": "化妆品", "brand": "LA MER", "item": "面霜60ml", "amt": 3680.00, "pay_type": "微信支付", "points_earned": 368},
+  {"txn_id": "BH-TXN-20260312-006", "vip_no": "BH-2021-02890", "txn_date": "2026-03-12", "store": "第一百货南京东路店", "dept": "女装", "brand": "CHANEL", "item": "经典外套", "amt": 28500.00, "pay_type": "银联卡", "points_earned": 2850},
+  {"txn_id": "BH-TXN-20260228-007", "vip_no": "BH-2021-02890", "txn_date": "2026-02-28", "store": "第一百货南京东路店", "dept": "箱包", "brand": "LV", "item": "Neverfull中号", "amt": 13200.00, "pay_type": "银联卡", "points_earned": 1320},
+  {"txn_id": "BH-TXN-20250810-008", "vip_no": "BH-2018-00102", "txn_date": "2025-08-10", "store": "东方商厦浦东店", "dept": "男装", "brand": "杰尼亚", "item": "衬衫", "amt": 2800.00, "pay_type": "现金", "points_earned": 280},
+  {"txn_id": "BH-TXN-20260228-009", "vip_no": "BH-2022-04521", "txn_date": "2026-02-28", "store": "第一百货南京东路店", "dept": "运动", "brand": "lululemon", "item": "瑜伽裤", "amt": 850.00, "pay_type": "微信支付", "points_earned": 85},
+  {"txn_id": "BH-TXN-20260220-010", "vip_no": "BH-2022-04521", "txn_date": "2026-02-20", "store": "第一百货南京东路店", "dept": "化妆品", "brand": "雅诗兰黛", "item": "小棕瓶眼霜", "amt": 590.00, "pay_type": "支付宝", "points_earned": 59},
+  {"txn_id": "BH-TXN-20250615-011", "vip_no": "BH-2017-00058", "txn_date": "2025-06-15", "store": "东方商厦徐汇店", "dept": "钟表", "brand": "OMEGA", "item": "海马系列腕表", "amt": 52000.00, "pay_type": "银联卡", "points_earned": 5200},
+  {"txn_id": "BH-TXN-20260105-012", "vip_no": "BH-2020-01567", "txn_date": "2026-01-05", "store": "东方商厦浦东店", "dept": "男装", "brand": "Ralph Lauren", "item": "羽绒服", "amt": 3600.00, "pay_type": "微信支付", "points_earned": 360},
+  {"txn_id": "BH-TXN-20260310-013", "vip_no": "BH-2019-00890", "txn_date": "2026-03-10", "store": "第一百货南京东路店", "dept": "化妆品", "brand": "SK-II", "item": "神仙水230ml", "amt": 1590.00, "pay_type": "支付宝", "points_earned": 159},
+  {"txn_id": "BH-TXN-20260305-014", "vip_no": "BH-2019-00890", "txn_date": "2026-03-05", "store": "第一百货南京东路店", "dept": "化妆品", "brand": "CPB", "item": "隔离霜", "amt": 980.00, "pay_type": "微信支付", "points_earned": 98},
+  {"txn_id": "BH-TXN-20240315-015", "vip_no": "BH-2024-08901", "txn_date": "2024-03-15", "store": "东方商厦徐汇店", "dept": "运动", "brand": "Nike", "item": "跑鞋Air Max", "amt": 1299.00, "pay_type": "支付宝", "points_earned": 130}
+]

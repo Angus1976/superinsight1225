@@ -1,0 +1,89 @@
+{
+  "_meta": {
+    "description": "业务规则定义 — 注入到数据中的业务逻辑规则集",
+    "version": "1.0",
+    "applied_to": "百联集团会员体系",
+    "created_at": "2026-03-19T10:00:00+08:00"
+  },
+  "rules": {
+    "rfm_model": {
+      "name": "RFM会员价值模型",
+      "description": "基于最近消费时间(R)、消费频率(F)、消费金额(M)的会员价值分层",
+      "parameters": {
+        "recency_thresholds_days": [30, 90, 180, 365],
+        "frequency_thresholds_90d": [1, 3, 6, 12],
+        "monetary_thresholds_90d": [500, 2000, 10000, 50000]
+      },
+      "tier_mapping": {
+        "5-5-5": "超高价值活跃",
+        "5-5-4": "高价值活跃",
+        "5-4-2": "潜力成长",
+        "4-3-3": "中价值活跃",
+        "2-1-1": "低价值沉默",
+        "1-1-5": "高价值流失风险",
+        "1-1-1": "已流失/流失风险"
+      }
+    },
+    "lifecycle_rules": {
+      "name": "会员生命周期规则",
+      "stages": {
+        "new": {"label": "新客期", "condition": "注册≤90天且消费≤2次"},
+        "growing": {"label": "成长期", "condition": "消费频次环比增长>20%且会员时长>3个月"},
+        "active": {"label": "活跃期", "condition": "近90天消费≥3次且近30天有消费"},
+        "silent": {"label": "沉默期", "condition": "近90天消费≤1次且近180天有消费"},
+        "pre_churn": {"label": "预流失期", "condition": "近180天无消费且历史消费≥3次"},
+        "churned": {"label": "已流失", "condition": "近365天无消费"}
+      }
+    },
+    "value_tier_rules": {
+      "name": "会员价值等级规则",
+      "tiers": {
+        "vip": {"label": "VIP会员", "condition": "年消费≥100000或RFM总分≥13"},
+        "high": {"label": "高价值会员", "condition": "年消费≥30000或RFM总分≥11"},
+        "medium": {"label": "中价值会员", "condition": "年消费≥5000或RFM总分≥7"},
+        "low": {"label": "低价值会员", "condition": "年消费<5000且RFM总分<7"}
+      }
+    },
+    "cross_segment_rules": {
+      "name": "跨板块消费关联规则",
+      "cross_segment_index": {
+        "formula": "活跃板块数/总板块数 * 跨板块消费频次权重",
+        "thresholds": {"high": 0.8, "medium": 0.5, "low": 0.2}
+      },
+      "migration_patterns": [
+        {"from": "超市", "to": "百货", "trigger": "超市高频消费者在百货首次消费化妆品", "probability": 0.35},
+        {"from": "百货", "to": "购物中心", "trigger": "百货客户开始在购物中心消费餐饮/亲子", "probability": 0.42},
+        {"from": "购物中心", "to": "超市", "trigger": "购物中心客户开始在超市购买生鲜", "probability": 0.58}
+      ]
+    },
+    "churn_prediction_rules": {
+      "name": "流失预警规则",
+      "signals": [
+        {"signal": "消费频次下降", "weight": 0.25, "condition": "近90天频次<前90天频次的50%"},
+        {"signal": "消费金额下降", "weight": 0.20, "condition": "近90天金额<前90天金额的50%"},
+        {"signal": "板块活跃度下降", "weight": 0.20, "condition": "活跃板块数减少"},
+        {"signal": "积分长期未使用", "weight": 0.15, "condition": "积分余额>5000且180天未兑换"},
+        {"signal": "营销无响应", "weight": 0.20, "condition": "连续3次营销活动未参与"}
+      ],
+      "risk_levels": {
+        "very_low": {"range": [0, 0.1], "action": "常规维护"},
+        "low": {"range": [0.1, 0.3], "action": "关注观察"},
+        "medium": {"range": [0.3, 0.5], "action": "主动触达"},
+        "high": {"range": [0.5, 0.7], "action": "紧急挽回"},
+        "critical": {"range": [0.7, 0.9], "action": "VIP专属挽回"},
+        "churned": {"range": [0.9, 1.0], "action": "评估挽回价值"}
+      }
+    },
+    "marketing_response_rules": {
+      "name": "营销响应预测规则",
+      "channel_effectiveness": {
+        "APP推送": {"avg_open_rate": 0.35, "best_for": ["活跃期", "成长期"]},
+        "微信公众号": {"avg_open_rate": 0.28, "best_for": ["活跃期"]},
+        "短信": {"avg_open_rate": 0.12, "best_for": ["沉默期"]},
+        "专属顾问电话": {"avg_open_rate": 0.65, "best_for": ["VIP预流失"]},
+        "VIP邀请函": {"avg_open_rate": 0.55, "best_for": ["VIP"]},
+        "小红书": {"avg_open_rate": 0.40, "best_for": ["18-30岁女性"]}
+      }
+    }
+  }
+}

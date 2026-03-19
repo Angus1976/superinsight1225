@@ -1,0 +1,14 @@
+[
+  {"order_no": "LH20260318080001", "mbr_id": "LH-M-20190322-0001", "order_time": "2026-03-18 08:30:22", "shop": "LH-NJR-001", "total_amount": 235.60, "item_count": 12, "category_top": "生鲜食品", "payment": "WECHAT", "coupon_used": "N"},
+  {"order_no": "LH20260315090002", "mbr_id": "LH-M-20190322-0001", "order_time": "2026-03-15 09:15:33", "shop": "LH-NJR-001", "total_amount": 168.30, "item_count": 8, "category_top": "乳制品", "payment": "ALIPAY", "coupon_used": "Y"},
+  {"order_no": "LH20260310100003", "mbr_id": "LH-M-20190322-0001", "order_time": "2026-03-10 10:20:45", "shop": "LH-NJR-001", "total_amount": 312.80, "item_count": 15, "category_top": "进口食品", "payment": "WECHAT", "coupon_used": "N"},
+  {"order_no": "SJ20251205140004", "mbr_id": "LH-M-20200815-0002", "order_time": "2025-12-05 14:30:10", "shop": "SJ-XH-003", "total_amount": 89.50, "item_count": 5, "category_top": "日用品", "payment": "CASH", "coupon_used": "N"},
+  {"order_no": "LH20260317110005", "mbr_id": "LH-M-20210110-0003", "order_time": "2026-03-17 11:05:28", "shop": "LH-NJR-001", "total_amount": 456.20, "item_count": 18, "category_top": "有机食品", "payment": "WECHAT", "coupon_used": "Y"},
+  {"order_no": "LH20260314080006", "mbr_id": "LH-M-20210110-0003", "order_time": "2026-03-14 08:45:12", "shop": "LH-NJR-001", "total_amount": 289.90, "item_count": 10, "category_top": "母婴用品", "payment": "ALIPAY", "coupon_used": "Y"},
+  {"order_no": "LH20260316150007", "mbr_id": "LH-M-20220618-0005", "order_time": "2026-03-16 15:22:38", "shop": "LH-NJR-001", "total_amount": 198.70, "item_count": 9, "category_top": "零食饮料", "payment": "WECHAT", "coupon_used": "N"},
+  {"order_no": "SJ20250922160008", "mbr_id": "LH-M-20180501-0004", "order_time": "2025-09-22 16:10:55", "shop": "SJ-PD-002", "total_amount": 56.80, "item_count": 3, "category_top": "粮油调味", "payment": "CASH", "coupon_used": "N"},
+  {"order_no": "LH20260318120009", "mbr_id": "LH-M-20190915-0009", "order_time": "2026-03-18 12:30:18", "shop": "LH-NJR-001", "total_amount": 380.50, "item_count": 14, "category_top": "个护美妆", "payment": "WECHAT", "coupon_used": "Y"},
+  {"order_no": "SJ20260220100010", "mbr_id": "LH-M-20201111-0008", "order_time": "2026-02-20 10:45:30", "shop": "SJ-PD-002", "total_amount": 225.60, "item_count": 11, "category_top": "生鲜食品", "payment": "ALIPAY", "coupon_used": "N"},
+  {"order_no": "SJ20250701090011", "mbr_id": "LH-M-20171201-0006", "order_time": "2025-07-01 09:20:42", "shop": "SJ-XH-003", "total_amount": 135.20, "item_count": 7, "category_top": "酒水", "payment": "WECHAT", "coupon_used": "N"},
+  {"order_no": "LH20231015130012", "mbr_id": "LH-M-20230308-0007", "order_time": "2023-10-15 13:55:08", "shop": "LH-NJR-001", "total_amount": 42.30, "item_count": 2, "category_top": "零食饮料", "payment": "WECHAT", "coupon_used": "N"}
+]

@@ -1,0 +1,217 @@
+{
+  "_meta": {
+    "description": "会员画像 — AI标注 + 业务规则计算后的会员多维画像",
+    "annotation_model": "SuperInsight AI预标注 + 业务专家审核",
+    "rules_applied": ["RFM模型", "生命周期规则", "跨板块消费关联", "营销响应预测"],
+    "processed_at": "2026-03-19T10:00:00+08:00"
+  },
+  "profiles": [
+    {
+      "unified_id": "BL-UID-000001",
+      "name": "王丽",
+      "lifecycle_stage": "active",
+      "lifecycle_label": "活跃期",
+      "rfm": {"recency_days": 18, "frequency_90d": 12, "monetary_90d": 18426.70, "score": "5-5-4", "tier": "高价值活跃"},
+      "value_tier": "high",
+      "value_label": "高价值会员",
+      "consumption_preferences": {
+        "primary_categories": ["化妆品", "女装", "生鲜食品"],
+        "preferred_brands": ["兰蔻", "MAXMARA", "周大福"],
+        "price_sensitivity": "medium",
+        "coupon_affinity": 0.35,
+        "preferred_payment": "微信支付",
+        "shopping_time_preference": "上午"
+      },
+      "cross_segment_behavior": {
+        "百货": {"frequency": "high", "avg_ticket": 5306.67, "focus": "化妆品/女装/珠宝"},
+        "超市": {"frequency": "high", "avg_ticket": 238.90, "focus": "生鲜/乳制品/进口食品"},
+        "购物中心": {"frequency": "medium", "avg_ticket": 1200.00, "focus": "餐饮/亲子"}
+      },
+      "churn_risk": {"score": 0.08, "level": "low", "signals": []},
+      "marketing_responsiveness": {"overall_score": 0.72, "preferred_channels": ["微信公众号", "APP推送"], "best_contact_time": "周末上午", "campaign_history": {"participated": 8, "converted": 5}},
+      "tags": ["高价值", "活跃", "跨板块消费", "化妆品爱好者", "品质生活", "家庭消费"],
+      "last_updated": "2026-03-19T10:00:00+08:00"
+    },
+    {
+      "unified_id": "BL-UID-000002",
+      "name": "张明",
+      "lifecycle_stage": "silent",
+      "lifecycle_label": "沉默期",
+      "rfm": {"recency_days": 119, "frequency_90d": 1, "monetary_90d": 89.50, "score": "2-1-1", "tier": "低价值沉默"},
+      "value_tier": "medium",
+      "value_label": "中价值会员",
+      "consumption_preferences": {
+        "primary_categories": ["男装", "日用品"],
+        "preferred_brands": ["BOSS"],
+        "price_sensitivity": "medium",
+        "coupon_affinity": 0.15,
+        "preferred_payment": "银联卡",
+        "shopping_time_preference": "下午"
+      },
+      "cross_segment_behavior": {
+        "百货": {"frequency": "low", "avg_ticket": 4200.00, "focus": "男装"},
+        "超市": {"frequency": "low", "avg_ticket": 95.20, "focus": "日用品"},
+        "购物中心": {"frequency": "low", "avg_ticket": 800.00, "focus": "餐饮"}
+      },
+      "churn_risk": {"score": 0.65, "level": "high", "signals": ["消费频次下降", "最近4个月无百货消费", "超市消费间隔拉长"]},
+      "marketing_responsiveness": {"overall_score": 0.28, "preferred_channels": ["短信"], "best_contact_time": "工作日午间", "campaign_history": {"participated": 2, "converted": 0}},
+      "tags": ["中价值", "沉默期", "流失风险高", "男装偏好", "低频消费"],
+      "last_updated": "2026-03-19T10:00:00+08:00"
+    },
+    {
+      "unified_id": "BL-UID-000003",
+      "name": "李芳",
+      "lifecycle_stage": "active",
+      "lifecycle_label": "活跃期",
+      "rfm": {"recency_days": 4, "frequency_90d": 18, "monetary_90d": 46126.10, "score": "5-5-5", "tier": "超高价值活跃"},
+      "value_tier": "vip",
+      "value_label": "VIP会员",
+      "consumption_preferences": {
+        "primary_categories": ["化妆品", "女装", "箱包", "有机食品", "母婴用品"],
+        "preferred_brands": ["LA MER", "CHANEL", "LV"],
+        "price_sensitivity": "low",
+        "coupon_affinity": 0.55,
+        "preferred_payment": "银联卡",
+        "shopping_time_preference": "全天"
+      },
+      "cross_segment_behavior": {
+        "百货": {"frequency": "very_high", "avg_ticket": 15126.67, "focus": "奢侈品/化妆品"},
+        "超市": {"frequency": "very_high", "avg_ticket": 373.05, "focus": "有机食品/母婴"},
+        "购物中心": {"frequency": "high", "avg_ticket": 2800.00, "focus": "亲子/餐饮/SPA"}
+      },
+      "churn_risk": {"score": 0.02, "level": "very_low", "signals": []},
+      "marketing_responsiveness": {"overall_score": 0.88, "preferred_channels": ["APP推送", "专属顾问", "微信公众号"], "best_contact_time": "随时", "campaign_history": {"participated": 15, "converted": 12}},
+      "tags": ["VIP", "超高价值", "活跃", "全板块消费", "奢侈品客户", "母婴需求", "高营销响应"],
+      "last_updated": "2026-03-19T10:00:00+08:00"
+    },
+    {
+      "unified_id": "BL-UID-000004",
+      "name": "陈建国",
+      "lifecycle_stage": "pre_churn",
+      "lifecycle_label": "预流失期",
+      "rfm": {"recency_days": 221, "frequency_90d": 0, "monetary_90d": 0, "score": "1-1-1", "tier": "流失风险"},
+      "value_tier": "medium",
+      "value_label": "中价值会员",
+      "consumption_preferences": {
+        "primary_categories": ["男装", "粮油调味"],
+        "preferred_brands": ["杰尼亚"],
+        "price_sensitivity": "medium",
+        "coupon_affinity": 0.10,
+        "preferred_payment": "现金",
+        "shopping_time_preference": "下午"
+      },
+      "churn_risk": {"score": 0.85, "level": "critical", "signals": ["7个月无任何消费", "积分长期未使用", "超市消费已停止", "购物中心8个月未到访"]},
+      "marketing_responsiveness": {"overall_score": 0.15, "preferred_channels": ["电话"], "best_contact_time": "工作日下午", "campaign_history": {"participated": 1, "converted": 0}},
+      "tags": ["中价值", "预流失", "流失风险极高", "传统消费习惯", "需紧急挽回"],
+      "last_updated": "2026-03-19T10:00:00+08:00"
+    },
+    {
+      "unified_id": "BL-UID-000005",
+      "name": "赵雪",
+      "lifecycle_stage": "growing",
+      "lifecycle_label": "成长期",
+      "rfm": {"recency_days": 14, "frequency_90d": 8, "monetary_90d": 1638.70, "score": "5-4-2", "tier": "潜力成长"},
+      "value_tier": "medium",
+      "value_label": "中价值会员",
+      "consumption_preferences": {
+        "primary_categories": ["运动", "化妆品", "零食饮料"],
+        "preferred_brands": ["lululemon", "雅诗兰黛"],
+        "price_sensitivity": "medium",
+        "coupon_affinity": 0.40,
+        "preferred_payment": "微信支付",
+        "shopping_time_preference": "下午/晚间"
+      },
+      "churn_risk": {"score": 0.12, "level": "low", "signals": []},
+      "marketing_responsiveness": {"overall_score": 0.65, "preferred_channels": ["小红书", "APP推送"], "best_contact_time": "晚间", "campaign_history": {"participated": 5, "converted": 3}},
+      "tags": ["中价值", "成长期", "年轻女性", "运动健康", "社交媒体活跃", "潜力客户"],
+      "last_updated": "2026-03-19T10:00:00+08:00"
+    },
+    {
+      "unified_id": "BL-UID-000006",
+      "name": "刘伟",
+      "lifecycle_stage": "pre_churn",
+      "lifecycle_label": "预流失期",
+      "rfm": {"recency_days": 277, "frequency_90d": 0, "monetary_90d": 0, "score": "1-1-5", "tier": "高价值流失风险"},
+      "value_tier": "vip",
+      "value_label": "VIP会员",
+      "consumption_preferences": {
+        "primary_categories": ["钟表", "酒水"],
+        "preferred_brands": ["OMEGA"],
+        "price_sensitivity": "very_low",
+        "coupon_affinity": 0.05,
+        "preferred_payment": "银联卡",
+        "shopping_time_preference": "上午"
+      },
+      "churn_risk": {"score": 0.78, "level": "critical", "signals": ["9个月无消费", "历史高客单价客户", "积分大量未使用", "停车券兑换后未再到访"]},
+      "marketing_responsiveness": {"overall_score": 0.20, "preferred_channels": ["专属顾问电话", "VIP邀请函"], "best_contact_time": "工作日上午", "campaign_history": {"participated": 3, "converted": 2}},
+      "tags": ["VIP", "高价值流失风险", "预流失", "高端消费", "需VIP专属挽回", "钟表收藏"],
+      "last_updated": "2026-03-19T10:00:00+08:00"
+    },
+    {
+      "unified_id": "BL-UID-000007",
+      "name": "孙婷",
+      "lifecycle_stage": "churned",
+      "lifecycle_label": "已流失",
+      "rfm": {"recency_days": 521, "frequency_90d": 0, "monetary_90d": 0, "score": "1-1-1", "tier": "已流失"},
+      "value_tier": "low",
+      "value_label": "低价值会员",
+      "churn_risk": {"score": 0.98, "level": "churned", "signals": ["17个月无任何消费", "注册后仅消费2次", "从未参与营销活动"]},
+      "tags": ["低价值", "已流失", "Z世代", "价格敏感", "低挽回优先级"],
+      "last_updated": "2026-03-19T10:00:00+08:00"
+    },
+    {
+      "unified_id": "BL-UID-000008",
+      "name": "周强",
+      "lifecycle_stage": "active",
+      "lifecycle_label": "活跃期",
+      "rfm": {"recency_days": 59, "frequency_90d": 5, "monetary_90d": 3825.60, "score": "4-3-3", "tier": "中价值活跃"},
+      "value_tier": "medium",
+      "value_label": "中价值会员",
+      "consumption_preferences": {
+        "primary_categories": ["男装", "生鲜食品"],
+        "preferred_brands": ["Ralph Lauren"],
+        "price_sensitivity": "medium",
+        "coupon_affinity": 0.25,
+        "preferred_payment": "微信支付",
+        "shopping_time_preference": "上午"
+      },
+      "churn_risk": {"score": 0.22, "level": "medium", "signals": ["百货消费频次偏低"]},
+      "marketing_responsiveness": {"overall_score": 0.50, "preferred_channels": ["APP推送", "短信"], "best_contact_time": "周末上午", "campaign_history": {"participated": 4, "converted": 2}},
+      "tags": ["中价值", "活跃", "家庭消费", "男装偏好", "稳定客户"],
+      "last_updated": "2026-03-19T10:00:00+08:00"
+    },
+    {
+      "unified_id": "BL-UID-000009",
+      "name": "吴敏",
+      "lifecycle_stage": "active",
+      "lifecycle_label": "活跃期",
+      "rfm": {"recency_days": 9, "frequency_90d": 10, "monetary_90d": 2950.50, "score": "5-5-3", "tier": "高频活跃"},
+      "value_tier": "high",
+      "value_label": "高价值会员",
+      "consumption_preferences": {
+        "primary_categories": ["化妆品", "个护美妆"],
+        "preferred_brands": ["SK-II", "CPB"],
+        "price_sensitivity": "low",
+        "coupon_affinity": 0.45,
+        "preferred_payment": "支付宝",
+        "shopping_time_preference": "中午/下午"
+      },
+      "churn_risk": {"score": 0.05, "level": "very_low", "signals": []},
+      "marketing_responsiveness": {"overall_score": 0.78, "preferred_channels": ["APP推送", "微信公众号"], "best_contact_time": "午间", "campaign_history": {"participated": 10, "converted": 7}},
+      "tags": ["高价值", "活跃", "化妆品重度用户", "高频消费", "高营销响应", "美妆达人"],
+      "last_updated": "2026-03-19T10:00:00+08:00"
+    },
+    {
+      "unified_id": "BL-UID-000010",
+      "name": "黄磊",
+      "lifecycle_stage": "churned",
+      "lifecycle_label": "已流失",
+      "rfm": {"recency_days": 369, "frequency_90d": 0, "monetary_90d": 0, "score": "1-1-1", "tier": "已流失"},
+      "value_tier": "low",
+      "value_label": "低价值会员",
+      "churn_risk": {"score": 0.95, "level": "churned", "signals": ["12个月无消费", "注册后仅消费1次", "积分极低"]},
+      "tags": ["低价值", "已流失", "新客流失", "运动偏好", "低挽回优先级"],
+      "last_updated": "2026-03-19T10:00:00+08:00"
+    }
+  ]
+}

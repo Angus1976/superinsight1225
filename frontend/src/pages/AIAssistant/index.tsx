@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  Card, Input, Button, Space, Typography, Avatar, List, Tag, Spin, Empty,
+  Card, Input, Button, Space, Typography, Avatar, List, Tag, Empty,
   Divider, Row, Col, message,
 } from 'antd';
 import {
@@ -14,6 +14,8 @@ import type { ChatMessage as ApiChatMessage, WorkflowItem } from '@/types/aiAssi
 import { useAuthStore } from '@/stores/authStore';
 import WorkflowSelector from './components/WorkflowSelector';
 import StatsPanel from './components/StatsPanel';
+import ProcessingSteps from './components/ProcessingSteps';
+import type { StatusStep } from './components/ProcessingSteps';
 import './styles.css';
 
 const { TextArea } = Input;
@@ -44,6 +46,9 @@ const AIAssistant: React.FC = () => {
   // Auth state
   const user = useAuthStore((s) => s.user);
   const userRole = user?.role || 'viewer';
+
+  // Processing steps for progress indicator
+  const [statusSteps, setStatusSteps] = useState<StatusStep[]>([]);
 
   // Stats refresh counter — increments after each completed message
   const [statsRefreshKey, setStatsRefreshKey] = useState(0);
@@ -124,9 +129,17 @@ const AIAssistant: React.FC = () => {
       { role: 'user' as const, content: inputValue },
     ];
 
+    // When no workflow is selected, fall back to the "LLM 直连" preset workflow
+    // so all requests go through the permission chain.
+    const effectiveWorkflowId = selectedWorkflowId
+      ?? workflows.find(w => w.is_preset && w.name === 'LLM 直连')?.id
+      ?? undefined;
+
+    setStatusSteps([]);
+
     const { abort } = sendMessageStream({
       messages: apiMessages,
-      workflow_id: selectedWorkflowId ?? undefined,
+      workflow_id: effectiveWorkflowId,
     }, {
       onChunk: (chunk) => {
         if (!chunk.content) return;
@@ -138,8 +151,12 @@ const AIAssistant: React.FC = () => {
           ),
         );
       },
+      onStatus: (text, progress) => {
+        setStatusSteps((prev) => [...prev, { text, progress, ts: Date.now() }]);
+      },
       onDone: () => {
         setIsLoading(false);
+        setStatusSteps([]);
         abortRef.current = null;
         setStatsRefreshKey((k) => k + 1);
       },
@@ -152,6 +169,7 @@ const AIAssistant: React.FC = () => {
         }
         console.error('AI stream error:', error);
         setIsLoading(false);
+        setStatusSteps([]);
         abortRef.current = null;
       },
     });
@@ -163,6 +181,7 @@ const AIAssistant: React.FC = () => {
     abortRef.current?.();
     abortRef.current = null;
     setIsLoading(false);
+    setStatusSteps([]);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -264,7 +283,7 @@ const AIAssistant: React.FC = () => {
               {isLoading && messages.length > 0 && messages[messages.length - 1].content === '' && (
                 <div className="message-item assistant">
                   <Avatar icon={<RobotOutlined />} style={{ backgroundColor: '#1890ff', flexShrink: 0 }} />
-                  <Spin tip={t('thinking')} />
+                  <ProcessingSteps steps={statusSteps} visible={isLoading} />
                 </div>
               )}
               <div ref={messagesEndRef} />
@@ -319,6 +338,7 @@ const AIAssistant: React.FC = () => {
               selectedId={selectedWorkflowId}
               onSelect={setSelectedWorkflowId}
               loading={workflowsLoading}
+              userRole={userRole}
             />
 
             {/* Stats */}

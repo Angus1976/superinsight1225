@@ -35,6 +35,8 @@
   "dataQualityCheckPrompt": "帮我分析当前数据集的质量，找出可能存在的问题，并给出改进建议。",
   "smartAnnotationPrompt": "请帮我分析未标注的数据，并提供智能标注建议。",
   "taskTrackingPrompt": "帮我分析当前所有任务的进度，找出可能延期的任务，并给出优化建议。",
+  "llmDirect": "LLM 直连",
+  "llmDirectDesc": "直接与大语言模型对话，无技能和数据源注入，响应最快",
   "aiServiceUnavailable": "AI 服务不可用",
   "skillPanel": "🛠 技能面板",
   "noSkills": "暂无可用技能",

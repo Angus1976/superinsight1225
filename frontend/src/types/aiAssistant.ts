@@ -49,6 +49,8 @@ export interface ChatResponse {
 
 export interface StreamChunk {
   content?: string;
+  status?: string;
+  progress?: number;
   error?: string;
   done: boolean;
 }

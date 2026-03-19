@@ -12,6 +12,7 @@ const API_BASE = '/api/v1/ai-assistant';
 
 export interface StreamCallbacks {
   onChunk: (chunk: StreamChunk) => void;
+  onStatus?: (text: string, progress?: number) => void;
   onDone: () => void;
   onError: (error: Error) => void;
 }
@@ -88,6 +89,10 @@ async function consumeStream(
         if (chunk.error) {
           callbacks.onError(new Error(chunk.error));
           return;
+        }
+        if (chunk.status && callbacks.onStatus) {
+          callbacks.onStatus(chunk.status, chunk.progress);
+          continue;
         }
         if (chunk.done) {
           callbacks.onDone();

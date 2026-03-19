@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { Card, Input, Tag, Empty, Space, Typography, Spin, Alert } from 'antd';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { Card, Input, Tag, Empty, Space, Typography, Spin, Alert, Pagination } from 'antd';
 import { SearchOutlined, ThunderboltOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import type { WorkflowItem } from '@/types/aiAssistant';
@@ -7,12 +7,35 @@ import type { WorkflowItem } from '@/types/aiAssistant';
 const { Text } = Typography;
 
 const STORAGE_KEY = 'ai_last_workflow_id';
+const PAGE_SIZE = 4;
 
 export interface WorkflowSelectorProps {
   workflows: WorkflowItem[];
   selectedId: string | null;
   onSelect: (id: string) => void;
   loading?: boolean;
+  userRole?: string;
+}
+
+/**
+ * Smart sort: role-match first → preset → has skills → alphabetical.
+ */
+function smartSort(items: WorkflowItem[], userRole: string): WorkflowItem[] {
+  return [...items].sort((a, b) => {
+    const aRole = a.visible_roles?.includes(userRole) ? 1 : 0;
+    const bRole = b.visible_roles?.includes(userRole) ? 1 : 0;
+    if (aRole !== bRole) return bRole - aRole;
+
+    const aPreset = a.is_preset ? 1 : 0;
+    const bPreset = b.is_preset ? 1 : 0;
+    if (aPreset !== bPreset) return bPreset - aPreset;
+
+    const aSkills = a.skill_ids?.length ?? 0;
+    const bSkills = b.skill_ids?.length ?? 0;
+    if (aSkills !== bSkills) return bSkills - aSkills;
+
+    return (a.name || '').localeCompare(b.name || '');
+  });
 }
 
 const WorkflowSelector: React.FC<WorkflowSelectorProps> = ({
@@ -20,9 +43,11 @@ const WorkflowSelector: React.FC<WorkflowSelectorProps> = ({
   selectedId,
   onSelect,
   loading = false,
+  userRole = 'viewer',
 }) => {
   const { t } = useTranslation('workflow');
   const [searchText, setSearchText] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Restore last selection from localStorage on mount
   useEffect(() => {
@@ -36,7 +61,6 @@ const WorkflowSelector: React.FC<WorkflowSelectorProps> = ({
     }
   }, [workflows]);
 
-  // Persist selection to localStorage
   const handleSelect = useCallback((id: string) => {
     localStorage.setItem(STORAGE_KEY, id);
     onSelect(id);
@@ -54,15 +78,24 @@ const WorkflowSelector: React.FC<WorkflowSelectorProps> = ({
     );
   }, []);
 
-  const filtered = filterWorkflows(workflows, searchText);
+  // Smart sort + filter + paginate
+  const sorted = useMemo(() => smartSort(workflows, userRole), [workflows, userRole]);
+  const filtered = useMemo(() => filterWorkflows(sorted, searchText), [sorted, searchText]);
+  const totalCount = filtered.length;
+  const pageItems = useMemo(
+    () => filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [filtered, currentPage],
+  );
+
+  // Reset page when search changes
+  useEffect(() => { setCurrentPage(1); }, [searchText]);
+
   const showGuideTip = !selectedId && workflows.length > 0;
 
   if (loading) {
     return (
       <Card title={t('selector.title')} size="small">
-        <div style={{ textAlign: 'center', padding: '24px 0' }}>
-          <Spin />
-        </div>
+        <div style={{ textAlign: 'center', padding: '24px 0' }}><Spin /></div>
       </Card>
     );
   }
@@ -83,28 +116,37 @@ const WorkflowSelector: React.FC<WorkflowSelectorProps> = ({
           />
 
           {showGuideTip && (
-            <Alert
-              message={t('selector.guideTip')}
-              type="info"
-              showIcon
-              style={{ marginBottom: 12 }}
-            />
+            <Alert message={t('selector.guideTip')} type="info" showIcon style={{ marginBottom: 12 }} />
           )}
 
           {filtered.length === 0 ? (
             <Empty description={t('selector.noResults')} image={Empty.PRESENTED_IMAGE_SIMPLE} />
           ) : (
-            <Space direction="vertical" size={8} style={{ width: '100%' }}>
-              {filtered.map(workflow => (
-                <WorkflowCard
-                  key={workflow.id}
-                  workflow={workflow}
-                  selected={workflow.id === selectedId}
-                  onSelect={handleSelect}
-                  t={t}
-                />
-              ))}
-            </Space>
+            <>
+              <Space direction="vertical" size={8} style={{ width: '100%' }}>
+                {pageItems.map(workflow => (
+                  <WorkflowCard
+                    key={workflow.id}
+                    workflow={workflow}
+                    selected={workflow.id === selectedId}
+                    onSelect={handleSelect}
+                    t={t}
+                  />
+                ))}
+              </Space>
+              {totalCount > PAGE_SIZE && (
+                <div style={{ textAlign: 'center', marginTop: 12 }}>
+                  <Pagination
+                    current={currentPage}
+                    pageSize={PAGE_SIZE}
+                    total={totalCount}
+                    onChange={setCurrentPage}
+                    size="small"
+                    simple
+                  />
+                </div>
+              )}
+            </>
           )}
         </>
       )}

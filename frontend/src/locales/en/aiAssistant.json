@@ -35,6 +35,8 @@
   "dataQualityCheckPrompt": "Analyze the quality of the current dataset, identify potential issues, and provide improvement suggestions.",
   "smartAnnotationPrompt": "Analyze unlabeled data and provide smart annotation suggestions.",
   "taskTrackingPrompt": "Analyze the progress of all current tasks, identify tasks at risk of delay, and provide optimization suggestions.",
+  "llmDirect": "LLM Direct",
+  "llmDirectDesc": "Direct conversation with LLM, no skills or data sources injected, fastest response",
   "aiServiceUnavailable": "AI service unavailable",
   "skillPanel": "🛠 Skills",
   "noSkills": "No skills available",

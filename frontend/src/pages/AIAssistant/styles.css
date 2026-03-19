@@ -159,3 +159,42 @@
   max-height: 400px;
   overflow-y: auto;
 }
+
+/* Processing steps progress indicator */
+.processing-steps {
+  padding: 8px 12px;
+  background: #fafafa;
+  border-radius: 8px;
+  margin: 8px 0;
+  min-width: 220px;
+  max-width: 70%;
+}
+
+.processing-steps-list {
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.processing-step {
+  display: flex;
+  align-items: center;
+  padding: 3px 0;
+  transition: opacity 0.3s;
+}
+
+.processing-step-active {
+  opacity: 1;
+}
+
+.processing-step-active .anticon-loading {
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.processing-step-done {
+  opacity: 0.6;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}

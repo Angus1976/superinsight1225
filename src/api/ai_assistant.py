@@ -10,7 +10,7 @@ import logging
 import asyncio
 from typing import AsyncIterator, List, Literal, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request as FastAPIRequest
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field, model_validator
 from sqlalchemy.orm import Session
@@ -426,10 +426,31 @@ async def _chat_workflow(
     )
 
 
+async def _disconnect_aware(
+    generator: AsyncIterator[str],
+    http_request: FastAPIRequest,
+) -> AsyncIterator[str]:
+    """Wrap an async generator to stop when the client disconnects.
+
+    Checks ``http_request.is_disconnected()`` between chunks so that
+    long-running LLM calls are cancelled promptly when the user clicks
+    "Stop", saving tokens.
+    """
+    try:
+        async for chunk in generator:
+            if await http_request.is_disconnected():
+                logger.info("Client disconnected, stopping stream")
+                break
+            yield chunk
+    finally:
+        await generator.aclose()
+
+
 def _stream_workflow_response(
     request: ChatRequest,
     user: UserModel,
     db: Session,
+    http_request: FastAPIRequest,
 ) -> StreamingResponse:
     """Build a StreamingResponse for workflow-routed streaming chat."""
     from src.ai.workflow_service import WorkflowService
@@ -447,7 +468,7 @@ def _stream_workflow_response(
         api_overrides=api_overrides,
     )
     return StreamingResponse(
-        generator,
+        _disconnect_aware(generator, http_request),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "Connection": "keep-alive"},
     )
@@ -518,13 +539,14 @@ async def openclaw_stream(
 @router.post("/chat/stream")
 async def chat_stream(
     request: ChatRequest,
+    http_request: FastAPIRequest,
     current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> StreamingResponse:
     """Streaming chat endpoint. Routes to LLMSwitcher or OpenClaw SSE stream."""
     # Workflow routing: delegate to WorkflowService when workflow_id is present
     if request.workflow_id:
-        return _stream_workflow_response(request, current_user, db)
+        return _stream_workflow_response(request, current_user, db, http_request)
 
     # Filter skill_ids by role permissions
     original_skill_ids = list(request.skill_ids or [])
@@ -569,7 +591,7 @@ async def chat_stream(
         generator = generate_stream(request, switcher, system_prompt=effective_system)
 
     return StreamingResponse(
-        generator,
+        _disconnect_aware(generator, http_request),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "Connection": "keep-alive"},
     )

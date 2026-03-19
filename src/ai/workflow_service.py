@@ -849,22 +849,39 @@ class WorkflowService:
         """
         options = options or GenerateOptions()
         workflow = self._get_or_404(workflow_id)
+
+        yield self._sse_status("权限校验中...", 5)
         effective = self.check_permission_chain(workflow, user.role, api_overrides)
+        yield self._sse_status("权限校验通过", 10)
+
+        has_skills = bool(effective.allowed_skill_ids)
+        has_data = bool(effective.allowed_data_sources)
+
+        if has_data:
+            yield self._sse_status("加载数据上下文...", 15)
 
         system_prompt = self._build_execution_system_prompt(
             effective.allowed_data_sources, workflow.preset_prompt,
         )
 
+        if has_data:
+            yield self._sse_status("数据上下文就绪", 20)
+
         start_ms = time.time()
         failed_skills: List[dict] = []
 
-        if effective.allowed_skill_ids:
+        if has_skills:
+            n_skills = len(effective.allowed_skill_ids)
+            yield self._sse_status(
+                f"准备执行 {n_skills} 个技能...", 25,
+            )
             async for chunk in self._stream_with_skills(
                 effective.allowed_skill_ids, user.tenant_id,
                 prompt, options, system_prompt, failed_skills,
             ):
                 yield chunk
         else:
+            yield self._sse_status("连接 LLM...", 25)
             async for chunk in self._stream_direct_llm(
                 prompt, options, system_prompt,
             ):
@@ -995,13 +1012,19 @@ class WorkflowService:
         service = OpenClawChatService(bridge=get_openclaw_llm_bridge(), db=self.db)
         gateway_id = self._get_active_gateway_id(tenant_id)
 
-        for skill_id in skill_ids:
+        total = len(skill_ids)
+        for idx, skill_id in enumerate(skill_ids):
+            pct = 30 + int(60 * idx / total)
+            yield self._sse_status(
+                f"执行技能 ({idx + 1}/{total}): {skill_id}...", pct,
+            )
             async for chunk in self._stream_single_skill(
                 service, gateway_id, tenant_id, skill_id,
                 prompt, options, system_prompt, failed_skills,
             ):
                 yield chunk
 
+        yield self._sse_status("生成完成", 95)
         # Final done chunk
         yield self._sse_chunk(content="", done=True)
 
@@ -1024,6 +1047,7 @@ class WorkflowService:
             )
             return
         try:
+            yield self._sse_status(f"连接技能网关: {skill_id}...")
             async for chunk in service.stream_chat(
                 gateway_id=gateway_id,
                 tenant_id=tenant_id,
@@ -1050,11 +1074,29 @@ class WorkflowService:
         from src.ai.llm_switcher import get_llm_switcher
 
         switcher = get_llm_switcher()
+        method_name = (
+            switcher.get_current_method().value
+            if switcher._initialized and switcher._current_method
+            else "LLM"
+        )
+        yield self._sse_status(f"连接 {method_name}...", 30)
+
         try:
+            first_chunk = True
             async for chunk in switcher.stream_generate(
                 prompt=prompt, options=options, system_prompt=system_prompt,
             ):
+                # Detect provider failover mid-stream
+                if switcher._failover_info:
+                    yield self._sse_status(
+                        f"已切换至备用模型: {switcher._failover_info}", 35,
+                    )
+                    switcher._failover_info = None
+                if first_chunk:
+                    yield self._sse_status("生成中...", 50)
+                    first_chunk = False
                 yield self._sse_chunk(content=chunk, done=False)
+            yield self._sse_status("生成完成", 95)
             yield self._sse_chunk(content="", done=True)
         except Exception as exc:
             logger.error("LLM stream failed: %s", exc)
@@ -1297,6 +1339,17 @@ class WorkflowService:
                 "visible_roles": ["admin", "business_expert", "annotator", "viewer"],
                 "preset_prompt": "请分析当前任务的完成进度，包括已完成、进行中和待处理的任务统计。",
             },
+            {
+                "name": "LLM 直连",
+                "name_en": "LLM Direct",
+                "description": "直接与大语言模型对话，无技能和数据源注入，响应最快",
+                "description_en": "Direct conversation with LLM, no skills or data sources injected, fastest response",
+                "skill_ids": [],
+                "data_source_auth": [],
+                "output_modes": ["merge"],
+                "visible_roles": ["admin", "business_expert", "annotator", "viewer"],
+                "preset_prompt": "",
+            },
         ]
 
         created: List[AIWorkflow] = []
@@ -1341,4 +1394,12 @@ class WorkflowService:
         payload: dict = {"content": content, "done": done}
         if error:
             payload["error"] = error
+        return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
+
+    @staticmethod
+    def _sse_status(text: str, progress: Optional[int] = None) -> str:
+        """Format an SSE status event for progress display."""
+        payload: dict = {"status": text, "done": False}
+        if progress is not None:
+            payload["progress"] = max(0, min(100, progress))
         return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"

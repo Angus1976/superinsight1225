@@ -110,6 +110,11 @@ class OpenClawChatService:
             yield self._sse_chunk(
                 error="OpenClaw 网关响应超时", done=True
             )
+        except httpx.ConnectTimeout:
+            logger.warning("Connect timeout for gateway %s", gateway_id)
+            yield self._sse_chunk(
+                error="OpenClaw 网关连接超时（10s）", done=True
+            )
         except httpx.ConnectError:
             logger.warning("Connection failed for gateway %s", gateway_id)
             yield self._sse_chunk(
@@ -223,7 +228,10 @@ class OpenClawChatService:
         if system_prompt:
             payload["system_prompt"] = system_prompt
 
-        async with httpx.AsyncClient(timeout=STREAM_TIMEOUT_SECONDS) as client:
+        timeout = httpx.Timeout(
+            connect=10.0, read=STREAM_TIMEOUT_SECONDS, write=10.0, pool=10.0,
+        )
+        async with httpx.AsyncClient(timeout=timeout) as client:
             resp = await client.post(url, json=payload)
             if resp.status_code != 200:
                 raise OpenClawUnavailableError(
@@ -251,6 +259,7 @@ class OpenClawChatService:
         skill_ids: Optional[list[str]],
     ) -> AsyncIterator[str]:
         """Wrap a non-streaming response as SSE chunks (fallback)."""
+        yield self._sse_status("LLM 生成中（非流式）...")
         opts = self._build_options_dict(options, skill_ids)
         response = await self.bridge.handle_llm_request(
             gateway_id=gateway_id,
@@ -284,4 +293,12 @@ class OpenClawChatService:
         payload: dict = {"content": content, "done": done}
         if error:
             payload["error"] = error
+        return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
+
+    @staticmethod
+    def _sse_status(text: str, progress: Optional[int] = None) -> str:
+        """Format an SSE status event for progress display."""
+        payload: dict = {"status": text, "done": False}
+        if progress is not None:
+            payload["progress"] = progress
         return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"

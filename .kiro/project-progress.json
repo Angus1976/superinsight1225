@@ -1,11 +1,11 @@
 {
   "version": "1.0",
-  "last_updated": "2026-03-11",
+  "last_updated": "2026-03-19",
   "updated_by": "Angus Liu",
   "progress": {
-    "percentage": 70,
-    "stage": "near_delivery",
-    "description": "接近交付阶段"
+    "percentage": 85,
+    "stage": "final_stage",
+    "description": "最终阶段 — 只做小幅修复/优化/配置，大改需确认"
   },
   "milestones": [
     {
@@ -30,13 +30,13 @@
       "name": "接近交付",
       "percentage": 70,
       "date": "2026-03-11",
-      "status": "current"
+      "status": "completed"
     },
     {
       "name": "测试优化",
       "percentage": 85,
-      "date": "2026-04-01",
-      "status": "planned"
+      "date": "2026-03-19",
+      "status": "current"
     },
     {
       "name": "正式交付",

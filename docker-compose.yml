@@ -49,6 +49,7 @@ services:
       - OPENAI_BASE_URL=${OPENAI_BASE_URL}
       - OPENAI_MODEL=${OPENAI_MODEL}
       - LLM_ENCRYPTION_KEY=${LLM_ENCRYPTION_KEY}
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:5173
     depends_on:
       - postgres
       - redis

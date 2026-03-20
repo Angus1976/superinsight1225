@@ -244,6 +244,39 @@ async def get_current_user_endpoint(
     )
 
 
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+
+@router.post("/change-password")
+async def change_password(
+    request: ChangePasswordRequest,
+    current_user: SimpleUser = Depends(get_current_user),
+    db: Session = Depends(get_db_session),
+):
+    """Change current user's password."""
+    if len(request.new_password) < 8:
+        raise HTTPException(status_code=400, detail="New password must be at least 8 characters")
+
+    result = db.execute(
+        text("SELECT password_hash FROM users WHERE id = :uid"),
+        {"uid": current_user.id},
+    )
+    row = result.fetchone()
+    if not row or not verify_password(request.current_password, row[0]):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+
+    new_hash = bcrypt.hashpw(request.new_password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+    db.execute(
+        text("UPDATE users SET password_hash = :h, updated_at = :now WHERE id = :uid"),
+        {"h": new_hash, "now": datetime.utcnow(), "uid": current_user.id},
+    )
+    db.commit()
+    logger.info(f"Password changed for user: {current_user.email}")
+    return {"message": "Password changed successfully"}
+
+
 @router.get("/tenants")
 def get_tenants(db: Session = Depends(get_db_session)):
     """Get available tenants for login."""

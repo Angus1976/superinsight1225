@@ -59,13 +59,17 @@ const SettingsPage: React.FC = () => {
   const handlePasswordSubmit = async (values: Record<string, string>) => {
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const { default: apiClient } = await import('@/services/api/client');
+      await apiClient.post('/api/auth/change-password', {
+        current_password: values.current_password,
+        new_password: values.new_password,
+      });
       message.success(t('security.changeSuccess'));
       passwordForm.resetFields();
-      console.log('Password values:', values);
-    } catch {
-      message.error(t('security.changeFailed'));
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { detail?: string } } };
+      const errorMsg = err.response?.data?.detail || t('security.changeFailed');
+      message.error(errorMsg);
     } finally {
       setLoading(false);
     }

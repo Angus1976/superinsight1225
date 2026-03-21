@@ -12,6 +12,14 @@
     {"id": "BL-UID-000005", "type": "Member", "properties": {"name": "赵雪", "value_tier": "medium", "lifecycle": "growing"}},
     {"id": "BL-UID-000006", "type": "Member", "properties": {"name": "刘伟", "value_tier": "vip", "lifecycle": "pre_churn"}},
     {"id": "BL-UID-000009", "type": "Member", "properties": {"name": "吴敏", "value_tier": "high", "lifecycle": "active"}},
+    {"id": "BL-UID-000011", "type": "Member", "properties": {"name": "林小红", "value_tier": "high", "lifecycle": "active"}},
+    {"id": "BL-UID-000012", "type": "Member", "properties": {"name": "马超", "value_tier": "medium", "lifecycle": "active"}},
+    {"id": "BL-UID-000013", "type": "Member", "properties": {"name": "杨秀英", "value_tier": "vip", "lifecycle": "active"}},
+    {"id": "BL-UID-000014", "type": "Member", "properties": {"name": "郑浩", "value_tier": "low", "lifecycle": "silent"}},
+    {"id": "BL-UID-000015", "type": "Member", "properties": {"name": "何美玲", "value_tier": "high", "lifecycle": "active"}},
+    {"id": "BL-UID-000018", "type": "Member", "properties": {"name": "谢丽萍", "value_tier": "medium", "lifecycle": "growing"}},
+    {"id": "BL-UID-000019", "type": "Member", "properties": {"name": "曹文斌", "value_tier": "medium", "lifecycle": "silent"}},
+    {"id": "BL-UID-000020", "type": "Member", "properties": {"name": "宋雅琴", "value_tier": "high", "lifecycle": "active"}},
     {"id": "CAT-cosmetics", "type": "Category", "properties": {"name": "化妆品", "segment": "百货"}},
     {"id": "CAT-women-fashion", "type": "Category", "properties": {"name": "女装", "segment": "百货"}},
     {"id": "CAT-men-fashion", "type": "Category", "properties": {"name": "男装", "segment": "百货"}},
@@ -33,7 +41,18 @@
     {"id": "BRAND-skii", "type": "Brand", "properties": {"name": "SK-II", "tier": "high-end"}},
     {"id": "BRAND-chanel", "type": "Brand", "properties": {"name": "CHANEL", "tier": "luxury"}},
     {"id": "BRAND-lv", "type": "Brand", "properties": {"name": "LV", "tier": "luxury"}},
-    {"id": "BRAND-omega", "type": "Brand", "properties": {"name": "OMEGA", "tier": "luxury"}}
+    {"id": "BRAND-omega", "type": "Brand", "properties": {"name": "OMEGA", "tier": "luxury"}},
+    {"id": "BRAND-cartier", "type": "Brand", "properties": {"name": "卡地亚", "tier": "luxury"}},
+    {"id": "BRAND-estee", "type": "Brand", "properties": {"name": "雅诗兰黛", "tier": "high-end"}},
+    {"id": "BRAND-maxmara", "type": "Brand", "properties": {"name": "MAXMARA", "tier": "high-end"}},
+    {"id": "BRAND-boss", "type": "Brand", "properties": {"name": "BOSS", "tier": "high-end"}},
+    {"id": "BRAND-mac", "type": "Brand", "properties": {"name": "MAC", "tier": "mid-range"}},
+    {"id": "BRAND-theory", "type": "Brand", "properties": {"name": "Theory", "tier": "high-end"}},
+    {"id": "BRAND-rl", "type": "Brand", "properties": {"name": "Ralph Lauren", "tier": "high-end"}},
+    {"id": "CAT-dining", "type": "Category", "properties": {"name": "餐饮", "segment": "购物中心"}},
+    {"id": "CAT-kids", "type": "Category", "properties": {"name": "亲子", "segment": "购物中心"}},
+    {"id": "CAT-daily", "type": "Category", "properties": {"name": "日用品", "segment": "超市"}},
+    {"id": "CAT-dairy", "type": "Category", "properties": {"name": "乳制品", "segment": "超市"}}
   ],
   "edges": [
     {"from": "BL-UID-000001", "to": "CAT-cosmetics", "type": "PREFERS", "properties": {"strength": 0.85, "frequency": "high"}},
@@ -60,6 +79,49 @@
     {"from": "CAT-cosmetics", "to": "CAT-handbags", "type": "CROSS_PURCHASE", "properties": {"lift": 2.2, "confidence": 0.45}},
     {"from": "CAT-fresh-food", "to": "CAT-organic", "type": "CROSS_PURCHASE", "properties": {"lift": 3.1, "confidence": 0.72}},
     {"from": "CAT-women-fashion", "to": "CAT-jewelry", "type": "CROSS_PURCHASE", "properties": {"lift": 1.8, "confidence": 0.38}},
-    {"from": "CAT-watches", "to": "CAT-wine", "type": "CROSS_PURCHASE", "properties": {"lift": 2.5, "confidence": 0.55}}
+    {"from": "CAT-watches", "to": "CAT-wine", "type": "CROSS_PURCHASE", "properties": {"lift": 2.5, "confidence": 0.55}},
+
+    {"from": "BL-UID-000011", "to": "CAT-women-fashion", "type": "PREFERS", "properties": {"strength": 0.85, "frequency": "high"}},
+    {"from": "BL-UID-000011", "to": "CAT-cosmetics", "type": "PREFERS", "properties": {"strength": 0.70, "frequency": "medium"}},
+    {"from": "BL-UID-000011", "to": "BRAND-maxmara", "type": "LOYAL_TO", "properties": {"purchase_count": 5, "since": "2020-03"}},
+    {"from": "BL-UID-000011", "to": "BRAND-estee", "type": "LOYAL_TO", "properties": {"purchase_count": 4, "since": "2021-01"}},
+    {"from": "BL-UID-000011", "to": "STORE-dy-njr", "type": "FREQUENTS", "properties": {"visit_count_90d": 4, "avg_spend": 3380.00}},
+
+    {"from": "BL-UID-000012", "to": "CAT-men-fashion", "type": "PREFERS", "properties": {"strength": 0.80, "frequency": "medium"}},
+    {"from": "BL-UID-000012", "to": "CAT-sports", "type": "PREFERS", "properties": {"strength": 0.65, "frequency": "medium"}},
+    {"from": "BL-UID-000012", "to": "BRAND-boss", "type": "LOYAL_TO", "properties": {"purchase_count": 3, "since": "2022-01"}},
+    {"from": "BL-UID-000012", "to": "STORE-df-xh", "type": "FREQUENTS", "properties": {"visit_count_90d": 2, "avg_spend": 2049.50}},
+
+    {"from": "BL-UID-000013", "to": "CAT-jewelry", "type": "PREFERS", "properties": {"strength": 0.95, "frequency": "medium"}},
+    {"from": "BL-UID-000013", "to": "CAT-women-fashion", "type": "PREFERS", "properties": {"strength": 0.85, "frequency": "high"}},
+    {"from": "BL-UID-000013", "to": "CAT-cosmetics", "type": "PREFERS", "properties": {"strength": 0.70, "frequency": "medium"}},
+    {"from": "BL-UID-000013", "to": "BRAND-cartier", "type": "LOYAL_TO", "properties": {"purchase_count": 4, "since": "2021-06"}},
+    {"from": "BL-UID-000013", "to": "BRAND-chanel", "type": "LOYAL_TO", "properties": {"purchase_count": 6, "since": "2021-01"}},
+    {"from": "BL-UID-000013", "to": "BRAND-lamer", "type": "LOYAL_TO", "properties": {"purchase_count": 3, "since": "2022-06"}},
+
+    {"from": "BL-UID-000015", "to": "CAT-women-fashion", "type": "PREFERS", "properties": {"strength": 0.80, "frequency": "medium"}},
+    {"from": "BL-UID-000015", "to": "CAT-cosmetics", "type": "PREFERS", "properties": {"strength": 0.70, "frequency": "medium"}},
+    {"from": "BL-UID-000015", "to": "BRAND-lancome", "type": "LOYAL_TO", "properties": {"purchase_count": 4, "since": "2019-06"}},
+    {"from": "BL-UID-000015", "to": "STORE-df-xh", "type": "FREQUENTS", "properties": {"visit_count_90d": 3, "avg_spend": 3690.00}},
+
+    {"from": "BL-UID-000018", "to": "CAT-cosmetics", "type": "PREFERS", "properties": {"strength": 0.75, "frequency": "medium"}},
+    {"from": "BL-UID-000018", "to": "CAT-sports", "type": "PREFERS", "properties": {"strength": 0.60, "frequency": "medium"}},
+    {"from": "BL-UID-000018", "to": "BRAND-mac", "type": "LOYAL_TO", "properties": {"purchase_count": 2, "since": "2025-06"}},
+
+    {"from": "BL-UID-000019", "to": "CAT-men-fashion", "type": "PREFERS", "properties": {"strength": 0.75, "frequency": "low"}},
+    {"from": "BL-UID-000019", "to": "BRAND-rl", "type": "LOYAL_TO", "properties": {"purchase_count": 2, "since": "2022-03"}},
+
+    {"from": "BL-UID-000020", "to": "CAT-cosmetics", "type": "PREFERS", "properties": {"strength": 0.80, "frequency": "high"}},
+    {"from": "BL-UID-000020", "to": "CAT-women-fashion", "type": "PREFERS", "properties": {"strength": 0.70, "frequency": "medium"}},
+    {"from": "BL-UID-000020", "to": "CAT-fresh-food", "type": "PREFERS", "properties": {"strength": 0.85, "frequency": "very_high"}},
+    {"from": "BL-UID-000020", "to": "CAT-dairy", "type": "PREFERS", "properties": {"strength": 0.75, "frequency": "high"}},
+    {"from": "BL-UID-000020", "to": "BRAND-skii", "type": "LOYAL_TO", "properties": {"purchase_count": 3, "since": "2023-01"}},
+    {"from": "BL-UID-000020", "to": "BRAND-theory", "type": "LOYAL_TO", "properties": {"purchase_count": 2, "since": "2024-06"}},
+    {"from": "BL-UID-000020", "to": "STORE-dy-njr", "type": "FREQUENTS", "properties": {"visit_count_90d": 4, "avg_spend": 2530.00}},
+    {"from": "BL-UID-000020", "to": "STORE-lh-njr", "type": "FREQUENTS", "properties": {"visit_count_90d": 6, "avg_spend": 312.10}},
+
+    {"from": "CAT-jewelry", "to": "CAT-women-fashion", "type": "CROSS_PURCHASE", "properties": {"lift": 2.1, "confidence": 0.48}},
+    {"from": "CAT-cosmetics", "to": "CAT-fresh-food", "type": "CROSS_PURCHASE", "properties": {"lift": 1.9, "confidence": 0.42}},
+    {"from": "CAT-dairy", "to": "CAT-fresh-food", "type": "CROSS_PURCHASE", "properties": {"lift": 3.5, "confidence": 0.78}}
   ]
 }

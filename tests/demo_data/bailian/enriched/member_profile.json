@@ -212,6 +212,204 @@
       "churn_risk": {"score": 0.95, "level": "churned", "signals": ["12个月无消费", "注册后仅消费1次", "积分极低"]},
       "tags": ["低价值", "已流失", "新客流失", "运动偏好", "低挽回优先级"],
       "last_updated": "2026-03-19T10:00:00+08:00"
+    },
+    {
+      "unified_id": "BL-UID-000011",
+      "name": "林小红",
+      "lifecycle_stage": "active",
+      "lifecycle_label": "活跃期",
+      "rfm": {"recency_days": 11, "frequency_90d": 8, "monetary_90d": 7046.20, "score": "5-4-4", "tier": "高价值活跃"},
+      "value_tier": "high",
+      "value_label": "高价值会员",
+      "consumption_preferences": {
+        "primary_categories": ["女装", "化妆品", "生鲜食品"],
+        "preferred_brands": ["MAXMARA", "雅诗兰黛"],
+        "price_sensitivity": "medium",
+        "coupon_affinity": 0.40,
+        "preferred_payment": "微信支付",
+        "shopping_time_preference": "上午"
+      },
+      "cross_segment_behavior": {
+        "百货": {"frequency": "high", "avg_ticket": 3380.00, "focus": "女装/化妆品"},
+        "超市": {"frequency": "high", "avg_ticket": 219.60, "focus": "生鲜/乳制品"}
+      },
+      "churn_risk": {"score": 0.10, "level": "low", "signals": []},
+      "marketing_responsiveness": {"overall_score": 0.70, "preferred_channels": ["APP推送", "微信公众号"], "best_contact_time": "周末上午", "campaign_history": {"participated": 6, "converted": 4}},
+      "tags": ["高价值", "活跃", "女装爱好者", "跨板块消费", "稳定客户"],
+      "last_updated": "2026-03-19T10:00:00+08:00"
+    },
+    {
+      "unified_id": "BL-UID-000012",
+      "name": "马超",
+      "lifecycle_stage": "active",
+      "lifecycle_label": "活跃期",
+      "rfm": {"recency_days": 38, "frequency_90d": 4, "monetary_90d": 4277.90, "score": "4-3-3", "tier": "中价值活跃"},
+      "value_tier": "medium",
+      "value_label": "中价值会员",
+      "consumption_preferences": {
+        "primary_categories": ["男装", "运动", "日用品"],
+        "preferred_brands": ["BOSS", "Nike"],
+        "price_sensitivity": "medium",
+        "coupon_affinity": 0.20,
+        "preferred_payment": "银联卡",
+        "shopping_time_preference": "下午"
+      },
+      "cross_segment_behavior": {
+        "百货": {"frequency": "medium", "avg_ticket": 2049.50, "focus": "男装/运动"},
+        "超市": {"frequency": "low", "avg_ticket": 178.90, "focus": "日用品"}
+      },
+      "churn_risk": {"score": 0.25, "level": "medium", "signals": ["百货消费频次偏低"]},
+      "marketing_responsiveness": {"overall_score": 0.35, "preferred_channels": ["短信"], "best_contact_time": "工作日午间", "campaign_history": {"participated": 2, "converted": 1}},
+      "tags": ["中价值", "活跃", "男装偏好", "运动爱好者"],
+      "last_updated": "2026-03-19T10:00:00+08:00"
+    },
+    {
+      "unified_id": "BL-UID-000013",
+      "name": "杨秀英",
+      "lifecycle_stage": "active",
+      "lifecycle_label": "活跃期",
+      "rfm": {"recency_days": 7, "frequency_90d": 12, "monetary_90d": 103568.50, "score": "5-5-5", "tier": "超高价值活跃"},
+      "value_tier": "vip",
+      "value_label": "VIP会员",
+      "consumption_preferences": {
+        "primary_categories": ["珠宝", "女装", "化妆品", "有机食品"],
+        "preferred_brands": ["卡地亚", "CHANEL", "LA MER"],
+        "price_sensitivity": "very_low",
+        "coupon_affinity": 0.30,
+        "preferred_payment": "银联卡",
+        "shopping_time_preference": "上午"
+      },
+      "cross_segment_behavior": {
+        "百货": {"frequency": "very_high", "avg_ticket": 34226.67, "focus": "珠宝/奢侈品女装"},
+        "超市": {"frequency": "high", "avg_ticket": 444.40, "focus": "有机食品/进口食品"},
+        "购物中心": {"frequency": "medium", "avg_ticket": 1500.00, "focus": "餐饮/养生"}
+      },
+      "churn_risk": {"score": 0.03, "level": "very_low", "signals": []},
+      "marketing_responsiveness": {"overall_score": 0.85, "preferred_channels": ["专属顾问", "VIP邀请函"], "best_contact_time": "工作日上午", "campaign_history": {"participated": 8, "converted": 6}},
+      "tags": ["VIP", "超高价值", "活跃", "珠宝收藏", "奢侈品客户", "退休高消费", "全板块消费"],
+      "last_updated": "2026-03-19T10:00:00+08:00"
+    },
+    {
+      "unified_id": "BL-UID-000014",
+      "name": "郑浩",
+      "lifecycle_stage": "silent",
+      "lifecycle_label": "沉默期",
+      "rfm": {"recency_days": 85, "frequency_90d": 1, "monetary_90d": 1099.00, "score": "3-1-2", "tier": "低频沉默"},
+      "value_tier": "low",
+      "value_label": "低价值会员",
+      "consumption_preferences": {
+        "primary_categories": ["运动"],
+        "preferred_brands": ["adidas"],
+        "price_sensitivity": "high",
+        "coupon_affinity": 0.15,
+        "preferred_payment": "微信支付",
+        "shopping_time_preference": "晚间"
+      },
+      "churn_risk": {"score": 0.55, "level": "high", "signals": ["消费频次极低", "仅百货单板块", "3个月无消费"]},
+      "marketing_responsiveness": {"overall_score": 0.20, "preferred_channels": ["短信"], "best_contact_time": "晚间", "campaign_history": {"participated": 0, "converted": 0}},
+      "tags": ["低价值", "沉默期", "运动偏好", "价格敏感", "流失风险"],
+      "last_updated": "2026-03-19T10:00:00+08:00"
+    },
+    {
+      "unified_id": "BL-UID-000015",
+      "name": "何美玲",
+      "lifecycle_stage": "active",
+      "lifecycle_label": "活跃期",
+      "rfm": {"recency_days": 59, "frequency_90d": 5, "monetary_90d": 7625.80, "score": "4-3-4", "tier": "高价值活跃"},
+      "value_tier": "high",
+      "value_label": "高价值会员",
+      "consumption_preferences": {
+        "primary_categories": ["女装", "化妆品", "粮油调味"],
+        "preferred_brands": ["Weekend MaxMara", "兰蔻"],
+        "price_sensitivity": "medium",
+        "coupon_affinity": 0.35,
+        "preferred_payment": "银联卡",
+        "shopping_time_preference": "上午"
+      },
+      "cross_segment_behavior": {
+        "百货": {"frequency": "medium", "avg_ticket": 3690.00, "focus": "女装/化妆品"},
+        "超市": {"frequency": "medium", "avg_ticket": 245.80, "focus": "粮油调味"}
+      },
+      "churn_risk": {"score": 0.15, "level": "low", "signals": []},
+      "marketing_responsiveness": {"overall_score": 0.60, "preferred_channels": ["微信公众号", "短信"], "best_contact_time": "周末上午", "campaign_history": {"participated": 4, "converted": 3}},
+      "tags": ["高价值", "活跃", "手机号重复待核实", "女装偏好", "家庭消费"],
+      "last_updated": "2026-03-19T10:00:00+08:00"
+    },
+    {
+      "unified_id": "BL-UID-000018",
+      "name": "谢丽萍",
+      "lifecycle_stage": "growing",
+      "lifecycle_label": "成长期",
+      "rfm": {"recency_days": 1, "frequency_90d": 6, "monetary_90d": 1474.80, "score": "5-3-2", "tier": "潜力成长"},
+      "value_tier": "medium",
+      "value_label": "中价值会员",
+      "consumption_preferences": {
+        "primary_categories": ["化妆品", "运动", "个护美妆"],
+        "preferred_brands": ["MAC", "lululemon"],
+        "price_sensitivity": "medium",
+        "coupon_affinity": 0.50,
+        "preferred_payment": "微信支付",
+        "shopping_time_preference": "下午/晚间"
+      },
+      "cross_segment_behavior": {
+        "百货": {"frequency": "medium", "avg_ticket": 635.00, "focus": "化妆品/运动"},
+        "超市": {"frequency": "medium", "avg_ticket": 102.40, "focus": "个护美妆/零食"}
+      },
+      "churn_risk": {"score": 0.08, "level": "low", "signals": []},
+      "marketing_responsiveness": {"overall_score": 0.75, "preferred_channels": ["小红书", "APP推送"], "best_contact_time": "晚间", "campaign_history": {"participated": 2, "converted": 2}},
+      "tags": ["中价值", "成长期", "年轻女性", "美妆入门", "高营销响应", "潜力客户"],
+      "last_updated": "2026-03-19T10:00:00+08:00"
+    },
+    {
+      "unified_id": "BL-UID-000019",
+      "name": "曹文斌",
+      "lifecycle_stage": "silent",
+      "lifecycle_label": "沉默期",
+      "rfm": {"recency_days": 153, "frequency_90d": 0, "monetary_90d": 0, "score": "2-1-2", "tier": "低频沉默"},
+      "value_tier": "medium",
+      "value_label": "中价值会员",
+      "consumption_preferences": {
+        "primary_categories": ["男装", "生鲜食品"],
+        "preferred_brands": ["Ralph Lauren"],
+        "price_sensitivity": "medium",
+        "coupon_affinity": 0.15,
+        "preferred_payment": "银联卡",
+        "shopping_time_preference": "下午"
+      },
+      "cross_segment_behavior": {
+        "百货": {"frequency": "low", "avg_ticket": 1280.00, "focus": "男装"},
+        "超市": {"frequency": "medium", "avg_ticket": 312.60, "focus": "生鲜食品"}
+      },
+      "churn_risk": {"score": 0.60, "level": "high", "signals": ["5个月无百货消费", "超市消费间隔拉长"]},
+      "marketing_responsiveness": {"overall_score": 0.25, "preferred_channels": ["短信"], "best_contact_time": "工作日下午", "campaign_history": {"participated": 1, "converted": 0}},
+      "tags": ["中价值", "沉默期", "流失风险高", "男装偏好", "低频消费"],
+      "last_updated": "2026-03-19T10:00:00+08:00"
+    },
+    {
+      "unified_id": "BL-UID-000020",
+      "name": "宋雅琴",
+      "lifecycle_stage": "active",
+      "lifecycle_label": "活跃期",
+      "rfm": {"recency_days": 5, "frequency_90d": 10, "monetary_90d": 6109.10, "score": "5-5-4", "tier": "高价值活跃"},
+      "value_tier": "high",
+      "value_label": "高价值会员",
+      "consumption_preferences": {
+        "primary_categories": ["化妆品", "女装", "生鲜食品", "乳制品"],
+        "preferred_brands": ["SK-II", "Theory"],
+        "price_sensitivity": "medium",
+        "coupon_affinity": 0.45,
+        "preferred_payment": "微信支付",
+        "shopping_time_preference": "上午"
+      },
+      "cross_segment_behavior": {
+        "百货": {"frequency": "high", "avg_ticket": 2530.00, "focus": "化妆品/女装"},
+        "超市": {"frequency": "very_high", "avg_ticket": 312.10, "focus": "生鲜/乳制品"},
+        "购物中心": {"frequency": "medium", "avg_ticket": 800.00, "focus": "餐饮/亲子"}
+      },
+      "churn_risk": {"score": 0.06, "level": "very_low", "signals": []},
+      "marketing_responsiveness": {"overall_score": 0.80, "preferred_channels": ["APP推送", "微信公众号"], "best_contact_time": "周末上午", "campaign_history": {"participated": 7, "converted": 5}},
+      "tags": ["高价值", "活跃", "跨板块消费", "家庭主妇", "周末常客", "高营销响应"],
+      "last_updated": "2026-03-19T10:00:00+08:00"
     }
   ]
 }

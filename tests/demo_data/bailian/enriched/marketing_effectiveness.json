@@ -1,0 +1,114 @@
+{
+  "_meta": {
+    "description": "营销活动效果分析 — AI分析后的活动ROI与会员响应评估",
+    "processed_by": "SuperInsight 营销分析模块",
+    "processed_at": "2026-03-19T10:00:00+08:00"
+  },
+  "campaigns": [
+    {
+      "campaign_id": "MKT-2026-CNY-001",
+      "name": "2026春节年货大促",
+      "type": "满减",
+      "period": {"start": "2026-01-15", "end": "2026-02-05"},
+      "channel": "全渠道",
+      "metrics": {
+        "total_participants": 4,
+        "converted": 3,
+        "conversion_rate": 0.75,
+        "total_revenue": 50880.00,
+        "avg_order_value": 16960.00,
+        "estimated_cost": 8500.00,
+        "roi": 4.99
+      },
+      "member_responses": [
+        {"unified_id": "BL-UID-000001", "name": "王丽", "converted": true, "spend": 5680.00, "response_speed": "fast"},
+        {"unified_id": "BL-UID-000003", "name": "李芳", "converted": true, "spend": 13200.00, "response_speed": "fast"},
+        {"unified_id": "BL-UID-000013", "name": "杨秀英", "converted": true, "spend": 32000.00, "response_speed": "medium"},
+        {"unified_id": "BL-UID-000008", "name": "周强", "converted": false, "spend": 0, "response_speed": "none"}
+      ],
+      "ai_insights": ["高价值会员响应率100%", "杨秀英贡献62.9%营收，属超高价值客户", "周强未转化，建议后续定向推送男装优惠"]
+    },
+    {
+      "campaign_id": "MKT-2026-38-002",
+      "name": "三八女神节美妆特惠",
+      "type": "折扣",
+      "period": {"start": "2026-03-01", "end": "2026-03-10"},
+      "channel": "百货",
+      "metrics": {
+        "total_participants": 7,
+        "converted": 6,
+        "conversion_rate": 0.857,
+        "total_revenue": 10700.00,
+        "avg_order_value": 1783.33,
+        "estimated_cost": 3200.00,
+        "roi": 2.34
+      },
+      "member_responses": [
+        {"unified_id": "BL-UID-000001", "name": "王丽", "converted": true, "spend": 1280.00, "response_speed": "fast"},
+        {"unified_id": "BL-UID-000003", "name": "李芳", "converted": true, "spend": 3680.00, "response_speed": "medium"},
+        {"unified_id": "BL-UID-000009", "name": "吴敏", "converted": true, "spend": 1590.00, "response_speed": "medium"},
+        {"unified_id": "BL-UID-000005", "name": "赵雪", "converted": false, "spend": 0, "response_speed": "slow"},
+        {"unified_id": "BL-UID-000011", "name": "林小红", "converted": true, "spend": 2180.00, "response_speed": "medium"},
+        {"unified_id": "BL-UID-000020", "name": "宋雅琴", "converted": true, "spend": 1380.00, "response_speed": "medium"},
+        {"unified_id": "BL-UID-000018", "name": "谢丽萍", "converted": true, "spend": 590.00, "response_speed": "fast"}
+      ],
+      "ai_insights": ["女性会员转化率85.7%，活动定位精准", "赵雪浏览未购买，可能价格敏感度较高", "谢丽萍为新客首次参与活动即转化，值得重点培养"]
+    },
+    {
+      "campaign_id": "MKT-2026-VIP-004",
+      "name": "钻石会员专属回馈",
+      "type": "专属折扣",
+      "period": {"start": "2026-02-01", "end": "2026-02-28"},
+      "channel": "百货",
+      "metrics": {
+        "total_participants": 3,
+        "converted": 2,
+        "conversion_rate": 0.667,
+        "total_revenue": 96500.00,
+        "avg_order_value": 48250.00,
+        "estimated_cost": 12000.00,
+        "roi": 7.04
+      },
+      "member_responses": [
+        {"unified_id": "BL-UID-000003", "name": "李芳", "converted": true, "spend": 28500.00, "response_speed": "fast"},
+        {"unified_id": "BL-UID-000013", "name": "杨秀英", "converted": true, "spend": 68000.00, "response_speed": "fast"},
+        {"unified_id": "BL-UID-000006", "name": "刘伟", "converted": false, "spend": 0, "response_speed": "none"}
+      ],
+      "ai_insights": ["ROI 7.04，所有活动中最高", "刘伟连续两次VIP活动未响应，流失风险极高", "杨秀英单笔6.8万，建议升级为黑钻会员"]
+    },
+    {
+      "campaign_id": "MKT-2026-SUPER-005",
+      "name": "超市周末家庭日",
+      "type": "满100减15",
+      "period": {"start": "2026-03-01", "end": "2026-03-31"},
+      "channel": "超市",
+      "metrics": {
+        "total_participants": 3,
+        "converted": 3,
+        "conversion_rate": 1.0,
+        "total_revenue": 884.10,
+        "avg_order_value": 294.70,
+        "estimated_cost": 500.00,
+        "roi": 0.77
+      },
+      "member_responses": [
+        {"unified_id": "BL-UID-000001", "name": "王丽", "converted": true, "spend": 168.30, "response_speed": "fast"},
+        {"unified_id": "BL-UID-000003", "name": "李芳", "converted": true, "spend": 289.90, "response_speed": "fast"},
+        {"unified_id": "BL-UID-000020", "name": "宋雅琴", "converted": true, "spend": 425.90, "response_speed": "medium"}
+      ],
+      "ai_insights": ["转化率100%但ROI偏低，超市客单价天花板限制", "宋雅琴超市消费最高，家庭采购型客户", "建议与百货联动提升跨板块转化"]
+    }
+  ],
+  "overall_summary": {
+    "total_campaigns_analyzed": 4,
+    "avg_conversion_rate": 0.819,
+    "best_roi_campaign": "钻石会员专属回馈",
+    "most_responsive_members": ["BL-UID-000001", "BL-UID-000003", "BL-UID-000013"],
+    "at_risk_vip_no_response": ["BL-UID-000006"],
+    "recommendations": [
+      "刘伟(BL-UID-000006)需专属顾问1对1挽回",
+      "杨秀英(BL-UID-000013)建议升级黑钻并配专属服务",
+      "超市活动ROI偏低，建议改为跨板块联动券"
+    ]
+  }
+}

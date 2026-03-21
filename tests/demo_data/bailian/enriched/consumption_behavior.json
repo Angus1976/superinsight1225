@@ -82,6 +82,129 @@
         "basket_trend": "declining",
         "seasonal_peaks": ["父亲节"]
       }
+    },
+    {
+      "unified_id": "BL-UID-000002",
+      "name": "张明",
+      "summary": {
+        "total_spend_12m": 5189.50,
+        "total_transactions_12m": 3,
+        "avg_monthly_spend": 432.46,
+        "active_months_12m": 2,
+        "cross_segment_index": 0.35
+      },
+      "transactions_standardized": [
+        {"date": "2025-12-05", "segment": "超市", "store": "世纪联华徐汇店", "amount": 89.50, "category_l1": "日用品", "category_l2": "家居清洁", "payment": "cash", "is_promotion": false},
+        {"date": "2025-11-20", "segment": "百货", "store": "东方商厦徐汇店", "amount": 4200.00, "category_l1": "服饰", "category_l2": "男装", "payment": "unionpay", "is_promotion": true},
+        {"date": "2025-11-08", "segment": "购物中心", "store": "百联南方购物中心", "amount": 800.00, "category_l1": "餐饮", "category_l2": "商务宴请", "payment": "unionpay", "is_promotion": false}
+      ],
+      "category_distribution": {"男装": 0.75, "日用品": 0.15, "餐饮": 0.10},
+      "segment_distribution": {"百货": 0.75, "超市": 0.10, "购物中心": 0.15},
+      "consumption_pattern": {
+        "weekday_vs_weekend": "weekday",
+        "time_of_day": "afternoon",
+        "basket_trend": "declining",
+        "seasonal_peaks": ["双十一"]
+      }
+    },
+    {
+      "unified_id": "BL-UID-000005",
+      "name": "赵雪",
+      "summary": {
+        "total_spend_12m": 3288.70,
+        "total_transactions_12m": 12,
+        "avg_monthly_spend": 274.06,
+        "active_months_12m": 8,
+        "cross_segment_index": 0.68
+      },
+      "transactions_standardized": [
+        {"date": "2026-03-16", "segment": "超市", "store": "联华超市南京路店", "amount": 198.70, "category_l1": "食品", "category_l2": "零食饮料", "payment": "wechat", "is_promotion": false},
+        {"date": "2026-02-28", "segment": "百货", "store": "第一百货南京东路店", "amount": 850.00, "category_l1": "运动", "category_l2": "瑜伽服饰", "payment": "wechat", "is_promotion": false},
+        {"date": "2026-02-20", "segment": "百货", "store": "第一百货南京东路店", "amount": 590.00, "category_l1": "美妆", "category_l2": "护肤品", "payment": "alipay", "is_promotion": false}
+      ],
+      "category_distribution": {"运动": 0.35, "美妆": 0.25, "零食饮料": 0.25, "餐饮": 0.15},
+      "segment_distribution": {"百货": 0.50, "超市": 0.30, "购物中心": 0.20},
+      "consumption_pattern": {
+        "weekday_vs_weekend": "weekend_heavy",
+        "time_of_day": "afternoon",
+        "basket_trend": "increasing",
+        "seasonal_peaks": ["三八节", "618", "双十一"]
+      }
+    },
+    {
+      "unified_id": "BL-UID-000009",
+      "name": "吴敏",
+      "summary": {
+        "total_spend_12m": 28650.50,
+        "total_transactions_12m": 32,
+        "avg_monthly_spend": 2387.54,
+        "active_months_12m": 11,
+        "cross_segment_index": 0.72
+      },
+      "transactions_standardized": [
+        {"date": "2026-03-18", "segment": "超市", "store": "联华超市南京路店", "amount": 380.50, "category_l1": "个护", "category_l2": "个护美妆", "payment": "wechat", "is_promotion": true},
+        {"date": "2026-03-10", "segment": "百货", "store": "第一百货南京东路店", "amount": 1590.00, "category_l1": "美妆", "category_l2": "高端护肤", "payment": "alipay", "is_promotion": false},
+        {"date": "2026-03-05", "segment": "百货", "store": "第一百货南京东路店", "amount": 980.00, "category_l1": "美妆", "category_l2": "彩妆", "payment": "wechat", "is_promotion": false}
+      ],
+      "category_distribution": {"美妆": 0.55, "个护": 0.20, "食品": 0.15, "餐饮": 0.10},
+      "segment_distribution": {"百货": 0.60, "超市": 0.30, "购物中心": 0.10},
+      "consumption_pattern": {
+        "weekday_vs_weekend": "balanced",
+        "time_of_day": "midday",
+        "basket_trend": "stable",
+        "seasonal_peaks": ["三八节", "618", "双十一", "圣诞"]
+      }
+    },
+    {
+      "unified_id": "BL-UID-000013",
+      "name": "杨秀英",
+      "summary": {
+        "total_spend_12m": 215800.00,
+        "total_transactions_12m": 42,
+        "avg_monthly_spend": 17983.33,
+        "active_months_12m": 12,
+        "cross_segment_index": 0.95
+      },
+      "transactions_standardized": [
+        {"date": "2026-03-16", "segment": "超市", "store": "联华超市南京路店", "amount": 368.50, "category_l1": "食品", "category_l2": "有机食品", "payment": "wechat", "is_promotion": true},
+        {"date": "2026-03-12", "segment": "百货", "store": "东方商厦浦东店", "amount": 68000.00, "category_l1": "珠宝", "category_l2": "奢侈品珠宝", "payment": "unionpay", "is_promotion": false},
+        {"date": "2026-03-12", "segment": "超市", "store": "世纪联华浦东店", "amount": 520.30, "category_l1": "食品", "category_l2": "进口食品", "payment": "unionpay", "is_promotion": false},
+        {"date": "2026-02-05", "segment": "百货", "store": "东方商厦浦东店", "amount": 32000.00, "category_l1": "服饰", "category_l2": "奢侈品女装", "payment": "unionpay", "is_promotion": false},
+        {"date": "2026-01-18", "segment": "百货", "store": "第一百货南京东路店", "amount": 2680.00, "category_l1": "美妆", "category_l2": "高端护肤", "payment": "wechat", "is_promotion": false}
+      ],
+      "category_distribution": {"珠宝": 0.35, "服饰": 0.25, "美妆": 0.15, "食品": 0.15, "餐饮": 0.10},
+      "segment_distribution": {"百货": 0.70, "超市": 0.15, "购物中心": 0.15},
+      "consumption_pattern": {
+        "weekday_vs_weekend": "weekday_heavy",
+        "time_of_day": "morning",
+        "basket_trend": "increasing",
+        "seasonal_peaks": ["春节", "三八节", "中秋"]
+      }
+    },
+    {
+      "unified_id": "BL-UID-000020",
+      "name": "宋雅琴",
+      "summary": {
+        "total_spend_12m": 45680.00,
+        "total_transactions_12m": 38,
+        "avg_monthly_spend": 3806.67,
+        "active_months_12m": 12,
+        "cross_segment_index": 0.90
+      },
+      "transactions_standardized": [
+        {"date": "2026-03-15", "segment": "超市", "store": "联华超市南京路店", "amount": 198.30, "category_l1": "食品", "category_l2": "乳制品", "payment": "alipay", "is_promotion": false},
+        {"date": "2026-03-05", "segment": "百货", "store": "第一百货南京东路店", "amount": 1380.00, "category_l1": "美妆", "category_l2": "护肤品", "payment": "wechat", "is_promotion": false},
+        {"date": "2026-03-05", "segment": "超市", "store": "联华超市南京路店", "amount": 425.90, "category_l1": "食品", "category_l2": "生鲜食品", "payment": "wechat", "is_promotion": true},
+        {"date": "2026-02-20", "segment": "百货", "store": "第一百货南京东路店", "amount": 3680.00, "category_l1": "服饰", "category_l2": "女装", "payment": "alipay", "is_promotion": false}
+      ],
+      "category_distribution": {"食品": 0.30, "美妆": 0.20, "服饰": 0.20, "餐饮": 0.15, "亲子": 0.15},
+      "segment_distribution": {"百货": 0.40, "超市": 0.35, "购物中心": 0.25},
+      "consumption_pattern": {
+        "weekday_vs_weekend": "weekend_heavy",
+        "time_of_day": "morning",
+        "basket_trend": "stable",
+        "seasonal_peaks": ["春节", "三八节", "暑假", "双十一"]
+      }
     }
   ]
 }

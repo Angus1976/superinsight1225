@@ -205,6 +205,101 @@
         "basket_trend": "stable",
         "seasonal_peaks": ["春节", "三八节", "暑假", "双十一"]
       }
+    },
+    {
+      "unified_id": "BL-UID-000004",
+      "name": "陈建国",
+      "summary": {
+        "total_spend_12m": 8650.00,
+        "total_transactions_12m": 5,
+        "avg_monthly_spend": 720.83,
+        "active_months_12m": 3,
+        "cross_segment_index": 0.38
+      },
+      "transactions_standardized": [
+        {"date": "2025-08-10", "segment": "百货", "store": "东方商厦浦东店", "amount": 2800.00, "category_l1": "服饰", "category_l2": "男装", "payment": "cash", "is_promotion": false},
+        {"date": "2025-09-22", "segment": "超市", "store": "世纪联华浦东店", "amount": 56.80, "category_l1": "食品", "category_l2": "粮油调味", "payment": "cash", "is_promotion": false}
+      ],
+      "category_distribution": {"男装": 0.60, "食品": 0.20, "餐饮": 0.20},
+      "segment_distribution": {"百货": 0.70, "超市": 0.15, "购物中心": 0.15},
+      "consumption_pattern": {
+        "weekday_vs_weekend": "weekday",
+        "time_of_day": "morning",
+        "basket_trend": "declining",
+        "seasonal_peaks": ["春节"]
+      }
+    },
+    {
+      "unified_id": "BL-UID-000008",
+      "name": "周强",
+      "summary": {
+        "total_spend_12m": 12580.00,
+        "total_transactions_12m": 8,
+        "avg_monthly_spend": 1048.33,
+        "active_months_12m": 5,
+        "cross_segment_index": 0.55
+      },
+      "transactions_standardized": [
+        {"date": "2026-01-05", "segment": "百货", "store": "东方商厦浦东店", "amount": 3600.00, "category_l1": "服饰", "category_l2": "男装", "payment": "wechat", "is_promotion": false},
+        {"date": "2026-02-20", "segment": "超市", "store": "世纪联华浦东店", "amount": 225.60, "category_l1": "食品", "category_l2": "生鲜食品", "payment": "alipay", "is_promotion": false}
+      ],
+      "category_distribution": {"男装": 0.50, "食品": 0.25, "运动": 0.15, "餐饮": 0.10},
+      "segment_distribution": {"百货": 0.60, "超市": 0.25, "购物中心": 0.15},
+      "consumption_pattern": {
+        "weekday_vs_weekend": "weekend_heavy",
+        "time_of_day": "afternoon",
+        "basket_trend": "stable",
+        "seasonal_peaks": ["春节", "双十一"]
+      }
+    },
+    {
+      "unified_id": "BL-UID-000011",
+      "name": "林小红",
+      "summary": {
+        "total_spend_12m": 18960.00,
+        "total_transactions_12m": 22,
+        "avg_monthly_spend": 1580.00,
+        "active_months_12m": 10,
+        "cross_segment_index": 0.78
+      },
+      "transactions_standardized": [
+        {"date": "2026-03-08", "segment": "百货", "store": "第一百货南京东路店", "amount": 4580.00, "category_l1": "服饰", "category_l2": "女装", "payment": "wechat", "is_promotion": false},
+        {"date": "2026-02-25", "segment": "百货", "store": "第一百货南京东路店", "amount": 2180.00, "category_l1": "美妆", "category_l2": "护肤品", "payment": "alipay", "is_promotion": false},
+        {"date": "2026-03-10", "segment": "超市", "store": "联华超市南京路店", "amount": 286.40, "category_l1": "食品", "category_l2": "生鲜食品", "payment": "wechat", "is_promotion": true},
+        {"date": "2026-03-05", "segment": "超市", "store": "联华超市南京路店", "amount": 152.80, "category_l1": "食品", "category_l2": "乳制品", "payment": "alipay", "is_promotion": false}
+      ],
+      "category_distribution": {"服饰": 0.35, "美妆": 0.25, "食品": 0.25, "餐饮": 0.15},
+      "segment_distribution": {"百货": 0.55, "超市": 0.30, "购物中心": 0.15},
+      "consumption_pattern": {
+        "weekday_vs_weekend": "balanced",
+        "time_of_day": "midday",
+        "basket_trend": "increasing",
+        "seasonal_peaks": ["三八节", "618", "双十一"]
+      }
+    },
+    {
+      "unified_id": "BL-UID-000012",
+      "name": "马超",
+      "summary": {
+        "total_spend_12m": 9280.00,
+        "total_transactions_12m": 10,
+        "avg_monthly_spend": 773.33,
+        "active_months_12m": 6,
+        "cross_segment_index": 0.52
+      },
+      "transactions_standardized": [
+        {"date": "2026-02-10", "segment": "百货", "store": "东方商厦徐汇店", "amount": 3200.00, "category_l1": "服饰", "category_l2": "男装", "payment": "unionpay", "is_promotion": false},
+        {"date": "2026-01-15", "segment": "百货", "store": "东方商厦徐汇店", "amount": 899.00, "category_l1": "运动", "category_l2": "运动服饰", "payment": "wechat", "is_promotion": false},
+        {"date": "2026-02-15", "segment": "超市", "store": "世纪联华徐汇店", "amount": 178.90, "category_l1": "日用品", "category_l2": "家居清洁", "payment": "wechat", "is_promotion": false}
+      ],
+      "category_distribution": {"男装": 0.45, "运动": 0.25, "日用品": 0.15, "食品": 0.15},
+      "segment_distribution": {"百货": 0.65, "超市": 0.25, "购物中心": 0.10},
+      "consumption_pattern": {
+        "weekday_vs_weekend": "weekend_heavy",
+        "time_of_day": "afternoon",
+        "basket_trend": "stable",
+        "seasonal_peaks": ["双十一", "春节"]
+      }
     }
   ]
 }

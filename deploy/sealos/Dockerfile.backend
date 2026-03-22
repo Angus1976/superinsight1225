@@ -1,0 +1,44 @@
+# SuperInsight Backend - Sealos Production Build
+# 多阶段构建，最小化镜像体积
+
+FROM python:3.11-slim AS builder
+
+WORKDIR /build
+COPY requirements.txt .
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+# -----------------------------------------------------------
+FROM python:3.11-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    APP_ENV=production
+
+WORKDIR /app
+
+# 系统依赖（仅运行时需要的）
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 curl && \
+    rm -rf /var/lib/apt/lists/*
+
+# 从 builder 复制已安装的 Python 包
+COPY --from=builder /install /usr/local
+
+# 复制应用代码
+COPY src/ ./src/
+COPY main.py .
+COPY alembic/ ./alembic/
+COPY alembic.ini .
+
+# 创建目录和非 root 用户
+RUN mkdir -p /app/logs /app/uploads /app/exports /app/data && \
+    useradd --create-home --uid 1000 app && \
+    chown -R app:app /app
+
+USER app
+EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+CMD ["python", "main.py"]

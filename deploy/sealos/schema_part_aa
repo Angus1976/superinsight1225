@@ -1,0 +1,500 @@
+--
+-- PostgreSQL database dump
+--
+
+
+-- Dumped from database version 15.17 (Debian 15.17-1.pgdg12+1)
+-- Dumped by pg_dump version 15.17 (Debian 15.17-1.pgdg12+1)
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- Name: vector; Type: EXTENSION; Schema: -; Owner: -
+--
+
+CREATE EXTENSION IF NOT EXISTS vector WITH SCHEMA public;
+
+
+--
+-- Name: action; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.action AS ENUM (
+    'VIEW',
+    'EDIT',
+    'DELETE',
+    'TRANSFER',
+    'REVIEW',
+    'ANNOTATE',
+    'ENHANCE',
+    'TRIAL'
+);
+
+
+--
+-- Name: annotationtype; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.annotationtype AS ENUM (
+    'CLASSIFICATION',
+    'ENTITY_RECOGNITION',
+    'RELATION_EXTRACTION',
+    'SENTIMENT_ANALYSIS',
+    'CUSTOM'
+);
+
+
+--
+-- Name: changetype; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.changetype AS ENUM (
+    'INITIAL',
+    'ANNOTATION',
+    'ENHANCEMENT',
+    'CORRECTION',
+    'MERGE'
+);
+
+
+--
+-- Name: datastage; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.datastage AS ENUM (
+    'TEMP_TABLE',
+    'SAMPLE_LIBRARY',
+    'DATA_SOURCE',
+    'ANNOTATED',
+    'ENHANCED'
+);
+
+
+--
+-- Name: datastate; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.datastate AS ENUM (
+    'RAW',
+    'STRUCTURED',
+    'TEMP_STORED',
+    'UNDER_REVIEW',
+    'REJECTED',
+    'APPROVED',
+    'IN_SAMPLE_LIBRARY',
+    'ANNOTATION_PENDING',
+    'ANNOTATING',
+    'ANNOTATED',
+    'ENHANCING',
+    'ENHANCED',
+    'TRIAL_CALCULATION',
+    'ARCHIVED'
+);
+
+
+--
+-- Name: enhancementtype; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.enhancementtype AS ENUM (
+    'DATA_AUGMENTATION',
+    'QUALITY_IMPROVEMENT',
+    'NOISE_REDUCTION',
+    'FEATURE_EXTRACTION',
+    'NORMALIZATION'
+);
+
+
+--
+-- Name: jobstatus; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.jobstatus AS ENUM (
+    'QUEUED',
+    'RUNNING',
+    'COMPLETED',
+    'FAILED',
+    'CANCELLED'
+);
+
+
+--
+-- Name: operationresult; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.operationresult AS ENUM (
+    'SUCCESS',
+    'FAILURE',
+    'PARTIAL'
+);
+
+
+--
+-- Name: operationtype; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.operationtype AS ENUM (
+    'CREATE',
+    'READ',
+    'UPDATE',
+    'DELETE',
+    'TRANSFER',
+    'STATE_CHANGE'
+);
+
+
+--
+-- Name: resourcetype; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.resourcetype AS ENUM (
+    'TEMP_DATA',
+    'SAMPLE',
+    'ANNOTATION_TASK',
+    'ANNOTATED_DATA',
+    'ENHANCED_DATA',
+    'TRIAL'
+);
+
+
+--
+-- Name: reviewstatus; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.reviewstatus AS ENUM (
+    'PENDING',
+    'IN_PROGRESS',
+    'APPROVED',
+    'REJECTED'
+);
+
+
+--
+-- Name: taskstatus; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.taskstatus AS ENUM (
+    'CREATED',
+    'IN_PROGRESS',
+    'COMPLETED',
+    'CANCELLED'
+);
+
+
+--
+-- Name: trialstatus; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.trialstatus AS ENUM (
+    'CREATED',
+    'RUNNING',
+    'COMPLETED',
+    'FAILED'
+);
+
+
+SET default_table_access_method = heap;
+
+--
+-- Name: ai_access_logs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.ai_access_logs (
+    id integer NOT NULL,
+    tenant_id character varying(100) NOT NULL,
+    user_id character varying(100) NOT NULL,
+    user_role character varying(50),
+    event_type character varying(50) NOT NULL,
+    resource_id character varying(200),
+    resource_name character varying(255),
+    api_key_id character varying(100),
+    request_type character varying(50),
+    success boolean DEFAULT true NOT NULL,
+    error_message text,
+    details jsonb DEFAULT '{}'::jsonb NOT NULL,
+    duration_ms integer,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+--
+-- Name: ai_access_logs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.ai_access_logs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: ai_access_logs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.ai_access_logs_id_seq OWNED BY public.ai_access_logs.id;
+
+
+--
+-- Name: ai_audit_logs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.ai_audit_logs (
+    id character varying(36) NOT NULL,
+    gateway_id character varying(36) NOT NULL,
+    tenant_id character varying(36) NOT NULL,
+    event_type character varying(50) NOT NULL,
+    resource character varying(255) NOT NULL,
+    action character varying(50) NOT NULL,
+    metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
+    user_identifier character varying(255),
+    channel character varying(50),
+    success boolean DEFAULT true NOT NULL,
+    error_message text,
+    "timestamp" timestamp with time zone DEFAULT now() NOT NULL,
+    signature character varying(255) NOT NULL
+);
+
+
+--
+-- Name: ai_data_source_config; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.ai_data_source_config (
+    id character varying NOT NULL,
+    label character varying NOT NULL,
+    description character varying DEFAULT ''::character varying,
+    enabled boolean DEFAULT true,
+    access_mode character varying DEFAULT 'read'::character varying,
+    config json DEFAULT '{}'::json,
+    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+--
+-- Name: ai_data_source_role_permission; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.ai_data_source_role_permission (
+    id integer NOT NULL,
+    role character varying(50) NOT NULL,
+    source_id character varying(100) NOT NULL,
+    allowed boolean DEFAULT false NOT NULL,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+--
+-- Name: ai_data_source_role_permission_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.ai_data_source_role_permission_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: ai_data_source_role_permission_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.ai_data_source_role_permission_id_seq OWNED BY public.ai_data_source_role_permission.id;
+
+
+--
+-- Name: ai_gateways; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.ai_gateways (
+    id character varying(36) NOT NULL,
+    name character varying(255) NOT NULL,
+    gateway_type character varying(50) NOT NULL,
+    tenant_id character varying(36) NOT NULL,
+    status character varying(20) DEFAULT 'inactive'::character varying NOT NULL,
+    configuration jsonb DEFAULT '{}'::jsonb NOT NULL,
+    api_key_hash character varying(255) NOT NULL,
+    api_secret_hash character varying(255) NOT NULL,
+    rate_limit_per_minute integer DEFAULT 60 NOT NULL,
+    quota_per_day integer DEFAULT 10000 NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    last_active_at timestamp with time zone
+);
+
+
+--
+-- Name: ai_skill_role_permission; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.ai_skill_role_permission (
+    id integer NOT NULL,
+    role character varying(50) NOT NULL,
+    skill_id character varying(100) NOT NULL,
+    allowed boolean DEFAULT false NOT NULL,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+--
+-- Name: ai_skill_role_permission_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.ai_skill_role_permission_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: ai_skill_role_permission_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.ai_skill_role_permission_id_seq OWNED BY public.ai_skill_role_permission.id;
+
+
+--
+-- Name: ai_skills; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.ai_skills (
+    id character varying(36) NOT NULL,
+    gateway_id character varying(36) NOT NULL,
+    name character varying(255) NOT NULL,
+    version character varying(50) NOT NULL,
+    code_path character varying(500) NOT NULL,
+    configuration jsonb DEFAULT '{}'::jsonb NOT NULL,
+    dependencies jsonb DEFAULT '[]'::jsonb NOT NULL,
+    status character varying(20) DEFAULT 'pending'::character varying NOT NULL,
+    deployed_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: ai_workflows; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.ai_workflows (
+    id character varying(36) NOT NULL,
+    name character varying(255) NOT NULL,
+    description text DEFAULT ''::text,
+    status character varying(20) DEFAULT 'enabled'::character varying NOT NULL,
+    is_preset boolean DEFAULT false NOT NULL,
+    skill_ids jsonb DEFAULT '[]'::jsonb NOT NULL,
+    data_source_auth jsonb DEFAULT '[]'::jsonb NOT NULL,
+    output_modes jsonb DEFAULT '[]'::jsonb NOT NULL,
+    visible_roles jsonb DEFAULT '[]'::jsonb NOT NULL,
+    preset_prompt text,
+    name_en character varying(255),
+    description_en text,
+    created_at timestamp with time zone DEFAULT now(),
+    updated_at timestamp with time zone DEFAULT now(),
+    created_by character varying(100)
+);
+
+
+--
+-- Name: alembic_version; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.alembic_version (
+    version_num character varying(128) NOT NULL
+);
+
+
+--
+-- Name: annotation_tasks; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.annotation_tasks (
+    id uuid NOT NULL,
+    name character varying(255) NOT NULL,
+    description text,
+    sample_ids jsonb NOT NULL,
+    annotation_type public.annotationtype NOT NULL,
+    instructions text NOT NULL,
+    status public.taskstatus DEFAULT 'CREATED'::public.taskstatus NOT NULL,
+    created_by character varying(255) NOT NULL,
+    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    assigned_to jsonb DEFAULT '[]'::jsonb NOT NULL,
+    deadline timestamp without time zone,
+    completed_at timestamp without time zone,
+    progress_total integer DEFAULT 0 NOT NULL,
+    progress_completed integer DEFAULT 0 NOT NULL,
+    progress_in_progress integer DEFAULT 0 NOT NULL,
+    annotations jsonb DEFAULT '[]'::jsonb NOT NULL,
+    metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
+    lock_version integer DEFAULT 1 NOT NULL,
+    CONSTRAINT check_progress_completed_positive CHECK ((progress_completed >= 0)),
+    CONSTRAINT check_progress_in_progress_positive CHECK ((progress_in_progress >= 0)),
+    CONSTRAINT check_progress_total_positive CHECK ((progress_total >= 0))
+);
+
+
+--
+-- Name: approval_requests; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.approval_requests (
+    id character varying(36) NOT NULL,
+    transfer_request jsonb NOT NULL,
+    requester_id character varying(36) NOT NULL,
+    requester_role character varying(20) NOT NULL,
+    status character varying(20) DEFAULT 'pending'::character varying NOT NULL,
+    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    expires_at timestamp without time zone NOT NULL,
+    approver_id character varying(36),
+    approved_at timestamp without time zone,
+    comment text
+);
+
+
+--
+-- Name: audit_logs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.audit_logs (
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
+    user_id uuid,
+    tenant_id character varying(255) DEFAULT 'system'::character varying,
+    action character varying(100),
+    resource_type character varying(100),
+    resource_id character varying(255),
+    ip_address character varying(45),
+    user_agent text,
+    details json,
+    "timestamp" timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+--
+-- Name: data_lifecycle_audit_logs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.data_lifecycle_audit_logs (
+    id uuid NOT NULL,
+    operation_type public.operationtype NOT NULL,
+    user_id character varying(255) NOT NULL,
+    resource_type public.resourcetype NOT NULL,
+    resource_id character varying(255) NOT NULL,
+    action public.action NOT NULL,
+    result public.operationresult NOT NULL,
+    duration integer NOT NULL,

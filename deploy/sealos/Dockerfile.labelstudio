@@ -1,0 +1,10 @@
+FROM heartexlabs/label-studio:latest
+
+# 修复 Sealos PVC 挂载权限问题：
+# Sealos 挂载的持久卷默认 root 拥有，Label Studio 以 uid 1001 运行无法写入
+# entrypoint 以 root 启动 → chown → 直接 exec 原始 entrypoint（以 root 运行，Label Studio 内部会降权）
+USER root
+RUN printf '#!/bin/bash\nchown -R 1001:0 /label-studio/data 2>/dev/null || true\nexec /label-studio/deploy/docker-entrypoint.sh label-studio\n' > /usr/local/bin/ls-entrypoint.sh && \
+    chmod +x /usr/local/bin/ls-entrypoint.sh
+
+ENTRYPOINT ["/usr/local/bin/ls-entrypoint.sh"]

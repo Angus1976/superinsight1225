@@ -1,0 +1,500 @@
+ALTER TABLE ONLY public.ai_gateways
+    ADD CONSTRAINT ai_gateways_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: ai_skill_role_permission ai_skill_role_permission_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_skill_role_permission
+    ADD CONSTRAINT ai_skill_role_permission_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: ai_skills ai_skills_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_skills
+    ADD CONSTRAINT ai_skills_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: ai_workflows ai_workflows_name_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_workflows
+    ADD CONSTRAINT ai_workflows_name_key UNIQUE (name);
+
+
+--
+-- Name: ai_workflows ai_workflows_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_workflows
+    ADD CONSTRAINT ai_workflows_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: alembic_version alembic_version_pkc; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.alembic_version
+    ADD CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num);
+
+
+--
+-- Name: annotation_tasks annotation_tasks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.annotation_tasks
+    ADD CONSTRAINT annotation_tasks_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: approval_requests approval_requests_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.approval_requests
+    ADD CONSTRAINT approval_requests_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: audit_logs audit_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.audit_logs
+    ADD CONSTRAINT audit_logs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: data_lifecycle_audit_logs data_lifecycle_audit_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.data_lifecycle_audit_logs
+    ADD CONSTRAINT data_lifecycle_audit_logs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: data_sources data_sources_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.data_sources
+    ADD CONSTRAINT data_sources_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: datalake_metrics datalake_metrics_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.datalake_metrics
+    ADD CONSTRAINT datalake_metrics_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: enhanced_data enhanced_data_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.enhanced_data
+    ADD CONSTRAINT enhanced_data_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: label_studio_projects label_studio_projects_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.label_studio_projects
+    ADD CONSTRAINT label_studio_projects_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: llm_application_bindings llm_application_bindings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.llm_application_bindings
+    ADD CONSTRAINT llm_application_bindings_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: llm_applications llm_applications_code_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.llm_applications
+    ADD CONSTRAINT llm_applications_code_key UNIQUE (code);
+
+
+--
+-- Name: llm_applications llm_applications_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.llm_applications
+    ADD CONSTRAINT llm_applications_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: llm_configurations llm_configurations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.llm_configurations
+    ADD CONSTRAINT llm_configurations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: llm_model_registry llm_model_registry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.llm_model_registry
+    ADD CONSTRAINT llm_model_registry_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: llm_usage_logs llm_usage_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.llm_usage_logs
+    ADD CONSTRAINT llm_usage_logs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: permissions permissions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.permissions
+    ADD CONSTRAINT permissions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: samples samples_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.samples
+    ADD CONSTRAINT samples_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: semantic_records semantic_records_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.semantic_records
+    ADD CONSTRAINT semantic_records_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: structured_records structured_records_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.structured_records
+    ADD CONSTRAINT structured_records_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: structuring_jobs structuring_jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.structuring_jobs
+    ADD CONSTRAINT structuring_jobs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: tasks tasks_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tasks
+    ADD CONSTRAINT tasks_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: temp_data temp_data_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.temp_data
+    ADD CONSTRAINT temp_data_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: transfer_audit_logs transfer_audit_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.transfer_audit_logs
+    ADD CONSTRAINT transfer_audit_logs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: llm_application_bindings uq_app_priority; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.llm_application_bindings
+    ADD CONSTRAINT uq_app_priority UNIQUE (application_id, priority);
+
+
+--
+-- Name: ai_skill_role_permission uq_role_skill; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_skill_role_permission
+    ADD CONSTRAINT uq_role_skill UNIQUE (role, skill_id);
+
+
+--
+-- Name: ai_data_source_role_permission uq_role_source; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_data_source_role_permission
+    ADD CONSTRAINT uq_role_source UNIQUE (role, source_id);
+
+
+--
+-- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: vector_records vector_records_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.vector_records
+    ADD CONSTRAINT vector_records_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: versions versions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.versions
+    ADD CONSTRAINT versions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: idx_access_log_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_access_log_created_at ON public.ai_access_logs USING btree (created_at);
+
+
+--
+-- Name: idx_access_log_event_type; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_access_log_event_type ON public.ai_access_logs USING btree (event_type);
+
+
+--
+-- Name: idx_access_log_tenant_time; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_access_log_tenant_time ON public.ai_access_logs USING btree (tenant_id, created_at);
+
+
+--
+-- Name: idx_access_log_user; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_access_log_user ON public.ai_access_logs USING btree (user_id);
+
+
+--
+-- Name: idx_annotation_tasks_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_annotation_tasks_created_at ON public.annotation_tasks USING btree (created_at);
+
+
+--
+-- Name: idx_annotation_tasks_created_by; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_annotation_tasks_created_by ON public.annotation_tasks USING btree (created_by);
+
+
+--
+-- Name: idx_annotation_tasks_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_annotation_tasks_status ON public.annotation_tasks USING btree (status);
+
+
+--
+-- Name: idx_annotation_tasks_status_created; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_annotation_tasks_status_created ON public.annotation_tasks USING btree (status, created_by);
+
+
+--
+-- Name: idx_approval_requests_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_approval_requests_created_at ON public.approval_requests USING btree (created_at);
+
+
+--
+-- Name: idx_approval_requests_requester; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_approval_requests_requester ON public.approval_requests USING btree (requester_id);
+
+
+--
+-- Name: idx_approval_requests_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_approval_requests_status ON public.approval_requests USING btree (status);
+
+
+--
+-- Name: idx_bindings_active; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_bindings_active ON public.llm_application_bindings USING btree (is_active);
+
+
+--
+-- Name: idx_bindings_app_priority; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_bindings_app_priority ON public.llm_application_bindings USING btree (application_id, priority);
+
+
+--
+-- Name: idx_data_sources_tenant_type; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_data_sources_tenant_type ON public.data_sources USING btree (tenant_id, source_type);
+
+
+--
+-- Name: idx_datalake_metrics_source_recorded; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_datalake_metrics_source_recorded ON public.datalake_metrics USING btree (source_id, recorded_at);
+
+
+--
+-- Name: idx_datalake_metrics_tenant_type; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_datalake_metrics_tenant_type ON public.datalake_metrics USING btree (tenant_id, metric_type);
+
+
+--
+-- Name: idx_dl_audit_logs_operation_type; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_dl_audit_logs_operation_type ON public.data_lifecycle_audit_logs USING btree (operation_type);
+
+
+--
+-- Name: idx_dl_audit_logs_resource_timestamp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_dl_audit_logs_resource_timestamp ON public.data_lifecycle_audit_logs USING btree (resource_type, "timestamp");
+
+
+--
+-- Name: idx_dl_audit_logs_resource_type; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_dl_audit_logs_resource_type ON public.data_lifecycle_audit_logs USING btree (resource_type);
+
+
+--
+-- Name: idx_dl_audit_logs_result; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_dl_audit_logs_result ON public.data_lifecycle_audit_logs USING btree (result);
+
+
+--
+-- Name: idx_dl_audit_logs_timestamp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_dl_audit_logs_timestamp ON public.data_lifecycle_audit_logs USING btree ("timestamp");
+
+
+--
+-- Name: idx_dl_audit_logs_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_dl_audit_logs_user_id ON public.data_lifecycle_audit_logs USING btree (user_id);
+
+
+--
+-- Name: idx_dl_audit_logs_user_timestamp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_dl_audit_logs_user_timestamp ON public.data_lifecycle_audit_logs USING btree (user_id, "timestamp");
+
+
+--
+-- Name: idx_enhanced_data_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_enhanced_data_created_at ON public.enhanced_data USING btree (created_at);
+
+
+--
+-- Name: idx_enhanced_data_original_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_enhanced_data_original_id ON public.enhanced_data USING btree (original_data_id);
+
+
+--
+-- Name: idx_llm_applications_code; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_llm_applications_code ON public.llm_applications USING btree (code);
+
+
+--
+-- Name: idx_permissions_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_permissions_user_id ON public.permissions USING btree (user_id);
+
+
+--
+-- Name: idx_permissions_user_resource; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_permissions_user_resource ON public.permissions USING btree (user_id, resource_type, resource_id);
+
+
+--
+-- Name: idx_role_permission_role; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_role_permission_role ON public.ai_data_source_role_permission USING btree (role);
+
+
+--
+-- Name: idx_role_permission_source_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_role_permission_source_id ON public.ai_data_source_role_permission USING btree (source_id);
+
+
+--
+-- Name: idx_samples_category; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_samples_category ON public.samples USING btree (category);
+
+
+--
+-- Name: idx_samples_category_quality; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_samples_category_quality ON public.samples USING btree (category, quality_overall);
+
+
+--
+-- Name: idx_samples_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_samples_created_at ON public.samples USING btree (created_at);
+
+
+--

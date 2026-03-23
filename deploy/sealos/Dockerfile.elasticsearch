@@ -1,0 +1,9 @@
+FROM docker.elastic.co/elasticsearch/elasticsearch:8.5.0
+
+# 修复 Sealos PVC 挂载权限问题：
+# Sealos 挂载的持久卷默认 root 拥有，ES 以 uid 1000 运行无法写入
+USER root
+RUN printf '#!/bin/bash\nchown -R 1000:1000 /usr/share/elasticsearch/data\nexec su elasticsearch -s /bin/bash -c "/usr/local/bin/docker-entrypoint.sh"\n' > /usr/local/bin/es-entrypoint.sh && \
+    chmod +x /usr/local/bin/es-entrypoint.sh
+
+ENTRYPOINT ["/usr/local/bin/es-entrypoint.sh"]

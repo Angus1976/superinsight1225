@@ -5,7 +5,11 @@ FROM python:3.11-slim AS builder
 
 WORKDIR /build
 COPY requirements.txt .
-RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+# 1. 先装 CPU-only torch（~200MB vs GPU版 ~2.5GB）
+# 2. 从 requirements.txt 中排除 torch 再装其余依赖，避免重复安装 GPU 版
+RUN pip install --no-cache-dir --prefix=/install torch --index-url https://download.pytorch.org/whl/cpu && \
+    grep -vi '^torch==' requirements.txt > requirements_no_torch.txt && \
+    pip install --no-cache-dir --prefix=/install -r requirements_no_torch.txt
 
 # -----------------------------------------------------------
 FROM python:3.11-slim

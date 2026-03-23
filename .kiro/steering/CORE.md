@@ -23,6 +23,7 @@
 | API 设计/分页/错误码 | `api-design-patterns.md` |
 | 代码审查/重构/质量优化 | `coding-quality-standards.md` |
 | 异步/并发/事件循环问题 | `async-sync-safety-quick-reference.md` |
+| Sealos 部署/PVC/容器权限 | 参考 `deploy/sealos/README.md` 踩坑记录 |
 
 多个场景同时出现时，可一次读取多个规则文件。
 

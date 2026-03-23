@@ -28,7 +28,6 @@ import {
   FolderOutlined,
   LinkOutlined,
   ExclamationCircleOutlined,
-  ExternalLinkOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import {
@@ -158,7 +157,7 @@ const LSWorkspaceProjectList: React.FC<Props> = ({ workspaceId }) => {
             <Button
               type="text"
               size="small"
-              icon={<ExternalLinkOutlined />}
+              icon={<LinkOutlined />}
               onClick={() => {
                 // Open project in Label Studio (assuming standard URL pattern)
                 const labelStudioUrl = `/label-studio/projects/${record.label_studio_project_id}`;

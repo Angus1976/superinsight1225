@@ -40,12 +40,13 @@ exports/
 operations_data/
 quality_monitoring/
 
-# Frontend
-frontend/
+# Frontend (保留 frontend/ 供 Dockerfile.frontend 构建)
+# frontend/  -- 已移除，前端构建需要
 habit-tracker/
 
-# Deployment
-deploy/
+# Deployment (保留 deploy/sealos/ 供 Dockerfile 使用)
+deploy/docker/
+deploy/k8s/
 scripts/
 文档/
 脚本/

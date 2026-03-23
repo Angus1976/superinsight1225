@@ -315,7 +315,7 @@ class RequestPriorityQueue {
     return new Promise((resolve, reject) => {
       const abortController = new AbortController();
       
-      const request: QueuedRequest<T> = {
+      const request: QueuedRequest = {
         id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         config: {
           ...config,

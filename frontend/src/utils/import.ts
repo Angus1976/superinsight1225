@@ -594,7 +594,7 @@ export const importTasksFromExcel = (
     }
     
     const sheet = workbook.Sheets[sheetName];
-    const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { header: 1 });
+    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as unknown[][];
     
     if (rows.length === 0) {
       result.errors.push({ row: 0, message: 'Empty Excel sheet' });

@@ -1,0 +1,488 @@
+-- Name: idx_semantic_records_job_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_semantic_records_job_id ON public.semantic_records USING btree (job_id);
+
+
+--
+-- Name: idx_skill_perm_role; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_skill_perm_role ON public.ai_skill_role_permission USING btree (role);
+
+
+--
+-- Name: idx_skill_perm_skill_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_skill_perm_skill_id ON public.ai_skill_role_permission USING btree (skill_id);
+
+
+--
+-- Name: idx_structured_records_job_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_structured_records_job_id ON public.structured_records USING btree (job_id);
+
+
+--
+-- Name: idx_structuring_jobs_tenant_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_structuring_jobs_tenant_status ON public.structuring_jobs USING btree (tenant_id, status);
+
+
+--
+-- Name: idx_tasks_assignee_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_tasks_assignee_id ON public.tasks USING btree (assignee_id);
+
+
+--
+-- Name: idx_tasks_document_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_tasks_document_id ON public.tasks USING btree (document_id);
+
+
+--
+-- Name: idx_tasks_label_studio_project_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_tasks_label_studio_project_id ON public.tasks USING btree (label_studio_project_id);
+
+
+--
+-- Name: idx_tasks_name; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_tasks_name ON public.tasks USING btree (name);
+
+
+--
+-- Name: idx_tasks_priority; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_tasks_priority ON public.tasks USING btree (priority);
+
+
+--
+-- Name: idx_tasks_project_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_tasks_project_id ON public.tasks USING btree (project_id);
+
+
+--
+-- Name: idx_temp_data_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_temp_data_created_at ON public.temp_data USING btree (created_at);
+
+
+--
+-- Name: idx_temp_data_state; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_temp_data_state ON public.temp_data USING btree (state);
+
+
+--
+-- Name: idx_temp_data_state_user; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_temp_data_state_user ON public.temp_data USING btree (state, uploaded_by);
+
+
+--
+-- Name: idx_temp_data_uploaded_by; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_temp_data_uploaded_by ON public.temp_data USING btree (uploaded_by);
+
+
+--
+-- Name: idx_transfer_audit_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_transfer_audit_created_at ON public.transfer_audit_logs USING btree (created_at);
+
+
+--
+-- Name: idx_transfer_audit_source; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_transfer_audit_source ON public.transfer_audit_logs USING btree (source_type, source_id);
+
+
+--
+-- Name: idx_transfer_audit_user; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_transfer_audit_user ON public.transfer_audit_logs USING btree (user_id);
+
+
+--
+-- Name: idx_vector_records_job_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_vector_records_job_id ON public.vector_records USING btree (job_id);
+
+
+--
+-- Name: idx_versions_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_versions_created_at ON public.versions USING btree (created_at);
+
+
+--
+-- Name: idx_versions_data_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_versions_data_id ON public.versions USING btree (data_id);
+
+
+--
+-- Name: idx_versions_data_id_version; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_versions_data_id_version ON public.versions USING btree (data_id, version_number);
+
+
+--
+-- Name: idx_workflow_name; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_workflow_name ON public.ai_workflows USING btree (name);
+
+
+--
+-- Name: idx_workflow_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_workflow_status ON public.ai_workflows USING btree (status);
+
+
+--
+-- Name: ix_ai_audit_logs_event_timestamp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ix_ai_audit_logs_event_timestamp ON public.ai_audit_logs USING btree (event_type, "timestamp");
+
+
+--
+-- Name: ix_ai_audit_logs_event_type; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ix_ai_audit_logs_event_type ON public.ai_audit_logs USING btree (event_type);
+
+
+--
+-- Name: ix_ai_audit_logs_gateway_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ix_ai_audit_logs_gateway_id ON public.ai_audit_logs USING btree (gateway_id);
+
+
+--
+-- Name: ix_ai_audit_logs_gateway_timestamp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ix_ai_audit_logs_gateway_timestamp ON public.ai_audit_logs USING btree (gateway_id, "timestamp");
+
+
+--
+-- Name: ix_ai_audit_logs_tenant_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ix_ai_audit_logs_tenant_id ON public.ai_audit_logs USING btree (tenant_id);
+
+
+--
+-- Name: ix_ai_audit_logs_tenant_timestamp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ix_ai_audit_logs_tenant_timestamp ON public.ai_audit_logs USING btree (tenant_id, "timestamp");
+
+
+--
+-- Name: ix_ai_audit_logs_timestamp; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ix_ai_audit_logs_timestamp ON public.ai_audit_logs USING btree ("timestamp");
+
+
+--
+-- Name: ix_ai_gateways_gateway_type; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ix_ai_gateways_gateway_type ON public.ai_gateways USING btree (gateway_type);
+
+
+--
+-- Name: ix_ai_gateways_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ix_ai_gateways_status ON public.ai_gateways USING btree (status);
+
+
+--
+-- Name: ix_ai_gateways_tenant_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ix_ai_gateways_tenant_id ON public.ai_gateways USING btree (tenant_id);
+
+
+--
+-- Name: ix_ai_gateways_tenant_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ix_ai_gateways_tenant_status ON public.ai_gateways USING btree (tenant_id, status);
+
+
+--
+-- Name: ix_ai_skills_gateway_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ix_ai_skills_gateway_id ON public.ai_skills USING btree (gateway_id);
+
+
+--
+-- Name: ix_ai_skills_gateway_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ix_ai_skills_gateway_status ON public.ai_skills USING btree (gateway_id, status);
+
+
+--
+-- Name: ix_ai_skills_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ix_ai_skills_status ON public.ai_skills USING btree (status);
+
+
+--
+-- Name: ix_datalake_metrics_recorded_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ix_datalake_metrics_recorded_at ON public.datalake_metrics USING btree (recorded_at);
+
+
+--
+-- Name: ix_datalake_metrics_tenant_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ix_datalake_metrics_tenant_id ON public.datalake_metrics USING btree (tenant_id);
+
+
+--
+-- Name: ix_llm_config_method; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ix_llm_config_method ON public.llm_configurations USING btree (default_method);
+
+
+--
+-- Name: ix_llm_config_tenant_active; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ix_llm_config_tenant_active ON public.llm_configurations USING btree (tenant_id, is_active);
+
+
+--
+-- Name: ix_llm_config_tenant_default; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ix_llm_config_tenant_default ON public.llm_configurations USING btree (tenant_id, is_default);
+
+
+--
+-- Name: ix_llm_config_tenant_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ix_llm_config_tenant_id ON public.llm_configurations USING btree (tenant_id);
+
+
+--
+-- Name: ix_llm_model_available; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ix_llm_model_available ON public.llm_model_registry USING btree (is_available);
+
+
+--
+-- Name: ix_llm_model_method_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX ix_llm_model_method_id ON public.llm_model_registry USING btree (method, model_id);
+
+
+--
+-- Name: ix_llm_usage_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ix_llm_usage_created_at ON public.llm_usage_logs USING btree (created_at);
+
+
+--
+-- Name: ix_llm_usage_method; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ix_llm_usage_method ON public.llm_usage_logs USING btree (method);
+
+
+--
+-- Name: ix_llm_usage_method_created; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ix_llm_usage_method_created ON public.llm_usage_logs USING btree (method, created_at);
+
+
+--
+-- Name: ix_llm_usage_model; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ix_llm_usage_model ON public.llm_usage_logs USING btree (model);
+
+
+--
+-- Name: ix_llm_usage_success; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ix_llm_usage_success ON public.llm_usage_logs USING btree (success, created_at);
+
+
+--
+-- Name: ix_llm_usage_tenant_created; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ix_llm_usage_tenant_created ON public.llm_usage_logs USING btree (tenant_id, created_at);
+
+
+--
+-- Name: ix_llm_usage_tenant_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ix_llm_usage_tenant_id ON public.llm_usage_logs USING btree (tenant_id);
+
+
+--
+-- Name: ix_llm_usage_user_created; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ix_llm_usage_user_created ON public.llm_usage_logs USING btree (user_id, created_at);
+
+
+--
+-- Name: ix_llm_usage_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ix_llm_usage_user_id ON public.llm_usage_logs USING btree (user_id);
+
+
+--
+-- Name: ix_structuring_jobs_tenant_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ix_structuring_jobs_tenant_id ON public.structuring_jobs USING btree (tenant_id);
+
+
+--
+-- Name: ix_users_email; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX ix_users_email ON public.users USING btree (email);
+
+
+--
+-- Name: ix_users_sso_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ix_users_sso_id ON public.users USING btree (sso_id);
+
+
+--
+-- Name: ix_users_sso_provider; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX ix_users_sso_provider ON public.users USING btree (sso_provider);
+
+
+--
+-- Name: ix_users_username; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX ix_users_username ON public.users USING btree (username);
+
+
+--
+-- Name: ai_audit_logs ai_audit_logs_gateway_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_audit_logs
+    ADD CONSTRAINT ai_audit_logs_gateway_id_fkey FOREIGN KEY (gateway_id) REFERENCES public.ai_gateways(id) ON DELETE CASCADE;
+
+
+--
+-- Name: ai_skills ai_skills_gateway_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.ai_skills
+    ADD CONSTRAINT ai_skills_gateway_id_fkey FOREIGN KEY (gateway_id) REFERENCES public.ai_gateways(id) ON DELETE CASCADE;
+
+
+--
+-- Name: datalake_metrics datalake_metrics_source_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.datalake_metrics
+    ADD CONSTRAINT datalake_metrics_source_id_fkey FOREIGN KEY (source_id) REFERENCES public.data_sources(id) ON DELETE CASCADE;
+
+
+--
+-- Name: llm_application_bindings llm_application_bindings_application_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.llm_application_bindings
+    ADD CONSTRAINT llm_application_bindings_application_id_fkey FOREIGN KEY (application_id) REFERENCES public.llm_applications(id) ON DELETE CASCADE;
+
+
+--
+-- Name: llm_application_bindings llm_application_bindings_llm_config_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.llm_application_bindings
+    ADD CONSTRAINT llm_application_bindings_llm_config_id_fkey FOREIGN KEY (llm_config_id) REFERENCES public.llm_configurations(id) ON DELETE CASCADE;
+
+
+--
+-- Name: semantic_records semantic_records_job_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.semantic_records
+    ADD CONSTRAINT semantic_records_job_id_fkey FOREIGN KEY (job_id) REFERENCES public.structuring_jobs(id) ON DELETE CASCADE;
+
+
+--
+-- Name: structured_records structured_records_job_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.structured_records
+    ADD CONSTRAINT structured_records_job_id_fkey FOREIGN KEY (job_id) REFERENCES public.structuring_jobs(id) ON DELETE CASCADE;
+
+
+--
+-- Name: vector_records vector_records_job_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.vector_records
+    ADD CONSTRAINT vector_records_job_id_fkey FOREIGN KEY (job_id) REFERENCES public.structuring_jobs(id) ON DELETE CASCADE;
+
+
+--
+-- PostgreSQL database dump complete
+--
+
+

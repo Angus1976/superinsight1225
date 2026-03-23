@@ -28,8 +28,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import EnhancementManagement from '@/components/DataLifecycle/Enhancement/EnhancementManagement';
-import CreateEnhancementModal from '@/components/DataLifecycle/Enhancement/CreateEnhancementModal';
-import EnhancementResultDrawer from '@/components/DataLifecycle/Enhancement/EnhancementResultDrawer';
+import CreateEnhancementModal from '@/components/DataLifecycle/CreateEnhancementModal';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -39,17 +38,10 @@ const EnhancementPage: React.FC = () => {
   const navigate = useNavigate();
   
   const [createModalVisible, setCreateModalVisible] = useState(false);
-  const [resultDrawerVisible, setResultDrawerVisible] = useState(false);
-  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [filters, setFilters] = useState<Record<string, any>>({});
 
   const handleCreateJob = useCallback(() => {
     setCreateModalVisible(true);
-  }, []);
-
-  const handleViewResults = useCallback((jobId: string) => {
-    setSelectedJobId(jobId);
-    setResultDrawerVisible(true);
   }, []);
 
   return (
@@ -159,15 +151,6 @@ const EnhancementPage: React.FC = () => {
       <CreateEnhancementModal
         visible={createModalVisible}
         onClose={() => setCreateModalVisible(false)}
-        onSubmit={async () => {}}
-      />
-
-      <EnhancementResultDrawer
-        visible={resultDrawerVisible}
-        jobId={selectedJobId}
-        onClose={() => setResultDrawerVisible(false)}
-        onAddToLibrary={() => {}}
-        onRollback={() => {}}
       />
     </div>
   );

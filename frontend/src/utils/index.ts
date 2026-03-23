@@ -9,11 +9,10 @@ export {
   memoize,
   debounce as performanceDebounce,
   throttle as performanceThrottle,
-  lazyLoad,
-  preloadImage,
-  preloadImages,
-  optimizeImage,
-  createImageLoader
+  lazyLoadImage,
+  preloadCriticalResources,
+  prefetchRouteChunks,
+  createLazyLoadObserver,
 } from './performanceOptimization';
 export * from './errorHandler';
 

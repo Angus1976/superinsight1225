@@ -426,10 +426,10 @@ class RemoteActivationService:
         license_model.status = LicenseStatus.REVOKED
         license_model.revoked_at = datetime.now(timezone.utc)
         
-        metadata = license_model.metadata or {}
+        metadata = license_model.extra_metadata or {}
         metadata["revocation_reason"] = reason
         metadata["revoked_remotely"] = True
-        license_model.metadata = metadata
+        license_model.extra_metadata = metadata
         
         # Revoke all activations
         await self.db.execute(
@@ -483,5 +483,5 @@ class RemoteActivationService:
             status=model.status,
             created_at=model.created_at,
             activated_at=model.activated_at,
-            metadata=model.metadata,
+            metadata=model.extra_metadata,
         )

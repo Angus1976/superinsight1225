@@ -1,5 +1,5 @@
 // Task detail page
-import { useState } from 'react';
+import {} from 'react';
 import { useParams, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import {
   Card,
@@ -124,8 +124,6 @@ const TaskDetailPage: React.FC = () => {
    */
   const handleOpenInNewWindow = () => {
     console.log('[handleOpenInNewWindow] ========== START ==========');
-    console.log('[handleOpenInNewWindow] id:', id);
-    console.log('[handleOpenInNewWindow] task:', task);
     
     if (!id || !task) {
       console.error('[handleOpenInNewWindow] Task ID or task data is missing');
@@ -142,10 +140,9 @@ const TaskDetailPage: React.FC = () => {
       return;
     }
     
-    // Open Label Studio data manager using the hook
+    // Open Label Studio data manager using the hook (async, handles errors internally)
     console.log('[handleOpenInNewWindow] Opening Label Studio for project:', projectId);
-    openLabelStudio(projectId);
-    console.log('[handleOpenInNewWindow] ========== END ==========');
+    openLabelStudio(Number(projectId));
   };
 
   const handleStatusChange = async (newStatus: TaskStatus) => {
@@ -245,7 +242,7 @@ const TaskDetailPage: React.FC = () => {
                 <Progress
                   percent={currentTask.progress}
                   status={currentTask.status === 'completed' ? 'success' : 'active'}
-                  size={[null, 12]}
+                  size={['100%', 12]}
                 />
               </div>
             </Card>
@@ -255,39 +252,45 @@ const TaskDetailPage: React.FC = () => {
               <p>{currentTask.description || t('detail.noDescription')}</p>
             </Card>
 
-            {/* 标注集成 */}
-            {currentTask.label_studio_project_id && (
-              <Card title={t('detail.dataAnnotation')} style={{ marginBottom: 16 }}>
-                <Alert
-                  message={t('detail.annotationFunction')}
-                  description={
-                    <div>
-                      <p>
-                        {t('detail.projectId')}: <strong>{currentTask.label_studio_project_id}</strong>
-                      </p>
-                      <p>{t('annotationTypeLabel')}: <strong>{currentTask.annotation_type}</strong></p>
-                      <Space style={{ marginTop: 12 }}>
-                        {annotationPerms.canView ? (
+            {/* 标注集成 - 始终显示开始标注，在新窗口打开仅在有项目ID时显示 */}
+            <Card title={t('detail.dataAnnotation')} style={{ marginBottom: 16 }}>
+              <Alert
+                message={t('detail.annotationFunction')}
+                description={
+                  <div>
+                    {currentTask.label_studio_project_id ? (
+                      <>
+                        <p>
+                          {t('detail.projectId')}: <strong>{currentTask.label_studio_project_id}</strong>
+                        </p>
+                        <p>{t('annotationTypeLabel')}: <strong>{currentTask.annotation_type}</strong></p>
+                      </>
+                    ) : (
+                      <p>{t('detail.projectAutoCreate')}</p>
+                    )}
+                    <Space style={{ marginTop: 12 }}>
+                      {annotationPerms.canView ? (
+                        <Button 
+                          type="primary" 
+                          size="large"
+                          icon={<PlayCircleOutlined />}
+                          onClick={handleStartAnnotation}
+                        >
+                          {t('detail.startAnnotation')}
+                        </Button>
+                      ) : (
+                        <Tooltip title={t('detail.noAnnotationPermission')}>
                           <Button 
                             type="primary" 
                             size="large"
                             icon={<PlayCircleOutlined />}
-                            onClick={handleStartAnnotation}
+                            disabled
                           >
                             {t('detail.startAnnotation')}
                           </Button>
-                        ) : (
-                          <Tooltip title={t('detail.noAnnotationPermission')}>
-                            <Button 
-                              type="primary" 
-                              size="large"
-                              icon={<PlayCircleOutlined />}
-                              disabled
-                            >
-                              {t('detail.startAnnotation')}
-                            </Button>
-                          </Tooltip>
-                        )}
+                        </Tooltip>
+                      )}
+                      {currentTask.label_studio_project_id && (
                         <Button 
                           size="large"
                           icon={<ExportOutlined />}
@@ -295,14 +298,14 @@ const TaskDetailPage: React.FC = () => {
                         >
                           {t('detail.openInNewWindow')}
                         </Button>
-                      </Space>
-                    </div>
-                  }
-                  type="info"
-                  showIcon
-                />
-              </Card>
-            )}
+                      )}
+                    </Space>
+                  </div>
+                }
+                type="info"
+                showIcon
+              />
+            </Card>
           </Col>
 
           {/* Sidebar */}

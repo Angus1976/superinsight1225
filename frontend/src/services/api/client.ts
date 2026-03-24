@@ -17,7 +17,7 @@ const OPTIMIZED_TIMEOUT = 10000;
 
 // Create axios instance with optimized settings
 const apiClient: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000',
+  baseURL: import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000',
   timeout: OPTIMIZED_TIMEOUT,
   headers: {
     'Content-Type': 'application/json',

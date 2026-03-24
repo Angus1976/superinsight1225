@@ -89,32 +89,38 @@ class LabelStudioConfig:
         # JWT credentials (Label Studio 1.22.0+)
         self.username = settings.label_studio.label_studio_username
         self.password = settings.label_studio.label_studio_password
+        
+        # SSO credentials (label-studio-sso package)
+        self.sso_enabled = settings.label_studio.label_studio_sso_enabled
+        self.sso_email = settings.label_studio.label_studio_sso_email
     
     def get_auth_method(self) -> str:
         """
         Determine which authentication method to use.
         
         Priority:
-        1. JWT (if username and password are configured)
-        2. API Token (if api_token is configured)
-        3. None (raise error)
+        1. SSO (if sso_enabled and api_token configured)
+        2. JWT (if username and password are configured)
+        3. API Token (if api_token is configured)
+        4. None (raise error)
         
         Returns:
-            str: 'jwt' or 'api_token'
+            str: 'sso', 'jwt' or 'api_token'
             
         Raises:
             LabelStudioIntegrationError: If no auth method is configured
-            
-        Validates: Requirements 6.3, 6.4
         """
-        if self.username and self.password:
+        if self.sso_enabled and self.api_token:
+            return 'sso'
+        elif self.username and self.password:
             return 'jwt'
         elif self.api_token:
             return 'api_token'
         else:
             raise LabelStudioConfigError(
                 "No authentication method configured. "
-                "Please set either LABEL_STUDIO_USERNAME/PASSWORD or LABEL_STUDIO_API_TOKEN"
+                "Please set LABEL_STUDIO_SSO_ENABLED=true with LABEL_STUDIO_API_TOKEN, "
+                "or LABEL_STUDIO_USERNAME/PASSWORD, or LABEL_STUDIO_API_TOKEN"
             )
     
     def get_default_label_config(self, annotation_type: str = "text_classification") -> str:

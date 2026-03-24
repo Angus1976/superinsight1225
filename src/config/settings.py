@@ -46,8 +46,8 @@ class DatabaseSettings:
     database_password: str = field(default_factory=lambda: get_env("DATABASE_PASSWORD", "password"))
     
     # Connection pool settings
-    database_pool_size: int = field(default_factory=lambda: get_env_int("DATABASE_POOL_SIZE", 10))
-    database_max_overflow: int = field(default_factory=lambda: get_env_int("DATABASE_MAX_OVERFLOW", 20))
+    database_pool_size: int = field(default_factory=lambda: get_env_int("DATABASE_POOL_SIZE", 20))
+    database_max_overflow: int = field(default_factory=lambda: get_env_int("DATABASE_MAX_OVERFLOW", 40))
     database_pool_timeout: int = field(default_factory=lambda: get_env_int("DATABASE_POOL_TIMEOUT", 30))
 
 
@@ -63,6 +63,11 @@ class LabelStudioSettings:
     # When both username and password are configured, JWT authentication is preferred
     label_studio_username: Optional[str] = field(default_factory=lambda: get_env("LABEL_STUDIO_USERNAME") or None)
     label_studio_password: Optional[str] = field(default_factory=lambda: get_env("LABEL_STUDIO_PASSWORD") or None)
+    
+    # SSO Authentication (label-studio-sso package)
+    # When SSO is enabled and api_token is set, uses /api/sso/token to get JWT
+    label_studio_sso_enabled: bool = field(default_factory=lambda: get_env("LABEL_STUDIO_SSO_ENABLED", "false").lower() == "true")
+    label_studio_sso_email: Optional[str] = field(default_factory=lambda: get_env("LABEL_STUDIO_SSO_EMAIL") or None)
 
 
 @dataclass

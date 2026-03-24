@@ -22,8 +22,9 @@ logger = logging.getLogger(__name__)
 # Create router
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
-# JWT configuration
-SECRET_KEY = "your-secret-key-change-in-production"
+# JWT configuration — must read from env to stay consistent with auth.py
+import os
+SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-in-production")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 

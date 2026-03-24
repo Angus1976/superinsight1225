@@ -124,7 +124,7 @@ class ChangeTracker:
                 new_snapshot=new_data,
                 diff=diff,
                 user_id=user_id,
-                metadata=metadata or {},
+                extra_metadata=metadata or {},
                 tenant_id=tenant_id,
             )
             
@@ -167,7 +167,7 @@ class ChangeTracker:
                 new_snapshot=new_data,
                 diff=diff,
                 user_id=user_id,
-                metadata=metadata or {},
+                extra_metadata=metadata or {},
                 tenant_id=tenant_id,
             )
             
@@ -270,7 +270,7 @@ class ChangeTracker:
                 "user_id": change.user_id,
                 "summary": self._generate_change_summary(change),
                 "diff": change.diff,
-                "metadata": change.metadata,
+                "metadata": change.extra_metadata,
             }
             timeline.append(entry)
         

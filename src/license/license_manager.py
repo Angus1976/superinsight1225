@@ -187,7 +187,7 @@ class LicenseManager:
             auto_renew=request.validity.auto_renew,
             status=LicenseStatus.PENDING,
             signature=signature,
-            metadata=request.metadata,
+            extra_metadata=request.metadata,
         )
         
         self.db.add(license_model)
@@ -456,9 +456,9 @@ class LicenseManager:
         license_model.revoked_at = datetime.now(timezone.utc)
         
         # Store reason in metadata
-        metadata = license_model.metadata or {}
+        metadata = license_model.extra_metadata or {}
         metadata["revocation_reason"] = reason
-        license_model.metadata = metadata
+        license_model.extra_metadata = metadata
         
         await self.db.commit()
         
@@ -642,5 +642,5 @@ class LicenseManager:
             status=model.status,
             created_at=model.created_at,
             activated_at=model.activated_at,
-            metadata=model.metadata,
+            metadata=model.extra_metadata,
         )

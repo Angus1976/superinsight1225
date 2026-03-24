@@ -217,9 +217,8 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
       // Enhanced origin verification
       const allowedOrigins = [
         window.location.origin,
-        'http://localhost:8080',
-        'http://localhost:8081',
-        'https://labelstudio.heartex.com'
+        import.meta.env.VITE_LABEL_STUDIO_URL || 'http://localhost:8080',
+        'http://label-studio:8080',
       ];
       
       if (!allowedOrigins.some(origin => event.origin.includes(origin.split('://')[1]))) {

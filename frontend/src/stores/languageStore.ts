@@ -28,11 +28,12 @@ export interface LabelStudioLanguageMessage {
 }
 
 // Allowed origins for postMessage security
+// VITE_LABEL_STUDIO_URL 构建时注入（Sealos 外网域名），未设置时 fallback localhost
 const ALLOWED_ORIGINS = [
   window.location.origin,
-  'http://localhost:8080',
+  import.meta.env.VITE_LABEL_STUDIO_URL || 'http://localhost:8080',
   'http://label-studio:8080',
-];
+].filter(Boolean);
 
 interface LanguageState {
   language: SupportedLanguage;

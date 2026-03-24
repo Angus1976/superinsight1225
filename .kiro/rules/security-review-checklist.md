@@ -141,6 +141,10 @@ if (safeUrl.origin === window.location.origin) {
 - 这会掩盖认证配置错误，dashboard 正常但其他页面全部跳转，误导排查方向
 - 审查时确认：使用 `auto_error=False` 的端点是否真的允许匿名访问
 
+### LS SSO token 必须由 LS 自身签发
+- 给 Label Studio 的 SSO token 必须调用 LS 的 `/api/sso/token` 端点获取，不能用 SuperInsight 的 `jwt_secret_key` 签发
+- LS 的 `JWTAutoLoginMiddleware` 只认 LS 自己的 `SECRET_KEY`，跨系统 JWT 信任边界不可混用
+
 ---
 
 ## 🔗 相关资源

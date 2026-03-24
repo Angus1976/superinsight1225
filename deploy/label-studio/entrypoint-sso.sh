@@ -23,9 +23,18 @@ if _sso_os.environ.get('LABEL_STUDIO_SSO_ENABLED', 'false').lower() == 'true':
         'label_studio_sso.backends.JWTAuthenticationBackend',
     ] + list(AUTHENTICATION_BACKENDS)
     
-    MIDDLEWARE = list(MIDDLEWARE) + [
-        'label_studio_sso.middleware.JWTAutoLoginMiddleware',
-    ]
+    # JWTAutoLoginMiddleware MUST be inserted BEFORE AuthenticationMiddleware
+    # (not appended to end), otherwise Django redirects to login before SSO runs.
+    _middleware_list = list(MIDDLEWARE)
+    _sso_mw = 'label_studio_sso.middleware.JWTAutoLoginMiddleware'
+    _auth_mw = 'django.contrib.auth.middleware.AuthenticationMiddleware'
+    if _sso_mw not in _middleware_list:
+        try:
+            _auth_idx = _middleware_list.index(_auth_mw)
+            _middleware_list.insert(_auth_idx, _sso_mw)
+        except ValueError:
+            _middleware_list.append(_sso_mw)
+        MIDDLEWARE = _middleware_list
     
     JWT_SSO_NATIVE_USER_ID_CLAIM = 'user_id'
     JWT_SSO_COOKIE_NAME = 'ls_auth_token'

@@ -1138,15 +1138,16 @@ async def get_authenticated_url(
                 }
             )
         
-        # Step 2: Generate authenticated URL with language parameter
-        # Use current user's ID for token generation
+        # Step 2: Generate authenticated URL via LS SSO token
         user_id = str(current_user.id)
         
         url_info = await ls.generate_authenticated_url(
             project_id=project_id,
             user_id=user_id,
             language=language,
-            expires_in=3600  # 1 hour expiration
+            email=current_user.email,
+            username=current_user.username or current_user.email.split("@")[0],
+            full_name=current_user.full_name or "",
         )
         
         logger.info(

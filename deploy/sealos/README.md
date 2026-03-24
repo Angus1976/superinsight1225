@@ -100,7 +100,7 @@ docker push angus888/superinsight-frontend:sealos-v4
 - 镜像：`angus888/superinsight-labelstudio:sealos`（自定义镜像，修复 PVC 权限）
 - CPU：0.5核，内存：512MB
 - 环境变量：
-  - `LABEL_STUDIO_HOST` = `http://0.0.0.0:8080`
+  - `LABEL_STUDIO_HOST` = `https://<LS外网域名>`（必须用外网地址，LS 用此值生成静态资源 URL）
   - `LABEL_STUDIO_USERNAME` = `admin@superinsight.local`
   - `LABEL_STUDIO_PASSWORD` = `<你的密码>`
   - `LANGUAGE_CODE` = `zh-hans`
@@ -111,6 +111,7 @@ docker push angus888/superinsight-frontend:sealos-v4
   - `POSTGRE_HOST` = `<pg内网地址>`
   - `POSTGRE_PORT` = `5432`
 - 存储：挂载 `/label-studio/data`，2GB
+- ⚠️ 必须开启外网访问：前端通过 `window.open()` 在用户浏览器中直接打开 LS 标注页面，走公网而非 Sealos 内网。不开外网 = 无法标注。外网域名同时用于前端构建时的 `VITE_LABEL_STUDIO_URL`
 - ⚠️ 注意：Label Studio 的 PG 变量名是 `POSTGRE_*`（不是 `POSTGRESQL_*`），数据库名用 `superinsight`，与本地 docker-compose 一致
 
 #### 3.4 Backend (FastAPI)
@@ -179,11 +180,15 @@ python -c "from main import *; print('DB initialized')"
 | 点击"在新窗口中打开"后 LS 要求手动登录，无自动登录 | `openLabelStudio` 直接用 `VITE_LABEL_STUDIO_URL` 拼 URL 打开，未调后端 `getAuthUrl` 获取 SSO token。本地 Docker 因 LS 无强制登录不易发现 | 修改 `useLabelStudio.ts` 的 `openLabelStudio`：先调 `getAuthUrl` 获取 token → 用前端 `VITE_LABEL_STUDIO_URL` 重建 URL → `window.open`。降级：auth 失败时回退无 token URL |
 | TaskDetail 页面不显示"开始标注"和"在新窗口中打开"按钮 | 整个标注卡片被 `label_studio_project_id &&` 包裹，Sealos 新建任务无 project ID 则整块不渲染 | 拆分条件：始终显示"开始标注"（annotate 页面会自动创建项目），"在新窗口中打开"仅在有 project ID 时显示 |
 | Sealos LS 登录页仍显示 HumanSignal logo 和英文 | LS Docker 镜像未重新构建推送，`entrypoint-sso.sh` 的品牌化 patch 未生效 | 重新构建并推送 LS 镜像：`docker build --platform linux/amd64 -f deploy/sealos/Dockerfile.labelstudio -t angus888/superinsight-labelstudio:sealos . && docker push` |
+| LS 外网访问页面空白，静态资源全部 502 | `LABEL_STUDIO_HOST=http://0.0.0.0:8080`，LS 用此值生成 HTML 中静态资源绝对 URL，浏览器无法访问容器内地址 | `LABEL_STUDIO_HOST` 必须设为 LS 外网域名（如 `https://xxx.sealosgzg.site`）。三变量区分：`LABEL_STUDIO_HOST`（LS 自身，外网）、`LABEL_STUDIO_URL`（后端→LS，内网）、`VITE_LABEL_STUDIO_URL`（前端构建时，外网） |
+| SSO 自动登录失败，浏览器跳转登录页 | `JWTAutoLoginMiddleware` 被追加到 MIDDLEWARE 末尾（第 20 位），`AuthenticationMiddleware`（第 7 位）先判定未认证并重定向 | `entrypoint-sso.sh` 中将 `JWTAutoLoginMiddleware` 插入到 `AuthenticationMiddleware` 之前，而非追加到末尾 |
+| LS 镜像更新后 entrypoint patch 不生效 | patch 用 marker 做幂等检查，但 PVC 持久化了旧文件，marker 已存在导致新 patch 跳过 | 更新 LS 镜像后需手动清除 marker（`sed -i '/SSO_PATCHED/,$d' label_studio.py`）或删除重建 LS 应用 |
 | 登录成功但页面一闪跳回仪表盘，AI助手等页面无法访问 | `auth_simple.py` 的 `SECRET_KEY` 硬编码，与 `auth.py` 从 `JWT_SECRET_KEY` 环境变量读取的值不一致，导致签发的 token 验证失败 401。`business_metrics.py` 用 `auto_error=False` 静默降级使 dashboard 正常，掩盖了问题 | `auth_simple.py` 改为 `os.getenv("JWT_SECRET_KEY", ...)`，确保所有 auth 模块使用同一密钥源 |
 | LS 容器内执行 Django 命令（如生成 Token）失败，报 `ModuleNotFoundError: No module named 'core'` | LS 的 settings 用相对导入 `from core.settings.base import *`，需要 `/label-studio/label_studio` 也在 `sys.path` 中；且容器是 Alpine（ash），多行 Python 粘贴会被拆散 | 用 `printf` 写单行脚本到文件再执行：`printf 'import django,os,sys\nsys.path.insert(0,"/label-studio")\nsys.path.insert(0,"/label-studio/label_studio")\nos.environ["DJANGO_SETTINGS_MODULE"]="label_studio.core.settings.label_studio"\ndjango.setup()\n...\n' > /tmp/script.py && cd /label-studio && python3 /tmp/script.py` |
 | SSO Bearer JWT 写入 `DEFAULT_AUTHENTICATION_CLASSES` 后仍 401 | LS 所有 API View 显式设置 `authentication_classes = [TokenAuthenticationPhaseout, SessionAuthentication]`，完全绕过全局 DRF 设置 | 必须 monkey-patch `TokenAuthenticationPhaseout.authenticate` 本身，在 legacy token 失败后回退到 SSO Bearer JWT 验证。patch 写在 `entrypoint-sso.sh` 中追加到 `jwt_auth/auth.py` |
 | LS 升级（基础镜像更新）后 SSO/品牌化失效 | `heartexlabs/label-studio:latest` 升级可能改变 Python 版本、`views.py` 代码结构、`jwt_auth/auth.py` 认证逻辑 | 升级流程：1) 拉新基础镜像 2) 重新构建 `Dockerfile.labelstudio` 3) 验证：`entrypoint-sso.sh` 动态路径检测是否正常、`views.py` patch 目标代码是否匹配、`jwt_auth/auth.py` patch 是否兼容、Bearer JWT 认证是否通过 |
 | 升版后 Celery 仍跑旧代码 | `Dockerfile.celery` 的 `FROM` 硬编码了 backend 镜像版本 tag，升版时忘记同步更新 | 升版时联动更新：`README.md` 镜像清单 + 构建命令 + `Dockerfile.celery` 的 `FROM` tag，三处必须一致 |
+| SSO 自动登录仍跳转登录页（middleware 正常、curl 容器内通过） | `generate_authenticated_url` 用 SuperInsight 的 `jwt_secret_key` 自签 JWT token，但 LS 的 `JWTAutoLoginMiddleware` 只认 LS 自己的 `SECRET_KEY`，跨系统密钥不互通 | `generate_authenticated_url` 改为调用 LS 的 `POST /api/sso/token` 获取 LS 签发的 token（与 `get_login_url` 同一方式）。规则：给 LS 的 SSO token 必须由 LS 自身签发，不可用 SuperInsight 密钥 |
 
 ## SuperInsight ↔ Label Studio 认证体系
 

@@ -1411,123 +1411,95 @@ class LabelStudioIntegration:
         project_id: str,
         user_id: str,
         language: str = "zh",
-        expires_in: int = 3600
+        expires_in: int = 3600,
+        email: str = "",
+        username: str = "",
+        full_name: str = "",
     ) -> Dict[str, Any]:
         """
-        Generate authenticated URL with temporary token and language parameter.
+        Generate authenticated URL by requesting SSO token from Label Studio.
         
-        This method creates a temporary JWT token for Label Studio access and
-        constructs a URL with the token and language preference. The URL can
-        be used to open Label Studio in a new window with automatic authentication
-        and the user's preferred language.
-        
-        Security Note:
-            This method checks if the URL uses HTTPS when tokens are included.
-            In production environments, HTTP URLs will trigger a security warning
-            as tokens may be exposed in transit.
+        IMPORTANT: The token MUST be signed by Label Studio itself (via /api/sso/token),
+        not by SuperInsight. LS's JWTAutoLoginMiddleware only trusts LS's own SECRET_KEY.
         
         Args:
             project_id: Label Studio project ID to access
-            user_id: User identifier for token generation
-            language: User's language preference ('zh' for Chinese, 'en' for English)
-                     Defaults to 'zh' (Chinese)
-            expires_in: Token expiration time in seconds (default: 3600 = 1 hour)
-            
-        Returns:
-            Dict[str, Any]: Dictionary containing:
-                - url: Complete authenticated URL with token and language
-                - token: The generated temporary token
-                - expires_at: ISO format datetime when token expires
-                - project_id: The project ID
-                - language: The language parameter used
-                - is_secure: Whether the URL uses HTTPS
-                
-        Raises:
-            LabelStudioIntegrationError: If URL generation fails
-            
-        Validates: Requirements 1.2 - Language matches user preference
-        Validates: Requirements 1.5 - Language preference included in authenticated URL
-        Validates: Requirements 10.3 - HTTPS enforcement for token URLs
-        
-        Example:
-            >>> url_info = await integration.generate_authenticated_url(
-            ...     project_id="123",
-            ...     user_id="user-456",
-            ...     language="zh"
-            ... )
-            >>> print(url_info['url'])
-            'https://label-studio:8080/projects/123?token=eyJ...&lang=zh'
+            user_id: User identifier (for logging)
+            language: Language preference ('zh' or 'en')
+            expires_in: Unused, kept for API compatibility
+            email: User email for LS SSO user matching
+            username: Username for LS SSO
+            full_name: Full name for LS SSO
         """
+        import os
+        
         try:
-            # HTTPS Security Check (Requirement 10.3)
             is_secure = self._check_https_security()
-            # Validate language parameter - only 'zh' and 'en' are supported
-            # Map common language codes to Label Studio supported codes
-            language_map = {
-                'zh': 'zh',
-                'zh-CN': 'zh',
-                'zh-Hans': 'zh',
-                'zh-TW': 'zh',
-                'en': 'en',
-                'en-US': 'en',
-                'en-GB': 'en',
-            }
             
-            # Normalize language code, default to 'zh' if not recognized
+            # Normalize language
+            language_map = {
+                'zh': 'zh', 'zh-CN': 'zh', 'zh-Hans': 'zh', 'zh-TW': 'zh',
+                'en': 'en', 'en-US': 'en', 'en-GB': 'en',
+            }
             normalized_language = language_map.get(language, 'zh')
             
-            if language not in language_map:
-                logger.warning(
-                    f"Unsupported language '{language}', defaulting to 'zh'. "
-                    f"Supported languages: {list(language_map.keys())}"
+            # Request SSO token from Label Studio (NOT self-signed)
+            ls_api_token = os.environ.get('LABEL_STUDIO_API_TOKEN')
+            sso_token = None
+            
+            if ls_api_token and email:
+                first_name = full_name.split()[0] if full_name else ""
+                last_name = " ".join(full_name.split()[1:]) if full_name and len(full_name.split()) > 1 else ""
+                
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    response = await client.post(
+                        f"{self.base_url}/api/sso/token",
+                        json={
+                            "email": email,
+                            "username": username or email.split("@")[0],
+                            "first_name": first_name,
+                            "last_name": last_name,
+                        },
+                        headers={
+                            "Authorization": f"Token {ls_api_token}",
+                            "Content-Type": "application/json",
+                        },
+                    )
+                    if response.status_code == 200:
+                        sso_token = response.json().get("token")
+                    else:
+                        logger.warning(f"LS SSO token request failed: {response.status_code} - {response.text}")
+            
+            if not sso_token:
+                raise LabelStudioIntegrationError(
+                    "Failed to obtain SSO token from Label Studio. "
+                    "Check LABEL_STUDIO_API_TOKEN and SSO endpoint availability."
                 )
             
-            # Create temporary token with expiration
-            expires_at = datetime.utcnow() + timedelta(seconds=expires_in)
-            
-            token_payload = {
-                "sub": user_id,
-                "project_id": project_id,
-                "purpose": "label_studio_access",
-                "lang": normalized_language,
-                "exp": expires_at,
-                "iat": datetime.utcnow(),
-                "jti": str(uuid4())  # Unique token ID for potential revocation
-            }
-            
-            # Generate JWT token using security settings
-            temp_token = jwt.encode(
-                token_payload,
-                settings.security.jwt_secret_key,
-                algorithm=settings.security.jwt_algorithm
-            )
-            
-            # Construct authenticated URL with token and language parameter
-            # Label Studio supports ?lang=zh or ?lang=en for language switching
+            # Build URL with LS-signed token + language
             authenticated_url = (
-                f"{self.base_url}/projects/{project_id}"
-                f"?token={temp_token}&lang={normalized_language}"
+                f"{self.base_url}/projects/{project_id}/data"
+                f"?token={sso_token}&lang={normalized_language}"
             )
+            
+            expires_at = datetime.utcnow() + timedelta(seconds=600)  # SSO token ~10min
             
             logger.info(
-                f"Generated authenticated URL for project {project_id}, "
-                f"user {user_id}, language {normalized_language}, "
-                f"expires at {expires_at.isoformat()}"
+                f"Generated LS SSO authenticated URL for project {project_id}, "
+                f"user {user_id}, language {normalized_language}"
             )
             
             return {
                 "url": authenticated_url,
-                "token": temp_token,
+                "token": sso_token,
                 "expires_at": expires_at.isoformat() + "Z",
                 "project_id": project_id,
                 "language": normalized_language,
-                "is_secure": is_secure
+                "is_secure": is_secure,
             }
             
-        except jwt.PyJWTError as e:
-            error_msg = f"Failed to generate JWT token: {str(e)}"
-            logger.error(error_msg)
-            raise LabelStudioIntegrationError(error_msg)
+        except LabelStudioIntegrationError:
+            raise
         except Exception as e:
             error_msg = f"Failed to generate authenticated URL: {str(e)}"
             logger.error(error_msg)

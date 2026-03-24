@@ -1,10 +1,34 @@
+# SuperInsight Label Studio - Sealos Production Build
+# 基于本地 deploy/label-studio/Dockerfile，增加 PVC 权限修复
+# 包含：SSO 认证 + 品牌化 + i18n + PVC chown
+
 FROM heartexlabs/label-studio:latest
 
-# 修复 Sealos PVC 挂载权限问题：
-# Sealos 挂载的持久卷默认 root 拥有，Label Studio 以 uid 1001 运行无法写入
-# entrypoint 以 root 启动 → chown → 直接 exec 原始 entrypoint（以 root 运行，Label Studio 内部会降权）
-USER root
-RUN printf '#!/bin/bash\nchown -R 1001:0 /label-studio/data 2>/dev/null || true\nexec /label-studio/deploy/docker-entrypoint.sh label-studio\n' > /usr/local/bin/ls-entrypoint.sh && \
-    chmod +x /usr/local/bin/ls-entrypoint.sh
+# 安装 label-studio-sso 包（SSO 认证支持）
+RUN pip install label-studio-sso
 
-ENTRYPOINT ["/usr/local/bin/ls-entrypoint.sh"]
+# 复制 SSO 配置文件
+COPY deploy/label-studio/settings_sso.py /label-studio/label_studio/core/settings/settings_sso.py
+
+# 复制品牌化 & i18n 文件
+COPY deploy/label-studio/i18n-inject.js /label-studio/custom/i18n-inject.js
+COPY deploy/label-studio/branding.css /label-studio/custom/branding.css
+
+# 复制 SSO entrypoint（包含品牌化 patch 逻辑）
+# --chmod 在 COPY 时直接设置权限，避免单独 RUN chmod 失败
+COPY --chmod=755 deploy/label-studio/entrypoint-sso.sh /entrypoint-sso.sh
+
+# Sealos PVC 权限修复：
+# Sealos 挂载的持久卷默认 root 拥有，Label Studio 以 uid 1001 运行无法写入
+# 用包装脚本先 chown 再调用 SSO entrypoint
+USER root
+RUN printf '#!/bin/bash\nset -e\nchown -R 1001:0 /label-studio/data 2>/dev/null || true\nexec /entrypoint-sso.sh "$@"\n' > /usr/local/bin/sealos-entrypoint.sh && \
+    chmod +x /usr/local/bin/sealos-entrypoint.sh
+
+# SSO 环境变量默认值
+ENV LABEL_STUDIO_SSO_ENABLED=true
+
+EXPOSE 8080
+
+ENTRYPOINT ["/usr/local/bin/sealos-entrypoint.sh"]
+CMD ["label-studio"]

@@ -15,25 +15,19 @@ const buildConfig: BuildOptions = {
     output: {
       // Manual chunk splitting for optimal loading
       manualChunks: (id) => {
-        // Core React runtime - loaded first
-        if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) {
-          return 'vendor-react-core';
+        // React + Ant Design 必须同 chunk（antd 模块顶层读取 React.version，拆开会因 ESM 初始化顺序导致 undefined）
+        if (
+          id.includes('node_modules/react/') ||
+          id.includes('node_modules/react-dom/') ||
+          id.includes('node_modules/antd/') ||
+          id.includes('node_modules/@ant-design/pro') ||
+          id.includes('node_modules/@ant-design/icons/')
+        ) {
+          return 'vendor-antd';
         }
         // React Router - needed for navigation
         if (id.includes('node_modules/react-router')) {
           return 'vendor-react-router';
-        }
-        // Ant Design core - UI framework
-        if (id.includes('node_modules/antd/')) {
-          return 'vendor-antd';
-        }
-        // Ant Design icons - can be loaded separately
-        if (id.includes('node_modules/@ant-design/icons/')) {
-          return 'vendor-antd-icons';
-        }
-        // Ant Design Pro components - loaded on demand
-        if (id.includes('node_modules/@ant-design/pro')) {
-          return 'vendor-antd-pro';
         }
         // TanStack Query - data fetching
         if (id.includes('node_modules/@tanstack/react-query')) {

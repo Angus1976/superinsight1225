@@ -42,6 +42,8 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - LABEL_STUDIO_URL=http://label-studio:8080
       - LABEL_STUDIO_API_TOKEN=${LABEL_STUDIO_API_TOKEN}
+      - LABEL_STUDIO_SSO_ENABLED=true
+      - LABEL_STUDIO_SSO_EMAIL=admin@example.com
       - ARGILLA_URL=http://argilla:6900
       - OLLAMA_BASE_URL=http://ollama:11434
       - OLLAMA_MODEL=qwen2.5vl:7b
@@ -77,6 +79,8 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - LABEL_STUDIO_URL=http://label-studio:8080
       - LABEL_STUDIO_API_TOKEN=${LABEL_STUDIO_API_TOKEN}
+      - LABEL_STUDIO_SSO_ENABLED=true
+      - LABEL_STUDIO_SSO_EMAIL=admin@example.com
       - ARGILLA_URL=http://argilla:6900
       - OLLAMA_BASE_URL=http://ollama:11434
       - OLLAMA_MODEL=qwen2.5vl:7b
@@ -158,8 +162,9 @@ services:
       - LANGUAGE_CODE=zh-hans
       - LABEL_STUDIO_DEFAULT_LANGUAGE=zh
       - LABEL_STUDIO_ENABLE_LANGUAGE_PARAM=true
-      # SSO configuration - DISABLED to allow legacy token authentication
-      - LABEL_STUDIO_SSO_ENABLED=false
+      # SSO configuration - enabled for auto-login via ?token=xxx
+      - LABEL_STUDIO_SSO_ENABLED=true
+      - LABEL_STUDIO_SSO_EMAIL=admin@example.com
       # Other settings
       - LABEL_STUDIO_DISABLE_SIGNUP_WITHOUT_LINK=false
       - LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED=true

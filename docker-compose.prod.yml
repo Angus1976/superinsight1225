@@ -1,0 +1,196 @@
+# SuperInsight - 本地生产验证 (复用 Sealos Dockerfile)
+# 用法: docker compose -f docker-compose.prod.yml --env-file .env.prod.local up --build
+#
+# 与 Sealos 的区别:
+#   - 前端 nginx.conf 指向 Docker Compose 服务名（非 K8s FQDN）
+#   - 包含 Ollama / Prometheus / Grafana（Sealos 不含）
+#   - 数据库在 compose 内运行（Sealos 用托管服务）
+
+version: '3.8'
+
+services:
+  # ===========================================================================
+  # Frontend (Nginx, 与 Sealos 同构)
+  # ===========================================================================
+  frontend:
+    build:
+      context: .
+      dockerfile: deploy/local/Dockerfile.frontend
+    container_name: superinsight-frontend-prod
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # ===========================================================================
+  # Backend (复用 Sealos Dockerfile)
+  # ===========================================================================
+  backend:
+    build:
+      context: .
+      dockerfile: deploy/sealos/Dockerfile.backend
+    container_name: superinsight-backend-prod
+    ports:
+      - "8000:8000"
+    env_file: .env.prod.local
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+
+  # ===========================================================================
+  # Celery Worker (基于 backend 镜像)
+  # ===========================================================================
+  celery-worker:
+    build:
+      context: .
+      dockerfile: deploy/sealos/Dockerfile.backend
+    container_name: superinsight-celery-prod
+    command: ["celery", "-A", "src.services.structuring_pipeline", "worker", "--loglevel=info", "--concurrency=4", "--include=src.services.vectorization_pipeline,src.services.semantic_pipeline"]
+    env_file: .env.prod.local
+    depends_on:
+      - postgres
+      - redis
+      - backend
+    restart: unless-stopped
+
+  # ===========================================================================
+  # Database
+  # ===========================================================================
+  postgres:
+    image: pgvector/pgvector:pg15
+    container_name: superinsight-postgres-prod
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-superinsight}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - POSTGRES_DB=${POSTGRES_DB:-superinsight}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U superinsight"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ===========================================================================
+  # Redis
+  # ===========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: superinsight-redis-prod
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_prod_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ===========================================================================
+  # Label Studio (复用 Sealos Dockerfile, 含 SSO + 品牌化)
+  # ===========================================================================
+  label-studio:
+    build:
+      context: .
+      dockerfile: deploy/sealos/Dockerfile.labelstudio
+    container_name: superinsight-ls-prod
+    ports:
+      - "8080:8080"
+    environment:
+      - LABEL_STUDIO_HOST=http://localhost:8080
+      - LABEL_STUDIO_USERNAME=${LABEL_STUDIO_USERNAME:-admin@example.com}
+      - LABEL_STUDIO_PASSWORD=${LABEL_STUDIO_PASSWORD:-admin}
+      - LANGUAGE_CODE=zh-hans
+      - LABEL_STUDIO_SSO_ENABLED=${LABEL_STUDIO_SSO_ENABLED:-true}
+      - LABEL_STUDIO_SSO_EMAIL=${LABEL_STUDIO_SSO_EMAIL:-admin@example.com}
+      - LABEL_STUDIO_DISABLE_SIGNUP_WITHOUT_LINK=false
+      - LABEL_STUDIO_LOCAL_FILES_SERVING_ENABLED=true
+      - LABEL_STUDIO_LOCAL_FILES_DOCUMENT_ROOT=/label-studio/data
+    volumes:
+      - ls_prod_data:/label-studio/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # ===========================================================================
+  # Elasticsearch
+  # ===========================================================================
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.5.0
+    container_name: superinsight-es-prod
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms256m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - es_prod_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # ===========================================================================
+  # Argilla
+  # ===========================================================================
+  argilla:
+    image: argilla/argilla-server:latest
+    container_name: superinsight-argilla-prod
+    ports:
+      - "6900:6900"
+    environment:
+      - ARGILLA_HOME_PATH=/argilla
+      - ARGILLA_ELASTICSEARCH=http://elasticsearch:9200
+      - ARGILLA_DATABASE_URL=postgresql://${POSTGRES_USER:-superinsight}:${POSTGRES_PASSWORD:-password}@postgres:5432/argilla
+      - ARGILLA_REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - elasticsearch
+      - redis
+    volumes:
+      - argilla_prod_data:/argilla
+    user: "0:0"
+    restart: unless-stopped
+
+  # ===========================================================================
+  # Ollama (本地 LLM, Sealos 不含)
+  # ===========================================================================
+  ollama:
+    image: ollama/ollama:latest
+    container_name: superinsight-ollama-prod
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_prod_data:/root/.ollama
+    deploy:
+      resources:
+        limits:
+          memory: 14G
+          cpus: '6'
+    restart: unless-stopped
+
+volumes:
+  postgres_prod_data:
+  redis_prod_data:
+  ls_prod_data:
+  es_prod_data:
+  argilla_prod_data:
+  ollama_prod_data:
+
+networks:
+  default:
+    name: superinsight_prod_network
+    driver: bridge

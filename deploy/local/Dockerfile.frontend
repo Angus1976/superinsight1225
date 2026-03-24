@@ -1,5 +1,5 @@
-# SuperInsight Frontend - Sealos Production Build (Nginx)
-# 多阶段构建：Node 编译 → Nginx 静态服务
+# SuperInsight Frontend - Local Production Build (Nginx)
+# 复用 Sealos 的多阶段构建模式，仅替换 nginx.conf
 
 FROM node:20-alpine AS builder
 
@@ -7,27 +7,22 @@ WORKDIR /app
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 COPY frontend/ .
-# 构建时 API 地址留空（前端请求路径已含 /api/ 前缀，nginx 反代匹配 /api/ 转发后端）
+# 本地 prod 模式：API 通过 nginx 反代，无需指定 base URL
 ARG VITE_API_BASE_URL=
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
-# Label Studio 外网地址（Sealos 分配的域名），用户浏览器直接跳转
-ARG VITE_LABEL_STUDIO_URL=
+# Label Studio 本地地址
+ARG VITE_LABEL_STUDIO_URL=http://localhost:8080
 ENV VITE_LABEL_STUDIO_URL=${VITE_LABEL_STUDIO_URL}
-# 跳过 tsc 类型检查，直接 vite 打包（类型问题不影响运行时）
 RUN npx vite build
 
 # -----------------------------------------------------------
 FROM nginx:alpine
 
-# 复制构建产物
 COPY --from=builder /app/dist /usr/share/nginx/html
-
-# 复制 nginx 配置
-COPY deploy/sealos/nginx.conf /etc/nginx/conf.d/default.conf
+# 使用本地版 nginx.conf（upstream 指向 Docker Compose 服务名）
+COPY deploy/local/nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
-
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
     CMD wget -q --spider http://localhost:80 || exit 1
-
 CMD ["nginx", "-g", "daemon off;"]

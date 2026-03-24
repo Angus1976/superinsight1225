@@ -34,13 +34,181 @@ if _sso_os.environ.get('LABEL_STUDIO_SSO_ENABLED', 'false').lower() == 'true':
     SSO_TOKEN_EXPIRY = 600
     SSO_AUTO_CREATE_USER = True  # Enable auto-create user
     
+    # Register DRF authentication classes for API Bearer token support
+    # SSOBearerAuthentication: direct Bearer JWT validation for backend-to-backend calls
+    # JWTSSOSessionAuthentication: session-based (after middleware login)
+    _sso_drf_classes = [
+        'label_studio_sso.bearer_auth.SSOBearerAuthentication',
+        'label_studio_sso.authentication.JWTSSOSessionAuthentication',
+    ]
+    if 'REST_FRAMEWORK' not in dir():
+        REST_FRAMEWORK = {}
+    _existing = list(REST_FRAMEWORK.get('DEFAULT_AUTHENTICATION_CLASSES', []))
+    REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] = _sso_drf_classes + _existing
+    
     print("Label Studio SSO enabled")
 EOF
     echo "SSO settings patched"
 fi
 
+# Create SSOBearerAuthentication DRF class for direct Bearer JWT validation
+# This allows backend-to-backend API calls using Bearer <sso_jwt> header
+# Dynamically detect Python version to avoid hardcoded path breakage
+SSO_PKG_DIR=$(python3 -c "import label_studio_sso, os; print(os.path.dirname(label_studio_sso.__file__))" 2>/dev/null || echo "/label-studio/.venv/lib/python3.13/site-packages/label_studio_sso")
+BEARER_AUTH_FILE="$SSO_PKG_DIR/bearer_auth.py"
+BEARER_MARKER="# BEARER_AUTH_CREATED"
+
+if [ -d "$SSO_PKG_DIR" ] && ! grep -q "$BEARER_MARKER" "$BEARER_AUTH_FILE" 2>/dev/null; then
+    echo "Creating SSOBearerAuthentication for DRF..."
+    
+    cat > "$BEARER_AUTH_FILE" << 'BEARER_EOF'
+# BEARER_AUTH_CREATED
+"""
+DRF Bearer JWT Authentication for Label Studio SSO.
+
+Validates JWT tokens issued by /api/sso/token endpoint directly
+from the Authorization: Bearer <token> header. This enables
+backend-to-backend API calls without session/cookie overhead.
+"""
+import logging
+import jwt
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from rest_framework.authentication import BaseAuthentication
+from rest_framework.exceptions import AuthenticationFailed
+
+logger = logging.getLogger(__name__)
+User = get_user_model()
+
+
+class SSOBearerAuthentication(BaseAuthentication):
+    """Authenticate DRF API requests using SSO JWT Bearer tokens."""
+
+    keyword = 'Bearer'
+
+    def authenticate(self, request):
+        auth_header = request.META.get('HTTP_AUTHORIZATION', '')
+        if not auth_header.startswith(self.keyword + ' '):
+            return None
+
+        token = auth_header[len(self.keyword) + 1:]
+        if not token:
+            return None
+
+        try:
+            payload = jwt.decode(
+                token,
+                settings.SECRET_KEY,
+                algorithms=['HS256'],
+                audience='label-studio-sso',
+                issuer='label-studio',
+            )
+        except jwt.ExpiredSignatureError:
+            raise AuthenticationFailed('SSO token has expired')
+        except jwt.InvalidTokenError as e:
+            # Not an SSO token — let other backends try
+            return None
+
+        user_id = payload.get('user_id')
+        email = payload.get('email')
+        if not user_id and not email:
+            return None
+
+        try:
+            if user_id:
+                user = User.objects.get(pk=user_id)
+            else:
+                user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise AuthenticationFailed('SSO user not found')
+
+        logger.debug(f"SSO Bearer auth OK: user={user.email}")
+        return (user, token)
+
+    def authenticate_header(self, request):
+        return self.keyword
+BEARER_EOF
+    echo "SSOBearerAuthentication created"
+fi
+
+# Patch jwt_auth/auth.py to add SSO Bearer JWT fallback
+# LS views explicitly set authentication_classes=[TokenAuthenticationPhaseout, SessionAuthentication]
+# which bypasses global DEFAULT_AUTHENTICATION_CLASSES. We patch TokenAuthenticationPhaseout
+# to fall back to SSO Bearer JWT when legacy token auth fails/returns None.
+JWT_AUTH_FILE="/label-studio/label_studio/jwt_auth/auth.py"
+JWT_AUTH_MARKER="# SSO_BEARER_FALLBACK_PATCHED"
+
+if [ -f "$JWT_AUTH_FILE" ] && ! grep -q "$JWT_AUTH_MARKER" "$JWT_AUTH_FILE" 2>/dev/null; then
+    echo "Patching TokenAuthenticationPhaseout with SSO Bearer fallback..."
+
+    cat >> "$JWT_AUTH_FILE" << 'JWT_PATCH_EOF'
+
+# SSO_BEARER_FALLBACK_PATCHED
+# Monkey-patch: add SSO Bearer JWT fallback to TokenAuthenticationPhaseout
+# LS views hardcode authentication_classes, so global DRF settings are ignored.
+# This makes TokenAuthenticationPhaseout try SSO Bearer JWT when legacy token fails.
+import os as _patch_os
+if _patch_os.environ.get('LABEL_STUDIO_SSO_ENABLED', 'false').lower() == 'true':
+    _original_authenticate = TokenAuthenticationPhaseout.authenticate
+
+    def _patched_authenticate(self, request):
+        """Try legacy token first, fall back to SSO Bearer JWT."""
+        from rest_framework.exceptions import AuthenticationFailed as _AuthFailed
+        try:
+            result = _original_authenticate(self, request)
+            if result is not None:
+                return result
+        except _AuthFailed:
+            pass  # Legacy token failed, try SSO Bearer
+
+        # Try SSO Bearer JWT
+        auth_header = request.META.get('HTTP_AUTHORIZATION', '')
+        if not auth_header.startswith('Bearer '):
+            return None
+
+        token = auth_header[7:]
+        if not token:
+            return None
+
+        try:
+            import jwt as _jwt
+            from django.conf import settings as _settings
+            from django.contrib.auth import get_user_model as _get_user_model
+            payload = _jwt.decode(
+                token, _settings.SECRET_KEY,
+                algorithms=['HS256'],
+                audience='label-studio-sso',
+                issuer='label-studio',
+            )
+            _User = _get_user_model()
+            user_id = payload.get('user_id')
+            email = payload.get('email')
+            if user_id:
+                user = _User.objects.get(pk=user_id)
+            elif email:
+                user = _User.objects.get(email=email)
+            else:
+                return None
+
+            # Update CurrentContext like the original does
+            try:
+                from core.current_request import CurrentContext
+                CurrentContext.set_user(user)
+            except Exception:
+                pass
+
+            return (user, token)
+        except Exception:
+            return None
+
+    TokenAuthenticationPhaseout.authenticate = _patched_authenticate
+    logger.info('SSO Bearer JWT fallback patched into TokenAuthenticationPhaseout')
+JWT_PATCH_EOF
+    echo "TokenAuthenticationPhaseout SSO Bearer fallback patched"
+fi
+
 # Patch label-studio-sso views.py to support auto-create user
-SSO_VIEWS_FILE="/label-studio/.venv/lib/python3.13/site-packages/label_studio_sso/views.py"
+SSO_VIEWS_FILE="$SSO_PKG_DIR/views.py"
 SSO_MARKER="# AUTO_CREATE_PATCHED"
 
 if [ -f "$SSO_VIEWS_FILE" ] && ! grep -q "$SSO_MARKER" "$SSO_VIEWS_FILE" 2>/dev/null; then
@@ -48,9 +216,8 @@ if [ -f "$SSO_VIEWS_FILE" ] && ! grep -q "$SSO_MARKER" "$SSO_VIEWS_FILE" 2>/dev/
     
     # Replace the user lookup section to support auto-create
     python3 << 'PYTHON_SCRIPT'
-import re
-
-views_file = "/label-studio/.venv/lib/python3.13/site-packages/label_studio_sso/views.py"
+import label_studio_sso, os
+views_file = os.path.join(os.path.dirname(label_studio_sso.__file__), "views.py")
 
 with open(views_file, 'r') as f:
     content = f.read()

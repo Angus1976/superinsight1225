@@ -161,6 +161,7 @@ async def test_get_annotation(client, sample_annotation):
 | 未关闭数据库连接 | 使用 `async with` 上下文管理器 |
 | 循环导入 | 延迟导入或重组模块结构 |
 | N+1 查询 | 使用 `selectinload` / `joinedload` |
+| SQLAlchemy 模型用 `metadata` 属性名 | 保留字，会导致 import 时抛异常且被 try/except 吞掉。用 `extra_metadata` + `mapped_column("metadata", ...)` 保留 DB 列名 |
 
 ---
 

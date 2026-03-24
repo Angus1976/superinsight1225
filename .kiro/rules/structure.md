@@ -71,6 +71,7 @@ src/
 - FastAPI/OpenAPI 自动文档
 
 ### 数据库设计
+- DB 连接池配置在 `src/config/settings.py`（读 `DATABASE_POOL_SIZE` 等环境变量），实际连接在 `src/database/connection.py`。`src/core/database.py` 是旧路径，勿改
 - 多租户架构，租户隔离
 - 关键操作审计日志
 - JSONB 字段支持灵活 schema

@@ -129,6 +129,20 @@ if (safeUrl.origin === window.location.origin) {
 
 ---
 
+## ⚠️ 项目特有陷阱
+
+### 双路由 JWT 密钥一致性
+- `auth_simple.py` 和 `auth.py` 都注册在 `/api/auth` 前缀，路由加载顺序决定哪个处理 `/api/auth/login`
+- 两个模块的 `SECRET_KEY` / `ALGORITHM` / token payload 结构必须一致，否则一个签发的 token 另一个验证必失败
+- 症状：登录成功但页面一闪跳回仪表盘（401 → refresh 失败 → 重定向 login → 已登录 → 重定向 dashboard）
+
+### `HTTPBearer(auto_error=False)` 静默降级
+- `business_metrics.py` 等使用 `HTTPBearer(auto_error=False)` + `Optional[UserModel]`，token 无效时 user=None 而非 401
+- 这会掩盖认证配置错误，dashboard 正常但其他页面全部跳转，误导排查方向
+- 审查时确认：使用 `auto_error=False` 的端点是否真的允许匿名访问
+
+---
+
 ## 🔗 相关资源
 
 - **异步安全**: `.kiro/rules/async-sync-safety-quick-reference.md`

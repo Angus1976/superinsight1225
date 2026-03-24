@@ -263,6 +263,30 @@ class ImportTasksResponse(BaseModel):
         }
 
 
+class SyncAnnotationsResponse(BaseModel):
+    """Response for sync annotations endpoint.
+
+    Validates: Requirements REQ-1 - 标注同步 API 端点
+    Validates: Requirements REQ-2 - 更新 TaskModel 标注统计
+    """
+    success: bool = Field(..., description="Whether the sync was successful")
+    synced_count: int = Field(default=0, description="Number of annotations synced")
+    total_annotations: int = Field(default=0, description="Total annotations in LS project")
+    errors: List[str] = Field(default_factory=list, description="List of error messages")
+    synced_at: Optional[str] = Field(default=None, description="ISO timestamp of sync completion")
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "success": True,
+                "synced_count": 10,
+                "total_annotations": 10,
+                "errors": [],
+                "synced_at": "2025-01-26T12:00:00Z"
+            }
+        }
+
+
 class AuthenticatedUrlResponse(BaseModel):
     """Response for authenticated URL endpoint.
     
@@ -955,6 +979,97 @@ async def import_tasks_to_project(
                 "message": "Failed to import tasks to Label Studio",
                 "details": str(e)
             }
+        )
+
+
+@router.post("/projects/{project_id}/sync-annotations", response_model=SyncAnnotationsResponse)
+async def sync_annotations(
+    project_id: str,
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db_session),
+):
+    """
+    Sync annotations from Label Studio back to SuperInsight.
+
+    Calls export_annotations() to pull LS annotation data, then updates
+    the associated TaskModel's annotation count, last sync time, and progress.
+
+    POST /api/label-studio/projects/{project_id}/sync-annotations
+
+    Validates: Requirements REQ-1 - 标注同步 API 端点
+    Validates: Requirements REQ-2 - 更新 TaskModel 标注统计
+    """
+    from datetime import datetime, timezone
+    from src.database.models import TaskModel
+
+    try:
+        ls = get_label_studio()
+
+        # 1. Export annotations from LS (internally calls _sync_annotations_to_db)
+        export_result = await ls.export_annotations(project_id)
+
+        if not export_result.success:
+            return SyncAnnotationsResponse(
+                success=False,
+                errors=export_result.errors,
+            )
+
+        annotations_data = export_result.data
+        total_annotations = len(annotations_data)
+
+        # 2. Count annotations that have at least one completed annotation
+        synced_count = sum(
+            1 for item in annotations_data
+            if item.get("annotations")
+        )
+
+        # 3. Update TaskModel stats
+        now_iso = datetime.now(timezone.utc).isoformat()
+        task_model = db.query(TaskModel).filter(
+            TaskModel.label_studio_project_id == str(project_id)
+        ).first()
+
+        if task_model:
+            task_model.label_studio_annotation_count = synced_count
+            task_model.label_studio_last_sync = datetime.now(timezone.utc)
+            task_model.completed_items = synced_count
+            total = task_model.total_items or 1
+            task_model.progress = min(int(synced_count / total * 100), 100)
+            db.commit()
+
+        logger.info(
+            f"Synced annotations for project {project_id}: "
+            f"synced={synced_count}, total={total_annotations}"
+        )
+
+        return SyncAnnotationsResponse(
+            success=True,
+            synced_count=synced_count,
+            total_annotations=total_annotations,
+            synced_at=now_iso,
+        )
+
+    except LabelStudioIntegrationError as e:
+        logger.error(f"Label Studio integration error syncing annotations: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error": "sync_failed",
+                "message": "Failed to sync annotations from Label Studio",
+                "details": str(e),
+            },
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error syncing annotations for project {project_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error": "sync_failed",
+                "message": "Failed to sync annotations from Label Studio",
+                "details": str(e),
+            },
         )
 
 

@@ -415,7 +415,12 @@
     "noCurrentTask": "No annotation task available",
     "projectIdLabel": "Project ID",
     "totalTasksLabel": "Total Tasks",
-    "currentIndexLabel": "Current Index"
+    "currentIndexLabel": "Current Index",
+    "syncAnnotations": "Sync Annotations",
+    "syncAnnotationsSuccess": "Annotations synced successfully",
+    "syncAnnotationsFailed": "Failed to sync annotations",
+    "syncedCount": "Synced {{count}} annotations",
+    "noAnnotationsToSync": "No annotations to sync"
   },
   "detail": {
     "overview": "Overview",
@@ -452,7 +457,8 @@
     "startTask": "Start Task",
     "completeTask": "Complete Task",
     "taskDataLoadFailed": "Failed to load task data",
-    "projectNotCreated": "Project not created yet, redirecting to annotation page..."
+    "projectNotCreated": "Project not created yet, redirecting to annotation page...",
+    "projectAutoCreate": "Annotation project not yet created. Click \"Start Annotation\" to auto-create and begin."
   },
   "create": {
     "title": "Create New Task",

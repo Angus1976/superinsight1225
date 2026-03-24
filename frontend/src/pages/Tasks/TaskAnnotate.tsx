@@ -56,8 +56,7 @@ import apiClient from '@/services/api/client';
 import { labelStudioService } from '@/services/labelStudioService';
 import type { 
   LabelStudioTask, 
-  LabelStudioProject, 
-  AnnotationResult 
+  LabelStudioProject,
 } from '@/types/task';
 
 const { Title, Text } = Typography;
@@ -227,95 +226,57 @@ const TaskAnnotatePage: React.FC = () => {
   );
   const tasksLength = useMemo(() => tasks.length, [tasks.length]);
 
-  // 处理标注创建
-  const handleAnnotationCreate = useCallback(async (annotation: unknown) => {
+  // 处理标注创建 - 引导用户在 LS 中标注后同步
+  const handleAnnotationCreate = useCallback(async (_annotation: unknown) => {
     if (!annotationPerms.canCreate) {
       message.error(t('annotate.noCreatePermission'));
       return;
     }
 
-    // Type guard for annotation
-    const annotationData = annotation as AnnotationResult;
+    // 标注操作应在 LS 中完成，完成后点击"同步标注结果"按钮
+    message.info(t('annotate.syncAnnotations'));
+  }, [annotationPerms.canCreate, t]);
 
-    try {
-      setSyncInProgress(true);
-      const response = await apiClient.post(
-        `/api/label-studio/projects/${id}/tasks/${currentTask.id}/annotations`,
-        annotationData,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      
-      message.success(t('annotate.annotationSaved'));
-      
-      // 更新任务状态
-      const updatedTasks = [...tasks];
-      updatedTasks[currentTaskIndex].is_labeled = true;
-      updatedTasks[currentTaskIndex].annotations.push(response.data);
-      setTasks(updatedTasks);
-      setAnnotationCount(prev => prev + 1);
-      setLastSyncTime(new Date());
-      
-      // 更新后端任务进度
-      if (taskDetail) {
-        const newProgress = Math.round(((annotationCount + 1) / tasks.length) * 100);
-        await updateTask.mutateAsync({
-          id: taskDetail.id,
-          payload: {
-            progress: newProgress,
-            completed_items: annotationCount + 1,
-          }
-        });
-      }
-      
-      // 自动跳转到下一个未标注任务
-      setTimeout(() => {
-        handleNextTask();
-      }, 1500);
-      
-    } catch (error) {
-      console.error('Failed to save annotation:', error);
-      message.error(t('annotate.saveAnnotationFailed'));
-    } finally {
-      setSyncInProgress(false);
-    }
-  }, [annotationPerms.canCreate, id, currentTask, token, tasks, currentTaskIndex, annotationCount, taskDetail, updateTask, t]);
-
-  // 处理标注更新
-  const handleAnnotationUpdate = useCallback(async (annotation: unknown) => {
+  // 处理标注更新 - 引导用户在 LS 中编辑后同步
+  const handleAnnotationUpdate = useCallback(async (_annotation: unknown) => {
     if (!annotationPerms.canEdit) {
       message.error(t('annotate.noEditPermission'));
       return;
     }
 
-    // Type guard for annotation
-    const annotationData = annotation as AnnotationResult;
+    // 标注编辑应在 LS 中完成，完成后点击"同步标注结果"按钮
+    message.info(t('annotate.syncAnnotations'));
+  }, [annotationPerms.canEdit, t]);
+
+  // 同步标注结果 - 从 LS 拉取标注数据到 SuperInsight
+  const handleSyncAnnotations = useCallback(async () => {
+    if (!project) return;
 
     try {
       setSyncInProgress(true);
-      await apiClient.patch(
-        `/api/label-studio/annotations/${currentTask.annotations[0]?.id}`,
-        annotationData,
-        { headers: { Authorization: `Bearer ${token}` } }
+      const result = await labelStudioService.syncAnnotations(String(project.id));
+
+      if (result.synced_count === 0) {
+        message.info(t('annotate.noAnnotationsToSync'));
+        return;
+      }
+
+      message.success(
+        t('annotate.syncAnnotationsSuccess') +
+        ' — ' +
+        t('annotate.syncedCount', { count: result.synced_count })
       );
-      
-      message.success(t('annotate.annotationUpdated'));
-      
-      // 更新本地任务状态
-      const updatedTasks = [...tasks];
-      updatedTasks[currentTaskIndex].annotations[0] = {
-        ...updatedTasks[currentTaskIndex].annotations[0],
-        ...annotationData
-      };
-      setTasks(updatedTasks);
+
+      // 刷新页面数据和进度
+      setInitialFetchDone(false);
       setLastSyncTime(new Date());
-      
-    } catch (error) {
-      console.error('Failed to update annotation:', error);
-      message.error(t('annotate.updateAnnotationFailed'));
+    } catch (err) {
+      console.error('Failed to sync annotations:', err);
+      message.error(t('annotate.syncAnnotationsFailed'));
     } finally {
       setSyncInProgress(false);
     }
-  }, [annotationPerms.canEdit, currentTask, token, tasks, currentTaskIndex, t]);
+  }, [project, t]);
 
   // 跳转到下一个任务
   const handleNextTask = useCallback(() => {
@@ -641,6 +602,16 @@ const TaskAnnotatePage: React.FC = () => {
             
             <Col>
               <Space>
+                <Tooltip title={t('annotate.syncAnnotations')}>
+                  <Button
+                    type="primary"
+                    icon={<SyncOutlined />}
+                    loading={syncInProgress}
+                    onClick={handleSyncAnnotations}
+                  >
+                    {t('annotate.syncAnnotations')}
+                  </Button>
+                </Tooltip>
                 <Tooltip title={t('annotate.syncProgress')}>
                   <Button
                     icon={<ReloadOutlined />}

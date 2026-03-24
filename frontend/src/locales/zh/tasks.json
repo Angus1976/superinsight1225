@@ -418,7 +418,12 @@
     "noCurrentTask": "当前没有可用的标注任务",
     "projectIdLabel": "项目 ID",
     "totalTasksLabel": "任务总数",
-    "currentIndexLabel": "当前索引"
+    "currentIndexLabel": "当前索引",
+    "syncAnnotations": "同步标注结果",
+    "syncAnnotationsSuccess": "标注结果同步成功",
+    "syncAnnotationsFailed": "标注结果同步失败",
+    "syncedCount": "已同步 {{count}} 条标注",
+    "noAnnotationsToSync": "暂无标注结果可同步"
   },
   "detail": {
     "overview": "概览",
@@ -455,7 +460,8 @@
     "startTask": "开始任务",
     "completeTask": "完成任务",
     "taskDataLoadFailed": "任务数据加载失败",
-    "projectNotCreated": "项目尚未创建，正在跳转到标注页面..."
+    "projectNotCreated": "项目尚未创建，正在跳转到标注页面...",
+    "projectAutoCreate": "标注项目尚未创建，点击「开始标注」将自动创建并进入标注流程。"
   },
   "create": {
     "title": "创建新任务",

@@ -186,7 +186,12 @@ class LabelStudioIntegration:
             auth_method = self.config.get_auth_method()
             self._auth_method = auth_method
             
-            if auth_method == 'jwt':
+            if auth_method == 'sso':
+                # SSO mode: use /api/sso/token endpoint to get JWT
+                # Requires label-studio-sso package on LS side
+                self._sso_email = self.config.sso_email or 'admin@superinsight.local'
+                logger.info("Label Studio integration initialized with SSO authentication")
+            elif auth_method == 'jwt':
                 # Initialize JWT auth manager
                 self._jwt_auth_manager = JWTAuthManager(
                     base_url=self.base_url,
@@ -217,6 +222,12 @@ class LabelStudioIntegration:
         if self._auth_method == 'legacy_token':
             self.headers = {
                 'Authorization': f'Token {self.api_token}',
+                'Content-Type': 'application/json'
+            }
+        elif self._auth_method == 'sso':
+            # SSO: headers will be set dynamically via _get_headers
+            self.headers = {
+                'Authorization': '',
                 'Content-Type': 'application/json'
             }
         else:
@@ -262,7 +273,14 @@ class LabelStudioIntegration:
             
         Validates: Requirements 1.4, 3.3 - Return appropriate auth header format
         """
-        if self._auth_method == 'jwt' and self._jwt_auth_manager:
+        if self._auth_method == 'sso' and self.api_token:
+            # SSO mode: get JWT via /api/sso/token endpoint
+            await self._ensure_sso_token()
+            return {
+                'Authorization': f'Bearer {self._access_token}',
+                'Content-Type': 'application/json'
+            }
+        elif self._auth_method == 'jwt' and self._jwt_auth_manager:
             # Ensure JWT token is valid (refresh if needed)
             await self._jwt_auth_manager._ensure_authenticated()
             
@@ -364,6 +382,61 @@ class LabelStudioIntegration:
             raise
         except Exception as e:
             error_msg = f"Unexpected error refreshing Personal Access Token: {str(e)}"
+            logger.error(f"[Label Studio] {error_msg}")
+            raise LabelStudioAuthenticationError(error_msg, status_code=0)
+    
+    async def _ensure_sso_token(self) -> None:
+        """
+        Ensure we have a valid JWT token from SSO endpoint.
+        
+        Calls /api/sso/token with the admin DRF Token to get a short-lived
+        JWT for API access. Token is cached and refreshed when expired.
+        """
+        # Check if we have a valid token
+        if self._access_token and self._access_token_expires_at:
+            if datetime.utcnow() < self._access_token_expires_at - timedelta(seconds=30):
+                return
+        
+        logger.info("[Label Studio] Requesting SSO token")
+        
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.post(
+                    f"{self.base_url}/api/sso/token",
+                    headers={
+                        'Authorization': f'Token {self.api_token}',
+                        'Content-Type': 'application/json'
+                    },
+                    json={'email': self._sso_email}
+                )
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    self._access_token = data.get('token')
+                    
+                    if not self._access_token:
+                        raise LabelStudioAuthenticationError(
+                            "No token in SSO response", status_code=200
+                        )
+                    
+                    expires_in = data.get('expires_in', 600)
+                    self._access_token_expires_at = datetime.utcnow() + timedelta(seconds=expires_in)
+                    logger.info(
+                        f"[Label Studio] SSO token obtained, expires in {expires_in}s"
+                    )
+                else:
+                    error_msg = f"SSO token request failed: {response.status_code} - {response.text}"
+                    logger.error(f"[Label Studio] {error_msg}")
+                    raise LabelStudioAuthenticationError(error_msg, status_code=response.status_code)
+                    
+        except httpx.RequestError as e:
+            error_msg = f"Network error requesting SSO token: {str(e)}"
+            logger.error(f"[Label Studio] {error_msg}")
+            raise LabelStudioAuthenticationError(error_msg, status_code=0)
+        except LabelStudioAuthenticationError:
+            raise
+        except Exception as e:
+            error_msg = f"Unexpected error requesting SSO token: {str(e)}"
             logger.error(f"[Label Studio] {error_msg}")
             raise LabelStudioAuthenticationError(error_msg, status_code=0)
     
@@ -585,7 +658,7 @@ class LabelStudioIntegration:
         Get the current authentication method.
         
         Returns:
-            str: 'jwt' or 'api_token'
+            str: 'sso', 'jwt', 'api_token', 'legacy_token', or 'personal_access_token'
         """
         return self._auth_method
     
@@ -980,13 +1053,26 @@ class LabelStudioIntegration:
                     elif 'data' in annotation and 'task_id' in annotation['data']:
                         task_id = UUID(annotation['data']['task_id'])
                     
-                    if not task_id:
-                        logger.warning(f"Could not find task ID for annotation: {annotation.get('id')}")
-                        continue
-                    
-                    # Update task with annotation data
-                    stmt = select(TaskModel).where(TaskModel.id == task_id)
-                    task_model = db.execute(stmt).scalar_one_or_none()
+                    if task_id:
+                        # Primary: look up by task_id
+                        stmt = select(TaskModel).where(TaskModel.id == task_id)
+                        task_model = db.execute(stmt).scalar_one_or_none()
+                    else:
+                        # Fallback: find TaskModel by label_studio_project_id
+                        task_model = db.query(TaskModel).filter(
+                            TaskModel.label_studio_project_id == project_id
+                        ).first()
+                        if task_model:
+                            logger.info(
+                                f"Matched annotation {annotation.get('id')} to task "
+                                f"{task_model.id} via project_id={project_id}"
+                            )
+                        else:
+                            logger.warning(
+                                f"Could not find task for annotation: {annotation.get('id')}, "
+                                f"project_id={project_id}"
+                            )
+                            continue
                     if task_model:
                         # Add annotation to task
                         if not task_model.annotations:

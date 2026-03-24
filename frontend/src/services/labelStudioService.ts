@@ -92,6 +92,20 @@ export interface AuthUrlResponse {
   project_id: string;
 }
 
+/** Sync annotations response */
+export interface SyncAnnotationsResponse {
+  /** Whether the sync was successful */
+  success: boolean;
+  /** Number of annotations synced */
+  synced_count: number;
+  /** Total annotations in the project */
+  total_annotations: number;
+  /** Error messages if any */
+  errors: string[];
+  /** Timestamp of the sync */
+  synced_at?: string;
+}
+
 /** Annotation template configuration */
 export interface AnnotationTemplateConfig {
   /** Categories for text classification */
@@ -364,6 +378,18 @@ export const labelStudioService = {
       console.error('Failed to create and link project:', error);
       return null;
     }
+  },
+
+  /**
+   * Sync annotations from Label Studio back to SuperInsight
+   * @param projectId - Label Studio project ID
+   * @returns Sync result with counts and errors
+   */
+  async syncAnnotations(projectId: string): Promise<SyncAnnotationsResponse> {
+    const response = await apiClient.post<SyncAnnotationsResponse>(
+      API_ENDPOINTS.LABEL_STUDIO.SYNC_ANNOTATIONS(projectId)
+    );
+    return response.data;
   },
 };
 

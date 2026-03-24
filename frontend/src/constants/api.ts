@@ -25,6 +25,7 @@ export const API_ENDPOINTS = {
     VALIDATE_PROJECT: (id: string) => `/api/label-studio/projects/${id}/validate`,
     IMPORT_TASKS: (projectId: string) => `/api/label-studio/projects/${projectId}/import-tasks`,
     AUTH_URL: (projectId: string) => `/api/label-studio/projects/${projectId}/auth-url`,
+    SYNC_ANNOTATIONS: (projectId: string) => `/api/label-studio/projects/${projectId}/sync-annotations`,
   },
 
   // Label Studio Workspaces (Enterprise)

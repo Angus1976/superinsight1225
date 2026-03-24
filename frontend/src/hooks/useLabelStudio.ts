@@ -28,6 +28,7 @@ import {
   type LabelStudioErrorType,
 } from '@/constants/labelStudio';
 import { labelStudioLogger } from '@/utils/labelStudioLogger';
+import { labelStudioService } from '@/services/labelStudioService';
 import type { AxiosError } from 'axios';
 
 /**
@@ -53,8 +54,8 @@ export interface UseLabelStudioReturn {
   getLabelStudioLanguage: () => string;
   /** 获取基础 URL */
   getBaseUrl: () => string;
-  /** 在新窗口中打开 Label Studio */
-  openLabelStudio: (projectId: number, taskId?: number) => void;
+  /** 在新窗口中打开 Label Studio（带自动登录） */
+  openLabelStudio: (projectId: number, taskId?: number) => Promise<void>;
   /** 在新窗口中打开项目设置 */
   openProjectSettings: (projectId: number) => void;
   /** 处理 Label Studio 相关错误 */
@@ -84,21 +85,47 @@ export const useLabelStudio = (): UseLabelStudioReturn => {
   } = useLabelStudioUrl();
 
   /**
-   * 在新窗口中打开 Label Studio 数据管理器
+   * 在新窗口中打开 Label Studio 数据管理器（带自动登录）
+   * 
+   * 流程：调用后端 getAuthUrl 获取 SSO token → 用前端 VITE_LABEL_STUDIO_URL 拼接 URL → 打开
+   * 后端返回的 URL 使用内网地址（LABEL_STUDIO_URL），需替换为浏览器可访问的前端地址
    */
-  const openLabelStudio = useCallback((projectId: number, taskId?: number) => {
-    const url = buildLabelStudioUrl(projectId, taskId);
-    const requestId = labelStudioLogger.logWindowOpen(projectId, url, taskId);
+  const openLabelStudio = useCallback(async (projectId: number, taskId?: number) => {
+    const requestId = labelStudioLogger.startOperation('Open Label Studio Window', { projectId, taskId });
     
-    window.open(url, '_blank', LABEL_STUDIO_WINDOW_OPTIONS);
-    
-    labelStudioLogger.endOperation('Open Label Studio Window', requestId, true, {
-      projectId,
-      taskId,
-      url,
-    });
-    message.success(t('openedLabelStudioDataManager'));
-  }, [buildLabelStudioUrl, t]);
+    try {
+      // 获取带 SSO token 的认证 URL
+      const language = getLabelStudioLanguage();
+      const authResponse = await labelStudioService.getAuthUrl(String(projectId), language);
+      
+      // 从后端返回的 URL 中提取 token（后端 URL 用内网地址，浏览器不可达）
+      const backendUrl = new URL(authResponse.url);
+      const token = backendUrl.searchParams.get('token');
+      const lang = backendUrl.searchParams.get('lang') || language;
+      
+      // 用前端 VITE_LABEL_STUDIO_URL 重建浏览器可访问的 URL
+      const baseUrl = getBaseUrl();
+      let url = `${baseUrl}/projects/${projectId}/data?token=${token}&lang=${lang}`;
+      if (taskId !== undefined && taskId !== null) {
+        url += `&task=${taskId}`;
+      }
+      
+      window.open(url, '_blank', LABEL_STUDIO_WINDOW_OPTIONS);
+      
+      labelStudioLogger.endOperation('Open Label Studio Window', requestId, true, {
+        projectId, taskId, url,
+      });
+      message.success(t('annotate.openSuccess'));
+    } catch (err) {
+      // 降级：auth 失败时用无 token 的普通 URL 打开（用户需手动登录）
+      console.warn('[openLabelStudio] Auth URL failed, falling back to plain URL:', err);
+      const fallbackUrl = buildLabelStudioUrl(projectId, taskId);
+      window.open(fallbackUrl, '_blank', LABEL_STUDIO_WINDOW_OPTIONS);
+      
+      labelStudioLogger.endOperation('Open Label Studio Window', requestId, false, { error: err });
+      message.warning(t('annotate.openWindowFailed'));
+    }
+  }, [buildLabelStudioUrl, getLabelStudioLanguage, getBaseUrl, t]);
 
   /**
    * 在新窗口中打开项目设置

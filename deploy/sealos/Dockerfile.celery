@@ -1,5 +1,5 @@
 # SuperInsight Celery Worker - Sealos
 # 基于后端镜像，仅覆盖启动命令
-FROM angus888/superinsight-backend:sealos
+FROM angus888/superinsight-backend:sealos-v4
 
 CMD ["celery", "-A", "src.services.structuring_pipeline", "worker", "--loglevel=info", "--concurrency=4"]

@@ -43,20 +43,26 @@
 # 跨架构构建（如 Apple Silicon → amd64）加 --platform linux/amd64
 
 # Elasticsearch（PVC 权限修复）
-docker build --platform linux/amd64 -f deploy/sealos/Dockerfile.elasticsearch -t angus888/superinsight-elasticsearch:sealos .
-docker push angus888/superinsight-elasticsearch:sealos
+docker build --platform linux/amd64 -f deploy/sealos/Dockerfile.elasticsearch -t angus888/superinsight-elasticsearch:sealos-v4 .
+docker push angus888/superinsight-elasticsearch:sealos-v4
 
-# Label Studio（PVC 权限修复）
-docker build --platform linux/amd64 -f deploy/sealos/Dockerfile.labelstudio -t angus888/superinsight-labelstudio:sealos .
-docker push angus888/superinsight-labelstudio:sealos
+# Label Studio（PVC 权限修复 + SSO + 品牌化）
+docker build --platform linux/amd64 -f deploy/sealos/Dockerfile.labelstudio -t angus888/superinsight-labelstudio:sealos-v4 .
+docker push angus888/superinsight-labelstudio:sealos-v4
 
 # 后端（CPU-only torch，镜像 ~1.5GB）
-docker build --platform linux/amd64 -f deploy/sealos/Dockerfile.backend -t angus888/superinsight-backend:sealos .
-docker push angus888/superinsight-backend:sealos
+docker build --platform linux/amd64 -f deploy/sealos/Dockerfile.backend -t angus888/superinsight-backend:sealos-v4 .
+docker push angus888/superinsight-backend:sealos-v4
 
-# 前端
-docker build --platform linux/amd64 -f deploy/sealos/Dockerfile.frontend -t angus888/superinsight-frontend:sealos .
-docker push angus888/superinsight-frontend:sealos
+# Celery Worker（基于后端镜像）
+docker build --platform linux/amd64 -f deploy/sealos/Dockerfile.celery -t angus888/superinsight-celery:sealos-v4 .
+docker push angus888/superinsight-celery:sealos-v4
+
+# 前端（构建时传入 LS 外网地址）
+docker build --platform linux/amd64 -f deploy/sealos/Dockerfile.frontend \
+  --build-arg VITE_LABEL_STUDIO_URL=https://<LS外网域名> \
+  -t angus888/superinsight-frontend:sealos-v4 .
+docker push angus888/superinsight-frontend:sealos-v4
 ```
 
 ### 第 2 步：在 Sealos 创建托管数据库
@@ -177,6 +183,7 @@ python -c "from main import *; print('DB initialized')"
 | LS 容器内执行 Django 命令（如生成 Token）失败，报 `ModuleNotFoundError: No module named 'core'` | LS 的 settings 用相对导入 `from core.settings.base import *`，需要 `/label-studio/label_studio` 也在 `sys.path` 中；且容器是 Alpine（ash），多行 Python 粘贴会被拆散 | 用 `printf` 写单行脚本到文件再执行：`printf 'import django,os,sys\nsys.path.insert(0,"/label-studio")\nsys.path.insert(0,"/label-studio/label_studio")\nos.environ["DJANGO_SETTINGS_MODULE"]="label_studio.core.settings.label_studio"\ndjango.setup()\n...\n' > /tmp/script.py && cd /label-studio && python3 /tmp/script.py` |
 | SSO Bearer JWT 写入 `DEFAULT_AUTHENTICATION_CLASSES` 后仍 401 | LS 所有 API View 显式设置 `authentication_classes = [TokenAuthenticationPhaseout, SessionAuthentication]`，完全绕过全局 DRF 设置 | 必须 monkey-patch `TokenAuthenticationPhaseout.authenticate` 本身，在 legacy token 失败后回退到 SSO Bearer JWT 验证。patch 写在 `entrypoint-sso.sh` 中追加到 `jwt_auth/auth.py` |
 | LS 升级（基础镜像更新）后 SSO/品牌化失效 | `heartexlabs/label-studio:latest` 升级可能改变 Python 版本、`views.py` 代码结构、`jwt_auth/auth.py` 认证逻辑 | 升级流程：1) 拉新基础镜像 2) 重新构建 `Dockerfile.labelstudio` 3) 验证：`entrypoint-sso.sh` 动态路径检测是否正常、`views.py` patch 目标代码是否匹配、`jwt_auth/auth.py` patch 是否兼容、Bearer JWT 认证是否通过 |
+| 升版后 Celery 仍跑旧代码 | `Dockerfile.celery` 的 `FROM` 硬编码了 backend 镜像版本 tag，升版时忘记同步更新 | 升版时联动更新：`README.md` 镜像清单 + 构建命令 + `Dockerfile.celery` 的 `FROM` tag，三处必须一致 |
 
 ## SuperInsight ↔ Label Studio 认证体系
 
@@ -367,13 +374,13 @@ python3 -c "import redis,os;r=redis.from_url(os.environ['REDIS_URL'],decode_resp
 
 ## 自定义镜像清单
 
-| 镜像 | Dockerfile | 基础镜像 | 自定义原因 |
-|------|-----------|---------|-----------|
-| `superinsight-elasticsearch:sealos` | `Dockerfile.elasticsearch` | `elasticsearch:8.5.0` | PVC 权限修复 |
-| `superinsight-ls:sealos-v3` | `Dockerfile.labelstudio` | `label-studio:latest` | PVC 权限修复 + SSO 认证 + Bearer JWT patch + 品牌化 + i18n |
-| `superinsight-backend:sealos-v2` | `Dockerfile.backend` | `python:3.11-slim` | 应用代码 + CPU-only torch + metadata 字段修复 |
-| `superinsight-frontend:sealos` | `Dockerfile.frontend` | `nginx:alpine` | 前端构建产物 + nginx 配置 |
-| `superinsight-celery:sealos-v2` | `Dockerfile.celery` | `superinsight-backend:sealos-v2` | 写死 Celery CMD，绕开 Sealos UI 参数拆分问题 |
+| 镜像 | Dockerfile | 基础镜像 | 自定义原因 | 当前版本 |
+|------|-----------|---------|-----------|----------|
+| `superinsight-elasticsearch` | `Dockerfile.elasticsearch` | `elasticsearch:8.5.0` | PVC 权限修复 | `sealos-v4` |
+| `superinsight-labelstudio` | `Dockerfile.labelstudio` | `label-studio:latest` | PVC 权限修复 + SSO 认证 + Bearer JWT patch + 品牌化 + i18n | `sealos-v4` |
+| `superinsight-backend` | `Dockerfile.backend` | `python:3.11-slim` | 应用代码 + CPU-only torch + LS 反向同步 | `sealos-v4` |
+| `superinsight-frontend` | `Dockerfile.frontend` | `nginx:alpine` | 前端构建产物 + nginx 配置 + 同步按钮 | `sealos-v4` |
+| `superinsight-celery` | `Dockerfile.celery` | `superinsight-backend:sealos-v4` | 写死 Celery CMD，绕开 Sealos UI 参数拆分问题 | `sealos-v4` |
 
 ## 多环境部署说明
 

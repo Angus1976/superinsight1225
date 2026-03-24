@@ -1,5 +1,18 @@
 # Design Document - Label Studio JWT Authentication
 
+> **⚠️ 实现演进说明 (2026-03-24)**
+>
+> 本文档描述的 JWT 用户名/密码认证方案已实现，但在 Sealos 部署场景中，实际采用了更高优先级的 SSO 认证方式。
+> 当前 `get_auth_method()` 的优先级为：SSO > JWT > PAT > Legacy Token。
+>
+> **与本文档的主要差异：**
+> - 新增 SSO 模式（`_ensure_sso_token`）：通过 `POST /api/sso/token` 用 DRF Token + email 换取短期 JWT，是 Sealos 部署的默认方式
+> - JWT 模式（本文档）的 `JWTAuthManager` 类已实现并集成，作为第二优先级
+> - `_get_headers()` 已重构为 4 分支路由（sso → jwt → pat → legacy_token）
+> - `LabelStudioConfig` 新增 `sso_enabled`、`sso_email` 字段
+>
+> 完整认证体系说明见 `label-studio-personal-access-token` spec 的演进说明。
+
 ## Overview
 
 This document describes the design for implementing JWT-based authentication support for Label Studio 1.22.0+. The design extends the existing `LabelStudioIntegration` class with JWT authentication capabilities while maintaining backward compatibility with API token authentication.

@@ -9,7 +9,7 @@ inclusion: manual
 **Priority**: CRITICAL  
 **加载方式**: 手动加载（按需引用）
 
-## The 3 Golden Rules
+## The 5 Golden Rules
 
 ### Rule 1: Use asyncio.Lock in Async Code
 
@@ -59,6 +59,39 @@ import psutil
 async def collect_metrics():
     loop = asyncio.get_event_loop()
     cpu = await loop.run_in_executor(None, psutil.cpu_percent, 1)
+```
+
+### Rule 4: BackgroundTasks 禁止传入请求级 DB Session
+
+`get_db_session()` 的 generator session 会在响应后 close，且不可跨线程。后台任务必须用 `db_manager.get_session()` 自建 session。
+
+```python
+# ❌ WRONG - session 可能已 close 或跨线程不安全
+@router.post("/items")
+async def create_item(bg: BackgroundTasks, db: Session = Depends(get_db_session)):
+    bg.add_task(sync_to_external, db, item_id)  # db 传进后台任务
+
+# ✅ CORRECT - 后台任务自建 session
+async def sync_to_external(item_id: str):
+    from src.database.connection import db_manager
+    with db_manager.get_session() as db:
+        item = db.query(ItemModel).filter_by(id=item_id).first()
+        ...
+```
+
+### Rule 5: `get_db_session()` 只能用于 FastAPI Depends
+
+`get_db_session()` 是 generator 函数（`yield`），不是 `@contextmanager`。非 Depends 场景直接用 `db_manager.get_session()`。
+
+```python
+# ❌ WRONG - generator 不是 context manager
+with get_db_session() as db:  # 拿到的是 generator 对象，不是 session
+    db.query(...)
+
+# ✅ CORRECT - 用 db_manager.get_session()
+from src.database.connection import db_manager
+with db_manager.get_session() as db:
+    db.query(...)
 ```
 
 ## Quick Checklist

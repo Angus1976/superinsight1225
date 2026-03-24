@@ -1,8 +1,28 @@
 # Design Document - Label Studio Personal Access Token Authentication
 
-**Version**: 1.0  
-**Status**: ✅ Complete  
-**Last Updated**: 2026-01-27
+**Version**: 1.1  
+**Status**: ⚠️ Superseded (部分)  
+**Last Updated**: 2026-03-24
+
+> **⚠️ 实现演进说明 (2026-03-24)**
+>
+> 本文档描述的 PAT 认证方案仍然有效，但已作为更完整的多认证体系的一部分被整合。
+> 当前实际实现支持 4 种认证方式，优先级如下：
+>
+> | 优先级 | 方式 | 端点 | 触发条件 |
+> |--------|------|------|----------|
+> | 1 | **SSO** | `POST /api/sso/token` | `LABEL_STUDIO_SSO_ENABLED=true` + `LABEL_STUDIO_API_TOKEN` |
+> | 2 | **JWT** (用户名/密码) | `POST /api/sessions/` | `LABEL_STUDIO_USERNAME` + `LABEL_STUDIO_PASSWORD` |
+> | 3 | **PAT** (本文档) | `POST /api/token/refresh` | `LABEL_STUDIO_API_TOKEN` 为 JWT 格式 |
+> | 4 | **Legacy Token** | 无刷新 | `LABEL_STUDIO_API_TOKEN` 为非 JWT 格式 |
+>
+> **与本文档的主要差异：**
+> - SSO 模式是 Sealos 部署的默认方式，通过 `label-studio-sso` 包实现，用 DRF Token 换取短期 JWT
+> - JWT 模式（见 `label-studio-jwt-authentication` spec）使用用户名/密码登录
+> - PAT 模式的核心逻辑（`_ensure_access_token`）未变，但 `_get_headers()` 已重构为多分支路由
+> - `__init__` 中通过 `config.get_auth_method()` 统一检测认证方式，不再仅靠 JWT 格式判断
+>
+> 相关代码：`src/label_studio/config.py` (`get_auth_method`)、`src/label_studio/integration.py` (`__init__`, `_get_headers`)
 
 ## Architecture Overview
 

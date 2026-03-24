@@ -232,55 +232,28 @@ def list_tasks(
         )
 
 
-def _sync_task_to_label_studio(task_id: str, db: Session, task_name: str, annotation_type: str, description: Optional[str] = None):
+async def _sync_task_to_label_studio(task_id: str, task_name: str, annotation_type: str, description: Optional[str] = None):
     """
     Background task to sync task to Label Studio.
 
-    This runs asynchronously after task creation to avoid blocking the API response.
+    This runs after task creation to avoid blocking the API response.
+    NOTE: Must NOT receive request-scoped db session — it may be closed
+    or used cross-thread. Always create a new session internally.
     """
-    import asyncio
-    
+    from src.database.connection import db_manager
+
     try:
         logger.info(f"Starting Label Studio sync for task {task_id}")
 
-        # Create Label Studio project
-        # Use asyncio.create_task or run in thread pool for existing event loop
-        try:
-            # Try to get existing event loop
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                # If loop is running, we need to use run_coroutine_threadsafe or create new loop
-                import concurrent.futures
-                with concurrent.futures.ThreadPoolExecutor() as executor:
-                    future = executor.submit(
-                        asyncio.run,
-                        label_studio_sync_service.create_project_for_task(
-                            task_id=task_id,
-                            task_name=task_name,
-                            task_description=description,
-                            annotation_type=annotation_type
-                        )
-                    )
-                    sync_result = future.result()
-            else:
-                # No running loop, safe to use asyncio.run
-                sync_result = asyncio.run(label_studio_sync_service.create_project_for_task(
-                    task_id=task_id,
-                    task_name=task_name,
-                    task_description=description,
-                    annotation_type=annotation_type
-                ))
-        except RuntimeError:
-            # No event loop, create one
-            sync_result = asyncio.run(label_studio_sync_service.create_project_for_task(
-                task_id=task_id,
-                task_name=task_name,
-                task_description=description,
-                annotation_type=annotation_type
-            ))
+        sync_result = await label_studio_sync_service.create_project_for_task(
+            task_id=task_id,
+            task_name=task_name,
+            task_description=description,
+            annotation_type=annotation_type
+        )
 
-        # Update task with sync result in database
-        try:
+        # Update task with sync result using a fresh session
+        with db_manager.get_session() as db:
             task_uuid = UUID(task_id)
             task = db.query(TaskModel).filter(TaskModel.id == task_uuid).first()
             if task:
@@ -289,31 +262,22 @@ def _sync_task_to_label_studio(task_id: str, db: Session, task_name: str, annota
                 task.label_studio_last_sync = datetime.utcnow()
                 if sync_result["success"]:
                     task.label_studio_project_created_at = datetime.utcnow()
-                db.commit()
+                # commit handled by context manager
 
-                if sync_result["success"]:
-                    logger.info(
-                        f"Successfully synced task {task_id} to Label Studio "
-                        f"project {sync_result['project_id']}"
-                    )
-                else:
-                    logger.error(
-                        f"Failed to sync task {task_id} to Label Studio: "
-                        f"{sync_result.get('error')}"
-                    )
-        except Exception as db_error:
-            logger.error(f"Error updating task sync status in database: {db_error}")
+            if sync_result["success"]:
+                logger.info(f"Successfully synced task {task_id} to LS project {sync_result['project_id']}")
+            else:
+                logger.error(f"Failed to sync task {task_id} to LS: {sync_result.get('error')}")
 
     except Exception as e:
         logger.error(f"Error in background sync for task {task_id}: {str(e)}")
-        # Update task with error status
         try:
-            task_uuid = UUID(task_id)
-            task = db.query(TaskModel).filter(TaskModel.id == task_uuid).first()
-            if task:
-                task.label_studio_sync_status = LabelStudioSyncStatus.FAILED
-                task.label_studio_last_sync = datetime.utcnow()
-                db.commit()
+            with db_manager.get_session() as db:
+                task_uuid = UUID(task_id)
+                task = db.query(TaskModel).filter(TaskModel.id == task_uuid).first()
+                if task:
+                    task.label_studio_sync_status = LabelStudioSyncStatus.FAILED
+                    task.label_studio_last_sync = datetime.utcnow()
         except Exception:
             pass
 
@@ -382,7 +346,6 @@ async def create_task(
         background_tasks.add_task(
             _sync_task_to_label_studio,
             str(task.id),
-            db,
             task.name,
             annotation_type.value,
             task.description

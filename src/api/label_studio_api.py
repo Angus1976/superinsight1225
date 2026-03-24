@@ -1035,6 +1035,14 @@ async def sync_annotations(
             task_model.completed_items = synced_count
             total = task_model.total_items or 1
             task_model.progress = min(int(synced_count / total * 100), 100)
+
+            # Update status based on progress
+            from src.database.models import TaskStatus as TS
+            if task_model.progress >= 100:
+                task_model.status = TS.COMPLETED
+            elif synced_count > 0:
+                task_model.status = TS.IN_PROGRESS
+
             db.commit()
 
         logger.info(

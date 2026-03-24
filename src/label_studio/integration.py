@@ -1044,7 +1044,8 @@ class LabelStudioIntegration:
     async def _sync_annotations_to_db(self, project_id: str, annotations_data: List[Dict[str, Any]]) -> None:
         """Synchronize annotations from Label Studio to PostgreSQL"""
         try:
-            with get_db_session() as db:
+            from src.database.connection import db_manager
+            with db_manager.get_session() as db:
                 for annotation in annotations_data:
                     # Extract task ID from annotation metadata
                     task_id = None
@@ -1074,22 +1075,26 @@ class LabelStudioIntegration:
                             )
                             continue
                     if task_model:
-                        # Add annotation to task
-                        if not task_model.annotations:
-                            task_model.annotations = []
-                        
-                        task_model.annotations.append({
+                        # Build annotation entry
+                        ann_entry = {
                             "id": annotation.get("id"),
                             "result": annotation.get("annotations", [{}])[0].get("result", []),
                             "created_at": annotation.get("created_at"),
                             "updated_at": annotation.get("updated_at"),
                             "lead_time": annotation.get("lead_time", 0),
                             "annotator": annotation.get("completed_by", {}).get("id")
-                        })
-                        
-                        # Update task status
-                        if annotation.get("annotations"):
-                            task_model.status = TaskStatus.COMPLETED
+                        }
+
+                        # Dedup by annotation id: replace existing or append
+                        existing = task_model.annotations or []
+                        ann_id = ann_entry["id"]
+                        deduped = [a for a in existing if a.get("id") != ann_id]
+                        deduped.append(ann_entry)
+                        task_model.annotations = deduped
+
+                        # NOTE: Do NOT set task status here.
+                        # Status is determined by sync_annotations endpoint
+                        # based on progress percentage.
                         
                         db.add(task_model)
                 

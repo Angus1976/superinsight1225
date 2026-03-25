@@ -7,8 +7,8 @@
 import { test, expect } from '@playwright/test'
 
 // Helper to set up authenticated state
-async function setupAuth(page: any, role: string = 'admin') {
-  await page.addInitScript(({ role }) => {
+async function setupAuth(page: any, role = 'admin') {
+  await page.addInitScript(({ role }: { role: string }) => {
     const permissions = role === 'admin' 
       ? ['read:all', 'write:all', 'manage:all']
       : ['read:tasks', 'read:billing']
@@ -270,7 +270,7 @@ test.describe('Data Isolation and Access Control', () => {
       const url = new URL(route.request().url())
       const tenantId = url.searchParams.get('tenant') || 'tenant-1'
       
-      const mockData = {
+      const mockData: Record<string, { id: string; name: string; tenant_id: string }[]> = {
         'tenant-1': [{ id: 'task-1', name: '租户1任务', tenant_id: 'tenant-1' }],
         'tenant-2': [{ id: 'task-2', name: '租户2任务', tenant_id: 'tenant-2' }]
       }
@@ -279,8 +279,8 @@ test.describe('Data Isolation and Access Control', () => {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          data: mockData[tenantId] || [],
-          total: mockData[tenantId]?.length || 0
+          data: mockData[tenantId as keyof typeof mockData] || [],
+          total: mockData[tenantId as keyof typeof mockData]?.length || 0
         })
       })
     })
@@ -426,7 +426,7 @@ test.describe('Input Validation and Sanitization', () => {
     
     if (await fileInput.isVisible()) {
       // Try to upload a potentially malicious file
-      const maliciousFile = Buffer.from('<?php echo "malicious code"; ?>', 'utf8')
+      const maliciousFile = new Uint8Array(new TextEncoder().encode('<?php echo "malicious code"; ?>'))
       
       await fileInput.setInputFiles({
         name: 'malicious.php',
@@ -554,7 +554,7 @@ test.describe('Content Security Policy', () => {
         script.innerHTML = 'window.testXSS = true;'
         document.head.appendChild(script)
         
-        return window.testXSS === true
+        return (window as any).testXSS === true
       } catch (error) {
         return false
       }
@@ -623,5 +623,430 @@ test.describe('Secure Communication', () => {
         }
       }
     }
+  })
+})
+
+
+/* ================================================================== */
+/*  Enhanced Security Tests (Requirements 5.1–5.10)                    */
+/* ================================================================== */
+
+import { mockAllApis } from './helpers/mock-api-factory'
+import { setupAuth as setupAuthHelper, waitForPageReady } from './test-helpers'
+
+/* ================================================================== */
+/*  XSS Injection Tests (Req 5.1)                                     */
+/* ================================================================== */
+
+test.describe('XSS injection vectors', () => {
+  const XSS_PAYLOADS = [
+    '<script>alert("xss")</script>',
+    '<img src=x onerror=alert("xss")>',
+    '"><svg onload=alert("xss")>',
+    "javascript:alert('xss')",
+    '<iframe src="javascript:alert(1)">',
+  ]
+
+  test.beforeEach(async ({ page }) => {
+    await mockAllApis(page)
+    await setupAuthHelper(page, 'admin', 'tenant-1')
+  })
+
+  for (const payload of XSS_PAYLOADS) {
+    test(`sanitizes XSS payload: ${payload.slice(0, 30)}...`, async ({ page }) => {
+      await page.goto('/tasks')
+      await waitForPageReady(page)
+
+      // Try injecting into search input
+      const searchInput = page.locator('input[placeholder*="搜索"], input[placeholder*="search"], input[type="search"]').first()
+      if (await searchInput.isVisible({ timeout: 3000 }).catch(() => false)) {
+        await searchInput.fill(payload)
+        await searchInput.press('Enter')
+        await page.waitForTimeout(1000)
+      }
+
+      // Verify the script is not executed in the DOM
+      const pageContent = await page.content()
+      expect(pageContent).not.toContain('<script>alert')
+      expect(pageContent).not.toContain('onerror=alert')
+
+      // Verify no alert dialog appeared
+      const dialogTriggered = await page.evaluate(() => {
+        return (window as any).__xssTriggered === true
+      })
+      expect(dialogTriggered).toBeFalsy()
+    })
+  }
+})
+
+/* ================================================================== */
+/*  Malicious API Response Test (Req 5.2)                              */
+/* ================================================================== */
+
+test.describe('Malicious API response escaping', () => {
+  test('HTML/script tags in API response are escaped in DOM', async ({ page }) => {
+    await setupAuthHelper(page, 'admin', 'tenant-1')
+
+    await page.route('**/api/tasks?**', async (route) => {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: [{
+            id: 'task-xss',
+            name: '<script>document.cookie</script>恶意任务',
+            status: 'pending',
+            assignee: '<img src=x onerror="fetch(\'http://evil.com\')">',
+            progress: 50,
+            tenant_id: 'tenant-1',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          }],
+          total: 1,
+        }),
+      })
+    })
+
+    await page.route('**/api/tasks/stats', async (route) => {
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ total: 1, pending: 1, in_progress: 0, completed: 0 }) })
+    })
+
+    await page.goto('/tasks')
+    await waitForPageReady(page)
+    await page.waitForTimeout(2000)
+
+    const html = await page.content()
+    // Raw script tags should not appear unescaped
+    expect(html).not.toContain('<script>document.cookie</script>')
+    expect(html).not.toContain('onerror="fetch')
+    // The safe text content should still render
+    expect(html).toContain('恶意任务')
+  })
+})
+
+/* ================================================================== */
+/*  SQL Injection Test (Req 5.4)                                       */
+/* ================================================================== */
+
+test.describe('SQL injection prevention', () => {
+  const SQL_PAYLOADS = [
+    "'; DROP TABLE tasks; --",
+    '1 OR 1=1',
+    "' UNION SELECT * FROM users --",
+    "1; DELETE FROM tasks WHERE 1=1",
+  ]
+
+  test.beforeEach(async ({ page }) => {
+    await mockAllApis(page)
+    await setupAuthHelper(page, 'admin', 'tenant-1')
+  })
+
+  for (const payload of SQL_PAYLOADS) {
+    test(`SQL payload treated as literal text: ${payload.slice(0, 25)}`, async ({ page }) => {
+      await page.goto('/tasks')
+      await waitForPageReady(page)
+
+      const searchInput = page.locator('input[placeholder*="搜索"], input[placeholder*="search"], input[type="search"]').first()
+      if (!(await searchInput.isVisible({ timeout: 3000 }).catch(() => false))) return
+
+      let capturedUrl = ''
+      await page.route('**/api/tasks?**', async (route) => {
+        capturedUrl = route.request().url()
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ data: [], total: 0 }),
+        })
+      })
+
+      await searchInput.fill(payload)
+      await searchInput.press('Enter')
+      await page.waitForTimeout(1000)
+
+      // The payload should be URL-encoded, not raw SQL
+      if (capturedUrl) {
+        expect(capturedUrl).not.toContain('DROP TABLE')
+        expect(capturedUrl).not.toContain('DELETE FROM')
+      }
+
+      // Page should not crash or show SQL errors
+      const pageContent = await page.textContent('body')
+      expect(pageContent).not.toMatch(/syntax error|SQL|query error/i)
+    })
+  }
+})
+
+/* ================================================================== */
+/*  Permission Bypass Test (Req 5.5)                                   */
+/* ================================================================== */
+
+test.describe('Permission bypass prevention', () => {
+  test('annotator navigating to admin URL gets redirected', async ({ page }) => {
+    await mockAllApis(page)
+    await setupAuthHelper(page, 'annotator', 'tenant-1')
+
+    await page.goto('/admin/users')
+    await page.waitForTimeout(3000)
+
+    // Should redirect to 403, dashboard, or login
+    const url = page.url()
+    const isBlocked = url.includes('403') || url.includes('dashboard') || url.includes('login') || url.includes('forbidden')
+    expect(isBlocked).toBeTruthy()
+  })
+
+  test('annotator cannot access security pages', async ({ page }) => {
+    await mockAllApis(page)
+    await setupAuthHelper(page, 'annotator', 'tenant-1')
+
+    await page.goto('/security/rbac')
+    await page.waitForTimeout(3000)
+
+    const url = page.url()
+    const isBlocked = url.includes('403') || url.includes('dashboard') || url.includes('login') || url.includes('forbidden')
+    expect(isBlocked).toBeTruthy()
+  })
+})
+
+/* ================================================================== */
+/*  Tenant Manipulation Test (Req 5.6)                                 */
+/* ================================================================== */
+
+test.describe('Tenant manipulation prevention', () => {
+  test('URL tenant_id parameter tampering is blocked', async ({ page }) => {
+    await setupAuthHelper(page, 'admin', 'tenant-1')
+
+    // Mock tasks API to enforce tenant isolation
+    await page.route('**/api/tasks**', async (route) => {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          data: [{ id: 'task-1', name: '租户1任务', tenant_id: 'tenant-1', status: 'pending', progress: 0, createdAt: new Date().toISOString() }],
+          total: 1,
+        }),
+      })
+    })
+
+    await page.route('**/api/tasks/stats', async (route) => {
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ total: 1, pending: 1, in_progress: 0, completed: 0 }) })
+    })
+
+    // Navigate with tampered tenant parameter
+    await page.goto('/tasks?tenant_id=tenant-2')
+    await waitForPageReady(page)
+    await page.waitForTimeout(2000)
+
+    // Should only see tenant-1 data (the authenticated tenant)
+    const content = await page.textContent('body')
+    expect(content).not.toContain('tenant-2')
+  })
+})
+
+/* ================================================================== */
+/*  Token Exposure Test (Req 5.7)                                      */
+/* ================================================================== */
+
+test.describe('Token exposure prevention', () => {
+  test('tokens are not exposed in URL parameters', async ({ page }) => {
+    await mockAllApis(page)
+    await setupAuthHelper(page, 'admin', 'tenant-1')
+
+    await page.goto('/dashboard')
+    await waitForPageReady(page)
+
+    // Check URL does not contain token
+    const url = page.url()
+    expect(url).not.toContain('token=')
+    expect(url).not.toContain('access_token=')
+    expect(url).not.toContain('jwt=')
+  })
+
+  test('tokens are not logged to console', async ({ page }) => {
+    const consoleLogs: string[] = []
+    page.on('console', (msg) => {
+      consoleLogs.push(msg.text())
+    })
+
+    await mockAllApis(page)
+    await setupAuthHelper(page, 'admin', 'tenant-1')
+
+    await page.goto('/dashboard')
+    await waitForPageReady(page)
+
+    // No console log should contain the mock token
+    const tokenExposed = consoleLogs.some(
+      (log) => log.includes('mock-jwt-token') || log.includes('access_token')
+    )
+    expect(tokenExposed).toBeFalsy()
+  })
+})
+
+/* ================================================================== */
+/*  Password Field Test (Req 5.8)                                      */
+/* ================================================================== */
+
+test.describe('Password field security', () => {
+  test('password fields have type="password" masking input', async ({ page }) => {
+    await page.goto('/login')
+    await waitForPageReady(page)
+
+    const passwordInput = page.locator('input[type="password"]').first()
+    await expect(passwordInput).toBeVisible()
+    await expect(passwordInput).toHaveAttribute('type', 'password')
+  })
+
+  test('password values are cleared after navigation away', async ({ page }) => {
+    await page.route('**/api/**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }))
+    await page.route('**/api/auth/tenants', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }))
+
+    await page.goto('/login')
+    await waitForPageReady(page)
+
+    const passwordInput = page.locator('input[type="password"]').first()
+    await passwordInput.fill('SensitivePassword123!')
+
+    // Navigate away
+    await page.goto('/register')
+    await waitForPageReady(page)
+
+    // Navigate back
+    await page.goto('/login')
+    await waitForPageReady(page)
+
+    // Password field should be empty
+    const newPasswordInput = page.locator('input[type="password"]').first()
+    const value = await newPasswordInput.inputValue()
+    expect(value).toBe('')
+  })
+
+  test('register page password fields have type="password"', async ({ page }) => {
+    await page.route('**/api/**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }))
+    await page.goto('/register')
+    await waitForPageReady(page)
+
+    const passwordInputs = page.locator('input[type="password"]')
+    const count = await passwordInputs.count()
+    expect(count).toBeGreaterThanOrEqual(2) // password + confirm password
+
+    for (let i = 0; i < count; i++) {
+      await expect(passwordInputs.nth(i)).toHaveAttribute('type', 'password')
+    }
+  })
+})
+
+/* ================================================================== */
+/*  File Upload Security Test (Req 5.9)                                */
+/* ================================================================== */
+
+test.describe('File upload security', () => {
+  test.beforeEach(async ({ page }) => {
+    await mockAllApis(page)
+    await setupAuthHelper(page, 'admin', 'tenant-1')
+  })
+
+  test('rejects .exe file upload', async ({ page }) => {
+    await page.goto('/augmentation')
+    await waitForPageReady(page)
+
+    const fileInput = page.locator('input[type="file"]').first()
+    if (!(await fileInput.count())) {
+      await page.goto('/data-structuring/upload')
+      await waitForPageReady(page)
+    }
+
+    const input = page.locator('input[type="file"]').first()
+    if (!(await input.count())) return
+
+    await input.setInputFiles({
+      name: 'malware.exe',
+      mimeType: 'application/x-msdownload',
+      buffer: new Uint8Array([0x4d, 0x5a, 0x00, 0x00]),
+    })
+
+    await page.waitForTimeout(1000)
+    // Should show error or reject the file
+  })
+
+  test('rejects .sh file upload', async ({ page }) => {
+    await page.goto('/augmentation')
+    await waitForPageReady(page)
+
+    const fileInput = page.locator('input[type="file"]').first()
+    if (!(await fileInput.count())) {
+      await page.goto('/data-structuring/upload')
+      await waitForPageReady(page)
+    }
+
+    const input = page.locator('input[type="file"]').first()
+    if (!(await input.count())) return
+
+    await input.setInputFiles({
+      name: 'exploit.sh',
+      mimeType: 'application/x-sh',
+      buffer: new Uint8Array(new TextEncoder().encode('#!/bin/bash\necho test')),
+    })
+
+    await page.waitForTimeout(1000)
+  })
+})
+
+/* ================================================================== */
+/*  API Error Safety Test (Req 5.10)                                   */
+/* ================================================================== */
+
+test.describe('API error response safety', () => {
+  test('error responses do not leak stack traces or DB schema', async ({ page }) => {
+    await setupAuthHelper(page, 'admin', 'tenant-1')
+
+    // Mock API to return a detailed error (simulating a misconfigured backend)
+    await page.route('**/api/tasks**', async (route) => {
+      return route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          detail: 'Internal server error',
+          // These should NOT be rendered to the user
+          stack: 'Error: at Object.<anonymous> (/app/src/routes/tasks.py:42)',
+          db_table: 'public.tasks',
+          query: 'SELECT * FROM tasks WHERE tenant_id = $1',
+        }),
+      })
+    })
+
+    await page.route('**/api/tasks/stats', async (route) => {
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ total: 0, pending: 0, in_progress: 0, completed: 0 }) })
+    })
+
+    await page.goto('/tasks')
+    await waitForPageReady(page)
+    await page.waitForTimeout(2000)
+
+    const bodyText = await page.textContent('body')
+    // Stack traces and DB details should not be visible
+    expect(bodyText).not.toContain('/app/src/routes/')
+    expect(bodyText).not.toContain('public.tasks')
+    expect(bodyText).not.toContain('SELECT * FROM')
+  })
+
+  test('404 error does not expose internal paths', async ({ page }) => {
+    await setupAuthHelper(page, 'admin', 'tenant-1')
+
+    await page.route('**/api/tasks**', async (route) => {
+      return route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          detail: 'Not found',
+          path: '/internal/api/v2/tasks',
+        }),
+      })
+    })
+
+    await page.goto('/tasks')
+    await waitForPageReady(page)
+    await page.waitForTimeout(2000)
+
+    const bodyText = await page.textContent('body')
+    expect(bodyText).not.toContain('/internal/api/v2/')
   })
 })

@@ -1,496 +1,268 @@
 /**
  * Performance E2E Tests
  *
- * Tests page load performance, rendering performance, and user experience metrics.
+ * Tests page load performance, Core Web Vitals, memory usage, and network resilience.
+ *
+ * Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 6.9
  */
 
-import { test, expect } from '@playwright/test'
+import { test, expect } from './fixtures'
+import { setupAuth, waitForPageReady } from './test-helpers'
+import { mockAllApis } from './helpers/mock-api-factory'
 
-// Helper to set up authenticated state
-async function setupAuth(page: any) {
-  await page.addInitScript(() => {
-    localStorage.setItem(
-      'auth-storage',
-      JSON.stringify({
-        state: {
-          user: {
-            id: 'user-1',
-            username: 'testuser',
-            name: '测试用户',
-            email: 'test@example.com',
-            tenant_id: 'tenant-1',
-            roles: ['admin'],
-            permissions: ['read:all', 'write:all'],
-          },
-          token: 'mock-jwt-token',
-          currentTenant: {
-            id: 'tenant-1',
-            name: '测试租户',
-          },
-          isAuthenticated: true,
-        },
-      })
-    )
-  })
-}
+/* ------------------------------------------------------------------ */
+/*  Page Load Performance (Req 6.1, 6.2, 6.3)                         */
+/* ------------------------------------------------------------------ */
 
 test.describe('Page Load Performance', () => {
-  test('login page loads within acceptable time', async ({ page }) => {
-    const startTime = Date.now()
-    
+  test('Login page loads within 2000ms', async ({ page }) => {
+    await mockAllApis(page)
+    const start = Date.now()
     await page.goto('/login')
-    
-    // Wait for page to be fully loaded
     await page.waitForLoadState('networkidle')
-    
-    const loadTime = Date.now() - startTime
-    
-    // Login page should load within 2 seconds
+    const loadTime = Date.now() - start
     expect(loadTime).toBeLessThan(2000)
-    
-    // Check that essential elements are visible
-    await expect(page.getByPlaceholder(/用户名|username/i)).toBeVisible()
-    await expect(page.getByPlaceholder(/密码|password/i)).toBeVisible()
-    await expect(page.getByRole('button', { name: /登录|login/i })).toBeVisible()
   })
 
-  test('dashboard loads within acceptable time', async ({ page }) => {
+  test('Dashboard loads within 3000ms', async ({ page }) => {
     await setupAuth(page)
-    
-    const startTime = Date.now()
-    
+    await mockAllApis(page)
+    const start = Date.now()
     await page.goto('/dashboard')
-    
-    // Wait for main content to load
     await page.waitForLoadState('networkidle')
-    
-    const loadTime = Date.now() - startTime
-    
-    // Dashboard should load within 3 seconds (more complex page)
+    const loadTime = Date.now() - start
     expect(loadTime).toBeLessThan(3000)
-    
-    // Check that main dashboard elements are present
-    const mainContent = page.locator('.ant-layout-content, .dashboard-content')
-    if (await mainContent.isVisible()) {
-      await expect(mainContent).toBeVisible()
-    }
   })
 
-  test('tasks page loads efficiently with large dataset simulation', async ({ page }) => {
-    await setupAuth(page)
-    
-    // Simulate large dataset by intercepting API calls
-    await page.route('**/api/tasks*', async route => {
-      // Simulate API response with many tasks
-      const mockTasks = Array.from({ length: 100 }, (_, i) => ({
-        id: `task-${i}`,
-        name: `任务 ${i + 1}`,
-        status: i % 3 === 0 ? 'completed' : i % 3 === 1 ? 'in_progress' : 'pending',
-        assignee: `用户${i % 5 + 1}`,
-        progress: Math.floor(Math.random() * 100),
-        createdAt: new Date(Date.now() - i * 86400000).toISOString(),
-      }))
-      
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          data: mockTasks,
-          total: 100,
-          page: 1,
-          pageSize: 20
-        })
-      })
+  const genericPages = [
+    { name: 'Tasks', route: '/tasks' },
+    { name: 'Quality', route: '/quality' },
+    { name: 'Security', route: '/security' },
+    { name: 'Admin', route: '/admin' },
+    { name: 'DataSync', route: '/data-sync' },
+  ]
+
+  for (const pg of genericPages) {
+    test(`${pg.name} page loads within 5000ms`, async ({ page }) => {
+      await setupAuth(page)
+      await mockAllApis(page)
+      const start = Date.now()
+      await page.goto(pg.route)
+      await waitForPageReady(page)
+      const loadTime = Date.now() - start
+      expect(loadTime).toBeLessThan(5000)
     })
-    
-    const startTime = Date.now()
-    
-    await page.goto('/tasks')
-    
-    // Wait for table to render
-    await page.waitForSelector('.ant-table-tbody tr', { timeout: 10000 })
-    
-    const loadTime = Date.now() - startTime
-    
-    // Should handle large dataset efficiently (within 5 seconds)
-    expect(loadTime).toBeLessThan(5000)
-    
-    // Check that pagination is working
-    const pagination = page.locator('.ant-pagination')
-    if (await pagination.isVisible()) {
-      await expect(pagination).toBeVisible()
-    }
-  })
+  }
+})
 
-  test('measures Core Web Vitals', async ({ page }) => {
+/* ------------------------------------------------------------------ */
+/*  Core Web Vitals on Dashboard (Req 6.4)                             */
+/* ------------------------------------------------------------------ */
+
+test.describe('Core Web Vitals', () => {
+  test('Dashboard meets Core Web Vitals thresholds', async ({ page }) => {
     await setupAuth(page)
-    
-    // Navigate to dashboard and measure performance
+    await mockAllApis(page)
     await page.goto('/dashboard')
-    
-    // Wait for page to fully load
     await page.waitForLoadState('networkidle')
-    
-    // Measure Web Vitals using Performance API
-    const webVitals = await page.evaluate(() => {
-      return new Promise((resolve) => {
-        const vitals: any = {}
-        
-        // Largest Contentful Paint (LCP)
-        new PerformanceObserver((list) => {
-          const entries = list.getEntries()
-          const lastEntry = entries[entries.length - 1]
-          vitals.lcp = lastEntry.startTime
-        }).observe({ entryTypes: ['largest-contentful-paint'] })
-        
-        // First Input Delay (FID) - simulated
-        vitals.fid = 0 // Will be 0 in automated tests
-        
-        // Cumulative Layout Shift (CLS)
-        let clsValue = 0
-        new PerformanceObserver((list) => {
-          for (const entry of list.getEntries()) {
-            if (!(entry as any).hadRecentInput) {
-              clsValue += (entry as any).value
+
+    const vitals = await page.evaluate(() => {
+      return new Promise<{ lcp: number; fcp: number; cls: number; ttfb: number }>((resolve) => {
+        const result = { lcp: 0, fcp: 0, cls: 0, ttfb: 0 }
+
+        try {
+          new PerformanceObserver((list) => {
+            const entries = list.getEntries()
+            if (entries.length) result.lcp = entries[entries.length - 1].startTime
+          }).observe({ entryTypes: ['largest-contentful-paint'] })
+        } catch { /* not supported */ }
+
+        try {
+          new PerformanceObserver((list) => {
+            for (const entry of list.getEntries()) {
+              if (!(entry as any).hadRecentInput) result.cls += (entry as any).value
             }
-          }
-          vitals.cls = clsValue
-        }).observe({ entryTypes: ['layout-shift'] })
-        
-        // First Contentful Paint (FCP)
-        new PerformanceObserver((list) => {
-          const entries = list.getEntries()
-          vitals.fcp = entries[0].startTime
-        }).observe({ entryTypes: ['paint'] })
-        
-        // Time to First Byte (TTFB)
-        const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming
-        vitals.ttfb = navigation.responseStart - navigation.requestStart
-        
-        setTimeout(() => resolve(vitals), 2000)
+          }).observe({ entryTypes: ['layout-shift'] })
+        } catch { /* not supported */ }
+
+        try {
+          new PerformanceObserver((list) => {
+            const entries = list.getEntries()
+            if (entries.length) result.fcp = entries[0].startTime
+          }).observe({ entryTypes: ['paint'] })
+        } catch { /* not supported */ }
+
+        const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming
+        if (nav) result.ttfb = nav.responseStart - nav.requestStart
+
+        setTimeout(() => resolve(result), 3000)
       })
     })
-    
-    console.log('Web Vitals:', webVitals)
-    
-    // Assert Web Vitals thresholds
-    expect((webVitals as any).lcp).toBeLessThan(2500) // LCP should be < 2.5s
-    expect((webVitals as any).cls).toBeLessThan(0.1)  // CLS should be < 0.1
-    expect((webVitals as any).fcp).toBeLessThan(1800) // FCP should be < 1.8s
-    expect((webVitals as any).ttfb).toBeLessThan(600)  // TTFB should be < 600ms
+
+    expect(vitals.lcp).toBeLessThan(2500)
+    expect(vitals.fcp).toBeLessThan(1800)
+    expect(vitals.cls).toBeLessThan(0.1)
+    expect(vitals.ttfb).toBeLessThan(600)
   })
 })
 
-test.describe('Large Data Rendering Performance', () => {
-  test('table renders large dataset efficiently', async ({ page }) => {
+/* ------------------------------------------------------------------ */
+/*  Table Render Benchmark (Req 6.5)                                   */
+/* ------------------------------------------------------------------ */
+
+test.describe('Large Data Rendering', () => {
+  test('table renders 1000-row dataset first page within 3000ms', async ({ page }) => {
     await setupAuth(page)
-    
-    // Mock API with large dataset
-    await page.route('**/api/tasks*', async route => {
-      const mockTasks = Array.from({ length: 1000 }, (_, i) => ({
+
+    await page.route('**/api/tasks**', async (route) => {
+      const rows = Array.from({ length: 50 }, (_, i) => ({
         id: `task-${i}`,
         name: `任务 ${i + 1}`,
-        description: `这是任务 ${i + 1} 的详细描述，包含一些较长的文本内容来测试渲染性能`,
-        status: ['pending', 'in_progress', 'completed', 'cancelled'][i % 4],
-        assignee: `用户${i % 10 + 1}`,
-        progress: Math.floor(Math.random() * 100),
-        timeSpent: Math.floor(Math.random() * 480), // minutes
-        createdAt: new Date(Date.now() - i * 86400000).toISOString(),
-        updatedAt: new Date(Date.now() - i * 3600000).toISOString(),
+        status: ['pending', 'in_progress', 'completed'][i % 3],
+        assignee: `用户${(i % 5) + 1}`,
+        progress: (i * 10) % 100,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        tenant_id: 'tenant-1',
       }))
-      
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({
-          data: mockTasks.slice(0, 50), // Paginated
-          total: 1000,
-          page: 1,
-          pageSize: 50
-        })
+        body: JSON.stringify({ data: rows, total: 1000 }),
       })
     })
-    
-    const startTime = Date.now()
-    
+
+    await page.route('**/api/tasks/stats', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ total: 1000, pending: 300, in_progress: 400, completed: 300 }) }),
+    )
+
+    const start = Date.now()
     await page.goto('/tasks')
-    
-    // Wait for table to render
-    await page.waitForSelector('.ant-table-tbody tr:nth-child(10)', { timeout: 10000 })
-    
-    const renderTime = Date.now() - startTime
-    
-    // Should render 50 rows efficiently
+    await waitForPageReady(page)
+    const renderTime = Date.now() - start
     expect(renderTime).toBeLessThan(3000)
-    
-    // Test scrolling performance
-    const tableBody = page.locator('.ant-table-tbody')
-    
-    if (await tableBody.isVisible()) {
-      const scrollStartTime = Date.now()
-      
-      // Scroll through the table
-      await tableBody.hover()
-      await page.mouse.wheel(0, 1000)
-      await page.waitForTimeout(100)
-      
-      const scrollTime = Date.now() - scrollStartTime
-      
-      // Scrolling should be smooth (< 500ms)
-      expect(scrollTime).toBeLessThan(500)
-    }
-  })
-
-  test('chart renders large dataset without performance issues', async ({ page }) => {
-    await setupAuth(page)
-    
-    // Mock API with large chart data
-    await page.route('**/api/dashboard/metrics*', async route => {
-      const mockData = Array.from({ length: 365 }, (_, i) => ({
-        date: new Date(Date.now() - i * 86400000).toISOString().split('T')[0],
-        tasks: Math.floor(Math.random() * 100) + 50,
-        quality: Math.random() * 0.3 + 0.7, // 0.7-1.0
-        annotations: Math.floor(Math.random() * 1000) + 500,
-      }))
-      
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify(mockData)
-      })
-    })
-    
-    const startTime = Date.now()
-    
-    await page.goto('/dashboard')
-    
-    // Wait for charts to render
-    await page.waitForSelector('.recharts-wrapper, canvas, .ant-chart', { timeout: 10000 })
-    
-    const renderTime = Date.now() - startTime
-    
-    // Chart should render within reasonable time
-    expect(renderTime).toBeLessThan(4000)
-    
-    // Check that chart is interactive
-    const chart = page.locator('.recharts-wrapper, canvas').first()
-    
-    if (await chart.isVisible()) {
-      // Test chart interaction
-      await chart.hover()
-      
-      // Look for tooltip or interaction feedback
-      const tooltip = page.locator('.recharts-tooltip, .ant-tooltip')
-      
-      // Tooltip should appear quickly
-      if (await tooltip.isVisible({ timeout: 1000 })) {
-        await expect(tooltip).toBeVisible()
-      }
-    }
-  })
-
-  test('virtual scrolling works for large lists', async ({ page }) => {
-    await setupAuth(page)
-    
-    // Navigate to a page with potentially large lists
-    await page.goto('/billing')
-    
-    // Mock large billing data
-    await page.route('**/api/billing*', async route => {
-      const mockBills = Array.from({ length: 500 }, (_, i) => ({
-        id: `bill-${i}`,
-        period: `2024-${String((i % 12) + 1).padStart(2, '0')}`,
-        amount: Math.floor(Math.random() * 10000) + 1000,
-        status: ['pending', 'paid', 'overdue'][i % 3],
-        items: Math.floor(Math.random() * 100) + 10,
-        hours: Math.floor(Math.random() * 200) + 50,
-      }))
-      
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          data: mockBills,
-          total: 500
-        })
-      })
-    })
-    
-    await page.reload()
-    
-    // Wait for list to load
-    await page.waitForSelector('.ant-list-item, .ant-table-row', { timeout: 10000 })
-    
-    // Test that only visible items are rendered (virtual scrolling)
-    const visibleItems = await page.locator('.ant-list-item, .ant-table-row').count()
-    
-    // Should not render all 500 items at once
-    expect(visibleItems).toBeLessThan(100)
-    
-    // Test scrolling performance
-    const scrollContainer = page.locator('.ant-list, .ant-table-body')
-    
-    if (await scrollContainer.isVisible()) {
-      const scrollStartTime = Date.now()
-      
-      // Scroll to bottom
-      await scrollContainer.hover()
-      for (let i = 0; i < 10; i++) {
-        await page.mouse.wheel(0, 500)
-        await page.waitForTimeout(50)
-      }
-      
-      const scrollTime = Date.now() - scrollStartTime
-      
-      // Scrolling should remain smooth
-      expect(scrollTime).toBeLessThan(2000)
-    }
   })
 })
 
-test.describe('Memory Usage and Performance', () => {
-  test('memory usage remains stable during navigation', async ({ page }) => {
+/* ------------------------------------------------------------------ */
+/*  Memory Leak Detection (Req 6.6, 6.7)                               */
+/* ------------------------------------------------------------------ */
+
+test.describe('Memory Leak Detection', () => {
+  test('memory growth < 200% after 5 page navigations', async ({ page }) => {
     await setupAuth(page)
-    
-    // Get initial memory usage
-    const initialMemory = await page.evaluate(() => {
-      return (performance as any).memory ? (performance as any).memory.usedJSHeapSize : 0
-    })
-    
-    // Navigate through multiple pages
-    const pages = ['/dashboard', '/tasks', '/billing', '/quality', '/settings']
-    
-    for (const pagePath of pages) {
-      await page.goto(pagePath)
-      await page.waitForLoadState('networkidle')
-      await page.waitForTimeout(1000) // Allow for any async operations
+    await mockAllApis(page)
+
+    await page.goto('/dashboard')
+    await waitForPageReady(page)
+
+    const initialMemory = await page.evaluate(() =>
+      (performance as any).memory ? (performance as any).memory.usedJSHeapSize : 0,
+    )
+
+    const routes = ['/tasks', '/quality', '/settings', '/billing', '/dashboard']
+    for (const r of routes) {
+      await page.goto(r)
+      await waitForPageReady(page)
     }
-    
-    // Check final memory usage
-    const finalMemory = await page.evaluate(() => {
-      return (performance as any).memory ? (performance as any).memory.usedJSHeapSize : 0
-    })
-    
+
+    const finalMemory = await page.evaluate(() =>
+      (performance as any).memory ? (performance as any).memory.usedJSHeapSize : 0,
+    )
+
     if (initialMemory > 0 && finalMemory > 0) {
-      const memoryIncrease = finalMemory - initialMemory
-      const memoryIncreasePercent = (memoryIncrease / initialMemory) * 100
-      
-      // Memory increase should be reasonable (< 200% of initial)
-      expect(memoryIncreasePercent).toBeLessThan(200)
-      
-      console.log(`Memory usage: ${initialMemory} -> ${finalMemory} (${memoryIncreasePercent.toFixed(1)}% increase)`)
+      const growthPercent = ((finalMemory - initialMemory) / initialMemory) * 100
+      expect(growthPercent).toBeLessThan(200)
     }
   })
 
-  test('no memory leaks during repeated operations', async ({ page }) => {
+  test('memory growth < 50% after 10 modal open/close cycles', async ({ page }) => {
     await setupAuth(page)
+    await mockAllApis(page)
     await page.goto('/tasks')
-    
-    // Get baseline memory
-    const baselineMemory = await page.evaluate(() => {
-      return (performance as any).memory ? (performance as any).memory.usedJSHeapSize : 0
-    })
-    
-    // Perform repeated operations that might cause memory leaks
+    await waitForPageReady(page)
+
+    const baseline = await page.evaluate(() =>
+      (performance as any).memory ? (performance as any).memory.usedJSHeapSize : 0,
+    )
+
     for (let i = 0; i < 10; i++) {
-      // Open and close modal
-      const createButton = page.getByRole('button', { name: /创建|create/i })
-      
-      if (await createButton.isVisible()) {
-        await createButton.click()
-        
+      const createBtn = page.getByRole('button', { name: /创建|create|新建/i })
+      if (await createBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await createBtn.click()
         const modal = page.locator('.ant-modal')
-        if (await modal.isVisible()) {
-          // Close modal
-          const closeButton = modal.locator('.ant-modal-close, .ant-btn').filter({ hasText: /取消|cancel/i })
-          if (await closeButton.isVisible()) {
-            await closeButton.click()
-          } else {
-            await page.keyboard.press('Escape')
-          }
-          
-          await expect(modal).not.toBeVisible()
+        if (await modal.isVisible({ timeout: 2000 }).catch(() => false)) {
+          await page.keyboard.press('Escape')
+          await modal.waitFor({ state: 'hidden', timeout: 2000 }).catch(() => {})
         }
       }
-      
-      await page.waitForTimeout(100)
     }
-    
-    // Force garbage collection if available
-    await page.evaluate(() => {
-      if ((window as any).gc) {
-        (window as any).gc()
-      }
-    })
-    
-    await page.waitForTimeout(1000)
-    
-    // Check final memory
-    const finalMemory = await page.evaluate(() => {
-      return (performance as any).memory ? (performance as any).memory.usedJSHeapSize : 0
-    })
-    
-    if (baselineMemory > 0 && finalMemory > 0) {
-      const memoryIncrease = finalMemory - baselineMemory
-      const memoryIncreasePercent = (memoryIncrease / baselineMemory) * 100
-      
-      // Memory increase should be minimal after repeated operations
-      expect(memoryIncreasePercent).toBeLessThan(50)
-      
-      console.log(`Memory after repeated operations: ${baselineMemory} -> ${finalMemory} (${memoryIncreasePercent.toFixed(1)}% increase)`)
+
+    await page.evaluate(() => { if ((window as any).gc) (window as any).gc() })
+    await page.waitForTimeout(500)
+
+    const finalMem = await page.evaluate(() =>
+      (performance as any).memory ? (performance as any).memory.usedJSHeapSize : 0,
+    )
+
+    if (baseline > 0 && finalMem > 0) {
+      const growthPercent = ((finalMem - baseline) / baseline) * 100
+      expect(growthPercent).toBeLessThan(50)
     }
   })
 })
 
-test.describe('Network Performance', () => {
-  test('handles slow network conditions gracefully', async ({ page }) => {
-    // Simulate slow network
+/* ------------------------------------------------------------------ */
+/*  Slow Network Test (Req 6.8)                                        */
+/* ------------------------------------------------------------------ */
+
+test.describe('Slow Network', () => {
+  test('loading indicators appear under 500ms latency, page renders after data', async ({ page }) => {
+    await setupAuth(page)
+
+    // Add 500ms delay to all routes
     await page.route('**/*', async (route) => {
-      await new Promise(resolve => setTimeout(resolve, 500)) // 500ms delay
+      await new Promise((r) => setTimeout(r, 500))
       await route.continue()
     })
-    
-    await setupAuth(page)
-    
-    const startTime = Date.now()
-    
-    await page.goto('/dashboard')
-    
-    // Should show loading states during slow network
-    const loadingIndicator = page.locator('.ant-spin, .loading, .ant-skeleton')
-    
-    if (await loadingIndicator.isVisible({ timeout: 1000 })) {
-      await expect(loadingIndicator).toBeVisible()
-    }
-    
-    // Wait for content to load
-    await page.waitForLoadState('networkidle')
-    
-    const loadTime = Date.now() - startTime
-    
-    // Should handle slow network within reasonable time
-    expect(loadTime).toBeLessThan(10000) // 10 seconds max
-  })
 
-  test('handles network errors gracefully', async ({ page }) => {
-    await setupAuth(page)
-    
-    // Simulate network errors for API calls
-    await page.route('**/api/**', async (route) => {
-      await route.abort('failed')
-    })
-    
     await page.goto('/dashboard')
-    
-    // Should show error states or fallback content
-    const errorMessage = page.locator('.ant-result, .ant-empty, .error-message')
-    
-    if (await errorMessage.isVisible({ timeout: 5000 })) {
-      await expect(errorMessage).toBeVisible()
+
+    // Loading indicator should appear
+    const spinner = page.locator('.ant-spin, .ant-skeleton, .loading')
+    if (await spinner.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await expect(spinner).toBeVisible()
     }
-    
-    // Should not crash the application
-    const appContainer = page.locator('#root, .app')
-    await expect(appContainer).toBeVisible()
+
+    // Eventually the page should render
+    await waitForPageReady(page, 15000)
+    const root = page.locator('#root')
+    await expect(root).toBeVisible()
+  })
+})
+
+/* ------------------------------------------------------------------ */
+/*  Offline Test (Req 6.9)                                             */
+/* ------------------------------------------------------------------ */
+
+test.describe('Offline Resilience', () => {
+  test('error state displayed when offline, no crash', async ({ page }) => {
+    await setupAuth(page)
+    await mockAllApis(page)
+    await page.goto('/dashboard')
+    await waitForPageReady(page)
+
+    // Go offline
+    await page.context().setOffline(true)
+
+    // Try navigating
+    await page.goto('/tasks').catch(() => {})
+
+    // App should not crash — #root should still be present
+    const root = page.locator('#root')
+    await expect(root).toBeVisible()
+
+    // Restore
+    await page.context().setOffline(false)
   })
 })

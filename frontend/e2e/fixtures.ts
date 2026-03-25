@@ -8,6 +8,8 @@
  */
 
 import { test as base, Page, BrowserContext } from '@playwright/test'
+import { RoleConfig, ROLE_CONFIGS } from './helpers/role-permissions'
+import { setupAuth } from './test-helpers'
 
 /**
  * Console log entry interface
@@ -155,3 +157,44 @@ export function hasCriticalErrors(logs: ConsoleLogEntry[]): boolean {
   )
   return criticalErrors.length > 0
 }
+
+// ---------------------------------------------------------------------------
+// Role-parameterized fixtures (Requirements: 16.1, 1.1–1.4)
+// ---------------------------------------------------------------------------
+
+/**
+ * Fixtures for role-based E2E tests.
+ * `rolePage` is a Page pre-authenticated as the role specified by `roleConfig`.
+ */
+export interface RoleTestFixtures {
+  rolePage: Page
+  roleConfig: RoleConfig
+}
+
+/**
+ * Extended test object that includes role-parameterized fixtures.
+ *
+ * Usage:
+ * ```ts
+ * import { roleTest } from '../fixtures'
+ * for (const [roleName, config] of Object.entries(ROLE_CONFIGS)) {
+ *   roleTest.describe(`${roleName} workflow`, () => {
+ *     roleTest.use({ roleConfig: config })
+ *     roleTest('can access dashboard', async ({ rolePage }) => { ... })
+ *   })
+ * }
+ * ```
+ */
+export const roleTest = test.extend<RoleTestFixtures>({
+  // Default role config — override with roleTest.use({ roleConfig: ... })
+  roleConfig: [ROLE_CONFIGS.admin, { option: true }],
+
+  rolePage: async ({ page, roleConfig }, use) => {
+    await setupAuth(page, roleConfig.role, roleConfig.tenantId)
+    await use(page)
+  },
+})
+
+// Re-export ROLE_CONFIGS for convenience
+export { ROLE_CONFIGS } from './helpers/role-permissions'
+export type { RoleConfig } from './helpers/role-permissions'

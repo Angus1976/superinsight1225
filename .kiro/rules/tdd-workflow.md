@@ -120,6 +120,8 @@ frontend/src/
 | Mock 过多 | 只 Mock 外部依赖 |
 | 测试名称不清晰 | `test_<行为>_when_<条件>_should_<结果>` |
 | 忽略边界条件 | 空值、极大值、并发场景 |
+| Playwright 中用 `Buffer.from()` | 用 `new Uint8Array(new TextEncoder().encode(...))` — Playwright 测试环境无 Node `Buffer` |
+| Playwright `baseURL`/`webServer.url` 写死端口 | 用 `process.env.PLAYWRIGHT_BASE_URL` — Vite 端口被占用会自动递增导致超时 |
 
 ---
 

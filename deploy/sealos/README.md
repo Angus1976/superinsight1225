@@ -189,6 +189,8 @@ python -c "from main import *; print('DB initialized')"
 | LS 升级（基础镜像更新）后 SSO/品牌化失效 | `heartexlabs/label-studio:latest` 升级可能改变 Python 版本、`views.py` 代码结构、`jwt_auth/auth.py` 认证逻辑 | 升级流程：1) 拉新基础镜像 2) 重新构建 `Dockerfile.labelstudio` 3) 验证：`entrypoint-sso.sh` 动态路径检测是否正常、`views.py` patch 目标代码是否匹配、`jwt_auth/auth.py` patch 是否兼容、Bearer JWT 认证是否通过 |
 | 升版后 Celery 仍跑旧代码 | `Dockerfile.celery` 的 `FROM` 硬编码了 backend 镜像版本 tag，升版时忘记同步更新 | 升版时联动更新：`README.md` 镜像清单 + 构建命令 + `Dockerfile.celery` 的 `FROM` tag，三处必须一致 |
 | SSO 自动登录仍跳转登录页（middleware 正常、curl 容器内通过） | `generate_authenticated_url` 用 SuperInsight 的 `jwt_secret_key` 自签 JWT token，但 LS 的 `JWTAutoLoginMiddleware` 只认 LS 自己的 `SECRET_KEY`，跨系统密钥不互通 | `generate_authenticated_url` 改为调用 LS 的 `POST /api/sso/token` 获取 LS 签发的 token（与 `get_login_url` 同一方式）。规则：给 LS 的 SSO token 必须由 LS 自身签发，不可用 SuperInsight 密钥 |
+| LS 项目数据页报 `mobx-state-tree: Failed to resolve reference 'N' to type 'User'` | SuperInsight 通过 API 创建标注时 `completed_by_id` 对应的用户不是该项目的 member，LS 前端 store 无法解析用户引用 | 创建标注后必须确保 annotator 用户是项目 member（`ProjectMember.objects.get_or_create`）。批量修复：遍历所有有标注的项目，将 `completed_by_id` 对应用户加入 member |
+| LS admin 邮箱不一致导致 SSO 登录用户与标注用户不同，mobx 崩溃 | `LABEL_STUDIO_USERNAME`、`LABEL_STUDIO_SSO_EMAIL`（docker-compose × 3处 + .env + .env.sealos）使用了不同邮箱，SSO 登录为 user A 但标注记录属于 user B，LS 前端 store 只加载登录用户 | 统一为 `admin@superinsight.local`，涉及 5 处联动：`docker-compose.yml`（USERNAME + SSO_EMAIL × 3）、`.env`、`deploy/sealos/.env.sealos` |
 
 ## SuperInsight ↔ Label Studio 认证体系
 

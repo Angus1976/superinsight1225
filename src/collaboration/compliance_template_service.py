@@ -139,10 +139,15 @@ class ComplianceTemplateService:
         """Initialize compliance template service."""
         self._templates: Dict[UUID, ComplianceTemplate] = {}
         self._entity_classifications: Dict[UUID, EntityClassificationResult] = {}
-        self._lock = asyncio.Lock()
+        self._lock: Optional[asyncio.Lock] = None
+        try:
+            asyncio.get_running_loop().create_task(self._initialize_builtin_templates())
+        except RuntimeError:
+            pass
 
-        # Initialize built-in templates
-        asyncio.create_task(self._initialize_builtin_templates())
+    async def _ensure_async_lock(self) -> None:
+        if self._lock is None:
+            self._lock = asyncio.Lock()
 
     async def _initialize_builtin_templates(self):
         """Initialize built-in compliance templates."""
@@ -170,6 +175,7 @@ class ComplianceTemplateService:
 
     async def _add_dsl_classification_rules(self, template_id: UUID):
         """Add Data Security Law classification rules."""
+        await self._ensure_async_lock()
         async with self._lock:
             template = self._templates.get(template_id)
             if not template:
@@ -204,6 +210,7 @@ class ComplianceTemplateService:
 
     async def _add_pipl_validation_rules(self, template_id: UUID):
         """Add PIPL validation rules."""
+        await self._ensure_async_lock()
         async with self._lock:
             template = self._templates.get(template_id)
             if not template:
@@ -251,6 +258,7 @@ class ComplianceTemplateService:
         Returns:
             Created template
         """
+        await self._ensure_async_lock()
         async with self._lock:
             template = ComplianceTemplate(
                 regulation=regulation,
@@ -273,6 +281,7 @@ class ComplianceTemplateService:
         Returns:
             Template or None
         """
+        await self._ensure_async_lock()
         async with self._lock:
             for template in self._templates.values():
                 if template.regulation == regulation:
@@ -299,6 +308,7 @@ class ComplianceTemplateService:
         Returns:
             Classification result
         """
+        await self._ensure_async_lock()
         async with self._lock:
             template = await self.get_template(regulation)
             if not template:
@@ -463,6 +473,7 @@ class ComplianceTemplateService:
         Returns:
             List of violations
         """
+        await self._ensure_async_lock()
         async with self._lock:
             violations = []
             classification = self._entity_classifications.get(entity_id)
@@ -549,6 +560,7 @@ class ComplianceTemplateService:
         Returns:
             Compliance report
         """
+        await self._ensure_async_lock()
         async with self._lock:
             report = ComplianceReport(
                 ontology_id=ontology_id,
@@ -603,6 +615,7 @@ class ComplianceTemplateService:
         Returns:
             Classification result or None
         """
+        await self._ensure_async_lock()
         async with self._lock:
             return self._entity_classifications.get(entity_id)
 
@@ -612,5 +625,6 @@ class ComplianceTemplateService:
         Returns:
             List of templates
         """
+        await self._ensure_async_lock()
         async with self._lock:
             return list(self._templates.values())

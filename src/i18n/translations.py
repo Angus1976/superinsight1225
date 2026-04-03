@@ -1692,6 +1692,12 @@ def get_translation(key: str, language: Optional[str] = None, **kwargs) -> str:
     
     return text
 
+
+def t(key: str, language: Optional[str] = None, **kwargs) -> str:
+    """Short alias for :func:`get_translation` (e.g. ``from src.i18n.translations import t``)."""
+    return get_translation(key, language=language, **kwargs)
+
+
 @safe_translation_wrapper
 @performance_timer
 def get_all_translations(language: Optional[str] = None) -> Dict[str, str]:

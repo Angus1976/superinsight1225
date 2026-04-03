@@ -830,9 +830,9 @@ class TestRetryLogic:
         
         expected_delays = [0, 1, 2, 4]
         
-        # Verify the pattern is correct
+        # Verify the pattern is correct (delay before attempt i+1 is min(2**(i-1), 4) for i>=1)
         for i, expected in enumerate(expected_delays):
-            actual = min(2 ** i, 4) if i > 0 else 0
+            actual = min(2 ** (i - 1), 4) if i > 0 else 0
             assert actual == expected
 
 

@@ -44,14 +44,47 @@ i18n.init({
 });
 
 // Mock hooks
-vi.mock('@/hooks/useDataLifecycle', () => ({
-  useTempData: () => ({ data: [], loading: false }),
-  useSampleLibrary: () => ({ samples: [], loading: false }),
-  useReview: () => ({ reviews: [], loading: false }),
-  useAnnotationTask: () => ({ tasks: [], loading: false }),
-  useEnhancement: () => ({ jobs: [], loading: false }),
-  useAITrial: () => ({ trials: [], loading: false }),
-}));
+vi.mock('@/hooks/useDataLifecycle', () => {
+  const pagination = { page: 1, pageSize: 10, total: 0 };
+  return {
+    useTempData: () => ({
+      data: [],
+      loading: false,
+      pagination,
+      fetchTempData: vi.fn().mockResolvedValue(undefined),
+    }),
+    useSampleLibrary: () => ({
+      samples: [],
+      loading: false,
+      pagination,
+      fetchSamples: vi.fn().mockResolvedValue(undefined),
+    }),
+    useReview: () => ({
+      reviews: [],
+      loading: false,
+      pagination,
+      fetchReviews: vi.fn().mockResolvedValue(undefined),
+    }),
+    useAnnotationTask: () => ({
+      tasks: [],
+      loading: false,
+      pagination,
+      fetchTasks: vi.fn().mockResolvedValue(undefined),
+    }),
+    useEnhancement: () => ({
+      jobs: [],
+      loading: false,
+      pagination,
+      fetchJobs: vi.fn().mockResolvedValue(undefined),
+    }),
+    useAITrial: () => ({
+      trials: [],
+      loading: false,
+      pagination,
+      fetchTrials: vi.fn().mockResolvedValue(undefined),
+    }),
+  };
+});
 
 vi.mock('@/stores/authStore', () => ({
   useAuthStore: () => ({ hasPermission: () => true }),

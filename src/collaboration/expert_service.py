@@ -231,7 +231,8 @@ class ExpertService:
             redis_client: Optional Redis client for caching
             cache_ttl_seconds: Cache TTL in seconds (default 15 minutes)
         """
-        self._lock = asyncio.Lock()
+        # Lazy-created: sync DI (e.g. FastAPI threadpool) has no event loop at import time (Py3.9).
+        self._lock: Optional[asyncio.Lock] = None
         self._experts: Dict[UUID, ExpertProfile] = {}
         self._email_index: Dict[str, UUID] = {}
         self._redis = redis_client
@@ -241,6 +242,11 @@ class ExpertService:
         self._recommendation_cache: Dict[str, Tuple[datetime, List[ExpertRecommendation]]] = {}
 
         logger.info("ExpertService initialized")
+
+    async def _ensure_async_lock(self) -> None:
+        """Create asyncio.Lock on first use (inside running event loop)."""
+        if self._lock is None:
+            self._lock = asyncio.Lock()
 
     # =========================================================================
     # CRUD Operations
@@ -259,6 +265,7 @@ class ExpertService:
         Raises:
             ValueError: If email already exists
         """
+        await self._ensure_async_lock()
         async with self._lock:
             # Check email uniqueness
             if data.email.lower() in self._email_index:
@@ -328,6 +335,7 @@ class ExpertService:
         Returns:
             Updated expert profile or None if not found
         """
+        await self._ensure_async_lock()
         async with self._lock:
             profile = self._experts.get(expert_id)
             if not profile:
@@ -360,6 +368,7 @@ class ExpertService:
         Returns:
             True if deleted, False if not found
         """
+        await self._ensure_async_lock()
         async with self._lock:
             profile = self._experts.get(expert_id)
             if not profile:
@@ -474,6 +483,7 @@ class ExpertService:
         Returns:
             Updated contribution metrics or None if expert not found
         """
+        await self._ensure_async_lock()
         async with self._lock:
             profile = self._experts.get(expert_id)
             if not profile:

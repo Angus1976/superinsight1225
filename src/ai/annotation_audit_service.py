@@ -18,7 +18,7 @@ import asyncio
 import hmac
 import hashlib
 import json
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Dict, List, Optional, Any
 from datetime import datetime, timedelta
 from uuid import UUID, uuid4
 from dataclasses import dataclass, field, asdict
@@ -130,7 +130,6 @@ class AnnotationAuditService:
         self._user_index: Dict[UUID, List[UUID]] = {}
         self._project_index: Dict[UUID, List[UUID]] = {}
         self._object_index: Dict[UUID, List[UUID]] = {}
-        self._timestamp_index: List[Tuple[datetime, UUID]] = []
 
     async def log_operation(
         self,
@@ -218,14 +217,13 @@ class AnnotationAuditService:
                 self._object_index[object_id] = []
             self._object_index[object_id].append(entry.log_id)
 
-            self._timestamp_index.append((entry.timestamp, entry.log_id))
-            self._timestamp_index.sort(key=lambda x: x[0])
-
-            # Create version if it's an annotation update
+            # Create version if it's an annotation lifecycle step (draft/edit/submit/review)
             if object_type == AnnotationObjectType.ANNOTATION and operation_type in [
                 AnnotationOperationType.CREATE,
                 AnnotationOperationType.UPDATE,
-                AnnotationOperationType.SUBMIT
+                AnnotationOperationType.SUBMIT,
+                AnnotationOperationType.APPROVE,
+                AnnotationOperationType.REJECT,
             ]:
                 await self._create_version(
                     annotation_id=object_id,

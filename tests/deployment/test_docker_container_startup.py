@@ -36,7 +36,19 @@ class ContainerInfo:
 class DockerContainerStartupTests:
     """Tests for Docker container startup and health verification."""
     
-    # Services to test (matches docker-compose.yml)
+    # Compose `services:` keys (docker-compose.yml), for static YAML checks.
+    REQUIRED_COMPOSE_SERVICE_KEYS = [
+        "app",
+        "frontend",
+        "postgres",
+        "redis",
+        "label-studio",
+        "argilla",
+        "elasticsearch",
+        "ollama",
+    ]
+
+    # Container names (`container_name:`), for `docker inspect` / runtime checks.
     REQUIRED_SERVICES = [
         "superinsight-app",
         "superinsight-frontend",
@@ -47,7 +59,7 @@ class DockerContainerStartupTests:
         "superinsight-elasticsearch",
         "superinsight-ollama",
     ]
-    
+
     OPTIONAL_SERVICES = [
         "superinsight-prometheus",
         "superinsight-grafana",
@@ -163,10 +175,10 @@ class DockerContainerStartupTests:
             config = yaml.safe_load(f)
         
         services = list(config.get("services", {}).keys())
-        
-        for service in self.REQUIRED_SERVICES:
-            assert service in services, \
-                f"Required service '{service}' not defined in docker-compose.yml"
+
+        for key in self.REQUIRED_COMPOSE_SERVICE_KEYS:
+            assert key in services, \
+                f"Required service '{key}' not defined in docker-compose.yml"
     
     @pytest.mark.docker
     @pytest.mark.deployment

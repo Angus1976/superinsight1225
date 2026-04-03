@@ -30,6 +30,20 @@ from src.api.ontology_collaboration_websocket import (
 )
 
 
+def _recv_until_element_updated(ws, element_id: str, max_extra: int = 10):
+    """Read messages until element_updated for element_id (skip intermittent heartbeats)."""
+    for _ in range(max_extra):
+        data = ws.receive_text()
+        message = json.loads(data)
+        if message.get("type") == MessageType.ELEMENT_UPDATED.value:
+            assert message.get("element_id") == element_id
+            return message
+        assert message.get("type") == MessageType.HEARTBEAT.value, (
+            f"unexpected message before element_updated: {message!r}"
+        )
+    raise AssertionError("did not receive element_updated")
+
+
 # =============================================================================
 # Test Fixtures
 # =============================================================================
@@ -161,12 +175,8 @@ class TestMessageBroadcasting:
                     "data": {"changes": {"name": "新名称"}}
                 }))
                 
-                # Expert 1 should receive update
-                data = ws1.receive_text()
-                message = json.loads(data)
-                
-                assert message["type"] == MessageType.ELEMENT_UPDATED.value
-                assert message["element_id"] == element_id
+                # Expert 1 should receive update (heartbeat may arrive first due to server idle timeout)
+                _recv_until_element_updated(ws1, element_id)
 
 
 # =============================================================================

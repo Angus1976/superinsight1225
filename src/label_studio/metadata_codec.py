@@ -206,6 +206,12 @@ class MetadataCodec:
         match = METADATA_PATTERN.match(encoded_text)
 
         if not match:
+            # Text looks like it might contain our prefix but does not match the
+            # full pattern (e.g. corrupted Base64 block). Treat this as
+            # corrupted metadata rather than plain text so callers can surface
+            # a decoding error, while ``try_decode`` will safely swallow it.
+            if encoded_text.startswith(METADATA_PREFIX):
+                raise MetadataDecodeError("Corrupted metadata: invalid prefix format")
             # No metadata prefix found, return original text
             return encoded_text, None
 

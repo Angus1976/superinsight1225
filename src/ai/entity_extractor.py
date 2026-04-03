@@ -30,8 +30,8 @@ class EntityExtractionError(Exception):
     """Raised when LLM-based entity extraction fails."""
 
 
-class StructuredRecord(BaseModel):
-    """A single record extracted from source content."""
+class ExtractedStructuredRecord(BaseModel):
+    """A single record extracted from source content (Pydantic; not the ORM ``StructuredRecord`` table model)."""
     fields: dict[str, Any] = Field(description="Extracted field values keyed by field name")
     confidence: float = Field(ge=0.0, le=1.0, description="Confidence score 0.0-1.0")
     source_span: Optional[str] = Field(
@@ -42,7 +42,7 @@ class StructuredRecord(BaseModel):
 
 class ExtractionResult(BaseModel):
     """Result of entity extraction."""
-    records: list[StructuredRecord] = Field(description="Extracted records")
+    records: list[ExtractedStructuredRecord] = Field(description="Extracted records")
     total_extracted: int = Field(description="Number of records extracted")
     avg_confidence: float = Field(ge=0.0, le=1.0, description="Average confidence")
 
@@ -81,7 +81,7 @@ def _truncate_content(content: str) -> str:
     return content
 
 
-def _compute_avg_confidence(records: list[StructuredRecord]) -> float:
+def _compute_avg_confidence(records: list[ExtractedStructuredRecord]) -> float:
     """Compute mean confidence across records. Returns 0.0 for empty list."""
     if not records:
         return 0.0
@@ -102,9 +102,9 @@ def _build_schema_description(schema: InferredSchema) -> str:
 
 
 def _validate_record_fields(
-    record: StructuredRecord,
+    record: ExtractedStructuredRecord,
     schema: InferredSchema,
-) -> StructuredRecord:
+) -> ExtractedStructuredRecord:
     """Validate and filter record fields against the schema.
 
     - Removes keys not present in the schema
@@ -112,7 +112,7 @@ def _validate_record_fields(
     """
     valid_names = {f.name for f in schema.fields}
     cleaned = {k: v for k, v in record.fields.items() if k in valid_names}
-    return StructuredRecord(
+    return ExtractedStructuredRecord(
         fields=cleaned,
         confidence=_clamp_confidence(record.confidence),
         source_span=record.source_span,
@@ -120,7 +120,7 @@ def _validate_record_fields(
 
 
 def _check_required_fields(
-    record: StructuredRecord,
+    record: ExtractedStructuredRecord,
     schema: InferredSchema,
 ) -> bool:
     """Return True if all required fields are present in the record."""
@@ -128,7 +128,7 @@ def _check_required_fields(
     return required_names.issubset(record.fields.keys())
 
 
-def _build_extraction_result(records: list[StructuredRecord]) -> ExtractionResult:
+def _build_extraction_result(records: list[ExtractedStructuredRecord]) -> ExtractionResult:
     """Build ExtractionResult with computed totals."""
     return ExtractionResult(
         records=records,
@@ -199,6 +199,11 @@ class EntityExtractor:
             logger.info(f"Using default mode for model: {self._model}")
             self._client = instructor.from_openai(openai_client)
 
+    @property
+    def cloud_config(self) -> CloudConfig:
+        """Backward-compatible alias for the active CloudConfig."""
+        return self._config
+
     async def extract(
         self,
         content: str,
@@ -248,7 +253,7 @@ class EntityExtractor:
         if not schema.fields:
             raise ValueError("schema must have at least one field")
 
-        all_records: list[StructuredRecord] = []
+        all_records: list[ExtractedStructuredRecord] = []
         for content in contents:
             if not content or not content.strip():
                 continue
@@ -309,9 +314,9 @@ class EntityExtractor:
         schema: InferredSchema,
     ) -> ExtractionResult:
         """Validate records against schema and build the result."""
-        validated: list[StructuredRecord] = []
+        validated: list[ExtractedStructuredRecord] = []
         for raw in response.records:
-            record = StructuredRecord(
+            record = ExtractedStructuredRecord(
                 fields=raw.fields,
                 confidence=_clamp_confidence(raw.confidence),
                 source_span=raw.source_span,

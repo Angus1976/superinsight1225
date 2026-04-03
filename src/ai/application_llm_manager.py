@@ -8,12 +8,13 @@ hot reload, and multi-tenant support.
 import os
 import asyncio
 import logging
-from typing import List, Optional, Callable, Awaitable, TypeVar
+from typing import List, Optional, Callable, Awaitable, TypeVar, Union
 from fnmatch import fnmatch
+from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import Session, selectinload
 
 from src.ai.llm_schemas import CloudConfig
 from src.ai.encryption_service import EncryptionService
@@ -24,6 +25,15 @@ from src.models.llm_application import LLMApplication, LLMApplicationBinding
 logger = logging.getLogger(__name__)
 
 T = TypeVar('T')
+
+
+def _coerce_uuid(value: Optional[str]) -> Optional[UUID]:
+    """Bind UUID columns consistently (SQLite + Postgres) when tenant_id is passed as str."""
+    if value is None:
+        return None
+    if isinstance(value, UUID):
+        return value
+    return UUID(str(value))
 
 
 class ApplicationLLMManager:
@@ -39,7 +49,7 @@ class ApplicationLLMManager:
     
     def __init__(
         self,
-        db_session: AsyncSession,
+        db_session: Union[AsyncSession, Session],
         cache_manager: CacheManager,
         encryption_service: EncryptionService
     ):
@@ -47,7 +57,7 @@ class ApplicationLLMManager:
         Initialize the ApplicationLLMManager.
         
         Args:
-            db_session: Async database session.
+            db_session: Async or sync SQLAlchemy session (integration tests use sync Session).
             cache_manager: Cache manager instance.
             encryption_service: Encryption service for API keys.
         """
@@ -200,6 +210,12 @@ class ApplicationLLMManager:
         if tenant_id:
             return f"llm:config:{application_code}:{tenant_id}"
         return f"llm:config:{application_code}:global"
+
+    async def _execute(self, stmt):
+        """Run execute on async or sync session (integration tests use sync Session)."""
+        if isinstance(self.db, AsyncSession):
+            return await self.db.execute(stmt)
+        return self.db.execute(stmt)
     
     async def _load_from_database(
         self,
@@ -209,7 +225,7 @@ class ApplicationLLMManager:
         """Load configurations from database with hierarchy resolution."""
         # Step 1: Get application
         stmt = select(LLMApplication).where(LLMApplication.code == application_code)
-        result = await self.db.execute(stmt)
+        result = await self._execute(stmt)
         app = result.scalar_one_or_none()
         
         if not app:
@@ -229,19 +245,23 @@ class ApplicationLLMManager:
             .order_by(LLMApplicationBinding.priority.asc())
         )
         
-        # Step 3: Apply tenant filter with fallback to global
+        # Step 3: Tenant scope merges tenant-scoped configs with global (tenant_id NULL)
+        # so failover lists stay ordered by binding priority across both (Req. 18.8).
         if tenant_id:
-            # Try tenant-specific first
-            tenant_stmt = stmt.where(LLMConfiguration.tenant_id == tenant_id)
-            result = await self.db.execute(tenant_stmt)
-            tenant_bindings = result.scalars().all()
-            
-            if tenant_bindings:
-                return [self._to_cloud_config(b.llm_config) for b in tenant_bindings]
+            tid = _coerce_uuid(tenant_id)
+            merged_stmt = stmt.where(
+                or_(
+                    LLMConfiguration.tenant_id == tid,
+                    LLMConfiguration.tenant_id.is_(None),
+                )
+            )
+            result = await self._execute(merged_stmt)
+            bindings = result.scalars().all()
+            return [self._to_cloud_config(b.llm_config) for b in bindings]
         
-        # Step 4: Fallback to global configurations
-        global_stmt = stmt.where(LLMConfiguration.tenant_id == None)
-        result = await self.db.execute(global_stmt)
+        # Step 4: No tenant context — only global configurations
+        global_stmt = stmt.where(LLMConfiguration.tenant_id.is_(None))
+        result = await self._execute(global_stmt)
         global_bindings = result.scalars().all()
         
         return [self._to_cloud_config(b.llm_config) for b in global_bindings]
@@ -253,7 +273,7 @@ class ApplicationLLMManager:
     ) -> List[LLMApplicationBinding]:
         """Get bindings for retry/timeout settings."""
         stmt = select(LLMApplication).where(LLMApplication.code == application_code)
-        result = await self.db.execute(stmt)
+        result = await self._execute(stmt)
         app = result.scalar_one_or_none()
         
         if not app:
@@ -271,14 +291,18 @@ class ApplicationLLMManager:
         )
         
         if tenant_id:
-            tenant_stmt = stmt.where(LLMConfiguration.tenant_id == tenant_id)
-            result = await self.db.execute(tenant_stmt)
-            tenant_bindings = result.scalars().all()
-            if tenant_bindings:
-                return tenant_bindings
+            tid = _coerce_uuid(tenant_id)
+            merged_stmt = stmt.where(
+                or_(
+                    LLMConfiguration.tenant_id == tid,
+                    LLMConfiguration.tenant_id.is_(None),
+                )
+            )
+            result = await self._execute(merged_stmt)
+            return result.scalars().all()
         
-        global_stmt = stmt.where(LLMConfiguration.tenant_id == None)
-        result = await self.db.execute(global_stmt)
+        global_stmt = stmt.where(LLMConfiguration.tenant_id.is_(None))
+        result = await self._execute(global_stmt)
         return result.scalars().all()
     
     def _to_cloud_config(self, llm_config: LLMConfiguration) -> CloudConfig:
@@ -365,7 +389,7 @@ _app_llm_manager: Optional[ApplicationLLMManager] = None
 
 
 def get_app_llm_manager(
-    db_session: AsyncSession,
+    db_session: Union[AsyncSession, Session],
     cache_manager: Optional[CacheManager] = None,
     encryption_service: Optional[EncryptionService] = None
 ) -> ApplicationLLMManager:

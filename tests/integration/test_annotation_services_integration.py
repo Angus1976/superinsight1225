@@ -109,6 +109,7 @@ class TestAnnotationServicesIntegration:
         from src.ai.annotation_rbac_service import (
             get_annotation_rbac_service,
             AnnotationRole,
+            AnnotationPermission,
         )
         from src.ai.annotation_tenant_isolation import (
             get_annotation_tenant_isolation_service,

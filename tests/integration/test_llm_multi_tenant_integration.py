@@ -57,6 +57,7 @@ def setup_multi_tenant_configs(db_session):
     global_config = LLMConfiguration(
         id=uuid4(),
         name="Global Default",
+        provider="openai",
         default_method="openai",
         is_active=True,
         tenant_id=None,  # Global
@@ -78,6 +79,7 @@ def setup_multi_tenant_configs(db_session):
     tenant_a_config = LLMConfiguration(
         id=uuid4(),
         name="Tenant A Config",
+        provider="openai",
         default_method="openai",
         is_active=True,
         tenant_id=tenant_a_id,
@@ -99,6 +101,7 @@ def setup_multi_tenant_configs(db_session):
     tenant_b_config = LLMConfiguration(
         id=uuid4(),
         name="Tenant B Config",
+        provider="openai",
         default_method="openai",
         is_active=True,
         tenant_id=tenant_b_id,
@@ -119,6 +122,7 @@ def setup_multi_tenant_configs(db_session):
     app_specific_config = LLMConfiguration(
         id=uuid4(),
         name="App1 Tenant A Config",
+        provider="openai",
         default_method="openai",
         is_active=True,
         tenant_id=tenant_a_id,
@@ -155,11 +159,12 @@ def setup_multi_tenant_configs(db_session):
         timeout_seconds=30,
         is_active=True
     )
+    # app2: global is lowest priority; tenant A/B use distinct priorities (unique per app)
     global_binding_app2 = LLMApplicationBinding(
         id=uuid4(),
         llm_config_id=global_config.id,
         application_id=app2.id,
-        priority=1,
+        priority=3,
         max_retries=3,
         timeout_seconds=30,
         is_active=True
@@ -180,14 +185,16 @@ def setup_multi_tenant_configs(db_session):
         id=uuid4(),
         llm_config_id=tenant_b_config.id,
         application_id=app2.id,
-        priority=1,
+        priority=2,
         max_retries=3,
         timeout_seconds=30,
         is_active=True
     )
     db_session.add_all([tenant_a_binding_app2, tenant_b_binding_app2])
     
-    db_session.commit()
+    # Flush only: commit() would persist past the test session's rollback boundary
+    # and break isolation (duplicate llm_applications.code on the next test).
+    db_session.flush()
     
     return {
         "app1": app1,
@@ -458,7 +465,7 @@ class TestOverrideBehavior:
             "base_url": "https://api.tenant-a-updated.example.com/v1",
             "model_name": "gpt-4-tenant-a-updated"
         }
-        db_session.commit()
+        db_session.flush()
         
         # Invalidate cache
         await manager.invalidate_cache(application_code="app2", broadcast=False)
@@ -504,7 +511,7 @@ class TestOverrideBehavior:
             "base_url": "https://api.app1-updated.example.com/v1",
             "model_name": "gpt-4-app1-updated"
         }
-        db_session.commit()
+        db_session.flush()
         
         # Invalidate cache
         await manager.invalidate_cache(application_code="app1", broadcast=False)
@@ -548,7 +555,7 @@ class TestOverrideBehavior:
             "base_url": "https://api.global-updated.example.com/v1",
             "model_name": "gpt-4-global-updated"
         }
-        db_session.commit()
+        db_session.flush()
         
         # Invalidate cache
         await manager.invalidate_cache(application_code=None, broadcast=False)

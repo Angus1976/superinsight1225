@@ -11,13 +11,30 @@ import pytest
 import asyncio
 import time
 import statistics
+import concurrent.futures
 from datetime import datetime
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Tuple, Callable
 from dataclasses import dataclass, field
 from unittest.mock import AsyncMock, MagicMock, patch
 import json
 import random
 import string
+
+
+def _run_async_callable(func: Callable) -> Any:
+    """
+    Run an async callable whether or not the current thread already has a running event loop
+    (e.g. under pytest-asyncio). Avoids ``run_until_complete`` when a loop is already running.
+    """
+    coro = func()
+    if not asyncio.iscoroutine(coro):
+        raise TypeError(f"Expected coroutine from {func!r}, got {type(coro)}")
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(coro)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+        return executor.submit(asyncio.run, coro).result()
 
 
 @dataclass
@@ -83,7 +100,7 @@ class PerformanceBenchmark:
         # Warmup
         for _ in range(warmup):
             if asyncio.iscoroutinefunction(func):
-                asyncio.get_event_loop().run_until_complete(func())
+                _run_async_callable(func)
             else:
                 func()
 
@@ -92,7 +109,7 @@ class PerformanceBenchmark:
         for _ in range(iterations):
             start = time.perf_counter()
             if asyncio.iscoroutinefunction(func):
-                asyncio.get_event_loop().run_until_complete(func())
+                _run_async_callable(func)
             else:
                 func()
             end = time.perf_counter()
@@ -325,12 +342,14 @@ class TestRelationOperationsBenchmark:
     @pytest.fixture
     def db(self):
         db = MockGraphDatabase()
-        # Pre-populate with entities
-        loop = asyncio.get_event_loop()
+        # Sync populate — avoid asyncio.run() in fixtures (breaks pytest-asyncio loop on main thread)
         for i in range(100):
-            loop.run_until_complete(
-                db.create_entity({"name": f"Entity_{i}", "type": "PERSON"})
-            )
+            entity_id = f"entity_{len(db.entities)}"
+            db.entities[entity_id] = {
+                "name": f"Entity_{i}",
+                "type": "PERSON",
+                "id": entity_id,
+            }
         return db
 
     @pytest.fixture

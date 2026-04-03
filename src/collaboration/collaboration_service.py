@@ -108,6 +108,7 @@ class CollaborationSession:
     changes: List[Change] = field(default_factory=list)
     conflicts: List[Conflict] = field(default_factory=list)
     is_active: bool = True
+    last_activity: Optional[datetime] = None
 
 
 @dataclass
@@ -132,12 +133,33 @@ class CollaborationService:
         self._sessions: Dict[UUID, CollaborationSession] = {}
         self._locks: Dict[UUID, ElementLock] = {}  # element_id -> ElementLock
         self._versions: Dict[UUID, List[Version]] = {}  # element_id -> List[Version]
-        self._lock = asyncio.Lock()
+        self._lock: Optional[asyncio.Lock] = None
 
         # Configuration
         self._lock_ttl = 300  # 5 minutes
         self._heartbeat_timeout = 60  # 1 minute
         self._broadcast_timeout = 2.0  # 2 seconds
+
+    async def _ensure_async_lock(self) -> None:
+        if self._lock is None:
+            self._lock = asyncio.Lock()
+
+    async def get_session(self, session_id: UUID) -> Optional[CollaborationSession]:
+        """Return an in-memory collaboration session if it exists."""
+        await self._ensure_async_lock()
+        async with self._lock:
+            return self._sessions.get(session_id)
+
+    async def ensure_websocket_session(self, session_id: UUID) -> CollaborationSession:
+        """Ensure a session exists for WebSocket-only flows (no prior REST create_session)."""
+        await self._ensure_async_lock()
+        async with self._lock:
+            existing = self._sessions.get(session_id)
+            if existing and existing.is_active:
+                return existing
+            session = CollaborationSession(session_id=session_id, name="websocket")
+            self._sessions[session_id] = session
+            return session
 
     async def create_session(
         self,
@@ -159,6 +181,7 @@ class CollaborationService:
         Returns:
             Created collaboration session
         """
+        await self._ensure_async_lock()
         async with self._lock:
             session = CollaborationSession(
                 ontology_id=ontology_id,
@@ -196,6 +219,7 @@ class CollaborationService:
         Returns:
             Participant object if successful, None if session not found
         """
+        await self._ensure_async_lock()
         async with self._lock:
             session = self._sessions.get(session_id)
             if not session or not session.is_active:
@@ -232,6 +256,7 @@ class CollaborationService:
         Returns:
             True if successful
         """
+        await self._ensure_async_lock()
         async with self._lock:
             session = self._sessions.get(session_id)
             if not session:
@@ -270,6 +295,7 @@ class CollaborationService:
         Returns:
             ElementLock if successful, None if element is already locked
         """
+        await self._ensure_async_lock()
         async with self._lock:
             session = self._sessions.get(session_id)
             if not session or not session.is_active:
@@ -304,6 +330,7 @@ class CollaborationService:
 
             session.active_locks[element_id] = lock
             self._locks[element_id] = lock
+            session.last_activity = datetime.utcnow()
 
             # Broadcast lock event
             await self._broadcast_change(session, Change(
@@ -332,6 +359,7 @@ class CollaborationService:
         Returns:
             True if successful
         """
+        await self._ensure_async_lock()
         async with self._lock:
             session = self._sessions.get(session_id)
             if not session:
@@ -398,6 +426,7 @@ class CollaborationService:
         Returns:
             Change object
         """
+        await self._ensure_async_lock()
         async with self._lock:
             session = self._sessions.get(session_id)
             if not session:
@@ -419,6 +448,7 @@ class CollaborationService:
             )
 
             session.changes.append(change)
+            session.last_activity = datetime.utcnow()
 
             # Create version entry
             version = Version(
@@ -517,6 +547,7 @@ class CollaborationService:
         Returns:
             True if successful
         """
+        await self._ensure_async_lock()
         async with self._lock:
             session = self._sessions.get(session_id)
             if not session:
@@ -596,6 +627,7 @@ class CollaborationService:
         Returns:
             List of versions, most recent first
         """
+        await self._ensure_async_lock()
         async with self._lock:
             versions = self._versions.get(element_id, [])
             return list(reversed(versions[-limit:]))
@@ -620,6 +652,7 @@ class CollaborationService:
         Returns:
             New version created from restoration, or None if failed
         """
+        await self._ensure_async_lock()
         async with self._lock:
             versions = self._versions.get(element_id, [])
             if not versions:
@@ -654,6 +687,7 @@ class CollaborationService:
         Returns:
             List of active sessions
         """
+        await self._ensure_async_lock()
         async with self._lock:
             return [s for s in self._sessions.values() if s.is_active]
 
@@ -663,6 +697,7 @@ class CollaborationService:
         Returns:
             Number of locks cleaned up
         """
+        await self._ensure_async_lock()
         async with self._lock:
             expired_count = 0
             now = datetime.utcnow()
@@ -685,6 +720,7 @@ class CollaborationService:
         Returns:
             Number of participants marked inactive
         """
+        await self._ensure_async_lock()
         async with self._lock:
             inactive_count = 0
             now = datetime.utcnow()

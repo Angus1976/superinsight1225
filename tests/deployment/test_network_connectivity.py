@@ -7,6 +7,7 @@ Validates Property 21: Deployment Test Service Accessibility
 """
 
 import os
+import re
 import time
 import pytest
 import subprocess
@@ -536,7 +537,7 @@ class NetworkConnectivityTests:
                 assert ip_address, \
                     "App container does not have an IP address in the network"
                 # Valid IP address format
-                assert ip_address.match(r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$'), \
+                assert re.match(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$", ip_address), \
                     f"Invalid IP address format: {ip_address}"
             else:
                 pytest.skip("Could not inspect app container")

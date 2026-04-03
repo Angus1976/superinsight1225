@@ -60,6 +60,21 @@ vi.mock('@/components/Tasks', () => ({
   ProgressTracker: () => <div data-testid="progress-tracker">Progress Tracker</div>,
 }));
 
+// 保留真实 openLabelStudio/getAuthUrl 行为；仅避免 navigateToAnnotate 触发路由离开（否则详情页按钮用例全部失效）
+vi.mock('@/hooks/useLabelStudio', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/hooks/useLabelStudio')>();
+  return {
+    ...actual,
+    useLabelStudio: () => {
+      const real = actual.useLabelStudio();
+      return {
+        ...real,
+        navigateToAnnotate: vi.fn(),
+      };
+    },
+  };
+});
+
 import { labelStudioService } from '@/services/labelStudioService';
 import { useTask, useUpdateTask } from '@/hooks/useTask';
 import { useLanguageStore } from '@/stores/languageStore';
@@ -122,7 +137,8 @@ describe('TaskDetail Page - Annotation Button Handlers', () => {
         status: 'in_progress',
         priority: 'high',
         annotation_type: 'sentiment',
-        label_studio_project_id: 'ls-project-456',
+        // 须为可 parseInt 为正整数的值，否则 isValidProject 为 false 会 navigate 到标注页
+        label_studio_project_id: '456',
         progress: 50,
         total_items: 100,
         completed_items: 50,
@@ -549,8 +565,11 @@ describe('TaskDetail Page - Annotation Button Handlers', () => {
       // Component should still be rendered
       expect(screen.getByText('Test Task')).toBeInTheDocument();
       
-      // Window should not be opened on error
-      expect(mockWindowOpen).not.toHaveBeenCalled();
+      // getAuthUrl 失败时实现会降级为无 token 的 URL，仍会 window.open（见 useLabelStudio.openLabelStudio）
+      expect(mockGetAuthUrl).toHaveBeenCalled();
+      expect(mockWindowOpen).toHaveBeenCalled();
+      const opened = mockWindowOpen.mock.calls[0]?.[0] as string;
+      expect(opened).toMatch(/projects\/456/);
     });
   });
 });

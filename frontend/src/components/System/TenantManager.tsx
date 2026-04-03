@@ -144,7 +144,7 @@ const TenantManager: React.FC = () => {
       dataIndex: 'plan',
       key: 'plan',
       render: (plan: keyof typeof planColors) => (
-        <Tag color={planColors[plan]}>{t(`tenants.plan.${plan}`)}</Tag>
+        <Tag color={planColors[plan]}>{t(`tenants.plans.${plan}`)}</Tag>
       ),
     },
     {

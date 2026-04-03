@@ -1424,6 +1424,9 @@ except Exception as e:
     traceback.print_exc()
 
 # Dynamically include available API routers
+_optional_routers_registered: bool = False
+
+
 async def include_optional_routers():
     """Include optional API routers if available.
     
@@ -1434,8 +1437,15 @@ async def include_optional_routers():
     - ❌ Error (registration failed)
     
     Validates: Requirements 3.2 - 详细的日志记录每个 API 的注册状态
-    """
     
+    Idempotent: lifespan and legacy on_event startup both call this; duplicate
+    include_router() calls corrupt the route tree (RecursionError in tests).
+    """
+    global _optional_routers_registered
+    if _optional_routers_registered:
+        logger.debug("Optional API routers already registered, skipping duplicate call")
+        return
+
     # Quality management router
     try:
         from src.api.quality import router as quality_router
@@ -1996,67 +2006,8 @@ async def include_optional_routers():
     except Exception as e:
         logger.error(f"❌ Collaboration API failed to load: {e}")
     
-    # Ontology Expert Collaboration router
-    # Requirements: Ontology Expert Collaboration spec - Tasks 15.1-15.7
-    try:
-        from src.api.ontology_expert_collaboration import router as ontology_collab_router
-        app.include_router(ontology_collab_router)
-        _track_api_registration(
-            module_path="src.api.ontology_expert_collaboration",
-            prefix="/api/v1/ontology-collaboration",
-            tags=["Ontology Expert Collaboration"],
-            success=True
-        )
-        logger.info("✅ Ontology Expert Collaboration API registered: /api/v1/ontology-collaboration")
-    except ImportError as e:
-        _track_api_registration(
-            module_path="src.api.ontology_expert_collaboration",
-            prefix="/api/v1/ontology-collaboration",
-            tags=["Ontology Expert Collaboration"],
-            success=False,
-            error=str(e)
-        )
-        logger.warning(f"⚠️ Ontology Expert Collaboration API not available: {e}")
-    except Exception as e:
-        _track_api_registration(
-            module_path="src.api.ontology_expert_collaboration",
-            prefix="/api/v1/ontology-collaboration",
-            tags=["Ontology Expert Collaboration"],
-            success=False,
-            error=str(e)
-        )
-        logger.error(f"❌ Ontology Expert Collaboration API failed to load: {e}")
-    
-    # Ontology Expert Collaboration WebSocket router
-    # Requirements: Ontology Expert Collaboration spec - Task 16
-    try:
-        from src.api.ontology_collaboration_websocket import router as ontology_ws_router
-        app.include_router(ontology_ws_router)
-        _track_api_registration(
-            module_path="src.api.ontology_collaboration_websocket",
-            prefix="/api/v1/ontology-collaboration/ws",
-            tags=["Ontology Expert Collaboration WebSocket"],
-            success=True
-        )
-        logger.info("✅ Ontology Expert Collaboration WebSocket API registered")
-    except ImportError as e:
-        _track_api_registration(
-            module_path="src.api.ontology_collaboration_websocket",
-            prefix="/api/v1/ontology-collaboration/ws",
-            tags=["Ontology Expert Collaboration WebSocket"],
-            success=False,
-            error=str(e)
-        )
-        logger.warning(f"⚠️ Ontology Expert Collaboration WebSocket API not available: {e}")
-    except Exception as e:
-        _track_api_registration(
-            module_path="src.api.ontology_collaboration_websocket",
-            prefix="/api/v1/ontology-collaboration/ws",
-            tags=["Ontology Expert Collaboration WebSocket"],
-            success=False,
-            error=str(e)
-        )
-        logger.error(f"❌ Ontology Expert Collaboration WebSocket API failed to load: {e}")
+    # Ontology Expert Collaboration REST + WS: registered in _include_optional_routers_sync()
+    # so TestClient works without running ASGI lifespan.
     
     # Text-to-SQL router
     try:
@@ -2529,6 +2480,9 @@ async def include_optional_routers():
     # Validates: Requirements 3.2 - 详细的日志记录每个 API 的注册状态
     _log_api_registration_summary()
 
+    _optional_routers_registered = True
+
+
 # Include ISO 27001 Compliance API router - comprehensive information security management
 try:
     from src.api.iso27001_compliance_api import router as iso27001_compliance_router
@@ -2752,6 +2706,75 @@ def _include_optional_routers_sync():
             error=str(e)
         )
         logger.error(f"❌ Data Permissions API failed to load: {e}")
+    
+    # Collaboration router (same subset as async include_optional_routers)
+    try:
+        from src.api.collaboration import router as collaboration_router
+        app.include_router(collaboration_router)
+        logger.info("✅ Collaboration API loaded successfully")
+    except ImportError as e:
+        logger.warning(f"⚠️ Collaboration API not available: {e}")
+    except Exception as e:
+        logger.error(f"❌ Collaboration API failed to load: {e}")
+    
+    # Ontology Expert Collaboration REST + WebSocket (tests use TestClient without lifespan)
+    try:
+        from src.api.ontology_expert_collaboration import router as ontology_collab_router
+        app.include_router(ontology_collab_router, prefix="/api/v1")
+        _track_api_registration(
+            module_path="src.api.ontology_expert_collaboration",
+            prefix="/api/v1/ontology-collaboration",
+            tags=["Ontology Expert Collaboration"],
+            success=True
+        )
+        logger.info("✅ Ontology Expert Collaboration API registered: /api/v1/ontology-collaboration")
+    except ImportError as e:
+        _track_api_registration(
+            module_path="src.api.ontology_expert_collaboration",
+            prefix="/api/v1/ontology-collaboration",
+            tags=["Ontology Expert Collaboration"],
+            success=False,
+            error=str(e)
+        )
+        logger.warning(f"⚠️ Ontology Expert Collaboration API not available: {e}")
+    except Exception as e:
+        _track_api_registration(
+            module_path="src.api.ontology_expert_collaboration",
+            prefix="/api/v1/ontology-collaboration",
+            tags=["Ontology Expert Collaboration"],
+            success=False,
+            error=str(e)
+        )
+        logger.error(f"❌ Ontology Expert Collaboration API failed to load: {e}")
+    
+    try:
+        from src.api.ontology_collaboration_websocket import router as ontology_ws_router
+        app.include_router(ontology_ws_router, prefix="/api/v1")
+        _track_api_registration(
+            module_path="src.api.ontology_collaboration_websocket",
+            prefix="/api/v1/ontology-collaboration/ws",
+            tags=["Ontology Expert Collaboration WebSocket"],
+            success=True
+        )
+        logger.info("✅ Ontology Expert Collaboration WebSocket API registered")
+    except ImportError as e:
+        _track_api_registration(
+            module_path="src.api.ontology_collaboration_websocket",
+            prefix="/api/v1/ontology-collaboration/ws",
+            tags=["Ontology Expert Collaboration WebSocket"],
+            success=False,
+            error=str(e)
+        )
+        logger.warning(f"⚠️ Ontology Expert Collaboration WebSocket API not available: {e}")
+    except Exception as e:
+        _track_api_registration(
+            module_path="src.api.ontology_collaboration_websocket",
+            prefix="/api/v1/ontology-collaboration/ws",
+            tags=["Ontology Expert Collaboration WebSocket"],
+            success=False,
+            error=str(e)
+        )
+        logger.error(f"❌ Ontology Expert Collaboration WebSocket API failed to load: {e}")
 
 # Call synchronously at module load
 _include_optional_routers_sync()

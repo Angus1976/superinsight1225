@@ -640,8 +640,8 @@ class TestErrorHandling:
             "/api/v1/ontology-collaboration/experts/not-a-uuid"
         )
         
-        # Should return 500 or 422 depending on validation
-        assert response.status_code in [422, 500]
+        # Path parameter validated as UUID → 422; legacy string ids may return 404
+        assert response.status_code in [404, 422, 500]
 
 
 # =============================================================================

@@ -112,6 +112,9 @@ class DatabaseManager:
 # Global database manager instance
 db_manager = DatabaseManager()
 
+# Backward-compatible session context manager (same as ``db_manager.get_session``)
+get_session = db_manager.get_session
+
 
 def get_db_session() -> Session:
     """Dependency function to get database session for FastAPI"""

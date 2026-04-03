@@ -12,6 +12,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@/test/test-utils';
 import userEvent from '@testing-library/user-event';
+import i18n from '@/locales/config';
 import AIAssistancePanel from '../AIAssistancePanel';
 
 // Mock WebSocket hook
@@ -24,35 +25,6 @@ vi.mock('@/hooks/useWebSocket', () => ({
     on: mockWsOn,
     off: mockWsOff,
     emit: mockWsEmit,
-  }),
-}));
-
-// Mock i18next
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string, options?: any) => {
-      const translations: Record<string, string> = {
-        'annotation:titles.ai_assistance': 'AI Assistance',
-        'annotation:sections.quality_alerts': 'Quality Alerts',
-        'annotation:sections.ai_suggestions': 'AI Suggestions',
-        'annotation:messages.ai_connected': 'AI assistance connected',
-        'annotation:messages.ai_disconnected': 'AI assistance disconnected',
-        'annotation:messages.ai_suggestions_received': `Received ${options?.count || 0} AI suggestion(s)`,
-        'annotation:messages.ai_suggestions_loaded': `Loaded ${options?.count || 0} AI suggestion(s)`,
-        'annotation:messages.no_suggestions': 'No AI suggestions available',
-        'annotation:messages.loading_suggestions': 'Loading AI suggestions...',
-        'annotation:messages.suggestion_accepted': 'Suggestion accepted',
-        'annotation:messages.suggestion_rejected': 'Suggestion rejected',
-        'annotation:actions.refresh_suggestions': 'Refresh Suggestions',
-        'annotation:actions.request_suggestions': 'Request Suggestions',
-        'annotation:errors.ai_suggestions_failed': 'Failed to load AI suggestions',
-        'annotation:errors.suggestion_feedback_failed': 'Failed to submit feedback',
-        'common:status.connected': 'Connected',
-        'common:status.disconnected': 'Disconnected',
-        'ai_annotation:fields.threshold': 'Threshold',
-      };
-      return translations[key] || key;
-    },
   }),
 }));
 
@@ -92,6 +64,18 @@ const mockQualityAlert = {
   timestamp: '2026-01-24T10:00:00Z',
 };
 
+async function expandQualityAlertsPanel(
+  user: ReturnType<typeof userEvent.setup>,
+  container: HTMLElement
+) {
+  await waitFor(() => {
+    const header = container.querySelector('.ai-assistance-panel .ant-collapse-header');
+    expect(header).toBeTruthy();
+  });
+  const header = container.querySelector('.ai-assistance-panel .ant-collapse-header') as HTMLElement;
+  await user.click(header);
+}
+
 describe('AIAssistancePanel', () => {
   const defaultProps = {
     taskId: 1,
@@ -100,8 +84,9 @@ describe('AIAssistancePanel', () => {
     onSuggestionReject: vi.fn(),
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
+    await i18n.changeLanguage('en');
     (global.fetch as any).mockResolvedValue({
       ok: true,
       json: async () => ({ suggestions: [] }),
@@ -161,12 +146,15 @@ describe('AIAssistancePanel', () => {
   });
 
   it('displays quality alerts when received via WebSocket', async () => {
-    render(<AIAssistancePanel {...defaultProps} />);
+    const user = userEvent.setup();
+    const { container } = render(<AIAssistancePanel {...defaultProps} />);
 
     // Simulate quality alert via WebSocket
     const alertHandler = mockWsOn.mock.calls.find((call) => call[0] === 'quality_alert')?.[1];
     expect(alertHandler).toBeDefined();
     alertHandler?.(mockQualityAlert);
+
+    await expandQualityAlertsPanel(user, container);
 
     await waitFor(() => {
       expect(screen.getByText('Low confidence detected')).toBeInTheDocument();
@@ -258,13 +246,10 @@ describe('AIAssistancePanel', () => {
     const rejectButton = screen.getByRole('button', { name: /reject/i });
     await user.click(rejectButton);
 
-    // Modal should open - find confirm button in modal
     await waitFor(() => {
-      const modalConfirmButton = screen.getAllByRole('button').find((btn) =>
-        btn.textContent?.includes('OK') || btn.textContent?.includes('确定')
-      );
-      expect(modalConfirmButton).toBeInTheDocument();
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
+    await user.click(screen.getByRole('button', { name: /^confirm$/i }));
   });
 
   it('shows empty state when no suggestions available', () => {
@@ -288,12 +273,14 @@ describe('AIAssistancePanel', () => {
         )
     );
 
-    render(<AIAssistancePanel {...defaultProps} />);
+    const { container } = render(<AIAssistancePanel {...defaultProps} />);
 
     const refreshButton = screen.getByRole('button', { name: /refresh suggestions/i });
     await user.click(refreshButton);
 
-    expect(screen.getByText('Loading AI suggestions...')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(container.querySelector('.ant-spin-spinning')).toBeInTheDocument();
+    });
   });
 
   it('handles API errors gracefully', async () => {
@@ -324,7 +311,8 @@ describe('AIAssistancePanel', () => {
   });
 
   it('limits quality alerts to 5 most recent', async () => {
-    render(<AIAssistancePanel {...defaultProps} />);
+    const user = userEvent.setup();
+    const { container } = render(<AIAssistancePanel {...defaultProps} />);
 
     const alertHandler = mockWsOn.mock.calls.find((call) => call[0] === 'quality_alert')?.[1];
 
@@ -337,8 +325,9 @@ describe('AIAssistancePanel', () => {
       });
     }
 
+    await expandQualityAlertsPanel(user, container);
+
     await waitFor(() => {
-      // Should only show 5 alerts
       expect(screen.queryByText('Alert 0')).not.toBeInTheDocument();
       expect(screen.getByText('Alert 5')).toBeInTheDocument();
     });

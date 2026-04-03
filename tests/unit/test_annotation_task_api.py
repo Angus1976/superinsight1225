@@ -134,7 +134,7 @@ def test_create_task_success(client, sample_data):
     
     response = client.post('/api/annotation-tasks', json=request_data)
     
-    assert response.status_code == 201
+    assert response.status_code == 201, response.text
     data = response.json()
     assert data['name'] == 'Test Annotation Task'
     assert data['description'] == 'Test task description'

@@ -27,6 +27,55 @@ from src.database.connection import Base
 logger = logging.getLogger(__name__)
 
 
+def ensure_sqlite_test_schema(engine: Engine) -> None:
+    """
+    Ensure all ORM tables exist on a SQLite test engine (idempotent).
+
+    Shared session-scoped in-memory engines can end up without some tables if an
+    early ``create_all`` aborted mid-metadata, or if stray DDL ran against the
+    same metadata. Integration tests that rely on ``temp_data`` / ``samples`` /
+    ``llm_applications`` call this via the root ``db_session`` fixture.
+
+    We only ``CREATE`` the few tables integration tests need. A full
+    ``metadata.create_all`` here can raise duplicate *index* errors on SQLite
+    (``checkfirst`` applies to tables, not indexes) even when canary tables are
+    missing, so we avoid blanket ``create_all`` in this repair path.
+    """
+    if engine.dialect.name != "sqlite":
+        return
+
+    from sqlalchemy import inspect
+
+    try:
+        names = set(inspect(engine).get_table_names())
+    except Exception:
+        names = set()
+
+    required = ("temp_data", "samples", "llm_applications")
+    if names and all(t in names for t in required):
+        return
+
+    import src.database.models  # noqa: F401 — register models on Base.metadata
+
+    from src.models.data_lifecycle import TempDataModel, SampleModel
+    from src.models.llm_configuration import LLMConfiguration
+    from src.models.llm_application import LLMApplication, LLMApplicationBinding
+
+    for table in (
+        TempDataModel.__table__,
+        SampleModel.__table__,
+        LLMConfiguration.__table__,
+        LLMApplication.__table__,
+        LLMApplicationBinding.__table__,
+    ):
+        try:
+            table.create(bind=engine, checkfirst=True)
+        except Exception as exc:
+            msg = str(exc).lower()
+            if "already exists" not in msg:
+                raise
+
+
 # =============================================================================
 # Test Database Configuration
 # =============================================================================
@@ -89,9 +138,44 @@ class TestDatabaseEngineFactory:
             poolclass=StaticPool,
             echo=False,
         )
-        
-        # Create all tables
-        Base.metadata.create_all(bind=engine)
+
+        # SQLite cannot create tables that use PostgreSQL JSONB unless compiled to JSON.
+        from sqlalchemy.dialects.postgresql import JSONB
+        from sqlalchemy.ext.compiler import compiles
+
+        @compiles(JSONB, "sqlite")
+        def _compile_jsonb_sqlite(type_, compiler, **kw):
+            return "JSON"
+
+        # Register all ORM models on Base.metadata (connection.Base alone is not enough).
+        import src.database.models  # noqa: F401
+
+        # Create all tables. When test modules are imported in different orders within
+        # the same Python process, some indexes can be registered on Base.metadata
+        # more than once (e.g. structuring_jobs tenant/status index). SQLite does not
+        # support "IF NOT EXISTS" on CREATE INDEX in this path, so we defensively
+        # ignore "already exists" errors during metadata.create_all for the in‑memory
+        # test engine.
+        from sqlalchemy.exc import OperationalError
+
+        try:
+            Base.metadata.create_all(bind=engine)
+        except OperationalError as exc:
+            msg = str(exc).lower()
+            if "already exists" not in msg:
+                raise
+
+        # Some integration tests (e.g. approval notifications) use raw SQL
+        # against the ``users`` and ``approval_requests`` tables. In rare import
+        # orders, these models can be registered on Base.metadata later than the
+        # main create_all call above; ensure the core tables exist explicitly.
+        from src.security.models import UserModel
+        from src.models.approval_request_db import ApprovalRequestRow
+        from src.models.notification_db import InternalMessageRow
+
+        UserModel.__table__.create(bind=engine, checkfirst=True)
+        ApprovalRequestRow.__table__.create(bind=engine, checkfirst=True)
+        InternalMessageRow.__table__.create(bind=engine, checkfirst=True)
         
         logger.info("Created SQLite in-memory test database engine")
         return engine

@@ -357,6 +357,36 @@ class AnnotationRBACService:
 
             return False
 
+    def _get_user_roles_unlocked(
+        self,
+        tenant_id: UUID,
+        user_id: UUID,
+        scope: Optional[str] = None,
+        scope_id: Optional[UUID] = None,
+    ) -> List[UserRole]:
+        """Return roles for user/tenant; caller must hold ``self._lock`` if needed."""
+        if user_id not in self._user_roles:
+            return []
+
+        roles = [
+            r for r in self._user_roles[user_id]
+            if r.tenant_id == tenant_id
+        ]
+
+        if scope:
+            roles = [r for r in roles if r.scope == scope]
+
+        if scope_id:
+            roles = [r for r in roles if r.scope_id == scope_id]
+
+        now = datetime.utcnow()
+        roles = [
+            r for r in roles
+            if r.expires_at is None or r.expires_at > now
+        ]
+
+        return roles
+
     async def get_user_roles(
         self,
         tenant_id: UUID,
@@ -376,30 +406,9 @@ class AnnotationRBACService:
             List of user role assignments
         """
         async with self._lock:
-            if user_id not in self._user_roles:
-                return []
-
-            roles = [
-                r for r in self._user_roles[user_id]
-                if r.tenant_id == tenant_id
-            ]
-
-            # Filter by scope
-            if scope:
-                roles = [r for r in roles if r.scope == scope]
-
-            # Filter by scope_id
-            if scope_id:
-                roles = [r for r in roles if r.scope_id == scope_id]
-
-            # Remove expired roles
-            now = datetime.utcnow()
-            roles = [
-                r for r in roles
-                if r.expires_at is None or r.expires_at > now
-            ]
-
-            return roles
+            return self._get_user_roles_unlocked(
+                tenant_id, user_id, scope, scope_id
+            )
 
     async def check_permission(
         self,
@@ -422,10 +431,10 @@ class AnnotationRBACService:
             Permission check result
         """
         async with self._lock:
-            # Get user roles
-            user_roles = await self.get_user_roles(
+            # Get user roles (must not call get_user_roles: same lock is not re-entrant)
+            user_roles = self._get_user_roles_unlocked(
                 tenant_id=tenant_id,
-                user_id=user_id
+                user_id=user_id,
             )
 
             matched_roles = []
@@ -582,11 +591,11 @@ class AnnotationRBACService:
             Set of permissions
         """
         async with self._lock:
-            user_roles = await self.get_user_roles(
+            user_roles = self._get_user_roles_unlocked(
                 tenant_id=tenant_id,
                 user_id=user_id,
                 scope=scope,
-                scope_id=scope_id
+                scope_id=scope_id,
             )
 
             permissions = set()

@@ -663,6 +663,10 @@ class GraphPredictor:
         return candidates
 
 
+# Backward-compatible name for integration tests
+LinkPredictor = GraphPredictor
+
+
 # Global instance
 _graph_predictor: Optional[GraphPredictor] = None
 

@@ -82,37 +82,34 @@ class TestApprovalExpiryWorkflow:
     ):
         """Test creating an approval and expiring it."""
         # Mock database operations
-        from unittest.mock import patch
-        from sqlalchemy import text
-        
+        from unittest.mock import patch, Mock
+
         approval_id = None
-        
-        with patch.object(db_session, 'execute') as mock_execute:
-            with patch.object(db_session, 'commit'):
-                # Mock approval creation
-                mock_execute.return_value = None
-                
-                # Create approval request
-                approval = await approval_service.create_approval_request(
-                    transfer_request=sample_transfer_request,
-                    requester_id="user-123",
-                    requester_role=UserRole.DATA_ANALYST
-                )
-                
-                approval_id = approval.id
-                assert approval.status == ApprovalStatus.PENDING
-                
-                # Mock the approval as expired (simulate time passing)
-                approval.expires_at = datetime.utcnow() - timedelta(days=1)
-                
-                # Mock fetching expired approvals
-                mock_execute.return_value.rowcount = 1
-                
-                # Run expiry check
-                expired_count = approval_service.expire_old_approvals()
-                
-                assert expired_count == 1
-    
+
+        with patch.object(
+            approval_service, "_get_eligible_approvers", return_value=[]
+        ):
+            with patch.object(db_session, 'execute') as mock_execute:
+                with patch.object(db_session, 'commit'):
+                    mock_execute.return_value = Mock()
+
+                    # Create approval request
+                    approval = await approval_service.create_approval_request(
+                        transfer_request=sample_transfer_request,
+                        requester_id="user-123",
+                        requester_role=UserRole.DATA_ANALYST
+                    )
+
+                    approval_id = approval.id
+                    assert approval.status == ApprovalStatus.PENDING
+
+                    approval.expires_at = datetime.utcnow() - timedelta(days=1)
+
+                    mock_execute.return_value = Mock(rowcount=1)
+                    expired_count = approval_service.expire_old_approvals()
+
+                    assert expired_count == 1
+
     @pytest.mark.asyncio
     async def test_scheduler_expires_old_approvals(
         self,
@@ -133,7 +130,7 @@ class TestApprovalExpiryWorkflow:
                 mock_db_manager.get_session.return_value.__aenter__.return_value = db_session
                 
                 # Mock ApprovalService
-                with patch('src.services.approval_scheduler.ApprovalService') as mock_service_class:
+                with patch('src.services.approval_service.ApprovalService') as mock_service_class:
                     mock_service = Mock()
                     mock_service.expire_old_approvals.return_value = 3
                     mock_service_class.return_value = mock_service
@@ -161,26 +158,27 @@ class TestApprovalExpiryWorkflow:
     ):
         """Test expiring multiple approvals at once."""
         from unittest.mock import patch
-        
-        with patch.object(db_session, 'execute') as mock_execute:
-            with patch.object(db_session, 'commit'):
-                # Create multiple approval requests
-                approvals = []
-                for i in range(5):
-                    approval = await approval_service.create_approval_request(
-                        transfer_request=sample_transfer_request,
-                        requester_id=f"user-{i}",
-                        requester_role=UserRole.DATA_ANALYST
-                    )
-                    approvals.append(approval)
-                
-                # Mock all as expired
-                mock_execute.return_value.rowcount = 5
-                
-                # Run expiry check
-                expired_count = approval_service.expire_old_approvals()
-                
-                assert expired_count == 5
+
+        with patch.object(approval_service, "_get_eligible_approvers", return_value=[]):
+            with patch.object(db_session, 'execute') as mock_execute:
+                with patch.object(db_session, 'commit'):
+                    # Create multiple approval requests
+                    approvals = []
+                    for i in range(5):
+                        approval = await approval_service.create_approval_request(
+                            transfer_request=sample_transfer_request,
+                            requester_id=f"user-{i}",
+                            requester_role=UserRole.DATA_ANALYST
+                        )
+                        approvals.append(approval)
+
+                    # Mock all as expired
+                    mock_execute.return_value.rowcount = 5
+
+                    # Run expiry check
+                    expired_count = approval_service.expire_old_approvals()
+
+                    assert expired_count == 5
     
     @pytest.mark.asyncio
     async def test_no_approvals_to_expire(
@@ -216,7 +214,7 @@ class TestApprovalExpiryWorkflow:
             with patch('src.services.approval_scheduler.db_manager') as mock_db_manager:
                 mock_db_manager.get_session.return_value.__aenter__.return_value = db_session
                 
-                with patch('src.services.approval_scheduler.ApprovalService') as mock_service_class:
+                with patch('src.services.approval_service.ApprovalService') as mock_service_class:
                     mock_service = Mock()
                     mock_service.expire_old_approvals.return_value = 2
                     mock_service_class.return_value = mock_service
@@ -253,7 +251,7 @@ class TestApprovalExpiryWorkflow:
             with patch('src.services.approval_scheduler.db_manager') as mock_db_manager:
                 mock_db_manager.get_session.return_value.__aenter__.return_value = db_session
                 
-                with patch('src.services.approval_scheduler.ApprovalService') as mock_service_class:
+                with patch('src.services.approval_service.ApprovalService') as mock_service_class:
                     mock_service = Mock()
                     mock_service.expire_old_approvals.return_value = 4
                     mock_service_class.return_value = mock_service
@@ -282,42 +280,43 @@ class TestApprovalExpiryWorkflow:
         from sqlalchemy import text
         import json
         
-        with patch.object(db_session, 'execute') as mock_execute:
-            with patch.object(db_session, 'commit'):
-                # Create approval
-                approval = await approval_service.create_approval_request(
-                    transfer_request=sample_transfer_request,
-                    requester_id="user-123",
-                    requester_role=UserRole.DATA_ANALYST
-                )
-                
-                # Set as expired
-                approval.expires_at = datetime.utcnow() - timedelta(days=1)
-                
-                # Mock fetching the approval
-                mock_result = Mock()
-                mock_result.fetchone.return_value = (
-                    approval.id,
-                    sample_transfer_request.model_dump_json(),
-                    approval.requester_id,
-                    approval.requester_role.value,
-                    ApprovalStatus.PENDING.value,
-                    approval.created_at,
-                    approval.expires_at,
-                    None,
-                    None,
-                    None
-                )
-                mock_execute.return_value = mock_result
-                
-                # Try to approve expired approval
-                with pytest.raises(ValueError, match="expired"):
-                    await approval_service.approve_request(
-                        approval_id=approval.id,
-                        approver_id="admin-123",
-                        approver_role=UserRole.ADMIN,
-                        approved=True
+        with patch.object(approval_service, "_get_eligible_approvers", return_value=[]):
+            with patch.object(db_session, 'execute') as mock_execute:
+                with patch.object(db_session, 'commit'):
+                    # Create approval
+                    approval = await approval_service.create_approval_request(
+                        transfer_request=sample_transfer_request,
+                        requester_id="user-123",
+                        requester_role=UserRole.DATA_ANALYST
                     )
+
+                    # Set as expired
+                    approval.expires_at = datetime.utcnow() - timedelta(days=1)
+
+                    # Mock fetching the approval
+                    mock_result = Mock()
+                    mock_result.fetchone.return_value = (
+                        approval.id,
+                        sample_transfer_request.model_dump_json(),
+                        approval.requester_id,
+                        approval.requester_role,
+                        ApprovalStatus.PENDING.value,
+                        approval.created_at,
+                        approval.expires_at,
+                        None,
+                        None,
+                        None
+                    )
+                    mock_execute.return_value = mock_result
+
+                    # Try to approve expired approval
+                    with pytest.raises(ValueError, match="expired"):
+                        await approval_service.approve_request(
+                            approval_id=approval.id,
+                            approver_id="admin-123",
+                            approver_role=UserRole.ADMIN,
+                            approved=True
+                        )
     
     @pytest.mark.asyncio
     async def test_scheduler_handles_errors_gracefully(
@@ -334,7 +333,7 @@ class TestApprovalExpiryWorkflow:
             with patch('src.services.approval_scheduler.db_manager') as mock_db_manager:
                 mock_db_manager.get_session.return_value.__aenter__.return_value = db_session
                 
-                with patch('src.services.approval_scheduler.ApprovalService') as mock_service_class:
+                with patch('src.services.approval_service.ApprovalService') as mock_service_class:
                     mock_service = Mock()
                     mock_service.expire_old_approvals.side_effect = Exception("Database error")
                     mock_service_class.return_value = mock_service

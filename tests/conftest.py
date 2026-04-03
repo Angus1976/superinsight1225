@@ -10,6 +10,13 @@ This module provides:
 """
 
 import os
+
+# Before any `src` import: ORM modules (e.g. structuring) read DATABASE_URL at import time.
+if not os.environ.get("DATABASE_URL"):
+    os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+if not os.environ.get("APP_ENV"):
+    os.environ["APP_ENV"] = "test"
+
 import pytest
 import asyncio
 from typing import Generator, AsyncGenerator
@@ -119,8 +126,11 @@ def db_session(request) -> Generator[Session, None, None]:
             pytest.skip("Property tests use their own db_session fixture")
     
     # Fall back to main test engine
-    from tests.database_isolation import isolated_test_session
-    with isolated_test_session(request.getfixturevalue("test_engine")) as session:
+    from tests.database_isolation import isolated_test_session, ensure_sqlite_test_schema
+
+    engine = request.getfixturevalue("test_engine")
+    ensure_sqlite_test_schema(engine)
+    with isolated_test_session(engine) as session:
         yield session
 
 
@@ -334,6 +344,15 @@ settings.register_profile(
     "fast",
     max_examples=10,
     deadline=None,
+    suppress_health_check=[HealthCheck.too_slow],
+)
+
+# Middle ground: faster than default (100) but more coverage than fast (10)
+settings.register_profile(
+    "dev",
+    max_examples=25,
+    deadline=None,
+    suppress_health_check=[HealthCheck.too_slow],
 )
 
 # Load profile from environment or use default

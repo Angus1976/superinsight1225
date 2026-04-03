@@ -18,7 +18,15 @@ const QUERY_KEYS = {
 } as const;
 
 // Audit Logs
-// Note: useAuditLogs is exported from useSystem.ts to avoid duplication
+// Note: this repo historically exported `useAuditLogs` from `useSystem.ts`.
+// Tests and consumers expect it here as well, so we provide a thin wrapper.
+export function useAuditLogs(params?: AuditLogListParams) {
+  return useQuery({
+    queryKey: [QUERY_KEYS.auditLogs, params],
+    queryFn: () => securityService.getAuditLogs(params),
+  });
+}
+
 export function useAuditLog(id: string) {
   return useQuery({
     queryKey: [QUERY_KEYS.auditLog, id],

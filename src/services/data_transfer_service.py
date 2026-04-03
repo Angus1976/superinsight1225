@@ -268,7 +268,7 @@ class DataTransferService:
         
         # Bulk insert all records at once
         self.db.bulk_save_objects(temp_data_list)
-        self.db.commit()
+        self.db.flush()
         
         return {
             "success": True,
@@ -328,9 +328,10 @@ class DataTransferService:
             sample_list.append(sample)
             lifecycle_ids.append(str(record_id))
         
-        # Bulk insert all records at once
-        self.db.bulk_save_objects(sample_list)
-        self.db.commit()
+        # Use add_all + flush so rows participate in the ORM session (bulk_save_objects
+        # can leave subsequent queries in the same session unable to load by PK in tests).
+        self.db.add_all(sample_list)
+        self.db.flush()
         
         return {
             "success": True,
@@ -386,7 +387,7 @@ class DataTransferService:
         
         # Bulk insert all records at once
         self.db.bulk_save_objects(temp_data_list)
-        self.db.commit()
+        self.db.flush()
         
         return {
             "success": True,
@@ -416,46 +417,47 @@ class DataTransferService:
             sensitive_data_result: Optional sensitive data detection result
         """
         try:
-            # Determine success status
-            success = result.get("success", False)
-            error_message = error or result.get("error")
-            
-            # If approval required, still log as successful submission
-            if result.get("approval_required"):
-                success = True
-            
-            # Create transfer-specific audit log
-            audit_log = TransferAuditLogModel(
-                id=str(uuid4()),
-                user_id=current_user.id,
-                user_role=current_user.role.value,
-                operation="transfer",
-                source_type=request.source_type,
-                source_id=request.source_id,
-                target_state=request.target_state,
-                record_count=len(request.records),
-                success=success,
-                error_message=error_message,
-                created_at=datetime.utcnow()
-            )
-            
-            # Add sensitive data information to audit log metadata if detected
-            if sensitive_data_result and sensitive_data_result.has_sensitive_data:
-                # Store sensitive data detection info in a metadata field
-                # (assuming TransferAuditLogModel has a metadata field)
-                if hasattr(audit_log, 'metadata_'):
-                    audit_log.metadata_ = {
-                        'sensitive_data_detected': True,
-                        'sensitivity_level': sensitive_data_result.sensitivity_level.value,
-                        'risk_score': sensitive_data_result.risk_score,
-                        'detected_pattern_count': len(sensitive_data_result.detected_patterns),
-                        'sensitive_field_count': len(sensitive_data_result.sensitive_fields),
-                        'requires_additional_approval': sensitive_data_result.requires_additional_approval
-                    }
-            
-            self.db.add(audit_log)
-            self.db.commit()
-            
+            # Nested transaction so a failed audit insert does not invalidate the outer session
+            # (which would lose an already-flushed transfer on SQLite).
+            with self.db.begin_nested():
+                # Determine success status
+                success = result.get("success", False)
+                error_message = error or result.get("error")
+
+                # If approval required, still log as successful submission
+                if result.get("approval_required"):
+                    success = True
+
+                # Create transfer-specific audit log
+                audit_log = TransferAuditLogModel(
+                    id=str(uuid4()),
+                    user_id=current_user.id,
+                    user_role=current_user.role.value,
+                    operation="transfer",
+                    source_type=request.source_type,
+                    source_id=request.source_id,
+                    target_state=request.target_state,
+                    record_count=len(request.records),
+                    success=success,
+                    error_message=error_message,
+                    created_at=datetime.utcnow()
+                )
+
+                # Add sensitive data information to audit log metadata if detected
+                if sensitive_data_result and sensitive_data_result.has_sensitive_data:
+                    if hasattr(audit_log, 'metadata_'):
+                        audit_log.metadata_ = {
+                            'sensitive_data_detected': True,
+                            'sensitivity_level': sensitive_data_result.sensitivity_level.value,
+                            'risk_score': sensitive_data_result.risk_score,
+                            'detected_pattern_count': len(sensitive_data_result.detected_patterns),
+                            'sensitive_field_count': len(sensitive_data_result.sensitive_fields),
+                            'requires_additional_approval': sensitive_data_result.requires_additional_approval
+                        }
+
+                self.db.add(audit_log)
+                self.db.flush()
+
             # Log sensitive data detection to application log
             if sensitive_data_result and sensitive_data_result.has_sensitive_data:
                 import logging
@@ -473,5 +475,3 @@ class DataTransferService:
             import logging
             logger = logging.getLogger(__name__)
             logger.error(f"Failed to create transfer audit log: {e}")
-            # Rollback the audit log transaction, but don't affect the main transfer
-            self.db.rollback()

@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import List, Optional, Dict, Any
 from uuid import UUID
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_, func
+from sqlalchemy import and_, or_, func, text
 
 from src.models.data_lifecycle import SampleModel, ChangeType
 
@@ -35,6 +35,33 @@ class SearchCriteria:
         self.date_to = date_to
         self.limit = limit
         self.offset = offset
+
+
+def _tags_all_present_filters(tags: List[str], dialect_name: str):
+    """
+    Build SQL fragments: sample JSON ``tags`` array contains each string tag.
+
+    PostgreSQL uses ``jsonb_exists``; SQLite uses ``json_each`` (JSONB is PG-only).
+    """
+    if not tags:
+        return []
+    if dialect_name == "postgresql":
+        return [
+            func.jsonb_exists(
+                func.cast(SampleModel.tags, type_=func.JSONB),
+                tag,
+            )
+            for tag in tags
+        ]
+    out = []
+    for i, tag in enumerate(tags):
+        out.append(
+            text(
+                "EXISTS (SELECT 1 FROM json_each(samples.tags) AS je "
+                f"WHERE je.value = :tag_filter_{i})"
+            ).bindparams(**{f"tag_filter_{i}": tag})
+        )
+    return out
 
 
 class SampleLibraryManager:
@@ -200,14 +227,8 @@ class SampleLibraryManager:
         
         # Tags filter (sample must have ALL specified tags)
         if criteria.tags:
-            for tag in criteria.tags:
-                # PostgreSQL JSON array contains operator
-                filters.append(
-                    func.jsonb_exists(
-                        func.cast(SampleModel.tags, type_=func.JSONB),
-                        tag
-                    )
-                )
+            dialect = self.db.get_bind().dialect.name
+            filters.extend(_tags_all_present_filters(criteria.tags, dialect))
         
         # Apply all filters
         if filters:
@@ -354,15 +375,10 @@ class SampleLibraryManager:
         
         # Build query with tag filters
         query = self.db.query(SampleModel)
-        
-        for tag in tags:
-            query = query.filter(
-                func.jsonb_exists(
-                    func.cast(SampleModel.tags, type_=func.JSONB),
-                    tag
-                )
-            )
-        
+        dialect = self.db.get_bind().dialect.name
+        for clause in _tags_all_present_filters(tags, dialect):
+            query = query.filter(clause)
+
         return query.order_by(SampleModel.created_at.desc()).all()
     
     def track_usage(self, sample_id: str) -> None:

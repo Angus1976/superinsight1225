@@ -12,6 +12,9 @@
 import { test, expect } from '@playwright/test'
 import * as fs from 'fs'
 import * as path from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 test.describe('Playwright Configuration Validation', () => {
   test.describe('Requirement 4.6: Headless Browser Mode', () => {

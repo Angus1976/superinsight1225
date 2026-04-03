@@ -399,7 +399,7 @@ async def list_approvals(
                 detail={
                     "success": False,
                     "error_code": "INVALID_STATUS",
-                    "message": get_message("invalid_status", lang) if "invalid_status" in MESSAGES.get(lang, {}) else f"Invalid status: {status}",
+                    "message": get_message("invalid_status", lang),
                     "valid_statuses": ["pending", "approved", "rejected", "expired"]
                 }
             )

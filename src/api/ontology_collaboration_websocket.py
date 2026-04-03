@@ -26,8 +26,9 @@ from pydantic import BaseModel, Field
 
 # Import collaboration service
 from src.collaboration.collaboration_service import (
+    ChangeType,
     CollaborationService,
-    ConflictResolution,
+    ElementLock,
 )
 
 # Configure logging
@@ -176,8 +177,16 @@ class ConnectionManager:
                 last_heartbeat=now,
             )
         
-        # Join the collaboration session
-        await self._collaboration_service.join_session(session_id, expert_id)
+        # Join the collaboration session (service requires user display fields)
+        sid = UUID(session_id)
+        uid = UUID(expert_id)
+        await self._collaboration_service.ensure_websocket_session(sid)
+        await self._collaboration_service.join_session(
+            sid,
+            uid,
+            username=f"expert_{expert_id}",
+            email=f"{expert_id}@collab.local",
+        )
         
         # Broadcast participant joined
         await self.broadcast_to_session(
@@ -226,7 +235,7 @@ class ConnectionManager:
                 del self._connection_info[cid]
         
         # Leave the collaboration session (releases locks)
-        await self._collaboration_service.leave_session(session_id, expert_id)
+        await self._collaboration_service.leave_session(UUID(session_id), UUID(expert_id))
         
         # Broadcast participant left
         await self.broadcast_to_session(
@@ -345,9 +354,10 @@ class ConnectionManager:
             True if lock acquired, False otherwise
         """
         lock = await self._collaboration_service.lock_element(
-            session_id=session_id,
-            element_id=element_id,
-            expert_id=expert_id,
+            session_id=UUID(session_id),
+            element_id=UUID(element_id),
+            element_type="ontology_element",
+            user_id=UUID(expert_id),
         )
         
         if lock:
@@ -399,9 +409,9 @@ class ConnectionManager:
             True if unlocked, False otherwise
         """
         result = await self._collaboration_service.unlock_element(
-            session_id=session_id,
-            element_id=element_id,
-            expert_id=expert_id,
+            session_id=UUID(session_id),
+            element_id=UUID(element_id),
+            user_id=UUID(expert_id),
         )
         
         if result:
@@ -436,10 +446,13 @@ class ConnectionManager:
         """
         # Record the change
         await self._collaboration_service.record_change(
-            session_id=session_id,
-            element_id=element_id,
-            expert_id=expert_id,
-            changes=changes,
+            session_id=UUID(session_id),
+            element_id=UUID(element_id),
+            element_type="ontology_element",
+            change_type=ChangeType.UPDATE,
+            user_id=UUID(expert_id),
+            username=f"expert_{expert_id}",
+            after=changes,
         )
         
         # Broadcast the update (within 2 seconds requirement)
@@ -701,11 +714,23 @@ async def get_session_presence(session_id: str):
     
     # Get collaboration service for lock info
     service = connection_manager._collaboration_service
-    session = await service.get_session(session_id)
-    
+    session = await service.get_session(UUID(session_id))
+
+    def _serialize_locks(locks: Dict[UUID, ElementLock]) -> Dict[str, Any]:
+        out: Dict[str, Any] = {}
+        for eid, lock in locks.items():
+            key = str(eid)
+            out[key] = {
+                "element_id": str(lock.element_id),
+                "locked_by": str(lock.locked_by),
+                "expires_at": lock.expires_at.isoformat() if lock.expires_at else None,
+            }
+        return out
+
+    locks_raw = session.active_locks if session else {}
     return {
         "session_id": session_id,
         "participants": participants,
-        "active_locks": session.active_locks if session else {},
+        "active_locks": _serialize_locks(locks_raw) if locks_raw else {},
         "last_activity": session.last_activity.isoformat() if session and session.last_activity else None,
     }

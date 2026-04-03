@@ -12,13 +12,14 @@ from sqlalchemy import (
     String, Text, Float, Integer, DateTime, ForeignKey,
     Enum as SQLEnum, JSON, Boolean, BigInteger, Index
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.sql import func
 import enum
 from typing import Optional, List
 
 from src.database.connection import Base
+from src.database.json_types import get_json_type
 
 
 # ============================================================================
@@ -208,9 +209,9 @@ class DataSourceModel(Base):
     status: Mapped[DataSourceStatus] = mapped_column(SQLEnum(DataSourceStatus), default=DataSourceStatus.INACTIVE)
 
     # Connection configuration (encrypted)
-    connection_config: Mapped[dict] = mapped_column(JSONB, nullable=False, default={})
+    connection_config: Mapped[dict] = mapped_column(get_json_type(), nullable=False, default={})
     # Schema/metadata information
-    schema_config: Mapped[dict] = mapped_column(JSONB, nullable=True, default={})
+    schema_config: Mapped[dict] = mapped_column(get_json_type(), nullable=True, default={})
 
     # Connection pool settings
     pool_size: Mapped[int] = mapped_column(Integer, default=5)
@@ -253,13 +254,13 @@ class SyncJobModel(Base):
 
     # Source and target
     source_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("data_sources.id"), nullable=False)
-    target_config: Mapped[dict] = mapped_column(JSONB, nullable=False, default={})
+    target_config: Mapped[dict] = mapped_column(get_json_type(), nullable=False, default={})
     
     # Output sync configuration (for output/bidirectional sync)
     target_source_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("data_sources.id"), nullable=True)
-    field_mapping_rules: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True, default={})
+    field_mapping_rules: Mapped[Optional[dict]] = mapped_column(get_json_type(), nullable=True, default={})
     output_sync_strategy: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # full/incremental
-    output_checkpoint: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True, default={})
+    output_checkpoint: Mapped[Optional[dict]] = mapped_column(get_json_type(), nullable=True, default={})
 
     # Sync configuration
     direction: Mapped[SyncDirection] = mapped_column(SQLEnum(SyncDirection), default=SyncDirection.PULL)
@@ -288,10 +289,10 @@ class SyncJobModel(Base):
     )
 
     # Data transformation
-    transformation_rules: Mapped[list] = mapped_column(JSONB, default=[])
+    transformation_rules: Mapped[list] = mapped_column(get_json_type(), default=[])
 
     # Filtering
-    filter_conditions: Mapped[dict] = mapped_column(JSONB, default={})
+    filter_conditions: Mapped[dict] = mapped_column(get_json_type(), default={})
 
     # Encryption and compression
     enable_encryption: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -357,18 +358,18 @@ class SyncExecutionModel(Base):
     # Output sync metrics (for output/bidirectional sync)
     sync_direction: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # input/output/bidirectional
     rows_written: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True, default=0)
-    write_errors: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True, default={})
+    write_errors: Mapped[Optional[dict]] = mapped_column(get_json_type(), nullable=True, default={})
 
     # Data transfer metrics
     bytes_transferred: Mapped[int] = mapped_column(BigInteger, default=0)
 
     # Error tracking
     error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    error_details: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    error_details: Mapped[Optional[dict]] = mapped_column(get_json_type(), nullable=True)
     retry_count: Mapped[int] = mapped_column(Integer, default=0)
 
     # Checkpoint for resume
-    checkpoint_data: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    checkpoint_data: Mapped[Optional[dict]] = mapped_column(get_json_type(), nullable=True)
 
     # Execution context
     triggered_by: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)  # user_id, system, schedule
@@ -413,8 +414,8 @@ class DataConflictModel(Base):
     field_name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
 
     # Conflict data
-    source_value: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
-    target_value: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    source_value: Mapped[Optional[dict]] = mapped_column(get_json_type(), nullable=True)
+    target_value: Mapped[Optional[dict]] = mapped_column(get_json_type(), nullable=True)
     source_version: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     target_version: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     source_timestamp: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -425,7 +426,7 @@ class DataConflictModel(Base):
         SQLEnum(ConflictResolutionStrategy),
         nullable=True
     )
-    resolved_value: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    resolved_value: Mapped[Optional[dict]] = mapped_column(get_json_type(), nullable=True)
     resolved_by: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     resolved_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     resolution_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
@@ -478,7 +479,7 @@ class SyncRuleModel(Base):
     sync_inserts: Mapped[bool] = mapped_column(Boolean, default=True)
 
     # Filtering conditions (JSON query format)
-    filter_conditions: Mapped[dict] = mapped_column(JSONB, default={})
+    filter_conditions: Mapped[dict] = mapped_column(get_json_type(), default={})
 
     # Conflict resolution override
     conflict_resolution: Mapped[Optional[ConflictResolutionStrategy]] = mapped_column(
@@ -521,14 +522,14 @@ class TransformationRuleModel(Base):
     target_field: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
 
     # Transformation configuration
-    transformation_config: Mapped[dict] = mapped_column(JSONB, nullable=False, default={})
+    transformation_config: Mapped[dict] = mapped_column(get_json_type(), nullable=False, default={})
 
     # Custom script (for CUSTOM_SCRIPT type)
     custom_script: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     script_language: Mapped[str] = mapped_column(String(50), default="python")
 
     # Validation
-    validation_rules: Mapped[dict] = mapped_column(JSONB, default={})
+    validation_rules: Mapped[dict] = mapped_column(get_json_type(), default={})
 
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
@@ -563,7 +564,7 @@ class IndustryDatasetModel(Base):
 
     # Category and domain
     category: Mapped[DatasetCategory] = mapped_column(SQLEnum(DatasetCategory), nullable=False)
-    domain_tags: Mapped[list] = mapped_column(JSONB, default=[])  # ["qa", "sentiment", "ner", etc.]
+    domain_tags: Mapped[list] = mapped_column(get_json_type(), default=[])  # ["qa", "sentiment", "ner", etc.]
     language: Mapped[str] = mapped_column(String(50), default="zh")  # ISO 639-1 code
 
     # Status and availability
@@ -576,11 +577,11 @@ class IndustryDatasetModel(Base):
 
     # Quality metrics
     quality_score: Mapped[float] = mapped_column(Float, default=0.0)  # 0-1 score
-    quality_metrics: Mapped[dict] = mapped_column(JSONB, default={})  # detailed quality breakdown
+    quality_metrics: Mapped[dict] = mapped_column(get_json_type(), default={})  # detailed quality breakdown
 
     # Integration information
     local_path: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
-    integration_config: Mapped[dict] = mapped_column(JSONB, default={})  # how to integrate with customer data
+    integration_config: Mapped[dict] = mapped_column(get_json_type(), default={})  # how to integrate with customer data
 
     # Dilution parameters
     recommended_dilution_ratio: Mapped[float] = mapped_column(Float, default=0.3)  # 30% default
@@ -640,11 +641,11 @@ class SyncAuditLogModel(Base):
     actor_ip: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
 
     # Action details
-    action_details: Mapped[dict] = mapped_column(JSONB, default={})
+    action_details: Mapped[dict] = mapped_column(get_json_type(), default={})
 
     # Before/After state (for changes)
-    state_before: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
-    state_after: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    state_before: Mapped[Optional[dict]] = mapped_column(get_json_type(), nullable=True)
+    state_after: Mapped[Optional[dict]] = mapped_column(get_json_type(), nullable=True)
 
     # Result
     success: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -703,7 +704,7 @@ class DataQualityScoreModel(Base):
     ai_response_time_improvement: Mapped[Optional[float]] = mapped_column(Float, nullable=True)  # Speed improvement percentage
 
     # Additional metrics
-    metrics_details: Mapped[dict] = mapped_column(JSONB, default={})
+    metrics_details: Mapped[dict] = mapped_column(get_json_type(), default={})
 
     # Timestamps
     evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
@@ -748,7 +749,7 @@ class APIKeyModel(Base):
     key_hash: Mapped[str] = mapped_column(String(128), nullable=False, unique=True)  # SHA-256 hash
     
     # Access control
-    scopes: Mapped[dict] = mapped_column(JSONB, nullable=False, default={})  # Accessible data scopes
+    scopes: Mapped[dict] = mapped_column(get_json_type(), nullable=False, default={})  # Accessible data scopes
     
     # Rate limiting
     rate_limit_per_minute: Mapped[int] = mapped_column(Integer, default=60)
@@ -768,13 +769,13 @@ class APIKeyModel(Base):
     
     # Smart Service Engine extensions
     allowed_request_types: Mapped[dict] = mapped_column(
-        JSONB, nullable=False, default=list, server_default='["query","chat","decision","skill"]'
+        get_json_type(), nullable=False, default=list, server_default='["query","chat","decision","skill"]'
     )
     skill_whitelist: Mapped[dict] = mapped_column(
-        JSONB, nullable=False, default=list, server_default='[]'
+        get_json_type(), nullable=False, default=list, server_default='[]'
     )
     webhook_config: Mapped[Optional[dict]] = mapped_column(
-        JSONB, nullable=True, default=None, server_default=None
+        get_json_type(), nullable=True, default=None, server_default=None
     )
 
     # Relationships

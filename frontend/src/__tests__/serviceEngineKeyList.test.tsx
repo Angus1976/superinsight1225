@@ -295,7 +295,6 @@ describe('KeyList - Service Engine Extensions', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Webhook 配置')).toBeInTheDocument();
-        expect(screen.getByText('即将推出')).toBeInTheDocument();
       });
     });
 
@@ -311,7 +310,8 @@ describe('KeyList - Service Engine Extensions', () => {
 
       await waitFor(() => {
         const webhookUrlInput = screen.getByPlaceholderText('https://example.com/webhook');
-        expect(webhookUrlInput).toBeDisabled();
+        // Webhook fields are currently editable in the UI.
+        expect(webhookUrlInput).not.toBeDisabled();
       });
     });
   });

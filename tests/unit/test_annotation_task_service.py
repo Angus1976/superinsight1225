@@ -8,13 +8,14 @@ and task completion with validation.
 import pytest
 import json
 from datetime import datetime, timedelta
-from uuid import uuid4
+from uuid import UUID, uuid4
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from src.database.connection import Base
 from src.models.data_lifecycle import (
     AnnotationTaskModel,
+    AuditLogModel,
     SampleModel,
     TaskStatus,
     AnnotationType,
@@ -35,83 +36,16 @@ from src.services.annotation_task_service import (
 # Test database setup
 @pytest.fixture(scope='function')
 def db_session():
-    """Create an in-memory SQLite database for testing"""
-    from sqlalchemy import Table, Column, String, Float, Integer, DateTime, JSON, Text, Enum as SQLEnum
-    from datetime import datetime
-    
+    """Create an in-memory SQLite database for testing (ORM schema matches production models)."""
     engine = create_engine('sqlite:///:memory:')
-    
-    metadata = Base.metadata
-    
-    # Create only the tables we need for annotation task testing
-    samples_table = Table(
-        'samples',
-        metadata,
-        Column('id', String(36), primary_key=True),
-        Column('data_id', String(255), nullable=False),
-        Column('content', JSON, nullable=False),
-        Column('category', String(100), nullable=False),
-        Column('quality_overall', Float, nullable=False),
-        Column('quality_completeness', Float, nullable=False),
-        Column('quality_accuracy', Float, nullable=False),
-        Column('quality_consistency', Float, nullable=False),
-        Column('version', Integer, nullable=False, default=1),
-        Column('tags', JSON, nullable=False, default=list),
-        Column('usage_count', Integer, nullable=False, default=0),
-        Column('last_used_at', DateTime, nullable=True),
-        Column('metadata', JSON, nullable=False, default=dict),
-        Column('created_at', DateTime, nullable=False, default=datetime.utcnow),
-        Column('updated_at', DateTime, nullable=False, default=datetime.utcnow),
-        extend_existing=True
+    Base.metadata.create_all(
+        engine,
+        tables=[
+            SampleModel.__table__,
+            AnnotationTaskModel.__table__,
+            AuditLogModel.__table__,
+        ],
     )
-    
-    annotation_tasks_table = Table(
-        'annotation_tasks',
-        metadata,
-        Column('id', String(36), primary_key=True),
-        Column('name', String(255), nullable=False),
-        Column('description', Text, nullable=True),
-        Column('sample_ids', JSON, nullable=False),
-        Column('annotation_type', String(50), nullable=False),
-        Column('instructions', Text, nullable=False),
-        Column('status', String(50), nullable=False, default='created'),
-        Column('created_by', String(255), nullable=False),
-        Column('created_at', DateTime, nullable=False, default=datetime.utcnow),
-        Column('assigned_to', JSON, nullable=False, default=list),
-        Column('deadline', DateTime, nullable=True),
-        Column('completed_at', DateTime, nullable=True),
-        Column('progress_total', Integer, nullable=False, default=0),
-        Column('progress_completed', Integer, nullable=False, default=0),
-        Column('progress_in_progress', Integer, nullable=False, default=0),
-        Column('annotations', JSON, nullable=False, default=list),
-        Column('metadata', JSON, nullable=False, default=dict),
-        extend_existing=True
-    )
-    
-    audit_logs_table = Table(
-        'data_lifecycle_audit_logs',
-        metadata,
-        Column('id', String(36), primary_key=True),
-        Column('operation_type', String(50), nullable=False),
-        Column('user_id', String(255), nullable=False),
-        Column('resource_type', String(50), nullable=False),
-        Column('resource_id', String(255), nullable=False),
-        Column('action', String(50), nullable=False),
-        Column('result', String(50), nullable=False),
-        Column('duration', Integer, nullable=False),
-        Column('error', Text, nullable=True),
-        Column('details', JSON, nullable=False, default=dict),
-        Column('ip_address', String(45), nullable=True),
-        Column('user_agent', String(500), nullable=True),
-        Column('timestamp', DateTime, nullable=False, default=datetime.utcnow),
-        extend_existing=True
-    )
-    
-    # Create tables
-    samples_table.create(engine, checkfirst=True)
-    annotation_tasks_table.create(engine, checkfirst=True)
-    audit_logs_table.create(engine, checkfirst=True)
-    
     Session = sessionmaker(bind=engine)
     session = Session()
     yield session
@@ -126,41 +60,27 @@ def task_service(db_session):
 
 @pytest.fixture
 def samples(db_session):
-    """Create sample data for testing"""
-    import json
+    """Create sample rows via ORM so UUID / lock_version match AnnotationTaskService queries."""
     sample_list = []
     for i in range(3):
-        sample_id = str(uuid4())
-        # Insert directly using SQL to avoid UUID issues with SQLite
-        db_session.execute(
-            """
-            INSERT INTO samples (id, data_id, content, category, quality_overall, 
-                               quality_completeness, quality_accuracy, quality_consistency,
-                               version, tags, usage_count, last_used_at, metadata, 
-                               created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                sample_id,
-                f'data-{i}',
-                json.dumps({'title': f'Sample {i}', 'text': f'Content {i}'}),
-                'test',
-                0.8, 0.8, 0.8, 0.8,
-                1,
-                json.dumps(['test']),
-                0,
-                None,
-                json.dumps({'source': 'test'}),
-                datetime.utcnow().isoformat(),
-                datetime.utcnow().isoformat()
-            )
+        row = SampleModel(
+            id=uuid4(),
+            data_id=f'data-{i}',
+            content={'title': f'Sample {i}', 'text': f'Content {i}'},
+            category='test',
+            quality_overall=0.8,
+            quality_completeness=0.8,
+            quality_accuracy=0.8,
+            quality_consistency=0.8,
+            version=1,
+            tags=['test'],
+            usage_count=0,
+            last_used_at=None,
+            metadata_={'source': 'test'},
+            lock_version=1,
         )
-        # Create a simple object to hold the ID
-        class SampleObj:
-            def __init__(self, sid):
-                self.id = sid
-        sample_list.append(SampleObj(sample_id))
-    
+        db_session.add(row)
+        sample_list.append(row)
     db_session.commit()
     return sample_list
 
@@ -199,7 +119,7 @@ def test_create_task_success(task_service, samples, db_session):
     
     # Verify database state
     task = db_session.query(AnnotationTaskModel).filter(
-        AnnotationTaskModel.id == result['id']
+        AnnotationTaskModel.id == UUID(result['id'])
     ).first()
     assert task is not None
     assert task.status == TaskStatus.CREATED

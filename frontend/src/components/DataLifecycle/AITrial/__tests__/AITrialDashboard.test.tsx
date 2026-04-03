@@ -759,11 +759,12 @@ describe('AITrialDashboard Component', () => {
           const closeButton = screen.getByText('common.actions.close');
           fireEvent.click(closeButton);
           
-          // Wait for modal to be hidden (Ant Design hides modals with display:none)
+          // rc-dialog sets display:none on .ant-modal-wrap (inline style). Global getComputedStyle
+          // is mocked in test/setup.ts, so assert .style.display instead of toHaveStyle.
           await waitFor(() => {
-            const modal = document.querySelector('.ant-modal');
-            expect(modal).toHaveStyle({ display: 'none' });
-          }, { timeout: 2000 });
+            const wrap = document.querySelector('.ant-modal-wrap');
+            expect(wrap?.style?.display).toBe('none');
+          }, { timeout: 3000 });
         }
       }
     });
@@ -801,11 +802,10 @@ describe('AITrialDashboard Component', () => {
           if (closeIcon) {
             fireEvent.click(closeIcon);
             
-            // Wait for modal to be hidden (Ant Design hides modals with display:none)
             await waitFor(() => {
-              const modalElement = document.querySelector('.ant-modal');
-              expect(modalElement).toHaveStyle({ display: 'none' });
-            }, { timeout: 2000 });
+              const wrap = document.querySelector('.ant-modal-wrap');
+              expect(wrap?.style?.display).toBe('none');
+            }, { timeout: 3000 });
           }
         }
       }
@@ -835,8 +835,8 @@ describe('AITrialDashboard Component', () => {
           fireEvent.click(compareButton);
           
           await waitFor(() => {
-            const modal = screen.getByText('aiTrial.comparisonModal.title').closest('.ant-modal');
-            expect(modal).toHaveStyle({ width: '800px' });
+            const dialog = screen.getByRole('dialog', { hidden: true });
+            expect((dialog as HTMLElement).style.width).toBe('800px');
           });
         }
       }

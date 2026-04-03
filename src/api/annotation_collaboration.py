@@ -286,8 +286,8 @@ def get_ws_manager() -> AnnotationWebSocketManager:
     return get_annotation_ws_manager()
 
 
-def get_collab_manager() -> CollaborationManager:
-    """Get collaboration manager dependency."""
+async def get_collab_manager() -> CollaborationManager:
+    """Get collaboration manager dependency (async so init runs on the event loop, not a thread pool)."""
     return get_collaboration_manager()
 
 
@@ -322,8 +322,8 @@ def get_post_validation_engine() -> PostValidationEngine:
     return _post_validation_engine
 
 
-def get_annotation_switcher() -> AnnotationSwitcher:
-    """Get annotation switcher."""
+async def get_annotation_switcher() -> AnnotationSwitcher:
+    """Get annotation switcher (async dep so AnnotationSwitcher initializes on the event loop)."""
     global _annotation_switcher
     if _annotation_switcher is None:
         _annotation_switcher = AnnotationSwitcher()

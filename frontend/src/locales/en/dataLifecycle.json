@@ -114,6 +114,7 @@
       "addFailed": "Failed to add to sample library",
       "removeSuccess": "Removed from sample library",
       "removeFailed": "Failed to remove from sample library",
+      "noSamplesSelected": "No samples selected",
       "noSamples": "Sample library is empty",
       "confirmRemove": "Are you sure you want to remove this sample from the library?",
       "searchPlaceholder": "Search sample name or description...",
@@ -336,6 +337,7 @@
     },
     "messages": {
       "createSuccess": "Enhancement task created successfully",
+      "createFailed": "Failed to create enhancement task",
       "startSuccess": "Enhancement task started",
       "startFailed": "Failed to start enhancement task",
       "pauseSuccess": "Enhancement task paused",
@@ -415,6 +417,7 @@
     },
     "messages": {
       "createSuccess": "AI trial task created successfully",
+      "createFailed": "Failed to create AI trial task",
       "startSuccess": "AI trial started",
       "startFailed": "Failed to start AI trial",
       "stopSuccess": "AI trial stopped",
@@ -437,7 +440,30 @@
   },
   "audit": {
     "title": "Audit Log",
-    "description": "View and search audit logs for compliance and debugging"
+    "description": "View and search audit logs for compliance and debugging",
+    "columns": {
+      "timestamp": "Timestamp",
+      "userId": "User ID",
+      "operationType": "Operation Type",
+      "resourceType": "Resource Type",
+      "action": "Action",
+      "result": "Result",
+      "duration": "Duration"
+    },
+    "filters": {
+      "userId": "User ID",
+      "resourceType": "Resource Type",
+      "operationType": "Operation Type",
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "result": "Result"
+    },
+    "results": {
+      "success": "Success",
+      "failure": "Failure",
+      "partial": "Partial"
+    },
+    "export": "Export"
   },
   "common": {
     "type": "Type",
@@ -452,6 +478,7 @@
       "save": "Save",
       "cancel": "Cancel",
       "confirm": "Confirm",
+      "retry": "Retry",
       "delete": "Delete",
       "edit": "Edit",
       "view": "View",
@@ -484,6 +511,7 @@
       "confirmAction": "Are you sure you want to perform this action?",
       "operationSuccess": "Operation successful",
       "operationFailed": "Operation failed",
+      "validationError": "There are issues with the submitted data. Please review and correct them.",
       "saveSuccess": "Saved successfully",
       "saveFailed": "Save failed",
       "deleteSuccess": "Deleted successfully",
@@ -503,6 +531,9 @@
       "page": "Page {{current}}",
       "pageSize": "{{size}} items per page"
     }
+  },
+  "common:action": {
+    "cancel": "Cancel"
   },
   "permissions": {
     "view": "View",
@@ -559,7 +590,15 @@
     "button": "Transfer Data",
     "modal": {
       "title": "Data Transfer Configuration",
-      "description": "Transfer data to the data lifecycle system"
+      "description": "Transfer data to the data lifecycle system",
+      "selectStage": "Select target stage",
+      "dataType": "Data Type",
+      "tags": "Tags",
+      "tagsPlaceholder": "Enter tags, separated by commas",
+      "remark": "Remark",
+      "remarkPlaceholder": "Optional remark",
+      "qualityThreshold": "Quality Threshold",
+      "preview": "Preview"
     },
     "fields": {
       "sourceType": "Data Source",
@@ -598,6 +637,7 @@
       "success": "Successfully transferred {{count}} records to {{state}}",
       "successWithNavigation": "Successfully transferred {{count}} records, click to view",
       "error": "Transfer failed: {{error}}",
+      "noStageSelected": "Please select a target stage",
       "approvalRequired": "Transfer request submitted for approval",
       "approvalEstimatedTime": "Estimated approval time: {{time}}",
       "permissionDenied": "You don't have permission for this operation",
@@ -623,6 +663,28 @@
       "recordCount": "Record Count",
       "fields": "Field List",
       "preview": "Data Preview"
+    },
+    "dataTypes": {
+      "text": "Text",
+      "image": "Image",
+      "audio": "Audio",
+      "video": "Video"
+    },
+    "progress": {
+      "title": "Transfer Progress"
+    },
+    "approval": {
+      "title": "Transfer Approval",
+      "directTransfer": "Direct Transfer",
+      "submitApproval": "Submit for Approval",
+      "reason": "Reason",
+      "reasonPlaceholder": "Enter approval reason",
+      "status": {
+        "pending": "Pending"
+      },
+      "messages": {
+        "submitted": "Submitted for approval"
+      }
     },
     "permissions": {
       "requiresApproval": "(Requires Approval)",

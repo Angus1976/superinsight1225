@@ -593,3 +593,7 @@ def get_graph_embedder() -> GraphEmbedder:
         _graph_embedder.initialize()
 
     return _graph_embedder
+
+
+# Backward-compatible name for integration tests
+GraphEmbedding = GraphEmbedder

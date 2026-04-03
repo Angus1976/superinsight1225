@@ -9,6 +9,14 @@ on:
       - '**.md'
       - '**.txt'
   workflow_dispatch:
+  workflow_call:
+    secrets: inherit
+    inputs:
+      hypothesis_profile:
+        description: 'HYPOTHESIS_PROFILE for backend pytest (see tests/conftest.py). Empty = infer from push ref.'
+        type: string
+        required: false
+        default: ''
 
 env:
   PYTHON_VERSION: '3.11'
@@ -81,6 +89,36 @@ jobs:
           API_V1_PREFIX=/api/v1
           SERVER_NAME=test-server
           EOF
+
+      - name: Set HYPOTHESIS_PROFILE for backend pytest
+        run: |
+          case "${{ github.event_name }}" in
+            workflow_call)
+              P='${{ inputs.hypothesis_profile }}'
+              if [ -n "$P" ]; then
+                echo "HYPOTHESIS_PROFILE=$P" >> "$GITHUB_ENV"
+              else
+                echo "HYPOTHESIS_PROFILE=default" >> "$GITHUB_ENV"
+              fi
+              ;;
+            push)
+              if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+                echo "HYPOTHESIS_PROFILE=ci" >> "$GITHUB_ENV"
+              else
+                echo "HYPOTHESIS_PROFILE=default" >> "$GITHUB_ENV"
+              fi
+              ;;
+            workflow_dispatch)
+              if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+                echo "HYPOTHESIS_PROFILE=ci" >> "$GITHUB_ENV"
+              else
+                echo "HYPOTHESIS_PROFILE=default" >> "$GITHUB_ENV"
+              fi
+              ;;
+            *)
+              echo "HYPOTHESIS_PROFILE=default" >> "$GITHUB_ENV"
+              ;;
+          esac
 
       - name: Run backend unit tests
         run: |

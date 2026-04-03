@@ -6,7 +6,7 @@ Integrates with State Manager for state transitions and Audit Logger for task op
 """
 
 from datetime import datetime
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Union
 from uuid import UUID, uuid4
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
@@ -27,6 +27,13 @@ from src.services.data_lifecycle_state_manager import (
     StateTransitionContext
 )
 from src.services.audit_logger import AuditLogger
+
+
+def _ensure_uuid(value: Union[str, UUID]) -> UUID:
+    """Bind UUID columns correctly (e.g. SQLite + PGUUID(as_uuid=True) vs str path params)."""
+    if isinstance(value, UUID):
+        return value
+    return UUID(str(value))
 
 
 class TaskConfig:
@@ -245,7 +252,7 @@ class AnnotationTaskService:
         """
         # Get task
         task = self.db.query(AnnotationTaskModel).filter(
-            AnnotationTaskModel.id == task_id
+            AnnotationTaskModel.id == _ensure_uuid(task_id)
         ).first()
         
         if not task:
@@ -298,7 +305,7 @@ class AnnotationTaskService:
             ValueError: If task not found
         """
         task = self.db.query(AnnotationTaskModel).filter(
-            AnnotationTaskModel.id == task_id
+            AnnotationTaskModel.id == _ensure_uuid(task_id)
         ).first()
         
         if not task:
@@ -326,7 +333,7 @@ class AnnotationTaskService:
         """
         # Get task
         task = self.db.query(AnnotationTaskModel).filter(
-            AnnotationTaskModel.id == annotation.task_id
+            AnnotationTaskModel.id == _ensure_uuid(annotation.task_id)
         ).first()
         
         if not task:
@@ -435,7 +442,7 @@ class AnnotationTaskService:
         Validates: Requirements 5.4
         """
         task = self.db.query(AnnotationTaskModel).filter(
-            AnnotationTaskModel.id == task_id
+            AnnotationTaskModel.id == _ensure_uuid(task_id)
         ).first()
         
         if not task:
@@ -475,7 +482,7 @@ class AnnotationTaskService:
         """
         # Get task
         task = self.db.query(AnnotationTaskModel).filter(
-            AnnotationTaskModel.id == task_id
+            AnnotationTaskModel.id == _ensure_uuid(task_id)
         ).first()
         
         if not task:

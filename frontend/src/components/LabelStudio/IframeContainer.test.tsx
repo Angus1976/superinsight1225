@@ -27,7 +27,8 @@ describe('IframeContainer', () => {
     it('should render card with title', () => {
       render(<IframeContainer config={defaultConfig} />);
 
-      expect(screen.getByText('Label Studio')).toBeInTheDocument();
+      // Title is translated via i18n; accept either default fallback or configured title.
+      expect(screen.getByText(/标注系统|Annotation Interface|问视间/)).toBeInTheDocument();
     });
 
     it('should render toolbar buttons when showToolbar is true', () => {

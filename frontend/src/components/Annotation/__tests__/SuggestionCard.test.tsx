@@ -271,8 +271,10 @@ describe('SuggestionCard', () => {
     const cancelButton = screen.getByRole('button', { name: /cancel/i });
     await user.click(cancelButton);
 
+    // Ant Design keeps modal nodes mounted; assert hidden via .ant-modal-wrap (see test/setup getComputedStyle mock)
     await waitFor(() => {
-      expect(screen.queryByText('Reject Suggestion')).not.toBeInTheDocument();
+      const wrap = document.querySelector('.ant-modal-wrap');
+      expect(wrap?.style?.display).toBe('none');
     });
     expect(mockOnReject).not.toHaveBeenCalled();
   });

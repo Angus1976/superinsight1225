@@ -8,27 +8,44 @@ import userEvent from '@testing-library/user-event';
 import { ExportOptionsModal, addExportHistoryEntry } from '../ExportOptionsModal';
 import type { ExportOptions } from '../ExportOptionsModal';
 
-// Mock react-i18next
+// Mock react-i18next — useTranslation(['tasks','common']) 传入的 key 为 export.* / columns.* 等（无前缀）
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, params?: Record<string, unknown>) => {
       const translations: Record<string, string> = {
-        'tasks.export.title': 'Export Tasks',
-        'tasks.export.selectFormat': 'Select export format:',
-        'tasks.export.csv': 'CSV (Simple Data)',
-        'tasks.export.json': 'JSON (Complete Data)',
-        'tasks.export.excel': 'Excel (Report)',
-        'tasks.export.selectRange': 'Export Range',
-        'tasks.export.allTasks': 'All Tasks',
-        'tasks.export.selectedTasks': 'Selected Tasks',
-        'tasks.export.filteredTasks': 'Filtered Tasks',
-        'tasks.export.selectFields': 'Select Fields',
-        'tasks.export.exportButton': 'Export',
-        'tasks.export.history': 'History',
-        'tasks.export.noHistory': 'No export history',
-        'tasks.columns.id': 'ID',
-        'tasks.columns.name': 'Name',
-        'tasks.columns.status': 'Status',
+        'export.title': 'Export Tasks',
+        'export.history': 'History',
+        'export.exportButton': 'Export',
+        'export.selectFormat': 'Select export format:',
+        'export.csv': 'CSV (Simple Data)',
+        'export.json': 'JSON (Complete Data)',
+        'export.excelFormat': 'Excel (Report)',
+        'export.selectRange': 'Export Range',
+        'export.allTasks': 'All Tasks',
+        'export.selectedTasks': 'Selected Tasks',
+        'export.filteredTasks': 'Filtered Tasks',
+        'export.selectFields': 'Select Fields',
+        'export.exportHistory': 'Export History',
+        'export.syncTimeJustNow': 'Just now',
+        'syncTimeJustNow': 'Just now',
+        'syncTimeMinutesAgo': '{{count}} min ago',
+        'syncTimeHoursAgo': '{{count}} h ago',
+        'syncTimeDaysAgo': '{{count}} d ago',
+        'columns.id': 'ID',
+        'columns.name': 'Name',
+        'columns.status': 'Status',
+        'description': 'Description',
+        'columns.priority': 'Priority',
+        'columns.annotationType': 'Annotation Type',
+        'columns.progress': 'Progress',
+        'columns.completedItems': 'Completed',
+        'columns.totalItems': 'Total',
+        'columns.assignee': 'Assignee',
+        'columns.createdAt': 'Created',
+        'columns.dueDate': 'Due',
+        'detail.projectId': 'Project ID',
+        'syncStatus': 'Sync',
+        'tagsLabel': 'Tags',
         'cancel': 'Cancel',
         'selectAll': 'Select All',
         'selectNone': 'Deselect All',
@@ -77,10 +94,6 @@ describe('ExportOptionsModal', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorageMock.clear();
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
   });
 
   it('renders modal when open', () => {

@@ -14,18 +14,22 @@ Performance targets:
 - Concurrent requests: Handle 50+ concurrent users
 """
 
+import os
+import tempfile
 import pytest
 import time
 import statistics
 import asyncio
 import concurrent.futures
+from contextlib import contextmanager
 from datetime import datetime, timedelta
 from typing import List, Dict
 from uuid import uuid4
 
 from sqlalchemy import create_engine, event
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy.pool import StaticPool
+from sqlalchemy.pool import NullPool
 
 from src.models.data_lifecycle import (
     Base,
@@ -58,6 +62,29 @@ LARGE_DATASET_SIZE = 10000
 PAGE_SIZES = [10, 25, 50, 100]
 
 
+def _clamp_unit_quality(value: float) -> float:
+    """Keep quality scores in [0, 1] for ``SampleModel`` CHECK constraints."""
+    return min(max(value, 0.0), 1.0)
+
+
+@contextmanager
+def _thread_sample_library_manager(db_session: Session):
+    """
+    Yield a SampleLibraryManager on a fresh Session for the current thread.
+
+    SQLAlchemy ``Session`` is not thread-safe; sharing one session across
+    ``ThreadPoolExecutor`` workers can cause undefined behavior or crashes
+    (especially with SQLite).
+    """
+    engine = db_session.get_bind()
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    sess = SessionLocal()
+    try:
+        yield SampleLibraryManager(sess)
+    finally:
+        sess.close()
+
+
 # =============================================================================
 # Test Fixtures
 # =============================================================================
@@ -66,28 +93,37 @@ PAGE_SIZES = [10, 25, 50, 100]
 def db_session() -> Session:
     """
     Provide a database session with data lifecycle tables.
-    
-    Uses in-memory SQLite for fast test execution.
+
+    Uses a temporary SQLite file with ``NullPool`` so concurrent tests can open
+    one connection per thread. ``StaticPool`` + ``:memory:`` shares a single
+    connection across threads and can segfault under concurrent ORM use.
     """
-    # Create in-memory SQLite engine
+    fd, path = tempfile.mkstemp(suffix=".sqlite")
+    os.close(fd)
     engine = create_engine(
-        "sqlite:///:memory:",
+        f"sqlite:///{path}",
         connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
+        poolclass=NullPool,
     )
-    
-    # Create all tables
-    Base.metadata.create_all(engine)
-    
-    # Create session
+    # Only lifecycle tables used here — full ``Base.metadata`` may include app models
+    # (e.g. JSONB columns) that SQLite cannot compile once other tests import them.
+    try:
+        Base.metadata.create_all(engine, tables=[SampleModel.__table__])
+    except OperationalError as exc:
+        if "already exists" not in str(exc).lower():
+            raise
+
     SessionLocal = sessionmaker(bind=engine)
     session = SessionLocal()
-    
-    yield session
-    
-    # Cleanup
-    session.close()
-    engine.dispose()
+    try:
+        yield session
+    finally:
+        session.close()
+        engine.dispose()
+        try:
+            os.unlink(path)
+        except OSError:
+            pass
 
 
 @pytest.fixture
@@ -110,11 +146,11 @@ def create_sample(
         created_at = datetime.utcnow()
     
     sample = SampleModel(
-        id=str(uuid4()),
+        id=uuid4(),
         data_id=str(uuid4()),
         content={"test": "data"},
         category=category,
-        quality_overall=quality_overall,
+        quality_overall=_clamp_unit_quality(quality_overall),
         quality_completeness=0.9,
         quality_accuracy=0.85,
         quality_consistency=0.8,
@@ -165,20 +201,26 @@ def populate_samples(
     for i in range(count):
         # Randomize attributes for realistic distribution
         category = random.choice(categories)
-        quality = random.uniform(*quality_range)
+        quality = _clamp_unit_quality(random.uniform(*quality_range))
         num_tags = random.randint(1, 4)
         tags = random.sample(tags_pool, num_tags)
         created_at = base_time + timedelta(days=random.randint(0, 365))
         
         sample = SampleModel(
-            id=str(uuid4()),
+            id=uuid4(),
             data_id=str(uuid4()),
             content={"test": f"data_{i}"},
             category=category,
             quality_overall=quality,
-            quality_completeness=quality + random.uniform(-0.1, 0.1),
-            quality_accuracy=quality + random.uniform(-0.1, 0.1),
-            quality_consistency=quality + random.uniform(-0.1, 0.1),
+            quality_completeness=_clamp_unit_quality(
+                quality + random.uniform(-0.1, 0.1)
+            ),
+            quality_accuracy=_clamp_unit_quality(
+                quality + random.uniform(-0.1, 0.1)
+            ),
+            quality_consistency=_clamp_unit_quality(
+                quality + random.uniform(-0.1, 0.1)
+            ),
             tags=tags,
             version=1,
             usage_count=random.randint(0, 100),
@@ -498,7 +540,7 @@ class TestPaginationPerformance:
 class TestConcurrentRequestHandling:
     """Performance tests for concurrent request handling."""
     
-    def test_concurrent_search_requests(self, db_session, sample_library_manager):
+    def test_concurrent_search_requests(self, db_session):
         """
         Test handling of concurrent search requests.
         
@@ -516,7 +558,8 @@ class TestConcurrentRequestHandling:
             )
             
             start = time.perf_counter()
-            results, total = sample_library_manager.search_samples(criteria)
+            with _thread_sample_library_manager(db_session) as mgr:
+                results, total = mgr.search_samples(criteria)
             end = time.perf_counter()
             
             return {
@@ -566,7 +609,7 @@ class TestConcurrentRequestHandling:
             assert p95_latency < SEARCH_LATENCY_TARGET_MS * 2, \
                 f"P95 latency {p95_latency:.3f}ms exceeds 2x target under {num_concurrent} concurrent users"
     
-    def test_concurrent_mixed_operations(self, db_session, sample_library_manager):
+    def test_concurrent_mixed_operations(self, db_session):
         """
         Test handling of mixed concurrent operations (search, get, track usage).
         
@@ -583,22 +626,19 @@ class TestConcurrentRequestHandling:
             op_type = random.choice(["search", "get", "track_usage"])
             
             start = time.perf_counter()
-            
-            if op_type == "search":
-                criteria = SearchCriteria(limit=25, offset=0)
-                results, total = sample_library_manager.search_samples(criteria)
-                result_data = {"count": len(results)}
-            
-            elif op_type == "get":
-                sample_id = random.choice(sample_ids)
-                sample = sample_library_manager.get_sample(sample_id)
-                result_data = {"found": sample is not None}
-            
-            else:  # track_usage
-                sample_id = random.choice(sample_ids)
-                sample_library_manager.track_usage(sample_id)
-                result_data = {"tracked": True}
-            
+            with _thread_sample_library_manager(db_session) as mgr:
+                if op_type == "search":
+                    criteria = SearchCriteria(limit=25, offset=0)
+                    results, total = mgr.search_samples(criteria)
+                    result_data = {"count": len(results)}
+                elif op_type == "get":
+                    sample_id = random.choice(sample_ids)
+                    sample = mgr.get_sample(str(sample_id))
+                    result_data = {"found": sample is not None}
+                else:  # track_usage
+                    sample_id = random.choice(sample_ids)
+                    mgr.track_usage(str(sample_id))
+                    result_data = {"tracked": True}
             end = time.perf_counter()
             
             return {

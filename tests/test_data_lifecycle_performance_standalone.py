@@ -14,17 +14,20 @@ Performance targets:
 - Concurrent requests: Handle 50+ concurrent users
 """
 
+import os
+import tempfile
 import pytest
 import time
 import statistics
 import concurrent.futures
+from contextlib import contextmanager
 from datetime import datetime, timedelta
 from typing import List, Dict
 from uuid import uuid4
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy.pool import StaticPool
+from sqlalchemy.pool import NullPool
 
 from src.models.data_lifecycle import (
     Base,
@@ -54,6 +57,23 @@ LARGE_DATASET_SIZE = 10000
 PAGE_SIZES = [10, 25, 50, 100]
 
 
+def _clamp_unit_quality(value: float) -> float:
+    """Keep quality scores in [0, 1] for ``SampleModel`` CHECK constraints."""
+    return min(max(value, 0.0), 1.0)
+
+
+@contextmanager
+def _thread_sample_library_manager(db_session: Session):
+    """Fresh Session + manager per thread (Session is not thread-safe)."""
+    engine = db_session.get_bind()
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    sess = SessionLocal()
+    try:
+        yield SampleLibraryManager(sess)
+    finally:
+        sess.close()
+
+
 # =============================================================================
 # Test Fixtures
 # =============================================================================
@@ -62,28 +82,28 @@ PAGE_SIZES = [10, 25, 50, 100]
 def db_session() -> Session:
     """
     Provide a database session with data lifecycle tables.
-    
-    Uses in-memory SQLite for fast test execution.
+
+    Temp file + NullPool: thread-safe for ThreadPoolExecutor (one conn per Session).
     """
-    # Create in-memory SQLite engine
+    fd, path = tempfile.mkstemp(suffix=".sqlite")
+    os.close(fd)
     engine = create_engine(
-        "sqlite:///:memory:",
+        f"sqlite:///{path}",
         connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
+        poolclass=NullPool,
     )
-    
-    # Create all tables
-    Base.metadata.create_all(engine)
-    
-    # Create session
+    Base.metadata.create_all(engine, tables=[SampleModel.__table__])
     SessionLocal = sessionmaker(bind=engine)
     session = SessionLocal()
-    
-    yield session
-    
-    # Cleanup
-    session.close()
-    engine.dispose()
+    try:
+        yield session
+    finally:
+        session.close()
+        engine.dispose()
+        try:
+            os.unlink(path)
+        except OSError:
+            pass
 
 
 @pytest.fixture
@@ -106,11 +126,11 @@ def create_sample(
         created_at = datetime.utcnow()
     
     sample = SampleModel(
-        id=str(uuid4()),
+        id=uuid4(),
         data_id=str(uuid4()),
         content={"test": "data"},
         category=category,
-        quality_overall=quality_overall,
+        quality_overall=_clamp_unit_quality(quality_overall),
         quality_completeness=0.9,
         quality_accuracy=0.85,
         quality_consistency=0.8,
@@ -161,20 +181,26 @@ def populate_samples(
     for i in range(count):
         # Randomize attributes for realistic distribution
         category = random.choice(categories)
-        quality = random.uniform(*quality_range)
+        quality = _clamp_unit_quality(random.uniform(*quality_range))
         num_tags = random.randint(1, 4)
         tags = random.sample(tags_pool, num_tags)
         created_at = base_time + timedelta(days=random.randint(0, 365))
         
         sample = SampleModel(
-            id=str(uuid4()),
+            id=uuid4(),
             data_id=str(uuid4()),
             content={"test": f"data_{i}"},
             category=category,
             quality_overall=quality,
-            quality_completeness=quality + random.uniform(-0.1, 0.1),
-            quality_accuracy=quality + random.uniform(-0.1, 0.1),
-            quality_consistency=quality + random.uniform(-0.1, 0.1),
+            quality_completeness=_clamp_unit_quality(
+                quality + random.uniform(-0.1, 0.1)
+            ),
+            quality_accuracy=_clamp_unit_quality(
+                quality + random.uniform(-0.1, 0.1)
+            ),
+            quality_consistency=_clamp_unit_quality(
+                quality + random.uniform(-0.1, 0.1)
+            ),
             tags=tags,
             version=1,
             usage_count=random.randint(0, 100),
@@ -371,7 +397,7 @@ class TestPaginationPerformance:
 class TestConcurrentRequestHandling:
     """Performance tests for concurrent request handling."""
     
-    def test_concurrent_search_requests(self, db_session, sample_library_manager):
+    def test_concurrent_search_requests(self, db_session):
         """
         Test handling of concurrent search requests.
         
@@ -389,7 +415,8 @@ class TestConcurrentRequestHandling:
             )
             
             start = time.perf_counter()
-            results, total = sample_library_manager.search_samples(criteria)
+            with _thread_sample_library_manager(db_session) as mgr:
+                results, total = mgr.search_samples(criteria)
             end = time.perf_counter()
             
             return {

@@ -1,5 +1,20 @@
 {
   "title": "Collaboration & Review",
+  "titles": {
+    "active_collaborators": "Active Collaborators"
+  },
+  "messages": {
+    "no_collaborators": "No collaborators online"
+  },
+  "labels": {
+    "same_task": "Same Task"
+  },
+  "warnings": {
+    "conflicts_detected": "Conflicts Detected"
+  },
+  "tooltips": {
+    "collaborators_active": "{{count}} collaborators active"
+  },
   "stats": {
     "inProgressTasks": "In Progress Tasks",
     "pendingReview": "Pending Review",
@@ -24,7 +39,10 @@
     "pending": "Pending",
     "inProgress": "In Progress",
     "review": "In Review",
-    "completed": "Completed"
+    "completed": "Completed",
+    "editing": "Editing",
+    "viewing": "Viewing",
+    "idle": "Idle"
   },
   "team": {
     "processing": "Processing",

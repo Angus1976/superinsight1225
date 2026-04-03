@@ -40,6 +40,7 @@ def api_token_config():
     config.api_token = LABEL_STUDIO_API_TOKEN
     config.username = None  # Force API token authentication
     config.password = None
+    config.sso_enabled = False  # Otherwise SSO wins when token + sso_enabled (env) are set
     return config
 
 
@@ -51,6 +52,7 @@ def jwt_config():
     config.username = LABEL_STUDIO_USERNAME
     config.password = LABEL_STUDIO_PASSWORD
     config.api_token = None  # Force JWT authentication
+    config.sso_enabled = False
     return config
 
 
@@ -62,6 +64,7 @@ def both_auth_config():
     config.username = LABEL_STUDIO_USERNAME
     config.password = LABEL_STUDIO_PASSWORD
     config.api_token = LABEL_STUDIO_API_TOKEN
+    config.sso_enabled = False
     return config
 
 
@@ -242,6 +245,7 @@ class TestAuthMethodSwitching:
         config.username = None  # Invalid JWT credentials
         config.password = None
         config.api_token = LABEL_STUDIO_API_TOKEN  # Valid API token
+        config.sso_enabled = False
         
         integration = LabelStudioIntegration(config=config)
         

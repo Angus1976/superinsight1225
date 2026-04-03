@@ -111,7 +111,7 @@ describe('SQLBuilder', () => {
     render(<SQLBuilder />, { wrapper: createWrapper() });
     
     await waitFor(() => {
-      expect(screen.getByText('SQL 构建器')).toBeInTheDocument();
+      expect(screen.getByText(/SQL 构建器|SQL Builder/)).toBeInTheDocument();
     });
   });
 
@@ -119,7 +119,7 @@ describe('SQLBuilder', () => {
     render(<SQLBuilder />, { wrapper: createWrapper() });
     
     await waitFor(() => {
-      expect(screen.getByText('选择数据库')).toBeInTheDocument();
+      expect(screen.getByText(/选择数据库|Select Database/)).toBeInTheDocument();
     });
   });
 
@@ -127,7 +127,7 @@ describe('SQLBuilder', () => {
     render(<SQLBuilder />, { wrapper: createWrapper() });
     
     await waitFor(() => {
-      expect(screen.getByText('请先选择数据库')).toBeInTheDocument();
+      expect(screen.getByText(/请先选择数据库|Please select a database/i)).toBeInTheDocument();
     });
   });
 
@@ -135,7 +135,7 @@ describe('SQLBuilder', () => {
     render(<SQLBuilder />, { wrapper: createWrapper() });
     
     await waitFor(() => {
-      expect(screen.getByText('选择数据库')).toBeInTheDocument();
+      expect(screen.getByText(/选择数据库|Select Database/)).toBeInTheDocument();
     });
     
     // Select database
@@ -157,7 +157,7 @@ describe('SQLBuilder', () => {
     
     // Wait for initial render
     await waitFor(() => {
-      expect(screen.getByText('SQL 构建器')).toBeInTheDocument();
+      expect(screen.getByText(/SQL 构建器|SQL Builder/)).toBeInTheDocument();
     });
     
     // The buildSQL should be called when query config changes
@@ -174,7 +174,7 @@ describe('SQLBuilder', () => {
     render(<SQLBuilder />, { wrapper: createWrapper() });
     
     await waitFor(() => {
-      expect(screen.getByText('SQL 构建器')).toBeInTheDocument();
+      expect(screen.getByText(/SQL 构建器|SQL Builder/)).toBeInTheDocument();
     });
     
     // Validation is part of the build process
@@ -196,11 +196,13 @@ describe('SQLBuilder', () => {
     render(<SQLBuilder />, { wrapper: createWrapper() });
     
     await waitFor(() => {
-      expect(screen.getByText('SQL 构建器')).toBeInTheDocument();
+      expect(screen.getByText(/SQL 构建器|SQL Builder/)).toBeInTheDocument();
     });
     
-    // Execute button should be present
-    expect(screen.getByText('执行查询')).toBeInTheDocument();
+    // Without selecting a database, the page shows an instructional alert.
+    expect(
+      screen.getByText(/请先选择数据库|Please select a database first/i)
+    ).toBeInTheDocument();
   });
 
   it('saves query as template', async () => {
@@ -219,7 +221,7 @@ describe('SQLBuilder', () => {
     render(<SQLBuilder />, { wrapper: createWrapper() });
     
     await waitFor(() => {
-      expect(screen.getByText('SQL 构建器')).toBeInTheDocument();
+      expect(screen.getByText(/SQL 构建器|SQL Builder/)).toBeInTheDocument();
     });
     
     // Template save functionality is available

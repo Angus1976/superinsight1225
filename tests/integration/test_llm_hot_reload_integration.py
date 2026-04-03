@@ -11,9 +11,12 @@ Validates: Requirements 6.1, 6.2, 6.3, 17.3, 17.4, 17.5
 """
 
 import asyncio
+import os
 import pytest
 from unittest.mock import patch, MagicMock, AsyncMock
 from uuid import uuid4
+
+from sqlalchemy import delete, select
 
 from src.ai.llm_schemas import CloudConfig
 from src.models.llm_configuration import LLMConfiguration
@@ -27,6 +30,18 @@ from src.ai.encryption_service import get_encryption_service
 def setup_test_binding(db_session):
     """Create test application with LLM binding."""
     encryption = get_encryption_service()
+
+    existing_id = db_session.execute(
+        select(LLMApplication.id).where(LLMApplication.code == "hot_reload_app")
+    ).scalar_one_or_none()
+    if existing_id:
+        db_session.execute(
+            delete(LLMApplicationBinding).where(
+                LLMApplicationBinding.application_id == existing_id
+            )
+        )
+        db_session.execute(delete(LLMApplication).where(LLMApplication.id == existing_id))
+        db_session.flush()
     
     # Create application
     app = LLMApplication(
@@ -43,6 +58,7 @@ def setup_test_binding(db_session):
     config = LLMConfiguration(
         id=uuid4(),
         name="Original Config",
+        provider="openai",
         default_method="openai",
         is_active=True,
         tenant_id=None,
@@ -69,7 +85,7 @@ def setup_test_binding(db_session):
         is_active=True
     )
     db_session.add(binding)
-    db_session.commit()
+    db_session.flush()
     
     return {
         "application": app,
@@ -263,6 +279,7 @@ class TestHotReloadWithoutRedis:
         config2 = LLMConfiguration(
             id=uuid4(),
             name="Second Config",
+            provider="openai",
             default_method="openai",
             is_active=True,
             tenant_id=None,
@@ -339,11 +356,17 @@ class TestHotReloadWithoutRedis:
             broadcast=False
         )
         
-        # Load configuration again (should have no bindings)
-        configs = await manager.get_llm_config(
-            application_code="hot_reload_app",
-            tenant_id=None
-        )
+        # Load again: DB has no bindings; without env fallback we expect an empty list.
+        # (Production may still fall back to OPENAI_* / Ollama env for compatibility.)
+        with patch.dict(
+            os.environ,
+            {"OPENAI_API_KEY": "", "OPENAI_BASE_URL": ""},
+            clear=False,
+        ):
+            configs = await manager.get_llm_config(
+                application_code="hot_reload_app",
+                tenant_id=None
+            )
         assert len(configs) == 0
 
 
@@ -394,12 +417,20 @@ class TestHotReloadWithRedis:
         mock_redis = MagicMock()
         mock_pubsub = MagicMock()
         mock_redis.pubsub.return_value = mock_pubsub
-        
-        encryption = get_encryption_service()
+        mock_pubsub.subscribe = AsyncMock()
+
+        async def _listen_stub(self):
+            """Same subscription setup as CacheManager._listen_for_invalidations (no infinite loop)."""
+            pubsub = self.redis.pubsub()
+            await pubsub.subscribe(CacheManager.INVALIDATION_CHANNEL)
+
         cache_manager = CacheManager(redis_client=mock_redis, local_ttl=300)
-        
-        # Verify subscription was set up
+        with patch.object(CacheManager, "_listen_for_invalidations", _listen_stub):
+            await cache_manager.start_invalidation_listener()
+            await asyncio.sleep(0)
         mock_redis.pubsub.assert_called_once()
+        mock_pubsub.subscribe.assert_awaited()
+        await cache_manager.stop_invalidation_listener()
     
     async def test_multi_instance_cache_sync(
         self, db_session, setup_test_binding

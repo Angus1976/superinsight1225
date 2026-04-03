@@ -114,6 +114,7 @@
       "addFailed": "添加到样本库失败",
       "removeSuccess": "已从样本库移除",
       "removeFailed": "从样本库移除失败",
+      "noSamplesSelected": "未选择样本",
       "noSamples": "样本库为空",
       "confirmRemove": "确定要从样本库移除此样本吗？",
       "searchPlaceholder": "搜索样本名称或描述...",
@@ -336,6 +337,7 @@
     },
     "messages": {
       "createSuccess": "增强任务创建成功",
+      "createFailed": "增强任务创建失败",
       "startSuccess": "增强任务已开始",
       "startFailed": "增强任务开始失败",
       "pauseSuccess": "增强任务已暂停",
@@ -415,6 +417,7 @@
     },
     "messages": {
       "createSuccess": "AI 试用任务创建成功",
+      "createFailed": "AI 试用任务创建失败",
       "startSuccess": "AI 试用已开始",
       "startFailed": "AI 试用开始失败",
       "stopSuccess": "AI 试用已停止",
@@ -437,7 +440,30 @@
   },
   "audit": {
     "title": "审计日志",
-    "description": "查看和搜索审计日志以进行合规性检查和调试"
+    "description": "查看和搜索审计日志以进行合规性检查和调试",
+    "columns": {
+      "timestamp": "时间",
+      "userId": "用户 ID",
+      "operationType": "操作类型",
+      "resourceType": "资源类型",
+      "action": "动作",
+      "result": "结果",
+      "duration": "耗时"
+    },
+    "filters": {
+      "userId": "用户 ID",
+      "resourceType": "资源类型",
+      "operationType": "操作类型",
+      "startDate": "开始日期",
+      "endDate": "结束日期",
+      "result": "结果"
+    },
+    "results": {
+      "success": "成功",
+      "failure": "失败",
+      "partial": "部分成功"
+    },
+    "export": "导出"
   },
   "common": {
     "type": "类型",
@@ -452,6 +478,7 @@
       "save": "保存",
       "cancel": "取消",
       "confirm": "确认",
+      "retry": "重试",
       "delete": "删除",
       "edit": "编辑",
       "view": "查看",
@@ -484,6 +511,7 @@
       "confirmAction": "确定要执行此操作吗？",
       "operationSuccess": "操作成功",
       "operationFailed": "操作失败",
+      "validationError": "提交的数据存在问题，请检查并修正后重试。",
       "saveSuccess": "保存成功",
       "saveFailed": "保存失败",
       "deleteSuccess": "删除成功",
@@ -503,6 +531,9 @@
       "page": "第 {{current}} 页",
       "pageSize": "每页 {{size}} 条"
     }
+  },
+  "common:action": {
+    "cancel": "取消"
   },
   "permissions": {
     "view": "查看",
@@ -559,7 +590,15 @@
     "button": "转存数据",
     "modal": {
       "title": "数据转存配置",
-      "description": "将数据转存到数据流转系统"
+      "description": "将数据转存到数据流转系统",
+      "selectStage": "选择目标阶段",
+      "dataType": "数据类型",
+      "tags": "标签",
+      "tagsPlaceholder": "输入标签，逗号分隔",
+      "remark": "备注",
+      "remarkPlaceholder": "可选备注",
+      "qualityThreshold": "质量阈值",
+      "preview": "预览"
     },
     "fields": {
       "sourceType": "数据来源",
@@ -598,6 +637,7 @@
       "success": "成功转存 {{count}} 条记录到{{state}}",
       "successWithNavigation": "成功转存 {{count}} 条记录，点击查看",
       "error": "转存失败：{{error}}",
+      "noStageSelected": "请选择目标阶段",
       "approvalRequired": "转存请求已提交，等待审批",
       "approvalEstimatedTime": "预计审批时间：{{time}}",
       "permissionDenied": "您没有权限执行此操作",
@@ -623,6 +663,28 @@
       "recordCount": "记录数",
       "fields": "字段列表",
       "preview": "数据预览"
+    },
+    "dataTypes": {
+      "text": "文本",
+      "image": "图片",
+      "audio": "音频",
+      "video": "视频"
+    },
+    "progress": {
+      "title": "转存进度"
+    },
+    "approval": {
+      "title": "转存审批",
+      "directTransfer": "直接转存",
+      "submitApproval": "提交审批",
+      "reason": "原因",
+      "reasonPlaceholder": "请输入审批原因",
+      "status": {
+        "pending": "待审批"
+      },
+      "messages": {
+        "submitted": "已提交审批"
+      }
     },
     "permissions": {
       "requiresApproval": "（需要审批）",

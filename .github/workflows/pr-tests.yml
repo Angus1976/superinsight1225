@@ -7,6 +7,14 @@ on:
     branches: [main, develop]
     types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
+  workflow_call:
+    secrets: inherit
+    inputs:
+      hypothesis_profile:
+        description: 'HYPOTHESIS_PROFILE for backend pytest in integration job (commit-tests sets its own via with).'
+        type: string
+        required: false
+        default: ''
 
 env:
   PYTHON_VERSION: '3.11'
@@ -22,6 +30,8 @@ jobs:
     name: Commit Tests
     uses: ./.github/workflows/commit-tests.yml
     secrets: inherit
+    with:
+      hypothesis_profile: ${{ github.event_name == 'pull_request' && 'dev' || inputs.hypothesis_profile }}
 
   # =============================================================================
   # Integration Tests
@@ -87,6 +97,25 @@ jobs:
           API_V1_PREFIX=/api/v1
           SERVER_NAME=test-server
           EOF
+
+      - name: Set HYPOTHESIS_PROFILE for integration pytest
+        run: |
+          case "${{ github.event_name }}" in
+            pull_request)
+              echo "HYPOTHESIS_PROFILE=dev" >> "$GITHUB_ENV"
+              ;;
+            workflow_call)
+              P='${{ inputs.hypothesis_profile }}'
+              if [ -n "$P" ]; then
+                echo "HYPOTHESIS_PROFILE=$P" >> "$GITHUB_ENV"
+              else
+                echo "HYPOTHESIS_PROFILE=default" >> "$GITHUB_ENV"
+              fi
+              ;;
+            *)
+              echo "HYPOTHESIS_PROFILE=default" >> "$GITHUB_ENV"
+              ;;
+          esac
 
       - name: Run integration tests
         run: |

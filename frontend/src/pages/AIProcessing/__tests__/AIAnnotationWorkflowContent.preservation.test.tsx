@@ -13,24 +13,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import '@testing-library/jest-dom'
+import i18n from '@/locales/config'
 import AIAnnotationWorkflowContent from '../AIAnnotationWorkflowContent'
 
 // Mock fetch globally
 global.fetch = vi.fn()
 
-// Mock react-i18next
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => key,
-    i18n: { language: 'zh' },
-  }),
-}))
-
 describe('AIAnnotationWorkflowContent - Preservation Properties', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks()
+    await i18n.changeLanguage('zh')
     // Mock successful data sources fetch
     ;(global.fetch as any).mockResolvedValue({
+      ok: true,
       json: async () => ({
         data_sources: [
           {

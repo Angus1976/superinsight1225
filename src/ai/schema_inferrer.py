@@ -187,6 +187,11 @@ class SchemaInferrer:
                     mode=instructor.Mode.JSON,
                 )
 
+    @property
+    def cloud_config(self) -> CloudConfig:
+        """Backward-compatible alias for the active CloudConfig."""
+        return self._config
+
     async def infer_from_text(
         self,
         text: str,

@@ -33,12 +33,12 @@ const WorkflowPlayground: React.FC = () => {
   } | null>(null);
   const [history, setHistory] = useState<WorkflowExecutionResult[]>([]);
 
-  const handleSendMessage = async (message: string) => {
-    if (!message.trim()) return;
+  const handleSendMessage = async (text: string) => {
+    if (!text.trim()) return;
 
     setGenerating(true);
     try {
-      const parsedWorkflow = await parseWorkflow(message);
+      const parsedWorkflow = await parseWorkflow(text);
       setWorkflow(parsedWorkflow);
       message.success(t('workflowPlayground.messages.workflowGenerated'));
     } catch (error) {

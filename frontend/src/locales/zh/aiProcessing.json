@@ -99,7 +99,9 @@
       "level": {
         "administrator": "管理员",
         "directTransfer": "直接转存",
+        "direct_transfer": "直接转存",
         "approvalRequired": "需要审批",
+        "approval_required": "需要审批",
         "noPermission": "无权限"
       },
       "yourLevel": "您的权限级别：{{level}}"

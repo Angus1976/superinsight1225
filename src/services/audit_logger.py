@@ -97,11 +97,12 @@ class AuditLogger:
         
         # Store in database (immutable - no updates allowed)
         self.db.add(audit_log)
+        self.db.flush()
+        # Validate before commit so we never rely on session.refresh() after commit.
+        # refresh() can fail on SQLite + PGUUID when tests temporarily swap column types.
+        out = AuditLog.model_validate(audit_log, from_attributes=True)
         self.db.commit()
-        self.db.refresh(audit_log)
-        
-        # Convert to Pydantic model
-        return AuditLog.model_validate(audit_log)
+        return out
     
     def get_audit_log(
         self,

@@ -18,49 +18,20 @@ from src.services.sample_library_manager import (
 
 @pytest.fixture
 def db_session():
-    """Create an in-memory SQLite database for testing"""
-    # Use SQLite with JSON type instead of JSONB
-    from sqlalchemy import event
-    from sqlalchemy.engine import Engine
-    
-    engine = create_engine('sqlite:///:memory:')
-    
-    # Only create the samples table for testing
-    from sqlalchemy import Table, Column, String, Float, Integer, DateTime, JSON
-    from sqlalchemy.dialects.postgresql import UUID as PGUUID
-    from uuid import uuid4
-    from datetime import datetime
-    
-    metadata = Base.metadata
-    
-    # Create only the samples table
-    samples_table = Table(
-        'samples',
-        metadata,
-        Column('id', String(36), primary_key=True, default=lambda: str(uuid4())),
-        Column('data_id', String(255), nullable=False),
-        Column('content', JSON, nullable=False),
-        Column('category', String(100), nullable=False),
-        Column('quality_overall', Float, nullable=False),
-        Column('quality_completeness', Float, nullable=False),
-        Column('quality_accuracy', Float, nullable=False),
-        Column('quality_consistency', Float, nullable=False),
-        Column('version', Integer, nullable=False, default=1),
-        Column('tags', JSON, nullable=False, default=list),
-        Column('usage_count', Integer, nullable=False, default=0),
-        Column('last_used_at', DateTime, nullable=True),
-        Column('metadata', JSON, nullable=False, default=dict),
-        Column('created_at', DateTime, nullable=False, default=datetime.utcnow),
-        Column('updated_at', DateTime, nullable=False, default=datetime.utcnow),
-        extend_existing=True
+    """In-memory SQLite with the real ``SampleModel`` schema (UUID + constraints)."""
+    engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
     )
-    
-    samples_table.create(engine, checkfirst=True)
-    
+    # Only ``samples`` — full ``Base.metadata`` may include PG-only types from other imports.
+    Base.metadata.create_all(engine, tables=[SampleModel.__table__])
     Session = sessionmaker(bind=engine)
     session = Session()
-    yield session
-    session.close()
+    try:
+        yield session
+    finally:
+        session.close()
+        engine.dispose()
 
 
 @pytest.fixture

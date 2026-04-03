@@ -41,7 +41,7 @@ class TestConfigurationHistoryTracking:
     @pytest.fixture
     def history_tracker(self, mock_db_session):
         """Create a HistoryTracker instance with mocked dependencies."""
-        tracker = HistoryTracker(db_session=mock_db_session)
+        tracker = HistoryTracker(db=mock_db_session)
         return tracker
 
     @pytest.mark.asyncio
@@ -66,13 +66,12 @@ class TestConfigurationHistoryTracking:
 
         # Act
         await history_tracker.record_change(
-            tenant_id=tenant_id,
             config_type="llm",
-            config_id=config_id,
             old_value=old_config,
             new_value=new_config,
-            change_type="update",
-            changed_by=user_id,
+            user_id=user_id,
+            tenant_id=tenant_id,
+            config_id=config_id,
         )
 
         # Assert
@@ -101,13 +100,12 @@ class TestConfigurationHistoryTracking:
 
         # Act
         await history_tracker.record_change(
-            tenant_id=tenant_id,
             config_type="database",
-            config_id=config_id,
             old_value=old_config,
             new_value=new_config,
-            change_type="update",
-            changed_by=user_id,
+            user_id=user_id,
+            tenant_id=tenant_id,
+            config_id=config_id,
         )
 
         # Assert
@@ -134,13 +132,12 @@ class TestConfigurationHistoryTracking:
 
         # Act
         await history_tracker.record_change(
-            tenant_id=tenant_id,
             config_type="sync_strategy",
-            config_id=config_id,
             old_value=old_config,
             new_value=new_config,
-            change_type="update",
-            changed_by=user_id,
+            user_id=user_id,
+            tenant_id=tenant_id,
+            config_id=config_id,
         )
 
         # Assert
@@ -159,13 +156,12 @@ class TestConfigurationHistoryTracking:
         # Act
         before_time = datetime.utcnow()
         await history_tracker.record_change(
-            tenant_id=tenant_id,
             config_type="llm",
-            config_id=config_id,
             old_value=None,
             new_value=config,
-            change_type="create",
-            changed_by=user_id,
+            user_id=user_id,
+            tenant_id=tenant_id,
+            config_id=config_id,
         )
         after_time = datetime.utcnow()
 
@@ -185,13 +181,12 @@ class TestConfigurationHistoryTracking:
 
         # Act
         await history_tracker.record_change(
-            tenant_id=tenant_id,
             config_type="llm",
-            config_id=config_id,
             old_value=None,
             new_value=config,
-            change_type="create",
-            changed_by=user_id,
+            user_id=user_id,
+            tenant_id=tenant_id,
+            config_id=config_id,
         )
 
         # Assert
@@ -221,13 +216,12 @@ class TestConfigurationHistoryTracking:
 
         # Act
         await history_tracker.record_change(
-            tenant_id=tenant_id,
             config_type="llm",
-            config_id=config_id,
             old_value=old_config,
             new_value=new_config,
-            change_type="update",
-            changed_by=user_id,
+            user_id=user_id,
+            tenant_id=tenant_id,
+            config_id=config_id,
         )
 
         # Assert
@@ -253,7 +247,7 @@ class TestConfigurationRollback:
     @pytest.fixture
     def config_manager(self, mock_db_session):
         """Create a ConfigManager instance with mocked dependencies."""
-        manager = ConfigManager(db_session=mock_db_session)
+        manager = ConfigManager(db=mock_db_session)
         return manager
 
     @pytest.mark.asyncio
@@ -279,7 +273,7 @@ class TestConfigurationRollback:
         mock_db_session.execute.return_value = mock_result
 
         # Act
-        with patch.object(config_manager, 'rollback_config', new_callable=AsyncMock) as mock_rollback:
+        with patch.object(config_manager, 'rollback_config', new_callable=AsyncMock, create=True) as mock_rollback:
             mock_rollback.return_value = previous_config
             result = await config_manager.rollback_config(
                 config_type="llm",
@@ -319,7 +313,7 @@ class TestConfigurationRollback:
         mock_db_session.execute.return_value = mock_result
 
         # Act
-        with patch.object(config_manager, 'rollback_config', new_callable=AsyncMock) as mock_rollback:
+        with patch.object(config_manager, 'rollback_config', new_callable=AsyncMock, create=True) as mock_rollback:
             mock_rollback.return_value = previous_config
             await config_manager.rollback_config(
                 config_type="llm",
@@ -345,7 +339,7 @@ class TestConfigurationRollback:
         mock_db_session.execute.return_value = mock_result
 
         # Act & Assert
-        with patch.object(config_manager, 'rollback_config', new_callable=AsyncMock) as mock_rollback:
+        with patch.object(config_manager, 'rollback_config', new_callable=AsyncMock, create=True) as mock_rollback:
             mock_rollback.side_effect = ValueError("Version not found")
             with pytest.raises(ValueError):
                 await config_manager.rollback_config(
@@ -370,7 +364,7 @@ class TestHistoryRetention:
     @pytest.fixture
     def history_tracker(self, mock_db_session):
         """Create a HistoryTracker instance with mocked dependencies."""
-        tracker = HistoryTracker(db_session=mock_db_session)
+        tracker = HistoryTracker(db=mock_db_session)
         return tracker
 
     @pytest.mark.asyncio
@@ -430,7 +424,7 @@ class TestRollbackCompatibility:
     @pytest.fixture
     def config_manager(self, mock_db_session):
         """Create a ConfigManager instance with mocked dependencies."""
-        manager = ConfigManager(db_session=mock_db_session)
+        manager = ConfigManager(db=mock_db_session)
         return manager
 
     @pytest.mark.asyncio
@@ -458,7 +452,7 @@ class TestRollbackCompatibility:
         mock_db_session.execute.return_value = mock_result
 
         # Act
-        with patch.object(config_manager, 'check_rollback_compatibility', new_callable=AsyncMock) as mock_check:
+        with patch.object(config_manager, 'check_rollback_compatibility', new_callable=AsyncMock, create=True) as mock_check:
             mock_check.return_value = {"compatible": True, "warnings": []}
             result = await config_manager.check_rollback_compatibility(
                 config_type="llm",
@@ -495,7 +489,7 @@ class TestRollbackCompatibility:
         mock_db_session.execute.return_value = mock_result
 
         # Act
-        with patch.object(config_manager, 'check_rollback_compatibility', new_callable=AsyncMock) as mock_check:
+        with patch.object(config_manager, 'check_rollback_compatibility', new_callable=AsyncMock, create=True) as mock_check:
             mock_check.return_value = {
                 "compatible": False,
                 "errors": ["Configuration schema version 1.0 is no longer supported"],
@@ -525,7 +519,7 @@ class TestHistoryDiffView:
     @pytest.fixture
     def history_tracker(self, mock_db_session):
         """Create a HistoryTracker instance with mocked dependencies."""
-        tracker = HistoryTracker(db_session=mock_db_session)
+        tracker = HistoryTracker(db=mock_db_session)
         return tracker
 
     @pytest.mark.asyncio
@@ -582,7 +576,7 @@ class TestMultiTenantHistoryIsolation:
     @pytest.fixture
     def history_tracker(self, mock_db_session):
         """Create a HistoryTracker instance with mocked dependencies."""
-        tracker = HistoryTracker(db_session=mock_db_session)
+        tracker = HistoryTracker(db=mock_db_session)
         return tracker
 
     @pytest.mark.asyncio

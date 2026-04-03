@@ -19,7 +19,7 @@ from src.ai.entity_extractor import (
     EntityExtractionError,
     EntityExtractor,
     ExtractionResult,
-    StructuredRecord,
+    ExtractedStructuredRecord,
     _build_extraction_result,
     _build_schema_description,
     _check_required_fields,
@@ -127,13 +127,13 @@ class TestComputeAvgConfidence:
         assert _compute_avg_confidence([]) == 0.0
 
     def test_single_record(self):
-        records = [StructuredRecord(fields={"a": 1}, confidence=0.8)]
+        records = [ExtractedStructuredRecord(fields={"a": 1}, confidence=0.8)]
         assert _compute_avg_confidence(records) == pytest.approx(0.8)
 
     def test_multiple_records(self):
         records = [
-            StructuredRecord(fields={"a": 1}, confidence=0.6),
-            StructuredRecord(fields={"a": 2}, confidence=0.8),
+            ExtractedStructuredRecord(fields={"a": 1}, confidence=0.6),
+            ExtractedStructuredRecord(fields={"a": 2}, confidence=0.8),
         ]
         assert _compute_avg_confidence(records) == pytest.approx(0.7)
 
@@ -162,18 +162,18 @@ class TestBuildSchemaDescription:
 
 class TestValidateRecordFields:
     def test_removes_extra_keys(self, sample_schema):
-        record = StructuredRecord(fields={"name": "A", "age": 1, "unknown": "x"}, confidence=0.9)
+        record = ExtractedStructuredRecord(fields={"name": "A", "age": 1, "unknown": "x"}, confidence=0.9)
         result = _validate_record_fields(record, sample_schema)
         assert "unknown" not in result.fields
         assert "name" in result.fields
 
     def test_keeps_valid_keys(self, sample_schema):
-        record = StructuredRecord(fields={"name": "A", "age": 1, "city": "X"}, confidence=0.9)
+        record = ExtractedStructuredRecord(fields={"name": "A", "age": 1, "city": "X"}, confidence=0.9)
         result = _validate_record_fields(record, sample_schema)
         assert len(result.fields) == 3
 
     def test_clamps_confidence(self, sample_schema):
-        record = StructuredRecord.model_construct(
+        record = ExtractedStructuredRecord.model_construct(
             fields={"name": "A", "age": 1}, confidence=1.5, source_span=None,
         )
         result = _validate_record_fields(record, sample_schema)
@@ -182,15 +182,15 @@ class TestValidateRecordFields:
 
 class TestCheckRequiredFields:
     def test_all_required_present(self, sample_schema):
-        record = StructuredRecord(fields={"name": "A", "age": 1}, confidence=0.9)
+        record = ExtractedStructuredRecord(fields={"name": "A", "age": 1}, confidence=0.9)
         assert _check_required_fields(record, sample_schema) is True
 
     def test_missing_required_field(self, sample_schema):
-        record = StructuredRecord(fields={"name": "A"}, confidence=0.9)
+        record = ExtractedStructuredRecord(fields={"name": "A"}, confidence=0.9)
         assert _check_required_fields(record, sample_schema) is False
 
     def test_optional_field_not_required(self, sample_schema):
-        record = StructuredRecord(fields={"name": "A", "age": 1}, confidence=0.9)
+        record = ExtractedStructuredRecord(fields={"name": "A", "age": 1}, confidence=0.9)
         # city is optional, so this should pass
         assert _check_required_fields(record, sample_schema) is True
 
@@ -204,8 +204,8 @@ class TestBuildExtractionResult:
 
     def test_computes_totals(self):
         records = [
-            StructuredRecord(fields={"a": 1}, confidence=0.6),
-            StructuredRecord(fields={"a": 2}, confidence=0.8),
+            ExtractedStructuredRecord(fields={"a": 1}, confidence=0.6),
+            ExtractedStructuredRecord(fields={"a": 2}, confidence=0.8),
         ]
         result = _build_extraction_result(records)
         assert result.total_extracted == 2

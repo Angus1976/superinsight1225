@@ -5,6 +5,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import i18n from '@/locales/config';
 import TempDataPage from '../TempData';
 
 // Mock hooks
@@ -54,8 +55,9 @@ vi.mock('react-router-dom', async () => {
 });
 
 describe('TempDataPage', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
+    await i18n.changeLanguage('en');
   });
 
   const renderComponent = () => {
@@ -68,26 +70,23 @@ describe('TempDataPage', () => {
 
   it('renders page title and description', () => {
     renderComponent();
-    
-    expect(screen.getByText('tempData.title')).toBeInTheDocument();
-    expect(screen.getByText('tempData.description')).toBeInTheDocument();
+
+    expect(screen.getByRole('heading', { name: /Temporary Data Management/i })).toBeInTheDocument();
+    expect(screen.getByText('Manage draft data and temporary files')).toBeInTheDocument();
   });
 
   it('renders action buttons', () => {
     renderComponent();
-    
-    expect(screen.getByText('common.actions.refresh')).toBeInTheDocument();
-    expect(screen.getByText('tempData.uploadDocument')).toBeInTheDocument();
+
+    expect(screen.getByRole('button', { name: /Refresh/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Upload Document/i })).toBeInTheDocument();
   });
 
   it('renders filter controls', () => {
     renderComponent();
-    
-    // Check for filter button
-    expect(screen.getByText('common.actions.filter')).toBeInTheDocument();
-    
-    // Check for reset button
-    expect(screen.getByText('common.actions.reset')).toBeInTheDocument();
+
+    expect(screen.getByRole('button', { name: /Filter/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Reset$/i })).toBeInTheDocument();
   });
 
   it('renders TempDataTable component', () => {
@@ -98,8 +97,8 @@ describe('TempDataPage', () => {
 
   it('navigates to upload page when upload button is clicked', () => {
     renderComponent();
-    
-    const uploadButton = screen.getByText('tempData.uploadDocument');
+
+    const uploadButton = screen.getByRole('button', { name: /Upload Document/i });
     fireEvent.click(uploadButton);
     
     expect(mockNavigate).toHaveBeenCalledWith('/data-structuring/upload');
@@ -115,9 +114,8 @@ describe('TempDataPage', () => {
 
   it('displays statistics card', () => {
     renderComponent();
-    
-    // Should show total count using i18n key
-    // The mock returns the key itself, so we check for the pattern
-    expect(screen.getByText(/common.pagination.total/i)).toBeInTheDocument();
+
+    expect(screen.getByText(/Total 0 items/i)).toBeInTheDocument();
+    expect(screen.getByText(/State: All/i)).toBeInTheDocument();
   });
 });

@@ -140,14 +140,15 @@ class TestAPIEndpointsStructure:
         assert "Label Studio Workspaces" in router.tags
 
     def test_routes_exist(self):
-        """Test expected routes are defined."""
+        """Test expected routes are defined (paths include router prefix)."""
         routes = [route.path for route in router.routes]
+        p = router.prefix
 
-        assert "" in routes  # POST create, GET list
-        assert "/{workspace_id}" in routes  # GET, PUT, DELETE
-        assert "/{workspace_id}/members" in routes  # POST add, GET list
-        assert "/{workspace_id}/members/{user_id}" in routes  # PUT, DELETE
-        assert "/{workspace_id}/permissions" in routes  # GET
+        assert f"{p}" in routes  # POST create, GET list
+        assert f"{p}/{{workspace_id}}" in routes  # GET, PUT, DELETE
+        assert f"{p}/{{workspace_id}}/members" in routes  # POST add, GET list
+        assert f"{p}/{{workspace_id}}/members/{{user_id}}" in routes  # PUT, DELETE
+        assert f"{p}/{{workspace_id}}/permissions" in routes  # GET
 
 
 class TestWorkspaceCRUDEndpoints:
@@ -488,6 +489,7 @@ class TestProjectAssociationAPIStructure:
         from src.api.label_studio_workspace import router
 
         routes = [route.path for route in router.routes]
+        p = router.prefix
 
-        assert "/{workspace_id}/projects" in routes  # POST, GET
-        assert "/{workspace_id}/projects/{project_id}" in routes  # GET, DELETE
+        assert f"{p}/{{workspace_id}}/projects" in routes  # POST, GET
+        assert f"{p}/{{workspace_id}}/projects/{{project_id}}" in routes  # GET, DELETE

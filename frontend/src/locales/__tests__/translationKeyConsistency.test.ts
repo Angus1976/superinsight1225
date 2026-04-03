@@ -145,27 +145,24 @@ describe('Translation Key Consistency', () => {
     describe('Core Translation Keys', () => {
       // Test that essential keys exist in both languages
       const coreKeys = [
-        'tasks.title',
-        'tasks.list.title',
-        'tasks.list.refresh',
-        'tasks.list.create',
-        'tasks.list.export',
-        'tasks.status.pending',
-        'tasks.status.inProgress',
-        'tasks.status.completed',
-        'tasks.status.cancelled',
-        'tasks.priority.low',
-        'tasks.priority.medium',
-        'tasks.priority.high',
-        'tasks.priority.urgent',
-        'tasks.actions.view',
-        'tasks.actions.edit',
-        'tasks.actions.delete',
-        'tasks.actions.startAnnotation',
-        'tasks.actions.openInNewWindow',
-        'tasks.annotate.title',
-        'tasks.annotate.openLabelStudio',
-        'tasks.annotate.backToTask',
+        // `tasks.json` is a flat namespace file; keys do not include a leading `tasks.`.
+        'title',
+        'refresh',
+        'createTask',
+        'exportAll',
+        'exportSelected',
+        'statusPending',
+        'statusInProgress',
+        'statusCompleted',
+        'statusCancelled',
+        'priorityLow',
+        'priorityMedium',
+        'priorityHigh',
+        'priorityUrgent',
+        'view',
+        'editAction',
+        'deleteAction',
+        'annotateAction',
       ];
 
       coreKeys.forEach(key => {
@@ -181,7 +178,7 @@ describe('Translation Key Consistency', () => {
 
     describe('Translation Values', () => {
       it('should have non-empty Chinese translations for core keys', () => {
-        const coreKeys = ['tasks.title', 'tasks.list.refresh', 'tasks.status.pending'];
+        const coreKeys = ['title', 'refresh', 'statusPending'];
         
         coreKeys.forEach(key => {
           const parts = key.split('.');
@@ -198,7 +195,7 @@ describe('Translation Key Consistency', () => {
       });
 
       it('should have non-empty English translations for core keys', () => {
-        const coreKeys = ['tasks.title', 'tasks.list.refresh', 'tasks.status.pending'];
+        const coreKeys = ['title', 'refresh', 'statusPending'];
         
         coreKeys.forEach(key => {
           const parts = key.split('.');
@@ -217,9 +214,9 @@ describe('Translation Key Consistency', () => {
       it('should have different values for Chinese and English translations', () => {
         // Verify that translations are actually different (not just copied)
         const testKeys = [
-          { key: 'tasks.title', zh: '标注任务', en: 'Annotation Tasks' },
-          { key: 'tasks.list.refresh', zh: '刷新', en: 'Refresh' },
-          { key: 'tasks.status.pending', zh: '待处理', en: 'Pending' },
+          { key: 'title', zh: '标注任务', en: 'Annotation Tasks' },
+          { key: 'refresh', zh: '刷新', en: 'Refresh' },
+          { key: 'statusPending', zh: '待开始', en: 'Pending' },
         ];
         
         testKeys.forEach(({ key, zh, en }) => {

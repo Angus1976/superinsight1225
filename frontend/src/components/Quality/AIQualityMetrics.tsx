@@ -35,8 +35,8 @@ import {
   ThunderboltOutlined,
   RobotOutlined,
   UserOutlined,
-  TrendingUpOutlined,
-  TrendingDownOutlined,
+  RiseOutlined,
+  FallOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import type { ColumnsType } from 'antd/es/table';
@@ -343,7 +343,7 @@ const AIQualityMetrics: React.FC<AIQualityMetricsProps> = ({
             />
             <div style={{ marginTop: 8, fontSize: 12 }}>
               <Space>
-                {accuracyChange >= 0 ? <TrendingUpOutlined /> : <TrendingDownOutlined />}
+                {accuracyChange >= 0 ? <RiseOutlined /> : <FallOutlined />}
                 <span style={{ color: accuracyChange >= 0 ? '#52c41a' : '#ff4d4f' }}>
                   {accuracyChange >= 0 ? '+' : ''}{accuracyChange.toFixed(1)}%
                 </span>

@@ -402,7 +402,7 @@ describe('ErrorLogger', () => {
 
       mockLocalStorage.getItem.mockReturnValue(savedLogs);
 
-      const newLogger = new ErrorLogger({ enableLocalStorage: true });
+      const newLogger = new ErrorLogger({ enableLocalStorage: true, loadFromLocalStorage: true });
       const logs = newLogger.getLogsByLevel(LogLevel.DEBUG);
 
       expect(logs).toHaveLength(1);

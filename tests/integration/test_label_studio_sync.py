@@ -48,8 +48,8 @@ async def login() -> str:
             sys.exit(1)
 
 
-async def test_label_studio_connection(token: str):
-    """Test Label Studio connection"""
+async def label_studio_connection_check(token: str):
+    """Test Label Studio connection (manual script helper; not a pytest case)."""
     print("\n📡 Testing Label Studio connection...")
     
     async with httpx.AsyncClient() as client:
@@ -209,7 +209,7 @@ async def main():
         token = await login()
         
         # Step 2: Test Label Studio connection
-        await test_label_studio_connection(token)
+        await label_studio_connection_check(token)
         
         # Step 3: Create test task
         task_id = await create_test_task(token)

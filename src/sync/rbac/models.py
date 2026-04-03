@@ -11,13 +11,14 @@ src/security/rbac_models.py to avoid duplicate model registration issues.
 from datetime import datetime
 from uuid import uuid4
 from sqlalchemy import String, Text, DateTime, Boolean, ForeignKey, Enum as SQLEnum, Integer
-from sqlalchemy.dialects.postgresql import UUID, JSONB, INET
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.sql import func
 import enum
 from typing import Optional, List, Dict, Any
 
 from src.database.connection import Base
+from src.database.json_types import get_inet_type, get_json_type
 
 # Re-export core RBAC models from security module to avoid duplicate registration
 from src.security.rbac_models import (
@@ -103,10 +104,10 @@ class FieldPermissionModel(Base):
     access_level: Mapped[FieldAccessLevel] = mapped_column(SQLEnum(FieldAccessLevel), nullable=False)
     
     # Masking configuration (for MASKED access level)
-    masking_config: Mapped[dict] = mapped_column(JSONB, default={})
+    masking_config: Mapped[dict] = mapped_column(get_json_type(), default={})
     
     # Conditions for dynamic field access
-    conditions: Mapped[dict] = mapped_column(JSONB, default={})
+    conditions: Mapped[dict] = mapped_column(get_json_type(), default={})
     
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
@@ -128,7 +129,7 @@ class DataAccessAuditModel(Base):
     # Actor information
     user_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), nullable=True, index=True)
     session_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    ip_address: Mapped[Optional[str]] = mapped_column(INET, nullable=True)
+    ip_address: Mapped[Optional[str]] = mapped_column(get_inet_type(), nullable=True)
     user_agent: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     
     # Event details
@@ -138,22 +139,22 @@ class DataAccessAuditModel(Base):
     resource_type: Mapped[Optional[SyncResourceType]] = mapped_column(SQLEnum(SyncResourceType), nullable=True)
     resource_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     table_name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
-    field_names: Mapped[Optional[List[str]]] = mapped_column(JSONB, nullable=True)
+    field_names: Mapped[Optional[List[str]]] = mapped_column(get_json_type(), nullable=True)
     
     # Action details
     action: Mapped[Optional[PermissionAction]] = mapped_column(SQLEnum(PermissionAction), nullable=True)
     permission_granted: Mapped[bool] = mapped_column(Boolean, nullable=False)
     
     # Context information
-    request_context: Mapped[dict] = mapped_column(JSONB, default={})
-    response_context: Mapped[dict] = mapped_column(JSONB, default={})
+    request_context: Mapped[dict] = mapped_column(get_json_type(), default={})
+    response_context: Mapped[dict] = mapped_column(get_json_type(), default={})
     
     # Performance metrics
     execution_time_ms: Mapped[Optional[float]] = mapped_column(nullable=True)
     
     # Risk assessment
     risk_score: Mapped[Optional[float]] = mapped_column(nullable=True)  # 0-1 risk score
-    anomaly_flags: Mapped[List[str]] = mapped_column(JSONB, default=[])
+    anomaly_flags: Mapped[List[str]] = mapped_column(get_json_type(), default=[])
     
     # Timestamp
     timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)

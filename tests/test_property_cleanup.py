@@ -17,7 +17,7 @@ from hypothesis import given, settings, HealthCheck
 from hypothesis import strategies as st
 from sqlalchemy import create_engine, event, text
 from sqlalchemy.ext.compiler import compiles
-from sqlalchemy.dialects.postgresql import JSONB, INET
+from sqlalchemy.dialects.postgresql import JSONB, INET, ARRAY
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.pool import StaticPool
 from unittest.mock import MagicMock
@@ -55,6 +55,11 @@ def _compile_jsonb_sqlite(type_, compiler, **kw):
 @compiles(INET, "sqlite")
 def _compile_inet_sqlite(type_, compiler, **kw):
     return "VARCHAR(45)"
+
+
+@compiles(ARRAY, "sqlite")
+def _compile_array_sqlite(type_, compiler, **kw):
+    return "JSON"
 
 
 # =============================================================================

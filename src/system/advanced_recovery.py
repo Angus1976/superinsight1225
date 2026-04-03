@@ -1114,6 +1114,10 @@ class AdvancedRecoverySystem:
         }
 
 
+# Alias for tests and legacy imports
+AdvancedRecoveryManager = AdvancedRecoverySystem
+
+
 # Global instance
 advanced_recovery_system = AdvancedRecoverySystem()
 

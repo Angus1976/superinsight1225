@@ -34,6 +34,7 @@ def approval_service_with_notifications(db_session):
 @pytest.fixture
 def setup_test_users(db_session):
     """Create test users in database."""
+    uid = str(uuid4())[:12]
     # Create approver (data_manager)
     approver_id = str(uuid4())
     insert_approver = text("""
@@ -42,14 +43,14 @@ def setup_test_users(db_session):
     """)
     db_session.execute(insert_approver, {
         "id": approver_id,
-        "username": "approver1",
-        "email": "approver@example.com",
+        "username": f"approver1_{uid}",
+        "email": f"approver_{uid}@example.com",
         "password_hash": "hashed_password",
         "role": "data_manager",
         "tenant_id": "tenant-1",
         "is_active": True
     })
-    
+
     # Create requester (data_analyst)
     requester_id = str(uuid4())
     insert_requester = text("""
@@ -58,19 +59,21 @@ def setup_test_users(db_session):
     """)
     db_session.execute(insert_requester, {
         "id": requester_id,
-        "username": "requester1",
-        "email": "requester@example.com",
+        "username": f"requester1_{uid}",
+        "email": f"requester_{uid}@example.com",
         "password_hash": "hashed_password",
         "role": "data_analyst",
         "tenant_id": "tenant-1",
         "is_active": True
     })
-    
+
     db_session.commit()
-    
+
+    approver_email = f"approver_{uid}@example.com"
     return {
         "approver_id": approver_id,
-        "requester_id": requester_id
+        "requester_id": requester_id,
+        "approver_email": approver_email,
     }
 
 
@@ -148,7 +151,7 @@ class TestApprovalCreationNotifications:
         # Assert
         assert email_sender.send_report.called, "Email was not sent"
         call_args = email_sender.send_report.call_args
-        assert "approver@example.com" in str(call_args)
+        assert setup_test_users["approver_email"] in str(call_args)
     
     @pytest.mark.asyncio
     async def test_notification_contains_approval_details(

@@ -20,7 +20,7 @@ import {
 } from 'antd';
 import {
   BulbOutlined,
-  TrendingUpOutlined,
+  RiseOutlined,
   WarningOutlined,
   CheckCircleOutlined,
   InfoCircleOutlined,
@@ -76,7 +76,7 @@ export const InsightCards: React.FC<InsightCardsProps> = ({
       efficiency_insight: {
         color: 'processing',
         text: t('insights.types.efficiencyInsight'),
-        icon: <TrendingUpOutlined />,
+        icon: <RiseOutlined />,
         bgColor: '#e6f7ff',
       },
       pattern_insight: {
@@ -255,7 +255,7 @@ export const InsightCards: React.FC<InsightCardsProps> = ({
               title={t('insights.avgImpactScore')}
               value={insights.length > 0 ? insights.reduce((sum, i) => sum + i.impact_score, 0) / insights.length : 0}
               precision={2}
-              prefix={<TrendingUpOutlined />}
+              prefix={<RiseOutlined />}
               formatter={(value) => `${((value as number) * 100).toFixed(1)}%`}
             />
           </Card>

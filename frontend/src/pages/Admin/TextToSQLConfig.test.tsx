@@ -142,7 +142,7 @@ describe('TextToSQLConfigPage', () => {
     renderWithProviders(<TextToSQLConfigPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('Text-to-SQL 配置')).toBeInTheDocument();
+      expect(screen.getByText(/Text-to-SQL (配置|Configuration)/)).toBeInTheDocument();
     });
   });
 
@@ -171,7 +171,7 @@ describe('TextToSQLConfigPage', () => {
     renderWithProviders(<TextToSQLConfigPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('总调用次数')).toBeInTheDocument();
+      expect(screen.getByText(/总调用次数|Total Requests/)).toBeInTheDocument();
       expect(screen.getByText('100')).toBeInTheDocument();
     });
   });
@@ -189,14 +189,14 @@ describe('TextToSQLConfigPage', () => {
     renderWithProviders(<TextToSQLConfigPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('SQL 测试')).toBeInTheDocument();
+      expect(screen.getByText(/SQL 测试|SQL Test/)).toBeInTheDocument();
     });
 
     // Click on SQL Test tab
-    fireEvent.click(screen.getByText('SQL 测试'));
+    fireEvent.click(screen.getByText(/SQL 测试|SQL Test/));
 
     await waitFor(() => {
-      expect(screen.getByPlaceholderText(/输入自然语言查询/)).toBeInTheDocument();
+      expect(screen.getByPlaceholderText(/输入自然语言查询|Enter natural language query/)).toBeInTheDocument();
     });
   });
 
@@ -204,11 +204,11 @@ describe('TextToSQLConfigPage', () => {
     renderWithProviders(<TextToSQLConfigPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('第三方插件')).toBeInTheDocument();
+      expect(screen.getByText(/第三方插件|Third-party Plugins/)).toBeInTheDocument();
     });
 
     // Click on plugins tab
-    fireEvent.click(screen.getByText('第三方插件'));
+    fireEvent.click(screen.getByText(/第三方插件|Third-party Plugins/));
 
     await waitFor(() => {
       expect(screen.getByText('vanna-ai')).toBeInTheDocument();
@@ -217,7 +217,7 @@ describe('TextToSQLConfigPage', () => {
 
   it('shows loading state initially', () => {
     renderWithProviders(<TextToSQLConfigPage />);
-    expect(screen.getByText('加载配置中...')).toBeInTheDocument();
+    expect(screen.getByText(/加载配置中\.\.\.|Loading configuration\.\.\./)).toBeInTheDocument();
   });
 
   it('handles configuration save', async () => {
@@ -229,10 +229,10 @@ describe('TextToSQLConfigPage', () => {
     renderWithProviders(<TextToSQLConfigPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('保存配置')).toBeInTheDocument();
+      expect(screen.getByText(/保存配置|Save Configuration/)).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByText('保存配置'));
+    fireEvent.click(screen.getByText(/保存配置|Save Configuration/));
 
     await waitFor(() => {
       expect(textToSqlService.textToSqlService.updateConfig).toHaveBeenCalled();
@@ -249,7 +249,7 @@ describe('TextToSQLConfigPage', () => {
     renderWithProviders(<TextToSQLConfigPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('方法配置')).toBeInTheDocument();
+      expect(screen.getAllByText(/方法配置|Methods/).length).toBeGreaterThan(0);
     });
   });
 
@@ -266,11 +266,11 @@ describe('TextToSQLConfigPage', () => {
     renderWithProviders(<TextToSQLConfigPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('第三方插件')).toBeInTheDocument();
+      expect(screen.getByText(/第三方插件|Third-party Plugins/)).toBeInTheDocument();
     });
 
     // Click on plugins tab
-    fireEvent.click(screen.getByText('第三方插件'));
+    fireEvent.click(screen.getByText(/第三方插件|Third-party Plugins/));
 
     await waitFor(() => {
       expect(screen.getByText('vanna-ai')).toBeInTheDocument();
@@ -281,20 +281,20 @@ describe('TextToSQLConfigPage', () => {
     renderWithProviders(<TextToSQLConfigPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('第三方插件')).toBeInTheDocument();
+      expect(screen.getByText(/第三方插件|Third-party Plugins/)).toBeInTheDocument();
     });
 
     // Click on plugins tab
-    fireEvent.click(screen.getByText('第三方插件'));
+    fireEvent.click(screen.getByText(/第三方插件|Third-party Plugins/));
 
     await waitFor(() => {
-      expect(screen.getByText('添加插件')).toBeInTheDocument();
+      expect(screen.getByText(/添加插件|Add Plugin/)).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByText('添加插件'));
+    fireEvent.click(screen.getByText(/添加插件|Add Plugin/));
 
     await waitFor(() => {
-      expect(screen.getByText('插件名称')).toBeInTheDocument();
+      expect(screen.getByLabelText(/插件名称|Plugin Name/)).toBeInTheDocument();
     });
   });
 });

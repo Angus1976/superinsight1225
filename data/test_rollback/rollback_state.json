@@ -67,6 +67,448 @@
       },
       "is_stable": true,
       "tags": {}
+    },
+    {
+      "version_id": "1d05034b",
+      "version_number": "1.0.0",
+      "created_at": 1775148683.934241,
+      "description": "Test version",
+      "components": {
+        "api": "1.0.0",
+        "db": "1.0.0"
+      },
+      "configuration_snapshot": {
+        "captured_at": 1775148683.934241,
+        "settings": {},
+        "environment": {}
+      },
+      "is_stable": true,
+      "tags": {}
+    },
+    {
+      "version_id": "c05a19dd",
+      "version_number": "1.0.0",
+      "created_at": 1775149016.135326,
+      "description": "Test version",
+      "components": {
+        "api": "1.0.0",
+        "db": "1.0.0"
+      },
+      "configuration_snapshot": {
+        "captured_at": 1775149016.1353269,
+        "settings": {},
+        "environment": {}
+      },
+      "is_stable": true,
+      "tags": {}
+    },
+    {
+      "version_id": "239bcaf2",
+      "version_number": "1.0.0",
+      "created_at": 1775149637.528286,
+      "description": "Test version",
+      "components": {
+        "api": "1.0.0",
+        "db": "1.0.0"
+      },
+      "configuration_snapshot": {
+        "captured_at": 1775149637.528286,
+        "settings": {},
+        "environment": {}
+      },
+      "is_stable": true,
+      "tags": {}
+    },
+    {
+      "version_id": "7faad509",
+      "version_number": "1.0.0",
+      "created_at": 1775151208.209147,
+      "description": "Test version",
+      "components": {
+        "api": "1.0.0",
+        "db": "1.0.0"
+      },
+      "configuration_snapshot": {
+        "captured_at": 1775151208.209148,
+        "settings": {},
+        "environment": {}
+      },
+      "is_stable": true,
+      "tags": {}
+    },
+    {
+      "version_id": "6f962ac5",
+      "version_number": "1.0.0",
+      "created_at": 1775151901.35912,
+      "description": "Test version",
+      "components": {
+        "api": "1.0.0",
+        "db": "1.0.0"
+      },
+      "configuration_snapshot": {
+        "captured_at": 1775151901.3591208,
+        "settings": {},
+        "environment": {}
+      },
+      "is_stable": true,
+      "tags": {}
+    },
+    {
+      "version_id": "605e67b9",
+      "version_number": "1.0.0",
+      "created_at": 1775171000.802891,
+      "description": "Test version",
+      "components": {
+        "api": "1.0.0",
+        "db": "1.0.0"
+      },
+      "configuration_snapshot": {
+        "captured_at": 1775171000.802892,
+        "settings": {},
+        "environment": {}
+      },
+      "is_stable": true,
+      "tags": {}
+    },
+    {
+      "version_id": "ef250613",
+      "version_number": "1.0.0",
+      "created_at": 1775171917.033164,
+      "description": "Test version",
+      "components": {
+        "api": "1.0.0",
+        "db": "1.0.0"
+      },
+      "configuration_snapshot": {
+        "captured_at": 1775171917.033164,
+        "settings": {},
+        "environment": {}
+      },
+      "is_stable": true,
+      "tags": {}
+    },
+    {
+      "version_id": "be70a500",
+      "version_number": "1.0.0",
+      "created_at": 1775180800.5755892,
+      "description": "Test version",
+      "components": {
+        "api": "1.0.0",
+        "db": "1.0.0"
+      },
+      "configuration_snapshot": {
+        "captured_at": 1775180800.57559,
+        "settings": {},
+        "environment": {}
+      },
+      "is_stable": true,
+      "tags": {}
+    },
+    {
+      "version_id": "d6f49fe1",
+      "version_number": "1.0.0",
+      "created_at": 1775181660.21701,
+      "description": "Test version",
+      "components": {
+        "api": "1.0.0",
+        "db": "1.0.0"
+      },
+      "configuration_snapshot": {
+        "captured_at": 1775181660.21701,
+        "settings": {},
+        "environment": {}
+      },
+      "is_stable": true,
+      "tags": {}
+    },
+    {
+      "version_id": "f0b48851",
+      "version_number": "1.0.0",
+      "created_at": 1775183309.0437381,
+      "description": "Test version",
+      "components": {
+        "api": "1.0.0",
+        "db": "1.0.0"
+      },
+      "configuration_snapshot": {
+        "captured_at": 1775183309.0437381,
+        "settings": {},
+        "environment": {}
+      },
+      "is_stable": true,
+      "tags": {}
+    },
+    {
+      "version_id": "5ec186e8",
+      "version_number": "1.0.0",
+      "created_at": 1775190850.927357,
+      "description": "Test version",
+      "components": {
+        "api": "1.0.0",
+        "db": "1.0.0"
+      },
+      "configuration_snapshot": {
+        "captured_at": 1775190850.927358,
+        "settings": {},
+        "environment": {}
+      },
+      "is_stable": true,
+      "tags": {}
+    },
+    {
+      "version_id": "900e396d",
+      "version_number": "1.0.0",
+      "created_at": 1775202180.9769442,
+      "description": "Test version",
+      "components": {
+        "api": "1.0.0",
+        "db": "1.0.0"
+      },
+      "configuration_snapshot": {
+        "captured_at": 1775202180.976945,
+        "settings": {},
+        "environment": {}
+      },
+      "is_stable": true,
+      "tags": {}
+    },
+    {
+      "version_id": "c8be20d5",
+      "version_number": "1.0.0",
+      "created_at": 1775202273.967547,
+      "description": "Test version",
+      "components": {
+        "api": "1.0.0",
+        "db": "1.0.0"
+      },
+      "configuration_snapshot": {
+        "captured_at": 1775202273.967548,
+        "settings": {},
+        "environment": {}
+      },
+      "is_stable": true,
+      "tags": {}
+    },
+    {
+      "version_id": "c7b5c0d8",
+      "version_number": "1.0.0",
+      "created_at": 1775202389.591851,
+      "description": "Test version",
+      "components": {
+        "api": "1.0.0",
+        "db": "1.0.0"
+      },
+      "configuration_snapshot": {
+        "captured_at": 1775202389.591851,
+        "settings": {},
+        "environment": {}
+      },
+      "is_stable": true,
+      "tags": {}
+    },
+    {
+      "version_id": "ea99f35e",
+      "version_number": "1.0.0",
+      "created_at": 1775202449.566873,
+      "description": "Test version",
+      "components": {
+        "api": "1.0.0",
+        "db": "1.0.0"
+      },
+      "configuration_snapshot": {
+        "captured_at": 1775202449.566874,
+        "settings": {},
+        "environment": {}
+      },
+      "is_stable": true,
+      "tags": {}
+    },
+    {
+      "version_id": "dac11390",
+      "version_number": "1.0.0",
+      "created_at": 1775202551.72079,
+      "description": "Test version",
+      "components": {
+        "api": "1.0.0",
+        "db": "1.0.0"
+      },
+      "configuration_snapshot": {
+        "captured_at": 1775202551.72079,
+        "settings": {},
+        "environment": {}
+      },
+      "is_stable": true,
+      "tags": {}
+    },
+    {
+      "version_id": "c89c6b01",
+      "version_number": "1.0.0",
+      "created_at": 1775206630.914193,
+      "description": "Test version",
+      "components": {
+        "api": "1.0.0",
+        "db": "1.0.0"
+      },
+      "configuration_snapshot": {
+        "captured_at": 1775206630.9141939,
+        "settings": {},
+        "environment": {}
+      },
+      "is_stable": true,
+      "tags": {}
+    },
+    {
+      "version_id": "837f674f",
+      "version_number": "1.0.0",
+      "created_at": 1775206796.455051,
+      "description": "Test version",
+      "components": {
+        "api": "1.0.0",
+        "db": "1.0.0"
+      },
+      "configuration_snapshot": {
+        "captured_at": 1775206796.455053,
+        "settings": {},
+        "environment": {}
+      },
+      "is_stable": true,
+      "tags": {}
+    },
+    {
+      "version_id": "62cd33f0",
+      "version_number": "1.0.0",
+      "created_at": 1775206894.908257,
+      "description": "Test version",
+      "components": {
+        "api": "1.0.0",
+        "db": "1.0.0"
+      },
+      "configuration_snapshot": {
+        "captured_at": 1775206894.908257,
+        "settings": {},
+        "environment": {}
+      },
+      "is_stable": true,
+      "tags": {}
+    },
+    {
+      "version_id": "d1033168",
+      "version_number": "1.0.0",
+      "created_at": 1775207223.2484999,
+      "description": "Test version",
+      "components": {
+        "api": "1.0.0",
+        "db": "1.0.0"
+      },
+      "configuration_snapshot": {
+        "captured_at": 1775207223.2484999,
+        "settings": {},
+        "environment": {}
+      },
+      "is_stable": true,
+      "tags": {}
+    },
+    {
+      "version_id": "fce499d6",
+      "version_number": "1.0.0",
+      "created_at": 1775208244.037622,
+      "description": "Test version",
+      "components": {
+        "api": "1.0.0",
+        "db": "1.0.0"
+      },
+      "configuration_snapshot": {
+        "captured_at": 1775208244.037623,
+        "settings": {},
+        "environment": {}
+      },
+      "is_stable": true,
+      "tags": {}
+    },
+    {
+      "version_id": "494cd665",
+      "version_number": "1.0.0",
+      "created_at": 1775208424.0427752,
+      "description": "Test version",
+      "components": {
+        "api": "1.0.0",
+        "db": "1.0.0"
+      },
+      "configuration_snapshot": {
+        "captured_at": 1775208424.0427752,
+        "settings": {},
+        "environment": {}
+      },
+      "is_stable": true,
+      "tags": {}
+    },
+    {
+      "version_id": "bc924713",
+      "version_number": "1.0.0",
+      "created_at": 1775208546.638456,
+      "description": "Test version",
+      "components": {
+        "api": "1.0.0",
+        "db": "1.0.0"
+      },
+      "configuration_snapshot": {
+        "captured_at": 1775208546.638456,
+        "settings": {},
+        "environment": {}
+      },
+      "is_stable": true,
+      "tags": {}
+    },
+    {
+      "version_id": "00c1ec8c",
+      "version_number": "1.0.0",
+      "created_at": 1775208875.7993028,
+      "description": "Test version",
+      "components": {
+        "api": "1.0.0",
+        "db": "1.0.0"
+      },
+      "configuration_snapshot": {
+        "captured_at": 1775208875.7993028,
+        "settings": {},
+        "environment": {}
+      },
+      "is_stable": true,
+      "tags": {}
+    },
+    {
+      "version_id": "24fdd069",
+      "version_number": "1.0.0",
+      "created_at": 1775220179.034923,
+      "description": "Test version",
+      "components": {
+        "api": "1.0.0",
+        "db": "1.0.0"
+      },
+      "configuration_snapshot": {
+        "captured_at": 1775220179.034924,
+        "settings": {},
+        "environment": {}
+      },
+      "is_stable": true,
+      "tags": {}
+    },
+    {
+      "version_id": "3eef0ea4",
+      "version_number": "1.0.0",
+      "created_at": 1775220595.483376,
+      "description": "Test version",
+      "components": {
+        "api": "1.0.0",
+        "db": "1.0.0"
+      },
+      "configuration_snapshot": {
+        "captured_at": 1775220595.483378,
+        "settings": {},
+        "environment": {}
+      },
+      "is_stable": true,
+      "tags": {}
     }
   ],
   "rollback_points": [
@@ -113,8 +555,294 @@
       "metadata": {
         "description": "Auto-created for version 1.0.0"
       }
+    },
+    {
+      "point_id": "907fa95a",
+      "version_id": "1d05034b",
+      "created_at": 1775148683.934252,
+      "rollback_type": "full_system",
+      "can_rollback": true,
+      "dependencies": [],
+      "metadata": {
+        "description": "Auto-created for version 1.0.0"
+      }
+    },
+    {
+      "point_id": "56368ca4",
+      "version_id": "c05a19dd",
+      "created_at": 1775149016.1353412,
+      "rollback_type": "full_system",
+      "can_rollback": true,
+      "dependencies": [],
+      "metadata": {
+        "description": "Auto-created for version 1.0.0"
+      }
+    },
+    {
+      "point_id": "02105c99",
+      "version_id": "239bcaf2",
+      "created_at": 1775149637.5282931,
+      "rollback_type": "full_system",
+      "can_rollback": true,
+      "dependencies": [],
+      "metadata": {
+        "description": "Auto-created for version 1.0.0"
+      }
+    },
+    {
+      "point_id": "d35e7bd4",
+      "version_id": "7faad509",
+      "created_at": 1775151208.2091541,
+      "rollback_type": "full_system",
+      "can_rollback": true,
+      "dependencies": [],
+      "metadata": {
+        "description": "Auto-created for version 1.0.0"
+      }
+    },
+    {
+      "point_id": "10930d28",
+      "version_id": "6f962ac5",
+      "created_at": 1775151901.359128,
+      "rollback_type": "full_system",
+      "can_rollback": true,
+      "dependencies": [],
+      "metadata": {
+        "description": "Auto-created for version 1.0.0"
+      }
+    },
+    {
+      "point_id": "5b924dc9",
+      "version_id": "605e67b9",
+      "created_at": 1775171000.802901,
+      "rollback_type": "full_system",
+      "can_rollback": true,
+      "dependencies": [],
+      "metadata": {
+        "description": "Auto-created for version 1.0.0"
+      }
+    },
+    {
+      "point_id": "8ccf033d",
+      "version_id": "ef250613",
+      "created_at": 1775171917.033176,
+      "rollback_type": "full_system",
+      "can_rollback": true,
+      "dependencies": [],
+      "metadata": {
+        "description": "Auto-created for version 1.0.0"
+      }
+    },
+    {
+      "point_id": "a63f46ed",
+      "version_id": "be70a500",
+      "created_at": 1775180800.5755992,
+      "rollback_type": "full_system",
+      "can_rollback": true,
+      "dependencies": [],
+      "metadata": {
+        "description": "Auto-created for version 1.0.0"
+      }
+    },
+    {
+      "point_id": "682979da",
+      "version_id": "d6f49fe1",
+      "created_at": 1775181660.2170188,
+      "rollback_type": "full_system",
+      "can_rollback": true,
+      "dependencies": [],
+      "metadata": {
+        "description": "Auto-created for version 1.0.0"
+      }
+    },
+    {
+      "point_id": "66b25008",
+      "version_id": "f0b48851",
+      "created_at": 1775183309.0437498,
+      "rollback_type": "full_system",
+      "can_rollback": true,
+      "dependencies": [],
+      "metadata": {
+        "description": "Auto-created for version 1.0.0"
+      }
+    },
+    {
+      "point_id": "66d49bdc",
+      "version_id": "5ec186e8",
+      "created_at": 1775190850.927371,
+      "rollback_type": "full_system",
+      "can_rollback": true,
+      "dependencies": [],
+      "metadata": {
+        "description": "Auto-created for version 1.0.0"
+      }
+    },
+    {
+      "point_id": "d6d2680d",
+      "version_id": "900e396d",
+      "created_at": 1775202180.976953,
+      "rollback_type": "full_system",
+      "can_rollback": true,
+      "dependencies": [],
+      "metadata": {
+        "description": "Auto-created for version 1.0.0"
+      }
+    },
+    {
+      "point_id": "648b0ad7",
+      "version_id": "c8be20d5",
+      "created_at": 1775202273.967555,
+      "rollback_type": "full_system",
+      "can_rollback": true,
+      "dependencies": [],
+      "metadata": {
+        "description": "Auto-created for version 1.0.0"
+      }
+    },
+    {
+      "point_id": "1be603aa",
+      "version_id": "c7b5c0d8",
+      "created_at": 1775202389.591858,
+      "rollback_type": "full_system",
+      "can_rollback": true,
+      "dependencies": [],
+      "metadata": {
+        "description": "Auto-created for version 1.0.0"
+      }
+    },
+    {
+      "point_id": "4cc0431e",
+      "version_id": "ea99f35e",
+      "created_at": 1775202449.566883,
+      "rollback_type": "full_system",
+      "can_rollback": true,
+      "dependencies": [],
+      "metadata": {
+        "description": "Auto-created for version 1.0.0"
+      }
+    },
+    {
+      "point_id": "910e9b21",
+      "version_id": "dac11390",
+      "created_at": 1775202551.7207968,
+      "rollback_type": "full_system",
+      "can_rollback": true,
+      "dependencies": [],
+      "metadata": {
+        "description": "Auto-created for version 1.0.0"
+      }
+    },
+    {
+      "point_id": "a702a371",
+      "version_id": "c89c6b01",
+      "created_at": 1775206630.914201,
+      "rollback_type": "full_system",
+      "can_rollback": true,
+      "dependencies": [],
+      "metadata": {
+        "description": "Auto-created for version 1.0.0"
+      }
+    },
+    {
+      "point_id": "c17d8476",
+      "version_id": "837f674f",
+      "created_at": 1775206796.455061,
+      "rollback_type": "full_system",
+      "can_rollback": true,
+      "dependencies": [],
+      "metadata": {
+        "description": "Auto-created for version 1.0.0"
+      }
+    },
+    {
+      "point_id": "0d36c3ff",
+      "version_id": "62cd33f0",
+      "created_at": 1775206894.908264,
+      "rollback_type": "full_system",
+      "can_rollback": true,
+      "dependencies": [],
+      "metadata": {
+        "description": "Auto-created for version 1.0.0"
+      }
+    },
+    {
+      "point_id": "e749261c",
+      "version_id": "d1033168",
+      "created_at": 1775207223.248508,
+      "rollback_type": "full_system",
+      "can_rollback": true,
+      "dependencies": [],
+      "metadata": {
+        "description": "Auto-created for version 1.0.0"
+      }
+    },
+    {
+      "point_id": "e8d439e5",
+      "version_id": "fce499d6",
+      "created_at": 1775208244.037631,
+      "rollback_type": "full_system",
+      "can_rollback": true,
+      "dependencies": [],
+      "metadata": {
+        "description": "Auto-created for version 1.0.0"
+      }
+    },
+    {
+      "point_id": "9d743f02",
+      "version_id": "494cd665",
+      "created_at": 1775208424.042782,
+      "rollback_type": "full_system",
+      "can_rollback": true,
+      "dependencies": [],
+      "metadata": {
+        "description": "Auto-created for version 1.0.0"
+      }
+    },
+    {
+      "point_id": "6d40a5ee",
+      "version_id": "bc924713",
+      "created_at": 1775208546.638463,
+      "rollback_type": "full_system",
+      "can_rollback": true,
+      "dependencies": [],
+      "metadata": {
+        "description": "Auto-created for version 1.0.0"
+      }
+    },
+    {
+      "point_id": "5c9725c3",
+      "version_id": "00c1ec8c",
+      "created_at": 1775208875.7993112,
+      "rollback_type": "full_system",
+      "can_rollback": true,
+      "dependencies": [],
+      "metadata": {
+        "description": "Auto-created for version 1.0.0"
+      }
+    },
+    {
+      "point_id": "d89f4d12",
+      "version_id": "24fdd069",
+      "created_at": 1775220179.034973,
+      "rollback_type": "full_system",
+      "can_rollback": true,
+      "dependencies": [],
+      "metadata": {
+        "description": "Auto-created for version 1.0.0"
+      }
+    },
+    {
+      "point_id": "7d27b26b",
+      "version_id": "3eef0ea4",
+      "created_at": 1775220595.483408,
+      "rollback_type": "full_system",
+      "can_rollback": true,
+      "dependencies": [],
+      "metadata": {
+        "description": "Auto-created for version 1.0.0"
+      }
     }
   ],
-  "current_version": "daa68707",
-  "updated_at": 1772280375.556864
+  "current_version": "3eef0ea4",
+  "updated_at": 1775220595.484771
 }

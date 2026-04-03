@@ -7,13 +7,14 @@ Defines security-related data models including users, permissions, audit logs, e
 from datetime import datetime
 from uuid import uuid4
 from sqlalchemy import String, Text, DateTime, Boolean, ForeignKey, Enum as SQLEnum
-from sqlalchemy.dialects.postgresql import UUID, JSONB, INET
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.sql import func
 import enum
 from typing import Optional, List, Dict, Any
 
 from src.database.connection import Base
+from src.database.json_types import get_inet_type, get_json_type
 
 
 class UserRole(str, enum.Enum):
@@ -102,7 +103,7 @@ class IPWhitelistModel(Base):
     
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     tenant_id: Mapped[str] = mapped_column(String(100), nullable=False)
-    ip_address: Mapped[str] = mapped_column(INET, nullable=False)
+    ip_address: Mapped[str] = mapped_column(get_inet_type(), nullable=False)
     ip_range: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # CIDR notation
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -130,9 +131,9 @@ class SecurityAuditLogModel(Base):
     )
     resource_type: Mapped[str] = mapped_column(String(50), nullable=False)
     resource_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    ip_address: Mapped[Optional[str]] = mapped_column(INET, nullable=True)
+    ip_address: Mapped[Optional[str]] = mapped_column(get_inet_type(), nullable=True)
     user_agent: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    details: Mapped[dict] = mapped_column(JSONB, default={})
+    details: Mapped[dict] = mapped_column(get_json_type(), default={})
     timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     
     # Relationship
@@ -152,7 +153,7 @@ class DataMaskingRuleModel(Base):
     field_name: Mapped[str] = mapped_column(String(100), nullable=False)
     field_pattern: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)  # Regex pattern
     masking_type: Mapped[str] = mapped_column(String(50), nullable=False)  # hash, partial, replace, etc.
-    masking_config: Mapped[dict] = mapped_column(JSONB, default={})
+    masking_config: Mapped[dict] = mapped_column(get_json_type(), default={})
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_by: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

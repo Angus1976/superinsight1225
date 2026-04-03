@@ -38,6 +38,14 @@ vi.mock('antd', () => ({
   message: mockMessage,
 }));
 
+// Mock Label Studio service (used by openLabelStudio)
+const mockGetAuthUrl = vi.fn();
+vi.mock('@/services/labelStudioService', () => ({
+  labelStudioService: {
+    getAuthUrl: (...args: any[]) => mockGetAuthUrl(...args),
+  },
+}));
+
 // Mock window.open
 const mockWindowOpen = vi.fn();
 
@@ -47,17 +55,19 @@ const wrapper = ({ children }: { children: ReactNode }) => (
 );
 
 describe('useLabelStudio', () => {
+  let openSpy: ReturnType<typeof vi.spyOn> | null = null;
+
   beforeEach(() => {
     vi.clearAllMocks();
     mockI18n.language = 'zh';
-    vi.stubGlobal('window', {
-      ...window,
-      open: mockWindowOpen,
-    });
+    // Do not stub the whole `window` object (it contains non-enumerable
+    // properties like `location` which axios relies on). Only mock `open`.
+    openSpy = vi.spyOn(window, 'open').mockImplementation(mockWindowOpen as any);
   });
 
   afterEach(() => {
-    vi.unstubAllGlobals();
+    openSpy?.mockRestore();
+    openSpy = null;
   });
 
   describe('isValidProject', () => {
@@ -383,8 +393,12 @@ describe('useLabelStudio', () => {
       const { useLabelStudio } = await import('../useLabelStudio');
       const { result } = renderHook(() => useLabelStudio(), { wrapper });
       
-      act(() => {
-        result.current.openLabelStudio(123);
+      mockGetAuthUrl.mockResolvedValueOnce({
+        url: 'http://label-studio:8080/projects/123/data?token=test-token&lang=zh-cn',
+      });
+
+      await act(async () => {
+        await result.current.openLabelStudio(123);
       });
       
       expect(mockWindowOpen).toHaveBeenCalledWith(
@@ -399,8 +413,12 @@ describe('useLabelStudio', () => {
       const { useLabelStudio } = await import('../useLabelStudio');
       const { result } = renderHook(() => useLabelStudio(), { wrapper });
       
-      act(() => {
-        result.current.openLabelStudio(123, 456);
+      mockGetAuthUrl.mockResolvedValueOnce({
+        url: 'http://label-studio:8080/projects/123/data?token=test-token&lang=zh-cn',
+      });
+
+      await act(async () => {
+        await result.current.openLabelStudio(123, 456);
       });
       
       expect(mockWindowOpen).toHaveBeenCalledWith(
@@ -415,8 +433,12 @@ describe('useLabelStudio', () => {
       const { useLabelStudio } = await import('../useLabelStudio');
       const { result } = renderHook(() => useLabelStudio(), { wrapper });
       
-      act(() => {
-        result.current.openLabelStudio(123);
+      mockGetAuthUrl.mockResolvedValueOnce({
+        url: 'http://label-studio:8080/projects/123/data?token=test-token&lang=en',
+      });
+
+      await act(async () => {
+        await result.current.openLabelStudio(123);
       });
       
       expect(mockWindowOpen).toHaveBeenCalledWith(

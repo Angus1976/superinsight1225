@@ -8,6 +8,11 @@ import '@testing-library/jest-dom'
 import { afterEach, vi } from 'vitest'
 import { cleanup } from '@testing-library/react'
 
+// Ensure i18n is initialized for components using `useTranslation()`.
+// Many unit tests render components directly (without `main.tsx`), so we must
+// initialize the shared i18next instance here.
+import '../locales/config'
+
 // Runs a cleanup after each test case
 afterEach(() => {
   cleanup()
@@ -48,14 +53,25 @@ global.IntersectionObserver = vi.fn().mockImplementation(() => ({
 // Mock scrollTo
 window.scrollTo = vi.fn()
 
-// Mock getComputedStyle (required for Ant Design modals)
-window.getComputedStyle = vi.fn().mockImplementation(() => ({
-  getPropertyValue: vi.fn().mockReturnValue(''),
-  width: '0px',
-  height: '0px',
-  overflow: 'visible',
-  display: 'block',
-}))
+// jsdom 无 scrollIntoView，ChatPanel 等组件在 effect 中会调用
+Element.prototype.scrollIntoView = vi.fn()
+
+// Mock getComputedStyle (required for Ant Design modals + rc-util scrollbar measurement)
+window.getComputedStyle = vi.fn().mockImplementation((_elt, pseudoElt?: string) => {
+  const base = {
+    getPropertyValue: vi.fn().mockReturnValue(''),
+    width: '0px',
+    height: '0px',
+    overflow: 'visible',
+    display: 'block',
+    scrollbarColor: '',
+    scrollbarWidth: '',
+  } as CSSStyleDeclaration & { scrollbarColor?: string; scrollbarWidth?: string }
+  if (pseudoElt === '::-webkit-scrollbar') {
+    return { ...base, width: '0px', height: '0px' } as unknown as CSSStyleDeclaration
+  }
+  return base as unknown as CSSStyleDeclaration
+})
 
 // Mock localStorage
 const localStorageMock = {

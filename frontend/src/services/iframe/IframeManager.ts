@@ -408,6 +408,9 @@ export class IframeManager {
     iframe.title = 'Label Studio';
     iframe.allow = 'clipboard-read; clipboard-write';
 
+    // Assign before attaching listeners (listeners reference this.iframe)
+    this.iframe = iframe;
+
     // Setup event listeners
     this.setupIframeListeners();
 
@@ -417,7 +420,6 @@ export class IframeManager {
     // Setup load timeout
     this.setupLoadTimeout();
 
-    this.iframe = iframe;
     return iframe;
   }
 

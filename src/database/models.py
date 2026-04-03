@@ -7,7 +7,7 @@ These models define the database schema using SQLAlchemy ORM.
 from datetime import datetime
 from uuid import uuid4
 from sqlalchemy import String, Text, Float, Integer, DateTime, ForeignKey, Enum as SQLEnum, JSON, Boolean
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.sql import func
 import enum
@@ -15,14 +15,7 @@ from typing import Optional, List
 
 from src.database.connection import Base
 from src.config.settings import settings
-
-
-def get_json_type():
-    """Get appropriate JSON type based on database backend"""
-    if settings.database.database_url.startswith('sqlite'):
-        return JSON  # SQLite uses JSON type
-    else:
-        return JSONB  # PostgreSQL uses JSONB type
+from src.database.json_types import get_json_type
 
 
 def get_uuid_type():
@@ -110,9 +103,9 @@ class DocumentModel(Base):
 
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     source_type: Mapped[str] = mapped_column(String(50), nullable=False)
-    source_config: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    source_config: Mapped[dict] = mapped_column(get_json_type(), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    document_metadata: Mapped[dict] = mapped_column("metadata", JSONB, default={})
+    document_metadata: Mapped[dict] = mapped_column("metadata", get_json_type(), default={})
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
@@ -125,7 +118,7 @@ class DocumentModel(Base):
     sync_source_id: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)  # External source record ID
     sync_job_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)  # UUID of sync job
     is_from_sync: Mapped[bool] = mapped_column(Boolean, default=False)  # Whether document came from sync
-    sync_metadata: Mapped[dict] = mapped_column(JSONB, default={})  # Additional sync-related metadata
+    sync_metadata: Mapped[dict] = mapped_column(get_json_type(), default={})  # Additional sync-related metadata
 
     # Relationship to tasks
     tasks: Mapped[List["TaskModel"]] = relationship("TaskModel", back_populates="document")
@@ -173,12 +166,12 @@ class TaskModel(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     due_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    # Annotation data (JSONB)
-    annotations: Mapped[list] = mapped_column(JSONB, default=[])
-    ai_predictions: Mapped[list] = mapped_column(JSONB, default=[])
+    # Annotation data (JSON / JSONB)
+    annotations: Mapped[list] = mapped_column(get_json_type(), default=[])
+    ai_predictions: Mapped[list] = mapped_column(get_json_type(), default=[])
     quality_score: Mapped[float] = mapped_column(Float, default=0.0)
-    tags: Mapped[list] = mapped_column(JSONB, default=[])
-    task_metadata: Mapped[dict] = mapped_column(JSONB, default={})
+    tags: Mapped[list] = mapped_column(get_json_type(), default=[])
+    task_metadata: Mapped[dict] = mapped_column(get_json_type(), default={})
 
     # Sync-related fields (Phase 1.2 extension)
     sync_status: Mapped[Optional[SyncStatus]] = mapped_column(SQLEnum(SyncStatus), nullable=True, default=None)
@@ -186,7 +179,7 @@ class TaskModel(Base):
     last_synced_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     sync_execution_id: Mapped[Optional[str]] = mapped_column(String(36), nullable=True)
     is_from_sync: Mapped[bool] = mapped_column(Boolean, default=False)
-    sync_metadata: Mapped[dict] = mapped_column(JSONB, default={})
+    sync_metadata: Mapped[dict] = mapped_column(get_json_type(), default={})
 
     # Label Studio integration fields
     label_studio_project_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)
@@ -275,11 +268,32 @@ from src.models.ai_integration import (
     AIGateway, AISkill, AIAuditLog
 )
 
+# AI workflow presets (ai_workflows table)
+from src.models.ai_workflow import AIWorkflow  # noqa: F401
+
+# Data lifecycle approval_requests (Alembic 029)
+from src.models.approval_request_db import ApprovalRequestRow  # noqa: F401
+from src.models.notification_db import InternalMessageRow  # noqa: F401
+
 # Import structuring models to ensure they are registered with SQLAlchemy
 from src.models.structuring import (  # noqa: F401
     StructuringJob, StructuredRecord, ProcessingType,
     VectorRecord, SemanticRecord,
 )
 
+# Data lifecycle tables used by transfer / integration tests (ensure create_all includes them)
+from src.models.data_lifecycle import (  # noqa: F401
+    TempDataModel,
+    SampleModel,
+    TransferAuditLogModel,
+)
+
 # Import datalake metrics model to ensure it is registered with SQLAlchemy
 from src.sync.connectors.datalake.models import DatalakeMetricsModel  # noqa: F401
+
+# Multi-tenant core (LLM tables reference tenants.id)
+from src.database.multi_tenant_models import TenantModel  # noqa: F401
+
+# LLM application binding tables (used by integration tests and admin LLM APIs)
+from src.models.llm_configuration import LLMConfiguration, LLMUsageLog  # noqa: F401
+from src.models.llm_application import LLMApplication, LLMApplicationBinding  # noqa: F401

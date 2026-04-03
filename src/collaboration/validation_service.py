@@ -281,12 +281,10 @@ class ValidationService:
         self._rules: Dict[UUID, ValidationRule] = {}
         self._rules_by_region: Dict[Region, List[UUID]] = {region: [] for region in Region}
         self._rules_by_industry: Dict[Industry, List[UUID]] = {industry: [] for industry in Industry}
-        self._lock = asyncio.Lock()
-
+        self._lock: Optional[asyncio.Lock] = None
         # Cache for frequently accessed rules
         self._rule_cache: Dict[str, List[ValidationRule]] = {}
         self._cache_ttl = 1800  # 30 minutes
-
         # i18n error messages
         self._error_messages = {
             # USCC errors
@@ -376,6 +374,10 @@ class ValidationService:
             },
         }
 
+    async def _ensure_async_lock(self) -> None:
+        if self._lock is None:
+            self._lock = asyncio.Lock()
+
     async def create_rule(
         self,
         name: str,
@@ -402,6 +404,7 @@ class ValidationService:
         Returns:
             Created validation rule
         """
+        await self._ensure_async_lock()
         async with self._lock:
             rule = ValidationRule(
                 name=name,
@@ -439,6 +442,7 @@ class ValidationService:
         Returns:
             List of validation rules
         """
+        await self._ensure_async_lock()
         async with self._lock:
             # Check cache
             cache_key = f"{region}:{industry}:{is_active}"

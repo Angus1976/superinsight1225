@@ -12,20 +12,23 @@ Tests verify that:
 - Error handling works through the old endpoint
 """
 
+import os
+import tempfile
+
 import pytest
 from unittest.mock import Mock, AsyncMock, patch, MagicMock
-from uuid import uuid4
+from uuid import UUID, uuid4
 from datetime import datetime
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, String, TypeDecorator
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.dialects.postgresql import JSONB, INET, UUID as PGUUID
 
-from src.database.connection import Base, get_db_session
+from src.database.connection import Base
+import src.api.enhancement_api as enhancement_api_module
 from src.api.enhancement_api import router, _shared_jobs
 from src.models.data_lifecycle import (
     EnhancedDataModel,
@@ -81,33 +84,56 @@ DEPRECATION_HEADERS = {
 
 @pytest.fixture
 def test_db():
-    """Create in-memory SQLite test database with UUID patching."""
+    """Create an isolated SQLite file DB with UUID patching.
+
+    File-backed SQLite avoids :memory: per-connection isolation and shared-cache
+    quirks when the full suite is collected in one process; per-request HTTP
+    sessions can safely open/close connections while sharing one database file.
+    """
+    fd, db_path = tempfile.mkstemp(prefix="legacy_api_compat_", suffix=".sqlite")
+    os.close(fd)
     engine = create_engine(
-        "sqlite:///:memory:",
+        f"sqlite:///{db_path}",
         connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
     )
 
+    # Save original SQLAlchemy column types so we restore the *same* objects after the test.
+    # Re-assigning fresh PGUUID() instances breaks mappers for other tests sharing Base metadata.
+    # After a large pytest collection, another test may leave UUID columns as SQLiteUUID;
+    # normalize back to PGUUID so the isinstance(PGUUID) branch runs.
+    _uuid_col_restore: list = []
+    for model in PATCHED_MODELS:
+        for col in model.__table__.columns:
+            if isinstance(col.type, SQLiteUUID):
+                col.type = PGUUID(as_uuid=True)
     for model in PATCHED_MODELS:
         for col in model.__table__.columns:
             if isinstance(col.type, PGUUID):
+                _uuid_col_restore.append((col, col.type))
                 col.type = SQLiteUUID()
 
     for model in PATCHED_MODELS:
         model.__table__.create(bind=engine, checkfirst=True)
 
-    Session = sessionmaker(bind=engine)
+    # DataTransferService._log_audit writes here; minimal legacy app DB does not run full create_all
+    from src.models.data_lifecycle import TransferAuditLogModel
+
+    TransferAuditLogModel.__table__.create(bind=engine, checkfirst=True)
+
+    Session = sessionmaker(bind=engine, expire_on_commit=False)
     db = Session()
     try:
         yield db
     finally:
         db.close()
         engine.dispose()
+        try:
+            os.unlink(db_path)
+        except OSError:
+            pass
 
-        for model in PATCHED_MODELS:
-            for col in model.__table__.columns:
-                if isinstance(col.type, SQLiteUUID):
-                    col.type = PGUUID(as_uuid=True)
+        for col, orig_type in _uuid_col_restore:
+            col.type = orig_type
 
 
 @pytest.fixture
@@ -124,7 +150,10 @@ def client(test_db):
         finally:
             pass
 
-    app.dependency_overrides[get_db_session] = override_get_db
+    # Must use the same callable object the router closed over (not only
+    # src.database.connection.get_db_session), otherwise unittest.mock.patch
+    # on the connection module can break override matching in the same process.
+    app.dependency_overrides[enhancement_api_module.get_db_session] = override_get_db
     yield TestClient(app)
     app.dependency_overrides.clear()
 
@@ -313,10 +342,9 @@ class TestInternalRoutingToNewService:
         assert resp.status_code == 201
         body = resp.json()
 
-        # Verify a sample was persisted
-        sample = test_db.query(SampleModel).filter_by(
-            id=body["id"]
-        ).first()
+        # Verify a sample was persisted (same identity-map pattern as add-to-library)
+        test_db.expire_all()
+        sample = test_db.get(SampleModel, UUID(body["id"]))
         assert sample is not None
 
     def test_transfer_succeeds_even_if_audit_log_fails(self, client):

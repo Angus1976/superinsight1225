@@ -21,7 +21,7 @@ import {
 import {
   EyeOutlined,
   BarChartOutlined,
-  TrendingUpOutlined,
+  RiseOutlined,
   UserOutlined,
   TagOutlined,
   ClockCircleOutlined,
@@ -209,7 +209,7 @@ export const PatternAnalysis: React.FC<PatternAnalysisProps> = ({
       temporal_trend: {
         color: 'orange',
         text: t('patterns.types.temporalTrend'),
-        icon: <TrendingUpOutlined />,
+        icon: <RiseOutlined />,
       },
       user_behavior: {
         color: 'purple',
@@ -362,7 +362,7 @@ export const PatternAnalysis: React.FC<PatternAnalysisProps> = ({
             <Statistic
               title={t('patterns.stats.strongPatterns')}
               value={stats.strongPatterns}
-              prefix={<TrendingUpOutlined />}
+              prefix={<RiseOutlined />}
               suffix={`/ ${stats.total}`}
             />
           </Card>

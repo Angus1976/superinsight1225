@@ -206,8 +206,10 @@ class LabelStudioIntegration:
                     self._personal_access_token = self.api_token
                     self._auth_method = 'personal_access_token'
                 else:
-                    logger.info("Label Studio integration initialized with Legacy Token authentication")
-                    self._auth_method = 'legacy_token'
+                    logger.info(
+                        "Label Studio integration initialized with legacy API token authentication"
+                    )
+                    self._auth_method = 'api_token'
         except Exception as e:
             # If auth method detection fails, fall back to API token if available
             if self.api_token:
@@ -219,7 +221,7 @@ class LabelStudioIntegration:
         # Legacy headers for backward compatibility (used when JWT is not available)
         # Note: Personal Access Tokens use "Bearer" prefix, Legacy Tokens use "Token" prefix
         # See: https://api.labelstud.io/api-reference/introduction/getting-started
-        if self._auth_method == 'legacy_token':
+        if self._auth_method in ('legacy_token', 'api_token'):
             self.headers = {
                 'Authorization': f'Token {self.api_token}',
                 'Content-Type': 'application/json'

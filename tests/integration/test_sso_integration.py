@@ -24,10 +24,11 @@ class TestSSOProviderIntegration:
         return db
     
     @pytest.fixture
-    def sso_provider(self):
-        return SSOProvider()
+    def sso_provider(self, mock_db):
+        return SSOProvider(db=mock_db)
     
-    def test_sso_provider_initialization(self, sso_provider):
+    def test_sso_provider_initialization(self, mock_db):
+        sso_provider = SSOProvider(db=mock_db)
         assert sso_provider is not None
     
     @pytest.mark.asyncio
@@ -75,8 +76,8 @@ class TestSSOCallbackIntegration:
         return MagicMock()
     
     @pytest.fixture
-    def sso_provider(self):
-        return SSOProvider()
+    def sso_provider(self, mock_db):
+        return SSOProvider(db=mock_db)
     
     @pytest.mark.asyncio
     async def test_handle_callback_success(self, sso_provider, mock_db):
@@ -107,7 +108,7 @@ class TestSSOLogoutIntegration:
     
     @pytest.fixture
     def sso_provider(self):
-        return SSOProvider()
+        return SSOProvider(db=MagicMock())
     
     @pytest.mark.asyncio
     async def test_single_logout(self, sso_provider):

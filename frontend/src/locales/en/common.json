@@ -174,6 +174,7 @@
     "label": "Actions",
     "submit": "Submit",
     "cancel": "Cancel",
+    "retry": "Retry",
     "create": "Create",
     "confirm": "Confirm",
     "delete": "Delete",
@@ -202,13 +203,19 @@
     "archive": "Archive",
     "restore": "Restore"
   },
+  "messages": {
+    "validationError": "There are issues with the submitted data. Please review and correct them."
+  },
   "status": {
     "loading": "Loading...",
     "success": "Success",
     "error": "Operation failed",
     "noData": "No data",
     "pending": "Pending",
-    "failed": "Failed"
+    "failed": "Failed",
+    "connected": "Connected",
+    "connecting": "Connecting",
+    "disconnected": "Disconnected"
   },
   "created": "Created",
   "approved": "Approved",
@@ -312,6 +319,7 @@
       "network": "Unable to connect to the server. Please check your network connection and try again.",
       "auth": "Your session has expired or is invalid. Please log in again.",
       "validation": "There are issues with the submitted data. Please review and correct them.",
+      "validationError": "There are issues with the submitted data. Please review and correct them.",
       "server": "The server encountered a problem. We're working on it. Please try again later.",
       "client": "The application encountered an issue. Please refresh the page and try again.",
       "timeout": "The request timed out. The server took too long to respond. Please try again.",

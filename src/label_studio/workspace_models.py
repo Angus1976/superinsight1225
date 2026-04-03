@@ -24,13 +24,14 @@ from sqlalchemy import (
     String, Text, Integer, DateTime, Boolean,
     ForeignKey, Enum as SQLEnum, UniqueConstraint, Index
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.sql import func
 import enum
 from typing import Optional, List, Dict, Any
 
 from src.database.connection import Base
+from src.database.json_types import get_json_type
 
 
 # ============================================================================
@@ -119,9 +120,9 @@ class LabelStudioWorkspaceModel(Base):
         index=True
     )
 
-    # Configuration settings (JSONB)
+    # Configuration settings (JSON / JSONB)
     settings: Mapped[dict] = mapped_column(
-        JSONB,
+        get_json_type(),
         default={},
         nullable=False
     )
@@ -319,9 +320,9 @@ class WorkspaceProjectModel(Base):
         index=True
     )
 
-    # Additional metadata (JSONB) - renamed from 'metadata' to avoid SQLAlchemy reserved name
+    # Additional metadata (JSON / JSONB) - renamed from 'metadata' to avoid SQLAlchemy reserved name
     project_metadata: Mapped[dict] = mapped_column(
-        JSONB,
+        get_json_type(),
         default={},
         nullable=False
     )

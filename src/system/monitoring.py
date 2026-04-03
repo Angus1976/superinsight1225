@@ -86,7 +86,9 @@ class MetricsCollector:
         self.collection_interval = 10  # seconds
         self.is_collecting = False
         self._collection_task: Optional[asyncio.Task] = None
-        self._lock = threading.Lock()
+        # asyncio.Lock for async code paths; sync APIs use _sync_lock (tests expect _lock to be asyncio.Lock)
+        self._lock = asyncio.Lock()
+        self._sync_lock = threading.Lock()
         self.alerts: List[PerformanceAlert] = []
         self.bottleneck_analyses: List[BottleneckAnalysis] = []
         self.alert_handlers: List[Callable] = []
@@ -106,7 +108,7 @@ class MetricsCollector:
         alert_thresholds: Optional[Dict[str, float]] = None
     ):
         """Register a new metric for collection with alert thresholds."""
-        with self._lock:
+        with self._sync_lock:
             if name not in self.metrics:
                 self.metrics[name] = MetricSeries(
                     name=name,
@@ -125,7 +127,7 @@ class MetricsCollector:
         metadata: Optional[Dict[str, Any]] = None
     ):
         """Record a metric value with enhanced metadata."""
-        with self._lock:
+        with self._sync_lock:
             if name not in self.metrics:
                 # Register metric directly without calling register_metric to avoid deadlock
                 self.metrics[name] = MetricSeries(
@@ -237,7 +239,7 @@ class MetricsCollector:
     def increment_counter(self, name: str, value: float = 1.0, tags: Optional[Dict[str, str]] = None):
         """Increment a counter metric."""
         # For counters, we'll track the cumulative value
-        with self._lock:
+        with self._sync_lock:
             if name not in self.metrics:
                 # Register metric directly without calling register_metric to avoid deadlock
                 self.metrics[name] = MetricSeries(
@@ -268,7 +270,7 @@ class MetricsCollector:
     
     def get_metric_values(self, name: str, since: Optional[float] = None) -> List[MetricPoint]:
         """Get metric values, optionally filtered by time."""
-        with self._lock:
+        with self._sync_lock:
             if name not in self.metrics:
                 return []
             
@@ -535,7 +537,7 @@ class MetricsCollector:
         """Get summary for all metrics."""
         summary = {}
         
-        with self._lock:
+        with self._sync_lock:
             for name in self.metrics:
                 summary[name] = self.get_metric_summary(name)
         

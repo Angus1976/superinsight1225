@@ -27,7 +27,6 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, func, desc, select, text
 from sqlalchemy.pool import StaticPool
 import redis
-import asyncio_redis
 
 from src.security.security_event_monitor import (
     SecurityEvent, SecurityEventType, ThreatLevel, ThreatPattern
@@ -115,6 +114,12 @@ class RealTimeSecurityMonitor:
     
     async def _initialize_redis(self):
         """初始化Redis连接"""
+        try:
+            import asyncio_redis
+        except ImportError:
+            self.logger.warning("asyncio_redis not installed; using in-memory cache only")
+            self.redis_enabled = False
+            return
         try:
             self.redis_client = await asyncio_redis.Connection.create(
                 host='localhost', 

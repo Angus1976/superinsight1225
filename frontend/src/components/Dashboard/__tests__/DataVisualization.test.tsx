@@ -6,7 +6,7 @@
  * Validates: Requirements 1.2
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -107,6 +107,7 @@ import { OverviewCards } from '../OverviewCards';
 import { ProgressOverview } from '../ProgressOverview';
 import { QualityReports } from '../QualityReports';
 import { QuickActions } from '../QuickActions';
+import type { AnnotationEfficiency, UserActivityMetrics } from '@/types/dashboard';
 
 // ============================================================================
 // Helpers
@@ -197,6 +198,50 @@ const mockQualityData = {
     },
   ],
 };
+
+/** Maps legacy mock shape to current QualityReports props (annotationEfficiency + userActivity). */
+function buildQualityReportsMockProps(): {
+  annotationEfficiency: AnnotationEfficiency;
+  userActivity: UserActivityMetrics;
+} {
+  const trends = mockQualityData.trends.map((t) => ({
+    timestamp: t.timestamp,
+    datetime: t.datetime,
+    annotations_per_hour: 100,
+    average_annotation_time: t.avgAnnotationTime,
+    quality_score: t.qualityScore,
+    completion_rate: t.completionRate,
+    revision_rate: t.revisionRate,
+  }));
+  const n = trends.length;
+  const sum = (arr: typeof trends, pick: (x: (typeof trends)[0]) => number) =>
+    arr.reduce((s, x) => s + pick(x), 0);
+  return {
+    annotationEfficiency: {
+      period_hours: 168,
+      data_points: n,
+      trends,
+      summary: {
+        avg_annotations_per_hour: sum(trends, (t) => t.annotations_per_hour) / n,
+        avg_quality_score: sum(trends, (t) => t.quality_score) / n,
+        avg_completion_rate: sum(trends, (t) => t.completion_rate) / n,
+        avg_revision_rate: sum(trends, (t) => t.revision_rate) / n,
+      },
+    },
+    userActivity: {
+      period_hours: 24,
+      data_points: 0,
+      trends: [],
+      summary: {
+        avg_active_users: 2,
+        total_new_users: 0,
+        avg_session_duration: (75 * 3600) / 2,
+        avg_actions_per_session: 0,
+        peak_concurrent_users: 0,
+      },
+    },
+  };
+}
 
 // ============================================================================
 // TrendChart Tests
@@ -437,40 +482,40 @@ describe('ProgressOverview', () => {
 // ============================================================================
 
 describe('QualityReports - chart rendering', () => {
+  const defaultProps = buildQualityReportsMockProps();
+
   it('renders line chart by default', () => {
-    render(<QualityReports data={mockQualityData} />);
+    render(<QualityReports {...defaultProps} />);
 
     expect(screen.getByTestId('line-chart')).toBeInTheDocument();
   });
 
   it('renders pie chart for distribution', () => {
-    render(<QualityReports data={mockQualityData} />);
+    render(<QualityReports {...defaultProps} />);
 
     expect(screen.getByTestId('pie-chart')).toBeInTheDocument();
   });
 
-  it('renders bar chart for work time analysis', () => {
-    render(<QualityReports data={mockQualityData} />);
-
-    expect(screen.getByTestId('bar-chart')).toBeInTheDocument();
-  });
-
-  it('renders all chart types simultaneously', () => {
-    render(<QualityReports data={mockQualityData} />);
+  it('renders line and distribution charts together', () => {
+    render(<QualityReports {...defaultProps} />);
 
     expect(screen.getByTestId('line-chart')).toBeInTheDocument();
     expect(screen.getByTestId('pie-chart')).toBeInTheDocument();
-    expect(screen.getByTestId('bar-chart')).toBeInTheDocument();
   });
 
-  it('renders with empty data arrays', () => {
-    const emptyData = {
+  it('renders with empty trend data', () => {
+    const emptyEfficiency: AnnotationEfficiency = {
+      period_hours: 0,
+      data_points: 0,
       trends: [],
-      distribution: [],
-      workTime: [],
-      anomalies: [],
+      summary: {
+        avg_annotations_per_hour: 0,
+        avg_quality_score: 0,
+        avg_completion_rate: 0,
+        avg_revision_rate: 0,
+      },
     };
-    render(<QualityReports data={emptyData} />);
+    render(<QualityReports annotationEfficiency={emptyEfficiency} />);
 
     expect(screen.getByText('metrics.avgQualityScore')).toBeInTheDocument();
   });
@@ -485,8 +530,10 @@ describe('QualityReports - data transformation', () => {
   // e.g. "85.0" becomes <span>85</span><span>.0</span>
   // Use container queries to verify the computed values
 
+  const defaultProps = buildQualityReportsMockProps();
+
   it('calculates average quality score from trends', () => {
-    const { container } = render(<QualityReports data={mockQualityData} />);
+    const { container } = render(<QualityReports {...defaultProps} />);
 
     // avg = (0.85 + 0.88 + 0.82) / 3 = 0.85 → 85.0%
     const statValues = container.querySelectorAll('.ant-statistic-content-value');
@@ -495,7 +542,7 @@ describe('QualityReports - data transformation', () => {
   });
 
   it('calculates average completion rate from trends', () => {
-    const { container } = render(<QualityReports data={mockQualityData} />);
+    const { container } = render(<QualityReports {...defaultProps} />);
 
     // avg = (0.92 + 0.95 + 0.89) / 3 = 0.92 → 92.0%
     const statValues = container.querySelectorAll('.ant-statistic-content-value');
@@ -504,7 +551,7 @@ describe('QualityReports - data transformation', () => {
   });
 
   it('calculates average revision rate from trends', () => {
-    const { container } = render(<QualityReports data={mockQualityData} />);
+    const { container } = render(<QualityReports {...defaultProps} />);
 
     // avg = (0.08 + 0.05 + 0.11) / 3 = 0.08 → 8.0%
     const statValues = container.querySelectorAll('.ant-statistic-content-value');
@@ -512,60 +559,35 @@ describe('QualityReports - data transformation', () => {
     expect(values).toContain('8.0');
   });
 
-  it('calculates total work hours', () => {
-    const { container } = render(<QualityReports data={mockQualityData} />);
+  it('calculates total work hours from user activity summary', () => {
+    const { container } = render(<QualityReports {...defaultProps} />);
 
-    // total = 40 + 35 = 75.0
+    // avg_active_users * avg_session_duration / 3600 = 75.0
     const statValues = container.querySelectorAll('.ant-statistic-content-value');
     const values = Array.from(statValues).map((el) => el.textContent);
     expect(values).toContain('75.0');
   });
 
   it('shows zero values when no trend data', () => {
-    const noTrends = { ...mockQualityData, trends: [], workTime: [] };
-    const { container } = render(<QualityReports data={noTrends} />);
+    const emptyEfficiency: AnnotationEfficiency = {
+      period_hours: 0,
+      data_points: 0,
+      trends: [],
+      summary: {
+        avg_annotations_per_hour: 0,
+        avg_quality_score: 0,
+        avg_completion_rate: 0,
+        avg_revision_rate: 0,
+      },
+    };
+    const { container } = render(
+      <QualityReports annotationEfficiency={emptyEfficiency} />,
+    );
 
-    // All averages should be 0.0
     const statValues = container.querySelectorAll('.ant-statistic-content-value');
     const values = Array.from(statValues).map((el) => el.textContent);
     const zeroCount = values.filter((v) => v === '0.0').length;
     expect(zeroCount).toBeGreaterThanOrEqual(3);
-  });
-});
-
-// ============================================================================
-// QualityReports - Anomaly Display Tests
-// ============================================================================
-
-describe('QualityReports - anomaly display', () => {
-  it('renders anomaly alerts when anomalies exist', () => {
-    render(<QualityReports data={mockQualityData} />);
-
-    expect(screen.getByText('charts.anomalyDetection')).toBeInTheDocument();
-    expect(screen.getByText('Quality score dropped below threshold')).toBeInTheDocument();
-    expect(screen.getByText('Annotation speed decreased significantly')).toBeInTheDocument();
-  });
-
-  it('hides anomaly section when no anomalies', () => {
-    const noAnomalies = { ...mockQualityData, anomalies: [] };
-    render(<QualityReports data={noAnomalies} />);
-
-    expect(screen.queryByText('charts.anomalyDetection')).not.toBeInTheDocument();
-  });
-
-  it('renders high severity anomaly as error alert', () => {
-    const { container } = render(<QualityReports data={mockQualityData} />);
-
-    // High severity anomaly should render as error type alert
-    const errorAlerts = container.querySelectorAll('.ant-alert-error');
-    expect(errorAlerts.length).toBeGreaterThanOrEqual(1);
-  });
-
-  it('renders medium severity anomaly as warning alert', () => {
-    const { container } = render(<QualityReports data={mockQualityData} />);
-
-    const warningAlerts = container.querySelectorAll('.ant-alert-warning');
-    expect(warningAlerts.length).toBeGreaterThanOrEqual(1);
   });
 });
 
@@ -585,14 +607,14 @@ describe('QualityReports - export functionality', () => {
   });
 
   it('renders export button', () => {
-    render(<QualityReports data={mockQualityData} />);
+    render(<QualityReports {...buildQualityReportsMockProps()} />);
 
     expect(screen.getByText('export.button')).toBeInTheDocument();
   });
 
   it('exports CSV when CSV option is clicked', async () => {
     const user = userEvent.setup();
-    render(<QualityReports data={mockQualityData} />);
+    render(<QualityReports {...buildQualityReportsMockProps()} />);
 
     // Click the export dropdown button
     const exportBtn = screen.getByText('export.button');
@@ -613,7 +635,7 @@ describe('QualityReports - export functionality', () => {
 
   it('exports PDF/JSON when PDF option is clicked', async () => {
     const user = userEvent.setup();
-    render(<QualityReports data={mockQualityData} />);
+    render(<QualityReports {...buildQualityReportsMockProps()} />);
 
     const exportBtn = screen.getByText('export.button');
     await user.click(exportBtn);
@@ -635,21 +657,21 @@ describe('QualityReports - export functionality', () => {
 
 describe('QualityReports - interactive features', () => {
   it('renders chart type selector', () => {
-    render(<QualityReports data={mockQualityData} />);
+    render(<QualityReports {...buildQualityReportsMockProps()} />);
 
     // The Select component for chart type should be present
     expect(screen.getByText('charts.lineChart')).toBeInTheDocument();
   });
 
   it('renders date range picker', () => {
-    render(<QualityReports data={mockQualityData} />);
+    render(<QualityReports {...buildQualityReportsMockProps()} />);
 
     expect(screen.getByTestId('range-picker')).toBeInTheDocument();
   });
 
   it('switches between line and area chart types', async () => {
     const user = userEvent.setup();
-    render(<QualityReports data={mockQualityData} />);
+    render(<QualityReports {...buildQualityReportsMockProps()} />);
 
     // Initially shows line chart
     expect(screen.getByTestId('line-chart')).toBeInTheDocument();

@@ -33,21 +33,17 @@ describe('Loading', () => {
   it('renders fullscreen loading', () => {
     const { container } = render(<Loading fullScreen />)
 
-    // Should have fixed positioning for fullscreen
+    // 使用内联 style；全局 getComputedStyle mock（test/setup.ts）会使 toHaveStyle 不可靠
     const wrapper = container.firstChild as HTMLElement
-    expect(wrapper).toHaveStyle({
-      position: 'fixed',
-    })
+    expect(wrapper.style.position).toBe('fixed')
   })
 
   it('renders non-fullscreen loading with flex centering', () => {
     const { container } = render(<Loading />)
 
     const wrapper = container.firstChild as HTMLElement
-    expect(wrapper).toHaveStyle({
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-    })
+    expect(wrapper.style.display).toBe('flex')
+    expect(wrapper.style.alignItems).toBe('center')
+    expect(wrapper.style.justifyContent).toBe('center')
   })
 })

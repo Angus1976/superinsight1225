@@ -8,11 +8,12 @@ from datetime import datetime
 from uuid import uuid4
 
 from sqlalchemy import String, DateTime, ForeignKey, Index
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 
 from src.database.connection import Base
+from src.database.json_types import get_json_type
 
 # Valid metric types for DatalakeMetricsModel
 VALID_METRIC_TYPES = ("health", "volume", "query_perf")
@@ -39,7 +40,7 @@ class DatalakeMetricsModel(Base):
     metric_type: Mapped[str] = mapped_column(
         String(50), nullable=False
     )  # health, volume, query_perf
-    metric_data: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    metric_data: Mapped[dict] = mapped_column(get_json_type(), nullable=False)
 
     # 时间戳
     recorded_at: Mapped[datetime] = mapped_column(

@@ -34,6 +34,12 @@ class ServiceRole(Enum):
     READONLY = "readonly"
 
 
+class ServiceType(Enum):
+    """High-level service category (e.g. core platform vs feature modules)."""
+    CORE = "core"
+    FEATURE = "feature"
+
+
 @dataclass
 class ServiceInstance:
     """Represents a service instance."""

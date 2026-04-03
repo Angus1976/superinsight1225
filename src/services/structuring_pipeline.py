@@ -383,7 +383,6 @@ async def _load_cloud_config(
     """
     import os
     from src.ai.llm_schemas import CloudConfig
-    from src.database.connection import get_db_session
     from src.models.llm_configuration import LLMConfiguration
     from src.models.llm_application import LLMApplication, LLMApplicationBinding
     from src.ai.encryption_service import get_encryption_service
@@ -392,117 +391,124 @@ async def _load_cloud_config(
     
     logger.info(f"Loading LLM config for application: {application_code}")
     
-    # Step 1: Check database for configuration
-    db = next(get_db_session())
+    # Step 1: Check database for configuration (use db_manager.get_session — not
+    # next(get_db_session()), which leaves the dependency generator unfinished and
+    # can corrupt the global DatabaseManager connection pool).
     has_db_config = False
-    
     try:
-        # Get application
-        stmt = select(LLMApplication).where(LLMApplication.code == application_code)
-        result = db.execute(stmt)
-        app = result.scalar_one_or_none()
-        
-        if not app:
-            logger.info(f"Application '{application_code}' not found in database")
-        else:
-            # Get bindings ordered by priority
-            stmt = (
-                select(LLMApplicationBinding)
-                .options(selectinload(LLMApplicationBinding.llm_config))
-                .where(
-                    LLMApplicationBinding.application_id == app.id,
-                    LLMApplicationBinding.is_active == True
-                )
-                .join(LLMConfiguration)
-                .where(LLMConfiguration.is_active == True)
-                .order_by(LLMApplicationBinding.priority.asc())
-            )
+        with db_manager.get_session() as db:
+            # Get application
+            stmt = select(LLMApplication).where(LLMApplication.code == application_code)
+            result = db.execute(stmt)
+            app = result.scalar_one_or_none()
             
-            # Apply tenant filter with fallback to global
-            if tenant_id:
-                # Try to convert tenant_id to UUID if it's a string
-                from uuid import UUID as UUIDType
-                try:
-                    # If tenant_id is a valid UUID string, convert it
-                    if isinstance(tenant_id, str):
-                        tenant_uuid = UUIDType(tenant_id)
-                    else:
-                        tenant_uuid = tenant_id
-                    
-                    tenant_stmt = stmt.where(LLMConfiguration.tenant_id == tenant_uuid)
-                    result = db.execute(tenant_stmt)
-                    bindings = result.scalars().all()
-                except (ValueError, AttributeError):
-                    # tenant_id is not a valid UUID (e.g., "system"), skip tenant filter
-                    logger.info(f"tenant_id '{tenant_id}' is not a valid UUID, using global config")
-                    bindings = []
+            if not app:
+                logger.info(f"Application '{application_code}' not found in database")
+            else:
+                # Get bindings ordered by priority
+                stmt = (
+                    select(LLMApplicationBinding)
+                    .options(selectinload(LLMApplicationBinding.llm_config))
+                    .where(
+                        LLMApplicationBinding.application_id == app.id,
+                        LLMApplicationBinding.is_active == True
+                    )
+                    .join(LLMConfiguration)
+                    .where(LLMConfiguration.is_active == True)
+                    .order_by(LLMApplicationBinding.priority.asc())
+                )
                 
-                if not bindings:
-                    # Fallback to global config
+                # Apply tenant filter with fallback to global
+                if tenant_id:
+                    # Try to convert tenant_id to UUID if it's a string
+                    from uuid import UUID as UUIDType
+                    try:
+                        # If tenant_id is a valid UUID string, convert it
+                        if isinstance(tenant_id, str):
+                            tenant_uuid = UUIDType(tenant_id)
+                        else:
+                            tenant_uuid = tenant_id
+                        
+                        tenant_stmt = stmt.where(LLMConfiguration.tenant_id == tenant_uuid)
+                        result = db.execute(tenant_stmt)
+                        bindings = result.scalars().all()
+                    except (ValueError, AttributeError):
+                        # tenant_id is not a valid UUID (e.g., "system"), skip tenant filter
+                        logger.info(f"tenant_id '{tenant_id}' is not a valid UUID, using global config")
+                        bindings = []
+                    
+                    if not bindings:
+                        # Fallback to global config
+                        global_stmt = stmt.where(LLMConfiguration.tenant_id == None)
+                        result = db.execute(global_stmt)
+                        bindings = result.scalars().all()
+                else:
                     global_stmt = stmt.where(LLMConfiguration.tenant_id == None)
                     result = db.execute(global_stmt)
                     bindings = result.scalars().all()
-            else:
-                global_stmt = stmt.where(LLMConfiguration.tenant_id == None)
-                result = db.execute(global_stmt)
-                bindings = result.scalars().all()
-            
-            if bindings:
-                has_db_config = True
-                binding = bindings[0]
-                llm_config = binding.llm_config
                 
-                logger.info(
-                    f"Found database config: {llm_config.name} "
-                    f"(priority={binding.priority}, provider={llm_config.provider})"
-                )
-                
-                # Step 2: If database has config, decrypt and use it (no fallback)
-                try:
-                    encryption_service = get_encryption_service()
-                    config_data = llm_config.config_data or {}
-                    api_key_encrypted = config_data.get("api_key_encrypted")
-                    
-                    if api_key_encrypted:
-                        api_key = encryption_service.decrypt(api_key_encrypted)
-                        logger.info(f"✓ API key decrypted successfully (length={len(api_key)})")
-                    else:
-                        api_key = config_data.get("api_key", "")
-                        logger.warning("No encrypted API key found, using plain text key")
-                    
-                    base_url = config_data.get("base_url", "https://api.openai.com/v1")
-                    model_name = config_data.get("model_name", "gpt-3.5-turbo")
-                    timeout = binding.timeout_seconds or 60
-                    max_retries = binding.max_retries or 3
-                    
-                    config = CloudConfig(
-                        openai_api_key=api_key,
-                        openai_base_url=base_url,
-                        openai_model=model_name,
-                        timeout=timeout,
-                        max_retries=max_retries
-                    )
+                if bindings:
+                    has_db_config = True
+                    binding = bindings[0]
+                    llm_config = binding.llm_config
                     
                     logger.info(
-                        f"✓ Using database LLM config: model={config.openai_model}, "
-                        f"base_url={config.openai_base_url}, priority={binding.priority}"
+                        f"Found database config: {llm_config.name} "
+                        f"(priority={binding.priority}, provider={llm_config.provider})"
                     )
-                    return config
                     
-                except Exception as decrypt_error:
-                    # Database has config but decryption failed - DO NOT fallback
-                    error_msg = (
-                        f"Database has LLM configuration but failed to decrypt: {decrypt_error}. "
-                        f"Please check LLM_ENCRYPTION_KEY environment variable."
-                    )
-                    logger.error(error_msg)
-                    raise ValueError(error_msg) from decrypt_error
-            else:
-                logger.info(f"No active bindings found for application: {application_code}")
+                    # Step 2: If database has config, decrypt and use it (no fallback)
+                    try:
+                        encryption_service = get_encryption_service()
+                        config_data = llm_config.config_data or {}
+                        api_key_encrypted = config_data.get("api_key_encrypted")
+                        
+                        if api_key_encrypted:
+                            api_key = encryption_service.decrypt(api_key_encrypted)
+                            logger.info(f"✓ API key decrypted successfully (length={len(api_key)})")
+                        else:
+                            api_key = config_data.get("api_key", "")
+                            logger.warning("No encrypted API key found, using plain text key")
+                        
+                        base_url = config_data.get("base_url", "https://api.openai.com/v1")
+                        model_name = config_data.get("model_name", "gpt-3.5-turbo")
+                        timeout = binding.timeout_seconds or 60
+                        max_retries = binding.max_retries or 3
+                        
+                        config = CloudConfig(
+                            openai_api_key=api_key,
+                            openai_base_url=base_url,
+                            openai_model=model_name,
+                            timeout=timeout,
+                            max_retries=max_retries
+                        )
+                        
+                        logger.info(
+                            f"✓ Using database LLM config: model={config.openai_model}, "
+                            f"base_url={config.openai_base_url}, priority={binding.priority}"
+                        )
+                        return config
+                        
+                    except Exception as decrypt_error:
+                        # Database has config but decryption failed - DO NOT fallback
+                        error_msg = (
+                            f"Database has LLM configuration but failed to decrypt: {decrypt_error}. "
+                            f"Please check LLM_ENCRYPTION_KEY environment variable."
+                        )
+                        logger.error(error_msg)
+                        raise ValueError(error_msg) from decrypt_error
+                else:
+                    logger.info(f"No active bindings found for application: {application_code}")
     
-    finally:
-        db.close()
-    
+    except ValueError:
+        # Decryption or configuration integrity errors must not be masked by env fallback
+        raise
+    except Exception as e:
+        logger.warning(
+            "Database error while loading LLM configuration (will try environment if needed): %s",
+            e,
+        )
+
     # Step 3: No database config found, fallback to environment variables
     if not has_db_config:
         logger.info("No database config found, falling back to environment variables")
@@ -546,7 +552,6 @@ async def _load_all_cloud_configs(
     """
     import os
     from src.ai.llm_schemas import CloudConfig
-    from src.database.connection import get_db_session
     from src.models.llm_configuration import LLMConfiguration
     from src.models.llm_application import LLMApplication, LLMApplicationBinding
     from src.ai.encryption_service import get_encryption_service
@@ -554,9 +559,8 @@ async def _load_all_cloud_configs(
     from sqlalchemy.orm import selectinload
 
     configs: list[CloudConfig] = []
-    db = next(get_db_session())
 
-    try:
+    with db_manager.get_session() as db:
         stmt = select(LLMApplication).where(LLMApplication.code == application_code)
         app = db.execute(stmt).scalar_one_or_none()
         if not app:
@@ -636,8 +640,6 @@ async def _load_all_cloud_configs(
                     )
                 except Exception as e:
                     logger.warning(f"Skipping config {llm_cfg.name}: decrypt failed: {e}")
-    finally:
-        db.close()
 
     # Env-var fallback when no DB configs were loaded
     if not configs:

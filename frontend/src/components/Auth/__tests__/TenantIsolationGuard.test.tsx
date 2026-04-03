@@ -76,7 +76,7 @@ describe('TenantIsolationGuard', () => {
       );
 
       expect(screen.queryByTestId('protected-content')).not.toBeInTheDocument();
-      expect(screen.getByText('租户隔离保护')).toBeInTheDocument();
+      expect(screen.getByText(/Tenant Isolation Protection|租户隔离保护/)).toBeInTheDocument();
     });
 
     it('renders custom fallback when provided', () => {
@@ -127,7 +127,7 @@ describe('TenantIsolationGuard', () => {
       );
 
       expect(screen.queryByTestId('protected-content')).not.toBeInTheDocument();
-      expect(screen.getByText('工作空间隔离保护')).toBeInTheDocument();
+      expect(screen.getByText(/Workspace Isolation Protection|工作空间隔离保护/)).toBeInTheDocument();
     });
   });
 
@@ -145,7 +145,7 @@ describe('TenantIsolationGuard', () => {
       );
 
       expect(screen.queryByTestId('protected-content')).not.toBeInTheDocument();
-      expect(screen.getByText('访问受限')).toBeInTheDocument();
+      expect(screen.getByText(/Access Denied|访问受限/)).toBeInTheDocument();
     });
   });
 

@@ -278,7 +278,7 @@ class TemplateService:
             redis_client: Optional Redis client for caching
             cache_ttl_seconds: Cache TTL in seconds (default 1 hour)
         """
-        self._lock = asyncio.Lock()
+        self._lock: Optional[asyncio.Lock] = None
         self._templates: Dict[UUID, OntologyTemplate] = {}
         self._name_index: Dict[str, UUID] = {}
         self._instantiated: Dict[UUID, InstantiatedOntology] = {}
@@ -286,6 +286,10 @@ class TemplateService:
         self._cache_ttl = cache_ttl_seconds
 
         logger.info("TemplateService initialized")
+
+    async def _ensure_async_lock(self) -> None:
+        if self._lock is None:
+            self._lock = asyncio.Lock()
 
     # =========================================================================
     # CRUD Operations
@@ -311,6 +315,7 @@ class TemplateService:
         Raises:
             ValueError: If template name already exists
         """
+        await self._ensure_async_lock()
         async with self._lock:
             # Check name uniqueness
             if data.name.lower() in self._name_index:
@@ -380,6 +385,7 @@ class TemplateService:
         Returns:
             Updated template or None if not found
         """
+        await self._ensure_async_lock()
         async with self._lock:
             template = self._templates.get(template_id)
             if not template:
@@ -421,6 +427,7 @@ class TemplateService:
         Returns:
             True if deleted, False if not found
         """
+        await self._ensure_async_lock()
         async with self._lock:
             template = self._templates.get(template_id)
             if not template:
@@ -524,6 +531,7 @@ class TemplateService:
         Raises:
             ValueError: If original template not found
         """
+        await self._ensure_async_lock()
         async with self._lock:
             original = self._templates.get(template_id)
             if not original:
@@ -624,6 +632,7 @@ class TemplateService:
         Raises:
             ValueError: If template not found
         """
+        await self._ensure_async_lock()
         async with self._lock:
             template = self._templates.get(template_id)
             if not template:

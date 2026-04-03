@@ -91,11 +91,14 @@ class OntologyI18nService:
         """
         self._translations: Dict[UUID, List[Translation]] = {}  # element_id -> [Translation]
         self._elements: Dict[UUID, OntologyElement] = {}  # element_id -> OntologyElement
-        self._lock = asyncio.Lock()
+        self._lock: Optional[asyncio.Lock] = None
         self._default_language = default_language
-
         # Required fields for bilingual definition
         self._required_bilingual_fields = {"name", "description", "definition"}
+
+    async def _ensure_async_lock(self) -> None:
+        if self._lock is None:
+            self._lock = asyncio.Lock()
 
     async def add_translation(
         self,
@@ -119,6 +122,7 @@ class OntologyI18nService:
         Returns:
             Created or updated translation
         """
+        await self._ensure_async_lock()
         async with self._lock:
             translation = Translation(
                 element_id=element_id,
@@ -166,6 +170,7 @@ class OntologyI18nService:
         Returns:
             Translation value or None
         """
+        await self._ensure_async_lock()
         async with self._lock:
             translations = self._translations.get(element_id, [])
 
@@ -208,6 +213,7 @@ class OntologyI18nService:
         if required_languages is None:
             required_languages = {Language.ZH_CN, Language.EN_US}
 
+        await self._ensure_async_lock()
         async with self._lock:
             translations = self._translations.get(element_id, [])
 
@@ -236,6 +242,7 @@ class OntologyI18nService:
         Returns:
             List of field names missing translations
         """
+        await self._ensure_async_lock()
         async with self._lock:
             translations = self._translations.get(element_id, [])
             translated_fields = {
@@ -263,6 +270,7 @@ class OntologyI18nService:
         Returns:
             Translation coverage statistics
         """
+        await self._ensure_async_lock()
         async with self._lock:
             translations = self._translations.get(element_id, [])
             translated_fields = {
@@ -302,6 +310,7 @@ class OntologyI18nService:
         Returns:
             Exported data as string
         """
+        await self._ensure_async_lock()
         async with self._lock:
             # Collect all translations for this language
             export_data = []
@@ -347,6 +356,7 @@ class OntologyI18nService:
         Returns:
             Number of translations imported
         """
+        await self._ensure_async_lock()
         async with self._lock:
             count = 0
 
@@ -419,6 +429,7 @@ class OntologyI18nService:
         Returns:
             Dictionary mapping field names to translated values
         """
+        await self._ensure_async_lock()
         async with self._lock:
             translations = self._translations.get(element_id, [])
 
@@ -443,6 +454,7 @@ class OntologyI18nService:
         Returns:
             Aggregated translation coverage
         """
+        await self._ensure_async_lock()
         async with self._lock:
             total_fields = 0
             translated_fields = 0
@@ -479,6 +491,7 @@ class OntologyI18nService:
         Returns:
             True if successful
         """
+        await self._ensure_async_lock()
         async with self._lock:
             translations = self._translations.get(element_id, [])
             translation = next(
@@ -506,6 +519,7 @@ class OntologyI18nService:
         Returns:
             List of translations needing review
         """
+        await self._ensure_async_lock()
         async with self._lock:
             needing_review = []
 
@@ -543,6 +557,7 @@ class OntologyI18nService:
         """
         inconsistencies = []
 
+        await self._ensure_async_lock()
         async with self._lock:
             for element_id in element_ids:
                 primary_trans = await self.get_element_translations(element_id, primary_language)

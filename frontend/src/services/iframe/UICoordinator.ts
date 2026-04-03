@@ -63,6 +63,7 @@ export class UICoordinator extends EventEmitter {
   };
   private shortcuts: Map<string, KeyboardShortcut> = new Map();
   private resizeObserver: ResizeObserver | null = null;
+  private focusCheckInterval: ReturnType<typeof setInterval> | null = null;
   private keyboardListenerActive = false;
   private originalStyles: Map<HTMLElement, string> = new Map();
 
@@ -139,6 +140,10 @@ export class UICoordinator extends EventEmitter {
     this.removeEventListeners();
     this.disableKeyboardShortcuts();
     this.cleanupResizeObserver();
+    if (this.focusCheckInterval) {
+      clearInterval(this.focusCheckInterval);
+      this.focusCheckInterval = null;
+    }
     this.exitFullscreen();
     this.showNavigation();
     
@@ -636,6 +641,10 @@ export class UICoordinator extends EventEmitter {
 
     // Monitor iframe focus state
     const checkFocus = () => {
+      // Vitest may tear down the DOM between timer ticks; bail out safely.
+      if (!this.iframe || typeof document === 'undefined') {
+        return;
+      }
       const focused = document.activeElement === this.iframe;
       if (focused !== this.uiState.iframeFocused) {
         this.uiState.iframeFocused = focused;
@@ -644,7 +653,10 @@ export class UICoordinator extends EventEmitter {
     };
 
     // Check focus periodically
-    setInterval(checkFocus, 100);
+    if (this.focusCheckInterval) {
+      clearInterval(this.focusCheckInterval);
+    }
+    this.focusCheckInterval = setInterval(checkFocus, 100);
   }
 
   /**

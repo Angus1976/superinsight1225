@@ -688,6 +688,10 @@ class SystemHealthMonitor:
         return summary
 
 
+# Alias for tests and legacy imports (class was renamed SystemHealthMonitor)
+HealthMonitor = SystemHealthMonitor
+
+
 # Global health monitor instance
 health_monitor = SystemHealthMonitor()
 

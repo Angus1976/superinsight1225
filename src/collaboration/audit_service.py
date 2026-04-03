@@ -110,12 +110,15 @@ class AuditService:
         self._logs: Dict[UUID, AuditLogEntry] = {}
         self._rollbacks: Dict[UUID, RollbackOperation] = {}
         self._secret_key = secret_key.encode()
-        self._lock = asyncio.Lock()
-
+        self._lock: Optional[asyncio.Lock] = None
         # Indexes for efficient querying
         self._ontology_index: Dict[UUID, List[UUID]] = {}
         self._user_index: Dict[UUID, List[UUID]] = {}
         self._timestamp_index: List[Tuple[datetime, UUID]] = []
+
+    async def _ensure_async_lock(self) -> None:
+        if self._lock is None:
+            self._lock = asyncio.Lock()
 
     async def log_change(
         self,
@@ -149,6 +152,7 @@ class AuditService:
         Returns:
             Created audit log entry
         """
+        await self._ensure_async_lock()
         async with self._lock:
             entry = AuditLogEntry(
                 ontology_id=ontology_id,
@@ -224,6 +228,7 @@ class AuditService:
         Returns:
             True if integrity verified, False otherwise
         """
+        await self._ensure_async_lock()
         async with self._lock:
             entry = self._logs.get(log_id)
             if not entry:
@@ -250,6 +255,7 @@ class AuditService:
         Returns:
             List of matching log entries
         """
+        await self._ensure_async_lock()
         async with self._lock:
             # Start with all logs
             candidate_log_ids = set(self._logs.keys())
@@ -305,6 +311,7 @@ class AuditService:
         Returns:
             Log entry or None
         """
+        await self._ensure_async_lock()
         async with self._lock:
             return self._logs.get(log_id)
 
@@ -329,6 +336,7 @@ class AuditService:
         Raises:
             ValueError: If target log not found
         """
+        await self._ensure_async_lock()
         async with self._lock:
             target_log = self._logs.get(target_log_id)
             if not target_log:
@@ -549,6 +557,7 @@ class AuditService:
         Returns:
             List of rollback operations
         """
+        await self._ensure_async_lock()
         async with self._lock:
             rollbacks = [
                 r for r in self._rollbacks.values()

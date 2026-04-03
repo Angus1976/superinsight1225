@@ -52,14 +52,22 @@ export const useWebSocket = (
   const eventHandlersRef = useRef<Map<string, Set<EventHandler>>>(new Map());
   const reconnectAttemptsRef = useRef(0);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const manualCloseRef = useRef(false);
+  const isConnectedRef = useRef(false);
   const [isConnected, setIsConnected] = useState(false);
+
+  // In SSR / test environments, WebSocket may be unavailable.
+  if (typeof WebSocket === 'undefined') {
+    return null;
+  }
 
   const connect = useCallback(() => {
     try {
-      // Close existing connection
-      if (wsRef.current) {
-        wsRef.current.close();
-      }
+      // If a previous socket instance exists, we avoid force-closing it here.
+      // Closing can trigger additional `onclose` events in some test / browser
+      // implementations and distort reconnect bookkeeping. Cleanup is handled
+      // by the effect cleanup and by the socket's own lifecycle.
+      wsRef.current = null;
 
       // Convert HTTP URL to WebSocket URL
       const wsUrl = url.startsWith('http')
@@ -73,7 +81,13 @@ export const useWebSocket = (
 
       ws.onopen = () => {
         setIsConnected(true);
+        isConnectedRef.current = true;
         reconnectAttemptsRef.current = 0;
+        manualCloseRef.current = false;
+        if (reconnectTimeoutRef.current) {
+          clearTimeout(reconnectTimeoutRef.current);
+          reconnectTimeoutRef.current = null;
+        }
 
         // Trigger connect event
         const handlers = eventHandlersRef.current.get('connect');
@@ -88,6 +102,7 @@ export const useWebSocket = (
 
       ws.onclose = () => {
         setIsConnected(false);
+        isConnectedRef.current = false;
 
         // Trigger disconnect event
         const handlers = eventHandlersRef.current.get('disconnect');
@@ -99,10 +114,16 @@ export const useWebSocket = (
           onDisconnect();
         }
 
-        // Attempt reconnection
-        if (reconnectAttemptsRef.current < reconnectAttempts) {
+        // Attempt reconnection (skip if we intentionally closed during reconnect/switch).
+        // Also avoid scheduling multiple pending reconnect timers.
+        if (
+          !manualCloseRef.current &&
+          reconnectTimeoutRef.current == null &&
+          reconnectAttemptsRef.current < reconnectAttempts
+        ) {
           reconnectAttemptsRef.current += 1;
           reconnectTimeoutRef.current = setTimeout(() => {
+            reconnectTimeoutRef.current = null;
             connect();
           }, reconnectInterval);
         }
@@ -119,7 +140,12 @@ export const useWebSocket = (
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          const { event: eventName, data: eventData } = data;
+          // Support both legacy `{ type, data }` and `{ event, data }` shapes.
+          const eventName = (data?.type ?? data?.event) as string | undefined;
+          const eventData = data?.data;
+          if (!eventName) {
+            return;
+          }
 
           // Trigger event handlers
           const handlers = eventHandlersRef.current.get(eventName);
@@ -171,10 +197,12 @@ export const useWebSocket = (
   }, []);
 
   const emit = useCallback((event: string, data?: any) => {
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+    // Some test environments do not provide reliable `readyState` constants.
+    // Treat "connected" as having seen `onopen`.
+    if (wsRef.current && isConnectedRef.current) {
       wsRef.current.send(
         JSON.stringify({
-          event,
+          type: event,
           data,
         })
       );

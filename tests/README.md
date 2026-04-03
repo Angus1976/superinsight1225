@@ -48,11 +48,15 @@ cp .env.test .env
 
 ### 1.2 CI Environment Configuration
 
-**GitHub Actions Workflows:**
-- `.github/workflows/test-commit.yml` - Runs on every commit
-- `.github/workflows/test-pr.yml` - Runs on pull requests
-- `.github/workflows/test-main.yml` - Runs on merge to main
-- `.github/workflows/test-scheduled.yml` - Daily performance, weekly security
+**GitHub Actions Workflows (backend / Hypothesis):**
+- `.github/workflows/commit-tests.yml` — Push to `main` / `develop` (unit + property tests; Hypothesis profile 见下)
+- `.github/workflows/pr-tests.yml` — Pull requests to `main` / `develop`（复用 `commit-tests`，并对集成测试设置 profile）
+- `.github/workflows/main-branch-tests.yml` — Push to `main`（复用 `pr-tests` 并传入更严的 Hypothesis 配置）
+
+**HYPOTHESIS_PROFILE in CI（与 workflow 一致）：**
+- **Pull request**：子工作流 `commit-tests` 使用 **`dev`**（约 25 例）；`pr-tests` 内集成测试步骤同样设为 **`dev`**。
+- **Push 到 `main`**：`commit-tests` 单独由 push 触发时，在 `main` 分支上使用 **`ci`**；**手动 `workflow_dispatch` 且当前 ref 为 `main`** 时同样使用 **`ci`**（其余分支手动运行为 **`default`**）。`main-branch-tests` 调用 `pr-tests` 时传入 **`ci`**，集成测试与复用的 commit 测试均走更严采样。
+- **其他分支 push**：`commit-tests` 默认 **`default`**（若未显式传入 `hypothesis_profile`）。
 
 **CI Environment Variables:**
 ```yaml
@@ -60,7 +64,7 @@ env:
   APP_ENV: test
   DATABASE_URL: postgresql://user:pass@localhost:5433/superinsight_test
   REDIS_URL: redis://localhost:6380/15
-  HYPOTHESIS_PROFILE: ci
+  # HYPOTHESIS_PROFILE 由各 workflow 步骤注入，勿在全局写死为单一值
   COVERAGE_THRESHOLD: 80
 ```
 
@@ -75,6 +79,25 @@ pytest --cov=src --cov-report=html --cov-report=term-missing
 # Fail if coverage below threshold
 pytest --cov-fail-under=80
 ```
+
+**Hypothesis profiles (property / `@given` tests):**
+
+| Profile | `max_examples` | When to use |
+|---------|------------------|-------------|
+| `default` | 100 | Full local/PR rigor (default if `HYPOTHESIS_PROFILE` unset) |
+| `ci` | 500 | Scheduled / merge validation (`HYPOTHESIS_PROFILE=ci`) |
+| `dev` | 25 | Balance speed vs coverage (e.g. `HYPOTHESIS_PROFILE=dev pytest`) |
+| `fast` | 10 | Fast iteration while editing property tests |
+
+Quick local regression (unit + API, no coverage, `fast` Hypothesis profile):
+
+```bash
+./scripts/run-tests-fast.sh
+# or explicitly:
+HYPOTHESIS_PROFILE=fast pytest tests/unit tests/api --no-cov -q
+```
+
+Property-heavy directories (`tests/property/`, many `*_properties.py`) scale roughly with `max_examples × number of @given tests`; use `fast`/`dev` during development and reserve `default`/`ci` for pre-merge or nightly runs.
 
 ### 1.3 Test Database Setup
 

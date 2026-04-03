@@ -77,7 +77,7 @@ describe('PermissionGuard', () => {
       );
 
       expect(screen.queryByTestId('protected-content')).not.toBeInTheDocument();
-      expect(screen.getByText('权限不足')).toBeInTheDocument();
+      expect(screen.getByText(/Insufficient Permission|权限不足/)).toBeInTheDocument();
     });
 
     it('renders fallback when provided and permission denied', () => {
@@ -165,7 +165,7 @@ describe('PermissionGuard', () => {
       );
 
       expect(screen.queryByTestId('protected-content')).not.toBeInTheDocument();
-      expect(screen.getByText('租户访问受限')).toBeInTheDocument();
+      expect(screen.getByText(/Tenant Access Denied|租户访问受限/)).toBeInTheDocument();
     });
   });
 
@@ -201,7 +201,7 @@ describe('PermissionGuard', () => {
       );
 
       expect(screen.queryByTestId('protected-content')).not.toBeInTheDocument();
-      expect(screen.getByText('工作空间访问受限')).toBeInTheDocument();
+      expect(screen.getByText(/Workspace Access Denied|工作空间访问受限/)).toBeInTheDocument();
     });
   });
 
@@ -243,7 +243,7 @@ describe('PermissionGuard', () => {
       );
 
       expect(screen.queryByTestId('protected-content')).not.toBeInTheDocument();
-      expect(screen.getByText('租户访问受限')).toBeInTheDocument();
+      expect(screen.getByText(/Tenant Access Denied|租户访问受限/)).toBeInTheDocument();
     });
   });
 
@@ -291,7 +291,7 @@ describe('PermissionGuard', () => {
         </PermissionGuard>
       );
 
-      expect(screen.getByText('权限不足')).toBeInTheDocument();
+      expect(screen.getByText(/Insufficient Permission|权限不足/)).toBeInTheDocument();
     });
   });
 

@@ -167,11 +167,14 @@ router = APIRouter(prefix="/api/v1/annotation", tags=["Annotation Workflow"])
 # Pre-Annotation Endpoints
 # ============================================================================
 
-@router.post("/pre-annotate", response_model=PreAnnotationResponse)
+@router.post("/workflow/pre-annotate", response_model=PreAnnotationResponse)
 async def pre_annotate(request: PreAnnotationRequest):
     """
-    Execute pre-annotation on tasks.
-    
+    Execute pre-annotation on tasks (task_ids-based workflow API).
+
+    Document/batch pre-annotation (project_id + document_ids) lives under
+    ``annotation_collaboration`` at POST /api/v1/annotation/pre-annotate.
+
     Requirement 1.1: 预标注功能
     """
     try:

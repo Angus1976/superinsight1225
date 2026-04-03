@@ -139,20 +139,17 @@ describe('Translation Key Consistency - tasks.json', () => {
   // Verify critical translation keys exist
   describe('Critical translation keys', () => {
     const criticalKeys = [
-      'tasks.title',
-      'tasks.list.title',
-      'tasks.list.refresh',
-      'tasks.list.syncAllTasks',
-      'tasks.status.pending',
-      'tasks.status.inProgress',
-      'tasks.status.completed',
-      'tasks.priority.low',
-      'tasks.priority.medium',
-      'tasks.priority.high',
-      'tasks.actions.startAnnotation',
-      'tasks.actions.openInNewWindow',
-      'tasks.annotate.title',
-      'tasks.annotate.openLabelStudio',
+      // `tasks.json` is a flat namespace file; keys do not include a leading `tasks.`.
+      'title',
+      'refresh',
+      'syncAllTasks',
+      'statusPending',
+      'statusInProgress',
+      'statusCompleted',
+      'priorityLow',
+      'priorityMedium',
+      'priorityHigh',
+      'annotateAction',
     ];
 
     it.each(criticalKeys)('should have key "%s" in zh', (key) => {

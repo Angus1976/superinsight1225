@@ -57,10 +57,10 @@ describe('resolveHelpKey', () => {
     expect(resolveHelpKey(ctx)).toBe('tasks');
   });
 
-  it('returns page as final fallback even if page key has no title in i18n', () => {
+  it('falls back to general when page key has no title in i18n', () => {
     const ctx: HelpContext = { page: 'unknownPage' };
-    // unknownPage doesn't exist in help.json, but resolveHelpKey returns page as final fallback
-    expect(resolveHelpKey(ctx)).toBe('unknownPage');
+    // unknownPage has no help:*.title; implementation then tries 'general' (see helpUtils.ts)
+    expect(resolveHelpKey(ctx)).toBe('general');
   });
 
   it('always returns a non-empty string', () => {

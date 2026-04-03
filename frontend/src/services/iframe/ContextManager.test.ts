@@ -321,6 +321,7 @@ describe('ContextManager', () => {
     it('should check if context is expired', async () => {
       const shortTimeoutManager = new ContextManager({
         sessionTimeout: 50, // 50ms
+        autoRefresh: false, // otherwise refreshContext() resets timestamp before age exceeds timeout
       });
 
       shortTimeoutManager.setContext(mockContext);

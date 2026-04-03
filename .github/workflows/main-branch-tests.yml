@@ -23,6 +23,8 @@ jobs:
   pr-tests:
     name: PR Tests
     uses: ./.github/workflows/pr-tests.yml
+    with:
+      hypothesis_profile: ci
     secrets: inherit
 
   # =============================================================================

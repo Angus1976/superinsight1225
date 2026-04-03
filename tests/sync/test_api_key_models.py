@@ -10,21 +10,41 @@ from datetime import datetime, timedelta
 from uuid import uuid4
 import hashlib
 
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
+from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.dialects.postgresql import JSONB
+
 from src.sync.models import (
-    APIKeyModel, 
-    APICallLogModel, 
-    APIKeyStatus
+    APIKeyModel,
+    APICallLogModel,
+    APIKeyStatus,
 )
-from src.database.connection import get_session
+
+
+@compiles(JSONB, "sqlite")
+def _compile_jsonb_sqlite(type_, compiler, **kw):
+    return "JSON"
 
 
 @pytest.fixture
 def db_session():
-    """Create a test database session."""
-    session = next(get_session())
-    yield session
-    session.rollback()
-    session.close()
+    """In-memory SQLite session (no Docker/host DB required)."""
+    engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    APIKeyModel.__table__.create(bind=engine, checkfirst=True)
+    APICallLogModel.__table__.create(bind=engine, checkfirst=True)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    try:
+        yield session
+    finally:
+        session.close()
+        engine.dispose()
 
 
 class TestAPIKeyModel:

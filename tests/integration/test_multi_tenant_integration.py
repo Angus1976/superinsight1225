@@ -639,7 +639,10 @@ class TestDataIsolation:
         filter1 = isolation_engine.get_tenant_filter(tenant1_id)
         filter2 = isolation_engine.get_tenant_filter(tenant2_id)
 
-        assert str(filter1) != str(filter2)
+        # String comparison is unreliable (bound params collapse in repr); compare values.
+        assert filter1.right.value == tenant1_id
+        assert filter2.right.value == tenant2_id
+        assert tenant1_id != tenant2_id
 
     def test_cross_tenant_access_logged(self, db_session):
         """Test: Cross-tenant access attempt → verify denied."""

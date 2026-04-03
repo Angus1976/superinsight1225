@@ -2,16 +2,18 @@
  * Integration tests for Augmentation Samples page with Transfer functionality
  */
 
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import AugmentationSamples from '../index';
 import { api } from '@/services/api';
 import * as dataLifecycleAPI from '@/api/dataLifecycleAPI';
+import type { ReactElement } from 'react';
 
 // Mock dependencies
-jest.mock('@/services/api');
-jest.mock('@/api/dataLifecycleAPI');
+vi.mock('@/services/api');
+vi.mock('@/api/dataLifecycleAPI');
 
 const mockSamples = [
   {
@@ -43,7 +45,7 @@ const mockSamples = [
   },
 ];
 
-const renderWithProviders = (component: React.ReactElement) => {
+const renderWithProviders = (component: ReactElement) => {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -62,14 +64,14 @@ const renderWithProviders = (component: React.ReactElement) => {
 
 describe('AugmentationSamples - Transfer Integration', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     
     // Mock API responses
-    (api.get as jest.Mock).mockResolvedValue({ data: mockSamples });
-    (dataLifecycleAPI.checkPermissionAPI as jest.Mock).mockResolvedValue({
+    vi.mocked(api.get).mockResolvedValue({ data: mockSamples } as any);
+    vi.mocked(dataLifecycleAPI.checkPermissionAPI).mockResolvedValue({
       allowed: true,
       requires_approval: false,
-    });
+    } as any);
   });
 
   it('should render the samples table', async () => {
@@ -134,7 +136,7 @@ describe('AugmentationSamples - Transfer Integration', () => {
       target_state: 'temp_stored',
     };
 
-    (dataLifecycleAPI.transferDataAPI as jest.Mock).mockResolvedValue(mockTransferResult);
+    vi.mocked(dataLifecycleAPI.transferDataAPI).mockResolvedValue(mockTransferResult as any);
 
     renderWithProviders(<AugmentationSamples />);
 
@@ -243,7 +245,7 @@ describe('AugmentationSamples - Transfer Integration', () => {
       },
     ];
 
-    (api.get as jest.Mock).mockResolvedValue({ data: samplesWithoutStrategy });
+    vi.mocked(api.get).mockResolvedValue({ data: samplesWithoutStrategy } as any);
 
     renderWithProviders(<AugmentationSamples />);
 

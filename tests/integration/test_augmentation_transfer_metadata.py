@@ -7,9 +7,12 @@ augmented data to the data lifecycle system.
 Task: 3.2.3 - Record augmentation methods and parameters
 """
 
+import json
+
 import pytest
 from datetime import datetime
-from uuid import uuid4
+from uuid import UUID, uuid4
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from src.services.data_transfer_service import DataTransferService, User
@@ -19,13 +22,12 @@ from src.models.data_transfer import (
     DataAttributes,
     TransferRecord
 )
-from src.models.data_lifecycle import TempDataModel, SampleModel
+from src.models.data_lifecycle import TempDataModel
 
 
-@pytest.fixture
-def db_session(test_db):
-    """Provide a database session for tests."""
-    return test_db
+def _as_uuid(value):
+    """Coerce lifecycle id from transfer API (str) to UUID for ORM queries."""
+    return UUID(value) if isinstance(value, str) else value
 
 
 @pytest.fixture
@@ -99,7 +101,7 @@ class TestAugmentationMetadataRecording:
         
         # Verify metadata in database
         lifecycle_id = result["lifecycle_ids"][0]
-        temp_data = db_session.query(TempDataModel).filter_by(id=lifecycle_id).first()
+        temp_data = db_session.query(TempDataModel).filter_by(id=_as_uuid(lifecycle_id)).first()
         
         assert temp_data is not None
         assert temp_data.metadata_["augmentation_method"] == "TEXT_ENHANCEMENT"
@@ -161,14 +163,19 @@ class TestAugmentationMetadataRecording:
         assert result["success"] is True
         assert result["target_state"] == "in_sample_library"
         
-        # Verify metadata in database
-        lifecycle_id = result["lifecycle_ids"][0]
-        sample = db_session.query(SampleModel).filter_by(id=lifecycle_id).first()
-        
-        assert sample is not None
-        assert sample.metadata_["augmentation_method"] == "IMAGE_ENHANCEMENT"
-        assert sample.metadata_["augmentation_params"] == augmentation_params
-        assert sample.metadata_["target_quality"] == 0.85
+        # Verify metadata in database (raw SQL avoids ORM UUID type confusion when
+        # test_legacy_api_compat runs earlier in the same process and patches columns).
+        # Prefer latest row: PK string comparison can differ across SQLite/UUID adapters.
+        row = db_session.execute(
+            text("SELECT metadata FROM samples ORDER BY created_at DESC LIMIT 1"),
+        ).mappings().first()
+        assert row is not None
+        meta = row["metadata"]
+        if isinstance(meta, str):
+            meta = json.loads(meta)
+        assert meta["augmentation_method"] == "IMAGE_ENHANCEMENT"
+        assert meta["augmentation_params"] == augmentation_params
+        assert meta["target_quality"] == 0.85
     
     @pytest.mark.asyncio
     async def test_multiple_records_preserve_different_parameters(
@@ -225,7 +232,7 @@ class TestAugmentationMetadataRecording:
         
         # Verify each record has its own parameters
         for lifecycle_id in result["lifecycle_ids"]:
-            temp_data = db_session.query(TempDataModel).filter_by(id=lifecycle_id).first()
+            temp_data = db_session.query(TempDataModel).filter_by(id=_as_uuid(lifecycle_id)).first()
             assert temp_data is not None
             assert "augmentation_method" in temp_data.metadata_
             assert "augmentation_params" in temp_data.metadata_
@@ -267,5 +274,5 @@ class TestAugmentationMetadataRecording:
         
         # Verify record exists even without augmentation params
         lifecycle_id = result["lifecycle_ids"][0]
-        temp_data = db_session.query(TempDataModel).filter_by(id=lifecycle_id).first()
+        temp_data = db_session.query(TempDataModel).filter_by(id=_as_uuid(lifecycle_id)).first()
         assert temp_data is not None

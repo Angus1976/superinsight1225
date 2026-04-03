@@ -150,11 +150,14 @@ class KnowledgeContributionService:
         self._relation_suggestions: Dict[UUID, RelationSuggestion] = {}
         self._attachments: Dict[UUID, DocumentAttachment] = {}
         self._metrics: Dict[UUID, ContributionMetrics] = {}
-        self._lock = asyncio.Lock()
-
+        self._lock: Optional[asyncio.Lock] = None
         # Configuration
         self._quality_score_weight = 0.6
         self._acceptance_rate_weight = 0.4
+
+    async def _ensure_async_lock(self) -> None:
+        if self._lock is None:
+            self._lock = asyncio.Lock()
 
     async def add_comment(
         self,
@@ -176,6 +179,7 @@ class KnowledgeContributionService:
         Returns:
             Created comment
         """
+        await self._ensure_async_lock()
         async with self._lock:
             # Validate parent comment exists if provided
             if parent_comment_id and parent_comment_id not in self._comments:
@@ -219,6 +223,7 @@ class KnowledgeContributionService:
         Returns:
             Created entity suggestion
         """
+        await self._ensure_async_lock()
         async with self._lock:
             suggestion = EntitySuggestion(
                 expert_id=expert_id,
@@ -264,6 +269,7 @@ class KnowledgeContributionService:
         Returns:
             Created relation suggestion
         """
+        await self._ensure_async_lock()
         async with self._lock:
             suggestion = RelationSuggestion(
                 expert_id=expert_id,
@@ -313,6 +319,7 @@ class KnowledgeContributionService:
         Returns:
             Created document attachment
         """
+        await self._ensure_async_lock()
         async with self._lock:
             # Validate document type requirements
             if document_type == DocumentType.LINK and not url:
@@ -357,6 +364,7 @@ class KnowledgeContributionService:
             review_notes: Review notes
             quality_score: Quality score (1.0-5.0)
         """
+        await self._ensure_async_lock()
         async with self._lock:
             expert_id = None
 
@@ -399,6 +407,7 @@ class KnowledgeContributionService:
             reviewer_id: Reviewer ID
             review_notes: Reason for rejection
         """
+        await self._ensure_async_lock()
         async with self._lock:
             expert_id = None
 
@@ -440,6 +449,7 @@ class KnowledgeContributionService:
         Returns:
             List of comments
         """
+        await self._ensure_async_lock()
         async with self._lock:
             comments = [
                 c for c in self._comments.values()
@@ -459,6 +469,7 @@ class KnowledgeContributionService:
         Returns:
             List of comment threads
         """
+        await self._ensure_async_lock()
         async with self._lock:
             comments = await self.get_comments(element_id, include_resolved=True)
 
@@ -519,6 +530,7 @@ class KnowledgeContributionService:
         Returns:
             List of entity suggestions
         """
+        await self._ensure_async_lock()
         async with self._lock:
             suggestions = [
                 s for s in self._entity_suggestions.values()
@@ -540,6 +552,7 @@ class KnowledgeContributionService:
         Returns:
             List of relation suggestions
         """
+        await self._ensure_async_lock()
         async with self._lock:
             suggestions = [
                 s for s in self._relation_suggestions.values()
@@ -559,6 +572,7 @@ class KnowledgeContributionService:
         Returns:
             List of attachments
         """
+        await self._ensure_async_lock()
         async with self._lock:
             attachments = [
                 a for a in self._attachments.values()
@@ -578,6 +592,7 @@ class KnowledgeContributionService:
         Returns:
             Contribution metrics
         """
+        await self._ensure_async_lock()
         async with self._lock:
             if expert_id not in self._metrics:
                 self._metrics[expert_id] = ContributionMetrics(expert_id=expert_id)
@@ -594,6 +609,7 @@ class KnowledgeContributionService:
             comment_id: Comment ID
             resolved_by: User resolving the comment
         """
+        await self._ensure_async_lock()
         async with self._lock:
             if comment_id not in self._comments:
                 raise ValueError(f"Comment {comment_id} not found")
@@ -717,6 +733,7 @@ class KnowledgeContributionService:
         Returns:
             Dictionary of contributions by type
         """
+        await self._ensure_async_lock()
         async with self._lock:
             contributions = {
                 "comments": [],

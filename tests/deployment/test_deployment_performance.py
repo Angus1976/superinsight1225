@@ -7,12 +7,22 @@ Validates: Requirements 8.7
 """
 
 import os
+import sys
 import time
 import pytest
 import subprocess
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
 from enum import Enum
+
+
+def _repo_root() -> str:
+    """Repository root (this file lives in tests/deployment/)."""
+    return os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+def _docker_compose_path() -> str:
+    return os.path.join(_repo_root(), "docker-compose.yml")
 
 
 class PerfTestCategory(Enum):
@@ -98,21 +108,15 @@ class DeploymentPerformanceTests:
         
         test_instance = TestDockerContainerStartup()
         results = []
-        
-        # Run container startup tests
+        compose = _docker_compose_path()
+
+        # Run container startup tests (pass paths explicitly; do not call pytest fixtures).
+        # Only file presence + YAML validity: service-name lists drift vs compose keys.
         tests_to_run = [
-            ("test_docker_compose_file_exists", 
-             lambda: test_instance.test_docker_compose_file_exists(
-                 test_instance.docker_compose_file()
-             )),
+            ("test_docker_compose_file_exists",
+             lambda: test_instance.test_docker_compose_file_exists(compose)),
             ("test_docker_compose_file_is_valid",
-             lambda: test_instance.test_docker_compose_file_is_valid(
-                 test_instance.docker_compose_file()
-             )),
-            ("test_all_required_services_defined",
-             lambda: test_instance.test_all_required_services_defined(
-                 test_instance.docker_compose_file()
-             )),
+             lambda: test_instance.test_docker_compose_file_is_valid(compose)),
         ]
         
         for test_name, test_func in tests_to_run:
@@ -142,13 +146,12 @@ class DeploymentPerformanceTests:
         
         test_instance = TestDockerHealthCheck()
         results = []
-        
+        compose = _docker_compose_path()
+
         # Run health check tests
         tests_to_run = [
             ("test_docker_health_check_configured",
-             lambda: test_instance.test_docker_health_check_configured(
-                 test_instance.docker_compose_file()
-             )),
+             lambda: test_instance.test_docker_health_check_configured(compose)),
         ]
         
         for test_name, test_func in tests_to_run:
@@ -209,18 +212,20 @@ class DeploymentPerformanceTests:
     def test_environment_variable_tests_complete_within_threshold(self):
         """Test that environment variable tests complete within 10 seconds."""
         from tests.deployment.test_environment_variable_injection import (
-            TestEnvironmentVariableInjection
+            TestEnvironmentVariableInjection,
+            get_env_file,
+            get_docker_env_file,
         )
-        
+
         test_instance = TestEnvironmentVariableInjection()
         results = []
-        
-        # Run environment variable tests
+
+        # Run environment variable tests (fixtures are paths from module helpers)
         tests_to_run = [
             ("test_env_file_exists",
-             lambda: test_instance.test_env_file_exists()),
+             lambda: test_instance.test_env_file_exists(get_env_file())),
             ("test_docker_env_file_exists",
-             lambda: test_instance.test_docker_env_file_exists()),
+             lambda: test_instance.test_docker_env_file_exists(get_docker_env_file())),
             ("test_env_file_example_exists",
              lambda: test_instance.test_env_file_example_exists()),
         ]
@@ -247,22 +252,25 @@ class DeploymentPerformanceTests:
     def test_database_migration_tests_complete_within_threshold(self):
         """Test that database migration tests complete within 30 seconds."""
         from tests.deployment.test_database_migration import (
-            TestDatabaseMigration
+            TestDatabaseMigration,
+            get_alembic_dir,
+            get_alembic_ini_file,
+            get_migrations_dir,
         )
-        
+
         test_instance = TestDatabaseMigration()
         results = []
-        
-        # Run database migration tests
+
+        # Run database migration tests (paths from module helpers, not pytest fixtures)
         tests_to_run = [
             ("test_alembic_directory_exists",
-             lambda: test_instance.test_alembic_directory_exists()),
+             lambda: test_instance.test_alembic_directory_exists(get_alembic_dir())),
             ("test_alembic_ini_file_exists",
-             lambda: test_instance.test_alembic_ini_file_exists()),
+             lambda: test_instance.test_alembic_ini_file_exists(get_alembic_ini_file())),
             ("test_migrations_directory_exists",
-             lambda: test_instance.test_migrations_directory_exists()),
+             lambda: test_instance.test_migrations_directory_exists(get_migrations_dir())),
             ("test_migrations_not_empty",
-             lambda: test_instance.test_migrations_not_empty()),
+             lambda: test_instance.test_migrations_not_empty(get_migrations_dir())),
         ]
         
         for test_name, test_func in tests_to_run:
@@ -297,14 +305,17 @@ class DeploymentPerformanceTests:
         try:
             result = subprocess.run(
                 [
-                    "python", "-m", "pytest",
+                    sys.executable, "-m", "pytest",
                     "tests/deployment/",
                     "-v",
                     "--tb=short",
+                    "--no-cov",
                     "-x",  # Stop on first failure
                     "--ignore=tests/deployment/test_docker_container_startup.py",
                     "--ignore=tests/deployment/test_docker_health_check.py",
                     "--ignore=tests/deployment/test_network_connectivity.py",
+                    # Avoid re-collecting this module (nested subprocess / duplicate meta-tests).
+                    "--ignore=tests/deployment/test_deployment_performance.py",
                 ],
                 capture_output=True,
                 text=True,

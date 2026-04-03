@@ -4,6 +4,7 @@
 
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import i18n from '@/locales/config';
 import WorkflowPlayground from '../WorkflowPlayground';
 import * as aiIntegrationApi from '../../../services/aiIntegrationApi';
 
@@ -39,8 +40,9 @@ const mockResult = {
 };
 
 describe('WorkflowPlayground', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
+    await i18n.changeLanguage('en');
   });
 
   it('renders the playground with all panels', () => {
@@ -94,14 +96,20 @@ describe('WorkflowPlayground', () => {
     await waitFor(() => {
       expect(aiIntegrationApi.executeWorkflow).toHaveBeenCalledWith('wf-1', 'governed');
     });
-    
-    await waitFor(() => {
-      expect(screen.getByText(/89/)).toBeInTheDocument(); // Quality score
-    });
+
+    await waitFor(
+      () => {
+        const body = document.body.textContent ?? '';
+        expect(body).toMatch(/89\.0/);
+        expect(body).toMatch(/1,?500/);
+      },
+      { timeout: 5000 }
+    );
   });
 
   it('saves workflow to production', async () => {
     vi.mocked(aiIntegrationApi.parseWorkflow).mockResolvedValue(mockWorkflow);
+    vi.mocked(aiIntegrationApi.executeWorkflow).mockResolvedValue(mockResult);
     vi.mocked(aiIntegrationApi.saveWorkflow).mockResolvedValue(mockWorkflow);
     
     render(<WorkflowPlayground />);
@@ -114,9 +122,13 @@ describe('WorkflowPlayground', () => {
     await waitFor(() => {
       expect(screen.getByText('Test Workflow')).toBeInTheDocument();
     });
+
+    fireEvent.click(screen.getByRole('button', { name: /execute/i }));
+    await waitFor(() => {
+      expect(aiIntegrationApi.executeWorkflow).toHaveBeenCalled();
+    });
     
-    // Save workflow
-    const saveButton = screen.getByRole('button', { name: /save/i });
+    const saveButton = screen.getByRole('button', { name: /save to production/i });
     fireEvent.click(saveButton);
     
     await waitFor(() => {

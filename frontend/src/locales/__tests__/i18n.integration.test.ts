@@ -111,16 +111,16 @@ describe('i18n Integration Tests', () => {
       await setupI18n('zh');
       
       // Chinese translation
-      expect(i18n.t('tasks.title')).toBe('标注任务');
-      expect(i18n.t('tasks.list.refresh')).toBe('刷新');
+      expect(i18n.t('title')).toBe('标注任务');
+      expect(i18n.t('refresh')).toBe('刷新');
       
       await act(async () => {
         await i18n.changeLanguage('en');
       });
       
       // English translation
-      expect(i18n.t('tasks.title')).toBe('Annotation Tasks');
-      expect(i18n.t('tasks.list.refresh')).toBe('Refresh');
+      expect(i18n.t('title')).toBe('Annotation Tasks');
+      expect(i18n.t('refresh')).toBe('Refresh');
     });
 
     it('should handle rapid language switching', async () => {
@@ -134,7 +134,7 @@ describe('i18n Integration Tests', () => {
       });
       
       expect(i18n.language).toBe('en');
-      expect(i18n.t('tasks.title')).toBe('Annotation Tasks');
+      expect(i18n.t('title')).toBe('Annotation Tasks');
     });
   });
 
@@ -345,9 +345,9 @@ describe('i18n Integration Tests', () => {
     it('should display Chinese text by default', async () => {
       await setupI18n();
       
-      expect(i18n.t('tasks.title')).toBe('标注任务');
-      expect(i18n.t('tasks.status.pending')).toBe('待处理');
-      expect(i18n.t('tasks.priority.high')).toBe('高');
+      expect(i18n.t('title')).toBe('标注任务');
+      expect(i18n.t('statusPending')).toBe('待开始');
+      expect(i18n.t('priorityHigh')).toBe('高');
     });
   });
 });

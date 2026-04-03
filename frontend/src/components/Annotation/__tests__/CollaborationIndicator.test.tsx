@@ -9,8 +9,9 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@/test/test-utils';
+import { act, render, screen, waitFor } from '@/test/test-utils';
 import userEvent from '@testing-library/user-event';
+import i18n from '@/locales/config';
 import CollaborationIndicator from '../CollaborationIndicator';
 
 // Mock WebSocket hook
@@ -21,26 +22,6 @@ vi.mock('@/hooks/useWebSocket', () => ({
   useWebSocket: () => ({
     on: mockWsOn,
     off: mockWsOff,
-  }),
-}));
-
-// Mock i18next
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string, options?: any) => {
-      const translations: Record<string, string> = {
-        'collaboration:titles.active_collaborators': 'Active Collaborators',
-        'collaboration:messages.no_collaborators': 'No collaborators online',
-        'collaboration:status.editing': 'Editing',
-        'collaboration:status.viewing': 'Viewing',
-        'collaboration:status.idle': 'Idle',
-        'collaboration:labels.same_task': 'Same Task',
-        'collaboration:warnings.conflicts_detected': 'Conflicts Detected',
-        'collaboration:tooltips.collaborators_active': `${options?.count || 0} collaborators active`,
-        'common:status.disconnected': 'Disconnected',
-      };
-      return translations[key] || key;
-    },
   }),
 }));
 
@@ -78,14 +59,21 @@ const mockConflict = {
   timestamp: '2026-01-24T10:05:00Z',
 };
 
+async function clickCollaborationTrigger(user: ReturnType<typeof userEvent.setup>) {
+  const el = document.querySelector('.collaboration-indicator [aria-label="team"]');
+  if (!el) throw new Error('Collaboration trigger not found');
+  await user.click(el);
+}
+
 describe('CollaborationIndicator', () => {
   const defaultProps = {
     projectId: 100,
     taskId: 123,
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
+    await i18n.changeLanguage('en');
   });
 
   it('establishes WebSocket connection with correct URL', () => {
@@ -134,11 +122,7 @@ describe('CollaborationIndicator', () => {
       updateHandler?.({ collaborators: mockCollaborators });
     });
 
-    // Click on the indicator to open popover
-    const indicator = screen.getByRole('img', { hidden: true })?.parentElement;
-    if (indicator) {
-      await user.click(indicator);
-    }
+    await clickCollaborationTrigger(user);
 
     await waitFor(() => {
       expect(screen.getByText('Alice')).toBeInTheDocument();
@@ -158,10 +142,7 @@ describe('CollaborationIndicator', () => {
       updateHandler?.({ collaborators: mockCollaborators });
     });
 
-    const indicator = screen.getByRole('img', { hidden: true })?.parentElement;
-    if (indicator) {
-      await user.click(indicator);
-    }
+    await clickCollaborationTrigger(user);
 
     await waitFor(() => {
       expect(screen.getByText('Editing')).toBeInTheDocument();
@@ -181,10 +162,7 @@ describe('CollaborationIndicator', () => {
       updateHandler?.({ collaborators: mockCollaborators });
     });
 
-    const indicator = screen.getByRole('img', { hidden: true })?.parentElement;
-    if (indicator) {
-      await user.click(indicator);
-    }
+    await clickCollaborationTrigger(user);
 
     await waitFor(() => {
       // Alice is on task 123 (same as current taskId)
@@ -211,12 +189,8 @@ describe('CollaborationIndicator', () => {
       joinedHandler?.(newCollaborator);
     });
 
-    // Open popover to verify
     const user = userEvent.setup();
-    const indicator = screen.getByRole('img', { hidden: true })?.parentElement;
-    if (indicator) {
-      await user.click(indicator);
-    }
+    await clickCollaborationTrigger(user);
 
     await waitFor(() => {
       expect(screen.getByText('David')).toBeInTheDocument();
@@ -243,11 +217,7 @@ describe('CollaborationIndicator', () => {
       leftHandler?.({ userId: 1 });
     });
 
-    // Open popover
-    const indicator = screen.getByRole('img', { hidden: true })?.parentElement;
-    if (indicator) {
-      await user.click(indicator);
-    }
+    await clickCollaborationTrigger(user);
 
     await waitFor(() => {
       expect(screen.queryByText('Alice')).not.toBeInTheDocument();
@@ -275,11 +245,7 @@ describe('CollaborationIndicator', () => {
       statusHandler?.({ userId: 2, status: 'editing' });
     });
 
-    // Open popover
-    const indicator = screen.getByRole('img', { hidden: true })?.parentElement;
-    if (indicator) {
-      await user.click(indicator);
-    }
+    await clickCollaborationTrigger(user);
 
     await waitFor(() => {
       // Bob should now show as "Editing"
@@ -292,6 +258,13 @@ describe('CollaborationIndicator', () => {
     const user = userEvent.setup();
     render(<CollaborationIndicator {...defaultProps} />);
 
+    const updateHandler = mockWsOn.mock.calls.find(
+      (call) => call[0] === 'collaborators_update'
+    )?.[1];
+    await act(async () => {
+      updateHandler?.({ collaborators: [mockCollaborators[0]] });
+    });
+
     const conflictHandler = mockWsOn.mock.calls.find(
       (call) => call[0] === 'conflict_warning'
     )?.[1];
@@ -299,18 +272,7 @@ describe('CollaborationIndicator', () => {
       conflictHandler?.(mockConflict);
     });
 
-    // Indicator should show warning styling
-    await waitFor(() => {
-      // Look for warning icon or color
-      const warningIcon = screen.queryByRole('img', { hidden: true });
-      expect(warningIcon).toBeInTheDocument();
-    });
-
-    // Open popover to see conflict details
-    const indicator = screen.getByRole('img', { hidden: true })?.parentElement;
-    if (indicator) {
-      await user.click(indicator);
-    }
+    await clickCollaborationTrigger(user);
 
     await waitFor(() => {
       expect(screen.getByText('Conflicts Detected')).toBeInTheDocument();
@@ -322,7 +284,13 @@ describe('CollaborationIndicator', () => {
     const user = userEvent.setup();
     render(<CollaborationIndicator {...defaultProps} />);
 
-    // Add conflict
+    const updateHandler = mockWsOn.mock.calls.find(
+      (call) => call[0] === 'collaborators_update'
+    )?.[1];
+    await act(async () => {
+      updateHandler?.({ collaborators: [mockCollaborators[0]] });
+    });
+
     const conflictHandler = mockWsOn.mock.calls.find(
       (call) => call[0] === 'conflict_warning'
     )?.[1];
@@ -330,7 +298,6 @@ describe('CollaborationIndicator', () => {
       conflictHandler?.(mockConflict);
     });
 
-    // Resolve conflict
     const resolveHandler = mockWsOn.mock.calls.find(
       (call) => call[0] === 'conflict_resolved'
     )?.[1];
@@ -338,11 +305,7 @@ describe('CollaborationIndicator', () => {
       resolveHandler?.({ warningId: 'conflict_1' });
     });
 
-    // Open popover
-    const indicator = screen.getByRole('img', { hidden: true })?.parentElement;
-    if (indicator) {
-      await user.click(indicator);
-    }
+    await clickCollaborationTrigger(user);
 
     await waitFor(() => {
       expect(screen.queryByText('Conflicts Detected')).not.toBeInTheDocument();
@@ -351,6 +314,13 @@ describe('CollaborationIndicator', () => {
 
   it('limits conflicts to last 5', async () => {
     render(<CollaborationIndicator {...defaultProps} />);
+
+    const updateHandler = mockWsOn.mock.calls.find(
+      (call) => call[0] === 'collaborators_update'
+    )?.[1];
+    await act(async () => {
+      updateHandler?.({ collaborators: [mockCollaborators[0]] });
+    });
 
     const conflictHandler = mockWsOn.mock.calls.find(
       (call) => call[0] === 'conflict_warning'
@@ -367,12 +337,8 @@ describe('CollaborationIndicator', () => {
       });
     }
 
-    // Should only keep last 5
     const user = userEvent.setup();
-    const indicator = screen.getByRole('img', { hidden: true })?.parentElement;
-    if (indicator) {
-      await user.click(indicator);
-    }
+    await clickCollaborationTrigger(user);
 
     await waitFor(() => {
       expect(screen.queryByText('Conflict 0')).not.toBeInTheDocument();
@@ -399,11 +365,7 @@ describe('CollaborationIndicator', () => {
     const user = userEvent.setup();
     render(<CollaborationIndicator {...defaultProps} />);
 
-    // Open popover without adding collaborators
-    const indicator = screen.getByRole('img', { hidden: true })?.parentElement;
-    if (indicator) {
-      await user.click(indicator);
-    }
+    await clickCollaborationTrigger(user);
 
     await waitFor(() => {
       expect(screen.getByText('No collaborators online')).toBeInTheDocument();
@@ -436,12 +398,8 @@ describe('CollaborationIndicator', () => {
       joinedHandler?.({ ...mockCollaborators[0], status: 'viewing' as const });
     });
 
-    // Open popover
     const user = userEvent.setup();
-    const indicator = screen.getByRole('img', { hidden: true })?.parentElement;
-    if (indicator) {
-      await user.click(indicator);
-    }
+    await clickCollaborationTrigger(user);
 
     await waitFor(() => {
       // Should only have one Alice, with updated status
@@ -451,9 +409,3 @@ describe('CollaborationIndicator', () => {
     });
   });
 });
-
-// Helper to wrap in act
-async function act(callback: () => void | Promise<void>) {
-  const { act: reactAct } = await import('@testing-library/react');
-  await reactAct(callback);
-}

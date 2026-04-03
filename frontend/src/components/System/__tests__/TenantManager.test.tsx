@@ -2,7 +2,8 @@
 import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
-import { vi } from 'vitest';
+import { vi, beforeEach } from 'vitest';
+import i18n from '@/locales/config';
 import TenantManager from '../TenantManager';
 
 // Mock the hooks
@@ -57,6 +58,10 @@ const renderWithProviders = (component: React.ReactElement) => {
 };
 
 describe('TenantManager', () => {
+  beforeEach(async () => {
+    await i18n.changeLanguage('en');
+  });
+
   it('renders tenant management interface', () => {
     renderWithProviders(<TenantManager />);
     
@@ -69,7 +74,7 @@ describe('TenantManager', () => {
     renderWithProviders(<TenantManager />);
     
     expect(screen.getByText('Test Tenant')).toBeInTheDocument();
-    expect(screen.getByText('ACTIVE')).toBeInTheDocument();
-    expect(screen.getByText('PRO')).toBeInTheDocument();
+    expect(screen.getByText('Active')).toBeInTheDocument();
+    expect(screen.getByText('Pro')).toBeInTheDocument();
   });
 });

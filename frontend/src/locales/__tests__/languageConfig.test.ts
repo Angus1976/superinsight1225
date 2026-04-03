@@ -199,7 +199,7 @@ describe('Language Configuration', () => {
       const { default: i18n } = await import('../config');
       
       await i18n.changeLanguage('zh');
-      const translation = i18n.t('tasks:tasks.title');
+      const translation = i18n.t('tasks:title');
       
       expect(translation).toBe('标注任务');
     });
@@ -208,7 +208,7 @@ describe('Language Configuration', () => {
       const { default: i18n } = await import('../config');
       
       await i18n.changeLanguage('en');
-      const translation = i18n.t('tasks:tasks.title');
+      const translation = i18n.t('tasks:title');
       
       expect(translation).toBe('Annotation Tasks');
     });
@@ -217,7 +217,7 @@ describe('Language Configuration', () => {
       const { default: i18n } = await import('../config');
       
       await i18n.changeLanguage('zh');
-      const translation = i18n.t('tasks:tasks.list.refresh');
+      const translation = i18n.t('tasks:refresh');
       
       expect(translation).toBe('刷新');
     });
@@ -226,7 +226,7 @@ describe('Language Configuration', () => {
       const { default: i18n } = await import('../config');
       
       await i18n.changeLanguage('zh');
-      const translation = i18n.t('tasks:tasks.messages.syncSuccess', { count: 5 });
+      const translation = i18n.t('tasks:syncSuccess', { count: 5 });
       
       expect(translation).toContain('5');
     });

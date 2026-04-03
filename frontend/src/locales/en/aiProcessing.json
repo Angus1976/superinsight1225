@@ -99,7 +99,9 @@
       "level": {
         "administrator": "Administrator",
         "directTransfer": "Direct Transfer",
+        "direct_transfer": "Direct Transfer",
         "approvalRequired": "Approval Required",
+        "approval_required": "Approval Required",
         "noPermission": "No Permission"
       },
       "yourLevel": "Your permission level: {{level}}"

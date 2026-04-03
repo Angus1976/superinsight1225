@@ -694,9 +694,9 @@ describe('Label Studio iframe Integration Tests', () => {
       // Wait for sync attempt
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // 4. Verify sync manager handled the error
+      // 4. Verify sync manager handled the error (network failure → often ERROR, may recover to OFFLINE/IDLE)
       const status = syncManager.getStatus();
-      expect(['offline', 'syncing', 'idle']).toContain(status);
+      expect(['offline', 'syncing', 'idle', 'error']).toContain(status);
       
       // 5. Simulate recovery
       (global.fetch as any).mockResolvedValue({

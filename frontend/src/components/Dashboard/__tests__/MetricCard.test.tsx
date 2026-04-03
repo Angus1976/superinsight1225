@@ -44,26 +44,25 @@ describe('MetricCard', () => {
     render(<MetricCard title="增长" value={100} trend={15.5} />)
 
     expect(screen.getByText('15.5%')).toBeInTheDocument()
-    // Check for ArrowUpOutlined (positive trend)
-    const trendContainer = screen.getByText('15.5%').parentElement
-    expect(trendContainer).toHaveStyle({ color: '#52c41a' })
+    // 颜色在父级 div 内联样式上；全局 getComputedStyle mock 会使 toHaveStyle 不可靠
+    const trendRow = screen.getByText('15.5%').parentElement as HTMLElement
+    expect(trendRow.style.color).toMatch(/52c41a|82,\s*196,\s*26/i)
   })
 
   it('displays negative trend with down arrow', () => {
     render(<MetricCard title="下降" value={100} trend={-8.3} />)
 
     expect(screen.getByText('8.3%')).toBeInTheDocument()
-    // Check for ArrowDownOutlined (negative trend)
-    const trendContainer = screen.getByText('8.3%').parentElement
-    expect(trendContainer).toHaveStyle({ color: '#ff4d4f' })
+    const trendRow = screen.getByText('8.3%').parentElement as HTMLElement
+    expect(trendRow.style.color).toMatch(/ff4d4f|255,\s*77,\s*79/i)
   })
 
   it('displays zero trend with neutral indicator', () => {
     render(<MetricCard title="持平" value={100} trend={0} />)
 
     expect(screen.getByText('0.0%')).toBeInTheDocument()
-    const trendContainer = screen.getByText('0.0%').parentElement
-    expect(trendContainer).toHaveStyle({ color: '#999' })
+    const trendRow = screen.getByText('0.0%').parentElement as HTMLElement
+    expect(trendRow.style.color).toMatch(/^#999$|^rgb\(153,\s*153,\s*153\)$/i)
   })
 
   it('does not display trend when not provided', () => {

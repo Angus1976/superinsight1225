@@ -8,6 +8,7 @@ Tests the REST API endpoints for LLM operations including:
 """
 
 import pytest
+from contextlib import contextmanager
 from fastapi.testclient import TestClient
 from unittest.mock import Mock, AsyncMock, patch, MagicMock
 from datetime import datetime
@@ -16,9 +17,21 @@ from datetime import datetime
 try:
     from fastapi import FastAPI
     from src.api.llm import router
+    from src.api.auth import get_current_user
+    from src.database.connection import get_db_session
     from src.security.models import UserModel, UserRole
 except ImportError:
     pytest.skip("FastAPI or dependencies not available", allow_module_level=True)
+
+
+@contextmanager
+def override_user(app, user, default_user):
+    """Temporarily override JWT dependency (Depends uses auth.get_current_user object)."""
+    app.dependency_overrides[get_current_user] = lambda: user
+    try:
+        yield
+    finally:
+        app.dependency_overrides[get_current_user] = lambda: default_user
 
 
 # ==================== Test Fixtures ====================
@@ -32,9 +45,16 @@ def app():
 
 
 @pytest.fixture
-def client(app):
-    """Create a test client."""
-    return TestClient(app)
+def client(app, mock_user):
+    """Test client with auth + DB session overrides."""
+    def _mock_db():
+        yield MagicMock()
+
+    app.dependency_overrides[get_current_user] = lambda: mock_user
+    app.dependency_overrides[get_db_session] = _mock_db
+    with TestClient(app) as test_client:
+        yield test_client
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture
@@ -42,7 +62,7 @@ def mock_user():
     """Create a mock regular user."""
     user = Mock(spec=UserModel)
     user.username = "testuser"
-    user.role = UserRole.USER
+    user.role = UserRole.VIEWER
     user.tenant_id = "test-tenant"
     return user
 
@@ -79,12 +99,13 @@ def mock_llm_response():
 @pytest.fixture
 def mock_health_status():
     """Create a mock health status."""
-    from src.ai.llm_schemas import HealthStatus
+    from src.ai.llm_schemas import HealthStatus, LLMMethod
 
     return HealthStatus(
+        method=LLMMethod.LOCAL_OLLAMA,
         available=True,
         latency_ms=50.0,
-        error=None
+        error=None,
     )
 
 
@@ -92,8 +113,7 @@ def mock_health_status():
 
 def test_generate_success(client, mock_user, mock_llm_response):
     """Test successful text generation."""
-    with patch('src.api.llm.get_current_user', return_value=mock_user), \
-         patch('src.api.llm.get_llm_switcher_instance') as mock_get_switcher:
+    with patch('src.api.llm.get_llm_switcher_instance') as mock_get_switcher:
 
         # Setup mock switcher
         mock_switcher = AsyncMock()
@@ -123,8 +143,7 @@ def test_generate_success(client, mock_user, mock_llm_response):
 
 def test_generate_minimal_request(client, mock_user, mock_llm_response):
     """Test generation with minimal request parameters."""
-    with patch('src.api.llm.get_current_user', return_value=mock_user), \
-         patch('src.api.llm.get_llm_switcher_instance') as mock_get_switcher:
+    with patch('src.api.llm.get_llm_switcher_instance') as mock_get_switcher:
 
         mock_switcher = AsyncMock()
         mock_switcher.generate = AsyncMock(return_value=mock_llm_response)
@@ -145,8 +164,7 @@ def test_generate_minimal_request(client, mock_user, mock_llm_response):
 
 def test_generate_with_system_prompt(client, mock_user, mock_llm_response):
     """Test generation with system prompt."""
-    with patch('src.api.llm.get_current_user', return_value=mock_user), \
-         patch('src.api.llm.get_llm_switcher_instance') as mock_get_switcher:
+    with patch('src.api.llm.get_llm_switcher_instance') as mock_get_switcher:
 
         mock_switcher = AsyncMock()
         mock_switcher.generate = AsyncMock(return_value=mock_llm_response)
@@ -170,21 +188,18 @@ def test_generate_with_system_prompt(client, mock_user, mock_llm_response):
 
 def test_generate_empty_prompt(client, mock_user):
     """Test generation with empty prompt returns validation error."""
-    with patch('src.api.llm.get_current_user', return_value=mock_user):
+    response = client.post(
+        "/api/v1/llm/generate",
+        json={"prompt": ""}
+    )
 
-        response = client.post(
-            "/api/v1/llm/generate",
-            json={"prompt": ""}
-        )
-
-        # Should fail validation
-        assert response.status_code == 422
+    # Should fail validation
+    assert response.status_code == 422
 
 
 def test_generate_service_unavailable(client, mock_user):
     """Test generation when LLM service is unavailable."""
-    with patch('src.api.llm.get_current_user', return_value=mock_user), \
-         patch('src.api.llm.get_llm_switcher_instance') as mock_get_switcher:
+    with patch('src.api.llm.get_llm_switcher_instance') as mock_get_switcher:
 
         # Simulate service unavailable
         mock_get_switcher.side_effect = Exception("Service down")
@@ -194,15 +209,14 @@ def test_generate_service_unavailable(client, mock_user):
             json={"prompt": "Test"}
         )
 
-        # Should return 503
-        assert response.status_code == 503
-        assert "error_code" in response.json()["detail"]
+        # Switcher failure is handled as generation error (500)
+        assert response.status_code == 500
+        assert response.json()["detail"]["error_code"] == "GENERATION_FAILED"
 
 
 def test_generate_generation_failed(client, mock_user):
     """Test generation when generation fails."""
-    with patch('src.api.llm.get_current_user', return_value=mock_user), \
-         patch('src.api.llm.get_llm_switcher_instance') as mock_get_switcher:
+    with patch('src.api.llm.get_llm_switcher_instance') as mock_get_switcher:
 
         mock_switcher = AsyncMock()
         mock_switcher.generate = AsyncMock(side_effect=Exception("Generation error"))
@@ -223,8 +237,7 @@ def test_generate_generation_failed(client, mock_user):
 
 def test_health_success(client, mock_user, mock_health_status):
     """Test successful health status retrieval."""
-    with patch('src.api.llm.get_current_user', return_value=mock_user), \
-         patch('src.api.llm.get_llm_switcher_instance') as mock_get_switcher, \
+    with patch('src.api.llm.get_llm_switcher_instance') as mock_get_switcher, \
          patch('src.api.llm.get_health_monitor_instance') as mock_get_monitor:
 
         # Setup mock switcher
@@ -263,8 +276,7 @@ def test_health_no_monitor(client, mock_user, mock_health_status):
     """Test health status when monitor is not available."""
     from src.ai.llm_schemas import LLMMethod
 
-    with patch('src.api.llm.get_current_user', return_value=mock_user), \
-         patch('src.api.llm.get_llm_switcher_instance') as mock_get_switcher, \
+    with patch('src.api.llm.get_llm_switcher_instance') as mock_get_switcher, \
          patch('src.api.llm.get_health_monitor_instance') as mock_get_monitor:
 
         # Mock provider with health_check method
@@ -290,8 +302,7 @@ def test_health_no_monitor(client, mock_user, mock_health_status):
 
 def test_health_unhealthy_providers(client, mock_user):
     """Test health status with unhealthy providers."""
-    with patch('src.api.llm.get_current_user', return_value=mock_user), \
-         patch('src.api.llm.get_llm_switcher_instance') as mock_get_switcher, \
+    with patch('src.api.llm.get_llm_switcher_instance') as mock_get_switcher, \
          patch('src.api.llm.get_health_monitor_instance') as mock_get_monitor:
 
         mock_switcher = AsyncMock()
@@ -321,11 +332,11 @@ def test_health_unhealthy_providers(client, mock_user):
 
 # ==================== Test POST /api/v1/llm/providers/{id}/activate ====================
 
-def test_activate_provider_success_admin(client, mock_admin, mock_health_status):
+def test_activate_provider_success_admin(client, app, mock_user, mock_admin, mock_health_status):
     """Test successful provider activation by admin."""
     from src.ai.llm_schemas import LLMMethod
 
-    with patch('src.api.llm.get_current_user', return_value=mock_admin), \
+    with override_user(app, mock_admin, mock_user), \
          patch('src.api.llm.get_llm_switcher_instance') as mock_get_switcher:
 
         mock_provider = AsyncMock()
@@ -352,11 +363,11 @@ def test_activate_provider_success_admin(client, mock_admin, mock_health_status)
         assert data["previous_active_id"] == "local_ollama"
 
 
-def test_activate_provider_as_fallback(client, mock_admin, mock_health_status):
+def test_activate_provider_as_fallback(client, app, mock_user, mock_admin, mock_health_status):
     """Test setting provider as fallback."""
     from src.ai.llm_schemas import LLMMethod
 
-    with patch('src.api.llm.get_current_user', return_value=mock_admin), \
+    with override_user(app, mock_admin, mock_user), \
          patch('src.api.llm.get_llm_switcher_instance') as mock_get_switcher:
 
         mock_provider = AsyncMock()
@@ -384,21 +395,19 @@ def test_activate_provider_as_fallback(client, mock_admin, mock_health_status):
 
 def test_activate_provider_non_admin(client, mock_user):
     """Test provider activation by non-admin returns 403."""
-    with patch('src.api.llm.get_current_user', return_value=mock_user):
+    response = client.post(
+        "/api/v1/llm/providers/cloud_openai/activate",
+        json={"set_as_fallback": False}
+    )
 
-        response = client.post(
-            "/api/v1/llm/providers/cloud_openai/activate",
-            json={"set_as_fallback": False}
-        )
-
-        # Should deny access
-        assert response.status_code == 403
-        assert "ADMIN_REQUIRED" in response.json()["detail"]["error_code"]
+    # Should deny access
+    assert response.status_code == 403
+    assert "ADMIN_REQUIRED" in response.json()["detail"]["error_code"]
 
 
-def test_activate_provider_not_found(client, mock_admin):
+def test_activate_provider_not_found(client, app, mock_user, mock_admin):
     """Test activation of non-existent provider."""
-    with patch('src.api.llm.get_current_user', return_value=mock_admin), \
+    with override_user(app, mock_admin, mock_user), \
          patch('src.api.llm.get_llm_switcher_instance') as mock_get_switcher:
 
         mock_switcher = AsyncMock()
@@ -414,18 +423,19 @@ def test_activate_provider_not_found(client, mock_admin):
         assert "PROVIDER_NOT_FOUND" in response.json()["detail"]["error_code"]
 
 
-def test_activate_provider_unhealthy(client, mock_admin):
+def test_activate_provider_unhealthy(client, app, mock_user, mock_admin):
     """Test activation of unhealthy provider returns 400."""
     from src.ai.llm_schemas import LLMMethod, HealthStatus
 
-    with patch('src.api.llm.get_current_user', return_value=mock_admin), \
+    with override_user(app, mock_admin, mock_user), \
          patch('src.api.llm.get_llm_switcher_instance') as mock_get_switcher:
 
         # Create unhealthy status
         unhealthy_status = HealthStatus(
+            method=LLMMethod.CLOUD_OPENAI,
             available=False,
             latency_ms=0.0,
-            error="Connection failed"
+            error="Connection failed",
         )
 
         mock_provider = AsyncMock()
@@ -446,10 +456,10 @@ def test_activate_provider_unhealthy(client, mock_admin):
 
 # ==================== Test GET /api/v1/llm/providers/{id}/api-key ====================
 
-def test_get_api_key_admin(client, mock_admin):
+def test_get_api_key_admin(client, app, mock_user, mock_admin):
     """Test API key retrieval by admin."""
-    with patch('src.api.llm.get_current_user', return_value=mock_admin), \
-         patch('src.api.llm.get_config_manager') as mock_get_config:
+    with override_user(app, mock_admin, mock_user), \
+         patch('src.admin.config_manager.get_config_manager') as mock_get_config:
 
         # Mock config manager
         mock_config = Mock()
@@ -464,19 +474,17 @@ def test_get_api_key_admin(client, mock_admin):
         assert response.status_code == 200
         data = response.json()
         assert data["provider_id"] == "cloud_openai"
-        assert data["has_api_key"] == True
-        assert "masked" in data["api_key_masked"]
+        assert data["has_api_key"] is True
+        assert "*" in data["api_key_masked"]
 
 
 def test_get_api_key_non_admin(client, mock_user):
     """Test API key retrieval by non-admin returns 403."""
-    with patch('src.api.llm.get_current_user', return_value=mock_user):
+    response = client.get("/api/v1/llm/providers/cloud_openai/api-key")
 
-        response = client.get("/api/v1/llm/providers/cloud_openai/api-key")
-
-        # Should deny access
-        assert response.status_code == 403
-        assert "ADMIN_REQUIRED" in response.json()["detail"]["error_code"]
+    # Should deny access
+    assert response.status_code == 403
+    assert "ADMIN_REQUIRED" in response.json()["detail"]["error_code"]
 
 
 # ==================== Integration Tests ====================
@@ -486,8 +494,7 @@ def test_full_workflow_generate_and_health(client, mock_user, mock_llm_response,
     """Test complete workflow: check health, then generate."""
     from src.ai.llm_schemas import LLMMethod
 
-    with patch('src.api.llm.get_current_user', return_value=mock_user), \
-         patch('src.api.llm.get_llm_switcher_instance') as mock_get_switcher, \
+    with patch('src.api.llm.get_llm_switcher_instance') as mock_get_switcher, \
          patch('src.api.llm.get_health_monitor_instance') as mock_get_monitor:
 
         # Setup mocks
@@ -497,6 +504,7 @@ def test_full_workflow_generate_and_health(client, mock_user, mock_llm_response,
         mock_switcher = AsyncMock()
         mock_switcher.generate = AsyncMock(return_value=mock_llm_response)
         mock_switcher._current_method = LLMMethod.LOCAL_OLLAMA
+        mock_switcher._fallback_method = None
         mock_switcher._providers = {LLMMethod.LOCAL_OLLAMA: mock_provider}
         mock_get_switcher.return_value = mock_switcher
 

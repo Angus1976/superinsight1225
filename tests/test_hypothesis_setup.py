@@ -10,6 +10,8 @@ This test validates that:
 **Validates: Requirements 2.1, 2.2, 2.3, 2.4, 2.6**
 """
 
+import os
+
 import pytest
 from hypothesis import given, settings, HealthCheck
 from hypothesis import strategies as st
@@ -25,15 +27,21 @@ import json
 # =============================================================================
 
 def test_hypothesis_configuration():
-    """Verify Hypothesis is configured with correct settings."""
-    # Get current settings
+    """Verify Hypothesis is configured with correct settings for the active profile."""
     current_settings = settings()
-    
-    # Verify max_examples is at least 100 (default profile)
-    assert current_settings.max_examples >= 100, \
-        f"Expected max_examples >= 100, got {current_settings.max_examples}"
-    
-    # Verify deadline is None (no time limit per test)
+    profile = os.getenv("HYPOTHESIS_PROFILE", "default")
+    # Minimum expected examples per profile (see tests/conftest.py register_profile)
+    min_by_profile = {
+        "default": 100,
+        "ci": 500,
+        "fast": 10,
+        "dev": 25,
+    }
+    minimum = min_by_profile.get(profile, 1)
+    assert current_settings.max_examples >= minimum, (
+        f"Profile {profile!r}: expected max_examples >= {minimum}, "
+        f"got {current_settings.max_examples}"
+    )
     assert current_settings.deadline is None, \
         "Expected deadline=None for property tests"
 
@@ -152,15 +160,16 @@ def test_iteration_count_verification(x):
 
 def test_hypothesis_profiles_exist():
     """Verify all required Hypothesis profiles are registered."""
-    from hypothesis import settings
-    
-    # Test that profiles can be loaded
+    active = os.getenv("HYPOTHESIS_PROFILE", "default")
     try:
         settings.load_profile("default")
         settings.load_profile("ci")
         settings.load_profile("fast")
+        settings.load_profile("dev")
     except Exception as e:
         pytest.fail(f"Failed to load Hypothesis profiles: {e}")
+    finally:
+        settings.load_profile(active)
 
 
 if __name__ == "__main__":

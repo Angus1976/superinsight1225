@@ -8,6 +8,8 @@ import type { ErrorInfo, ErrorType, ErrorSeverity } from './ErrorHandler';
 export interface LoggerConfig {
   enableConsoleLogging?: boolean;
   enableLocalStorage?: boolean;
+  /** Load persisted logs/metrics from localStorage on startup */
+  loadFromLocalStorage?: boolean;
   enableRemoteLogging?: boolean;
   remoteEndpoint?: string;
   maxLocalStorageEntries?: number;
@@ -74,14 +76,16 @@ export class ErrorLogger {
     this.config = {
       enableConsoleLogging: config.enableConsoleLogging !== false,
       enableLocalStorage: config.enableLocalStorage !== false,
-      enableRemoteLogging: config.enableRemoteLogging || false,
-      remoteEndpoint: config.remoteEndpoint || '',
-      maxLocalStorageEntries: config.maxLocalStorageEntries || 1000,
-      logLevel: config.logLevel || LogLevel.INFO,
+      loadFromLocalStorage: config.loadFromLocalStorage ?? false,
+      enableRemoteLogging: config.enableRemoteLogging ?? false,
+      remoteEndpoint: config.remoteEndpoint ?? '',
+      maxLocalStorageEntries: config.maxLocalStorageEntries ?? 1000,
+      // `LogLevel.DEBUG` is `0` (falsy), so we must use nullish coalescing.
+      logLevel: config.logLevel ?? LogLevel.INFO,
       enableStructuredLogging: config.enableStructuredLogging !== false,
       enableErrorAggregation: config.enableErrorAggregation !== false,
-      aggregationWindow: config.aggregationWindow || 300000, // 5 minutes
-      enablePerformanceLogging: config.enablePerformanceLogging || false,
+      aggregationWindow: config.aggregationWindow ?? 300000, // 5 minutes
+      enablePerformanceLogging: config.enablePerformanceLogging ?? false,
     };
 
     this.sessionId = this.generateSessionId();
@@ -189,6 +193,9 @@ export class ErrorLogger {
         errorType,
         metadata,
       });
+    } else if (this.config.enableLocalStorage) {
+      // Persist metrics even when no log entry is emitted.
+      this.saveToLocalStorage();
     }
   }
 
@@ -294,8 +301,8 @@ export class ErrorLogger {
     this.performanceMetrics = [];
     
     if (this.config.enableLocalStorage) {
-      localStorage.removeItem('iframe_error_logs');
-      localStorage.removeItem('iframe_performance_metrics');
+      globalThis.localStorage?.removeItem('iframe_error_logs');
+      globalThis.localStorage?.removeItem('iframe_performance_metrics');
     }
   }
 
@@ -361,8 +368,8 @@ export class ErrorLogger {
       category,
       message,
       data,
-      userAgent: navigator.userAgent,
-      url: window.location.href,
+      userAgent: globalThis.navigator?.userAgent,
+      url: globalThis.window?.location?.href,
       userId: this.userId,
       sessionId: this.sessionId,
       correlationId: this.generateCorrelationId(),
@@ -432,10 +439,10 @@ export class ErrorLogger {
   private saveToLocalStorage(): void {
     try {
       const recentLogs = this.logs.slice(-this.config.maxLocalStorageEntries);
-      localStorage.setItem('iframe_error_logs', JSON.stringify(recentLogs));
+      globalThis.localStorage?.setItem('iframe_error_logs', JSON.stringify(recentLogs));
       
       if (this.config.enablePerformanceLogging) {
-        localStorage.setItem('iframe_performance_metrics', JSON.stringify(this.performanceMetrics));
+        globalThis.localStorage?.setItem('iframe_performance_metrics', JSON.stringify(this.performanceMetrics));
       }
     } catch (error) {
       console.warn('Failed to save logs to localStorage:', error);
@@ -447,7 +454,7 @@ export class ErrorLogger {
    */
   private loadFromLocalStorage(): void {
     try {
-      const savedLogs = localStorage.getItem('iframe_error_logs');
+      const savedLogs = globalThis.localStorage?.getItem('iframe_error_logs');
       if (savedLogs) {
         const parsedLogs = JSON.parse(savedLogs) as LogEntry[];
         this.logs = parsedLogs.filter(log => 
@@ -456,7 +463,7 @@ export class ErrorLogger {
       }
 
       if (this.config.enablePerformanceLogging) {
-        const savedMetrics = localStorage.getItem('iframe_performance_metrics');
+        const savedMetrics = globalThis.localStorage?.getItem('iframe_performance_metrics');
         if (savedMetrics) {
           const parsedMetrics = JSON.parse(savedMetrics) as PerformanceMetrics[];
           this.performanceMetrics = parsedMetrics.filter(metric =>
@@ -521,7 +528,7 @@ export class ErrorLogger {
    * Initialize logger
    */
   private initializeLogger(): void {
-    if (this.config.enableLocalStorage) {
+    if (this.config.enableLocalStorage && this.config.loadFromLocalStorage) {
       this.loadFromLocalStorage();
     }
 

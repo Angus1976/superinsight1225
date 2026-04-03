@@ -14,10 +14,11 @@ Validates: Requirements 7.1, 7.4, 7.5, 7.8
 import asyncio
 import os
 import pytest
+from contextlib import contextmanager
 from unittest.mock import patch
 from uuid import uuid4
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
 from src.ai.llm_schemas import CloudConfig
 from src.models.llm_configuration import LLMConfiguration
@@ -27,8 +28,33 @@ from src.ai.schema_inferrer import SchemaInferrer
 from src.ai.entity_extractor import EntityExtractor
 
 
+class _StructuringPipelineTestDbManager:
+    """Minimal stand-in for ``db_manager`` used only under patch in this module."""
+
+    def __init__(self, session):
+        self._session = session
+
+    @contextmanager
+    def get_session(self):
+        yield self._session
+
+
 @pytest.fixture
-def setup_database_bindings(db_session):
+def patch_get_db_session_for_llm_cloud_config(db_session):
+    """Point ``structuring_pipeline.db_manager`` at the test session without mutating the global singleton.
+
+    Not autouse: ``test_existing_code_pattern_still_works`` relies on the real
+    ``connection.db_manager`` for env-only fallback.
+    """
+    with patch(
+        "src.services.structuring_pipeline.db_manager",
+        _StructuringPipelineTestDbManager(db_session),
+    ):
+        yield
+
+
+@pytest.fixture
+def setup_database_bindings(db_session, patch_get_db_session_for_llm_cloud_config):
     """
     Create test database bindings for the structuring application.
     
@@ -40,6 +66,18 @@ def setup_database_bindings(db_session):
     from src.ai.encryption_service import get_encryption_service
     
     encryption = get_encryption_service()
+
+    existing_id = db_session.execute(
+        select(LLMApplication.id).where(LLMApplication.code == "structuring")
+    ).scalar_one_or_none()
+    if existing_id:
+        db_session.execute(
+            delete(LLMApplicationBinding).where(
+                LLMApplicationBinding.application_id == existing_id
+            )
+        )
+        db_session.execute(delete(LLMApplication).where(LLMApplication.id == existing_id))
+        db_session.flush()
     
     # Create application
     app = LLMApplication(
@@ -58,6 +96,7 @@ def setup_database_bindings(db_session):
     config = LLMConfiguration(
         id=uuid4(),
         name="Test Database Config",
+        provider="openai",
         default_method="openai",
         is_active=True,
         tenant_id=None,  # No tenant for test
@@ -84,7 +123,7 @@ def setup_database_bindings(db_session):
         is_active=True
     )
     db_session.add(binding)
-    db_session.commit()
+    db_session.flush()
     
     return {
         "application": app,
@@ -305,7 +344,9 @@ class TestGradualMigration:
             assert config_with_env.openai_api_key == "env-fallback-key"
             assert config_with_env.openai_base_url == "https://api.openai.com/v1"
     
-    async def test_application_can_be_migrated_independently(self, db_session):
+    async def test_application_can_be_migrated_independently(
+        self, db_session, patch_get_db_session_for_llm_cloud_config
+    ):
         """
         Test that applications can be migrated to database configuration
         independently without affecting others.
@@ -331,6 +372,7 @@ class TestGradualMigration:
         config = LLMConfiguration(
             id=uuid4(),
             name="KG Config",
+            provider="openai",
             default_method="openai",
             is_active=True,
             tenant_id=None,
@@ -356,7 +398,7 @@ class TestGradualMigration:
             is_active=True
         )
         db_session.add(binding)
-        db_session.commit()
+        db_session.flush()
         
         # Set environment variables
         env_vars = {
@@ -414,14 +456,13 @@ class TestErrorHandling:
         }
         
         with patch.dict(os.environ, env_vars, clear=True):
-            # Simulate database error by using invalid session
-            with patch("src.services.structuring_pipeline.db_manager.get_async_session") as mock_session:
-                mock_session.side_effect = Exception("Database connection failed")
-                
-                # Should fall back to environment variables
+            class _Boom:
+                def get_session(self):
+                    raise Exception("Database connection failed")
+
+            with patch("src.services.structuring_pipeline.db_manager", _Boom()):
                 config = await _load_cloud_config(
                     tenant_id=None,
                     application_code="structuring"
                 )
-                
                 assert config.openai_api_key == "fallback-key"

@@ -123,11 +123,14 @@ class ApprovalService:
         """Initialize approval service."""
         self._chains: Dict[UUID, ApprovalChain] = {}
         self._change_requests: Dict[UUID, ChangeRequest] = {}
-        self._lock = asyncio.Lock()
-
+        self._lock: Optional[asyncio.Lock] = None
         # Configuration
         self._default_deadline_hours = 24
         self._escalation_reminder_hours = 2  # Remind before deadline
+
+    async def _ensure_async_lock(self) -> None:
+        if self._lock is None:
+            self._lock = asyncio.Lock()
 
     async def create_approval_chain(
         self,
@@ -157,6 +160,7 @@ class ApprovalService:
         if not levels or len(levels) > 5:
             raise ValueError("Approval chain must have 1-5 levels")
 
+        await self._ensure_async_lock()
         async with self._lock:
             chain = ApprovalChain(
                 name=name,
@@ -183,6 +187,7 @@ class ApprovalService:
         Returns:
             Approval chain or None if not found
         """
+        await self._ensure_async_lock()
         async with self._lock:
             return self._chains.get(chain_id)
 
@@ -200,6 +205,7 @@ class ApprovalService:
         Returns:
             List of approval chains
         """
+        await self._ensure_async_lock()
         async with self._lock:
             chains = list(self._chains.values())
 
@@ -237,6 +243,7 @@ class ApprovalService:
         Returns:
             Created change request
         """
+        await self._ensure_async_lock()
         async with self._lock:
             request = ChangeRequest(
                 title=title,
@@ -267,6 +274,7 @@ class ApprovalService:
         Returns:
             True if successful
         """
+        await self._ensure_async_lock()
         async with self._lock:
             request = self._change_requests.get(request_id)
             if not request or request.status != ChangeRequestStatus.DRAFT:
@@ -365,6 +373,7 @@ class ApprovalService:
         Returns:
             True if successful
         """
+        await self._ensure_async_lock()
         async with self._lock:
             request = self._change_requests.get(request_id)
             if not request or request.status not in [ChangeRequestStatus.SUBMITTED, ChangeRequestStatus.IN_REVIEW]:
@@ -414,6 +423,7 @@ class ApprovalService:
         if not reason:
             raise ValueError("Rejection reason is required")
 
+        await self._ensure_async_lock()
         async with self._lock:
             request = self._change_requests.get(request_id)
             if not request or request.status not in [ChangeRequestStatus.SUBMITTED, ChangeRequestStatus.IN_REVIEW]:
@@ -469,6 +479,7 @@ class ApprovalService:
         if not requested_changes:
             raise ValueError("Requested changes description is required")
 
+        await self._ensure_async_lock()
         async with self._lock:
             request = self._change_requests.get(request_id)
             if not request or request.status not in [ChangeRequestStatus.SUBMITTED, ChangeRequestStatus.IN_REVIEW]:
@@ -563,6 +574,7 @@ class ApprovalService:
         Returns:
             List of change requests pending approval by this user
         """
+        await self._ensure_async_lock()
         async with self._lock:
             pending_requests = []
 
@@ -616,6 +628,7 @@ class ApprovalService:
         Returns:
             Number of escalations performed
         """
+        await self._ensure_async_lock()
         async with self._lock:
             escalation_count = 0
             now = datetime.utcnow()
@@ -656,6 +669,7 @@ class ApprovalService:
         Returns:
             Change request or None
         """
+        await self._ensure_async_lock()
         async with self._lock:
             return self._change_requests.get(request_id)
 
@@ -671,6 +685,7 @@ class ApprovalService:
         Returns:
             List of approval records
         """
+        await self._ensure_async_lock()
         async with self._lock:
             request = self._change_requests.get(request_id)
             if not request:

@@ -17,6 +17,8 @@ import time
 from unittest.mock import AsyncMock, patch, MagicMock
 from uuid import uuid4
 
+from sqlalchemy import delete, select
+
 from src.ai.llm_schemas import CloudConfig
 from src.models.llm_configuration import LLMConfiguration
 from src.models.llm_application import LLMApplication, LLMApplicationBinding
@@ -36,6 +38,18 @@ def setup_three_llm_bindings(db_session):
     - 3 LLMApplicationBindings with priorities 1, 2, 3
     """
     encryption = get_encryption_service()
+
+    existing_id = db_session.execute(
+        select(LLMApplication.id).where(LLMApplication.code == "test_app")
+    ).scalar_one_or_none()
+    if existing_id:
+        db_session.execute(
+            delete(LLMApplicationBinding).where(
+                LLMApplicationBinding.application_id == existing_id
+            )
+        )
+        db_session.execute(delete(LLMApplication).where(LLMApplication.id == existing_id))
+        db_session.flush()
     
     # Create application
     app = LLMApplication(
@@ -56,6 +70,7 @@ def setup_three_llm_bindings(db_session):
         config = LLMConfiguration(
             id=uuid4(),
             name=f"{name} LLM",
+            provider="openai",
             default_method="openai",
             is_active=True,
             tenant_id=None,
@@ -87,7 +102,7 @@ def setup_three_llm_bindings(db_session):
         db_session.add(binding)
         bindings.append(binding)
     
-    db_session.commit()
+    db_session.flush()
     
     return {
         "application": app,
@@ -182,15 +197,13 @@ class TestCompleteFailoverFlow:
         assert result == "Success after retries"
         assert len(retry_times) == 3
         
-        # Verify exponential backoff (approximately 2^0, 2^1 seconds)
+        # Verify exponential backoff: sleep(2**attempt) after each failure
+        # (attempt 0 -> sleep 1s before retry 1; attempt 1 -> sleep 2s before retry 2)
         if len(retry_times) >= 3:
             delay1 = retry_times[1] - retry_times[0]
             delay2 = retry_times[2] - retry_times[1]
             
-            # First retry should be immediate (< 0.5s)
-            assert delay1 < 0.5
-            
-            # Second retry should have ~2s delay (allow 1.5-3s range)
+            assert 0.8 <= delay1 <= 1.4
             assert 1.5 <= delay2 <= 3.0
     
     async def test_timeout_triggers_failover(
@@ -486,6 +499,7 @@ class TestFailoverEdgeCases:
         config = LLMConfiguration(
             id=uuid4(),
             name="Single LLM",
+            provider="openai",
             default_method="openai",
             is_active=True,
             tenant_id=None,

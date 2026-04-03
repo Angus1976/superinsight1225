@@ -24,8 +24,9 @@ export class ContextManager {
     this.config = {
       enableEncryption: config.enableEncryption || false,
       encryptionKey: config.encryptionKey || 'default-context-key',
-      sessionTimeout: config.sessionTimeout || 3600000, // 1 hour
-      autoRefresh: config.autoRefresh || true,
+      sessionTimeout: config.sessionTimeout ?? 3600000, // 1 hour
+      // Use ?? so callers can disable auto-refresh (|| true would ignore false)
+      autoRefresh: config.autoRefresh ?? true,
     };
 
     this.security = new MessageSecurity({

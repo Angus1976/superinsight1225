@@ -142,10 +142,13 @@ class BestPracticeService:
         self._practices: Dict[UUID, BestPractice] = {}
         self._reviews: Dict[UUID, List[BestPracticeReview]] = {}
         self._sessions: Dict[UUID, ApplicationSession] = {}
-        self._lock = asyncio.Lock()
-
+        self._lock: Optional[asyncio.Lock] = None
         # Configuration
         self._promotion_percentile = 75  # 75th percentile for promotion
+
+    async def _ensure_async_lock(self) -> None:
+        if self._lock is None:
+            self._lock = asyncio.Lock()
 
     async def create_best_practice(
         self,
@@ -181,6 +184,7 @@ class BestPracticeService:
         Returns:
             Created best practice
         """
+        await self._ensure_async_lock()
         async with self._lock:
             practice = BestPractice(
                 title=title,
@@ -217,6 +221,7 @@ class BestPracticeService:
         Raises:
             ValueError: If practice not found or already submitted
         """
+        await self._ensure_async_lock()
         async with self._lock:
             if practice_id not in self._practices:
                 raise ValueError(f"Practice {practice_id} not found")
@@ -258,6 +263,7 @@ class BestPracticeService:
         Raises:
             ValueError: If practice not found or not under review
         """
+        await self._ensure_async_lock()
         async with self._lock:
             if practice_id not in self._practices:
                 raise ValueError(f"Practice {practice_id} not found")
@@ -308,6 +314,7 @@ class BestPracticeService:
         Returns:
             Best practice or None
         """
+        await self._ensure_async_lock()
         async with self._lock:
             return self._practices.get(practice_id)
 
@@ -331,6 +338,7 @@ class BestPracticeService:
         Returns:
             List of matching practices
         """
+        await self._ensure_async_lock()
         async with self._lock:
             results = []
 
@@ -381,6 +389,7 @@ class BestPracticeService:
         Raises:
             ValueError: If practice not found or not approved
         """
+        await self._ensure_async_lock()
         async with self._lock:
             if practice_id not in self._practices:
                 raise ValueError(f"Practice {practice_id} not found")
@@ -427,6 +436,7 @@ class BestPracticeService:
         Raises:
             ValueError: If session not found
         """
+        await self._ensure_async_lock()
         async with self._lock:
             if session_id not in self._sessions:
                 raise ValueError(f"Session {session_id} not found")
@@ -458,6 +468,7 @@ class BestPracticeService:
         Returns:
             Application session or None
         """
+        await self._ensure_async_lock()
         async with self._lock:
             return self._sessions.get(session_id)
 
@@ -473,6 +484,7 @@ class BestPracticeService:
         Returns:
             Next configuration step or None if completed
         """
+        await self._ensure_async_lock()
         async with self._lock:
             session = self._sessions.get(session_id)
             if not session:
@@ -524,6 +536,7 @@ class BestPracticeService:
         Returns:
             List of popular practices
         """
+        await self._ensure_async_lock()
         async with self._lock:
             practices = [
                 p for p in self._practices.values()
@@ -554,6 +567,7 @@ class BestPracticeService:
         Returns:
             List of reviews
         """
+        await self._ensure_async_lock()
         async with self._lock:
             return self._reviews.get(practice_id, [])
 
@@ -569,6 +583,7 @@ class BestPracticeService:
         Returns:
             Average rating or 0.0 if no ratings
         """
+        await self._ensure_async_lock()
         async with self._lock:
             practice = self._practices.get(practice_id)
             if not practice or practice.rating_count == 0:
@@ -588,6 +603,7 @@ class BestPracticeService:
         Returns:
             List of practices
         """
+        await self._ensure_async_lock()
         async with self._lock:
             practices = list(self._practices.values())
 
@@ -602,6 +618,7 @@ class BestPracticeService:
         Returns:
             Dictionary of statistics
         """
+        await self._ensure_async_lock()
         async with self._lock:
             approved_practices = [
                 p for p in self._practices.values()

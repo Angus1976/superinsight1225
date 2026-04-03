@@ -311,6 +311,13 @@ class LabelStudioProxy:
         # Normalize path
         path = path.lower().rstrip("/")
 
+        # Export/import (paths like /api/projects/1/export match /api/projects first;
+        # handle these before generic project CRUD rules.)
+        if "/export" in path:
+            return Permission.DATA_EXPORT
+        if "/import" in path:
+            return Permission.DATA_IMPORT
+
         # Project endpoints
         if "/api/projects" in path:
             if method == "GET":
@@ -343,14 +350,6 @@ class LabelStudioProxy:
                 return Permission.TASK_ANNOTATE
             elif method == "DELETE":
                 return Permission.TASK_REVIEW
-
-        # Export endpoints
-        if "/export" in path:
-            return Permission.DATA_EXPORT
-
-        # Import endpoints
-        if "/import" in path:
-            return Permission.DATA_IMPORT
 
         # Default: require view permission
         return Permission.PROJECT_VIEW

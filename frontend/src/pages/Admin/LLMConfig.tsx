@@ -154,7 +154,7 @@ const LLMConfigPage: React.FC = () => {
   };
 
   const handleReset = () => {
-    modal.confirm({
+    Modal.confirm({
       title: t('llm.actions.confirmReset'),
       content: t('llm.actions.confirmResetMessage'),
       onOk: () => {

@@ -31,7 +31,7 @@ from src.models.data_transfer import (
     DataAttributes,
     TransferRecord,
 )
-from src.services.data_transfer_service import DataTransferService, User
+from src.services.data_transfer_service import DataTransferService, User, UserRole
 from src.models.data_lifecycle import EnhancedDataModel
 
 
@@ -166,14 +166,18 @@ async def _convert_to_new_api(
     if not job.enhanced_data_id:
         raise ValueError("No enhanced data available for this job")
     
-    # Retrieve enhanced data from database
-    enhanced_record = db.query(EnhancedDataModel).filter(
-        EnhancedDataModel.id == UUID(job.enhanced_data_id)
-    ).first()
+    # Session.get avoids stale identity-map misses vs query().filter() after apply.
+    enhanced_record = db.get(
+        EnhancedDataModel, UUID(str(job.enhanced_data_id))
+    )
     if not enhanced_record:
         raise ValueError(
             f"Enhanced data {job.enhanced_data_id} not found in database"
         )
+
+    iteration_count = db.query(EnhancedDataModel).filter(
+        EnhancedDataModel.original_data_id == enhanced_record.original_data_id
+    ).count()
     
     # Build transfer request in new format
     transfer_request = DataTransferRequest(
@@ -202,8 +206,8 @@ async def _convert_to_new_api(
         ]
     )
     
-    # Create mock user for transfer service
-    mock_user = User(id=user_id, role="admin")
+    # Create mock user for transfer service (role must be UserRole for permission matrix lookup)
+    mock_user = User(id=user_id, role=UserRole.ADMIN)
     
     # Call new unified transfer API
     transfer_service = DataTransferService(db)
@@ -232,6 +236,7 @@ async def _convert_to_new_api(
             "original_data_id": enhanced_record.original_data_id,
             "enhancement_job_id": str(enhanced_record.enhancement_job_id),
             "enhancement_type": enhanced_record.enhancement_type.value,
+            "iteration_count": iteration_count,
             "augmentation_method": enhanced_record.enhancement_type.value,
             "augmentation_params": job.config.parameters,
             "target_quality": job.config.target_quality,
@@ -490,7 +495,6 @@ async def add_to_library(
     request: AddToLibraryRequest,
     response: Response,
     service: EnhancementService = Depends(get_enhancement_service),
-    db: DBSession = Depends(get_db_session),
 ):
     """
     Add enhanced data to the sample library for iterative optimization.
@@ -522,12 +526,12 @@ async def add_to_library(
     )
     
     try:
-        # Convert old request to new unified format
+        # Use service.db (same session as apply_enhancement for this request chain).
         result = await _convert_to_new_api(
             job_id=job_id,
             user_id=request.user_id,
             service=service,
-            db=db
+            db=service.db,
         )
         return AddToLibraryResponse(**result)
     except ValueError as e:

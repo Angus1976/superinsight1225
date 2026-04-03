@@ -4,6 +4,7 @@
 
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import TransferButton from '../TransferButton';
 import * as dataLifecycleAPI from '@/api/dataLifecycleAPI';
@@ -21,7 +22,7 @@ vi.mock('react-i18next', () => ({
         'transfer.button': 'Transfer Data',
         'transfer.validation.minRecords': 'At least 1 record must be selected',
         'transfer.messages.permissionDenied': 'You don\'t have permission for this operation',
-        'common.messages.networkError': 'Network error, please try again later',
+          'common.messages.networkError': 'Network error, please try again later',
       };
       return translations[key] || key;
     },
@@ -264,12 +265,20 @@ describe('TransferButton', () => {
     });
 
     const button = screen.getByRole('button');
-    fireEvent.click(button);
+    await userEvent.click(button);
 
-    // Placeholder text should appear
-    await waitFor(() => {
-      expect(screen.getByText('TransferModal will be implemented in task 2.2')).toBeInTheDocument();
-    });
+    // 若其它用例/文件留下已关闭的 ant-modal-wrap，querySelector 会命中 display:none；
+    // 这里取「可见」的 wrap，避免误判。
+    await waitFor(
+      () => {
+        const visibleWrap = Array.from(document.querySelectorAll('.ant-modal-wrap')).find(
+          (el) => (el as HTMLElement).style.display !== 'none'
+        );
+        expect(visibleWrap).toBeTruthy();
+        expect(screen.getByRole('dialog', { hidden: true })).toBeInTheDocument();
+      },
+      { timeout: 5000 }
+    );
   });
 
   it('should call onTransferComplete callback when transfer succeeds', async () => {

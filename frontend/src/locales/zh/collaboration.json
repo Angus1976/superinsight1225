@@ -1,5 +1,20 @@
 {
   "title": "协作与审核",
+  "titles": {
+    "active_collaborators": "在线协作者"
+  },
+  "messages": {
+    "no_collaborators": "暂无在线协作者"
+  },
+  "labels": {
+    "same_task": "同一任务"
+  },
+  "warnings": {
+    "conflicts_detected": "检测到冲突"
+  },
+  "tooltips": {
+    "collaborators_active": "{{count}} 位协作者在线"
+  },
   "stats": {
     "inProgressTasks": "进行中任务",
     "pendingReview": "待审核",
@@ -24,7 +39,10 @@
     "pending": "待处理",
     "inProgress": "进行中",
     "review": "审核中",
-    "completed": "已完成"
+    "completed": "已完成",
+    "editing": "编辑中",
+    "viewing": "查看中",
+    "idle": "空闲"
   },
   "team": {
     "processing": "正在处理",

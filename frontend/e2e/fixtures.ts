@@ -10,6 +10,7 @@
 import { test as base, Page, BrowserContext } from '@playwright/test'
 import { RoleConfig, ROLE_CONFIGS } from './helpers/role-permissions'
 import { setupAuth } from './test-helpers'
+import { E2E_VALID_ACCESS_TOKEN } from './e2e-tokens'
 
 /**
  * Console log entry interface
@@ -95,8 +96,8 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
 
   // Authenticated page fixture with default admin auth
   authenticatedPage: async ({ page }, use) => {
-    // Set up authentication before test
-    await page.addInitScript(() => {
+    await page.addInitScript((accessToken: string) => {
+      localStorage.setItem('auth_token', JSON.stringify(accessToken))
       localStorage.setItem(
         'auth-storage',
         JSON.stringify({
@@ -110,17 +111,18 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
               roles: ['admin'],
               permissions: ['read:all', 'write:all', 'manage:all'],
             },
-            token: 'mock-jwt-token-for-testing',
+            token: accessToken,
             currentTenant: {
               id: 'tenant-1',
               name: '测试租户',
             },
             isAuthenticated: true,
           },
-        })
+          version: 0,
+        }),
       )
-    })
-    
+    }, E2E_VALID_ACCESS_TOKEN)
+
     await use(page)
   },
 })

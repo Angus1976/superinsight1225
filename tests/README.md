@@ -99,6 +99,27 @@ HYPOTHESIS_PROFILE=fast pytest tests/unit tests/api --no-cov -q
 
 Property-heavy directories (`tests/property/`, many `*_properties.py`) scale roughly with `max_examples × number of @given tests`; use `fast`/`dev` during development and reserve `default`/`ci` for pre-merge or nightly runs.
 
+#### 测试任务依赖顺序（CI）
+
+分层原则：**单元/属性 → 前端单测 → 集成 →（main 上）E2E 与镜像部署类检查**。上层失败则下层不再执行，以减少无效 CI 时间。
+
+| 阶段 | GitHub Actions | 说明 |
+|------|----------------|------|
+| 1 | `commit-tests`（`.github/workflows/commit-tests.yml`） | 后端 `pytest -m unit` → `pytest -m property`；前端 Vitest；coverage 汇总 |
+| 2 | `integration-tests`（`pr-tests.yml`） | **`needs: commit-tests`**，仅在可复用 commit 工作流全部成功后运行 |
+| 并行 | `dependency-scan`、`code-quality`（`pr-tests.yml`） | 与集成测试无代码编译依赖，可与 commit 阶段并行执行 |
+| 汇总 | `test-report`、`merge-gate` | 依赖前述任务结果（`test-report` 使用 `if: always()` 汇总） |
+
+推送到 **`main`**（`.github/workflows/main-branch-tests.yml`）时：`pr-tests` 先完成；**`e2e-tests` 与 `deployment-tests` 均 `needs: pr-tests`**，在 PR 级检查通过后再并行执行 E2E 与容器构建/启动类测试。
+
+**本地按相同顺序跑（可选集成/E2E）：**
+
+```bash
+./scripts/run-tests-by-deps.sh
+RUN_INTEGRATION=1 ./scripts/run-tests-by-deps.sh   # 需测试库与 Redis
+RUN_E2E=1 ./scripts/run-tests-by-deps.sh           # 需本机起后端与 frontend dev
+```
+
 ### 1.3 Test Database Setup
 
 **Database Configuration:**

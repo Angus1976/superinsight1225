@@ -49,7 +49,7 @@ import {
   Line,
 } from 'recharts';
 import { useTranslation } from 'react-i18next';
-import { useAuditLogs, useSystemLogs } from '@/hooks';
+import { useSystemAuditLogs, useSystemLogs } from '@/hooks';
 import type { SystemAuditLog } from '@/types';
 
 const { RangePicker } = DatePicker;
@@ -82,7 +82,7 @@ const SecurityAudit: React.FC = () => {
   const [selectedLog, setSelectedLog] = useState<SystemAuditLog | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
 
-  const { data: auditLogsData } = useAuditLogs(auditFilters);
+  const { data: auditLogsData } = useSystemAuditLogs(auditFilters);
   const { data: systemLogsData } = useSystemLogs(systemLogFilters);
 
   const auditLogs = auditLogsData?.logs || [];

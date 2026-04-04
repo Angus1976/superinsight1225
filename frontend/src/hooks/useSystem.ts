@@ -139,8 +139,8 @@ export const useResolveAlert = () => {
   });
 };
 
-// Audit logs hooks
-export const useAuditLogs = (params?: {
+// System audit logs (distinct from security `useAuditLogs` in useSecurity.ts — barrel export name clash)
+export const useSystemAuditLogs = (params?: {
   tenant_id?: string;
   user_id?: string;
   action?: string;

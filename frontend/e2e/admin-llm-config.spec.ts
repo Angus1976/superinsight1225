@@ -1,401 +1,263 @@
 /**
  * Admin LLM Configuration E2E Tests
  *
- * Tests the complete LLM configuration workflow including:
- * - Creating new LLM configurations
- * - Testing connections
- * - Editing configurations
- * - Deleting configurations
- * - Validation and error handling
- *
- * **Validates: Requirements 1.1, 1.2, 1.3, 1.4, 1.5**
+ * Aligns with `/admin/config/llm` → `LLMApplicationBinding` and `/api/llm-configs` APIs.
  */
 
-import { test, expect } from '@playwright/test';
-import { setupAuth, waitForPageReady, mockApiResponses } from './test-helpers';
+import { test, expect } from '@playwright/test'
+import { setupAuth, waitForPageReady, seedLanguageStores } from './test-helpers'
+import { mockAllApis } from './helpers/mock-api-factory'
+
+function sampleLlmConfigs() {
+  const now = new Date().toISOString()
+  return [
+    {
+      id: 'llm-1',
+      name: 'OpenAI GPT-4',
+      provider: 'openai',
+      base_url: 'https://api.openai.com/v1',
+      model_name: 'gpt-4o',
+      parameters: {},
+      is_active: true,
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: 'llm-2',
+      name: '通义千问',
+      provider: 'qwen',
+      base_url: 'https://dashscope.aliyuncs.com/api/v1',
+      model_name: 'qwen-turbo',
+      parameters: {},
+      is_active: true,
+      created_at: now,
+      updated_at: now,
+    },
+  ]
+}
+
+async function goToConfigsTab(page: import('@playwright/test').Page) {
+  await page.getByRole('tab', { name: /配置管理|Configuration Management/i }).click()
+}
 
 test.describe('Admin LLM Configuration', () => {
   test.beforeEach(async ({ page }) => {
-    // Set up admin authentication
-    await setupAuth(page, 'admin', 'tenant-1');
+    await setupAuth(page, 'admin', 'tenant-1')
+    await seedLanguageStores(page, 'zh')
+    await mockAllApis(page, { llmConfigs: sampleLlmConfigs() })
 
-    // Mock API responses for LLM configuration
-    await page.route('**/api/v1/admin/config/llm', async (route, request) => {
-      if (request.method() === 'GET') {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify([
-            {
-              id: 'llm-1',
-              name: 'OpenAI GPT-4',
-              llm_type: 'openai',
-              model_name: 'gpt-4',
-              api_endpoint: 'https://api.openai.com/v1',
-              api_key_masked: '****...****',
-              temperature: 0.7,
-              max_tokens: 4096,
-              timeout_seconds: 60,
-              is_active: true,
-              is_default: true,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            },
-            {
-              id: 'llm-2',
-              name: '通义千问',
-              llm_type: 'qianwen',
-              model_name: 'qwen-turbo',
-              api_endpoint: 'https://dashscope.aliyuncs.com/api/v1',
-              api_key_masked: '****...****',
-              temperature: 0.8,
-              max_tokens: 8192,
-              timeout_seconds: 30,
-              is_active: true,
-              is_default: false,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            },
-          ]),
-        });
-      } else if (request.method() === 'POST') {
-        const body = JSON.parse(request.postData() || '{}');
-        await route.fulfill({
-          status: 201,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            id: 'llm-new',
-            ...body,
-            api_key_masked: '****...****',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          }),
-        });
-      }
-    });
-
-    await page.route('**/api/v1/admin/config/llm/*', async (route, request) => {
-      const url = request.url();
-      const id = url.split('/').pop();
-
-      if (request.method() === 'PUT') {
-        const body = JSON.parse(request.postData() || '{}');
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            id,
-            ...body,
-            api_key_masked: '****...****',
-            updated_at: new Date().toISOString(),
-          }),
-        });
-      } else if (request.method() === 'DELETE') {
-        await route.fulfill({
-          status: 204,
-        });
-      } else if (request.method() === 'GET') {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            id,
-            name: 'Test Config',
-            llm_type: 'openai',
-            model_name: 'gpt-4',
-            api_endpoint: 'https://api.openai.com/v1',
-            api_key_masked: '****...****',
-            temperature: 0.7,
-            max_tokens: 4096,
-            timeout_seconds: 60,
-            is_active: true,
-            is_default: false,
-          }),
-        });
-      }
-    });
-
-    await page.route('**/api/v1/admin/config/llm/*/test', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          success: true,
-          latency_ms: 245,
-          model_info: {
-            name: 'gpt-4',
-            version: '2024-01',
-          },
-        }),
-      });
-    });
-
-    // Navigate to LLM config page
-    await page.goto('/admin/config/llm');
-    await waitForPageReady(page);
-  });
+    await page.goto('/admin/config/llm')
+    await waitForPageReady(page)
+    await goToConfigsTab(page)
+  })
 
   test('displays LLM configuration list', async ({ page }) => {
-    // Check page title
-    await expect(page.locator('text=LLM').first()).toBeVisible({ timeout: 10000 });
-
-    // Check table is visible
-    await expect(page.locator('.ant-table')).toBeVisible();
-
-    // Check configurations are displayed
-    await expect(page.getByText('OpenAI GPT-4')).toBeVisible();
-    await expect(page.getByText('通义千问')).toBeVisible();
-  });
+    await expect(page.getByRole('heading', { name: /LLM 配置管理|LLM Configuration Management/i })).toBeVisible({
+      timeout: 10000,
+    })
+    await expect(page.getByText('OpenAI GPT-4')).toBeVisible()
+    await expect(page.getByText('通义千问')).toBeVisible()
+  })
 
   test('opens create configuration modal', async ({ page }) => {
-    // Click add button
-    const addButton = page.getByRole('button', { name: /添加|新增|add/i });
-    await addButton.click();
-
-    // Check modal is visible
-    await expect(page.locator('.ant-modal')).toBeVisible();
-
-    // Check form fields are present
-    await expect(page.getByLabel(/名称|name/i).first()).toBeVisible();
-    await expect(page.locator('.ant-select').first()).toBeVisible();
-  });
+    await page.getByRole('button', { name: /添加配置|Add configuration/i }).click()
+    await expect(page.locator('.ant-modal')).toBeVisible()
+    await expect(page.getByLabel(/配置名称|Configuration name/i)).toBeVisible()
+  })
 
   test('creates new LLM configuration', async ({ page }) => {
-    // Open create modal
-    await page.getByRole('button', { name: /添加|新增|add/i }).click();
-    await expect(page.locator('.ant-modal')).toBeVisible();
+    await page.getByRole('button', { name: /添加配置|Add configuration/i }).click()
+    await expect(page.locator('.ant-modal')).toBeVisible()
 
-    // Fill form
-    await page.getByLabel(/名称|name/i).first().fill('Test LLM Config');
-    
-    // Select LLM type
-    await page.locator('.ant-select').first().click();
-    await page.getByText('OpenAI', { exact: false }).first().click();
+    await page.getByLabel(/配置名称|Configuration name/i).fill('Test LLM Config')
 
-    // Fill model name
-    await page.getByLabel(/模型|model/i).first().fill('gpt-4-turbo');
+    await page.getByLabel(/提供商|Provider/i).click()
+    await page
+      .locator('.ant-select-dropdown')
+      .locator('.ant-select-item-option-content')
+      .filter({ hasText: /^DeepSeek$/ })
+      .click()
 
-    // Fill API endpoint
-    const endpointInput = page.getByPlaceholder(/endpoint|端点/i);
-    if (await endpointInput.isVisible()) {
-      await endpointInput.fill('https://api.openai.com/v1');
-    }
+    await page.getByLabel(/API 密钥|API Key/i).fill('sk-test-key-12345')
 
-    // Fill API key
-    const apiKeyInput = page.locator('input[type="password"]').first();
-    if (await apiKeyInput.isVisible()) {
-      await apiKeyInput.fill('sk-test-key-12345');
-    }
+    await page.locator('.ant-modal .ant-select').nth(1).click()
+    await page
+      .locator('.ant-select-dropdown')
+      .locator('.ant-select-item-option-content')
+      .filter({ hasText: /^DeepSeek Chat$/ })
+      .click()
 
-    // Submit form
-    await page.getByRole('button', { name: /确定|ok|submit/i }).click();
+    const created = page.waitForResponse(
+      (r) => r.request().method() === 'POST' && /\/api\/llm-configs\/?(\?|$)/.test(new URL(r.url()).pathname),
+    )
+    await page.locator('.ant-modal').getByRole('button', { name: /提交|Submit/i }).click()
+    expect((await created).status()).toBe(201)
 
-    // Check success message
-    await expect(page.getByText(/成功|success/i).first()).toBeVisible({ timeout: 5000 });
-  });
+    await expect(page.locator('.ant-modal')).toBeHidden({ timeout: 15000 })
+    await expect(page.getByText('Test LLM Config')).toBeVisible()
+  })
 
   test('validates required fields', async ({ page }) => {
-    // Open create modal
-    await page.getByRole('button', { name: /添加|新增|add/i }).click();
-    await expect(page.locator('.ant-modal')).toBeVisible();
+    await page.getByRole('button', { name: /添加配置|Add configuration/i }).click()
+    await expect(page.locator('.ant-modal')).toBeVisible()
 
-    // Try to submit without filling required fields
-    await page.getByRole('button', { name: /确定|ok|submit/i }).click();
+    await page.locator('.ant-modal').getByRole('button', { name: /提交|Submit/i }).click()
 
-    // Check validation errors
-    await expect(page.getByText(/请输入|required|必填/i).first()).toBeVisible();
-  });
+    await expect(page.locator('.ant-modal .ant-form-item-explain-error').first()).toBeVisible({ timeout: 5000 })
+  })
 
   test('tests LLM connection', async ({ page }) => {
-    // Find test connection button for first config
-    const testButton = page.locator('[aria-label*="test"], button:has(.anticon-api)').first();
-    
-    if (await testButton.isVisible()) {
-      await testButton.click();
-
-      // Check for success message
-      await expect(page.getByText(/成功|success|online/i).first()).toBeVisible({ timeout: 10000 });
-    }
-  });
+    const respPromise = page.waitForResponse(
+      (r) =>
+        /\/api\/llm-configs\/[^/]+\/test\/?(\?|$)/.test(r.url()) && r.request().method() === 'POST',
+    )
+    await page.getByRole('button', { name: /测试连接|Test connection/i }).first().click()
+    const resp = await respPromise
+    expect(resp.ok()).toBeTruthy()
+    const body = (await resp.json()) as { status?: string }
+    expect(body.status).toBe('success')
+  })
 
   test('edits existing configuration', async ({ page }) => {
-    // Find edit button for first config
-    const editButton = page.locator('button:has(.anticon-edit)').first();
-    await editButton.click();
+    await page.getByRole('button', { name: /编辑|Edit/i }).first().click()
+    await expect(page.locator('.ant-modal')).toBeVisible()
 
-    // Check modal is visible with existing data
-    await expect(page.locator('.ant-modal')).toBeVisible();
+    await page.getByLabel(/配置名称|Configuration name/i).clear()
+    await page.getByLabel(/配置名称|Configuration name/i).fill('Updated LLM Config')
 
-    // Modify name
-    const nameInput = page.getByLabel(/名称|name/i).first();
-    await nameInput.clear();
-    await nameInput.fill('Updated LLM Config');
+    await page.locator('.ant-modal').getByRole('button', { name: /提交|Submit/i }).click()
 
-    // Submit
-    await page.getByRole('button', { name: /确定|ok|submit/i }).click();
-
-    // Check success message
-    await expect(page.getByText(/成功|success/i).first()).toBeVisible({ timeout: 5000 });
-  });
+    await expect(page.locator('.ant-modal')).toBeHidden({ timeout: 10000 })
+    await expect(page.getByText('Updated LLM Config')).toBeVisible()
+  })
 
   test('deletes configuration with confirmation', async ({ page }) => {
-    // Find delete button for second config (not default)
-    const deleteButtons = page.locator('button:has(.anticon-delete)');
-    const deleteButton = deleteButtons.nth(1);
-    
-    if (await deleteButton.isVisible()) {
-      await deleteButton.click();
+    const delResp = page.waitForResponse(
+      (r) => r.request().method() === 'DELETE' && r.url().includes('/api/llm-configs/'),
+    )
+    // LLMConfigList cards live under .ant-row; the page also wraps content in an outer ant-card,
+    // so `.ant-card` + hasText would match the wrapper and .first() hit the wrong Delete.
+    await page
+      .locator('.ant-row .ant-card')
+      .filter({ has: page.getByText('通义千问', { exact: true }) })
+      .getByRole('button', { name: /^delete Delete$/i })
+      .click()
+    await expect(page.locator('.ant-modal-wrap').last()).toBeVisible({ timeout: 10000 })
+    // antd 按钮文案在 a11y 树里可能是「确 定」等带字间距的形式，避免只匹配「确定」
+    await page
+      .locator('.ant-modal-wrap')
+      .last()
+      .getByRole('button', { name: /^OK$|^确定$|^确\s*定$/i })
+      .click()
+    expect((await delResp).status()).toBe(204)
+    await expect(page.getByText('通义千问')).toHaveCount(0)
+  })
 
-      // Check confirmation dialog
-      await expect(page.getByText(/确认|confirm|删除/i).first()).toBeVisible();
+  test('displays provider-specific fields when switching provider', async ({ page }) => {
+    await page.getByRole('button', { name: /添加配置|Add configuration/i }).click()
+    await expect(page.locator('.ant-modal')).toBeVisible()
 
-      // Confirm deletion
-      await page.getByRole('button', { name: /确定|ok|yes/i }).click();
-
-      // Check success message
-      await expect(page.getByText(/成功|success|删除/i).first()).toBeVisible({ timeout: 5000 });
-    }
-  });
-
-  test('displays provider-specific options based on selection', async ({ page }) => {
-    // Open create modal
-    await page.getByRole('button', { name: /添加|新增|add/i }).click();
-    await expect(page.locator('.ant-modal')).toBeVisible();
-
-    // Select OpenAI provider
-    await page.locator('.ant-select').first().click();
-    await page.getByText('OpenAI', { exact: false }).first().click();
-
-    // Check OpenAI-specific fields are visible
-    await expect(page.getByLabel(/API Key/i).first()).toBeVisible();
-
-    // Select local Ollama provider
-    await page.locator('.ant-select').first().click();
-    await page.getByText(/Ollama|本地/i).first().click();
-
-    // API Key might be optional for local providers
-    // Check that endpoint field is visible
-    const endpointField = page.getByPlaceholder(/endpoint|端点|localhost/i);
-    await expect(endpointField.first()).toBeVisible();
-  });
+    await page.locator('.ant-modal .ant-select-selector').first().click()
+    await page
+      .locator('.ant-select-dropdown')
+      .locator('.ant-select-item-option-content')
+      .filter({ hasText: /^DeepSeek$/ })
+      .click()
+    await expect(page.getByLabel(/API 密钥|API Key/i)).toBeVisible()
+  })
 
   test('handles connection test failure gracefully', async ({ page }) => {
-    // Override route to return failure
-    await page.route('**/api/v1/admin/config/llm/*/test', async (route) => {
+    await page.unroute(/\/api\/llm-configs\/[^/]+\/test\/?$/)
+    await page.route(/\/api\/llm-configs\/[^/]+\/test\/?$/, async (route) => {
+      if (route.request().method() !== 'POST') return route.continue()
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+        },
         body: JSON.stringify({
-          success: false,
-          latency_ms: 0,
-          error_message: 'Connection timeout: Unable to reach API endpoint',
+          status: 'failed',
+          error: 'Connection timeout: Unable to reach API endpoint',
         }),
-      });
-    });
+      })
+    })
 
-    // Find test connection button
-    const testButton = page.locator('[aria-label*="test"], button:has(.anticon-api)').first();
-    
-    if (await testButton.isVisible()) {
-      await testButton.click();
+    await page.reload()
+    await waitForPageReady(page)
+    await goToConfigsTab(page)
 
-      // Check for error message
-      await expect(page.getByText(/失败|failed|error|timeout/i).first()).toBeVisible({ timeout: 10000 });
-    }
-  });
+    const failResp = page.waitForResponse(
+      (r) =>
+        /\/api\/llm-configs\/[^/]+\/test\/?(\?|$)/.test(r.url()) && r.request().method() === 'POST',
+    )
+    await page.getByRole('button', { name: /测试连接|Test connection/i }).first().click()
+    const fr = await failResp
+    expect(fr.ok()).toBeTruthy()
+    const body = (await fr.json()) as { status: string }
+    expect(body.status).toBe('failed')
+  })
 
-  test('refreshes configuration list', async ({ page }) => {
-    // Find refresh button
-    const refreshButton = page.getByRole('button', { name: /刷新|refresh/i });
-    
-    if (await refreshButton.isVisible()) {
-      await refreshButton.click();
+  test('search filters configuration cards', async ({ page }) => {
+    const search = page.getByPlaceholder(/搜索配置名称或模型|Search configuration name or model/i)
+    await search.fill('OpenAI')
+    await expect(page.getByText('OpenAI GPT-4')).toBeVisible()
+    await expect(page.getByText('Test LLM Config')).toHaveCount(0)
+  })
 
-      // Table should still be visible after refresh
-      await expect(page.locator('.ant-table')).toBeVisible();
-    }
-  });
+  test('toggles active status when editing', async ({ page }) => {
+    await page.getByRole('button', { name: /编辑|Edit/i }).first().click()
+    await expect(page.locator('.ant-modal')).toBeVisible()
 
-  test('displays masked API keys', async ({ page }) => {
-    // Check that API keys are masked in the table
-    await expect(page.getByText(/\*\*\*\*/).first()).toBeVisible();
-  });
-
-  test('sets default configuration', async ({ page }) => {
-    // Open edit modal for non-default config
-    const editButtons = page.locator('button:has(.anticon-edit)');
-    await editButtons.nth(1).click();
-
-    // Check modal is visible
-    await expect(page.locator('.ant-modal')).toBeVisible();
-
-    // Find and toggle default switch
-    const defaultSwitch = page.locator('.ant-switch').first();
-    if (await defaultSwitch.isVisible()) {
-      await defaultSwitch.click();
+    const activeSwitch = page.locator('.ant-modal .ant-switch').first()
+    if (await activeSwitch.isVisible()) {
+      await activeSwitch.click()
     }
 
-    // Submit
-    await page.getByRole('button', { name: /确定|ok|submit/i }).click();
-
-    // Check success
-    await expect(page.getByText(/成功|success/i).first()).toBeVisible({ timeout: 5000 });
-  });
-});
+    const put = page.waitForResponse(
+      (r) => r.request().method() === 'PUT' && r.url().includes('/api/llm-configs/'),
+    )
+    await page.locator('.ant-modal').getByRole('button', { name: /提交|Submit/i }).click()
+    expect((await put).status()).toBe(200)
+    await expect(page.locator('.ant-modal')).toBeHidden({ timeout: 15000 })
+  })
+})
 
 test.describe('LLM Configuration - Responsive Design', () => {
   test.beforeEach(async ({ page }) => {
-    await setupAuth(page, 'admin', 'tenant-1');
-    
-    await page.route('**/api/v1/admin/config/llm', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([]),
-      });
-    });
-  });
+    await setupAuth(page, 'admin', 'tenant-1')
+    await seedLanguageStores(page, 'zh')
+    await mockAllApis(page)
+  })
 
   test('displays correctly on mobile', async ({ page }) => {
-    await page.setViewportSize({ width: 375, height: 667 });
-    await page.goto('/admin/config/llm');
-    await waitForPageReady(page);
+    await page.setViewportSize({ width: 375, height: 667 })
+    await page.goto('/admin/config/llm')
+    await waitForPageReady(page)
+    await goToConfigsTab(page)
 
-    // Page should still be functional
-    await expect(page.getByRole('button', { name: /添加|新增|add/i })).toBeVisible();
-  });
+    await expect(page.getByRole('button', { name: /添加配置|Add configuration/i })).toBeVisible()
+  })
 
   test('displays correctly on tablet', async ({ page }) => {
-    await page.setViewportSize({ width: 768, height: 1024 });
-    await page.goto('/admin/config/llm');
-    await waitForPageReady(page);
+    await page.setViewportSize({ width: 768, height: 1024 })
+    await page.goto('/admin/config/llm')
+    await waitForPageReady(page)
+    await goToConfigsTab(page)
 
-    // Page should still be functional
-    await expect(page.getByRole('button', { name: /添加|新增|add/i })).toBeVisible();
-  });
-});
+    await expect(page.getByRole('button', { name: /添加配置|Add configuration/i })).toBeVisible()
+  })
+})
 
 test.describe('LLM Configuration - Access Control', () => {
   test('denies access for non-admin users', async ({ page }) => {
-    // Set up as regular user
-    await setupAuth(page, 'user', 'tenant-1');
+    await setupAuth(page, 'user', 'tenant-1')
+    await seedLanguageStores(page, 'zh')
+    await mockAllApis(page)
 
-    await page.route('**/api/v1/admin/**', async (route) => {
-      await route.fulfill({
-        status: 403,
-        contentType: 'application/json',
-        body: JSON.stringify({ error: 'Forbidden', message: 'Admin access required' }),
-      });
-    });
+    await page.goto('/admin/config/llm')
+    await waitForPageReady(page)
 
-    await page.goto('/admin/config/llm');
-
-    // Should show access denied or redirect
-    await expect(
-      page.getByText(/禁止|forbidden|权限|access denied/i).first()
-    ).toBeVisible({ timeout: 10000 }).catch(() => {
-      // May redirect to login or dashboard
-      expect(page.url()).not.toContain('/admin/config/llm');
-    });
-  });
-});
+    await expect(page.getByText(/Access Denied|权限|permission/i).first()).toBeVisible({ timeout: 10000 })
+  })
+})

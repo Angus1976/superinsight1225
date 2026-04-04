@@ -8,15 +8,15 @@
  */
 
 import { test, expect } from '../fixtures'
-import { setupAuth, waitForPageReady } from '../test-helpers'
+import { isRestApiUrl } from '../api-route-helpers'
+import { createSeedLanguageStoresInitScript, setupAuth, waitForPageReady } from '../test-helpers'
 import { mockAllApis } from '../helpers/mock-api-factory'
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
 /* ------------------------------------------------------------------ */
 
-/** Raw translation key pattern: e.g. common.button.submit */
-const RAW_KEY_REGEX = /\b[a-z]+\.[a-z]+\.[a-z]+\b/
+const BTN_LOGIN = /登\s*录|登录|login|sign in/i
 
 async function switchLanguage(page: import('@playwright/test').Page, targetLang: 'zh' | 'en') {
   // Look for language switcher in header / settings
@@ -36,10 +36,28 @@ async function switchLanguage(page: import('@playwright/test').Page, targetLang:
     }
   }
 
-  // Fallback: set localStorage directly
-  await page.evaluate((lang: string) => {
+  await page.evaluate((lang: 'zh' | 'en') => {
     localStorage.setItem('i18nextLng', lang)
     localStorage.setItem('language', lang)
+    localStorage.setItem(
+      'language-storage',
+      JSON.stringify({
+        state: { language: lang },
+        version: 0,
+      }),
+    )
+    localStorage.setItem(
+      'ui-storage',
+      JSON.stringify({
+        state: {
+          theme: 'light',
+          language: lang,
+          sidebarCollapsed: false,
+          clientCompany: null,
+        },
+        version: 0,
+      }),
+    )
   }, targetLang)
 }
 
@@ -52,11 +70,7 @@ test.describe('Language switch zh → en', () => {
     await setupAuth(page)
     await mockAllApis(page)
 
-    // Start in Chinese
-    await page.addInitScript(() => {
-      localStorage.setItem('i18nextLng', 'zh')
-      localStorage.setItem('language', 'zh')
-    })
+    await page.addInitScript(createSeedLanguageStoresInitScript('zh'))
 
     await page.goto('/dashboard')
     await waitForPageReady(page)
@@ -78,10 +92,7 @@ test.describe('Language switch en → zh', () => {
     await setupAuth(page)
     await mockAllApis(page)
 
-    await page.addInitScript(() => {
-      localStorage.setItem('i18nextLng', 'en')
-      localStorage.setItem('language', 'en')
-    })
+    await page.addInitScript(createSeedLanguageStoresInitScript('en'))
 
     await page.goto('/dashboard')
     await waitForPageReady(page)
@@ -105,7 +116,14 @@ test.describe('No raw translation keys displayed', () => {
         await setupAuth(page)
         await mockAllApis(page)
       } else {
-        await page.route('**/api/**', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: '{}' }))
+        await page.route((url: URL) => url.pathname === '/health', (r) =>
+          r.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({ status: 'healthy' }),
+          }),
+        )
+        await page.route(isRestApiUrl, (r) => r.fulfill({ status: 200, contentType: 'application/json', body: '{}' }))
       }
 
       await page.goto(route)
@@ -143,27 +161,44 @@ test.describe('Language preference persistence', () => {
     await setupAuth(page)
     await mockAllApis(page)
 
-    await page.addInitScript(() => {
-      localStorage.setItem('i18nextLng', 'en')
-      localStorage.setItem('language', 'en')
-    })
+    await page.addInitScript(createSeedLanguageStoresInitScript('en'))
 
     await page.goto('/dashboard')
     await waitForPageReady(page)
 
-    // Navigate to another page
     await page.goto('/tasks')
     await waitForPageReady(page)
 
-    let lang = await page.evaluate(() => localStorage.getItem('i18nextLng') || localStorage.getItem('language'))
-    expect(lang).toBe('en')
+    let lang = await page.evaluate(() => {
+      const raw = localStorage.getItem('language-storage')
+      if (raw) {
+        try {
+          const p = JSON.parse(raw) as { state?: { language?: string } }
+          if (p?.state?.language) return p.state.language
+        } catch {
+          /* ignore */
+        }
+      }
+      return localStorage.getItem('i18nextLng') || localStorage.getItem('language')
+    })
+    expect(String(lang).startsWith('en')).toBe(true)
 
-    // Refresh
     await page.reload()
     await waitForPageReady(page)
 
-    lang = await page.evaluate(() => localStorage.getItem('i18nextLng') || localStorage.getItem('language'))
-    expect(lang).toBe('en')
+    lang = await page.evaluate(() => {
+      const raw = localStorage.getItem('language-storage')
+      if (raw) {
+        try {
+          const p = JSON.parse(raw) as { state?: { language?: string } }
+          if (p?.state?.language) return p.state.language
+        } catch {
+          /* ignore */
+        }
+      }
+      return localStorage.getItem('i18nextLng') || localStorage.getItem('language')
+    })
+    expect(String(lang).startsWith('en')).toBe(true)
   })
 })
 
@@ -173,18 +208,22 @@ test.describe('Language preference persistence', () => {
 
 test.describe('Validation messages in active language', () => {
   test('form validation messages display in active language', async ({ page }) => {
-    await page.route('**/api/**', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: '{}' }))
+    await page.route((url: URL) => url.pathname === '/health', (r) =>
+      r.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ status: 'healthy' }),
+      }),
+    )
+    await page.route(isRestApiUrl, (r) => r.fulfill({ status: 200, contentType: 'application/json', body: '{}' }))
 
-    await page.addInitScript(() => {
-      localStorage.setItem('i18nextLng', 'zh')
-      localStorage.setItem('language', 'zh')
-    })
+    await page.addInitScript(createSeedLanguageStoresInitScript('zh'))
 
     await page.goto('/login')
     await waitForPageReady(page)
 
     // Submit empty form to trigger validation
-    const submitBtn = page.getByRole('button', { name: /登录|login|sign in/i })
+    const submitBtn = page.getByRole('button', { name: BTN_LOGIN })
     if (await submitBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
       await submitBtn.click()
 

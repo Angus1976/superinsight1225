@@ -9,6 +9,7 @@
 
 import { test, expect } from '../fixtures'
 import { mockAllApis } from '../helpers/mock-api-factory'
+import { isRestApiUrl } from '../api-route-helpers'
 import { setupAuth, waitForPageReady } from '../test-helpers'
 import { fillAntForm, submitAntForm, verifyFormValidation } from '../helpers/form-interaction'
 
@@ -33,7 +34,7 @@ const MOCK_AUTH_ROUTES = async (page: import('@playwright/test').Page) => {
   })
   await page.route('**/api/auth/register', (route) => route.fulfill({ status: 201, contentType: 'application/json', body: '{}' }))
   await page.route('**/api/auth/tenants', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }))
-  await page.route('**/api/**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }))
+  await page.route(isRestApiUrl, (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }))
 }
 
 /* ================================================================== */

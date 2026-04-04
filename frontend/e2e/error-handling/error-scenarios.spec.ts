@@ -8,6 +8,7 @@
  */
 
 import { test, expect } from '../fixtures'
+import { isRestApiUrl } from '../api-route-helpers'
 import { setupAuth, waitForPageReady } from '../test-helpers'
 import { mockAllApis } from '../helpers/mock-api-factory'
 
@@ -19,7 +20,7 @@ test.describe('API 500 response', () => {
   test('user-friendly error message displayed, no blank page', async ({ page }) => {
     await setupAuth(page)
 
-    await page.route('**/api/**', async (route) => {
+    await page.route(isRestApiUrl, async (route) => {
       await route.fulfill({
         status: 500,
         contentType: 'application/json',
@@ -72,7 +73,7 @@ test.describe('API 429 response', () => {
   test('rate-limiting message displayed', async ({ page }) => {
     await setupAuth(page)
 
-    await page.route('**/api/**', async (route) => {
+    await page.route(isRestApiUrl, async (route) => {
       await route.fulfill({
         status: 429,
         contentType: 'application/json',
@@ -96,7 +97,7 @@ test.describe('API 429 response', () => {
 
 test.describe('Non-existent route', () => {
   test('404 page with navigation back to Dashboard', async ({ page }) => {
-    await page.route('**/api/**', (r) =>
+    await page.route(isRestApiUrl, (r) =>
       r.fulfill({ status: 200, contentType: 'application/json', body: '{}' }),
     )
 

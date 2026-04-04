@@ -5,6 +5,7 @@
  */
 
 import { test, expect } from '@playwright/test'
+import { isRestApiUrl } from './api-route-helpers'
 
 // Helper to set up authenticated state
 async function setupAuth(page: any, role = 'admin') {
@@ -201,7 +202,7 @@ test.describe('CSRF Protection', () => {
     await setupAuth(page)
 
     // Intercept and modify requests to remove CSRF tokens
-    await page.route('**/api/**', async route => {
+    await page.route(isRestApiUrl, async route => {
       const request = route.request()
       
       if (request.method() === 'POST') {
@@ -896,7 +897,7 @@ test.describe('Password field security', () => {
   })
 
   test('password values are cleared after navigation away', async ({ page }) => {
-    await page.route('**/api/**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }))
+    await page.route(isRestApiUrl, (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }))
     await page.route('**/api/auth/tenants', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }))
 
     await page.goto('/login')
@@ -920,7 +921,7 @@ test.describe('Password field security', () => {
   })
 
   test('register page password fields have type="password"', async ({ page }) => {
-    await page.route('**/api/**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }))
+    await page.route(isRestApiUrl, (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }))
     await page.goto('/register')
     await waitForPageReady(page)
 

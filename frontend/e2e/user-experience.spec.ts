@@ -5,6 +5,7 @@
  */
 
 import { test, expect } from '@playwright/test'
+import { isRestApiUrl } from './api-route-helpers'
 
 // Helper to set up authenticated state
 async function setupAuth(page: any) {
@@ -39,7 +40,7 @@ test.describe('Loading States and Feedback', () => {
     await setupAuth(page)
 
     // Simulate slow API responses
-    await page.route('**/api/**', async (route) => {
+    await page.route(isRestApiUrl, async (route) => {
       await new Promise(resolve => setTimeout(resolve, 1000)) // 1 second delay
       await route.continue()
     })
@@ -109,7 +110,7 @@ test.describe('Error Handling and Recovery', () => {
     await setupAuth(page)
 
     // Simulate API errors
-    await page.route('**/api/**', async (route) => {
+    await page.route(isRestApiUrl, async (route) => {
       await route.fulfill({
         status: 500,
         contentType: 'application/json',
@@ -406,7 +407,7 @@ test.describe('Data Presentation and Clarity', () => {
     await setupAuth(page)
 
     // Mock empty data response
-    await page.route('**/api/**', async (route) => {
+    await page.route(isRestApiUrl, async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',

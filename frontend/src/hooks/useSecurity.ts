@@ -17,9 +17,7 @@ const QUERY_KEYS = {
   sessions: 'security-sessions',
 } as const;
 
-// Audit Logs
-// Note: this repo historically exported `useAuditLogs` from `useSystem.ts`.
-// Tests and consumers expect it here as well, so we provide a thin wrapper.
+// Audit Logs (security API — system-wide audit list is `useSystemAuditLogs` in useSystem.ts)
 export function useAuditLogs(params?: AuditLogListParams) {
   return useQuery({
     queryKey: [QUERY_KEYS.auditLogs, params],

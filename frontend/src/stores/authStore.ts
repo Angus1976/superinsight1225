@@ -150,17 +150,3 @@ export const useAuthStore = create<AuthState>()(
     }
   )
 );
-
-// Initialize hydration check for SSR/initial load scenarios
-if (typeof window !== 'undefined') {
-  // Ensure hydration happens even if onRehydrateStorage doesn't fire
-  const checkHydration = () => {
-    const state = useAuthStore.getState();
-    if (!state._hasHydrated) {
-      state.validateAndHydrate();
-    }
-  };
-  
-  // Check after a short delay to allow persist middleware to complete
-  setTimeout(checkHydration, 50);
-}

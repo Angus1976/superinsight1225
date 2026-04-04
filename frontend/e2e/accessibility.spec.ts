@@ -8,6 +8,7 @@
  */
 
 import { test, expect } from './fixtures'
+import { isRestApiUrl } from './api-route-helpers'
 import { setupAuth, waitForPageReady } from './test-helpers'
 import { mockAllApis } from './helpers/mock-api-factory'
 
@@ -22,22 +23,14 @@ test.describe('Tab key navigation', () => {
     await page.goto('/dashboard')
     await waitForPageReady(page)
 
-    const focusedTags: string[] = []
-
-    for (let i = 0; i < 10; i++) {
-      await page.keyboard.press('Tab')
-      const tag = await page.evaluate(() => {
-        const el = document.activeElement
-        return el ? el.tagName.toLowerCase() : 'none'
-      })
-      focusedTags.push(tag)
-    }
-
-    // Should have focused on interactive elements (not stuck on body)
-    const interactiveTags = focusedTags.filter((t) =>
-      ['a', 'button', 'input', 'select', 'textarea', 'li', 'div'].includes(t),
-    )
-    expect(interactiveTags.length).toBeGreaterThan(0)
+    await expect(page.getByRole('button').first()).toBeVisible({ timeout: 15000 })
+    await page.getByRole('button').first().focus()
+    const before = await page.evaluate(() => document.activeElement?.tagName)
+    await page.keyboard.press('Tab')
+    const after = await page.evaluate(() => document.activeElement?.tagName)
+    expect(before).toBeTruthy()
+    expect(after).toBeTruthy()
+    expect(before).not.toEqual(after)
   })
 })
 
@@ -113,7 +106,14 @@ test.describe('Modal focus trap', () => {
 
 test.describe('Form input labels', () => {
   test('all inputs have label, aria-label, or aria-labelledby', async ({ page }) => {
-    await page.route('**/api/**', (r) =>
+    await page.route((url: URL) => url.pathname === '/health', (r) =>
+      r.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ status: 'healthy' }),
+      }),
+    )
+    await page.route(isRestApiUrl, (r) =>
       r.fulfill({ status: 200, contentType: 'application/json', body: '{}' }),
     )
     await page.goto('/login')
@@ -196,7 +196,14 @@ test.describe('Alt text', () => {
 
 test.describe('Color contrast', () => {
   test('minimum 4.5:1 ratio on Login page text', async ({ page }) => {
-    await page.route('**/api/**', (r) =>
+    await page.route((url: URL) => url.pathname === '/health', (r) =>
+      r.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ status: 'healthy' }),
+      }),
+    )
+    await page.route(isRestApiUrl, (r) =>
       r.fulfill({ status: 200, contentType: 'application/json', body: '{}' }),
     )
     await page.goto('/login')
@@ -212,10 +219,24 @@ test.describe('Color contrast', () => {
         return a[0] * 0.2126 + a[1] * 0.7152 + a[2] * 0.0722
       }
 
-      function parseColor(color: string): [number, number, number] | null {
-        const m = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/)
-        if (m) return [parseInt(m[1]), parseInt(m[2]), parseInt(m[3])]
+      function parseColor(color: string): [number, number, number, number] | null {
+        const m = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/)
+        if (m) {
+          const a = m[4] !== undefined ? parseFloat(m[4]) : 1
+          return [parseInt(m[1]), parseInt(m[2]), parseInt(m[3]), a]
+        }
         return null
+      }
+
+      /** Resolve effective RGB background for contrast (transparent → walk parents or white) */
+      function effectiveBg(el: Element): [number, number, number] {
+        let node: Element | null = el
+        for (let i = 0; i < 8 && node; i++) {
+          const bg = parseColor(window.getComputedStyle(node).backgroundColor || '')
+          if (bg && bg[3] >= 0.99) return [bg[0], bg[1], bg[2]]
+          node = node.parentElement
+        }
+        return [255, 255, 255]
       }
 
       const labels = document.querySelectorAll('label, .ant-form-item-label')
@@ -223,10 +244,12 @@ test.describe('Color contrast', () => {
       labels.forEach((el) => {
         const styles = window.getComputedStyle(el)
         const fg = parseColor(styles.color)
-        const bg = parseColor(styles.backgroundColor || 'rgb(255,255,255)')
-        if (fg && bg) {
-          const l1 = luminance(...fg)
-          const l2 = luminance(...bg)
+        const bgRaw = parseColor(styles.backgroundColor || '')
+        const bg: [number, number, number] =
+          !bgRaw || bgRaw[3] < 0.99 ? effectiveBg(el) : [bgRaw[0], bgRaw[1], bgRaw[2]]
+        if (fg) {
+          const l1 = luminance(fg[0], fg[1], fg[2])
+          const l2 = luminance(bg[0], bg[1], bg[2])
           const ratio = (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05)
           if (ratio < 4.5) allPass = false
         }

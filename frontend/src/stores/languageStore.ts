@@ -209,11 +209,9 @@ export const useLanguageStore = create<LanguageState>()(
       partialize: (state) => ({
         language: state.language,
       }),
-      onRehydrateStorage: () => (state) => {
-        // Initialize after rehydration
-        if (state) {
-          state.initializeLanguage();
-        }
+      onRehydrateStorage: () => () => {
+        // Must run after persisted language is merged; do not gate on `state` (can be undefined on parse edge cases)
+        useLanguageStore.getState().initializeLanguage();
       },
     }
   )

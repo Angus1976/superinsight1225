@@ -40,19 +40,18 @@ function App() {
   useHelpShortcut(); // 注册全局帮助快捷键 (F1 / ?)
 
   const { theme: currentTheme, language: uiLanguage, setLanguage: setUILanguage } = useUIStore();
-  const { language: langStoreLanguage, initializeLanguage, setLanguage: setLangStoreLanguage } = useLanguageStore();
+  const { language: langStoreLanguage, setLanguage: setLangStoreLanguage } = useLanguageStore();
 
-  // Initialize language store and set up Label Studio listener
   useEffect(() => {
-    initializeLanguage();
-    const cleanup = setupLabelStudioLanguageListener();
-    return cleanup;
-  }, [initializeLanguage]);
+    return setupLabelStudioLanguageListener();
+  }, []);
 
-  // Sync language between UI store and language store
+  // Sync language between UI store and language store only after both persists have hydrated (avoids default zh overwriting seeded i18n)
   useEffect(() => {
+    if (!useUIStore.persist.hasHydrated() || !useLanguageStore.persist.hasHydrated()) {
+      return;
+    }
     if (uiLanguage !== langStoreLanguage) {
-      // UI store changed, sync to language store
       setLangStoreLanguage(uiLanguage);
     }
   }, [uiLanguage, langStoreLanguage, setLangStoreLanguage]);

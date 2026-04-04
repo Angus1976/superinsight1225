@@ -5,41 +5,101 @@
  */
 
 import { Page, expect } from '@playwright/test'
+import { E2E_VALID_ACCESS_TOKEN } from './e2e-tokens'
+import { mockAllApis } from './helpers/mock-api-factory'
 
 /**
  * Set up authenticated state with mock data
  */
 export async function setupAuth(page: Page, role: string = 'admin', tenantId: string = 'tenant-1') {
-  await page.addInitScript(({ role, tenantId }) => {
-    const permissions = role === 'admin' 
-      ? ['read:all', 'write:all', 'manage:all']
-      : role === 'manager'
-      ? ['read:all', 'write:tasks', 'read:billing']
-      : ['read:tasks', 'read:dashboard']
+  await page.addInitScript(
+    ({ role, tenantId, accessToken }) => {
+      const permissions =
+        role === 'admin'
+          ? ['read:all', 'write:all', 'manage:all']
+          : role === 'manager'
+            ? ['read:all', 'write:tasks', 'read:billing']
+            : ['read:tasks', 'read:dashboard']
 
+      // Same shape as @/utils/storage setToken — axios reads this before Zustand validateAndHydrate runs
+      localStorage.setItem('auth_token', JSON.stringify(accessToken))
+
+      localStorage.setItem(
+        'auth-storage',
+        JSON.stringify({
+          state: {
+            user: {
+              id: `user-${role}`,
+              username: `${role}user`,
+              name: `${role} 用户`,
+              email: `${role}@example.com`,
+              role,
+              tenant_id: tenantId,
+              roles: [role],
+              permissions: permissions,
+            },
+            token: accessToken,
+            currentTenant: {
+              id: tenantId,
+              name: `测试租户${tenantId.slice(-1)}`,
+            },
+            isAuthenticated: true,
+          },
+          version: 0,
+        }),
+      )
+    },
+    { role, tenantId, accessToken: E2E_VALID_ACCESS_TOKEN },
+  )
+}
+
+/** Returns a no-arg init script for `page.addInitScript(...)` */
+export function createSeedLanguageStoresInitScript(lang: 'zh' | 'en') {
+  return () => {
+    localStorage.setItem('i18nextLng', lang)
+    localStorage.setItem('language', lang)
     localStorage.setItem(
-      'auth-storage',
+      'language-storage',
+      JSON.stringify({
+        state: { language: lang },
+        version: 0,
+      }),
+    )
+    localStorage.setItem(
+      'ui-storage',
       JSON.stringify({
         state: {
-          user: {
-            id: `user-${role}`,
-            username: `${role}user`,
-            name: `${role} 用户`,
-            email: `${role}@example.com`,
-            tenant_id: tenantId,
-            roles: [role],
-            permissions: permissions,
-          },
-          token: 'mock-jwt-token',
-          currentTenant: {
-            id: tenantId,
-            name: `测试租户${tenantId.slice(-1)}`,
-          },
-          isAuthenticated: true,
+          theme: 'light',
+          language: lang,
+          sidebarCollapsed: false,
+          clientCompany: null,
         },
-      })
+        version: 0,
+      }),
     )
-  }, { role, tenantId })
+  }
+}
+
+/**
+ * Seed i18next + language store + UI store so E2E assertions match zh/en copy
+ * (see App.tsx syncing UI language → i18next).
+ */
+export async function seedLanguageStores(page: Page, lang: 'zh' | 'en' = 'zh') {
+  await page.addInitScript(createSeedLanguageStoresInitScript(lang))
+}
+
+/**
+ * Authenticated E2E session: auth storage + fixed language + mocked APIs.
+ * Call before `page.goto` so routes and axios see consistent state.
+ */
+export async function setupE2eSession(
+  page: Page,
+  options: { lang?: 'zh' | 'en'; role?: string; tenantId?: string } = {},
+) {
+  const { lang = 'zh', role = 'admin', tenantId = 'tenant-1' } = options
+  await setupAuth(page, role, tenantId)
+  await seedLanguageStores(page, lang)
+  await mockAllApis(page)
 }
 
 /**

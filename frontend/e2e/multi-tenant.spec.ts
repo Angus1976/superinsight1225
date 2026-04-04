@@ -8,6 +8,7 @@
  */
 
 import { test, expect } from './fixtures'
+import { isRestApiUrl } from './api-route-helpers'
 import { setupAuth, waitForPageReady } from './test-helpers'
 import { mockAllApis } from './helpers/mock-api-factory'
 
@@ -212,7 +213,7 @@ test.describe('Workspace removal', () => {
     await page.route('**/api/workspaces/**', async (route) => {
       return route.fulfill({ status: 403, contentType: 'application/json', body: JSON.stringify({ detail: 'Access denied' }) })
     })
-    await page.route('**/api/**', async (route) => {
+    await page.route(isRestApiUrl, async (route) => {
       return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
     })
 
@@ -234,7 +235,7 @@ test.describe('URL manipulation', () => {
   test('accessing unauthorized workspace via URL returns 403 or redirect', async ({ page }) => {
     await setupAuth(page, 'annotator', 'tenant-1')
 
-    await page.route('**/api/**', async (route) => {
+    await page.route(isRestApiUrl, async (route) => {
       return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
     })
 

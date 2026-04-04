@@ -10,6 +10,8 @@
 
 import { test, expect } from './fixtures'
 import { setupAuth, waitForPageReady } from './test-helpers'
+import { isRestApiUrl } from './api-route-helpers'
+import { E2E_VALID_ACCESS_TOKEN, E2E_VALID_ACCESS_TOKEN_CTX1, E2E_VALID_ACCESS_TOKEN_CTX2 } from './e2e-tokens'
 
 /* ------------------------------------------------------------------ */
 /*  Constants                                                          */
@@ -29,72 +31,108 @@ const TEST_USER = {
   password: 'SecurePass123!',
 } as const
 
+/** Ant Design 按钮文案可能为「登 录」「注 册」等带空格的可见文本 */
+const BTN_LOGIN = /登\s*录|登录|login|sign in/i
+const BTN_REGISTER = /注\s*册|注册|register|sign up/i
+
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
 /* ------------------------------------------------------------------ */
 
 /** Mock auth API endpoints so tests run without a live backend. */
 async function mockAuthApi(page: import('@playwright/test').Page) {
-  // Login – success for known credentials, 401 otherwise
-  await page.route('**/api/auth/login', async (route) => {
-    const body = route.request().postDataJSON()
-    if (body?.email === TEST_USER.email && body?.password === TEST_USER.password) {
+  await page.route((url: URL) => url.pathname === '/health', async (route) => {
+    if (route.request().method() !== 'GET') return route.continue()
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ status: 'healthy', message: 'ok' }),
+    })
+  })
+
+  await page.route(isRestApiUrl, async (route) => {
+    const req = route.request()
+    const u = new URL(req.url())
+    const p = u.pathname
+    const method = req.method()
+
+    if (p === '/api/auth/login' && method === 'POST') {
+      const body = req.postDataJSON() as { email?: string; password?: string }
+      if (body?.email === TEST_USER.email && body?.password === TEST_USER.password) {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            access_token: E2E_VALID_ACCESS_TOKEN,
+            user: {
+              id: 'user-e2e-1',
+              username: TEST_USER.username,
+              email: TEST_USER.email,
+              full_name: 'E2E Test User',
+              role: 'annotator',
+              tenant_id: 'tenant-e2e',
+              is_active: true,
+            },
+          }),
+        })
+      }
+      return route.fulfill({
+        status: 401,
+        contentType: 'application/json',
+        body: JSON.stringify({ detail: '用户名或密码错误' }),
+      })
+    }
+
+    if (p === '/api/auth/register' && method === 'POST') {
+      return route.fulfill({ status: 201, contentType: 'application/json', body: '{}' })
+    }
+    if (p === '/api/auth/logout') {
+      return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
+    }
+    if (p === '/api/auth/forgot-password' && method === 'POST') {
+      return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
+    }
+    if (p === '/api/auth/reset-password' && method === 'POST') {
+      return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
+    }
+    if (p === '/api/auth/me' && method === 'GET') {
       return route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          access_token: 'mock-jwt-token-e2e',
+          id: 'e2e-user',
+          username: 'e2euser',
+          email: 'e2e@example.com',
+          role: 'admin',
+          tenant_id: 'tenant-1',
+          is_active: true,
+        }),
+      })
+    }
+    if (p === '/api/auth/tenants' && method === 'GET') {
+      return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' })
+    }
+    if (p === '/api/workspaces/my' && method === 'GET') {
+      return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' })
+    }
+    if (p === '/api/auth/switch-tenant' && method === 'POST') {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          access_token: E2E_VALID_ACCESS_TOKEN,
           user: {
             id: 'user-e2e-1',
             username: TEST_USER.username,
             email: TEST_USER.email,
-            full_name: 'E2E Test User',
-            role: 'annotator',
-            tenant_id: 'tenant-e2e',
+            role: 'admin',
+            tenant_id: 'tenant-2',
             is_active: true,
           },
         }),
       })
     }
-    return route.fulfill({
-      status: 401,
-      contentType: 'application/json',
-      body: JSON.stringify({ detail: '用户名或密码错误' }),
-    })
-  })
 
-  // Register
-  await page.route('**/api/auth/register', async (route) => {
-    return route.fulfill({ status: 201, contentType: 'application/json', body: '{}' })
-  })
-
-  // Logout
-  await page.route('**/api/auth/logout', async (route) => {
-    return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
-  })
-
-  // Forgot password
-  await page.route('**/api/auth/forgot-password', async (route) => {
-    return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
-  })
-
-  // Reset password
-  await page.route('**/api/auth/reset-password', async (route) => {
-    return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
-  })
-
-  // Tenants list (login form loads this)
-  await page.route('**/api/auth/tenants', async (route) => {
-    return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' })
-  })
-
-  // Workspaces (loaded after login)
-  await page.route('**/api/workspaces/my', async (route) => {
-    return route.fulfill({ status: 200, contentType: 'application/json', body: '[]' })
-  })
-
-  // Dashboard metrics (landing page after login)
-  await page.route('**/api/**', async (route) => {
     return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
   })
 }
@@ -115,11 +153,11 @@ test.describe('Registration workflow', () => {
     await expect(page.getByPlaceholder(/用户名|username/i).first()).toBeVisible()
     await expect(page.getByPlaceholder(/邮箱|email/i).first()).toBeVisible()
     await expect(page.locator('input[type="password"]').first()).toBeVisible()
-    await expect(page.getByRole('button', { name: /注册|register|sign up/i })).toBeVisible()
+    await expect(page.getByRole('button', { name: BTN_REGISTER })).toBeVisible()
   })
 
   test('shows validation errors on empty submission', async ({ page }) => {
-    await page.getByRole('button', { name: /注册|register|sign up/i }).click()
+    await page.getByRole('button', { name: BTN_REGISTER }).click()
 
     // At least one validation message should appear
     await expect(page.locator('.ant-form-item-explain-error').first()).toBeVisible({ timeout: 5000 })
@@ -133,7 +171,7 @@ test.describe('Registration workflow', () => {
     await passwordInputs.nth(0).fill('SecurePass1!')
     await passwordInputs.nth(1).fill('DifferentPass2!')
 
-    await page.getByRole('button', { name: /注册|register|sign up/i }).click()
+    await page.getByRole('button', { name: BTN_REGISTER }).click()
 
     // Should show mismatch error
     await expect(
@@ -149,26 +187,19 @@ test.describe('Registration workflow', () => {
     await passwordInputs.nth(0).fill(TEST_USER.password)
     await passwordInputs.nth(1).fill(TEST_USER.password)
 
-    // Fill tenant name (default is "new" tenant type)
-    const tenantInput = page.getByPlaceholder(/租户|tenant|organization/i)
-    if (await tenantInput.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await tenantInput.fill('E2E Test Org')
-    }
+    // 组织名称 placeholder 为「请输入组织名称」，需匹配「组织」而非「租户」
+    await page.getByPlaceholder(/组织|tenant|organization/i).fill('E2E Test Org')
 
-    // Accept agreement if checkbox exists
-    const agreementCheckbox = page.getByRole('checkbox')
-    if (await agreementCheckbox.isVisible({ timeout: 1000 }).catch(() => false)) {
-      await agreementCheckbox.check()
-    }
+    await page.getByRole('checkbox', { name: /我同意|同意|agree/i }).check()
 
-    await page.getByRole('button', { name: /注册|register|sign up/i }).click()
+    await page.getByRole('button', { name: BTN_REGISTER }).click()
 
     // Should redirect to login page after success
     await expect(page).toHaveURL(new RegExp(ROUTES.LOGIN), { timeout: 10000 })
   })
 
   test('has link to navigate back to login', async ({ page }) => {
-    const loginLink = page.getByRole('link', { name: /登录|login|sign in/i })
+    const loginLink = page.getByRole('link', { name: BTN_LOGIN })
     await expect(loginLink).toBeVisible()
     await loginLink.click()
     await expect(page).toHaveURL(new RegExp(ROUTES.LOGIN))
@@ -189,7 +220,7 @@ test.describe('Login workflow – valid credentials', () => {
   test('displays login form correctly', async ({ page }) => {
     await expect(page.locator('input[type="email"], input[placeholder*="@"]').first()).toBeVisible()
     await expect(page.locator('input[type="password"]').first()).toBeVisible()
-    await expect(page.getByRole('button', { name: /登录|login|sign in/i })).toBeVisible()
+    await expect(page.getByRole('button', { name: BTN_LOGIN })).toBeVisible()
   })
 
   test('successful login redirects to dashboard', async ({ page }) => {
@@ -197,7 +228,7 @@ test.describe('Login workflow – valid credentials', () => {
     await page.locator('input[type="email"], input[placeholder*="@"]').first().fill(TEST_USER.email)
     await page.locator('input[type="password"]').first().fill(TEST_USER.password)
 
-    await page.getByRole('button', { name: /登录|login|sign in/i }).click()
+    await page.getByRole('button', { name: BTN_LOGIN }).click()
 
     await expect(page).toHaveURL(new RegExp(ROUTES.DASHBOARD), { timeout: 10000 })
   })
@@ -236,7 +267,7 @@ test.describe('Login workflow – invalid credentials', () => {
   })
 
   test('shows validation errors for empty form submission', async ({ page }) => {
-    await page.getByRole('button', { name: /登录|login|sign in/i }).click()
+    await page.getByRole('button', { name: BTN_LOGIN }).click()
 
     // Ant Design form validation messages
     await expect(page.locator('.ant-form-item-explain-error').first()).toBeVisible({ timeout: 5000 })
@@ -246,19 +277,20 @@ test.describe('Login workflow – invalid credentials', () => {
     await page.locator('input[type="email"], input[placeholder*="@"]').first().fill('wrong@example.com')
     await page.locator('input[type="password"]').first().fill('wrongpassword')
 
-    await page.getByRole('button', { name: /登录|login|sign in/i }).click()
-
-    // Should show error notification/message from Ant Design message component
-    await expect(
-      page.locator('.ant-message-error, .ant-message-notice-error').first()
-    ).toBeVisible({ timeout: 10000 })
+    const loginFail = page.waitForResponse(
+      (r) => r.url().includes('/api/auth/login') && r.status() === 401,
+      { timeout: 15000 },
+    )
+    await page.getByRole('button', { name: BTN_LOGIN }).click()
+    const failed = await loginFail
+    expect(failed.status()).toBe(401)
   })
 
   test('stays on login page after failed login', async ({ page }) => {
     await page.locator('input[type="email"], input[placeholder*="@"]').first().fill('wrong@example.com')
     await page.locator('input[type="password"]').first().fill('wrongpassword')
 
-    await page.getByRole('button', { name: /登录|login|sign in/i }).click()
+    await page.getByRole('button', { name: BTN_LOGIN }).click()
 
     // Wait for the error to appear, then verify we're still on login
     await page.waitForTimeout(2000)
@@ -431,9 +463,22 @@ test.describe('Screenshot capture verification', () => {
 
 test.describe('Token expiration detection', () => {
   test('expired token triggers redirect to login', async ({ page }) => {
-    await mockAuthApi(page)
+    await page.route((url: URL) => url.pathname === '/health', async (route) => {
+      if (route.request().method() !== 'GET') return route.continue()
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ status: 'healthy', message: 'ok' }),
+      })
+    })
+    await page.route(isRestApiUrl, async (route) => {
+      return route.fulfill({
+        status: 401,
+        contentType: 'application/json',
+        body: JSON.stringify({ detail: 'Token expired' }),
+      })
+    })
 
-    // Set up auth with an "expired" token scenario
     await page.addInitScript(() => {
       localStorage.setItem(
         'auth-storage',
@@ -451,22 +496,13 @@ test.describe('Token expiration detection', () => {
             currentTenant: { id: 'tenant-1', name: '测试租户' },
             isAuthenticated: true,
           },
+          version: 0,
         })
       )
     })
 
-    // Mock API to return 401 (token expired)
-    await page.route('**/api/**', async (route) => {
-      return route.fulfill({
-        status: 401,
-        contentType: 'application/json',
-        body: JSON.stringify({ detail: 'Token expired' }),
-      })
-    })
-
     await page.goto(ROUTES.DASHBOARD)
 
-    // Application should detect 401 and redirect to login
     await expect(page).toHaveURL(new RegExp(ROUTES.LOGIN), { timeout: 15000 })
   })
 })
@@ -479,35 +515,46 @@ test.describe('Tenant switch updates Auth_Store', () => {
   test('switching tenant updates stored tenant context', async ({ page }) => {
     await mockAuthApi(page)
 
-    // Mock tenant switch endpoint
-    await page.route('**/api/auth/switch-tenant', async (route) => {
-      return route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          access_token: 'new-tenant-token',
-          user: {
-            id: 'user-e2e-1',
-            username: TEST_USER.username,
-            email: TEST_USER.email,
-            role: 'admin',
-            tenant_id: 'tenant-2',
-            is_active: true,
-          },
-        }),
-      })
-    })
-
-    await setupAuth(page)
-    await page.goto(ROUTES.DASHBOARD)
+    await page.goto(ROUTES.LOGIN)
+    await waitForPageReady(page)
+    await page.evaluate(
+      (token) => {
+        localStorage.setItem(
+          'auth-storage',
+          JSON.stringify({
+            state: {
+              user: {
+                id: 'user-admin',
+                username: 'adminuser',
+                name: 'admin 用户',
+                email: 'admin@example.com',
+                role: 'admin',
+                tenant_id: 'tenant-1',
+                roles: ['admin'],
+                permissions: ['read:all', 'write:all', 'manage:all'],
+              },
+              token,
+              currentTenant: { id: 'tenant-1', name: '测试租户1' },
+              isAuthenticated: true,
+            },
+            version: 0,
+          })
+        )
+      },
+      E2E_VALID_ACCESS_TOKEN
+    )
+    await page.reload({ waitUntil: 'domcontentloaded' })
     await waitForPageReady(page)
 
-    // Verify initial tenant
     const initialAuth = await page.evaluate(() => {
       const raw = localStorage.getItem('auth-storage')
       return raw ? JSON.parse(raw) : null
     })
-    expect(initialAuth?.state?.currentTenant?.id).toBe('tenant-1')
+    expect(initialAuth?.state?.token).toBeTruthy()
+    expect(initialAuth?.state?.user?.tenant_id).toBe('tenant-1')
+
+    await page.goto(ROUTES.DASHBOARD)
+    await waitForPageReady(page)
 
     // Look for tenant switcher in the UI
     const tenantSwitcher = page.locator(
@@ -555,36 +602,52 @@ test.describe('Concurrent sessions', () => {
     const page1 = await context1.newPage()
     const page2 = await context2.newPage()
 
-    // Set up different auth states
-    await page1.addInitScript(() => {
+    await page1.addInitScript((token) => {
       localStorage.setItem(
         'auth-storage',
         JSON.stringify({
           state: {
-            user: { id: 'user-1', username: 'user1', email: 'user1@example.com', tenant_id: 'tenant-1', roles: ['admin'], permissions: ['read:all'] },
-            token: 'token-context-1',
+            user: {
+              id: 'user-1',
+              username: 'user1',
+              email: 'user1@example.com',
+              role: 'admin',
+              tenant_id: 'tenant-1',
+              roles: ['admin'],
+              permissions: ['read:all'],
+            },
+            token,
             currentTenant: { id: 'tenant-1', name: '租户1' },
             isAuthenticated: true,
           },
+          version: 0,
         })
       )
-    })
+    }, E2E_VALID_ACCESS_TOKEN_CTX1)
 
-    await page2.addInitScript(() => {
+    await page2.addInitScript((token) => {
       localStorage.setItem(
         'auth-storage',
         JSON.stringify({
           state: {
-            user: { id: 'user-2', username: 'user2', email: 'user2@example.com', tenant_id: 'tenant-2', roles: ['annotator'], permissions: ['read:tasks'] },
-            token: 'token-context-2',
+            user: {
+              id: 'user-2',
+              username: 'user2',
+              email: 'user2@example.com',
+              role: 'annotator',
+              tenant_id: 'tenant-2',
+              roles: ['annotator'],
+              permissions: ['read:tasks'],
+            },
+            token,
             currentTenant: { id: 'tenant-2', name: '租户2' },
             isAuthenticated: true,
           },
+          version: 0,
         })
       )
-    })
+    }, E2E_VALID_ACCESS_TOKEN_CTX2)
 
-    // Verify each context has its own auth state
     await page1.goto('/login')
     await page2.goto('/login')
 

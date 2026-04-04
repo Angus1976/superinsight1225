@@ -1,348 +1,215 @@
 /**
- * E2E Tests for Quality Management Module
- * 质量管理模块端到端测试
+ * Quality module E2E — aligned with `/quality` (Quality/index.tsx), sub-routes, and i18n.
+ * Assertions use zh|en patterns: navigator + store hydration can still surface EN in CI.
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures'
+import { setupE2eSession, waitForPageReady } from './test-helpers'
 
-test.describe('Quality Dashboard', () => {
+test.use({ locale: 'zh-CN' })
+
+test.beforeEach(async ({ page }) => {
+  await setupE2eSession(page, { lang: 'zh' })
+})
+
+test.describe('质量管理主页', () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to quality dashboard
-    await page.goto('/quality');
-  });
+    await page.goto('/quality')
+    await waitForPageReady(page)
+  })
 
-  test('should display quality overview statistics', async ({ page }) => {
-    // Check for key statistics
-    await expect(page.getByText('平均质量分')).toBeVisible();
-    await expect(page.getByText('通过率')).toBeVisible();
-    await expect(page.getByText('待处理问题')).toBeVisible();
-    await expect(page.getByText('活跃预警')).toBeVisible();
-  });
+  test('应展示概览统计卡片', async ({ page }) => {
+    await expect(page.getByRole('heading', { name: /质量管理|Quality Management/ })).toBeVisible()
+    await expect(page.getByText(/活跃规则|Active Rules/)).toBeVisible()
+    await expect(page.getByText(/总违规数|Total Violations/)).toBeVisible()
+    await expect(page.getByText(/待处理问题|Open Issues/)).toBeVisible()
+    await expect(page.getByText(/质量评分|Quality Score/)).toBeVisible()
+  })
 
-  test('should navigate between tabs', async ({ page }) => {
-    // Click on Rules tab
-    await page.click('text=规则配置');
-    await expect(page.getByText('质量规则')).toBeVisible();
+  test('应在主要 Tab 间切换', async ({ page }) => {
+    await page.getByRole('tab', { name: /质量规则|Quality Rules/ }).click()
+    await expect(page.getByRole('button', { name: /创建规则|Create Rule/ })).toBeVisible()
 
-    // Click on Alerts tab
-    await page.click('text=预警列表');
-    await expect(page.getByText('质量预警')).toBeVisible();
+    await page.getByRole('tab', { name: /质量问题|Quality Issues/ }).click()
+    await expect(page.getByRole('columnheader', { name: /描述|Description/ })).toBeVisible()
 
-    // Click on Reports tab
-    await page.click('text=报告');
-    await expect(page.getByText('质量报告')).toBeVisible();
-  });
+    await page.getByRole('tab', { name: /质量报表|Quality Reports/ }).click()
+    await expect(page.getByText(/导出报表|Export Report/).first()).toBeVisible()
+  })
 
-  test('should display annotator ranking', async ({ page }) => {
-    // Check for ranking table
-    await expect(page.getByText('标注员排名')).toBeVisible();
-    
-    // Check for ranking columns
-    await expect(page.getByText('排名')).toBeVisible();
-    await expect(page.getByText('标注员')).toBeVisible();
-    await expect(page.getByText('平均分')).toBeVisible();
-  });
-});
+  test('质量报表 Tab 中应展示考核排名数据', async ({ page }) => {
+    await page.getByRole('tab', { name: /质量报表|Quality Reports/ }).click()
+    await expect(page.getByText('John Doe').first()).toBeVisible()
+  })
+})
 
-test.describe('Quality Rules Configuration', () => {
+test.describe('质量规则', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/quality');
-    await page.click('text=规则配置');
-  });
+    await page.goto('/quality')
+    await waitForPageReady(page)
+  })
 
-  test('should display rules list', async ({ page }) => {
-    // Check for rules table
-    await expect(page.getByRole('table')).toBeVisible();
-    
-    // Check for table headers
-    await expect(page.getByText('规则名称')).toBeVisible();
-    await expect(page.getByText('严重程度')).toBeVisible();
-    await expect(page.getByText('优先级')).toBeVisible();
-  });
+  test('应展示规则表格列', async ({ page }) => {
+    await expect(page.getByRole('columnheader', { name: /规则名称|Rule Name/ })).toBeVisible()
+    await expect(page.getByRole('columnheader', { name: /严重程度|Severity/ })).toBeVisible()
+    await expect(page.getByRole('columnheader', { name: /规则类型|Rule Type/ })).toBeVisible()
+  })
 
-  test('should open create rule modal', async ({ page }) => {
-    // Click add rule button
-    await page.click('text=添加规则');
-    
-    // Check modal is visible
-    await expect(page.getByRole('dialog')).toBeVisible();
-    await expect(page.getByText('规则名称')).toBeVisible();
-    await expect(page.getByText('规则类型')).toBeVisible();
-  });
+  test('应打开创建规则对话框', async ({ page }) => {
+    await page.getByRole('button', { name: /创建规则|Create Rule/ }).click()
+    await expect(page.getByRole('dialog')).toBeVisible()
+    await expect(page.getByLabel(/规则名称|Rule Name/)).toBeVisible()
+    await expect(page.getByLabel(/规则类型|Rule Type/)).toBeVisible()
+  })
 
-  test('should create a new rule', async ({ page }) => {
-    // Open modal
-    await page.click('text=添加规则');
-    
-    // Fill form
-    await page.fill('input[placeholder="请输入规则名称"]', 'Test Rule');
-    await page.click('text=选择类型');
-    await page.click('text=内置规则');
-    await page.click('text=选择严重程度');
-    await page.click('.ant-select-item-option:has-text("高")');
-    
-    // Submit
-    await page.click('button:has-text("确定")');
-    
-    // Verify success message
-    await expect(page.getByText('规则已创建')).toBeVisible();
-  });
+  test('应通过表单创建规则并关闭对话框', async ({ page }) => {
+    await page.getByRole('button', { name: /创建规则|Create Rule/ }).click()
+    await page.getByLabel(/规则名称|Rule Name/).fill('E2E 测试规则')
+    await page.getByLabel(/规则类型|Rule Type/).click()
+    await page.locator('.ant-select-item-option').filter({ hasText: /格式|Format/ }).click()
+    // Ant Design zh_CN: modal OK is often "确 定" (spaced)
+    await page.locator('.ant-modal-wrap').getByRole('button', { name: /确\s*定|OK/i }).click()
+    await expect(page.getByRole('dialog', { name: /创建规则|Create Rule/ })).toBeHidden({ timeout: 8000 })
+  })
 
-  test('should toggle rule enabled status', async ({ page }) => {
-    // Find a switch in the table and click it
-    const switchElement = page.locator('.ant-switch').first();
-    await switchElement.click();
-    
-    // Verify status change message
-    await expect(page.getByText(/规则已(启用|禁用)/)).toBeVisible();
-  });
+  test('应切换规则启用状态', async ({ page }) => {
+    const sw = page.locator('.ant-switch').first()
+    const before = await sw.getAttribute('aria-checked')
+    await sw.click()
+    await expect(sw).toHaveAttribute('aria-checked', before === 'true' ? 'false' : 'true', { timeout: 5000 })
+  })
+})
 
-  test('should delete a rule', async ({ page }) => {
-    // Click delete button
-    await page.click('button[aria-label="删除"]');
-    
-    // Confirm deletion
-    await page.click('text=确定');
-    
-    // Verify success message
-    await expect(page.getByText('规则已删除')).toBeVisible();
-  });
-});
-
-test.describe('Quality Alerts', () => {
+test.describe('质量问题列表', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/quality');
-    await page.click('text=预警列表');
-  });
+    await page.goto('/quality')
+    await waitForPageReady(page)
+    await page.getByRole('tab', { name: /质量问题|Quality Issues/ }).click()
+  })
 
-  test('should display alerts list', async ({ page }) => {
-    // Check for alerts table
-    await expect(page.getByRole('table')).toBeVisible();
-    
-    // Check for table headers
-    await expect(page.getByText('严重程度')).toBeVisible();
-    await expect(page.getByText('触发维度')).toBeVisible();
-    await expect(page.getByText('状态')).toBeVisible();
-  });
+  test('应展示问题表格', async ({ page }) => {
+    await expect(page.getByRole('table')).toBeVisible()
+    await expect(page.getByRole('columnheader', { name: /描述|Description/ })).toBeVisible()
+  })
+})
 
-  test('should filter alerts by status', async ({ page }) => {
-    // Open status filter
-    await page.click('text=状态筛选');
-    
-    // Select "待处理"
-    await page.click('text=待处理');
-    
-    // Verify filter is applied
-    await expect(page.locator('.ant-select-selection-item:has-text("待处理")')).toBeVisible();
-  });
-
-  test('should acknowledge an alert', async ({ page }) => {
-    // Find and click acknowledge button
-    const acknowledgeBtn = page.locator('button:has-text("确认")').first();
-    if (await acknowledgeBtn.isVisible()) {
-      await acknowledgeBtn.click();
-      await expect(page.getByText('预警已确认')).toBeVisible();
-    }
-  });
-
-  test('should resolve an alert', async ({ page }) => {
-    // Find and click resolve button
-    const resolveBtn = page.locator('button:has-text("解决")').first();
-    if (await resolveBtn.isVisible()) {
-      await resolveBtn.click();
-      await expect(page.getByText('预警已解决')).toBeVisible();
-    }
-  });
-
-  test('should configure alert thresholds', async ({ page }) => {
-    // Click configure button
-    await page.click('text=配置阈值');
-    
-    // Check modal is visible
-    await expect(page.getByRole('dialog')).toBeVisible();
-    await expect(page.getByText('准确性阈值')).toBeVisible();
-    await expect(page.getByText('完整性阈值')).toBeVisible();
-  });
-});
-
-test.describe('Quality Reports', () => {
+test.describe('质量报表（独立页）', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/quality');
-    await page.click('text=报告');
-  });
+    await page.goto('/quality/reports')
+    await waitForPageReady(page)
+  })
 
-  test('should display report options', async ({ page }) => {
-    // Check for report types
-    await expect(page.getByText('项目质量报告')).toBeVisible();
-    await expect(page.getByText('标注员排名报告')).toBeVisible();
-    await expect(page.getByText('质量趋势报告')).toBeVisible();
-  });
+  test('应展示报表与指标区域', async ({ page }) => {
+    await expect(page.getByText(/总体质量评分|Overall Quality Score/).first()).toBeVisible()
+    await expect(page.getByText(/导出报告|Export Report/).first()).toBeVisible()
+  })
 
-  test('should generate project report', async ({ page }) => {
-    // Click on project report card
-    await page.click('text=项目质量报告');
-    
-    // Verify action triggered
-    await expect(page.getByText(/生成|报告/)).toBeVisible();
-  });
+  test('应展示导出与刷新控件', async ({ page }) => {
+    await expect(page.getByRole('button', { name: /导出报告|Export Report/ })).toBeVisible()
+    await expect(page.getByRole('button', { name: /刷新|Refresh/ })).toBeVisible()
+  })
+})
 
-  test('should export report', async ({ page }) => {
-    // Find export button
-    await page.click('text=导出报告');
-    
-    // Select format
-    await page.click('text=导出 PDF');
-  });
-});
-
-test.describe('Improvement Workflow', () => {
+test.describe('改进任务列表', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/quality/workflow/tasks');
-  });
+    await page.goto('/quality/workflow/tasks')
+    await waitForPageReady(page)
+  })
 
-  test('should display improvement tasks list', async ({ page }) => {
-    // Check for tasks table
-    await expect(page.getByRole('table')).toBeVisible();
-    
-    // Check for key columns
-    await expect(page.getByText('任务ID')).toBeVisible();
-    await expect(page.getByText('优先级')).toBeVisible();
-    await expect(page.getByText('状态')).toBeVisible();
-  });
+  test('应展示任务表格与列', async ({ page }) => {
+    await expect(page.getByText(/改进任务列表|Improvement Task List/).first()).toBeVisible()
+    await expect(page.getByRole('columnheader', { name: /任务ID|Task ID/ })).toBeVisible()
+    await expect(page.getByRole('columnheader', { name: /优先级|Priority/ })).toBeVisible()
+    await expect(page.getByRole('columnheader', { name: /状态|Status/ })).toBeVisible()
+  })
 
-  test('should filter tasks by status', async ({ page }) => {
-    // Open status filter
-    await page.click('text=状态筛选');
-    
-    // Select "待处理"
-    await page.click('.ant-select-item-option:has-text("待处理")');
-  });
+  test('应用状态筛选', async ({ page }) => {
+    const statusFilter = page.locator('.ant-card-extra .ant-select').first()
+    await statusFilter.click()
+    await page.locator('.ant-select-item-option').filter({ hasText: /待处理|Pending/ }).first().click()
+    await expect(page.getByRole('table')).toBeVisible()
+  })
 
-  test('should filter tasks by priority', async ({ page }) => {
-    // Open priority filter
-    await page.click('text=优先级');
-    
-    // Select "高优先级"
-    await page.click('.ant-select-item-option:has-text("高优先级")');
-  });
+  test('应进入任务详情', async ({ page }) => {
+    await page.getByRole('button', { name: /查看详情|View Details/ }).first().click()
+    await expect(page).toHaveURL(/\/quality\/workflow\/tasks\//)
+    await expect(page.getByText(/任务详情|Task Details/).first()).toBeVisible()
+  })
+})
 
-  test('should navigate to task detail', async ({ page }) => {
-    // Click on first task's detail link
-    const detailLink = page.locator('text=查看详情').first();
-    if (await detailLink.isVisible()) {
-      await detailLink.click();
-      
-      // Verify navigation to detail page
-      await expect(page.getByText('任务详情')).toBeVisible();
-    }
-  });
-});
-
-test.describe('Improvement Task Detail', () => {
-  test('should display task information', async ({ page }) => {
-    // Navigate to a specific task (mock ID)
-    await page.goto('/quality/workflow/tasks/task_001');
-    
-    // Check for task details
-    await expect(page.getByText('任务详情')).toBeVisible();
-    await expect(page.getByText('质量问题')).toBeVisible();
-    await expect(page.getByText('改进数据')).toBeVisible();
-  });
-
-  test('should edit improvement data', async ({ page }) => {
-    await page.goto('/quality/workflow/tasks/task_001');
-    
-    // Click edit button
-    const editBtn = page.locator('button:has-text("编辑")');
-    if (await editBtn.isVisible()) {
-      await editBtn.click();
-      
-      // Check for textarea
-      await expect(page.locator('textarea')).toBeVisible();
-    }
-  });
-
-  test('should submit improvement', async ({ page }) => {
-    await page.goto('/quality/workflow/tasks/task_001');
-    
-    // Click edit
-    await page.click('text=编辑');
-    
-    // Fill improvement data
-    await page.fill('textarea', '{"field": "corrected_value"}');
-    
-    // Submit
-    await page.click('text=提交改进');
-  });
-
-  test('should review improvement', async ({ page }) => {
-    await page.goto('/quality/workflow/tasks/task_001');
-    
-    // Check for review buttons (if task is in submitted status)
-    const approveBtn = page.locator('button:has-text("批准")');
-    const rejectBtn = page.locator('button:has-text("拒绝")');
-    
-    if (await approveBtn.isVisible()) {
-      await expect(approveBtn).toBeVisible();
-      await expect(rejectBtn).toBeVisible();
-    }
-  });
-});
-
-test.describe('Workflow Configuration', () => {
+test.describe('改进任务详情', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/quality/workflow/config');
-  });
+    await page.goto('/quality/workflow/tasks/task_001')
+    await waitForPageReady(page)
+  })
 
-  test('should display workflow configuration', async ({ page }) => {
-    // Check for configuration form
-    await expect(page.getByText('工作流配置')).toBeVisible();
-    await expect(page.getByText('工作流阶段')).toBeVisible();
-    await expect(page.getByText('自动化设置')).toBeVisible();
-  });
+  test('应展示任务与问题区块', async ({ page }) => {
+    await expect(page.getByText(/任务详情|Task Details/).first()).toBeVisible()
+    await expect(page.getByText(/质量问题|Quality Issues/).first()).toBeVisible()
+    await expect(page.getByText(/改进数据|Improved Data/).first()).toBeVisible()
+  })
 
-  test('should toggle auto create task', async ({ page }) => {
-    // Find auto create switch
-    const autoCreateSwitch = page.locator('.ant-switch').first();
-    await autoCreateSwitch.click();
-  });
+  test('应进入编辑改进数据并提交', async ({ page }) => {
+    await page.getByRole('button', { name: /编\s*辑|Edit/i }).first().click()
+    await page.locator('textarea').fill('{"field": "corrected_value"}')
+    await Promise.all([
+      page.waitForResponse(
+        (r) =>
+          r.url().includes('/api/v1/quality-workflow/tasks/') &&
+          r.url().includes('/submit') &&
+          r.request().method() === 'POST' &&
+          r.ok(),
+      ),
+      page.getByRole('button', { name: /提\s*交\s*改\s*进|Submit Improvement/i }).click(),
+    ])
+  })
+})
 
-  test('should save workflow configuration', async ({ page }) => {
-    // Click save button
-    await page.click('text=保存配置');
-    
-    // Verify success message
-    await expect(page.getByText('配置已保存')).toBeVisible();
-  });
+test.describe('工作流配置', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/quality/workflow/config')
+    await waitForPageReady(page)
+  })
 
-  test('should display effect statistics', async ({ page }) => {
-    // Check for effect statistics card
-    await expect(page.getByText('改进效果统计')).toBeVisible();
-    await expect(page.getByText('总任务数')).toBeVisible();
-    await expect(page.getByText('完成任务')).toBeVisible();
-  });
-});
+  test('应展示工作流配置表单', async ({ page }) => {
+    await expect(page.getByText(/工作流配置|Workflow Configuration/).first()).toBeVisible()
+    await expect(page.getByText(/工作流阶段|Workflow Stages/).first()).toBeVisible()
+    await expect(page.getByText(/自动化设置|Automation Settings/).first()).toBeVisible()
+  })
 
-test.describe('Complete Quality Workflow E2E', () => {
-  test('should complete full quality management workflow', async ({ page }) => {
-    // 1. View dashboard
-    await page.goto('/quality');
-    await expect(page.getByText('质量仪表板')).toBeVisible();
-    
-    // 2. Check rules
-    await page.click('text=规则配置');
-    await expect(page.getByRole('table')).toBeVisible();
-    
-    // 3. View alerts
-    await page.click('text=预警列表');
-    await expect(page.getByText('质量预警')).toBeVisible();
-    
-    // 4. Generate report
-    await page.click('text=报告');
-    await expect(page.getByText('项目质量报告')).toBeVisible();
-    
-    // 5. Navigate to workflow
-    await page.goto('/quality/workflow/tasks');
-    await expect(page.getByText('改进任务列表')).toBeVisible();
-  });
-});
+  test('应保存工作流配置（POST 成功）', async ({ page }) => {
+    await Promise.all([
+      page.waitForResponse(
+        (r) =>
+          r.url().includes('/api/v1/quality-workflow/configure') &&
+          r.request().method() === 'POST' &&
+          r.ok(),
+      ),
+      page.getByRole('button', { name: /保\s*存\s*配\s*置|Save Configuration/i }).click(),
+    ])
+  })
+
+  test('应展示改进效果统计', async ({ page }) => {
+    await expect(page.getByText(/改进效果统计|Improvement Effect Statistics/).first()).toBeVisible()
+    await expect(page.getByText(/总任务数|Total Tasks/).first()).toBeVisible()
+    await expect(page.getByText(/完成任务|Completed Tasks/).first()).toBeVisible()
+  })
+})
+
+test.describe('质量模块完整浏览', () => {
+  test('应在关键页面间连贯跳转', async ({ page }) => {
+    await page.goto('/quality')
+    await waitForPageReady(page)
+    await expect(page.getByRole('heading', { name: /质量管理|Quality Management/ })).toBeVisible()
+
+    await page.getByRole('tab', { name: /质量规则|Quality Rules/ }).click()
+    await expect(page.getByRole('table')).toBeVisible()
+
+    await page.getByRole('tab', { name: /质量问题|Quality Issues/ }).click()
+    await expect(page.getByRole('table')).toBeVisible()
+
+    await page.goto('/quality/workflow/tasks')
+    await waitForPageReady(page)
+    await expect(page.getByText(/改进任务列表|Improvement Task List/).first()).toBeVisible()
+  })
+})

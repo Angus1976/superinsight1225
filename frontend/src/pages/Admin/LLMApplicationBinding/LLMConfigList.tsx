@@ -12,7 +12,7 @@ import {
   Button,
   Tag,
   Space,
-  Modal,
+  App,
   message,
   Input,
   Empty,
@@ -31,6 +31,7 @@ import TestConnectionButton from './TestConnectionButton';
 
 const LLMConfigList: React.FC = () => {
   const { t } = useTranslation('llmConfig');
+  const { modal } = App.useApp();
   const { configs, loading, deleteConfig } = useLLMConfigStore();
   const [searchText, setSearchText] = useState('');
   const [formVisible, setFormVisible] = useState(false);
@@ -47,7 +48,7 @@ const LLMConfigList: React.FC = () => {
   };
 
   const handleDelete = (config: LLMConfig) => {
-    Modal.confirm({
+    modal.confirm({
       title: t('configList.deleteConfirm.title'),
       content: t('configList.deleteConfirm.content', { name: config.name }),
       onOk: async () => {

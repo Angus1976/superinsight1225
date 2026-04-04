@@ -23,6 +23,7 @@
 
 import { test, expect } from '../fixtures'
 import { mockAllApis } from '../helpers/mock-api-factory'
+import { isRestApiUrl } from '../api-route-helpers'
 import { setupAuth, waitForPageReady } from '../test-helpers'
 import { Page } from '@playwright/test'
 
@@ -154,7 +155,7 @@ test.beforeEach(async ({ page }) => {
   await setupAuth(page, 'admin', 'tenant-1')
 
   // Catch-all for any unmocked API to prevent 404 noise
-  await page.route('**/api/**', async (route) => {
+  await page.route(isRestApiUrl, async (route) => {
     if (!route.request().isNavigationRequest()) {
       await route.fulfill({
         status: 200,

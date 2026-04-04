@@ -34,10 +34,11 @@ jobs:
       hypothesis_profile: ${{ github.event_name == 'pull_request' && 'dev' || inputs.hypothesis_profile }}
 
   # =============================================================================
-  # Integration Tests
+  # Integration Tests (runs after commit-tests: unit/property/frontend — fail-fast)
   # =============================================================================
   integration-tests:
     name: Integration Tests
+    needs: commit-tests
     runs-on: ubuntu-latest
     timeout-minutes: 15
 

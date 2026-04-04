@@ -48,6 +48,7 @@ const QualityRulesPage = lazyWithPreload(() => import('@/pages/Quality/Rules'));
 const QualityReportsPage = lazyWithPreload(() => import('@/pages/Quality/Reports'));
 const QualityImprovementTaskListPage = lazyWithPreload(() => import('@/pages/Quality/ImprovementTaskList'));
 const QualityImprovementTaskDetailPage = lazyWithPreload(() => import('@/pages/Quality/ImprovementTaskDetail'));
+const QualityWorkflowConfigPage = lazyWithPreload(() => import('@/pages/Quality/WorkflowConfigPage'));
 
 // License pages
 const LicensePage = lazyWithPreload(() => import('@/pages/License'));
@@ -420,6 +421,10 @@ export const routes: RouteObject[] = [
           {
             path: 'workflow/tasks/:taskId',
             element: withSuspense(QualityImprovementTaskDetailPage, 'page'),
+          },
+          {
+            path: 'workflow/config',
+            element: withSuspense(QualityWorkflowConfigPage, 'form'),
           },
         ],
       },

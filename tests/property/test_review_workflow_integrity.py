@@ -17,6 +17,8 @@ from uuid import uuid4, UUID
 from sqlalchemy.orm import Session
 from hypothesis import given, strategies as st, settings, assume, HealthCheck
 
+from tests.property.sqlite_uuid_compat import uuid_pk_eq
+
 from src.services.review_service import (
     ReviewService,
     ReviewRequest,
@@ -189,7 +191,7 @@ def get_temp_data_state(db: Session, data_id: UUID) -> DataState:
     Returns:
         Current DataState
     """
-    temp_data = db.query(TempDataModel).filter(TempDataModel.id == data_id).first()
+    temp_data = db.query(TempDataModel).filter(uuid_pk_eq(TempDataModel.id, data_id)).first()
     return temp_data.state if temp_data else None
 
 
@@ -204,7 +206,7 @@ def get_temp_data_review_status(db: Session, data_id: UUID) -> Optional[ReviewSt
     Returns:
         Current ReviewStatus or None
     """
-    temp_data = db.query(TempDataModel).filter(TempDataModel.id == data_id).first()
+    temp_data = db.query(TempDataModel).filter(uuid_pk_eq(TempDataModel.id, data_id)).first()
     return temp_data.review_status if temp_data else None
 
 
@@ -219,7 +221,7 @@ def get_temp_data_rejection_reason(db: Session, data_id: UUID) -> Optional[str]:
     Returns:
         Rejection reason or None
     """
-    temp_data = db.query(TempDataModel).filter(TempDataModel.id == data_id).first()
+    temp_data = db.query(TempDataModel).filter(uuid_pk_eq(TempDataModel.id, data_id)).first()
     return temp_data.rejection_reason if temp_data else None
 
 
@@ -298,7 +300,7 @@ class TestReviewWorkflowIntegrity:
         assert review_request.status in [ReviewStatus.PENDING, ReviewStatus.IN_PROGRESS]
         
         # Verify state changed to UNDER_REVIEW
-        temp_data = db_session.query(TempDataModel).filter(TempDataModel.id == data_id).first()
+        temp_data = db_session.query(TempDataModel).filter(uuid_pk_eq(TempDataModel.id, data_id)).first()
         assert temp_data.state == DataState.UNDER_REVIEW
         
         # Approve the data
@@ -316,7 +318,7 @@ class TestReviewWorkflowIntegrity:
         assert approval_result.sample_id is not None
         
         # Verify state updated to IN_SAMPLE_LIBRARY
-        temp_data = db_session.query(TempDataModel).filter(TempDataModel.id == data_id).first()
+        temp_data = db_session.query(TempDataModel).filter(uuid_pk_eq(TempDataModel.id, data_id)).first()
         assert temp_data.state == DataState.IN_SAMPLE_LIBRARY
         
         # Verify review status is APPROVED
@@ -393,7 +395,7 @@ class TestReviewWorkflowIntegrity:
         assert review_request.status in [ReviewStatus.PENDING, ReviewStatus.IN_PROGRESS]
         
         # Verify state changed to UNDER_REVIEW
-        temp_data = db_session.query(TempDataModel).filter(TempDataModel.id == data_id).first()
+        temp_data = db_session.query(TempDataModel).filter(uuid_pk_eq(TempDataModel.id, data_id)).first()
         assert temp_data.state == DataState.UNDER_REVIEW
         
         # Reject the data
@@ -410,7 +412,7 @@ class TestReviewWorkflowIntegrity:
         assert rejection_result.reason == reason
         
         # Verify state updated to REJECTED
-        temp_data = db_session.query(TempDataModel).filter(TempDataModel.id == data_id).first()
+        temp_data = db_session.query(TempDataModel).filter(uuid_pk_eq(TempDataModel.id, data_id)).first()
         assert temp_data.state == DataState.REJECTED
         
         # Verify review status is REJECTED
@@ -482,7 +484,7 @@ class TestReviewWorkflowIntegrity:
         assert review_request.submitted_at is not None
         
         # Verify state transition
-        temp_data = db_session.query(TempDataModel).filter(TempDataModel.id == data_id).first()
+        temp_data = db_session.query(TempDataModel).filter(uuid_pk_eq(TempDataModel.id, data_id)).first()
         assert temp_data.state == DataState.UNDER_REVIEW
         assert temp_data.review_status == review_request.status
         assert temp_data.reviewed_by == reviewer_id
@@ -599,7 +601,7 @@ class TestReviewWorkflowIntegrity:
         )
         
         # Verify data preserved
-        temp_data = db_session.query(TempDataModel).filter(TempDataModel.id == data_id).first()
+        temp_data = db_session.query(TempDataModel).filter(uuid_pk_eq(TempDataModel.id, data_id)).first()
         
         assert temp_data is not None
         assert temp_data.content == content
@@ -689,7 +691,7 @@ class TestReviewWorkflowEdgeCases:
             )
         
         # Verify data is still in UNDER_REVIEW state
-        temp_data = db_session.query(TempDataModel).filter(TempDataModel.id == data_id).first()
+        temp_data = db_session.query(TempDataModel).filter(uuid_pk_eq(TempDataModel.id, data_id)).first()
         assert temp_data.state == DataState.UNDER_REVIEW
     
     def test_cannot_approve_already_rejected_data(self, db_session: Session):
@@ -887,6 +889,6 @@ class TestReviewWorkflowEdgeCases:
         )
         
         # Verify Unicode reason preserved
-        temp_data = db_session.query(TempDataModel).filter(TempDataModel.id == data_id).first()
+        temp_data = db_session.query(TempDataModel).filter(uuid_pk_eq(TempDataModel.id, data_id)).first()
         assert temp_data.rejection_reason == unicode_reason
         assert '数据质量问题' in temp_data.rejection_reason

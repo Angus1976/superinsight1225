@@ -72,10 +72,11 @@ def test_db():
         poolclass=StaticPool,
     )
 
-    # Patch UUID columns for SQLite
+    _uuid_col_restore = []
     for model in PATCHED_MODELS:
         for col in model.__table__.columns:
             if isinstance(col.type, PGUUID):
+                _uuid_col_restore.append((col, col.type))
                 col.type = SQLiteUUID()
 
     for model in PATCHED_MODELS:
@@ -89,11 +90,8 @@ def test_db():
         db.close()
         engine.dispose()
 
-        # Restore original UUID types
-        for model in PATCHED_MODELS:
-            for col in model.__table__.columns:
-                if isinstance(col.type, SQLiteUUID):
-                    col.type = PGUUID(as_uuid=True)
+        for col, original_type in _uuid_col_restore:
+            col.type = original_type
 
 
 @pytest.fixture

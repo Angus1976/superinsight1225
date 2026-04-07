@@ -15,8 +15,9 @@ import logging
 import time
 from typing import Dict, Optional
 
-from fastapi import HTTPException, Request, Response
+from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.responses import JSONResponse
 from starlette.types import ASGIApp
 
 from src.config.settings import Settings
@@ -389,10 +390,7 @@ class AdminRateLimitMiddleware(BaseHTTPMiddleware):
             call_next: Next middleware/endpoint
 
         Returns:
-            Response with rate limit headers
-
-        Raises:
-            HTTPException: 429 if rate limit exceeded
+            Response with rate limit headers (429 JSONResponse when exceeded).
         """
         # Skip excluded paths
         path = str(request.url.path)
@@ -412,16 +410,19 @@ class AdminRateLimitMiddleware(BaseHTTPMiddleware):
             logger.warning(
                 f"Rate limit exceeded for {identifier} on {request.method} {path}"
             )
-            raise HTTPException(
+            # Return JSONResponse instead of raising HTTPException: BaseHTTPMiddleware
+            # + TestClient can mishandle raised exceptions as 500.
+            detail = {
+                "error": "rate_limit_exceeded",
+                "message": "Too many requests. Please try again later.",
+                "limit": result.limit,
+                "window_seconds": 60,
+                "retry_after": result.retry_after,
+            }
+            return JSONResponse(
                 status_code=429,
-                detail={
-                    "error": "rate_limit_exceeded",
-                    "message": "Too many requests. Please try again later.",
-                    "limit": result.limit,
-                    "window_seconds": 60,
-                    "retry_after": result.retry_after
-                },
-                headers=headers
+                content={"detail": detail},
+                headers=headers,
             )
 
         # Process request

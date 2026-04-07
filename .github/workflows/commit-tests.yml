@@ -122,8 +122,7 @@ jobs:
 
       - name: Run backend unit tests
         run: |
-          pytest tests/ \
-            -m "unit" \
+          pytest tests/unit/ \
             --tb=short \
             -v \
             --cov=src \

@@ -30,6 +30,44 @@ from src.database.connection import Base
 
 
 # =============================================================================
+# Peak memory (max RSS) reporting
+# =============================================================================
+#
+# Enable: PYTEST_REPORT_MAXRSS=1 或 ./scripts/run-unit-lowmem.sh --mem
+# 使用 resource.getrusage(RUSAGE_SELF).ru_maxrss：与进程同生命周期内的峰值常驻内存。
+#
+
+
+def _ru_maxrss_to_mib(ru_maxrss: int) -> float:
+    """将 ru_maxrss 转为 MiB（macOS 为字节，Linux 等一般为千字节）。"""
+    import sys
+
+    if ru_maxrss <= 0:
+        return 0.0
+    if sys.platform == "darwin":
+        return float(ru_maxrss) / (1024.0 * 1024.0)
+    return float(ru_maxrss) * 1024.0 / (1024.0 * 1024.0)
+
+
+def pytest_sessionfinish(session, exitstatus):
+    if os.environ.get("PYTEST_REPORT_MAXRSS", "").lower() not in ("1", "true", "yes"):
+        return
+    try:
+        import resource
+        import sys
+
+        u = resource.getrusage(resource.RUSAGE_SELF)
+        mib = _ru_maxrss_to_mib(u.ru_maxrss)
+        print(
+            f"\n[pytest] Peak resident set size (ru_maxrss): {mib:.1f} MiB\n",
+            file=sys.stderr,
+            end="",
+        )
+    except Exception:
+        pass
+
+
+# =============================================================================
 # Test Environment Configuration
 # =============================================================================
 

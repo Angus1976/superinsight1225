@@ -202,7 +202,7 @@ class LLMConfigManager:
             # Create new config
             new_config = LLMConfiguration(
                 id=uuid4(),
-                tenant_id=UUID(tenant_id) if tenant_id else None,
+                tenant_id=tenant_id if tenant_id else None,
                 config_data=config_data,
                 default_method=config.default_method.value,
                 is_active=True,
@@ -244,7 +244,7 @@ class LLMConfigManager:
         cache_key = self._get_cache_key(tenant_id)
         
         stmt = delete(LLMConfiguration).where(
-            LLMConfiguration.tenant_id == (UUID(tenant_id) if tenant_id else None)
+            LLMConfiguration.tenant_id == (tenant_id if tenant_id else None)
         )
         result = await db.execute(stmt)
         await db.commit()
@@ -558,7 +558,7 @@ class LLMConfigManager:
     ) -> Optional[LLMConfiguration]:
         """Get configuration from database."""
         stmt = select(LLMConfiguration).where(
-            LLMConfiguration.tenant_id == (UUID(tenant_id) if tenant_id else None),
+            LLMConfiguration.tenant_id == (tenant_id if tenant_id else None),
             LLMConfiguration.is_active == True
         )
         result = await db.execute(stmt)

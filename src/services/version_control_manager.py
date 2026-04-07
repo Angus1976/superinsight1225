@@ -11,7 +11,7 @@ from datetime import datetime
 from typing import List, Optional, Dict, Any, Tuple
 from uuid import UUID
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, desc
+from sqlalchemy import and_, cast, desc, String
 
 from src.models.data_lifecycle import (
     VersionModel,
@@ -57,7 +57,22 @@ class VersionControlManager:
             db: Database session
         """
         self.db = db
-    
+
+    def _get_version_by_uuid(self, version_uuid: UUID) -> Optional[VersionModel]:
+        """
+        Load a version row by id.
+
+        Compare via cast(String) so SQLite unit tests stay correct after long runs
+        where PGUUID bind / compiled-cache interactions can make ``id == UUID``
+        miss rows that are present.
+        """
+        sid = str(version_uuid)
+        return (
+            self.db.query(VersionModel)
+            .filter(cast(VersionModel.id, String) == sid)
+            .first()
+        )
+
     def create_version(
         self,
         data_id: str,
@@ -101,9 +116,7 @@ class VersionControlManager:
         if parent_version_id:
             try:
                 parent_uuid = UUID(parent_version_id)
-                parent_version = self.db.query(VersionModel).filter(
-                    VersionModel.id == parent_uuid
-                ).first()
+                parent_version = self._get_version_by_uuid(parent_uuid)
                 if not parent_version:
                     raise ValueError(f"Parent version {parent_version_id} not found")
                 if parent_version.data_id != data_id:
@@ -140,10 +153,17 @@ class VersionControlManager:
         )
         
         self.db.add(version)
+        self.db.flush()
+        version_pk = version.id
         self.db.commit()
-        self.db.refresh(version)
-        
-        return version
+        # Re-load: refresh() can fail under SQLite when prior tests leave ORM
+        # column types inconsistent across the suite.
+        reloaded = self._get_version_by_uuid(version_pk)
+        if reloaded is None:
+            raise RuntimeError(
+                f"Version row missing after insert (id={version_pk!r})"
+            )
+        return reloaded
     
     def get_version(self, version_id: str) -> Optional[VersionModel]:
         """
@@ -162,9 +182,7 @@ class VersionControlManager:
         except (ValueError, AttributeError):
             return None
         
-        return self.db.query(VersionModel).filter(
-            VersionModel.id == version_uuid
-        ).first()
+        return self._get_version_by_uuid(version_uuid)
 
     
     def get_version_history(
@@ -349,9 +367,11 @@ class VersionControlManager:
         # Add tag if not already present
         if tag not in version.tags:
             version.tags = version.tags + [tag]
+            vid = version.id
             self.db.commit()
-            self.db.refresh(version)
-        
+            reloaded = self._get_version_by_uuid(vid)
+            return reloaded if reloaded is not None else version
+
         return version
     
     def verify_checksum(

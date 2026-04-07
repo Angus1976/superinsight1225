@@ -85,10 +85,12 @@ def test_db():
         poolclass=StaticPool,
     )
 
-    # Patch UUID columns for SQLite
+    _uuid_col_restore = []
+    # Patch UUID columns for SQLite; keep originals for exact restore (shared Base.metadata).
     for model in PATCHED_MODELS:
         for col in model.__table__.columns:
             if isinstance(col.type, PGUUID):
+                _uuid_col_restore.append((col, col.type))
                 col.type = SQLiteUUID()
 
     for model in PATCHED_MODELS:
@@ -102,12 +104,8 @@ def test_db():
         db.close()
         engine.dispose()
 
-        # Restore original UUID types
-        from sqlalchemy.dialects.postgresql import UUID as PGUUID_Restore
-        for model in PATCHED_MODELS:
-            for col in model.__table__.columns:
-                if isinstance(col.type, SQLiteUUID):
-                    col.type = PGUUID_Restore(as_uuid=True)
+        for col, original_type in _uuid_col_restore:
+            col.type = original_type
 
 
 @pytest.fixture

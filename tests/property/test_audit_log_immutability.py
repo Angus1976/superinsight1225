@@ -22,6 +22,7 @@ from src.models.data_lifecycle import (
     Action
 )
 from src.services.audit_logger import AuditLogger
+from tests.property.sqlite_uuid_compat import uuid_pk_eq
 
 
 # ============================================================================
@@ -155,6 +156,9 @@ class TestAuditLogImmutability:
             ip_address=log_data["ip_address"],
             user_agent=log_data["user_agent"]
         )
+        # Persist insert so a failed update/delete rollback does not drop the new row
+        # (AuditLogger intentionally does not commit).
+        db_session.commit()
         
         # Store original values
         original_id = log_entry.id
@@ -179,7 +183,7 @@ class TestAuditLogImmutability:
         
         # Get the database model instance
         db_log = db_session.query(AuditLogModel).filter(
-            AuditLogModel.id == original_id
+            uuid_pk_eq(AuditLogModel.id, original_id)
         ).first()
         
         assert db_log is not None, "Audit log must exist in database"
@@ -212,7 +216,7 @@ class TestAuditLogImmutability:
             
             # Verify the log entry still exists with original values
             db_log = db_session.query(AuditLogModel).filter(
-                AuditLogModel.id == original_id
+                uuid_pk_eq(AuditLogModel.id, original_id)
             ).first()
             
             assert db_log is not None, \
@@ -257,12 +261,13 @@ class TestAuditLogImmutability:
             ip_address=log_data["ip_address"],
             user_agent=log_data["user_agent"]
         )
+        db_session.commit()
         
         log_id = log_entry.id
         
         # Verify log exists
         db_log = db_session.query(AuditLogModel).filter(
-            AuditLogModel.id == log_id
+            uuid_pk_eq(AuditLogModel.id, log_id)
         ).first()
         assert db_log is not None, "Audit log must exist before deletion attempt"
         
@@ -274,7 +279,7 @@ class TestAuditLogImmutability:
             # If deletion succeeded, this violates immutability
             # Check if the log still exists (application-level protection)
             db_log_after = db_session.query(AuditLogModel).filter(
-                AuditLogModel.id == log_id
+                uuid_pk_eq(AuditLogModel.id, log_id)
             ).first()
             
             # The log should still exist (immutability enforced)
@@ -287,7 +292,7 @@ class TestAuditLogImmutability:
             
             # Verify the log entry still exists
             db_log_after = db_session.query(AuditLogModel).filter(
-                AuditLogModel.id == log_id
+                uuid_pk_eq(AuditLogModel.id, log_id)
             ).first()
             
             assert db_log_after is not None, \
@@ -329,13 +334,14 @@ class TestAuditLogImmutability:
             ip_address=log_data["ip_address"],
             user_agent=log_data["user_agent"]
         )
+        db_session.commit()
         
         original_timestamp = log_entry.timestamp
         log_id = log_entry.id
         
         # Attempt to modify timestamp
         db_log = db_session.query(AuditLogModel).filter(
-            AuditLogModel.id == log_id
+            uuid_pk_eq(AuditLogModel.id, log_id)
         ).first()
         
         # Try to change timestamp to a different time
@@ -358,7 +364,7 @@ class TestAuditLogImmutability:
             
             # Verify timestamp is still original
             db_log = db_session.query(AuditLogModel).filter(
-                AuditLogModel.id == log_id
+                uuid_pk_eq(AuditLogModel.id, log_id)
             ).first()
             
             assert db_log.timestamp == original_timestamp, \
@@ -413,6 +419,7 @@ class TestAuditLogImmutability:
             ip_address=log_data2["ip_address"],
             user_agent=log_data2["user_agent"]
         )
+        db_session.commit()
         
         # Store original values
         log1_original = {
@@ -431,7 +438,7 @@ class TestAuditLogImmutability:
         
         # Attempt to modify log1
         db_log1 = db_session.query(AuditLogModel).filter(
-            AuditLogModel.id == log1.id
+            uuid_pk_eq(AuditLogModel.id, log1.id)
         ).first()
         
         try:
@@ -447,11 +454,11 @@ class TestAuditLogImmutability:
         
         # Verify both logs still exist with original values
         db_log1_check = db_session.query(AuditLogModel).filter(
-            AuditLogModel.id == log1_original["id"]
+            uuid_pk_eq(AuditLogModel.id, log1_original["id"])
         ).first()
         
         db_log2_check = db_session.query(AuditLogModel).filter(
-            AuditLogModel.id == log2_original["id"]
+            uuid_pk_eq(AuditLogModel.id, log2_original["id"])
         ).first()
         
         assert db_log1_check is not None, "Log1 must still exist"
@@ -527,12 +534,13 @@ class TestAuditLogImmutability:
             duration=log_data["duration"],
             details=original_details
         )
+        db_session.commit()
         
         log_id = log_entry.id
         
         # Attempt to modify details
         db_log = db_session.query(AuditLogModel).filter(
-            AuditLogModel.id == log_id
+            uuid_pk_eq(AuditLogModel.id, log_id)
         ).first()
         
         modified_details = {"modified": "malicious_data", "tampered": True}
@@ -553,7 +561,7 @@ class TestAuditLogImmutability:
             
             # Verify details are still original
             db_log = db_session.query(AuditLogModel).filter(
-                AuditLogModel.id == log_id
+                uuid_pk_eq(AuditLogModel.id, log_id)
             ).first()
             
             assert db_log.details == original_details, \

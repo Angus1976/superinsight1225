@@ -10,6 +10,8 @@ import time
 import pytest
 import subprocess
 from typing import Dict, List, Optional
+
+from tests.docker_compose_cmd import docker_compose_argv_prefix
 from dataclasses import dataclass
 from enum import Enum
 
@@ -84,9 +86,12 @@ class DockerContainerStartupTests:
         timeout: int = 60
     ) -> subprocess.CompletedProcess:
         """Run a docker-compose command and return the result."""
+        prefix = docker_compose_argv_prefix()
+        if not prefix:
+            pytest.skip("docker compose / docker-compose not available - skipping Docker tests")
         try:
             result = subprocess.run(
-                ["docker-compose", "-f", "docker-compose.yml", "-p", "superinsight"] + command,
+                prefix + ["-f", "docker-compose.yml", "-p", "superinsight"] + command,
                 capture_output=True,
                 text=True,
                 timeout=timeout
@@ -95,7 +100,7 @@ class DockerContainerStartupTests:
         except subprocess.TimeoutExpired:
             raise AssertionError(f"Command timed out after {timeout} seconds")
         except FileNotFoundError:
-            pytest.skip("docker-compose not found - skipping Docker tests")
+            pytest.skip("docker compose / docker-compose not found - skipping Docker tests")
     
     def _get_container_status(self, container_name: str) -> ContainerInfo:
         """Get the status of a specific container."""

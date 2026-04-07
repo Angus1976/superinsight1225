@@ -13,7 +13,7 @@ import pytest
 from hypothesis import given, strategies as st, settings, assume, HealthCheck
 from datetime import datetime, timedelta
 from uuid import uuid4, UUID
-from sqlalchemy import create_engine, event, String, TypeDecorator
+from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -29,47 +29,15 @@ from src.services.annotation_task_service import (
     TaskConfig,
     Annotation
 )
+from tests.property.sqlite_uuid_compat import (
+    snapshot_uuid_columns,
+    patch_models_to_sqlite_uuid,
+    restore_uuid_columns,
+)
 
+PATCHED_MODELS = [SampleModel, AnnotationTaskModel, AuditLogModel]
+_UUID_COLUMN_SNAPSHOT = snapshot_uuid_columns(PATCHED_MODELS)
 
-# ============================================================================
-# SQLite UUID Compatibility
-# ============================================================================
-
-class SQLiteUUID(TypeDecorator):
-    """UUID type that works with SQLite by storing as string."""
-    impl = String(36)
-    cache_ok = True
-
-    def process_bind_param(self, value, dialect):
-        if value is not None:
-            if isinstance(value, UUID):
-                return str(value)
-            return str(value)
-        return value
-
-    def process_result_value(self, value, dialect):
-        if value is not None:
-            return UUID(value) if not isinstance(value, UUID) else value
-        return value
-
-
-def patch_uuid_columns_for_sqlite(engine):
-    """
-    Patch PGUUID columns to use string storage for SQLite compatibility.
-    This is applied at the column level when creating tables.
-    """
-    from sqlalchemy.dialects.postgresql import UUID as PGUUID
-
-    @event.listens_for(engine, "connect")
-    def _set_sqlite_pragma(dbapi_conn, connection_record):
-        cursor = dbapi_conn.cursor()
-        cursor.execute("PRAGMA journal_mode=WAL")
-        cursor.close()
-
-
-# ============================================================================
-# Custom Fixture for Data Lifecycle Tables Only
-# ============================================================================
 
 @pytest.fixture(scope="function")
 def db_session() -> Session:
@@ -77,38 +45,27 @@ def db_session() -> Session:
     Provide a database session with only data lifecycle tables.
     Patches UUID columns for SQLite compatibility.
     """
-    from sqlalchemy.dialects.postgresql import UUID as PGUUID
-
     engine = create_engine(
         "sqlite:///:memory:",
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
 
-    # Patch UUID columns in the models to use String for SQLite
-    for model in [SampleModel, AnnotationTaskModel, AuditLogModel]:
-        for col in model.__table__.columns:
-            if isinstance(col.type, PGUUID):
-                col.type = SQLiteUUID()
+    restore = patch_models_to_sqlite_uuid(PATCHED_MODELS, _UUID_COLUMN_SNAPSHOT)
+    try:
+        SampleModel.__table__.create(bind=engine, checkfirst=True)
+        AnnotationTaskModel.__table__.create(bind=engine, checkfirst=True)
+        AuditLogModel.__table__.create(bind=engine, checkfirst=True)
 
-    SampleModel.__table__.create(bind=engine, checkfirst=True)
-    AnnotationTaskModel.__table__.create(bind=engine, checkfirst=True)
-    AuditLogModel.__table__.create(bind=engine, checkfirst=True)
-
-    SessionLocal = sessionmaker(bind=engine)
-    session = SessionLocal()
-
-    yield session
-
-    session.close()
-    engine.dispose()
-
-    # Restore original UUID types for other tests
-    from sqlalchemy.dialects.postgresql import UUID as PGUUID_Restore
-    for model in [SampleModel, AnnotationTaskModel, AuditLogModel]:
-        for col in model.__table__.columns:
-            if isinstance(col.type, SQLiteUUID):
-                col.type = PGUUID_Restore(as_uuid=True)
+        SessionLocal = sessionmaker(bind=engine)
+        session = SessionLocal()
+        try:
+            yield session
+        finally:
+            session.close()
+            engine.dispose()
+    finally:
+        restore_uuid_columns(restore)
 
 
 # ============================================================================

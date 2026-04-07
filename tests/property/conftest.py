@@ -5,15 +5,11 @@ Provides fixtures for database sessions and other test utilities.
 """
 
 import pytest
-from uuid import UUID
-from sqlalchemy import create_engine, String
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.pool import StaticPool
-from sqlalchemy.types import TypeDecorator
-from sqlalchemy.dialects.postgresql import UUID as PGUUID
 
 from src.models.data_lifecycle import (
-    Base,
     PermissionModel,
     AuditLogModel,
     TempDataModel,
@@ -23,26 +19,11 @@ from src.models.data_lifecycle import (
     VersionModel,
 )
 
-
-# ============================================================================
-# SQLite UUID Compatibility
-# ============================================================================
-
-class SQLiteUUID(TypeDecorator):
-    """UUID type that works with SQLite by storing as string."""
-    impl = String(36)
-    cache_ok = True
-
-    def process_bind_param(self, value, dialect):
-        if value is not None:
-            return str(value)
-        return value
-
-    def process_result_value(self, value, dialect):
-        if value is not None:
-            return UUID(value) if not isinstance(value, UUID) else value
-        return value
-
+from tests.property.sqlite_uuid_compat import (
+    snapshot_uuid_columns,
+    patch_models_to_sqlite_uuid,
+    restore_uuid_columns,
+)
 
 # Models that need UUID patching
 PATCHED_MODELS = [
@@ -55,38 +36,36 @@ PATCHED_MODELS = [
     VersionModel,
 ]
 
+# Captured at import time (before any test mutates mapped column types).
+_UUID_COLUMN_SNAPSHOT = snapshot_uuid_columns(PATCHED_MODELS)
+
 
 @pytest.fixture(scope="function")
 def db_session() -> Session:
     """
     Create an in-memory SQLite database session for property tests.
-    
+
     This fixture creates only the data lifecycle tables needed for testing,
     with UUID columns patched for SQLite compatibility.
     """
-    # Create in-memory SQLite engine
     engine = create_engine(
         "sqlite:///:memory:",
         connect_args={"check_same_thread": False},
-        poolclass=StaticPool
+        poolclass=StaticPool,
     )
-    
-    # Patch UUID columns for SQLite compatibility
-    for model in PATCHED_MODELS:
-        for col in model.__table__.columns:
-            if isinstance(col.type, PGUUID):
-                col.type = SQLiteUUID()
-    
-    # Create tables
-    for model in PATCHED_MODELS:
-        model.__table__.create(bind=engine, checkfirst=True)
-    
-    # Create session
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-    session = SessionLocal()
-    
+
+    restore = patch_models_to_sqlite_uuid(PATCHED_MODELS, _UUID_COLUMN_SNAPSHOT)
+
     try:
-        yield session
+        for model in PATCHED_MODELS:
+            model.__table__.create(bind=engine, checkfirst=True)
+
+        SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+        session = SessionLocal()
+        try:
+            yield session
+        finally:
+            session.close()
+            engine.dispose()
     finally:
-        session.close()
-        engine.dispose()
+        restore_uuid_columns(restore)

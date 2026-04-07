@@ -852,10 +852,14 @@ More content.
 
     def test_validate_structure_returns_all_errors(self, parser):
         """Test that validation returns all errors, not just first"""
+        # level>6 is rejected by Section's Field(ge=1, le=6); use model_construct
+        # so we exercise validate_structure()'s heading-level checks, not Pydantic.
         structured_data = StructuredData(
             source_document_id="test",
             sections=[
-                Section(title="Section 1", content="", level=10, order=0),  # Invalid level
+                Section.model_construct(
+                    title="Section 1", content="", level=10, order=0
+                ),
             ],
             metadata=Metadata(title="Test")
         )

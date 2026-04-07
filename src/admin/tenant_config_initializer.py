@@ -414,7 +414,7 @@ class TenantConfigInitializer:
                 # Create configuration record
                 config = AdminConfiguration(
                     id=config_id,
-                    tenant_id=UUID(tenant_id) if tenant_id else None,
+                    tenant_id=tenant_id if tenant_id else None,
                     config_type=ConfigType.LLM.value,
                     name=config_data.get("name", "Default LLM"),
                     description=config_data.get("description"),
@@ -474,7 +474,7 @@ class TenantConfigInitializer:
                 # Note: password_encrypted is not set in templates (tenant must configure)
                 config = DatabaseConnection(
                     id=config_id,
-                    tenant_id=UUID(tenant_id) if tenant_id else None,
+                    tenant_id=tenant_id if tenant_id else None,
                     name=template.get("name", "Default Database"),
                     description=template.get("description"),
                     db_type=template.get("db_type", DatabaseType.POSTGRESQL.value),
@@ -549,7 +549,7 @@ class TenantConfigInitializer:
                 # Create sync strategy record
                 strategy = SyncStrategy(
                     id=strategy_id,
-                    tenant_id=UUID(tenant_id) if tenant_id else None,
+                    tenant_id=tenant_id if tenant_id else None,
                     db_config_id=UUID(default_db_config_id),
                     name=template.get("name", "Default Sync Strategy"),
                     mode=template.get("mode", SyncMode.FULL.value),
@@ -592,7 +592,7 @@ class TenantConfigInitializer:
             # Count LLM configurations
             llm_query = select(AdminConfiguration).where(
                 and_(
-                    AdminConfiguration.tenant_id == UUID(tenant_id),
+                    AdminConfiguration.tenant_id == tenant_id,
                     AdminConfiguration.config_type == ConfigType.LLM.value,
                 )
             )
@@ -601,14 +601,14 @@ class TenantConfigInitializer:
             
             # Count database configurations
             db_query = select(DatabaseConnection).where(
-                DatabaseConnection.tenant_id == UUID(tenant_id)
+                DatabaseConnection.tenant_id == tenant_id
             )
             db_result = await self._db.execute(db_query)
             db_configs = db_result.scalars().all()
             
             # Count sync strategies
             sync_query = select(SyncStrategy).where(
-                SyncStrategy.tenant_id == UUID(tenant_id)
+                SyncStrategy.tenant_id == tenant_id
             )
             sync_result = await self._db.execute(sync_query)
             sync_strategies = sync_result.scalars().all()

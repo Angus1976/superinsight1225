@@ -276,7 +276,7 @@ class DataSourceService:
         # 创建数据源记录
         data_source = DataSource(
             id=uuid4(),
-            tenant_id=UUID(tenant_id) if tenant_id else None,
+            tenant_id=tenant_id if tenant_id else None,
             name=request.name,
             description=request.description,
             db_type=request.db_type.value,
@@ -330,7 +330,7 @@ class DataSourceService:
         # 应用过滤条件
         conditions = []
         if tenant_id:
-            conditions.append(DataSource.tenant_id == UUID(tenant_id))
+            conditions.append(DataSource.tenant_id == tenant_id)
         if is_active is not None:
             conditions.append(DataSource.is_active == is_active)
         

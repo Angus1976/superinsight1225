@@ -64,9 +64,11 @@ def db_session():
         poolclass=StaticPool,
     )
 
+    _uuid_col_restore = []
     for model in PATCHED_MODELS:
         for col in model.__table__.columns:
             if isinstance(col.type, PGUUID):
+                _uuid_col_restore.append((col, col.type))
                 col.type = SQLiteUUID()
 
     for model in PATCHED_MODELS:
@@ -78,11 +80,8 @@ def db_session():
     session.close()
     engine.dispose()
 
-    from sqlalchemy.dialects.postgresql import UUID as PGUUID_Restore
-    for model in PATCHED_MODELS:
-        for col in model.__table__.columns:
-            if isinstance(col.type, SQLiteUUID):
-                col.type = PGUUID_Restore(as_uuid=True)
+    for col, original_type in _uuid_col_restore:
+        col.type = original_type
 
 
 @pytest.fixture

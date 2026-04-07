@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import Dict, List, Optional, Any, Union
 from uuid import UUID, uuid4
 from sqlalchemy.orm import Session
-from sqlalchemy import and_
+from sqlalchemy import and_, cast, String, or_
 
 from src.models.data_lifecycle import (
     AnnotationTaskModel,
@@ -34,6 +34,15 @@ def _ensure_uuid(value: Union[str, UUID]) -> UUID:
     if isinstance(value, UUID):
         return value
     return UUID(str(value))
+
+
+def _pk_id_eq(model_class, value: Union[str, UUID]):
+    """UUID PK filter for plain SQLite and SQLiteUUID property tests."""
+    u = _ensure_uuid(value)
+    return or_(
+        model_class.id == u,
+        cast(model_class.id, String) == str(u),
+    )
 
 
 class TaskConfig:
@@ -156,8 +165,13 @@ class AnnotationTaskService:
         Validates: Requirements 5.1
         """
         # Validate sample IDs exist
+        id_strings = [str(_ensure_uuid(sid)) for sid in config.sample_ids]
+        uuid_list = [_ensure_uuid(sid) for sid in config.sample_ids]
         samples = self.db.query(SampleModel).filter(
-            SampleModel.id.in_([UUID(sid) for sid in config.sample_ids])
+            or_(
+                SampleModel.id.in_(uuid_list),
+                cast(SampleModel.id, String).in_(id_strings),
+            )
         ).all()
         
         if len(samples) != len(config.sample_ids):
@@ -252,7 +266,7 @@ class AnnotationTaskService:
         """
         # Get task
         task = self.db.query(AnnotationTaskModel).filter(
-            AnnotationTaskModel.id == _ensure_uuid(task_id)
+            _pk_id_eq(AnnotationTaskModel, task_id)
         ).first()
         
         if not task:
@@ -305,7 +319,7 @@ class AnnotationTaskService:
             ValueError: If task not found
         """
         task = self.db.query(AnnotationTaskModel).filter(
-            AnnotationTaskModel.id == _ensure_uuid(task_id)
+            _pk_id_eq(AnnotationTaskModel, task_id)
         ).first()
         
         if not task:
@@ -333,7 +347,7 @@ class AnnotationTaskService:
         """
         # Get task
         task = self.db.query(AnnotationTaskModel).filter(
-            AnnotationTaskModel.id == _ensure_uuid(annotation.task_id)
+            _pk_id_eq(AnnotationTaskModel, annotation.task_id)
         ).first()
         
         if not task:
@@ -442,7 +456,7 @@ class AnnotationTaskService:
         Validates: Requirements 5.4
         """
         task = self.db.query(AnnotationTaskModel).filter(
-            AnnotationTaskModel.id == _ensure_uuid(task_id)
+            _pk_id_eq(AnnotationTaskModel, task_id)
         ).first()
         
         if not task:
@@ -482,7 +496,7 @@ class AnnotationTaskService:
         """
         # Get task
         task = self.db.query(AnnotationTaskModel).filter(
-            AnnotationTaskModel.id == _ensure_uuid(task_id)
+            _pk_id_eq(AnnotationTaskModel, task_id)
         ).first()
         
         if not task:

@@ -27,6 +27,12 @@ from src.models.data_lifecycle import (
     TempDataModel,
     DataState
 )
+from tests.property.sqlite_uuid_compat import uuid_pk_eq
+
+
+def _temp_data_by_id(session: Session, row_id):
+    """SQLite + PGUUID: bind UUID as string for reliable primary-key lookup."""
+    return session.query(TempDataModel).filter(uuid_pk_eq(TempDataModel.id, row_id)).first()
 
 
 # ============================================================================
@@ -343,9 +349,7 @@ class TestDocumentParsingRoundTrip:
         db_session.refresh(temp_data)
         
         # Retrieve from database
-        retrieved_temp_data = db_session.query(TempDataModel).filter_by(
-            id=temp_data.id
-        ).first()
+        retrieved_temp_data = _temp_data_by_id(db_session, temp_data.id)
         
         assert retrieved_temp_data is not None, "Temp data should be retrievable"
         
@@ -467,9 +471,7 @@ class TestDocumentParsingRoundTrip:
         db_session.refresh(temp_data)
         
         # Retrieve and reconstruct
-        retrieved_temp_data = db_session.query(TempDataModel).filter_by(
-            id=temp_data.id
-        ).first()
+        retrieved_temp_data = _temp_data_by_id(db_session, temp_data.id)
         
         retrieved_sections = [
             Section(**section_dict)
@@ -559,9 +561,7 @@ class TestDocumentParsingRoundTrip:
         db_session.refresh(temp_data)
         
         # Retrieve
-        retrieved_temp_data = db_session.query(TempDataModel).filter_by(
-            id=temp_data.id
-        ).first()
+        retrieved_temp_data = _temp_data_by_id(db_session, temp_data.id)
         
         retrieved_tags = retrieved_temp_data.metadata_.get('tags', [])
         
@@ -633,9 +633,7 @@ tags: [中文, 测试, Unicode]
         db_session.refresh(temp_data)
         
         # Retrieve
-        retrieved_temp_data = db_session.query(TempDataModel).filter_by(
-            id=temp_data.id
-        ).first()
+        retrieved_temp_data = _temp_data_by_id(db_session, temp_data.id)
         
         # Assert: Unicode metadata preserved
         assert retrieved_temp_data.metadata_['title'] == "测试文档"
@@ -707,9 +705,7 @@ And some JSON:
         db_session.refresh(temp_data)
         
         # Retrieve
-        retrieved_temp_data = db_session.query(TempDataModel).filter_by(
-            id=temp_data.id
-        ).first()
+        retrieved_temp_data = _temp_data_by_id(db_session, temp_data.id)
         
         retrieved_sections = [
             Section(**s) for s in retrieved_temp_data.content['sections']

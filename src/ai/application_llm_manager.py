@@ -10,8 +10,6 @@ import asyncio
 import logging
 from typing import List, Optional, Callable, Awaitable, TypeVar, Union
 from fnmatch import fnmatch
-from uuid import UUID
-
 from sqlalchemy import select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session, selectinload
@@ -27,13 +25,11 @@ logger = logging.getLogger(__name__)
 T = TypeVar('T')
 
 
-def _coerce_uuid(value: Optional[str]) -> Optional[UUID]:
-    """Bind UUID columns consistently (SQLite + Postgres) when tenant_id is passed as str."""
+def _normalize_tenant_id(value: Optional[str]) -> Optional[str]:
+    """Match ``TenantModel.id`` (human-readable string); same value used on ``LLMConfiguration.tenant_id``."""
     if value is None:
         return None
-    if isinstance(value, UUID):
-        return value
-    return UUID(str(value))
+    return str(value)
 
 
 class ApplicationLLMManager:
@@ -248,7 +244,7 @@ class ApplicationLLMManager:
         # Step 3: Tenant scope merges tenant-scoped configs with global (tenant_id NULL)
         # so failover lists stay ordered by binding priority across both (Req. 18.8).
         if tenant_id:
-            tid = _coerce_uuid(tenant_id)
+            tid = _normalize_tenant_id(tenant_id)
             merged_stmt = stmt.where(
                 or_(
                     LLMConfiguration.tenant_id == tid,
@@ -291,7 +287,7 @@ class ApplicationLLMManager:
         )
         
         if tenant_id:
-            tid = _coerce_uuid(tenant_id)
+            tid = _normalize_tenant_id(tenant_id)
             merged_stmt = stmt.where(
                 or_(
                     LLMConfiguration.tenant_id == tid,

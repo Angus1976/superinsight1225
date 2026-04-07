@@ -11,8 +11,9 @@ Validates: Requirements 6.1, 6.2, 6.3, 6.4, 6.5, 6.6
 import copy
 import re
 from datetime import datetime
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Union
 from uuid import UUID, uuid4
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from src.models.data_lifecycle import (
@@ -28,6 +29,11 @@ from src.models.data_lifecycle import (
 )
 from src.services.audit_logger import AuditLogger
 from src.services.version_control_manager import VersionControlManager
+
+
+def _as_uuid(value: Union[str, UUID]) -> UUID:
+    """Coerce PK binds for EnhancedDataModel (SQLite + Postgres)."""
+    return value if isinstance(value, UUID) else UUID(str(value))
 
 
 class EnhancementConfig:
@@ -330,9 +336,7 @@ class EnhancementService:
         Raises:
             ValueError: If enhanced data not found
         """
-        record = self.db.query(EnhancedDataModel).filter(
-            EnhancedDataModel.id == enhanced_data_id
-        ).first()
+        record = self.db.get(EnhancedDataModel, _as_uuid(enhanced_data_id))
         if not record:
             raise ValueError(
                 f"Enhanced data {enhanced_data_id} not found"
@@ -377,11 +381,13 @@ class EnhancementService:
         if job.original_content is None:
             raise ValueError("No original content stored for rollback")
 
-        # Delete enhanced data record
+        # Delete enhanced data record (ORM delete avoids bulk DELETE statement-cache
+        # collisions on SQLite when other tests/sessions reuse many-parameter SQL).
         if job.enhanced_data_id:
-            self.db.query(EnhancedDataModel).filter(
-                EnhancedDataModel.id == job.enhanced_data_id
-            ).delete()
+            eid = _as_uuid(job.enhanced_data_id)
+            row = self.db.get(EnhancedDataModel, eid)
+            if row is not None:
+                self.db.delete(row)
 
         job.status = JobStatus.CANCELLED
         job.completed_at = datetime.utcnow()
@@ -465,19 +471,24 @@ class EnhancementService:
         if not job.enhanced_data_id:
             raise ValueError("No enhanced data available for this job")
 
-        # Retrieve enhanced data from DB
-        enhanced_record = self.db.query(EnhancedDataModel).filter(
-            EnhancedDataModel.id == UUID(job.enhanced_data_id)
-        ).first()
+        # Retrieve enhanced data from DB (Session.get avoids dialect quirks on filter binds)
+        enhanced_record = self.db.get(
+            EnhancedDataModel, _as_uuid(job.enhanced_data_id)
+        )
         if not enhanced_record:
             raise ValueError(
                 f"Enhanced data {job.enhanced_data_id} not found in database"
             )
 
-        # Determine iteration count from enhanced data records (Req 21.6)
-        iteration_count = self.db.query(EnhancedDataModel).filter(
-            EnhancedDataModel.original_data_id == enhanced_record.original_data_id
-        ).count()
+        # Determine iteration count from enhanced data records (Req 21.6).
+        # Use select(func.count()) instead of legacy Query.count() to avoid SQLite
+        # compiled-statement cache collisions with other tests/sessions.
+        iteration_count = self.db.execute(
+            select(func.count()).select_from(EnhancedDataModel).where(
+                EnhancedDataModel.original_data_id
+                == enhanced_record.original_data_id
+            )
+        ).scalar_one()
 
         # Build sample metadata for traceability (Req 21.3, 21.6)
         # Include augmentation method and parameters (Task 3.2.3)
@@ -513,6 +524,25 @@ class EnhancementService:
         self.db.add(sample)
         self.db.flush()
 
+        # Snapshot before create_version(): it calls commit(), which expires ORM
+        # instances; touching sample after that can trigger refresh → ObjectDeletedError
+        # under SQLite in long test runs.
+        sample_id_str = str(sample.id)
+        out = {
+            'id': sample_id_str,
+            'data_id': sample.data_id,
+            'content': sample.content,
+            'category': sample.category,
+            'quality_overall': sample.quality_overall,
+            'quality_completeness': sample.quality_completeness,
+            'quality_accuracy': sample.quality_accuracy,
+            'quality_consistency': sample.quality_consistency,
+            'version': sample.version,
+            'tags': sample.tags,
+            'metadata': sample.metadata_,
+            'created_at': sample.created_at.isoformat(),
+        }
+
         # Create version record for traceability (Req 21.4)
         self.version_control.create_version(
             data_id=str(sample.id),
@@ -540,7 +570,7 @@ class EnhancementService:
             operation_type=OperationType.CREATE,
             user_id=user_id,
             resource_type=ResourceType.SAMPLE,
-            resource_id=str(sample.id),
+            resource_id=sample_id_str,
             action=Action.TRANSFER,
             result=OperationResult.SUCCESS,
             duration=0,
@@ -554,22 +584,7 @@ class EnhancementService:
         )
 
         self.db.commit()
-        self.db.refresh(sample)
-
-        return {
-            'id': str(sample.id),
-            'data_id': sample.data_id,
-            'content': sample.content,
-            'category': sample.category,
-            'quality_overall': sample.quality_overall,
-            'quality_completeness': sample.quality_completeness,
-            'quality_accuracy': sample.quality_accuracy,
-            'quality_consistency': sample.quality_consistency,
-            'version': sample.version,
-            'tags': sample.tags,
-            'metadata': sample.metadata_,
-            'created_at': sample.created_at.isoformat(),
-        }
+        return out
 
     # ================================================================
     # Enhancement Algorithms

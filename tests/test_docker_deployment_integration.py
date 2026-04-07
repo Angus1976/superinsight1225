@@ -27,7 +27,16 @@ import time
 import os
 import tempfile
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, List, Optional
+
+from tests.docker_compose_cmd import docker_compose_argv_prefix
+
+
+def _docker_compose_prefix_or_skip() -> List[str]:
+    p = docker_compose_argv_prefix()
+    if not p:
+        pytest.skip("docker compose / docker-compose not found")
+    return p
 
 # Mark all tests in this module as integration and docker tests
 pytestmark = [pytest.mark.integration, pytest.mark.docker]
@@ -165,14 +174,21 @@ class TestDockerDeployment:
         Requirements: 1.1
         """
         # Start services
-        result = run_command([
-            "docker-compose",
-            "-f", docker_compose_files["main"],
-            "-f", docker_compose_files["ai_integration"],
-            "--env-file", test_env_file,
-            "up", "-d",
-            "openclaw-gateway", "openclaw-agent"
-        ])
+        result = run_command(
+            _docker_compose_prefix_or_skip()
+            + [
+                "-f",
+                docker_compose_files["main"],
+                "-f",
+                docker_compose_files["ai_integration"],
+                "--env-file",
+                test_env_file,
+                "up",
+                "-d",
+                "openclaw-gateway",
+                "openclaw-agent",
+            ]
+        )
         
         assert result.returncode == 0, "Docker compose up failed"
         
@@ -355,16 +371,26 @@ class TestDockerDeployment:
     def cleanup(self, docker_compose_files, test_env_file):
         """Cleanup containers after tests."""
         yield
-        
+
+        prefix = docker_compose_argv_prefix()
+        if not prefix:
+            return
+
         # Stop and remove containers
-        run_command([
-            "docker-compose",
-            "-f", docker_compose_files["main"],
-            "-f", docker_compose_files["ai_integration"],
-            "--env-file", test_env_file,
-            "down",
-            "-v"
-        ], check=False)
+        run_command(
+            prefix
+            + [
+                "-f",
+                docker_compose_files["main"],
+                "-f",
+                docker_compose_files["ai_integration"],
+                "--env-file",
+                test_env_file,
+                "down",
+                "-v",
+            ],
+            check=False,
+        )
 
 
 class TestDockerDeploymentScript:

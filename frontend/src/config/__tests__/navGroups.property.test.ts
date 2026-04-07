@@ -51,7 +51,11 @@ const navGroupArb: fc.Arbitrary<NavGroup> = fc.record({
   items: fc.array(menuItemArb, { minLength: 1, maxLength: 6 }),
 });
 
-const navGroupsArb = fc.array(navGroupArb, { minLength: 0, maxLength: 5 });
+const navGroupsArb = fc.uniqueArray(navGroupArb, {
+  minLength: 0,
+  maxLength: 5,
+  selector: (g) => g.key,
+});
 
 const userRoleArb = fc.constantFrom('admin', 'user');
 

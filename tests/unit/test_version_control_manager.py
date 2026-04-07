@@ -7,51 +7,69 @@ and checksum verification functionality.
 
 import pytest
 from datetime import datetime
-from uuid import uuid4
-from sqlalchemy import create_engine
+from uuid import uuid4, UUID
+from sqlalchemy import String, TypeDecorator, cast, create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
 
-from src.database.connection import Base
 from src.models.data_lifecycle import VersionModel, ChangeType
 from src.services.version_control_manager import VersionControlManager
+
+
+class SQLiteUUID(TypeDecorator):
+    """UUID type that works with SQLite by storing as string."""
+
+    impl = String(36)
+    cache_ok = True
+
+    def process_bind_param(self, value, dialect):
+        if value is not None:
+            return str(value) if isinstance(value, UUID) else str(value)
+        return value
+
+    def process_result_value(self, value, dialect):
+        if value is not None:
+            return UUID(value) if not isinstance(value, UUID) else value
+        return value
+
+
+_VERSION_UUID_SNAPSHOT = [
+    (col, col.type)
+    for col in VersionModel.__table__.columns
+    if isinstance(col.type, PGUUID)
+]
 
 
 # Test database setup
 @pytest.fixture(scope='function')
 def db_session():
-    """Create an in-memory SQLite database for testing"""
-    from sqlalchemy import Table, Column, String, Integer, DateTime, JSON, Text, MetaData
-    from datetime import datetime
-    
-    engine = create_engine('sqlite:///:memory:')
-    
-    # Create a separate metadata for testing
-    metadata = MetaData()
-    
-    # Create only the versions table for testing
-    versions_table = Table(
-        'versions',
-        metadata,
-        Column('id', String(36), primary_key=True, default=lambda: str(uuid4())),
-        Column('data_id', String(255), nullable=False),
-        Column('version_number', Integer, nullable=False),
-        Column('content', JSON, nullable=False),
-        Column('change_type', String(50), nullable=False),
-        Column('description', Text, nullable=True),
-        Column('parent_version_id', String(36), nullable=True),
-        Column('checksum', String(64), nullable=False),
-        Column('tags', JSON, nullable=False, default=list),
-        Column('created_by', String(255), nullable=False),
-        Column('created_at', DateTime, nullable=False, default=datetime.utcnow),
-        Column('metadata', JSON, nullable=False, default=dict)
+    """Create an in-memory SQLite database using VersionModel DDL (suite-safe)."""
+    engine = create_engine(
+        'sqlite:///:memory:',
+        connect_args={'check_same_thread': False},
+        poolclass=StaticPool,
     )
-    
-    metadata.create_all(engine)
-    
+
+    for col, original_pg in _VERSION_UUID_SNAPSHOT:
+        col.type = original_pg
+
+    _uuid_col_restore = []
+    for col in VersionModel.__table__.columns:
+        if isinstance(col.type, PGUUID):
+            _uuid_col_restore.append((col, col.type))
+            col.type = SQLiteUUID()
+
+    VersionModel.__table__.create(bind=engine, checkfirst=True)
+
     Session = sessionmaker(bind=engine)
     session = Session()
     yield session
     session.close()
+    engine.dispose()
+
+    for col, original_type in _uuid_col_restore:
+        col.type = original_type
 
 
 @pytest.fixture
@@ -635,7 +653,7 @@ def test_verify_checksum_tampered(version_manager, sample_content, db_session):
     
     # Tamper with content directly in database
     db_version = db_session.query(VersionModel).filter(
-        VersionModel.id == version.id
+        cast(VersionModel.id, String) == str(version.id)
     ).first()
     db_version.content = {'tampered': 'data'}
     db_session.commit()

@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import List, Optional, Dict, Any
 from uuid import UUID
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_, func, text
+from sqlalchemy import and_, or_, func, text, cast, String
 
 from src.models.data_lifecycle import SampleModel, ChangeType
 
@@ -185,7 +185,10 @@ class SampleLibraryManager:
             return None
         
         return self.db.query(SampleModel).filter(
-            SampleModel.id == sample_uuid
+            or_(
+                SampleModel.id == sample_uuid,
+                cast(SampleModel.id, String) == str(sample_uuid),
+            )
         ).first()
     
     def search_samples(

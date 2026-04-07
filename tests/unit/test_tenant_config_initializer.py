@@ -135,7 +135,7 @@ class TestTenantConfigInitializer:
     ):
         """Test initialization with all configuration types."""
         # Mock database queries to return no global defaults
-        mock_result = AsyncMock()
+        mock_result = MagicMock()
         mock_result.scalars.return_value.all.return_value = []
         mock_db_session.execute.return_value = mock_result
         
@@ -170,7 +170,7 @@ class TestTenantConfigInitializer:
     ):
         """Test initialization with LLM configurations only."""
         # Mock database queries
-        mock_result = AsyncMock()
+        mock_result = MagicMock()
         mock_result.scalars.return_value.all.return_value = []
         mock_db_session.execute.return_value = mock_result
         
@@ -193,7 +193,7 @@ class TestTenantConfigInitializer:
     ):
         """Test initialization with database configurations only."""
         # Mock database queries
-        mock_result = AsyncMock()
+        mock_result = MagicMock()
         mock_result.scalars.return_value.all.return_value = []
         mock_db_session.execute.return_value = mock_result
         
@@ -216,7 +216,7 @@ class TestTenantConfigInitializer:
     ):
         """Test that initialization rolls back on error during commit."""
         # Mock execute to return empty results (no global defaults)
-        mock_result = AsyncMock()
+        mock_result = MagicMock()
         mock_result.scalars.return_value.all.return_value = []
         mock_db_session.execute.return_value = mock_result
         
@@ -238,7 +238,7 @@ class TestTenantConfigInitializer:
     ):
         """Test getting global defaults when none exist."""
         # Mock database queries to return empty results
-        mock_result = AsyncMock()
+        mock_result = MagicMock()
         mock_result.scalars.return_value.all.return_value = []
         mock_db_session.execute.return_value = mock_result
         
@@ -533,7 +533,7 @@ class TestConfigurationInheritance:
     ):
         """Test that inheritance can be disabled."""
         # Mock database queries
-        mock_result = AsyncMock()
+        mock_result = MagicMock()
         mock_result.scalars.return_value.all.return_value = []
         mock_db_session.execute.return_value = mock_result
         

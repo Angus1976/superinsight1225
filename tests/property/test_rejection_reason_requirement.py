@@ -19,6 +19,12 @@ from src.models.data_lifecycle import (
     ReviewStatus
 )
 from src.services.review_service import ReviewService
+from tests.property.sqlite_uuid_compat import uuid_pk_eq
+
+
+def _temp_data_by_id(db: Session, row_id):
+    """SQLite + PGUUID: primary-key lookup by string id."""
+    return db.query(TempDataModel).filter(uuid_pk_eq(TempDataModel.id, row_id)).first()
 
 
 # ============================================================================
@@ -114,9 +120,7 @@ class TestRejectionReasonRequirement:
         review_service = ReviewService(db_session)
         
         # Get initial state
-        temp_data = db_session.query(TempDataModel).filter(
-            TempDataModel.id == data_id
-        ).first()
+        temp_data = _temp_data_by_id(db_session, data_id)
         
         initial_state = temp_data.state
         initial_review_status = temp_data.review_status
@@ -210,9 +214,7 @@ class TestRejectionReasonRequirement:
         )
         
         # Get temp data after rejection
-        temp_data = db_session.query(TempDataModel).filter(
-            TempDataModel.id == data_id
-        ).first()
+        temp_data = _temp_data_by_id(db_session, data_id)
         
         # Assert: Data is in REJECTED state
         assert temp_data.state == DataState.REJECTED, (
@@ -284,9 +286,7 @@ class TestRejectionReasonRequirement:
         )
         
         # Get temp data
-        temp_data = db_session.query(TempDataModel).filter(
-            TempDataModel.id == data_id
-        ).first()
+        temp_data = _temp_data_by_id(db_session, data_id)
         
         # Assert: Data remains in UNDER_REVIEW state
         assert temp_data.state == DataState.UNDER_REVIEW, (
@@ -345,13 +345,8 @@ class TestRejectionReasonRequirement:
         )
         
         # Retrieve data from database
-        temp_data1 = db_session.query(TempDataModel).filter(
-            TempDataModel.id == data_id1
-        ).first()
-        
-        temp_data2 = db_session.query(TempDataModel).filter(
-            TempDataModel.id == data_id2
-        ).first()
+        temp_data1 = _temp_data_by_id(db_session, data_id1)
+        temp_data2 = _temp_data_by_id(db_session, data_id2)
         
         # Assert: Both rejection reasons are stored correctly
         assert temp_data1.rejection_reason == reason1, (
@@ -406,9 +401,7 @@ class TestRejectionReasonRequirement:
         )
         
         # Retrieve data
-        temp_data = db_session.query(TempDataModel).filter(
-            TempDataModel.id == data_id
-        ).first()
+        temp_data = _temp_data_by_id(db_session, data_id)
         
         # Assert: Rejection reason exactly matches input
         assert temp_data.rejection_reason == valid_reason, (
@@ -467,9 +460,7 @@ class TestRejectionReasonRequirement:
                 )
             
             # Verify data remains in UNDER_REVIEW state
-            temp_data = db_session.query(TempDataModel).filter(
-                TempDataModel.id == data_id
-            ).first()
+            temp_data = _temp_data_by_id(db_session, data_id)
             
             assert temp_data.state == DataState.UNDER_REVIEW, (
                 f"After failed rejection with reason '{repr(invalid_reason)}', "

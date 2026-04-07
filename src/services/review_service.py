@@ -6,10 +6,10 @@ for state transitions and Audit Logger for review action logging.
 """
 
 from datetime import datetime
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Union
 from uuid import UUID, uuid4
 from sqlalchemy.orm import Session
-from sqlalchemy import and_
+from sqlalchemy import and_, cast, String, or_
 
 from src.models.data_lifecycle import (
     TempDataModel,
@@ -26,6 +26,20 @@ from src.services.data_lifecycle_state_manager import (
     StateTransitionContext
 )
 from src.services.audit_logger import AuditLogger
+
+
+def _as_uuid(value: Union[str, UUID]) -> UUID:
+    """Coerce string IDs to UUID for ORM binds (Postgres + SQLite unit tests)."""
+    return value if isinstance(value, UUID) else UUID(str(value))
+
+
+def _temp_data_id_eq(data_id: Union[str, UUID]):
+    """Primary-key filter for TempDataModel.id (plain SQLite + SQLiteUUID property tests)."""
+    u = _as_uuid(data_id)
+    return or_(
+        TempDataModel.id == u,
+        cast(TempDataModel.id, String) == str(u),
+    )
 
 
 class ReviewRequest:
@@ -129,7 +143,7 @@ class ReviewService:
         """
         # Get temp data
         temp_data = self.db.query(TempDataModel).filter(
-            TempDataModel.id == data_id
+            _temp_data_id_eq(data_id)
         ).first()
         
         if not temp_data:
@@ -212,7 +226,7 @@ class ReviewService:
         """
         # Get temp data
         temp_data = self.db.query(TempDataModel).filter(
-            TempDataModel.id == review_id
+            _temp_data_id_eq(review_id)
         ).first()
         
         if not temp_data:
@@ -272,7 +286,7 @@ class ReviewService:
         """
         # Get temp data
         temp_data = self.db.query(TempDataModel).filter(
-            TempDataModel.id == review_id
+            _temp_data_id_eq(review_id)
         ).first()
         
         if not temp_data:
@@ -378,7 +392,7 @@ class ReviewService:
         
         # Get temp data
         temp_data = self.db.query(TempDataModel).filter(
-            TempDataModel.id == review_id
+            _temp_data_id_eq(review_id)
         ).first()
         
         if not temp_data:
@@ -462,7 +476,7 @@ class ReviewService:
         """
         # Get temp data
         temp_data = self.db.query(TempDataModel).filter(
-            TempDataModel.id == review_id
+            _temp_data_id_eq(review_id)
         ).first()
         
         if not temp_data:

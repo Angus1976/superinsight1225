@@ -10,6 +10,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi import FastAPI, Request
+from starlette.datastructures import Headers
 from fastapi.responses import JSONResponse
 from starlette.testclient import TestClient
 
@@ -188,13 +189,20 @@ class TestRedisRateLimiter:
 
     @pytest.fixture
     def mock_redis(self):
-        """Create a mock Redis client."""
-        redis = AsyncMock()
-        redis.pipeline.return_value = redis
-        redis.zremrangebyscore = AsyncMock()
-        redis.zcard = AsyncMock()
-        redis.zadd = AsyncMock()
-        redis.expire = AsyncMock()
+        """Create a mock async Redis client.
+
+        redis.asyncio pipeline queues commands synchronously; only ``execute()``
+        is awaited — mirror that so tests match production behavior.
+        """
+        pipe = MagicMock()
+        pipe.zremrangebyscore = MagicMock(return_value=pipe)
+        pipe.zcard = MagicMock(return_value=pipe)
+        pipe.zadd = MagicMock(return_value=pipe)
+        pipe.expire = MagicMock(return_value=pipe)
+        pipe.execute = AsyncMock(return_value=[1, 2, 1, 1])
+
+        redis = MagicMock()
+        redis.pipeline = MagicMock(return_value=pipe)
         redis.zrem = AsyncMock()
         redis.delete = AsyncMock()
         return redis
@@ -202,8 +210,10 @@ class TestRedisRateLimiter:
     @pytest.mark.asyncio
     async def test_allows_requests_under_limit(self, mock_redis):
         """Test that requests under limit are allowed."""
-        # Mock Redis responses
-        mock_redis.execute = AsyncMock(return_value=[1, 2, 1, 1])
+        # Mock Redis responses (pipeline execute: zremrangebyscore, zcard, zadd, expire)
+        mock_redis.pipeline.return_value.execute = AsyncMock(
+            return_value=[1, 2, 1, 1]
+        )
 
         limiter = RedisRateLimiter(
             redis_client=mock_redis,
@@ -218,8 +228,10 @@ class TestRedisRateLimiter:
     @pytest.mark.asyncio
     async def test_blocks_requests_over_limit(self, mock_redis):
         """Test that requests over limit are blocked."""
-        # Mock Redis responses - count is at limit
-        mock_redis.execute = AsyncMock(return_value=[1, 5, 1, 1])
+        # zcard (index 1) == limit → block
+        mock_redis.pipeline.return_value.execute = AsyncMock(
+            return_value=[1, 5, 1, 1]
+        )
 
         limiter = RedisRateLimiter(
             redis_client=mock_redis,
@@ -238,8 +250,9 @@ class TestRedisRateLimiter:
     @pytest.mark.asyncio
     async def test_redis_failure_fails_open(self, mock_redis):
         """Test that Redis failures allow requests (fail open)."""
-        # Mock Redis to raise exception
-        mock_redis.execute = AsyncMock(side_effect=Exception("Redis error"))
+        mock_redis.pipeline.return_value.execute = AsyncMock(
+            side_effect=Exception("Redis error")
+        )
 
         limiter = RedisRateLimiter(
             redis_client=mock_redis,
@@ -283,7 +296,9 @@ class TestRedisRateLimiter:
     @pytest.mark.asyncio
     async def test_key_generation(self, mock_redis):
         """Test Redis key generation."""
-        mock_redis.execute = AsyncMock(return_value=[1, 0, 1, 1])
+        mock_redis.pipeline.return_value.execute = AsyncMock(
+            return_value=[1, 0, 1, 1]
+        )
 
         limiter = RedisRateLimiter(
             redis_client=mock_redis,
@@ -320,13 +335,12 @@ class TestAdminRateLimitMiddleware:
     @pytest.fixture
     def client_with_middleware(self, app):
         """Create test client with rate limit middleware."""
-        middleware = AdminRateLimitMiddleware(
-            app=app,
-            redis_client=None,  # Use in-memory
+        app.add_middleware(
+            AdminRateLimitMiddleware,
+            redis_client=None,
             limit=3,
-            window_seconds=60
+            window_seconds=60,
         )
-        app.add_middleware(lambda app: middleware)
         return TestClient(app)
 
     def test_allows_requests_under_limit(self, client_with_middleware):
@@ -405,6 +419,7 @@ class TestAdminRateLimitMiddleware:
         request.state.user_id = "user123"
         request.state.tenant_id = "tenant456"
         request.client.host = "192.168.1.1"
+        request.headers = Headers()
 
         identifier = middleware._get_client_identifier(request)
         assert identifier == "user:user123"
@@ -414,8 +429,9 @@ class TestAdminRateLimitMiddleware:
         identifier = middleware._get_client_identifier(request)
         assert identifier == "tenant:tenant456"
 
-        # Test with IP only
+        # Test with IP only (headers must not return a truthy MagicMock for X-Tenant-ID)
         request.state.tenant_id = None
+        request.headers = Headers()
         identifier = middleware._get_client_identifier(request)
         assert identifier == "ip:192.168.1.1"
 
@@ -449,16 +465,14 @@ class TestAdminRateLimitMiddleware:
         async def excluded_endpoint():
             return {"message": "excluded"}
 
-        middleware = AdminRateLimitMiddleware(
-            app=app,
+        app.add_middleware(
+            AdminRateLimitMiddleware,
             redis_client=None,
             limit=1,
             window_seconds=60,
-            exclude_paths=["/custom/excluded"]
+            exclude_paths=["/custom/excluded"],
         )
-
         client = TestClient(app)
-        app.add_middleware(lambda app: middleware)
 
         # Make multiple requests to excluded path
         for _ in range(5):

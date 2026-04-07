@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # Local quick regression: low Hypothesis sample count + no coverage overhead.
+# 仅跑 tests/unit 且更省内存：./scripts/run-unit-lowmem.sh
+# 打印本次运行峰值常驻内存：./scripts/run-unit-lowmem.sh --mem
 # Usage:
 #   ./scripts/run-tests-fast.sh
 #   ./scripts/run-tests-fast.sh tests/unit/test_foo.py -v

@@ -8,7 +8,7 @@ and all five enhancement algorithms.
 import pytest
 from datetime import datetime
 from uuid import uuid4, UUID
-from sqlalchemy import create_engine, String, TypeDecorator
+from sqlalchemy import cast, create_engine, String, TypeDecorator
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
@@ -53,6 +53,22 @@ class SQLiteUUID(TypeDecorator):
 PATCHED_MODELS = [EnhancedDataModel, SampleModel, VersionModel, AuditLogModel]
 
 
+def _snapshot_uuid_columns(models):
+    """Pairs of (column, PGUUID type instance) for resetting between tests."""
+    from sqlalchemy.dialects.postgresql import UUID as PGUUID
+
+    pairs = []
+    for model in models:
+        for col in model.__table__.columns:
+            if isinstance(col.type, PGUUID):
+                pairs.append((col, col.type))
+    return pairs
+
+
+# Captured at import time (before any test mutates mapped column types).
+_UUID_COLUMN_SNAPSHOT = _snapshot_uuid_columns(PATCHED_MODELS)
+
+
 @pytest.fixture(scope='function')
 def db_session():
     """Create an in-memory SQLite database with UUID patching"""
@@ -64,10 +80,15 @@ def db_session():
         poolclass=StaticPool,
     )
 
-    # Patch UUID columns for SQLite
+    # Other unit tests may leave UUID columns as SQLiteUUID; normalize first.
+    for col, original_pg in _UUID_COLUMN_SNAPSHOT:
+        col.type = original_pg
+
+    _uuid_col_restore = []
     for model in PATCHED_MODELS:
         for col in model.__table__.columns:
             if isinstance(col.type, PGUUID):
+                _uuid_col_restore.append((col, col.type))
                 col.type = SQLiteUUID()
 
     for model in PATCHED_MODELS:
@@ -79,12 +100,8 @@ def db_session():
     session.close()
     engine.dispose()
 
-    # Restore original UUID types
-    from sqlalchemy.dialects.postgresql import UUID as PGUUID_Restore
-    for model in PATCHED_MODELS:
-        for col in model.__table__.columns:
-            if isinstance(col.type, SQLiteUUID):
-                col.type = PGUUID_Restore(as_uuid=True)
+    for col, original_type in _uuid_col_restore:
+        col.type = original_type
 
 
 @pytest.fixture
@@ -320,19 +337,16 @@ def test_rollback_enhancement_success(service, sample_content, db_session):
     job = service.create_enhancement_job(config, created_by='admin-1')
     result = service.apply_enhancement(job.id, sample_content)
 
-    # Verify enhanced data exists
-    enhanced = db_session.query(EnhancedDataModel).filter(
-        EnhancedDataModel.id == result['id']
-    ).first()
+    # Verify enhanced data exists (coerce str id for PGUUID bind consistency)
+    rid = UUID(str(result['id']))
+    enhanced = db_session.get(EnhancedDataModel, rid)
     assert enhanced is not None
 
     # Rollback
     service.rollback_enhancement(job.id)
 
     # Verify enhanced data is removed
-    enhanced_after = db_session.query(EnhancedDataModel).filter(
-        EnhancedDataModel.id == result['id']
-    ).first()
+    enhanced_after = db_session.get(EnhancedDataModel, rid)
     assert enhanced_after is None
 
     # Verify job status changed
@@ -568,11 +582,11 @@ def test_add_to_sample_library_success(service, sample_content, db_session):
     assert sample['version'] == 1
     assert 'enhanced' in sample['tags']
 
-    # Verify persisted in DB
+    # Verify persisted in DB (string cast avoids SQLite PGUUID bind issues after
+    # long test runs in the same process).
     from src.models.data_lifecycle import SampleModel
-    from uuid import UUID as _UUID
     db_sample = db_session.query(SampleModel).filter(
-        SampleModel.id == _UUID(sample['id'])
+        cast(SampleModel.id, String) == sample['id']
     ).first()
     assert db_sample is not None
     assert db_sample.data_id == enhanced['id']

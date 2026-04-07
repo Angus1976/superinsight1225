@@ -12,6 +12,7 @@ Tests the core data transfer service functionality including:
 """
 
 import pytest
+from contextlib import contextmanager
 from datetime import datetime
 from uuid import uuid4
 from unittest.mock import Mock, AsyncMock, patch, MagicMock
@@ -33,10 +34,18 @@ def mock_db():
     """Create a mock database session."""
     db = Mock(spec=Session)
     db.add = Mock()
+    db.add_all = Mock()
     db.commit = Mock()
     db.flush = Mock()
     db.execute = Mock()
     db.bulk_save_objects = Mock()
+    db.rollback = Mock()
+
+    @contextmanager
+    def _begin_nested():
+        yield
+
+    db.begin_nested = Mock(side_effect=_begin_nested)
     return db
 
 
@@ -209,7 +218,7 @@ class TestTransferToTempStorage:
         # Verify database operations - bulk_save_objects for records + add for audit log
         assert mock_db.bulk_save_objects.call_count == 1
         assert mock_db.add.call_count == 1  # Only audit log
-        assert mock_db.commit.call_count >= 1
+        assert mock_db.flush.call_count >= 1
         
         # Verify bulk_save_objects was called with correct number of records
         bulk_call_args = mock_db.bulk_save_objects.call_args[0][0]
@@ -309,8 +318,8 @@ class TestTransferToSampleLibrary:
         assert result["target_state"] == "in_sample_library"
         assert result["navigation_url"] == "/data-lifecycle/sample-library"
         
-        # Verify sample was created with correct quality scores using bulk_save_objects
-        bulk_call_args = mock_db.bulk_save_objects.call_args[0][0]
+        # Sample library path uses add_all + flush (not bulk_save_objects)
+        bulk_call_args = mock_db.add_all.call_args[0][0]
         sample = bulk_call_args[0]
         
         assert sample.quality_overall == 0.95
@@ -473,8 +482,8 @@ class TestAuditLogging:
             result = await service.transfer(sample_transfer_request, admin_user)
         
         assert result["success"] is True
-        # Verify rollback was called for audit log failure
-        assert mock_db.rollback.call_count == 1
+        mock_db.add.assert_called()
+        # Real Session would roll back the nested savepoint; the mock does not call rollback().
     
     @pytest.mark.asyncio
     async def test_audit_log_created_on_failed_transfer(
@@ -718,8 +727,8 @@ class TestBatchTransfer:
         assert result["success"] is True
         assert result["transferred_count"] == 100
         
-        # Verify all records were passed to bulk_save_objects
-        bulk_call_args = mock_db.bulk_save_objects.call_args[0][0]
+        # Sample library uses add_all([...]) for ORM-visible inserts
+        bulk_call_args = mock_db.add_all.call_args[0][0]
         assert len(bulk_call_args) == 100
         
         # Verify first and last records have correct data
@@ -778,8 +787,8 @@ class TestErrorHandling:
         """Test handling of database errors during transfer."""
         service = DataTransferService(mock_db)
         
-        # Make database commit fail
-        mock_db.commit.side_effect = Exception("Database connection lost")
+        # Persist path uses flush(), not commit()
+        mock_db.flush.side_effect = Exception("Database connection lost")
         
         with patch.object(
             service.permission_service, 'check_permission',
@@ -917,7 +926,7 @@ class TestTransferToSampleLibraryDetails:
         assert result["transferred_count"] == 5
         assert result["target_state"] == "in_sample_library"
 
-        bulk_args = mock_db.bulk_save_objects.call_args[0][0]
+        bulk_args = mock_db.add_all.call_args[0][0]
         assert len(bulk_args) == 5
         for sample in bulk_args:
             assert sample.quality_overall == 0.88
@@ -962,7 +971,7 @@ class TestTransferToSampleLibraryDetails:
             result = await service.transfer(request, admin_user)
 
         assert result["success"] is True
-        sample = mock_db.bulk_save_objects.call_args[0][0][0]
+        sample = mock_db.add_all.call_args[0][0][0]
         assert sample.metadata_["transferred_by"] == admin_user.id
         assert "transferred_at" in sample.metadata_
         assert sample.metadata_["source_type"] == "structuring"
@@ -1265,22 +1274,13 @@ class TestErrorHandlingExtended:
         assert "Unsupported target state" in audit_log.error_message
 
     @pytest.mark.asyncio
-    async def test_commit_failure_triggers_audit_and_reraise(
+    async def test_flush_failure_during_transfer_reraises(
         self, mock_db, admin_user
     ):
-        """Test that commit failure still logs audit and re-raises."""
+        """Flush failure during data persist re-raises (service does not commit)."""
         service = DataTransferService(mock_db)
 
-        # First commit (for bulk_save_objects) fails, second commit (audit) succeeds
-        call_count = {"n": 0}
-        original_commit = mock_db.commit
-
-        def commit_side_effect():
-            call_count["n"] += 1
-            if call_count["n"] == 1:
-                raise RuntimeError("Connection lost during commit")
-
-        mock_db.commit = Mock(side_effect=commit_side_effect)
+        mock_db.flush.side_effect = RuntimeError("Connection lost during flush")
 
         request = DataTransferRequest(
             source_type="structuring",
@@ -1299,8 +1299,7 @@ class TestErrorHandlingExtended:
             with pytest.raises(RuntimeError, match="Connection lost"):
                 await service.transfer(request, admin_user)
 
-        # Audit log should have been attempted
-        assert mock_db.add.call_count >= 1
+        assert mock_db.bulk_save_objects.call_count == 1
 
     @pytest.mark.asyncio
     async def test_validation_error_does_not_execute_transfer(

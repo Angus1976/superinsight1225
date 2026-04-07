@@ -26,6 +26,14 @@ from src.services.annotation_task_service import (
     TaskConfig,
     Annotation
 )
+from tests.property.sqlite_uuid_compat import (
+    snapshot_uuid_columns,
+    patch_models_to_sqlite_uuid,
+    restore_uuid_columns,
+)
+
+PATCHED_MODELS = [SampleModel, AnnotationTaskModel, AuditLogModel]
+_UUID_COLUMN_SNAPSHOT = snapshot_uuid_columns(PATCHED_MODELS)
 
 
 # ============================================================================
@@ -36,31 +44,29 @@ from src.services.annotation_task_service import (
 def db_session() -> Session:
     """
     Provide a database session with only data lifecycle tables.
-    
-    This avoids the JSONB compatibility issue with SQLite by only creating
-    the data lifecycle tables (which use JSON, not JSONB).
+    Patches UUID columns for SQLite compatibility.
     """
-    # Create in-memory SQLite engine
     engine = create_engine(
         "sqlite:///:memory:",
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
-    
-    # Create only the specific tables we need for this test
-    SampleModel.__table__.create(bind=engine, checkfirst=True)
-    AnnotationTaskModel.__table__.create(bind=engine, checkfirst=True)
-    AuditLogModel.__table__.create(bind=engine, checkfirst=True)
-    
-    # Create session
-    SessionLocal = sessionmaker(bind=engine)
-    session = SessionLocal()
-    
-    yield session
-    
-    # Cleanup
-    session.close()
-    engine.dispose()
+
+    restore = patch_models_to_sqlite_uuid(PATCHED_MODELS, _UUID_COLUMN_SNAPSHOT)
+    try:
+        SampleModel.__table__.create(bind=engine, checkfirst=True)
+        AnnotationTaskModel.__table__.create(bind=engine, checkfirst=True)
+        AuditLogModel.__table__.create(bind=engine, checkfirst=True)
+
+        SessionLocal = sessionmaker(bind=engine)
+        session = SessionLocal()
+        try:
+            yield session
+        finally:
+            session.close()
+            engine.dispose()
+    finally:
+        restore_uuid_columns(restore)
 
 
 # ============================================================================

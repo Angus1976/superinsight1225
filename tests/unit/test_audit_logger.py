@@ -518,12 +518,12 @@ class TestExportAuditLog:
         # Act
         csv_content = audit_logger.export_audit_log()
         
-        # Assert
+        # Assert (enum values in CSV are lowercase via .value)
         assert csv_content is not None
         assert "ID,Timestamp,User ID" in csv_content
         assert "user123" in csv_content
-        assert "CREATE" in csv_content
-        assert "SAMPLE" in csv_content
+        assert "create" in csv_content
+        assert "sample" in csv_content
     
     def test_export_audit_log_with_filters(self, audit_logger):
         """Test exporting filtered audit logs."""

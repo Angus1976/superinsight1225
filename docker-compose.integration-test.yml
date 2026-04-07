@@ -1,0 +1,35 @@
+# 供本地/CI 运行 `pytest -m integration`（不含 @pytest.mark.docker 的重栈测试）时使用。
+# 与 tests/database_isolation.TestDatabaseConfig 默认端口及 .env.test 中 TEST_* 对齐。
+#
+# 启动:
+#   docker compose -f docker-compose.integration-test.yml up -d
+# 停止:
+#   docker compose -f docker-compose.integration-test.yml down
+
+services:
+  postgres-test:
+    image: pgvector/pgvector:pg15
+    container_name: superinsight-postgres-test
+    environment:
+      POSTGRES_USER: superinsight_test
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_DB: superinsight_test
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U superinsight_test -d superinsight_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis-test:
+    image: redis:7-alpine
+    container_name: superinsight-redis-test
+    ports:
+      - "6380:6379"
+    command: redis-server --appendonly no
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10

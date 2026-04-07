@@ -509,8 +509,15 @@ def teardown_test_database(engine: Engine):
         engine: Database engine to use
     """
     try:
-        # Drop all tables
-        Base.metadata.drop_all(bind=engine)
+        if engine.dialect.name == "postgresql":
+            # ``metadata.drop_all`` can fail on circular FK graphs (e.g. data_versions ↔ branches).
+            with engine.begin() as conn:
+                conn.execute(text("DROP SCHEMA public CASCADE"))
+                conn.execute(text("CREATE SCHEMA public"))
+                conn.execute(text("GRANT ALL ON SCHEMA public TO public"))
+                conn.execute(text("GRANT ALL ON SCHEMA public TO CURRENT_USER"))
+        else:
+            Base.metadata.drop_all(bind=engine)
         logger.info("Test database schema dropped")
     except Exception as e:
         logger.error(f"Failed to drop test database schema: {e}")

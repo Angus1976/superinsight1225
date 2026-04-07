@@ -59,7 +59,13 @@ const trialResultArb: fc.Arbitrary<TrialResult> = fc.record({
   confidenceDistribution: fc.array(distributionEntryArb, { minLength: 0, maxLength: 5 }),
   labelDistribution: fc.array(labelEntryArb, { minLength: 0, maxLength: 5 }),
   duration: fc.integer({ min: 0, max: 600000 }),
-  timestamp: fc.date().map((d) => d.toISOString()),
+  // Avoid fc.date() → Invalid Date / RangeError on toISOString(); use epoch ms in a safe range.
+  timestamp: fc
+    .integer({
+      min: Date.parse('2000-01-01T00:00:00.000Z'),
+      max: Date.parse('2100-12-31T23:59:59.999Z'),
+    })
+    .map((ms) => new Date(ms).toISOString()),
 })
 
 // ─── Property 1: 执行状态渲染完整性 ────────────────────────────────

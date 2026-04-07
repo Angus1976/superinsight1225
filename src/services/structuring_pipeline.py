@@ -418,25 +418,12 @@ async def _load_cloud_config(
                     .order_by(LLMApplicationBinding.priority.asc())
                 )
                 
-                # Apply tenant filter with fallback to global
+                # Apply tenant filter with fallback to global (tenant id matches ``TenantModel.id`` string)
                 if tenant_id:
-                    # Try to convert tenant_id to UUID if it's a string
-                    from uuid import UUID as UUIDType
-                    try:
-                        # If tenant_id is a valid UUID string, convert it
-                        if isinstance(tenant_id, str):
-                            tenant_uuid = UUIDType(tenant_id)
-                        else:
-                            tenant_uuid = tenant_id
-                        
-                        tenant_stmt = stmt.where(LLMConfiguration.tenant_id == tenant_uuid)
-                        result = db.execute(tenant_stmt)
-                        bindings = result.scalars().all()
-                    except (ValueError, AttributeError):
-                        # tenant_id is not a valid UUID (e.g., "system"), skip tenant filter
-                        logger.info(f"tenant_id '{tenant_id}' is not a valid UUID, using global config")
-                        bindings = []
-                    
+                    tenant_stmt = stmt.where(LLMConfiguration.tenant_id == str(tenant_id))
+                    result = db.execute(tenant_stmt)
+                    bindings = result.scalars().all()
+
                     if not bindings:
                         # Fallback to global config
                         global_stmt = stmt.where(LLMConfiguration.tenant_id == None)
@@ -579,14 +566,9 @@ async def _load_all_cloud_configs(
             )
 
             if tenant_id:
-                from uuid import UUID as UUIDType
-                try:
-                    tenant_uuid = UUIDType(tenant_id) if isinstance(tenant_id, str) else tenant_id
-                    bindings = db.execute(
-                        bind_stmt.where(LLMConfiguration.tenant_id == tenant_uuid)
-                    ).scalars().all()
-                except (ValueError, AttributeError):
-                    bindings = []
+                bindings = db.execute(
+                    bind_stmt.where(LLMConfiguration.tenant_id == str(tenant_id))
+                ).scalars().all()
                 if not bindings:
                     bindings = db.execute(
                         bind_stmt.where(LLMConfiguration.tenant_id == None)

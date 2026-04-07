@@ -30,7 +30,7 @@ class DataSource(Base):
     __tablename__ = "sync_data_sources"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    tenant_id = Column(UUID(as_uuid=True), nullable=True, index=True)
+    tenant_id = Column(String(100), nullable=True, index=True)
     name = Column(String(200), nullable=False)
     description = Column(Text, nullable=True)
     

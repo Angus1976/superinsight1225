@@ -180,15 +180,16 @@ class RBACEngine:
                     self.logger.warning(f"Parent role {parent_role_id} not found")
                     return None
             
-            # Create role
+            # Create role (permissions is a relationship, not a JSON list — store
+            # declarative permission dicts in role_metadata until linked to PermissionModel rows)
             role = RoleModel(
                 name=name,
                 description=description,
                 tenant_id=tenant_id,
-                permissions=permissions or [],
                 parent_role_id=parent_role_id,
                 created_by=created_by,
-                is_system_role=is_system_role
+                is_system_role=is_system_role,
+                role_metadata={"permissions": permissions} if permissions else None,
             )
             
             db.add(role)

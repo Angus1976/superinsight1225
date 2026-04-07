@@ -14,11 +14,9 @@ import copy
 import pytest
 from hypothesis import given, strategies as st, settings, HealthCheck
 from uuid import uuid4, UUID
-from sqlalchemy import create_engine, String
+from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
-from sqlalchemy.types import TypeDecorator
-from sqlalchemy.dialects.postgresql import UUID as PGUUID
 
 from src.models.data_lifecycle import (
     AuditLogModel,
@@ -29,29 +27,14 @@ from src.services.ai_trial_service import (
     AITrialService,
     TrialConfig,
 )
-
-
-# ============================================================================
-# SQLite UUID Compatibility
-# ============================================================================
-
-class SQLiteUUID(TypeDecorator):
-    """UUID type that works with SQLite by storing as string."""
-    impl = String(36)
-    cache_ok = True
-
-    def process_bind_param(self, value, dialect):
-        if value is not None:
-            return str(value)
-        return value
-
-    def process_result_value(self, value, dialect):
-        if value is not None:
-            return UUID(value) if not isinstance(value, UUID) else value
-        return value
-
+from tests.property.sqlite_uuid_compat import (
+    snapshot_uuid_columns,
+    patch_models_to_sqlite_uuid,
+    restore_uuid_columns,
+)
 
 PATCHED_MODELS = [AuditLogModel]
+_UUID_COLUMN_SNAPSHOT = snapshot_uuid_columns(PATCHED_MODELS)
 
 
 @pytest.fixture(scope="function")
@@ -63,28 +46,20 @@ def db_session() -> Session:
         poolclass=StaticPool,
     )
 
-    # Patch UUID columns for SQLite
-    for model in PATCHED_MODELS:
-        for col in model.__table__.columns:
-            if isinstance(col.type, PGUUID):
-                col.type = SQLiteUUID()
+    restore = patch_models_to_sqlite_uuid(PATCHED_MODELS, _UUID_COLUMN_SNAPSHOT)
+    try:
+        for model in PATCHED_MODELS:
+            model.__table__.create(bind=engine, checkfirst=True)
 
-    for model in PATCHED_MODELS:
-        model.__table__.create(bind=engine, checkfirst=True)
-
-    SessionLocal = sessionmaker(bind=engine)
-    session = SessionLocal()
-
-    yield session
-
-    session.close()
-    engine.dispose()
-
-    # Restore original UUID types
-    for model in PATCHED_MODELS:
-        for col in model.__table__.columns:
-            if isinstance(col.type, SQLiteUUID):
-                col.type = PGUUID(as_uuid=True)
+        SessionLocal = sessionmaker(bind=engine)
+        session = SessionLocal()
+        try:
+            yield session
+        finally:
+            session.close()
+            engine.dispose()
+    finally:
+        restore_uuid_columns(restore)
 
 
 # ============================================================================

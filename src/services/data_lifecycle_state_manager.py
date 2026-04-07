@@ -6,10 +6,10 @@ valid transitions according to the state machine definition.
 """
 
 from datetime import datetime
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple, Union
 from uuid import UUID
 from sqlalchemy.orm import Session
-from sqlalchemy import and_
+from sqlalchemy import and_, cast, String, or_
 
 from src.models.data_lifecycle import (
     DataState,
@@ -23,6 +23,20 @@ from src.models.data_lifecycle import (
     Action,
     ResourceType
 )
+
+
+def _as_uuid(value: Union[str, UUID]) -> UUID:
+    """Coerce string IDs for UUID primary-key columns (Postgres + SQLite tests)."""
+    return value if isinstance(value, UUID) else UUID(str(value))
+
+
+def _pk_id_eq(model_class, data_id: str):
+    """UUID PK filter compatible with plain SQLite and SQLiteUUID property tests."""
+    u = _as_uuid(data_id)
+    return or_(
+        model_class.id == u,
+        cast(model_class.id, String) == str(u),
+    )
 
 
 # ============================================================================
@@ -147,7 +161,7 @@ class DataStateManager:
         """
         model_class = self._get_model_class(resource_type)
         data_item = self.db.query(model_class).filter(
-            model_class.id == data_id
+            _pk_id_eq(model_class, data_id)
         ).first()
         
         if not data_item:
@@ -161,7 +175,7 @@ class DataStateManager:
         elif resource_type == ResourceType.ANNOTATED_DATA:
             # Check task status to determine state
             task = self.db.query(AnnotationTaskModel).filter(
-                AnnotationTaskModel.id == data_id
+                _pk_id_eq(AnnotationTaskModel, data_id)
             ).first()
             if task:
                 if task.status.value == 'created':
@@ -172,7 +186,7 @@ class DataStateManager:
                     return DataState.ANNOTATED
         elif resource_type == ResourceType.ENHANCED_DATA:
             enhanced = self.db.query(EnhancedDataModel).filter(
-                EnhancedDataModel.id == data_id
+                _pk_id_eq(EnhancedDataModel, data_id)
             ).first()
             if enhanced:
                 return DataState.ENHANCED
@@ -251,7 +265,7 @@ class DataStateManager:
             # Update state in database
             model_class = self._get_model_class(resource_type)
             data_item = self.db.query(model_class).filter(
-                model_class.id == data_id
+                _pk_id_eq(model_class, data_id)
             ).first()
             
             if not data_item:

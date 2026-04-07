@@ -13,9 +13,11 @@ import * as fc from 'fast-check';
 
 // Mock localStorage
 const localStorageMock = (() => {
-  let store: Record<string, string> = {};
+  let store: Record<string, string> = Object.create(null);
   return {
-    getItem: vi.fn((key: string) => store[key] || null),
+    getItem: vi.fn((key: string) =>
+      Object.prototype.hasOwnProperty.call(store, key) ? store[key] : null,
+    ),
     setItem: vi.fn((key: string, value: string) => {
       store[key] = value;
     }),
@@ -23,7 +25,7 @@ const localStorageMock = (() => {
       delete store[key];
     }),
     clear: vi.fn(() => {
-      store = {};
+      store = Object.create(null);
     }),
     get length() {
       return Object.keys(store).length;

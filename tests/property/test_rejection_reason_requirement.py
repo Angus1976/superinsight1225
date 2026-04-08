@@ -99,7 +99,7 @@ class TestRejectionReasonRequirement:
         reviewer_id=user_id_strategy,
         invalid_reason=invalid_rejection_reason_strategy
     )
-    @settings(max_examples=50, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_rejection_requires_non_empty_reason(
         self,
         db_session: Session,
@@ -166,7 +166,7 @@ class TestRejectionReasonRequirement:
         reviewer_id=user_id_strategy,
         valid_reason=valid_rejection_reason_strategy
     )
-    @settings(max_examples=50, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_rejection_succeeds_with_valid_reason(
         self,
         db_session: Session,
@@ -253,7 +253,7 @@ class TestRejectionReasonRequirement:
         submitter_id=user_id_strategy,
         reviewer_id=user_id_strategy
     )
-    @settings(max_examples=30, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_rejection_with_none_reason_fails(
         self,
         db_session: Session,
@@ -305,7 +305,7 @@ class TestRejectionReasonRequirement:
         reason1=valid_rejection_reason_strategy,
         reason2=valid_rejection_reason_strategy
     )
-    @settings(max_examples=30, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_rejection_reason_is_retrievable(
         self,
         db_session: Session,
@@ -370,7 +370,7 @@ class TestRejectionReasonRequirement:
         reviewer_id=user_id_strategy,
         valid_reason=valid_rejection_reason_strategy
     )
-    @settings(max_examples=30, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_rejection_reason_preserves_content(
         self,
         db_session: Session,
@@ -420,7 +420,7 @@ class TestRejectionReasonRequirement:
         submitter_id=user_id_strategy,
         reviewer_id=user_id_strategy
     )
-    @settings(max_examples=20, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_multiple_rejection_attempts_with_invalid_reasons(
         self,
         db_session: Session,
@@ -477,7 +477,7 @@ class TestRejectionReasonRequirement:
         reviewer_id=user_id_strategy,
         valid_reason=valid_rejection_reason_strategy
     )
-    @settings(max_examples=20, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_rejection_reason_in_audit_log(
         self,
         db_session: Session,

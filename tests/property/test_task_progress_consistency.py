@@ -159,7 +159,7 @@ class TestTaskProgressConsistency:
     """
     
     @given(sample_count=sample_count_strategy)
-    @settings(max_examples=30, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_progress_total_equals_sample_count(
         self,
         db_session: Session,
@@ -191,7 +191,7 @@ class TestTaskProgressConsistency:
         sample_count=sample_count_strategy,
         annotation_count=annotation_count_strategy
     )
-    @settings(max_examples=30, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_completed_plus_in_progress_not_exceed_total(
         self,
         db_session: Session,
@@ -244,7 +244,7 @@ class TestTaskProgressConsistency:
         sample_count=sample_count_strategy,
         annotation_count=annotation_count_strategy
     )
-    @settings(max_examples=30, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_percentage_calculation_correct(
         self,
         db_session: Session,
@@ -299,7 +299,7 @@ class TestTaskProgressConsistency:
         )
     
     @given(sample_count=st.integers(min_value=1, max_value=20))
-    @settings(max_examples=30, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_initial_progress_is_zero(
         self,
         db_session: Session,
@@ -334,7 +334,7 @@ class TestTaskProgressConsistency:
         )
     
     @given(sample_count=st.integers(min_value=1, max_value=20))
-    @settings(max_examples=30, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_full_completion_reaches_100_percent(
         self,
         db_session: Session,
@@ -384,7 +384,7 @@ class TestTaskProgressConsistency:
         sample_count=st.integers(min_value=2, max_value=20),
         annotation_count=st.integers(min_value=1, max_value=20)
     )
-    @settings(max_examples=30, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_progress_increments_monotonically(
         self,
         db_session: Session,
@@ -446,7 +446,7 @@ class TestTaskProgressConsistency:
         sample_count=st.integers(min_value=2, max_value=20),
         annotation_count=st.integers(min_value=1, max_value=20)
     )
-    @settings(max_examples=30, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_percentage_monotonically_increases(
         self,
         db_session: Session,
@@ -499,7 +499,7 @@ class TestTaskProgressConsistency:
             previous_percentage = progress.percentage
     
     @given(sample_count=st.integers(min_value=1, max_value=20))
-    @settings(max_examples=30, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_resubmitting_same_annotation_does_not_increase_progress(
         self,
         db_session: Session,
@@ -566,7 +566,7 @@ class TestTaskProgressConsistency:
         sample_count=st.integers(min_value=1, max_value=20),
         annotation_type=annotation_type_strategy
     )
-    @settings(max_examples=30, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_progress_consistency_across_annotation_types(
         self,
         db_session: Session,
@@ -625,7 +625,7 @@ class TestTaskProgressConsistency:
         )
     
     @given(sample_count=st.integers(min_value=1, max_value=20))
-    @settings(max_examples=20, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_progress_values_are_non_negative(
         self,
         db_session: Session,
@@ -663,7 +663,7 @@ class TestTaskProgressConsistency:
         )
     
     @given(sample_count=st.integers(min_value=1, max_value=20))
-    @settings(max_examples=20, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_percentage_never_exceeds_100(
         self,
         db_session: Session,

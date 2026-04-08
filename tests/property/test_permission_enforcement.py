@@ -84,7 +84,7 @@ def permission_grant_strategy(draw):
     grant_data=permission_grant_strategy(),
     action_to_check=action_strategy()
 )
-@settings(max_examples=50, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+@settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
 def test_permission_enforcement_granted_actions(
     db_session: Session,
     grant_data: dict,
@@ -129,7 +129,7 @@ def test_permission_enforcement_granted_actions(
     resource=resource_strategy(),
     action=action_strategy()
 )
-@settings(max_examples=50, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+@settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
 def test_permission_enforcement_no_grant(
     db_session: Session,
     user_id: str,
@@ -160,7 +160,7 @@ def test_permission_enforcement_no_grant(
     grant_data=permission_grant_strategy(),
     action_to_check=action_strategy()
 )
-@settings(max_examples=50, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+@settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
 def test_permission_enforcement_403_error(
     db_session: Session,
     grant_data: dict,
@@ -210,7 +210,7 @@ def test_permission_enforcement_403_error(
     grant_data=permission_grant_strategy(),
     other_user_id=user_id_strategy()
 )
-@settings(max_examples=50, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+@settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
 def test_permission_enforcement_user_isolation(
     db_session: Session,
     grant_data: dict,
@@ -252,7 +252,7 @@ def test_permission_enforcement_user_isolation(
     grant_data=permission_grant_strategy(),
     other_resource=resource_strategy()
 )
-@settings(max_examples=50, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+@settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
 def test_permission_enforcement_resource_isolation(
     db_session: Session,
     grant_data: dict,
@@ -294,7 +294,7 @@ def test_permission_enforcement_resource_isolation(
 @given(
     grant_data=permission_grant_strategy()
 )
-@settings(max_examples=50, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+@settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
 def test_permission_enforcement_revoke(
     db_session: Session,
     grant_data: dict
@@ -350,7 +350,7 @@ def test_permission_enforcement_revoke(
     resource_type=st.sampled_from(list(ResourceType)),
     action=action_strategy()
 )
-@settings(max_examples=50, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+@settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
 def test_permission_enforcement_rbac(
     db_session: Session,
     role: str,

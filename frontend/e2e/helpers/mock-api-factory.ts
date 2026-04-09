@@ -8,8 +8,12 @@
  * Requirements: 16.2, 2.1, 2.2
  */
 
+import type { BrowserContext } from '@playwright/test'
 import { Page } from '@playwright/test'
 import { E2E_VALID_ACCESS_TOKEN } from '../e2e-tokens'
+
+/** One LS origin stub per browser context (mockAllApis may run many times per file). */
+const labelStudioOriginStubbed = new WeakSet<BrowserContext>()
 
 export interface MockOptions {
   count?: number
@@ -804,6 +808,20 @@ export async function mockAllApis(page: Page, options: MockOptions = {}): Promis
       url: 'https://labelstudio.internal/projects/99/data?token=e2e-mock-token&lang=zh',
     }),
   )
+
+  /* Popups use `window.open(VITE_LABEL_STUDIO_URL)` — child pages do not inherit `page.route`.
+   * Stub the LS origin so navigation commits (avoids ERR_CONNECTION_REFUSED / stuck about:blank). */
+  const ctx = page.context()
+  if (!labelStudioOriginStubbed.has(ctx)) {
+    labelStudioOriginStubbed.add(ctx)
+    await ctx.route(/https?:\/\/(localhost|127\.0\.0\.1):8080\/.*/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'text/html; charset=utf-8',
+        body: '<!DOCTYPE html><html><head><title>LS E2E</title></head><body>stub</body></html>',
+      })
+    })
+  }
 }
 
 export { buildTaskRecord, generateTasks, generateBillingRecords, generateDataSources, generateUsers }

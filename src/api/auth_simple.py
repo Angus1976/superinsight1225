@@ -125,7 +125,8 @@ async def get_current_user(
         )
     
     result = db.execute(text(
-        "SELECT id, email, username, name, is_active, is_superuser FROM users WHERE id = :user_id"
+        "SELECT id, email, username, full_name AS name, is_active, "
+        "(role = 'admin') AS is_superuser FROM users WHERE id = CAST(:user_id AS uuid)"
     ), {"user_id": user_id})
     
     user_row = result.fetchone()
@@ -156,15 +157,18 @@ def login(
 ):
     """Authenticate user and return access token."""
     try:
-        # Query user from database
+        # Accept either email or username in the "email" field (matches login form placeholder)
+        login_id = (request.email or "").strip()
         result = db.execute(text(
-            "SELECT id, email, username, name, password_hash, is_active, is_superuser FROM users WHERE email = :email"
-        ), {"email": request.email})
+            "SELECT id, email, username, full_name AS name, password_hash, is_active, "
+            "(role = 'admin') AS is_superuser FROM users "
+            "WHERE LOWER(email) = LOWER(:login) OR LOWER(username) = LOWER(:login)"
+        ), {"login": login_id})
         
         user_row = result.fetchone()
         
         if not user_row:
-            logger.warning(f"Login attempt for non-existent user: {request.email}")
+            logger.warning(f"Login attempt for non-existent user: {login_id}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid email or password",
@@ -198,7 +202,7 @@ def login(
         
         # Update last login
         db.execute(text(
-            "UPDATE users SET last_login_at = :now WHERE id = :user_id"
+            "UPDATE users SET last_login = :now WHERE id = :user_id"
         ), {"now": datetime.utcnow(), "user_id": user_id})
         db.commit()
         

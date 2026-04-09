@@ -74,31 +74,38 @@ export default defineConfig({
     },
   },
 
-  /* Configure projects for major browsers */
+  /* Deployment specs live under e2e/deployment — only the `deployment` project should run them
+   * (real services / DEPLOY_URL). Browser projects must ignore this folder or `npm run test:e2e`
+   * double-runs them against the Vite dev server and fails. */
   projects: [
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+      testIgnore: ['**/deployment/**'],
     },
 
     {
       name: 'firefox',
       use: { ...devices['Desktop Firefox'] },
+      testIgnore: ['**/deployment/**'],
     },
 
     {
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
+      testIgnore: ['**/deployment/**'],
     },
 
     /* Test against mobile viewports. */
     {
       name: 'Mobile Chrome',
       use: { ...devices['Pixel 5'] },
+      testIgnore: ['**/deployment/**'],
     },
     {
       name: 'Mobile Safari',
       use: { ...devices['iPhone 12'] },
+      testIgnore: ['**/deployment/**'],
     },
 
     /* Deployment health checks — runs against real services (no mocking) */

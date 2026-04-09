@@ -108,8 +108,14 @@ async function mockSecurityApis(page: import('@playwright/test').Page) {
   })
 
   await page.route('**/api/v1/audit/logs**', async (route) => {
+    /* POST …/export must be fulfilled here: this pattern matches before the dedicated export route
+     * in reverse registration order, and continue() would hit the real network (timeout in E2E). */
     if (route.request().url().includes('/export')) {
-      await route.continue()
+      await route.fulfill({
+        status: 200,
+        headers: { 'Content-Type': 'text/csv' },
+        body: 'id,event_type\nlog-1,user_login\n',
+      })
       return
     }
     await route.fulfill({

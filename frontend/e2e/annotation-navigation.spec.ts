@@ -29,10 +29,14 @@ test.describe('Annotation Navigation E2E Tests', () => {
     await waitForPageReady(page)
     await expect(page.getByText(/测试任务/).first()).toBeVisible({ timeout: 15000 })
 
-    const popupPromise = context.waitForEvent('page')
-    await page.getByRole('button', { name: /在新窗口打开|Open in New Window/i }).click()
-    const newPage = await popupPromise
-    await newPage.waitForLoadState('domcontentloaded')
+    const [newPage] = await Promise.all([
+      context.waitForEvent('page'),
+      page.getByRole('button', { name: /在新窗口打开|Open in New Window/i }).click(),
+    ])
+    await newPage.waitForURL(/token=|projects\/\d+\/data/, {
+      timeout: 20000,
+      waitUntil: 'commit',
+    })
     const url = newPage.url()
     expect(url).toMatch(/token=|projects\/\d+\/data/)
     await newPage.close()

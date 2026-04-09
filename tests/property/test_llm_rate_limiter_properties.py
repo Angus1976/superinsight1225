@@ -168,21 +168,22 @@ async def test_property_token_refill(
     await asyncio.sleep(wait_time)
 
     # Property: Tokens should be refilled
-    # Expected refill = wait_time * refill_rate
+    # Expected refill = wait_time * refill_rate (capped by max_tokens — bucket cannot exceed burst)
     expected_tokens = wait_time * refill_rate
+    max_possible = int(min(expected_tokens, config.max_tokens))
 
-    # Should be able to make approximately expected_tokens requests
+    # Should be able to make approximately min(expected, max_tokens) requests
     successful = 0
-    for i in range(int(expected_tokens) + 2):  # +2 tolerance
+    for i in range(max_possible + 2):  # +2 headroom for tolerance loops
         try:
             await limiter.acquire(LLMMethod.CLOUD_OPENAI, wait=False)
             successful += 1
         except RateLimitExceededError:
             break
 
-    # Allow some tolerance
-    assert successful >= int(expected_tokens) - 1, \
-        f"Expected ~{expected_tokens:.1f} tokens after {wait_time}s refill, got {successful}"
+    # Allow some tolerance (timing / float); cannot exceed bucket capacity
+    assert successful >= max(0, max_possible - 1), \
+        f"Expected ~{max_possible} tokens after {wait_time}s refill (raw {expected_tokens:.1f}), got {successful}"
 
 
 @pytest.mark.asyncio
@@ -294,11 +295,6 @@ async def test_property_variable_cost(
 
 
 @pytest.mark.asyncio
-@settings(
-    max_examples=50,
-    deadline=None,
-    suppress_health_check=[HealthCheck.function_scoped_fixture]
-)
 async def test_property_wait_mode():
     """
     Property: Wait Mode
@@ -344,11 +340,6 @@ async def test_property_wait_mode():
 
 
 @pytest.mark.asyncio
-@settings(
-    max_examples=50,
-    deadline=None,
-    suppress_health_check=[HealthCheck.function_scoped_fixture]
-)
 async def test_property_disabled_limiting():
     """
     Property: Disabled Rate Limiting
@@ -382,11 +373,6 @@ async def test_property_disabled_limiting():
 
 
 @pytest.mark.asyncio
-@settings(
-    max_examples=100,
-    deadline=None,
-    suppress_health_check=[HealthCheck.function_scoped_fixture]
-)
 async def test_property_statistics_accuracy():
     """
     Property: Statistics Accuracy
@@ -438,11 +424,6 @@ async def test_property_statistics_accuracy():
 
 
 @pytest.mark.asyncio
-@settings(
-    max_examples=50,
-    deadline=None,
-    suppress_health_check=[HealthCheck.function_scoped_fixture]
-)
 async def test_property_bucket_reset():
     """
     Property: Bucket Reset
@@ -515,7 +496,7 @@ async def test_concurrent_requests():
 
 @pytest.mark.asyncio
 async def test_zero_capacity():
-    """Test handling of zero capacity (effectively disabled)."""
+    """Zero burst capacity: configuration is accepted; every acquire is rejected."""
     reset_rate_limiter()
     limiter = RateLimiter()
 
@@ -525,11 +506,10 @@ async def test_zero_capacity():
         tokens_per_request=1.0,
         enabled=True
     )
+    limiter.configure_provider(LLMMethod.CLOUD_OPENAI, config)
 
-    with pytest.raises(Exception):
-        # This should fail validation in a real scenario
-        # but for testing, we check that zero capacity blocks all requests
-        limiter.configure_provider(LLMMethod.CLOUD_OPENAI, config)
+    with pytest.raises(RateLimitExceededError):
+        await limiter.acquire(LLMMethod.CLOUD_OPENAI, wait=False)
 
 
 @pytest.mark.asyncio

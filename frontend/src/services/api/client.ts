@@ -21,6 +21,30 @@ import {
 // Increased to 10 seconds to prevent premature timeouts during workspace loading
 const OPTIMIZED_TIMEOUT = 10000;
 
+/**
+ * Auth endpoints that may legitimately return 401 (e.g. wrong password on login).
+ * They must not trigger the refresh-token flow: auth_simple does not issue refresh_token,
+ * so the interceptor would always log errors and force-redirect.
+ */
+function isPublicAuthRequest(config: InternalAxiosRequestConfig | undefined): boolean {
+  const raw = config?.url;
+  if (!raw) return false;
+  try {
+    const path = raw.startsWith('http') ? new URL(raw).pathname : raw.split('?')[0];
+    const publicPaths = [
+      '/api/auth/login',
+      '/api/auth/register',
+      '/api/auth/forgot-password',
+      '/api/auth/reset-password',
+      '/api/auth/refresh',
+      '/api/auth/tenants',
+    ];
+    return publicPaths.some((p) => path === p || path.endsWith(p));
+  } catch {
+    return false;
+  }
+}
+
 // Create axios instance with optimized settings
 const apiClient: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000',
@@ -102,12 +126,17 @@ apiClient.interceptors.response.use(
 
     // Handle 401 Unauthorized
     if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isPublicAuthRequest(originalRequest)) {
+        return Promise.reject(error);
+      }
+
       originalRequest._retry = true;
 
       const refreshToken = getRefreshToken();
       if (refreshToken) {
         try {
-          const response = await axios.post(API_ENDPOINTS.AUTH.REFRESH, {
+          const refreshUrl = `${apiClient.defaults.baseURL ?? ''}${API_ENDPOINTS.AUTH.REFRESH}`;
+          const response = await axios.post(refreshUrl, {
             refresh_token: refreshToken,
           });
           const newToken = response.data.access_token;

@@ -132,9 +132,12 @@ test.describe('Annotation Workflow E2E Tests', () => {
         page.getByRole('button', { name: /在新窗口打开|Open in New Window/i }).click(),
       ]);
 
-      await newPage.waitForLoadState('domcontentloaded');
+      await newPage.waitForURL(/token=|projects\/\d+\/data/, {
+        timeout: 20000,
+        waitUntil: 'commit',
+      })
 
-      const url = newPage.url();
+      const url = newPage.url()
       // Mocked auth-url may point at labelstudio.internal; real env uses LABEL_STUDIO_URL
       expect(url).toMatch(
         new RegExp(`${LABEL_STUDIO_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}|labelstudio\\.internal|token=`),
@@ -157,10 +160,13 @@ test.describe('Annotation Workflow E2E Tests', () => {
         page.getByRole('button', { name: /在新窗口打开|Open in New Window/i }).click(),
       ]);
 
-      await newPage.waitForLoadState('domcontentloaded');
+      await newPage.waitForURL(/token=|projects\/\d+\/data/, {
+        timeout: 20000,
+        waitUntil: 'commit',
+      })
 
       // Verify URL contains language parameter
-      const url = newPage.url();
+      const url = newPage.url()
       // next= may encode ? as %3F and = as %3D (e.g. lang%3Dzh)
       expect(url).toMatch(/lang(=|%3D)(zh|en)/);
       

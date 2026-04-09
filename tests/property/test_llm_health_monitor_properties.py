@@ -58,10 +58,15 @@ class MockProvider(LLMProvider):
         """Mock health check that tracks call count."""
         self.health_check_count += 1
         return HealthStatus(
+            method=self._method,
             available=self._healthy,
             latency_ms=100.0 if self._healthy else 0.0,
-            error=self._error if not self._healthy else None
+            error=self._error if not self._healthy else None,
         )
+
+    def list_models(self) -> List[str]:
+        """Satisfy LLMProvider ABC (health monitor tests do not call this)."""
+        return ["mock-model"]
 
     def set_health(self, healthy: bool, error: str = None):
         """Update health status."""
@@ -89,6 +94,14 @@ class MockSwitcher:
 def mock_switcher():
     """Create a mock LLM switcher."""
     return MockSwitcher()
+
+
+@pytest.fixture(autouse=True)
+def _fast_health_check_interval(monkeypatch):
+    """Property tests must not wait 60s between checks; patch interval before monitor runs."""
+    import src.ai.llm.health_monitor as hm
+
+    monkeypatch.setattr(hm, "HEALTH_CHECK_INTERVAL_SECONDS", 0.12)
 
 
 @pytest.fixture
@@ -130,6 +143,7 @@ async def test_property_14_health_check_scheduling(
     - Then health checks occur at regular intervals
     - And all providers are checked in each cycle
     """
+    mock_switcher._providers.clear()
     # Setup: Create providers
     methods = list(LLMMethod)[:num_providers]
     providers = []
@@ -200,6 +214,7 @@ async def test_property_15_health_status_management(
     - And alerts are triggered on status change
     - And healthy providers can be queried
     """
+    mock_switcher._providers.clear()
     # Setup: Create a provider with initial health
     provider = MockProvider(
         method=LLMMethod.LOCAL_OLLAMA,
@@ -323,6 +338,7 @@ async def test_property_consecutive_failure_tracking(
     - Then consecutive failure count increments correctly
     - And count resets on successful health check
     """
+    mock_switcher._providers.clear()
     # Setup: Create an unhealthy provider
     provider = MockProvider(
         method=LLMMethod.CLOUD_OPENAI,
@@ -400,6 +416,7 @@ async def test_property_healthy_provider_list(
     - Then only healthy providers are returned
     - And the count matches the number of healthy providers
     """
+    mock_switcher._providers.clear()
     # Ensure num_healthy doesn't exceed num_providers
     num_healthy = min(num_healthy, num_providers)
 

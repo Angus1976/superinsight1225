@@ -9,7 +9,7 @@
  */
 
 import { test, expect } from './fixtures'
-import { setupAuth, waitForPageReady } from './test-helpers'
+import { seedAuthLocalStorage, waitForPageReady } from './test-helpers'
 import { isRestApiUrl } from './api-route-helpers'
 import { E2E_VALID_ACCESS_TOKEN, E2E_VALID_ACCESS_TOKEN_CTX1, E2E_VALID_ACCESS_TOKEN_CTX2 } from './e2e-tokens'
 
@@ -305,7 +305,8 @@ test.describe('Login workflow – invalid credentials', () => {
 test.describe('Logout workflow', () => {
   test('logout clears auth state and redirects to login', async ({ page }) => {
     await mockAuthApi(page)
-    await setupAuth(page)
+    await page.goto(ROUTES.LOGIN)
+    await seedAuthLocalStorage(page, 'admin')
     await page.goto(ROUTES.DASHBOARD)
     await waitForPageReady(page)
 
@@ -325,8 +326,11 @@ test.describe('Logout workflow', () => {
       }
     }
 
-    // Fallback: simulate logout by clearing auth storage directly
-    await page.evaluate(() => localStorage.removeItem('auth-storage'))
+    // Fallback: simulate logout by clearing auth storage (no auth init script, so navigation stays logged out)
+    await page.evaluate(() => {
+      localStorage.removeItem('auth-storage')
+      localStorage.removeItem('auth_token')
+    })
     await page.goto(ROUTES.DASHBOARD)
     await expect(page).toHaveURL(new RegExp(ROUTES.LOGIN), { timeout: 10000 })
   })

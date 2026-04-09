@@ -454,7 +454,9 @@ const CrowdsourcePage: React.FC = () => {
             {
               key: 'desensitization',
               label: <span><SafetyOutlined /> {t('tabs.desensitization')}</span>,
-              children: <DesensitizerConfig taskId="default" />,
+              children: (
+                <DesensitizerConfig taskId="default" sensitiveFields={[]} />
+              ),
             },
             {
               key: 'audit',

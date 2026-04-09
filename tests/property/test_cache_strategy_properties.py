@@ -212,7 +212,7 @@ class TestCacheConsistency:
             st.dictionaries(st.text(min_size=1, max_size=20), st.integers(), max_size=5)
         )
     )
-    @settings(max_examples=100)
+    @settings()
     def test_cache_roundtrip(self, key, value):
         """缓存数据的往返一致性
         
@@ -241,7 +241,7 @@ class TestCacheConsistency:
         initial_value=st.integers(),
         updated_value=st.integers()
     )
-    @settings(max_examples=100)
+    @settings()
     def test_cache_invalidation_on_update(self, key, initial_value, updated_value):
         """数据更新时缓存应该失效
         
@@ -282,7 +282,7 @@ class TestCacheConsistency:
         ),
         values=st.lists(st.integers(), min_size=1, max_size=20)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_cache_aside_pattern(self, keys, values):
         """Cache-aside 模式应该正确工作
         
@@ -329,7 +329,7 @@ class TestCacheConsistency:
             unique=True
         )
     )
-    @settings(max_examples=100)
+    @settings()
     def test_batch_invalidation_pattern(self, prefix, suffixes):
         """批量失效应该正确匹配模式
         
@@ -382,7 +382,7 @@ class TestCacheHitRateMonitoring:
         hits=st.integers(min_value=0, max_value=1000),
         misses=st.integers(min_value=0, max_value=1000)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_hit_rate_calculation(self, hits, misses):
         """命中率计算应该正确
         
@@ -405,7 +405,7 @@ class TestCacheHitRateMonitoring:
         misses=st.integers(min_value=0, max_value=1000),
         threshold=st.floats(min_value=0.0, max_value=1.0, allow_nan=False)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_hit_rate_threshold_check(self, hits, misses, threshold):
         """命中率阈值检查应该正确
         
@@ -426,7 +426,7 @@ class TestCacheHitRateMonitoring:
         num_hits=st.integers(min_value=0, max_value=100),
         num_misses=st.integers(min_value=0, max_value=100)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_stats_tracking(self, num_hits, num_misses):
         """统计跟踪应该准确
         
@@ -457,7 +457,7 @@ class TestCacheHitRateMonitoring:
         high_hit_ratio=st.floats(min_value=0.8, max_value=1.0, allow_nan=False),
         low_hit_ratio=st.floats(min_value=0.0, max_value=0.79, allow_nan=False)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_hit_rate_warning_threshold(self, high_hit_ratio, low_hit_ratio):
         """命中率低于 80% 时应该触发警告
         
@@ -498,7 +498,7 @@ class TestCacheHitRateMonitoring:
             max_size=50
         )
     )
-    @settings(max_examples=100)
+    @settings()
     def test_stats_consistency_after_operations(self, operations):
         """操作后统计应该保持一致
         
@@ -551,7 +551,7 @@ class TestCacheTTLConfiguration:
             'business_rule', 'system_config', 'user_session'
         ])
     )
-    @settings(max_examples=100)
+    @settings()
     def test_ttl_by_data_type(self, data_type):
         """不同数据类型应该有不同的 TTL
         
@@ -568,7 +568,7 @@ class TestCacheTTLConfiguration:
     @given(
         unknown_type=st.text(min_size=1, max_size=20, alphabet=st.characters(whitelist_categories=('L',)))
     )
-    @settings(max_examples=100)
+    @settings()
     def test_default_ttl_for_unknown_type(self, unknown_type):
         """未知数据类型应该使用默认 TTL
         
@@ -606,7 +606,7 @@ class TestCacheSerialization:
             )
         )
     )
-    @settings(max_examples=100)
+    @settings()
     def test_serialization_roundtrip(self, value):
         """序列化和反序列化应该保持数据一致
         
@@ -631,7 +631,7 @@ class TestCacheSerialization:
             'tags': st.lists(st.text(max_size=20), max_size=5)
         })
     )
-    @settings(max_examples=100)
+    @settings()
     def test_complex_object_serialization(self, nested_dict):
         """复杂对象的序列化应该正确
         
@@ -654,7 +654,7 @@ class TestCacheKeyManagement:
         key=st.text(min_size=1, max_size=50, alphabet=st.characters(whitelist_categories=('L', 'N'))),
         prefix=st.text(min_size=1, max_size=20, alphabet=st.characters(whitelist_categories=('L',)))
     )
-    @settings(max_examples=100)
+    @settings()
     def test_key_prefix_application(self, key, prefix):
         """键前缀应该正确应用
         
@@ -680,7 +680,7 @@ class TestCacheKeyManagement:
         matching_suffix=st.text(min_size=1, max_size=20, alphabet=st.characters(whitelist_categories=('L', 'N'))),
         non_matching_prefix=st.text(min_size=1, max_size=20, alphabet=st.characters(whitelist_categories=('L',)))
     )
-    @settings(max_examples=100)
+    @settings()
     def test_pattern_matching(self, pattern, matching_suffix, non_matching_prefix):
         """模式匹配应该正确工作
         
@@ -720,7 +720,7 @@ class TestCacheWarmup:
             max_size=20
         )
     )
-    @settings(max_examples=100)
+    @settings()
     def test_warmup_loads_all_keys(self, warmup_data):
         """预热应该加载所有指定的键
         
@@ -750,7 +750,7 @@ class TestCacheWarmup:
             unique=True
         )
     )
-    @settings(max_examples=100)
+    @settings()
     def test_warmup_stats_tracking(self, keys):
         """预热应该正确跟踪统计
         

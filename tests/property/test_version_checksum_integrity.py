@@ -114,7 +114,7 @@ class TestVersionChecksumIntegrity:
     """
     
     @given(content=content_strategy)
-    @settings(max_examples=50, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_version_has_checksum_on_creation(
         self,
         db_session: Session,
@@ -154,7 +154,7 @@ class TestVersionChecksumIntegrity:
         )
     
     @given(content=content_strategy)
-    @settings(max_examples=50, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_checksum_is_deterministic(
         self,
         db_session: Session,
@@ -196,7 +196,7 @@ class TestVersionChecksumIntegrity:
         )
     
     @given(content=content_strategy)
-    @settings(max_examples=50, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_checksum_verification_succeeds_for_valid_version(
         self,
         db_session: Session,
@@ -230,7 +230,7 @@ class TestVersionChecksumIntegrity:
         assert error_message is None, f"Error message should be None for valid checksum: {error_message}"
     
     @given(content=content_strategy)
-    @settings(max_examples=50, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_checksum_matches_expected_sha256(
         self,
         db_session: Session,
@@ -269,7 +269,7 @@ class TestVersionChecksumIntegrity:
         content1=content_strategy,
         content2=content_strategy
     )
-    @settings(max_examples=50, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_different_content_produces_different_checksums(
         self,
         db_session: Session,
@@ -311,7 +311,7 @@ class TestVersionChecksumIntegrity:
         )
     
     @given(content=content_strategy)
-    @settings(max_examples=30, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_checksum_detects_content_tampering(
         self,
         db_session: Session,
@@ -363,7 +363,7 @@ class TestVersionChecksumIntegrity:
         content=content_strategy,
         change_type=change_type_strategy
     )
-    @settings(max_examples=40, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_checksum_independent_of_change_type(
         self,
         db_session: Session,
@@ -409,7 +409,7 @@ class TestVersionChecksumIntegrity:
         )
     
     @given(content=content_strategy)
-    @settings(max_examples=30, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_checksum_independent_of_metadata(
         self,
         db_session: Session,
@@ -453,7 +453,7 @@ class TestVersionChecksumIntegrity:
         )
     
     @given(content=content_strategy)
-    @settings(max_examples=30, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_checksum_persists_across_retrieval(
         self,
         db_session: Session,
@@ -499,7 +499,7 @@ class TestVersionChecksumIntegrity:
         content=content_strategy,
         num_versions=st.integers(min_value=2, max_value=10)
     )
-    @settings(max_examples=30, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_all_versions_have_valid_checksums(
         self,
         db_session: Session,
@@ -548,7 +548,7 @@ class TestVersionChecksumIntegrity:
             )
     
     @given(content=content_strategy)
-    @settings(max_examples=30, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_rollback_version_has_valid_checksum(
         self,
         db_session: Session,
@@ -606,7 +606,7 @@ class TestVersionChecksumIntegrity:
         assert is_valid is True, f"Rollback checksum verification failed: {error_msg}"
     
     @given(content=content_strategy)
-    @settings(max_examples=20, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_checksum_verification_fails_for_nonexistent_version(
         self,
         db_session: Session,

@@ -222,7 +222,7 @@ class TestValidationBeforePersistence:
     """
     
     @given(config=invalid_llm_config_dict_strategy())
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     def test_invalid_llm_config_rejected_before_persistence(self, config):
         """
         Invalid LLM configurations are rejected with specific error messages.
@@ -274,7 +274,7 @@ class TestValidationBeforePersistence:
         asyncio.run(run_test())
     
     @given(config=invalid_db_config_dict_strategy())
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     def test_invalid_db_config_rejected_before_persistence(self, config):
         """
         Invalid database configurations are rejected with specific error messages.
@@ -321,7 +321,7 @@ class TestValidationBeforePersistence:
         asyncio.run(run_test())
     
     @given(config=invalid_sync_config_dict_strategy())
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     def test_invalid_sync_config_rejected_before_persistence(self, config):
         """
         Invalid sync strategy configurations are rejected with specific error messages.
@@ -662,7 +662,7 @@ class TestInputValidationConsistency:
             "max_tokens": st.integers(min_value=-1000, max_value=200000)
         })
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     def test_ui_and_api_validation_consistency_llm(self, config):
         """
         UI and API validation produce identical results for LLM configurations.
@@ -726,7 +726,7 @@ class TestInputValidationConsistency:
             ))
         })
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     def test_ui_and_api_validation_consistency_db(self, config):
         """
         UI and API validation produce identical results for database configurations.
@@ -779,7 +779,7 @@ class TestInputValidationConsistency:
             )
         })
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     def test_ui_and_api_validation_consistency_sync(self, config):
         """
         UI and API validation produce identical results for sync strategies.

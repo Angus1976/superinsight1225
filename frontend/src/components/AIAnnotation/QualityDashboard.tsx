@@ -99,13 +99,15 @@ interface QualityDashboardProps {
   projectId: string;
   dateRange?: [string, string];
   engineId?: string;
+  /** 仪表盘卡片内嵌时可缩小密度 */
+  compact?: boolean;
 }
-
 
 const QualityDashboard: React.FC<QualityDashboardProps> = ({
   projectId,
   dateRange,
   engineId,
+  compact = false,
 }) => {
   const { t } = useTranslation(['ai_annotation', 'common']);
   const [loading, setLoading] = useState(false);
@@ -285,7 +287,7 @@ const QualityDashboard: React.FC<QualityDashboardProps> = ({
   return (
     <div className="quality-dashboard">
       {/* Filters */}
-      <Card size="small" style={{ marginBottom: 16 }}>
+      <Card size="small" style={{ marginBottom: compact ? 8 : 16 }}>
         <Space>
           <Select
             value={selectedDateRange}

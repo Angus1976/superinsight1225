@@ -201,7 +201,7 @@ class TestI18nCompleteness:
             "English translation file must not be empty"
     
     @given(namespace=namespace_strategy())
-    @settings(max_examples=10, deadline=None)
+    @settings(deadline=None)
     def test_translation_keys_identical_across_languages(self, namespace: str):
         """
         Property: Translation keys must be identical across zh and en files.
@@ -227,7 +227,7 @@ class TestI18nCompleteness:
             f"Missing in ZH: {en_keys - zh_keys}"
     
     @given(key=translation_key_strategy())
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_translation_values_are_non_empty_strings(self, key: str):
         """
         Property: Translation values must be non-empty strings.

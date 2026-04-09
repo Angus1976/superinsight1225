@@ -127,7 +127,7 @@ class TestStructuredLogFormatProperty:
         correlation_id=st.one_of(st.none(), correlation_id_strategy),
         extra_fields=extra_fields_strategy
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     def test_structured_log_contains_required_fields(
         self,
         level: str,
@@ -219,7 +219,7 @@ class TestStructuredLogFormatProperty:
             max_size=100
         ).filter(lambda s: s.strip() and s.isprintable())
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_error_log_contains_traceback(
         self,
         message: str,
@@ -284,7 +284,7 @@ class TestStructuredLogFormatProperty:
         level=log_level_strategy,
         message=message_strategy
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_log_level_classification(self, level: str, message: str):
         """
         Property: Logs are correctly classified by severity.
@@ -344,7 +344,7 @@ class TestAPIErrorResponseProperty:
             max_size=3
         ))
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     def test_error_response_contains_required_fields(
         self,
         error_code: str,
@@ -392,7 +392,7 @@ class TestAPIErrorResponseProperty:
         error_code=error_code_strategy,
         request_id=request_id_strategy
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_error_code_maps_to_correct_http_status(
         self,
         error_code: str,
@@ -435,7 +435,7 @@ class TestAPIErrorResponseProperty:
         request_id=request_id_strategy,
         validation_errors=st.lists(validation_error_strategy, min_size=1, max_size=5)
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_validation_error_response_contains_field_details(
         self,
         request_id: str,
@@ -473,7 +473,7 @@ class TestAPIErrorResponseProperty:
         error_code=error_code_strategy,
         request_id=request_id_strategy
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_error_response_serializes_to_valid_json(
         self,
         error_code: str,
@@ -510,7 +510,7 @@ class TestAPIErrorResponseProperty:
         assert parsed["request_id"] == request_id
     
     @given(error_code=error_code_strategy)
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_error_message_is_localized(self, error_code: str):
         """
         Property: Error messages are localized (have i18n support).
@@ -536,7 +536,7 @@ class TestCorrelationIdProperties:
     """Tests for correlation ID generation and propagation."""
     
     @given(st.integers(min_value=1, max_value=1000))
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_correlation_id_uniqueness(self, count: int):
         """
         Property: Generated correlation IDs are unique.
@@ -550,7 +550,7 @@ class TestCorrelationIdProperties:
             time.sleep(0.001)
     
     @given(st.integers(min_value=1, max_value=100))
-    @settings(max_examples=20, deadline=None)
+    @settings(deadline=None)
     def test_request_id_uniqueness(self, count: int):
         """
         Property: Generated request IDs are unique.

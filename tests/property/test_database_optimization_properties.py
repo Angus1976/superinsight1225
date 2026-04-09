@@ -389,7 +389,7 @@ class TestBatchDatabaseOperations:
         ),
         batch_size=st.integers(min_value=1, max_value=50)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_bulk_insert_count_consistency(self, records, batch_size):
         """批量插入的成功数量应该等于实际插入的记录数
         
@@ -421,7 +421,7 @@ class TestBatchDatabaseOperations:
         num_records=st.integers(min_value=1, max_value=100),
         batch_size=st.integers(min_value=1, max_value=50)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_batch_count_calculation(self, num_records, batch_size):
         """批次数量计算应该正确
         
@@ -454,7 +454,7 @@ class TestBatchDatabaseOperations:
             unique_by=lambda x: x['id']
         )
     )
-    @settings(max_examples=100)
+    @settings()
     def test_bulk_insert_roundtrip(self, records):
         """批量插入后应该能正确检索所有记录
         
@@ -488,7 +488,7 @@ class TestBatchDatabaseOperations:
         ),
         update_value=st.integers()
     )
-    @settings(max_examples=100)
+    @settings()
     def test_bulk_update_count_consistency(self, initial_records, update_value):
         """批量更新的成功数量应该等于实际更新的记录数
         
@@ -523,7 +523,7 @@ class TestBatchDatabaseOperations:
         batch_size=st.integers(min_value=1, max_value=100),
         num_records=st.integers(min_value=1, max_value=200)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_batch_operation_logging(self, batch_size, num_records):
         """批量操作应该正确记录操作日志
         
@@ -568,7 +568,7 @@ class TestPaginationQueries:
         page=st.integers(min_value=1, max_value=100),
         page_size=st.integers(min_value=1, max_value=100)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_pagination_result_count(self, total_items, page, page_size):
         """分页结果数量不应超过 page_size
         
@@ -592,7 +592,7 @@ class TestPaginationQueries:
         total_items=st.integers(min_value=1, max_value=500),
         page_size=st.integers(min_value=1, max_value=50)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_pagination_offset_correctness(self, total_items, page_size):
         """偏移量应该正确跳过指定数量的记录
         
@@ -620,7 +620,7 @@ class TestPaginationQueries:
         total_items=st.integers(min_value=0, max_value=500),
         page_size=st.integers(min_value=1, max_value=50)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_pagination_total_pages_calculation(self, total_items, page_size):
         """总页数计算应该正确
         
@@ -641,7 +641,7 @@ class TestPaginationQueries:
         total_items=st.integers(min_value=1, max_value=500),
         page_size=st.integers(min_value=1, max_value=50)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_pagination_has_next_prev(self, total_items, page_size):
         """has_next 和 has_prev 标志应该正确
         
@@ -675,7 +675,7 @@ class TestPaginationQueries:
         total_items=st.integers(min_value=1, max_value=200),
         limit=st.integers(min_value=1, max_value=50)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_cursor_pagination_limit(self, total_items, limit):
         """游标分页结果数量不应超过 limit
         
@@ -701,7 +701,7 @@ class TestPaginationQueries:
         total_items=st.integers(min_value=10, max_value=200),
         limit=st.integers(min_value=1, max_value=20)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_cursor_pagination_traversal(self, total_items, limit):
         """游标分页应该能遍历所有记录
         
@@ -751,7 +751,7 @@ class TestSlowQueryMonitoring:
         duration_ms=st.floats(min_value=0, max_value=10000, allow_nan=False),
         threshold_ms=st.floats(min_value=100, max_value=5000, allow_nan=False)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_slow_query_detection(self, duration_ms, threshold_ms):
         """慢查询检测应该正确
         
@@ -776,7 +776,7 @@ class TestSlowQueryMonitoring:
             "ALTER TABLE users ADD COLUMN email VARCHAR(255)"
         ])
     )
-    @settings(max_examples=100)
+    @settings()
     def test_query_type_extraction(self, sql):
         """查询类型提取应该正确
         
@@ -825,7 +825,7 @@ class TestSlowQueryMonitoring:
         ),
         threshold_ms=st.floats(min_value=500, max_value=2000, allow_nan=False)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_slow_query_recording(self, queries, threshold_ms):
         """慢查询应该被正确记录
         
@@ -856,7 +856,7 @@ class TestSlowQueryMonitoring:
         num_queries=st.integers(min_value=1, max_value=100),
         threshold_ms=st.floats(min_value=500, max_value=2000, allow_nan=False)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_query_statistics_accuracy(self, num_queries, threshold_ms):
         """查询统计应该准确
         
@@ -910,7 +910,7 @@ class TestSlowQueryMonitoring:
             max_size=50
         )
     )
-    @settings(max_examples=100)
+    @settings()
     def test_query_type_statistics(self, queries):
         """查询类型统计应该正确
         
@@ -937,7 +937,7 @@ class TestSlowQueryMonitoring:
         num_slow_queries=st.integers(min_value=1, max_value=20),
         limit=st.integers(min_value=1, max_value=30)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_get_slow_queries_limit(self, num_slow_queries, limit):
         """获取慢查询应该遵守 limit 限制
         
@@ -966,7 +966,7 @@ class TestSlowQueryMonitoring:
     @given(
         num_queries=st.integers(min_value=1, max_value=50)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_monitor_reset(self, num_queries):
         """重置后统计应该清零
         

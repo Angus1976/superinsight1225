@@ -258,7 +258,7 @@ class TestServiceUnhealthyAlert:
         initial_status=st.sampled_from(list(HealthStatus)),
         new_status=st.sampled_from(list(HealthStatus))
     )
-    @settings(max_examples=100)
+    @settings()
     def test_state_change_detection(self, service_name, initial_status, new_status):
         """状态变化应该被正确检测
         
@@ -287,7 +287,7 @@ class TestServiceUnhealthyAlert:
         consecutive_failures=st.integers(min_value=0, max_value=20),
         threshold=st.integers(min_value=1, max_value=10)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_consecutive_failures_threshold(
         self, service_name, consecutive_failures, threshold
     ):
@@ -318,7 +318,7 @@ class TestServiceUnhealthyAlert:
         cooldown_seconds=st.integers(min_value=60, max_value=600),
         elapsed_seconds=st.integers(min_value=0, max_value=1000)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_alert_cooldown(self, service_name, cooldown_seconds, elapsed_seconds):
         """告警冷却时间应该被正确遵守
         
@@ -348,7 +348,7 @@ class TestServiceUnhealthyAlert:
         old_status=st.sampled_from(list(HealthStatus)),
         new_status=st.sampled_from(list(HealthStatus))
     )
-    @settings(max_examples=50)
+    @settings()
     def test_state_change_type_mapping(self, old_status, new_status):
         """状态变化类型应该正确映射
         
@@ -388,7 +388,7 @@ class TestAlertThresholdEvaluation:
         current_value=st.floats(min_value=-1000, max_value=1000, allow_nan=False),
         threshold_value=st.floats(min_value=-1000, max_value=1000, allow_nan=False)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_gt_operator(self, current_value, threshold_value):
         """GT 运算符应该正确评估
         
@@ -411,7 +411,7 @@ class TestAlertThresholdEvaluation:
         current_value=st.floats(min_value=-1000, max_value=1000, allow_nan=False),
         threshold_value=st.floats(min_value=-1000, max_value=1000, allow_nan=False)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_lt_operator(self, current_value, threshold_value):
         """LT 运算符应该正确评估
         
@@ -434,7 +434,7 @@ class TestAlertThresholdEvaluation:
         current_value=st.floats(min_value=-1000, max_value=1000, allow_nan=False),
         threshold_value=st.floats(min_value=-1000, max_value=1000, allow_nan=False)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_gte_operator(self, current_value, threshold_value):
         """GTE 运算符应该正确评估
         
@@ -457,7 +457,7 @@ class TestAlertThresholdEvaluation:
         current_value=st.floats(min_value=-1000, max_value=1000, allow_nan=False),
         threshold_value=st.floats(min_value=-1000, max_value=1000, allow_nan=False)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_lte_operator(self, current_value, threshold_value):
         """LTE 运算符应该正确评估
         
@@ -493,7 +493,7 @@ class TestRecoveryNotification:
         recovery_count=st.integers(min_value=1, max_value=5),
         notify_on_recovery=st.booleans()
     )
-    @settings(max_examples=100)
+    @settings()
     def test_recovery_notification_conditions(
         self, service_name, consecutive_successes, recovery_count, notify_on_recovery
     ):
@@ -528,7 +528,7 @@ class TestRecoveryNotification:
             whitelist_characters='_-'
         ))
     )
-    @settings(max_examples=50)
+    @settings()
     def test_no_recovery_without_previous_alert(self, service_name):
         """没有之前的告警时不应该发送恢复通知
         
@@ -606,7 +606,7 @@ class TestStateTrackerStatistics:
         healthy_checks=st.integers(min_value=0, max_value=100),
         unhealthy_checks=st.integers(min_value=0, max_value=100)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_failure_rate_calculation(
         self, service_name, healthy_checks, unhealthy_checks
     ):
@@ -659,7 +659,7 @@ class TestAlertThresholdValidation:
         )),
         threshold_value=st.floats(min_value=-1e9, max_value=1e9, allow_nan=False, allow_infinity=False)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_valid_threshold_values_accepted(self, metric_name, threshold_value):
         """
         Valid threshold values within range are accepted.
@@ -685,7 +685,7 @@ class TestAlertThresholdValidation:
         threshold_value=st.floats(min_value=0, max_value=100, allow_nan=False),
         test_value=st.floats(min_value=0, max_value=100, allow_nan=False)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_threshold_evaluation_consistency(self, operator, threshold_value, test_value):
         """
         Threshold evaluation is consistent with operator semantics.
@@ -718,7 +718,7 @@ class TestAlertThresholdValidation:
     @given(
         duration_seconds=st.integers(min_value=-100, max_value=3600)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_duration_validation(self, duration_seconds):
         """
         Alert duration values are validated.
@@ -745,7 +745,7 @@ class TestAlertThresholdValidation:
     @given(
         severity=st.sampled_from(list(AlertSeverity))
     )
-    @settings(max_examples=50)
+    @settings()
     def test_severity_levels_accepted(self, severity):
         """
         All valid severity levels are accepted.
@@ -784,7 +784,7 @@ class TestThresholdViolationAlerting:
         threshold_value=st.floats(min_value=0, max_value=100, allow_nan=False),
         num_channels=st.integers(min_value=1, max_value=5)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_threshold_violation_triggers_alert(
         self, current_value, threshold_value, num_channels
     ):
@@ -840,7 +840,7 @@ class TestThresholdViolationAlerting:
         ),
         threshold_value=st.floats(min_value=20, max_value=80, allow_nan=False)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_multiple_violations_generate_multiple_alerts(
         self, metric_values, threshold_value
     ):
@@ -868,7 +868,7 @@ class TestThresholdViolationAlerting:
     @given(
         severity=st.sampled_from(list(AlertSeverity))
     )
-    @settings(max_examples=50)
+    @settings()
     def test_alert_includes_correct_severity(self, severity):
         """
         Alerts include the correct severity level.
@@ -919,7 +919,7 @@ class TestConnectionFailureAlertTiming:
         failure_detection_delay_seconds=st.integers(min_value=0, max_value=120),
         alert_timing_seconds=st.integers(min_value=0, max_value=120)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_connection_failure_alert_within_1_minute(
         self, failure_detection_delay_seconds, alert_timing_seconds
     ):
@@ -957,7 +957,7 @@ class TestConnectionFailureAlertTiming:
         )),
         consecutive_failures=st.integers(min_value=1, max_value=10)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_consecutive_failures_trigger_alert(
         self, service_name, consecutive_failures
     ):
@@ -991,7 +991,7 @@ class TestConnectionFailureAlertTiming:
     @given(
         num_services=st.integers(min_value=1, max_value=5)
     )
-    @settings(max_examples=50)
+    @settings()
     def test_multiple_service_failures_tracked_independently(self, num_services):
         """
         Multiple service connection failures are tracked independently.
@@ -1050,7 +1050,7 @@ class TestRealTimeDashboardStatus:
             max_size=10
         )
     )
-    @settings(max_examples=100)
+    @settings()
     def test_dashboard_reflects_actual_service_status(self, service_statuses):
         """
         Dashboard displays actual current status of services.
@@ -1085,7 +1085,7 @@ class TestRealTimeDashboardStatus:
         update_interval_seconds=st.integers(min_value=1, max_value=60),
         status_changes=st.integers(min_value=1, max_value=10)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_dashboard_updates_within_30_seconds(
         self, update_interval_seconds, status_changes
     ):
@@ -1112,7 +1112,7 @@ class TestRealTimeDashboardStatus:
         db_status=st.sampled_from(list(HealthStatus)),
         sync_status=st.sampled_from(list(HealthStatus))
     )
-    @settings(max_examples=100)
+    @settings()
     def test_dashboard_shows_all_configuration_types(
         self, llm_status, db_status, sync_status
     ):
@@ -1160,7 +1160,7 @@ class TestRealTimeDashboardStatus:
         initial_status=st.sampled_from(list(HealthStatus)),
         new_status=st.sampled_from(list(HealthStatus))
     )
-    @settings(max_examples=100)
+    @settings()
     def test_dashboard_detects_status_transitions(
         self, initial_status, new_status
     ):
@@ -1193,7 +1193,7 @@ class TestRealTimeDashboardStatus:
     @given(
         quota_usage_percent=st.floats(min_value=0, max_value=150, allow_nan=False)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_dashboard_shows_quota_usage(self, quota_usage_percent):
         """
         Dashboard displays LLM provider quota usage.

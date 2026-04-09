@@ -124,6 +124,7 @@ const admin: MenuItem = {
   icon: React.createElement(SafetyOutlined),
   access: 'admin',
   children: [
+    { path: `${ROUTES.ADMIN}/console`, nameKey: 'console' },
     { path: `${ROUTES.ADMIN}/tenants`, nameKey: 'tenants' },
     { path: `${ROUTES.ADMIN}/users`, nameKey: 'users' },
     { path: `${ROUTES.ADMIN}/system`, nameKey: 'system' },

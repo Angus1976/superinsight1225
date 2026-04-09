@@ -151,17 +151,21 @@ export function Switch<T>({ value, children }: SwitchProps<T>): React.ReactEleme
   
   for (const child of childArray) {
     if (React.isValidElement(child)) {
+      const p = child.props as CaseProps<T>;
       // Check for Case component
-      if (child.props.value === value) {
-        return <>{child.props.children}</>;
+      if (p.value === value) {
+        return <>{p.children}</>;
       }
     }
   }
   
   // Look for Default component
   for (const child of childArray) {
-    if (React.isValidElement(child) && child.props.value === undefined) {
-      return <>{child.props.children}</>;
+    if (React.isValidElement(child)) {
+      const p = child.props as CaseProps<T>;
+      if (p.value === undefined) {
+        return <>{p.children}</>;
+      }
     }
   }
   

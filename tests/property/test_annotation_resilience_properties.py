@@ -53,7 +53,7 @@ class TestLLMAPIRetryLogic:
     @given(
         num_failures_before_success=st.integers(min_value=0, max_value=3)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_retry_with_exponential_backoff(self, num_failures_before_success: int):
         """Test that retry uses exponential backoff (1s, 2s, 4s)."""
         await reset_resilience_services()
@@ -104,7 +104,7 @@ class TestLLMAPIRetryLogic:
     @given(
         max_retries=st.integers(min_value=1, max_value=5)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_retry_exhaustion(self, max_retries: int):
         """Test that retry gives up after max_retries attempts."""
         await reset_resilience_services()
@@ -164,7 +164,7 @@ class TestNetworkFailureQueuing:
     @given(
         num_operations=st.integers(min_value=1, max_value=20)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_queue_operations(self, num_operations: int):
         """Test that operations can be queued."""
         await reset_resilience_services()
@@ -341,7 +341,7 @@ class TestInputValidation:
     @given(
         text_length=st.integers(min_value=0, max_value=200000)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_text_length_validation(self, text_length: int):
         """Test that text length validation works correctly."""
         text = "a" * text_length
@@ -372,7 +372,7 @@ class TestInputValidation:
     @given(
         annotation_type=st.text(min_size=1, max_size=50)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_annotation_type_validation(self, annotation_type: str):
         """Test that annotation type validation works correctly."""
         result = InputValidationService.validate_annotation_task(
@@ -404,7 +404,7 @@ class TestInputValidation:
     @given(
         batch_size=st.integers(min_value=-10, max_value=2000)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_batch_size_validation(self, batch_size: int):
         """Test that batch size validation enforces range."""
         result = InputValidationService.validate_batch_size(batch_size)
@@ -423,7 +423,7 @@ class TestInputValidation:
     @given(
         threshold=st.floats(min_value=-1.0, max_value=2.0, allow_nan=False, allow_infinity=False)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_confidence_threshold_validation(self, threshold: float):
         """Test that confidence threshold validation enforces 0-1 range."""
         result = InputValidationService.validate_confidence_threshold(threshold)
@@ -450,7 +450,7 @@ class TestErrorLoggingAndNotification:
     @given(
         num_errors=st.integers(min_value=1, max_value=30)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_error_logging_completeness(self, num_errors: int):
         """Test that all errors are logged with full context."""
         await reset_resilience_services()
@@ -528,7 +528,7 @@ class TestErrorLoggingAndNotification:
             ErrorSeverity.CRITICAL,
         ])
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_error_filtering_by_severity(self, severity: ErrorSeverity):
         """Test that errors can be filtered by severity."""
         await reset_resilience_services()

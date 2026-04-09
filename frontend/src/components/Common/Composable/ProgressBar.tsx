@@ -26,7 +26,7 @@ export interface ProgressBarProps {
   /** Show percentage text */
   showInfo?: boolean;
   /** Custom format for percentage text */
-  format?: (percent: number) => React.ReactNode;
+  format?: (percent?: number, successPercent?: number) => React.ReactNode;
   /** Stroke color (can be gradient) */
   strokeColor?: string | { from: string; to: string } | { [key: string]: string };
   /** Trail color */

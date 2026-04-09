@@ -133,15 +133,14 @@ class TestBindingPreventsConfigDeletion:
            is bound to any application and prevent deletion if bindings exist
     """
     
-    @settings(max_examples=100, suppress_health_check=[HealthCheck.too_slow], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow], deadline=None)
     @given(
         config_name=config_name_strategy,
         application_code=application_code_strategy,
         tenant_id=tenant_id_strategy,
         num_bindings=st.integers(min_value=1, max_value=5)
     )
-    @pytest.mark.asyncio
-    async def test_property_3_cannot_delete_config_with_active_bindings(
+    def test_property_3_cannot_delete_config_with_active_bindings(
         self,
         config_name: str,
         application_code: str,
@@ -179,7 +178,7 @@ class TestBindingPreventsConfigDeletion:
         binding_result = MagicMock()
         binding_result.scalars = MagicMock(return_value=MagicMock(all=MagicMock(return_value=bindings)))
         
-        async def mock_execute(stmt):
+        def mock_execute(stmt):
             if not hasattr(mock_execute, 'call_count'):
                 mock_execute.call_count = 0
             mock_execute.call_count += 1
@@ -196,7 +195,7 @@ class TestBindingPreventsConfigDeletion:
         
         # Attempt to delete config with bindings - should raise HTTPException
         with pytest.raises(HTTPException) as exc_info:
-            await delete_llm_config(config.id, mock_db)
+            delete_llm_config(config.id, mock_db)
         
         # Verify error details
         assert exc_info.value.status_code == 409, \
@@ -206,13 +205,12 @@ class TestBindingPreventsConfigDeletion:
         assert str(num_bindings) in str(exc_info.value.detail), \
             f"Error message should mention {num_bindings} bindings"
     
-    @settings(max_examples=100, suppress_health_check=[HealthCheck.too_slow], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow], deadline=None)
     @given(
         config_name=config_name_strategy,
         tenant_id=tenant_id_strategy
     )
-    @pytest.mark.asyncio
-    async def test_property_3_can_delete_config_without_bindings(
+    def test_property_3_can_delete_config_without_bindings(
         self,
         config_name: str,
         tenant_id: str
@@ -241,7 +239,7 @@ class TestBindingPreventsConfigDeletion:
         binding_result = MagicMock()
         binding_result.scalars = MagicMock(return_value=MagicMock(all=MagicMock(return_value=[])))
         
-        async def mock_execute(stmt):
+        def mock_execute(stmt):
             if not hasattr(mock_execute, 'call_count'):
                 mock_execute.call_count = 0
             mock_execute.call_count += 1
@@ -252,27 +250,26 @@ class TestBindingPreventsConfigDeletion:
                 return binding_result
         
         mock_db.execute = mock_execute
-        mock_db.delete = AsyncMock()  # Must be AsyncMock for await
-        mock_db.commit = AsyncMock()  # Must be AsyncMock for await
+        mock_db.delete = MagicMock()
+        mock_db.commit = MagicMock()
         
         # Import the delete function
         from src.api.llm_config import delete_llm_config
         
         # Delete config without bindings - should succeed
-        await delete_llm_config(config.id, mock_db)
+        delete_llm_config(config.id, mock_db)
         
         # Verify delete was called
         mock_db.delete.assert_called_once()
         mock_db.commit.assert_called_once()
     
-    @settings(max_examples=100, suppress_health_check=[HealthCheck.too_slow], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow], deadline=None)
     @given(
         config_name=config_name_strategy,
         application_code=application_code_strategy,
         tenant_id=tenant_id_strategy
     )
-    @pytest.mark.asyncio
-    async def test_property_3_can_delete_config_with_inactive_bindings(
+    def test_property_3_can_delete_config_with_inactive_bindings(
         self,
         config_name: str,
         application_code: str,
@@ -307,7 +304,7 @@ class TestBindingPreventsConfigDeletion:
         binding_result = MagicMock()
         binding_result.scalars = MagicMock(return_value=MagicMock(all=MagicMock(return_value=[])))
         
-        async def mock_execute(stmt):
+        def mock_execute(stmt):
             if not hasattr(mock_execute, 'call_count'):
                 mock_execute.call_count = 0
             mock_execute.call_count += 1
@@ -318,14 +315,14 @@ class TestBindingPreventsConfigDeletion:
                 return binding_result
         
         mock_db.execute = mock_execute
-        mock_db.delete = AsyncMock()  # Must be AsyncMock for await
-        mock_db.commit = AsyncMock()  # Must be AsyncMock for await
+        mock_db.delete = MagicMock()
+        mock_db.commit = MagicMock()
         
         # Import the delete function
         from src.api.llm_config import delete_llm_config
         
         # Delete config with inactive bindings - should succeed
-        await delete_llm_config(config.id, mock_db)
+        delete_llm_config(config.id, mock_db)
         
         # Verify delete was called
         mock_db.delete.assert_called_once()
@@ -348,7 +345,7 @@ class TestApplicationCodeUniqueness:
            application code is unique
     """
     
-    @settings(max_examples=100, suppress_health_check=[HealthCheck.too_slow], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow], deadline=None)
     @given(
         application_code=application_code_strategy,
         name1=st.text(min_size=3, max_size=50),
@@ -409,7 +406,7 @@ class TestApplicationCodeUniqueness:
                "UNIQUE constraint" in str(exc_info.value), \
             "Error should mention unique constraint violation"
     
-    @settings(max_examples=100, suppress_health_check=[HealthCheck.too_slow], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow], deadline=None)
     @given(
         code1=application_code_strategy,
         code2=application_code_strategy
@@ -451,7 +448,7 @@ class TestApplicationCodeUniqueness:
         assert mock_db.commit.call_count == 2, \
             "Both applications should be committed successfully"
     
-    @settings(max_examples=100, suppress_health_check=[HealthCheck.too_slow], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow], deadline=None)
     @given(
         application_code=st.text(
             alphabet=st.characters(whitelist_categories=('Lu', 'Ll')),  # Only letters with case
@@ -513,13 +510,12 @@ class TestBindingsOrderedByPriority:
            return all active bindings ordered by priority
     """
     
-    @settings(max_examples=100, suppress_health_check=[HealthCheck.too_slow], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow], deadline=None)
     @given(
         application_code=application_code_strategy,
         priorities=st.lists(priority_strategy, min_size=2, max_size=10, unique=True)
     )
-    @pytest.mark.asyncio
-    async def test_property_8_bindings_returned_in_priority_order(
+    def test_property_8_bindings_returned_in_priority_order(
         self,
         application_code: str,
         priorities: list
@@ -555,7 +551,7 @@ class TestBindingsOrderedByPriority:
         binding_result = MagicMock()
         binding_result.scalars = MagicMock(return_value=MagicMock(all=MagicMock(return_value=sorted_bindings)))
         
-        async def mock_execute(stmt):
+        def mock_execute(stmt):
             return binding_result
         
         mock_db.execute = mock_execute
@@ -564,7 +560,7 @@ class TestBindingsOrderedByPriority:
         from src.api.llm_config import list_bindings
         
         # Get bindings
-        result = await list_bindings(application_id=app.id, db=mock_db)
+        result = list_bindings(application_id=app.id, db=mock_db)
         
         # Verify bindings are in priority order
         sorted_priorities = sorted(priorities)
@@ -573,13 +569,12 @@ class TestBindingsOrderedByPriority:
             assert binding.priority == expected_priority, \
                 f"Binding at index {i} should have priority {expected_priority}, got {binding.priority}"
     
-    @settings(max_examples=100, suppress_health_check=[HealthCheck.too_slow], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow], deadline=None)
     @given(
         application_code=application_code_strategy,
         num_bindings=st.integers(min_value=3, max_value=8)
     )
-    @pytest.mark.asyncio
-    async def test_property_8_sequential_priorities_maintained(
+    def test_property_8_sequential_priorities_maintained(
         self,
         application_code: str,
         num_bindings: int
@@ -615,7 +610,7 @@ class TestBindingsOrderedByPriority:
         binding_result = MagicMock()
         binding_result.scalars = MagicMock(return_value=MagicMock(all=MagicMock(return_value=sorted_bindings)))
         
-        async def mock_execute(stmt):
+        def mock_execute(stmt):
             return binding_result
         
         mock_db.execute = mock_execute
@@ -624,7 +619,7 @@ class TestBindingsOrderedByPriority:
         from src.api.llm_config import list_bindings
         
         # Get bindings
-        result = await list_bindings(application_id=app.id, db=mock_db)
+        result = list_bindings(application_id=app.id, db=mock_db)
         
         # Verify bindings are in sequential order
         for i, binding in enumerate(result):
@@ -632,13 +627,12 @@ class TestBindingsOrderedByPriority:
             assert binding.priority == expected_priority, \
                 f"Binding at index {i} should have priority {expected_priority}, got {binding.priority}"
     
-    @settings(max_examples=100, suppress_health_check=[HealthCheck.too_slow], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow], deadline=None)
     @given(
         application_code=application_code_strategy,
         priorities=st.lists(priority_strategy, min_size=2, max_size=5, unique=True)
     )
-    @pytest.mark.asyncio
-    async def test_property_8_only_active_bindings_returned(
+    def test_property_8_only_active_bindings_returned(
         self,
         application_code: str,
         priorities: list
@@ -682,7 +676,7 @@ class TestBindingsOrderedByPriority:
         binding_result = MagicMock()
         binding_result.scalars = MagicMock(return_value=MagicMock(all=MagicMock(return_value=sorted_active_bindings)))
         
-        async def mock_execute(stmt):
+        def mock_execute(stmt):
             return binding_result
         
         mock_db.execute = mock_execute
@@ -691,7 +685,7 @@ class TestBindingsOrderedByPriority:
         from src.api.llm_config import list_bindings
         
         # Get bindings
-        result = await list_bindings(application_id=app.id, db=mock_db)
+        result = list_bindings(application_id=app.id, db=mock_db)
         
         # Verify only active bindings returned
         assert len(result) == len(active_bindings), \
@@ -708,12 +702,11 @@ class TestBindingsOrderedByPriority:
             assert binding.priority == active_priorities[i], \
                 f"Binding at index {i} should have priority {active_priorities[i]}, got {binding.priority}"
     
-    @settings(max_examples=100, suppress_health_check=[HealthCheck.too_slow], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow], deadline=None)
     @given(
         application_code=application_code_strategy
     )
-    @pytest.mark.asyncio
-    async def test_property_8_empty_bindings_returns_empty_list(
+    def test_property_8_empty_bindings_returns_empty_list(
         self,
         application_code: str
     ):
@@ -734,7 +727,7 @@ class TestBindingsOrderedByPriority:
         binding_result = MagicMock()
         binding_result.scalars = MagicMock(return_value=MagicMock(all=MagicMock(return_value=[])))
         
-        async def mock_execute(stmt):
+        def mock_execute(stmt):
             return binding_result
         
         mock_db.execute = mock_execute
@@ -743,7 +736,7 @@ class TestBindingsOrderedByPriority:
         from src.api.llm_config import list_bindings
         
         # Get bindings
-        result = await list_bindings(application_id=app.id, db=mock_db)
+        result = list_bindings(application_id=app.id, db=mock_db)
         
         # Verify empty list returned
         assert len(result) == 0, \

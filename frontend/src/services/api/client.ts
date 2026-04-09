@@ -1,5 +1,11 @@
 // Axios API client with performance optimization
-import axios, { type AxiosInstance, type InternalAxiosRequestConfig, type AxiosResponse, type AxiosError } from 'axios';
+import axios, {
+  type AxiosInstance,
+  type AxiosRequestConfig,
+  type InternalAxiosRequestConfig,
+  type AxiosResponse,
+  type AxiosError,
+} from 'axios';
 import { getToken, setToken, isTokenExpired, getRefreshToken, clearAuthTokens } from '@/utils/token';
 import { API_ENDPOINTS } from '@/constants';
 import {
@@ -143,7 +149,7 @@ export const optimizedApiClient = {
    */
   async get<T>(
     url: string,
-    config?: InternalAxiosRequestConfig & { useCache?: boolean; cacheTtl?: number }
+    config?: AxiosRequestConfig & { useCache?: boolean; cacheTtl?: number }
   ): Promise<AxiosResponse<T>> {
     const { useCache = true, cacheTtl, ...axiosConfig } = config || {};
     
@@ -191,7 +197,7 @@ export const optimizedApiClient = {
   async post<T>(
     url: string,
     data?: unknown,
-    config?: InternalAxiosRequestConfig
+    config?: AxiosRequestConfig
   ): Promise<AxiosResponse<T>> {
     const response = await apiClient.post<T>(url, data, config);
     
@@ -207,7 +213,7 @@ export const optimizedApiClient = {
   async put<T>(
     url: string,
     data?: unknown,
-    config?: InternalAxiosRequestConfig
+    config?: AxiosRequestConfig
   ): Promise<AxiosResponse<T>> {
     const response = await apiClient.put<T>(url, data, config);
     
@@ -223,7 +229,7 @@ export const optimizedApiClient = {
   async patch<T>(
     url: string,
     data?: unknown,
-    config?: InternalAxiosRequestConfig
+    config?: AxiosRequestConfig
   ): Promise<AxiosResponse<T>> {
     const response = await apiClient.patch<T>(url, data, config);
     
@@ -238,7 +244,7 @@ export const optimizedApiClient = {
    */
   async delete<T>(
     url: string,
-    config?: InternalAxiosRequestConfig
+    config?: AxiosRequestConfig
   ): Promise<AxiosResponse<T>> {
     const response = await apiClient.delete<T>(url, config);
     

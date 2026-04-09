@@ -252,25 +252,13 @@ test.describe('Stage 4: Quality review', () => {
   })
 
   test('run quality rules against annotated data', async ({ page }) => {
-    let rulesCalled = false
-    await page.route('**/api/quality/rules/run-all', async (route) => {
-      rulesCalled = true
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ success: true, issuesFound: 2 }),
-      })
-    })
-
     await page.goto('/quality')
     await waitForPageReady(page)
 
-    const runBtn = page.locator('button').filter({ hasText: /运行|检查|run|check/i }).first()
-    if (await runBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await runBtn.click()
-      await page.waitForTimeout(2000)
-      expect(rulesCalled).toBe(true)
-    }
+    // Rules tab is default; "Run all rules" triggers in-app message only (no API in Quality/index.tsx).
+    const runBtn = page.getByRole('button', { name: /运行所有规则|run all rules/i })
+    await expect(runBtn).toBeVisible({ timeout: 8000 })
+    await runBtn.click()
   })
 })
 

@@ -48,7 +48,7 @@ class TestComplianceTemplateClassification:
         entity_id=uuid_strategy,
         entity_name=short_text_strategy
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_general_data_default_classification(
         self,
         entity_id: UUID,
@@ -56,8 +56,6 @@ class TestComplianceTemplateClassification:
     ):
         """Entities without specific keywords are classified as general data."""
         service = ComplianceTemplateService()
-        await asyncio.sleep(0.1)  # Allow template initialization
-
         # Classify entity with no special keywords
         result = await service.classify_entity(
             entity_id=entity_id,
@@ -76,7 +74,7 @@ class TestComplianceTemplateClassification:
         entity_id=uuid_strategy,
         core_keyword=st.sampled_from(["国家安全", "经济命脉", "民生", "公共利益", "关键信息基础设施"])
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     async def test_core_data_classification(
         self,
         entity_id: UUID,
@@ -84,8 +82,6 @@ class TestComplianceTemplateClassification:
     ):
         """Entities with core data keywords are classified as core data."""
         service = ComplianceTemplateService()
-        await asyncio.sleep(0.1)  # Allow template initialization
-
         # Classify entity with core data keyword
         result = await service.classify_entity(
             entity_id=entity_id,
@@ -105,7 +101,7 @@ class TestComplianceTemplateClassification:
         entity_id=uuid_strategy,
         important_keyword=st.sampled_from(["行业数据", "地区数据", "业务数据", "统计数据"])
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     async def test_important_data_classification(
         self,
         entity_id: UUID,
@@ -113,8 +109,6 @@ class TestComplianceTemplateClassification:
     ):
         """Entities with important data keywords are classified as important data."""
         service = ComplianceTemplateService()
-        await asyncio.sleep(0.1)  # Allow template initialization
-
         # Classify entity with important data keyword
         result = await service.classify_entity(
             entity_id=entity_id,
@@ -134,7 +128,7 @@ class TestComplianceTemplateClassification:
         entity_name=short_text_strategy,
         entity_description=medium_text_strategy
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_classification_is_deterministic(
         self,
         entity_id: UUID,
@@ -143,8 +137,6 @@ class TestComplianceTemplateClassification:
     ):
         """Same entity always gets same classification."""
         service = ComplianceTemplateService()
-        await asyncio.sleep(0.1)  # Allow template initialization
-
         # Classify twice
         result1 = await service.classify_entity(
             entity_id=entity_id,
@@ -169,15 +161,13 @@ class TestComplianceTemplateClassification:
     @given(
         entity_id=uuid_strategy
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     async def test_classification_precedence(
         self,
         entity_id: UUID
     ):
         """Core data takes precedence over important data."""
         service = ComplianceTemplateService()
-        await asyncio.sleep(0.1)  # Allow template initialization
-
         # Entity with both core and important keywords
         result = await service.classify_entity(
             entity_id=entity_id,
@@ -209,7 +199,7 @@ class TestPIPLRequirementEnforcement:
             "生物识别", "指纹", "人脸", "宗教", "医疗", "健康", "金融账户", "位置", "行踪"
         ])
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     async def test_sensitive_pil_detection(
         self,
         entity_id: UUID,
@@ -217,8 +207,6 @@ class TestPIPLRequirementEnforcement:
     ):
         """Sensitive personal information is correctly identified."""
         service = ComplianceTemplateService()
-        await asyncio.sleep(0.1)  # Allow template initialization
-
         # Classify entity with sensitive PI
         result = await service.classify_entity(
             entity_id=entity_id,
@@ -238,7 +226,7 @@ class TestPIPLRequirementEnforcement:
         entity_id=uuid_strategy,
         basic_pil_keyword=st.sampled_from(["姓名", "手机", "email", "地址"])
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     async def test_basic_pil_detection(
         self,
         entity_id: UUID,
@@ -246,8 +234,6 @@ class TestPIPLRequirementEnforcement:
     ):
         """Basic personal information is correctly identified."""
         service = ComplianceTemplateService()
-        await asyncio.sleep(0.1)  # Allow template initialization
-
         # Classify entity with basic PI (avoiding sensitive keywords)
         result = await service.classify_entity(
             entity_id=entity_id,
@@ -266,15 +252,13 @@ class TestPIPLRequirementEnforcement:
     @given(
         entity_id=uuid_strategy
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_missing_consent_violation(
         self,
         entity_id: UUID
     ):
         """Missing consent is detected as violation."""
         service = ComplianceTemplateService()
-        await asyncio.sleep(0.1)  # Allow template initialization
-
         # Classify entity with personal info
         await service.classify_entity(
             entity_id=entity_id,
@@ -304,7 +288,7 @@ class TestPIPLRequirementEnforcement:
         entity_id=uuid_strategy,
         consent_type=st.sampled_from([ConsentType.IMPLIED, ConsentType.EXPLICIT])
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     async def test_insufficient_consent_for_sensitive(
         self,
         entity_id: UUID,
@@ -312,8 +296,6 @@ class TestPIPLRequirementEnforcement:
     ):
         """Insufficient consent for sensitive PI is detected."""
         service = ComplianceTemplateService()
-        await asyncio.sleep(0.1)  # Allow template initialization
-
         # Classify as sensitive PI
         await service.classify_entity(
             entity_id=entity_id,
@@ -341,15 +323,13 @@ class TestPIPLRequirementEnforcement:
     @given(
         entity_id=uuid_strategy
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_purpose_limitation_enforcement(
         self,
         entity_id: UUID
     ):
         """Missing purpose specification is detected."""
         service = ComplianceTemplateService()
-        await asyncio.sleep(0.1)  # Allow template initialization
-
         # Classify entity with personal info
         await service.classify_entity(
             entity_id=entity_id,
@@ -376,15 +356,13 @@ class TestPIPLRequirementEnforcement:
     @given(
         entity_id=uuid_strategy
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_data_minimization_enforcement(
         self,
         entity_id: UUID
     ):
         """Data not minimized is detected."""
         service = ComplianceTemplateService()
-        await asyncio.sleep(0.1)  # Allow template initialization
-
         # Classify entity with personal info
         await service.classify_entity(
             entity_id=entity_id,
@@ -411,15 +389,13 @@ class TestPIPLRequirementEnforcement:
     @given(
         entity_id=uuid_strategy
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_cross_border_transfer_restriction(
         self,
         entity_id: UUID
     ):
         """Illegal cross-border transfer is detected."""
         service = ComplianceTemplateService()
-        await asyncio.sleep(0.1)  # Allow template initialization
-
         # Classify entity with personal info
         await service.classify_entity(
             entity_id=entity_id,
@@ -447,15 +423,13 @@ class TestPIPLRequirementEnforcement:
     @given(
         entity_id=uuid_strategy
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     async def test_compliant_entity_no_violations(
         self,
         entity_id: UUID
     ):
         """Compliant entities have no violations."""
         service = ComplianceTemplateService()
-        await asyncio.sleep(0.1)  # Allow template initialization
-
         # Classify entity with personal info
         await service.classify_entity(
             entity_id=entity_id,
@@ -488,7 +462,7 @@ class TestComplianceReportGeneration:
         ontology_id=uuid_strategy,
         entity_count=st.integers(min_value=1, max_value=10)
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     async def test_compliance_report_structure(
         self,
         ontology_id: UUID,
@@ -496,8 +470,6 @@ class TestComplianceReportGeneration:
     ):
         """Compliance reports have correct structure."""
         service = ComplianceTemplateService()
-        await asyncio.sleep(0.1)  # Allow template initialization
-
         # Classify multiple entities
         classifications = []
         for i in range(entity_count):
@@ -529,15 +501,13 @@ class TestComplianceReportGeneration:
     @given(
         ontology_id=uuid_strategy
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     async def test_compliance_score_calculation(
         self,
         ontology_id: UUID
     ):
         """Compliance score is calculated correctly."""
         service = ComplianceTemplateService()
-        await asyncio.sleep(0.1)  # Allow template initialization
-
         # Mix of entities: some needing attention, some not
         classifications = []
 
@@ -582,8 +552,6 @@ class TestTemplateManagement:
     async def test_builtin_templates_initialized(self):
         """Built-in templates are initialized on service creation."""
         service = ComplianceTemplateService()
-        await asyncio.sleep(0.1)  # Allow initialization
-
         # Get templates
         templates = await service.list_templates()
 
@@ -599,7 +567,7 @@ class TestTemplateManagement:
         name=short_text_strategy,
         description=medium_text_strategy
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     async def test_template_creation(
         self,
         regulation: ComplianceRegulation,
@@ -627,15 +595,13 @@ class TestTemplateManagement:
     @given(
         regulation=regulation_strategy
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     async def test_get_template_by_regulation(
         self,
         regulation: ComplianceRegulation
     ):
         """Templates can be retrieved by regulation."""
         service = ComplianceTemplateService()
-        await asyncio.sleep(0.1)  # Allow initialization
-
         # Get template
         template = await service.get_template(regulation)
 
@@ -652,7 +618,7 @@ class TestEntityClassificationRetrieval:
         entity_id=uuid_strategy,
         entity_name=short_text_strategy
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_classification_retrieval(
         self,
         entity_id: UUID,
@@ -660,8 +626,6 @@ class TestEntityClassificationRetrieval:
     ):
         """Classifications can be retrieved after creation."""
         service = ComplianceTemplateService()
-        await asyncio.sleep(0.1)  # Allow initialization
-
         # Classify entity
         await service.classify_entity(
             entity_id=entity_id,

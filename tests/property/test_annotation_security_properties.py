@@ -67,7 +67,7 @@ class TestAuditTrailCompleteness:
         object_type=st.sampled_from(list(AnnotationObjectType)),
         num_operations=st.integers(min_value=1, max_value=50)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_all_operations_logged(
         self,
         operation_type: AnnotationOperationType,
@@ -113,7 +113,7 @@ class TestAuditTrailCompleteness:
     @given(
         num_versions=st.integers(min_value=1, max_value=20)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_version_history_completeness(
         self,
         num_versions: int
@@ -152,7 +152,7 @@ class TestAuditTrailCompleteness:
     @given(
         num_operations=st.integers(min_value=5, max_value=30)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_audit_integrity_verification(
         self,
         num_operations: int
@@ -205,7 +205,7 @@ class TestRoleBasedAccessEnforcement:
             AnnotationPermission.ANNOTATION_DELETE
         ])
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_role_permission_enforcement(
         self,
         role: AnnotationRole,
@@ -246,7 +246,7 @@ class TestRoleBasedAccessEnforcement:
     @given(
         num_permissions=st.integers(min_value=1, max_value=5)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_permission_denial_for_unauthorized_users(
         self,
         num_permissions: int
@@ -275,7 +275,7 @@ class TestRoleBasedAccessEnforcement:
     @given(
         scope=st.sampled_from(["tenant", "project"])
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_scope_hierarchy_enforcement(
         self,
         scope: str
@@ -324,7 +324,7 @@ class TestSensitiveDataDesensitization:
             DesensitizationStrategy.REPLACE
         ])
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_pii_detection_and_desensitization(
         self,
         strategy: DesensitizationStrategy
@@ -360,7 +360,7 @@ class TestSensitiveDataDesensitization:
     @given(
         num_pii_items=st.integers(min_value=1, max_value=5)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_multiple_pii_detection(
         self,
         num_pii_items: int
@@ -384,7 +384,7 @@ class TestSensitiveDataDesensitization:
     @given(
         preserve_structure=st.booleans()
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_desensitization_preserves_structure(
         self,
         preserve_structure: bool
@@ -435,7 +435,7 @@ class TestMultiTenantIsolation:
     @given(
         num_tenants=st.integers(min_value=2, max_value=5)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_cross_tenant_access_prevention(
         self,
         num_tenants: int
@@ -478,7 +478,7 @@ class TestMultiTenantIsolation:
     @given(
         num_operations=st.integers(min_value=5, max_value=20)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_tenant_filter_enforcement(
         self,
         num_operations: int
@@ -507,7 +507,7 @@ class TestMultiTenantIsolation:
     @given(
         num_violations=st.integers(min_value=1, max_value=10)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_isolation_violation_tracking(
         self,
         num_violations: int

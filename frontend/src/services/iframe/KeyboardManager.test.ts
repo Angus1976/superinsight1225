@@ -472,7 +472,7 @@ describe('KeyboardManager', () => {
       consoleErrorSpy.mockRestore();
     });
 
-    it('should handle sequence timeout', (done) => {
+    it('should handle sequence timeout', async () => {
       const sequenceHandler = vi.fn();
       keyboardManager.on('sequence_triggered', sequenceHandler);
       
@@ -485,19 +485,17 @@ describe('KeyboardManager', () => {
       
       keyboardManager.registerKeySequence(sequence);
       
-      // Simulate first 'g' then wait for timeout
       const event1 = new KeyboardEvent('keydown', { key: 'g', bubbles: true });
       document.dispatchEvent(event1);
       
-      setTimeout(() => {
-        // Simulate second 'g' after timeout
-        const event2 = new KeyboardEvent('keydown', { key: 'g', bubbles: true });
-        document.dispatchEvent(event2);
-        
-        // Should not trigger sequence due to timeout
-        expect(sequenceHandler).not.toHaveBeenCalled();
-        done();
-      }, 150);
+      await new Promise<void>((resolve) => {
+        setTimeout(() => {
+          const event2 = new KeyboardEvent('keydown', { key: 'g', bubbles: true });
+          document.dispatchEvent(event2);
+          expect(sequenceHandler).not.toHaveBeenCalled();
+          resolve();
+        }, 150);
+      });
     });
   });
 });

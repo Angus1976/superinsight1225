@@ -41,6 +41,7 @@ export interface User {
   id?: string;
   username: string;
   email: string;
+  avatar?: string;
   full_name?: string;
   role: string;
   tenant_id?: string;

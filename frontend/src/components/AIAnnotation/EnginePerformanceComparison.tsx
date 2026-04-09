@@ -129,7 +129,8 @@ const EnginePerformanceComparison: React.FC<EnginePerformanceComparisonProps> = 
     return metricsData.find((m) => m.engineId === engineId) || null;
   };
 
-  const getEngineName = (engineId: string): string => {
+  const getEngineName = (engineId: string | null | undefined): string => {
+    if (engineId == null || engineId === '') return '';
     const engine = engines.find((e) => e.id === engineId);
     return engine ? `${engine.engineType} (${engine.model})` : engineId;
   };

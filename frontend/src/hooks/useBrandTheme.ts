@@ -11,7 +11,8 @@
 
 import { useCallback, useEffect, useMemo } from 'react';
 import { useBrandStore } from '@/stores/brandStore';
-import type { BrandTheme, BrandThemeType, LogoVariant, BrandColors } from '@/types/brand';
+import type { BrandTheme, BrandThemeType, BrandColors } from '@/types/brand';
+import { LogoVariant } from '@/types/brand';
 
 export interface UseBrandThemeReturn {
   // 当前状态

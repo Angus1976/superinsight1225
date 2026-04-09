@@ -200,7 +200,7 @@ class TestSyncManagerRoundTrip:
             'updated_at': st.datetimes(min_value=datetime(2020, 1, 1), max_value=datetime(2030, 1, 1)).map(lambda d: d.isoformat())
         })
     )
-    @settings(max_examples=100)
+    @settings()
     def test_annotation_checksum_consistency(self, annotation_data):
         """标注数据的校验和计算必须一致
         
@@ -227,7 +227,7 @@ class TestSyncManagerRoundTrip:
             )
         })
     )
-    @settings(max_examples=100)
+    @settings()
     def test_annotation_validation(self, annotation_data):
         """标注数据验证必须正确识别有效数据
         
@@ -245,7 +245,7 @@ class TestSyncManagerRoundTrip:
             'annotation_data': st.dictionaries(st.text(min_size=1), st.integers(), min_size=1)
         })
     )
-    @settings(max_examples=100)
+    @settings()
     def test_annotation_validation_missing_fields(self, annotation_data):
         """缺少必填字段的标注数据应该验证失败"""
         is_valid = validate_annotation_data(annotation_data)
@@ -263,7 +263,7 @@ class TestSyncManagerBatchThreshold:
         num_annotations=st.integers(min_value=0, max_value=50),
         batch_threshold=st.integers(min_value=5, max_value=20)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_batch_threshold_behavior(self, num_annotations, batch_threshold):
         """批量插入应该根据阈值选择不同的策略
         
@@ -302,7 +302,7 @@ class TestSyncManagerBatchThreshold:
             max_size=30
         )
     )
-    @settings(max_examples=100)
+    @settings()
     def test_batch_insert_idempotency(self, annotations):
         """批量插入应该是幂等的（重复插入不会增加记录）
         
@@ -332,7 +332,7 @@ class TestSyncManagerErrorRecovery:
         ),
         max_errors=st.integers(min_value=10, max_value=100)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_error_processing_limit(self, errors, max_errors):
         """错误处理应该限制错误数量
         
@@ -370,7 +370,7 @@ class TestSyncManagerErrorRecovery:
             max_size=10
         )
     )
-    @settings(max_examples=100)
+    @settings()
     def test_conflict_detection_consistency(self, local_data, cloud_data):
         """冲突检测应该是一致的
         
@@ -395,7 +395,7 @@ class TestSyncManagerErrorRecovery:
             'data': st.text(min_size=1, max_size=50)
         })
     )
-    @settings(max_examples=100)
+    @settings()
     def test_conflict_resolution_timestamp_based(self, local_item, cloud_item):
         """基于时间戳的冲突解决应该选择较新的数据
         
@@ -418,7 +418,7 @@ class TestSyncManagerErrorRecovery:
             'data': st.text(min_size=1, max_size=50)
         })
     )
-    @settings(max_examples=100)
+    @settings()
     def test_conflict_resolution_local_wins(self, local_item, cloud_item):
         """本地优先策略应该始终返回本地数据"""
         resolved = resolve_conflict_local_wins(local_item, cloud_item)
@@ -434,7 +434,7 @@ class TestSyncManagerErrorRecovery:
             'data': st.text(min_size=1, max_size=50)
         })
     )
-    @settings(max_examples=100)
+    @settings()
     def test_conflict_resolution_cloud_wins(self, local_item, cloud_item):
         """云端优先策略应该始终返回云端数据"""
         resolved = resolve_conflict_cloud_wins(local_item, cloud_item)
@@ -454,7 +454,7 @@ class TestSyncResultIntegrity:
         conflicts=st.integers(min_value=0, max_value=1000),
         errors=st.lists(st.text(min_size=1, max_size=100), min_size=0, max_size=50)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_sync_result_consistency(self, records_processed, records_synced, conflicts, errors):
         """同步结果的数据应该一致
         

@@ -179,4 +179,11 @@ secrets/
 *.key
 *.pem
 *.p12
-*.pfxfrontend/coverage/
+*.pfx
+
+# Frontend test artifacts / local exports (generated; do not commit)
+frontend/coverage/
+frontend/playwright-report/
+frontend/test-results.json
+frontend/task_task-*.xlsx
+frontend/tasks_export_*.xlsx

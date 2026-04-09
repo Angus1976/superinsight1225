@@ -1,0 +1,139 @@
+# 手动全量 Chromium E2E（与 merge main 的 E2E 配置对齐：单浏览器、2 workers、长超时；启 Postgres/Redis + 后端）。
+# 不设每日定时：develop 上靠 e2e-sample-phased.yml 每周抽样；需要与 main 同规模全量时再手动运行本 workflow。
+name: E2E Chromium (full, manual)
+
+run-name: E2E Chromium full (${{ inputs.git_ref }})
+
+on:
+  workflow_dispatch:
+    inputs:
+      git_ref:
+        description: '要测试的分支或 SHA（默认 develop）'
+        required: false
+        default: 'develop'
+        type: string
+
+concurrency:
+  group: e2e-chromium-scheduled
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '18'
+
+jobs:
+  e2e-chromium:
+    name: Playwright Chromium
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
+
+    steps:
+      - name: Resolve git ref
+        id: ref
+        run: |
+          R="${{ inputs.git_ref }}"
+          echo "ref=$R" >> "$GITHUB_OUTPUT"
+          echo "Testing ref: $R"
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.ref.outputs.ref }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest pytest-asyncio
+          pip install -r requirements.txt || true
+
+      - name: Create test environment file
+        run: |
+          cat > .env.test << EOF
+          DATABASE_URL=postgresql://test_user:test_password@localhost:5432/test_db
+          REDIS_URL=redis://localhost:6379/0
+          SECRET_KEY=test-secret-key-for-testing
+          JWT_SECRET_KEY=test-jwt-secret-key
+          JWT_ALGORITHM=HS256
+          ACCESS_TOKEN_EXPIRE_MINUTES=30
+          API_V1_PREFIX=/api/v1
+          SERVER_NAME=test-server
+          EOF
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Install Playwright browsers
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Start backend server
+        run: |
+          export DATABASE_URL=postgresql://test_user:test_password@localhost:5432/test_db
+          export REDIS_URL=redis://localhost:6379/0
+          export SECRET_KEY=test-secret-key-for-testing
+          export JWT_SECRET_KEY=test-jwt-secret-key
+          export JWT_ALGORITHM=HS256
+          export ACCESS_TOKEN_EXPIRE_MINUTES=30
+          export API_V1_PREFIX=/api/v1
+          export SERVER_NAME=test-server
+          uvicorn src.app:app --host 0.0.0.0 --port 8000 &
+          sleep 5
+          curl -f http://localhost:8000/health || exit 1
+
+      - name: Run E2E (Chromium)
+        working-directory: frontend
+        env:
+          CI: true
+          BASE_URL: 'http://localhost:8000'
+          PLAYWRIGHT_WORKERS: '2'
+        run: |
+          npx playwright test \
+            --project=chromium \
+            --reporter=html,json,list \
+            --output=e2e-results \
+            --trace=on-first-retry
+
+      - name: Upload E2E report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-scheduled-report
+          path: |
+            frontend/playwright-report/
+            frontend/e2e-results/
+            frontend/test-results/
+          retention-days: 7

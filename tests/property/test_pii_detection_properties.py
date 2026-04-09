@@ -92,7 +92,7 @@ class TestPIIDetection:
     """**Validates: Requirement 8.2**"""
 
     @given(source=pii_data_source())
-    @settings(max_examples=50, deadline=5000)
+    @settings(deadline=5000)
     def test_pii_data_flags_sensitive_fields(self, source: DataSource):
         """Data with PII patterns → profiler flags sensitive_fields as non-empty."""
         profiler = SimpleDataProfiler()

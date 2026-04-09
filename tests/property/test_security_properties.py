@@ -391,7 +391,7 @@ class TestAuditTrailCompleteness:
     """
 
     @given(operations=st.lists(operation_strategy(), min_size=1, max_size=50))
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_all_operations_logged(self, operations: List[Dict[str, Any]]):
         """All operations should be logged."""
         async def run_test():
@@ -414,7 +414,7 @@ class TestAuditTrailCompleteness:
         asyncio.run(run_test())
 
     @given(operation=operation_strategy())
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_log_contains_required_fields(self, operation: Dict[str, Any]):
         """Log entries should contain all required fields."""
         async def run_test():
@@ -440,7 +440,7 @@ class TestAuditTrailCompleteness:
         asyncio.run(run_test())
 
     @given(operation=operation_strategy())
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_log_integrity_verification(self, operation: Dict[str, Any]):
         """Log entries should pass integrity verification."""
         async def run_test():
@@ -462,7 +462,7 @@ class TestAuditTrailCompleteness:
         tenant_id=uuid_strategy(),
         num_operations=st.integers(min_value=5, max_value=30)
     )
-    @settings(max_examples=30, deadline=None)
+    @settings(deadline=None)
     def test_logs_filtered_by_tenant(self, tenant_id: str, num_operations: int):
         """Logs should be filterable by tenant."""
         async def run_test():
@@ -509,7 +509,7 @@ class TestRoleBasedAccessEnforcement:
         role=st.sampled_from(list(Role)),
         permission=st.sampled_from(list(Permission))
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_permission_matches_role_definition(
         self,
         role: Role,
@@ -537,7 +537,7 @@ class TestRoleBasedAccessEnforcement:
     @given(
         roles=st.lists(st.sampled_from(list(Role)), min_size=1, max_size=4, unique=True)
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_multiple_roles_combine_permissions(self, roles: List[Role]):
         """Multiple roles should combine their permissions."""
         async def run_test():
@@ -568,7 +568,7 @@ class TestRoleBasedAccessEnforcement:
         user_id=uuid_strategy(),
         permission=st.sampled_from(list(Permission))
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_no_role_means_no_permission(
         self,
         tenant_id: str,
@@ -603,7 +603,7 @@ class TestSensitiveDataDesensitization:
     """
 
     @given(text=pii_text_strategy())
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_pii_detected_in_text(self, text: str):
         """PII should be detected in text."""
         async def run_test():
@@ -617,7 +617,7 @@ class TestSensitiveDataDesensitization:
         asyncio.run(run_test())
 
     @given(text=pii_text_strategy())
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_desensitized_text_differs_from_original(self, text: str):
         """Desensitized text should differ from original when PII present."""
         async def run_test():
@@ -636,7 +636,7 @@ class TestSensitiveDataDesensitization:
         text=pii_text_strategy(),
         strategy=st.sampled_from(["full_mask", "partial_mask", "replace"])
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_desensitization_removes_pii(self, text: str, strategy: str):
         """Desensitization should remove or mask PII."""
         async def run_test():
@@ -656,7 +656,7 @@ class TestSensitiveDataDesensitization:
         asyncio.run(run_test())
 
     @given(num_samples=st.integers(min_value=5, max_value=20))
-    @settings(max_examples=30, deadline=None)
+    @settings(deadline=None)
     def test_desensitization_preserves_text_structure(self, num_samples: int):
         """Desensitization should preserve overall text structure."""
         async def run_test():
@@ -691,7 +691,7 @@ class TestMultiTenantIsolation:
         tenant1_id=uuid_strategy(),
         tenant2_id=uuid_strategy()
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_cross_tenant_access_blocked(self, tenant1_id: str, tenant2_id: str):
         """Cross-tenant access should be blocked."""
         assume(tenant1_id != tenant2_id)
@@ -715,7 +715,7 @@ class TestMultiTenantIsolation:
         asyncio.run(run_test())
 
     @given(tenant_id=uuid_strategy())
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_same_tenant_access_allowed(self, tenant_id: str):
         """Same-tenant access should be allowed."""
         async def run_test():
@@ -741,7 +741,7 @@ class TestMultiTenantIsolation:
             max_size=5
         )
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_tenant_filter_enforced(self, tenant_id: str, filters: Dict[str, Any]):
         """Tenant filter should be enforced on all queries."""
         async def run_test():
@@ -763,7 +763,7 @@ class TestMultiTenantIsolation:
         num_tenants=st.integers(min_value=2, max_value=10),
         num_access_attempts=st.integers(min_value=10, max_value=50)
     )
-    @settings(max_examples=30, deadline=None)
+    @settings(deadline=None)
     def test_isolation_under_concurrent_access(
         self,
         num_tenants: int,

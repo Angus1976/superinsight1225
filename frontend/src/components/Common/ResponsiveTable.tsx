@@ -67,6 +67,13 @@ function getNestedValue(obj: Record<string, unknown>, path: string | string[]): 
   }, obj);
 }
 
+function unknownToReactNode(value: unknown): ReactNode {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'string' || typeof value === 'number') return value;
+  if (typeof value === 'boolean') return value ? 'true' : 'false';
+  return value as ReactNode;
+}
+
 function ResponsiveTableInner<T extends object>({
   columns,
   dataSource,
@@ -135,13 +142,15 @@ function ResponsiveTableInner<T extends object>({
           const tagCols = columns.filter((col) => col.isTag);
           const cardCols = columns.filter((col) => col.showInCard !== false && !col.isPrimary && !col.isSecondary && !col.isTag);
 
+          const rec = record as Record<string, unknown>;
+
           // Get title
           const title = cardTitle 
             ? cardTitle(record)
             : primaryCol 
               ? primaryCol.render 
-                ? primaryCol.render(getNestedValue(record, primaryCol.dataIndex), record, index)
-                : getNestedValue(record, primaryCol.dataIndex)
+                ? primaryCol.render(getNestedValue(rec, primaryCol.dataIndex), record, index)
+                : getNestedValue(rec, primaryCol.dataIndex)
               : `Item ${index + 1}`;
 
           // Get description
@@ -149,8 +158,8 @@ function ResponsiveTableInner<T extends object>({
             ? cardDescription(record)
             : secondaryCol
               ? secondaryCol.render
-                ? secondaryCol.render(getNestedValue(record, secondaryCol.dataIndex), record, index)
-                : getNestedValue(record, secondaryCol.dataIndex)
+                ? secondaryCol.render(getNestedValue(rec, secondaryCol.dataIndex), record, index)
+                : getNestedValue(rec, secondaryCol.dataIndex)
               : null;
 
           return (
@@ -160,15 +169,15 @@ function ResponsiveTableInner<T extends object>({
                 size="small"
                 title={
                   <div className={styles.cardHeader}>
-                    <div className={styles.cardTitle}>{title}</div>
+                    <div className={styles.cardTitle}>{unknownToReactNode(title)}</div>
                     {cardExtra && <div className={styles.cardExtra}>{cardExtra(record)}</div>}
                   </div>
                 }
                 actions={cardActions ? cardActions(record) : undefined}
               >
-                {description && (
+                {description != null && description !== false && (
                   <Text type="secondary" className={styles.cardDescription}>
-                    {description}
+                    {unknownToReactNode(description)}
                   </Text>
                 )}
 
@@ -176,13 +185,13 @@ function ResponsiveTableInner<T extends object>({
                 {tagCols.length > 0 && (
                   <div className={styles.cardTags}>
                     {tagCols.map((col) => {
-                      const value = getNestedValue(record, col.dataIndex);
+                      const value = getNestedValue(rec, col.dataIndex);
                       const rendered = col.render 
                         ? col.render(value, record, index)
                         : value;
                       return (
                         <span key={col.key}>
-                          {typeof rendered === 'string' ? <Tag>{rendered}</Tag> : rendered}
+                          {typeof rendered === 'string' ? <Tag>{rendered}</Tag> : unknownToReactNode(rendered)}
                         </span>
                       );
                     })}
@@ -193,7 +202,7 @@ function ResponsiveTableInner<T extends object>({
                 {cardCols.length > 0 && (
                   <div className={styles.cardFields}>
                     {cardCols.map((col) => {
-                      const value = getNestedValue(record, col.dataIndex);
+                      const value = getNestedValue(rec, col.dataIndex);
                       const rendered = col.render 
                         ? col.render(value, record, index)
                         : value;
@@ -202,7 +211,7 @@ function ResponsiveTableInner<T extends object>({
                           <Text type="secondary" className={styles.fieldLabel}>
                             {col.cardLabel || col.title}:
                           </Text>
-                          <span className={styles.fieldValue}>{rendered}</span>
+                          <span className={styles.fieldValue}>{unknownToReactNode(rendered)}</span>
                         </div>
                       );
                     })}

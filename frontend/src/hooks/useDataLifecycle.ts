@@ -8,7 +8,17 @@
 import { useCallback, useEffect } from 'react';
 import { message } from 'antd';
 import { useTranslation } from 'react-i18next';
-import { dataLifecycleApi, TempData, Sample, Review, AnnotationTask, EnhancementJob, AITrial } from '@/services/dataLifecycle';
+import {
+  dataLifecycleApi,
+  TempData,
+  Sample,
+  Review,
+  AnnotationTask,
+  EnhancementJob,
+  AITrial,
+  CreateAnnotationTaskPayload,
+  CreateEnhancementPayload,
+} from '@/services/dataLifecycle';
 import { useDataLifecycleStore, dataLifecycleSelectors } from '@/stores/dataLifecycleStore';
 
 // ============================================================================
@@ -63,7 +73,7 @@ export interface UseAnnotationTaskReturn {
   error: string | null;
   pagination: { page: number; pageSize: number; total: number };
   fetchTasks: (params?: { page?: number; pageSize?: number; status?: string; priority?: string }) => Promise<void>;
-  createTask: (payload: { name: string; description?: string; sample_ids: string[]; annotation_type: string; instructions: string; created_by: string; deadline?: string; assigned_to?: string[] }) => Promise<void>;
+  createTask: (payload: CreateAnnotationTaskPayload) => Promise<void>;
   updateTask: (id: string, payload: Partial<AnnotationTask>) => Promise<void>;
   startTask: (id: string) => Promise<void>;
   completeTask: (id: string) => Promise<void>;
@@ -79,7 +89,7 @@ export interface UseEnhancementReturn {
   error: string | null;
   pagination: { page: number; pageSize: number; total: number };
   fetchJobs: (params?: { page?: number; pageSize?: number; status?: string; type?: string }) => Promise<void>;
-  createJob: (payload: { data_id: string; enhancement_type: string; created_by: string; parameters?: Record<string, unknown>; target_quality?: number }) => Promise<void>;
+  createJob: (payload: CreateEnhancementPayload) => Promise<void>;
   startJob: (id: string) => Promise<void>;
   pauseJob: (id: string) => Promise<void>;
   resumeJob: (id: string) => Promise<void>;
@@ -511,7 +521,7 @@ export function useAnnotationTask(): UseAnnotationTaskReturn {
     }
   }, [annotationTaskPagination.page, annotationTaskPagination.pageSize, setAnnotationTaskList, setLoading, setError, t]);
 
-  const createTask = useCallback(async (payload: { name: string; description?: string; sample_ids: string[]; annotation_type: string; instructions: string; created_by: string; deadline?: string; assigned_to?: string[] }) => {
+  const createTask = useCallback(async (payload: CreateAnnotationTaskPayload) => {
     try {
       setLoading(true);
       await dataLifecycleApi.createAnnotationTask(payload);
@@ -661,7 +671,7 @@ export function useEnhancement(): UseEnhancementReturn {
     }
   }, [enhancementPagination.page, enhancementPagination.pageSize, setEnhancementList, setLoading, setError, t]);
 
-  const createJob = useCallback(async (payload: { data_id: string; enhancement_type: string; created_by: string; parameters?: Record<string, unknown>; target_quality?: number }) => {
+  const createJob = useCallback(async (payload: CreateEnhancementPayload) => {
     try {
       setLoading(true);
       await dataLifecycleApi.createEnhancement(payload);

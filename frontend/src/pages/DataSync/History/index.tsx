@@ -29,6 +29,7 @@ import {
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import type { ColumnsType } from 'antd/es/table';
+import type { TimelineItemProps } from 'antd';
 import { TransferButton } from '@/components/DataLifecycle/TransferButton';
 import type { TransferRecord } from '@/api/dataLifecycleAPI';
 
@@ -553,30 +554,42 @@ const SyncHistory: React.FC = () => {
 
             <Card title={t('history.timeline')} size="small" type="inner">
               <Timeline
-                items={[
-                  {
-                    color: 'blue',
-                    children: `${t('history.timelineStart')} - ${new Date(selectedRecord.startedAt).toLocaleTimeString()}`,
-                  },
-                  {
-                    color: 'blue',
-                    children: t('history.timelineConnect'),
-                  },
-                  selectedRecord.syncDirection !== 'output' && {
-                    color: 'blue',
-                    children: `${t('history.timelineRead')} - ${selectedRecord.rowsSynced.toLocaleString()} rows`,
-                  },
-                  (selectedRecord.syncDirection === 'output' || selectedRecord.syncDirection === 'bidirectional') && selectedRecord.rowsWritten !== undefined && {
-                    color: 'blue',
-                    children: `${t('history.timelineWrite')} - ${selectedRecord.rowsWritten.toLocaleString()} rows`,
-                  },
-                  {
+                items={(() => {
+                  const timelineItems: TimelineItemProps[] = [
+                    {
+                      color: 'blue',
+                      children: `${t('history.timelineStart')} - ${new Date(selectedRecord.startedAt).toLocaleTimeString()}`,
+                    },
+                    {
+                      color: 'blue',
+                      children: t('history.timelineConnect'),
+                    },
+                  ];
+                  if (selectedRecord.syncDirection !== 'output') {
+                    timelineItems.push({
+                      color: 'blue',
+                      children: `${t('history.timelineRead')} - ${selectedRecord.rowsSynced.toLocaleString()} rows`,
+                    });
+                  }
+                  if (
+                    (selectedRecord.syncDirection === 'output' ||
+                      selectedRecord.syncDirection === 'bidirectional') &&
+                    selectedRecord.rowsWritten !== undefined
+                  ) {
+                    timelineItems.push({
+                      color: 'blue',
+                      children: `${t('history.timelineWrite')} - ${selectedRecord.rowsWritten.toLocaleString()} rows`,
+                    });
+                  }
+                  timelineItems.push({
                     color: selectedRecord.status === 'completed' ? 'green' : 'red',
-                    children: selectedRecord.status === 'completed'
-                      ? `${t('history.timelineComplete')} - ${selectedRecord.completedAt ? new Date(selectedRecord.completedAt).toLocaleTimeString() : ''}`
-                      : `${t('history.timelineFailed')} - ${selectedRecord.errorMessage}`,
-                  },
-                ].filter(Boolean)}
+                    children:
+                      selectedRecord.status === 'completed'
+                        ? `${t('history.timelineComplete')} - ${selectedRecord.completedAt ? new Date(selectedRecord.completedAt).toLocaleTimeString() : ''}`
+                        : `${t('history.timelineFailed')} - ${selectedRecord.errorMessage}`,
+                  });
+                  return timelineItems;
+                })()}
               />
             </Card>
           </Space>

@@ -46,6 +46,7 @@
     "src/**/*.spec.ts",
     "src/**/*.spec.tsx",
     "src/**/__tests__/**/*",
-    "src/test/**/*"
+    "src/test/**/*",
+    "src/pages/_archived/**/*"
   ]
 }

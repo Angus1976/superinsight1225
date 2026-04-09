@@ -301,7 +301,7 @@ export const BusinessRuleManager: React.FC<BusinessRuleManagerProps> = ({
     {
       title: t('rules.columns.actions'),
       key: 'actions',
-      render: (_, record: BusinessRule) => (
+      render: (_: unknown, record: BusinessRule) => (
         <Space>
           <Tooltip title={t('rules.actions.viewDetail')}>
             <Button
@@ -451,13 +451,15 @@ export const BusinessRuleManager: React.FC<BusinessRuleManagerProps> = ({
             name="confidence"
             label={t('rules.form.initialConfidence')}
           >
-            <InputNumber
+            <InputNumber<number>
               min={0.1}
               max={1.0}
               step={0.1}
               style={{ width: '100%' }}
-              formatter={(value) => `${((value as number) * 100).toFixed(0)}%`}
-              parser={(value) => (parseFloat(value?.replace('%', '') || '0') / 100)}
+              formatter={(value) => `${((value ?? 0) * 100).toFixed(0)}%`}
+              parser={(value) =>
+                parseFloat(String(value ?? '').replace(/%/g, '') || '0') / 100
+              }
             />
           </Form.Item>
 
@@ -535,13 +537,15 @@ export const BusinessRuleManager: React.FC<BusinessRuleManagerProps> = ({
             name="confidence"
             label={t('rules.columns.confidence')}
           >
-            <InputNumber
+            <InputNumber<number>
               min={0.1}
               max={1.0}
               step={0.1}
               style={{ width: '100%' }}
-              formatter={(value) => `${((value as number) * 100).toFixed(0)}%`}
-              parser={(value) => (parseFloat(value?.replace('%', '') || '0') / 100)}
+              formatter={(value) => `${((value ?? 0) * 100).toFixed(0)}%`}
+              parser={(value) =>
+                parseFloat(String(value ?? '').replace(/%/g, '') || '0') / 100
+              }
             />
           </Form.Item>
 

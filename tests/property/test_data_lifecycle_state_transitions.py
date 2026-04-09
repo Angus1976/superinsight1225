@@ -120,7 +120,7 @@ class TestStateTransitionValidity:
         reason=reason_strategy,
         metadata=metadata_strategy
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_valid_transitions_succeed(
         self,
         db_session: Session,
@@ -178,7 +178,7 @@ class TestStateTransitionValidity:
         user_id=user_id_strategy,
         reason=reason_strategy
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_invalid_transitions_rejected(
         self,
         db_session: Session,
@@ -307,7 +307,7 @@ class TestStateHistoryCompleteness:
         reason=reason_strategy,
         metadata=metadata_strategy
     )
-    @settings(max_examples=30, deadline=None)
+    @settings(deadline=None)
     def test_successful_transition_recorded_in_history(
         self,
         db_session: Session,

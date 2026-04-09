@@ -155,8 +155,8 @@ export const ProjectSync: React.FC<ProjectSyncProps> = ({
 
   // Convert workspace projects to sync status format
   const workspaceProjectsAsSyncStatus = useMemo((): ProjectSyncStatus[] => {
-    if (!workspaceProjectsData?.projects) return [];
-    return workspaceProjectsData.projects.map((project: LSWorkspaceProject) => ({
+    if (!workspaceProjectsData?.items) return [];
+    return workspaceProjectsData.items.map((project: LSWorkspaceProject) => ({
       projectId: project.id,
       projectName: project.label_studio_project_id, // Will be replaced with actual name when available
       labelStudioProjectId: project.label_studio_project_id,
@@ -171,7 +171,7 @@ export const ProjectSync: React.FC<ProjectSyncProps> = ({
 
   // Merge workspace projects with mock data or use only workspace projects
   useEffect(() => {
-    if (selectedWorkspaceId && workspaceProjectsData?.projects) {
+    if (selectedWorkspaceId && workspaceProjectsData?.items) {
       // Use workspace projects when a workspace is selected
       setSyncStatus(workspaceProjectsAsSyncStatus);
     } else if (!selectedWorkspaceId) {

@@ -309,15 +309,27 @@ export const QualityReports: React.FC<QualityReportsProps> = ({
           extra={<CloseOutlined style={{ cursor: 'pointer' }} onClick={() => setSelectedCard(null)} />}
           style={{ marginBottom: 24 }}
         >
-          <Table
-            columns={selectedCard === 'totalWorkHours' ? userActivityColumns : trendDetailColumns}
-            dataSource={selectedCard === 'totalWorkHours' ? (userActivity?.trends || []) : trends}
-            rowKey={(_, index) => String(index)}
-            loading={loading}
-            pagination={{ pageSize: 10, showTotal: (total) => t('detailTable.total', { total }) }}
-            size="middle"
-            scroll={{ x: 600 }}
-          />
+          {selectedCard === 'totalWorkHours' ? (
+            <Table
+              columns={userActivityColumns}
+              dataSource={userActivity?.trends || []}
+              rowKey={(_, index) => String(index)}
+              loading={loading}
+              pagination={{ pageSize: 10, showTotal: (total) => t('detailTable.total', { total }) }}
+              size="middle"
+              scroll={{ x: 600 }}
+            />
+          ) : (
+            <Table
+              columns={trendDetailColumns}
+              dataSource={trends}
+              rowKey={(_, index) => String(index)}
+              loading={loading}
+              pagination={{ pageSize: 10, showTotal: (total) => t('detailTable.total', { total }) }}
+              size="middle"
+              scroll={{ x: 600 }}
+            />
+          )}
         </Card>
       )}
 

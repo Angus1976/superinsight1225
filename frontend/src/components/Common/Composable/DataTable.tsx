@@ -10,6 +10,7 @@
 
 import React, { type ReactNode, useCallback, useMemo, memo, useState } from 'react';
 import { Table, Input, Space, Button, Dropdown, type TableProps, type MenuProps } from 'antd';
+import type { SizeType } from 'antd/es/config-provider/SizeContext';
 import { SearchOutlined, FilterOutlined, ReloadOutlined, SettingOutlined } from '@ant-design/icons';
 import type { ColumnsType, ColumnType } from 'antd/es/table';
 import type { FilterValue, SorterResult, TablePaginationConfig } from 'antd/es/table/interface';
@@ -299,7 +300,7 @@ function DataTableInner<T extends { id?: string | number; key?: string | number 
         footer={footer ? () => footer : undefined}
         scroll={scroll}
         bordered={bordered}
-        size={size}
+        size={size as SizeType}
         sticky={sticky}
         locale={{ emptyText }}
         expandable={expandable}

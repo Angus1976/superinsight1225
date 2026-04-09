@@ -132,7 +132,8 @@ class TestConcurrentEditConflictDetection:
         element_id = uuid4()
         element_type = "entity_type"
 
-        # User 1 modifies description
+        # User 1 modifies description only (partial after-dict so _changes_conflict
+        # intersects keys with user 2 only on fields both touched in ``after``).
         await service.record_change(
             session_id=session.session_id,
             element_id=element_id,
@@ -141,10 +142,10 @@ class TestConcurrentEditConflictDetection:
             user_id=session.created_by,
             username="user1",
             before={"name": "Entity A", "description": "Original"},
-            after={"name": "Entity A", "description": "Updated by user1"}
+            after={"description": "Updated by user1"},
         )
 
-        # User 2 modifies name (different field, no conflict)
+        # User 2 modifies name; shared key "description" keeps the same value in both after dicts
         await service.record_change(
             session_id=session.session_id,
             element_id=element_id,
@@ -153,7 +154,7 @@ class TestConcurrentEditConflictDetection:
             user_id=user2_id,
             username="user2",
             before={"name": "Entity A", "description": "Updated by user1"},
-            after={"name": "Entity B", "description": "Updated by user1"}
+            after={"name": "Entity B", "description": "Updated by user1"},
         )
 
         # Check that no conflict was detected (different fields)

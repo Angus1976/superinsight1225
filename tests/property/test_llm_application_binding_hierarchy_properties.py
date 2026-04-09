@@ -12,7 +12,7 @@ import pytest
 import os
 from uuid import uuid4
 from hypothesis import given, strategies as st, settings, assume, HealthCheck
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 from src.ai.application_llm_manager import ApplicationLLMManager
 from src.ai.cache_manager import CacheManager
@@ -69,16 +69,17 @@ priority_strategy = st.integers(min_value=1, max_value=99)
 
 @pytest.fixture
 def mock_db_session():
-    """Create a mock async database session."""
-    session = AsyncMock()
-    
-    async def mock_execute(stmt):
-        """Mock execute that returns a proper result object."""
-        result = AsyncMock()
-        result.scalar_one_or_none = AsyncMock(return_value=None)
-        result.scalars = MagicMock(return_value=MagicMock(all=MagicMock(return_value=[])))
+    """Sync session mock — ``ApplicationLLMManager._execute`` uses sync ``execute`` unless ``AsyncSession``."""
+    session = MagicMock()
+
+    def mock_execute(stmt):
+        result = MagicMock()
+        result.scalar_one_or_none.return_value = None
+        scalars = MagicMock()
+        scalars.all.return_value = []
+        result.scalars.return_value = scalars
         return result
-    
+
     session.execute = mock_execute
     return session
 
@@ -200,7 +201,7 @@ class TestConfigurationLoadingHierarchy:
             global configuration
     """
     
-    @settings(max_examples=20, suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture], deadline=None)
     @given(
         application_code=application_code_strategy,
         tenant_id=tenant_id_strategy,
@@ -241,7 +242,7 @@ class TestConfigurationLoadingHierarchy:
         binding_result = MagicMock()
         binding_result.scalars = MagicMock(return_value=MagicMock(all=MagicMock(return_value=[app_binding])))
         
-        async def mock_execute(stmt):
+        def mock_execute(stmt):
             if not hasattr(mock_execute, 'call_count'):
                 mock_execute.call_count = 0
             mock_execute.call_count += 1
@@ -261,7 +262,7 @@ class TestConfigurationLoadingHierarchy:
         assert configs[0].openai_model == model_name, \
             "Should return model from application binding"
     
-    @settings(max_examples=20, suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture], deadline=None)
     @given(
         application_code=application_code_strategy,
         tenant_id=st.uuids().map(str),  # Always use tenant ID for this test
@@ -285,6 +286,8 @@ class TestConfigurationLoadingHierarchy:
         
         **Validates: Requirements 18.4**
         """
+        await app_llm_manager.cache.invalidate("*")
+        
         # Create mock application
         app = create_mock_application(application_code)
         
@@ -299,7 +302,7 @@ class TestConfigurationLoadingHierarchy:
         tenant_result = MagicMock()
         tenant_result.scalars = MagicMock(return_value=MagicMock(all=MagicMock(return_value=[tenant_binding])))
         
-        async def mock_execute(stmt):
+        def mock_execute(stmt):
             if not hasattr(mock_execute, 'call_count'):
                 mock_execute.call_count = 0
             mock_execute.call_count += 1
@@ -311,15 +314,15 @@ class TestConfigurationLoadingHierarchy:
         
         app_llm_manager.db.execute = mock_execute
         
-        # Load configuration
-        configs = await app_llm_manager.get_llm_config(application_code, tenant_id)
+        with patch.dict(os.environ, {}, clear=True):
+            configs = await app_llm_manager.get_llm_config(application_code, tenant_id)
         
         # Verify tenant configuration was returned
         assert len(configs) > 0, "Should return tenant-level configuration"
         assert configs[0].openai_model == model_name, \
             "Should return model from tenant configuration"
     
-    @settings(max_examples=20, suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture], deadline=None)
     @given(
         application_code=application_code_strategy,
         tenant_id=st.uuids().map(str),
@@ -342,6 +345,8 @@ class TestConfigurationLoadingHierarchy:
         
         **Validates: Requirements 18.4**
         """
+        await app_llm_manager.cache.invalidate("*")
+        
         # Create mock application
         app = create_mock_application(application_code)
         
@@ -353,38 +358,34 @@ class TestConfigurationLoadingHierarchy:
         app_result = MagicMock()
         app_result.scalar_one_or_none = MagicMock(return_value=app)
         
-        # First query (tenant-specific) returns empty
-        tenant_result = MagicMock()
-        tenant_result.scalars = MagicMock(return_value=MagicMock(all=MagicMock(return_value=[])))
+        # With tenant_id set, ``_load_from_database`` uses one merged query (tenant ∪ global), not two steps.
+        merged_result = MagicMock()
+        merged_result.scalars = MagicMock(
+            return_value=MagicMock(all=MagicMock(return_value=[global_binding]))
+        )
         
-        # Second query (global) returns global binding
-        global_result = MagicMock()
-        global_result.scalars = MagicMock(return_value=MagicMock(all=MagicMock(return_value=[global_binding])))
-        
-        # Setup execute to return different results for different queries
-        async def mock_execute(stmt):
+        def mock_execute(stmt):
             if not hasattr(mock_execute, 'call_count'):
                 mock_execute.call_count = 0
             mock_execute.call_count += 1
             
             if mock_execute.call_count == 1:
                 return app_result
-            elif mock_execute.call_count == 2:
-                return tenant_result
-            else:
-                return global_result
+            return merged_result
         
         app_llm_manager.db.execute = mock_execute
         
-        # Load configuration
-        configs = await app_llm_manager.get_llm_config(application_code, tenant_id)
+        # Avoid env fallback masking DB result when developer has OPENAI_* set
+        with patch.dict(os.environ, {}, clear=True):
+            # Load configuration
+            configs = await app_llm_manager.get_llm_config(application_code, tenant_id)
         
         # Verify global configuration was returned
         assert len(configs) > 0, "Should return global configuration"
         assert configs[0].openai_model == model_name, \
             "Should return model from global configuration"
     
-    @settings(max_examples=20, suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture], deadline=None)
     @given(
         application_code=application_code_strategy,
         tenant_id=tenant_id_strategy
@@ -413,7 +414,7 @@ class TestConfigurationLoadingHierarchy:
         empty_result = MagicMock()
         empty_result.scalars = MagicMock(return_value=MagicMock(all=MagicMock(return_value=[])))
         
-        async def mock_execute(stmt):
+        def mock_execute(stmt):
             # First call returns app, subsequent calls return empty
             if not hasattr(mock_execute, 'call_count'):
                 mock_execute.call_count = 0
@@ -444,7 +445,7 @@ class TestConfigurationLoadingHierarchy:
             assert configs[0].openai_model == 'gpt-4', \
                 "Should use model from environment"
     
-    @settings(max_examples=20, suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture], deadline=None)
     @given(
         application_code=application_code_strategy,
         tenant_id=tenant_id_strategy,
@@ -486,7 +487,7 @@ class TestConfigurationLoadingHierarchy:
         binding_result = MagicMock()
         binding_result.scalars = MagicMock(return_value=MagicMock(all=MagicMock(return_value=[db_binding])))
         
-        async def mock_execute(stmt):
+        def mock_execute(stmt):
             if not hasattr(mock_execute, 'call_count'):
                 mock_execute.call_count = 0
             mock_execute.call_count += 1
@@ -514,7 +515,7 @@ class TestConfigurationLoadingHierarchy:
             assert configs[0].openai_model == db_model, \
                 f"Should use model from database ({db_model}), not environment ({env_model})"
     
-    @settings(max_examples=20, suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture], deadline=None)
     @given(
         application_code=application_code_strategy,
         tenant_id=st.uuids().map(str),
@@ -561,7 +562,7 @@ class TestConfigurationLoadingHierarchy:
         binding_result = MagicMock()
         binding_result.scalars = MagicMock(return_value=MagicMock(all=MagicMock(return_value=bindings)))
         
-        async def mock_execute(stmt):
+        def mock_execute(stmt):
             if not hasattr(mock_execute, 'call_count'):
                 mock_execute.call_count = 0
             mock_execute.call_count += 1
@@ -584,7 +585,7 @@ class TestConfigurationLoadingHierarchy:
             assert configs[i].openai_model == f"model-priority-{priority}", \
                 f"Binding at index {i} should have priority {priority}"
     
-    @settings(max_examples=15, suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture], deadline=None)
     @given(
         application_code=application_code_strategy,
         tenant_id=tenant_id_strategy
@@ -608,7 +609,7 @@ class TestConfigurationLoadingHierarchy:
         app_result = MagicMock()
         app_result.scalar_one_or_none = MagicMock(return_value=None)
         
-        async def mock_execute(stmt):
+        def mock_execute(stmt):
             return app_result
         
         app_llm_manager.db.execute = mock_execute
@@ -622,7 +623,7 @@ class TestConfigurationLoadingHierarchy:
             assert len(configs) == 0, \
                 "Should return empty list when application not found and no env vars"
     
-    @settings(max_examples=15, suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture], deadline=None)
     @given(
         application_code=application_code_strategy
     )
@@ -649,7 +650,7 @@ class TestConfigurationLoadingHierarchy:
         empty_result = MagicMock()
         empty_result.scalars = MagicMock(return_value=MagicMock(all=MagicMock(return_value=[])))
         
-        async def mock_execute(stmt):
+        def mock_execute(stmt):
             if not hasattr(mock_execute, 'call_count'):
                 mock_execute.call_count = 0
             mock_execute.call_count += 1
@@ -688,7 +689,7 @@ class TestConfigurationHierarchyWithCache:
     **Validates: Requirements 4.2, 17.1, 18.4**
     """
     
-    @settings(max_examples=15, suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture], deadline=None)
     @given(
         application_code=application_code_strategy,
         tenant_id=tenant_id_strategy,
@@ -726,7 +727,7 @@ class TestConfigurationHierarchyWithCache:
         
         call_count = [0]
         
-        async def mock_execute(stmt):
+        def mock_execute(stmt):
             call_count[0] += 1
             if call_count[0] == 1:
                 return app_result

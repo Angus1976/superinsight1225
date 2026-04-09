@@ -42,7 +42,7 @@ class TestWebhookURLUniqueness:
     @given(
         num_webhooks=st.integers(min_value=2, max_value=20)
     )
-    @settings(max_examples=10, deadline=None)
+    @settings(deadline=None)
     def test_generated_webhook_urls_are_unique(self, num_webhooks):
         """
         Generated webhook URLs are unique across multiple strategies.
@@ -80,7 +80,7 @@ class TestWebhookURLUniqueness:
     @given(
         num_webhooks=st.integers(min_value=5, max_value=12)
     )
-    @settings(max_examples=8, deadline=None)
+    @settings(deadline=None)
     def test_webhook_urls_contain_cryptographically_secure_tokens(self, num_webhooks):
         """
         Webhook URLs contain cryptographically secure random tokens.
@@ -132,7 +132,7 @@ class TestWebhookURLUniqueness:
     @given(
         num_strategies=st.integers(min_value=3, max_value=8)
     )
-    @settings(max_examples=8, deadline=None)
+    @settings(deadline=None)
     def test_webhook_urls_unique_across_tenants(self, num_strategies):
         """
         Webhook URLs are unique even across different tenants.
@@ -203,7 +203,7 @@ class TestWebhookURLUniqueness:
     @given(
         num_concurrent_requests=st.integers(min_value=5, max_value=15)
     )
-    @settings(max_examples=8, deadline=None)
+    @settings(deadline=None)
     def test_webhook_url_generation_is_thread_safe(self, num_concurrent_requests):
         """
         Webhook URL generation is thread-safe and produces unique URLs.
@@ -284,7 +284,7 @@ class TestWebhookURLUniqueness:
     @given(
         num_webhooks=st.integers(min_value=10, max_value=15)
     )
-    @settings(max_examples=8, deadline=None)
+    @settings(deadline=None)
     def test_webhook_url_collision_probability_is_negligible(self, num_webhooks):
         """
         Probability of webhook URL collision is negligible.
@@ -347,7 +347,7 @@ class TestDryRunNonModification:
         enabled=st.booleans(),
         num_records=st.integers(min_value=10, max_value=50),
     )
-    @settings(max_examples=10, deadline=None)
+    @settings(deadline=None)
     def test_dry_run_does_not_modify_source_data(
         self, mode, db_config_id, name, batch_size, enabled, num_records
     ):
@@ -428,7 +428,7 @@ class TestDryRunNonModification:
         enabled=st.booleans(),
         num_existing_records=st.integers(min_value=0, max_value=30),
     )
-    @settings(max_examples=10, deadline=None)
+    @settings(deadline=None)
     def test_dry_run_does_not_modify_destination_data(
         self, mode, db_config_id, name, batch_size, enabled, num_existing_records
     ):
@@ -506,7 +506,7 @@ class TestDryRunNonModification:
         enabled=st.booleans(),
         num_preview_records=st.integers(min_value=1, max_value=15),
     )
-    @settings(max_examples=10, deadline=None)
+    @settings(deadline=None)
     def test_dry_run_returns_preview_results(
         self, mode, db_config_id, name, batch_size, enabled, num_preview_records
     ):
@@ -601,7 +601,7 @@ class TestDryRunNonModification:
         }),
         num_records=st.integers(min_value=20, max_value=50),
     )
-    @settings(max_examples=10, deadline=None)
+    @settings(deadline=None)
     def test_dry_run_respects_incremental_mode(self, strategy_data, num_records):
         """
         Dry-run respects incremental sync mode in preview.
@@ -672,7 +672,7 @@ class TestDryRunNonModification:
     @given(
         num_concurrent_dry_runs=st.integers(min_value=2, max_value=8)
     )
-    @settings(max_examples=8, deadline=None)
+    @settings(deadline=None)
     def test_concurrent_dry_runs_do_not_interfere(self, num_concurrent_dry_runs):
         """
         Concurrent dry-run executions do not interfere with each other.
@@ -829,7 +829,7 @@ class TestSyncRetryWithExponentialBackoff:
         mode=st.sampled_from([SyncMode.FULL, SyncMode.INCREMENTAL]),
         batch_size=st.integers(min_value=100, max_value=5000),
     )
-    @settings(max_examples=8, deadline=None)
+    @settings(deadline=None)
     def test_sync_retry_uses_exponential_backoff(
         self, db_config_id, name, mode, batch_size
     ):
@@ -946,7 +946,7 @@ class TestSyncRetryWithExponentialBackoff:
         batch_size=st.integers(min_value=100, max_value=5000),
         num_consecutive_failures=st.integers(min_value=3, max_value=4),
     )
-    @settings(max_examples=8, deadline=None)
+    @settings(deadline=None)
     def test_alert_sent_after_three_consecutive_failures(
         self, db_config_id, name, mode, batch_size, num_consecutive_failures
     ):
@@ -1059,7 +1059,7 @@ class TestSyncRetryWithExponentialBackoff:
         batch_size=st.integers(min_value=100, max_value=5000),
         success_on_attempt=st.integers(min_value=1, max_value=3),
     )
-    @settings(max_examples=15, deadline=None)
+    @settings(deadline=None)
     def test_successful_retry_resets_failure_counter(
         self, db_config_id, name, mode, batch_size, success_on_attempt
     ):
@@ -1142,7 +1142,7 @@ class TestSyncRetryWithExponentialBackoff:
         batch_size=st.integers(min_value=100, max_value=5000),
         max_retries=st.integers(min_value=1, max_value=5),
     )
-    @settings(max_examples=15, deadline=None)
+    @settings(deadline=None)
     def test_retry_respects_max_retries_parameter(
         self, db_config_id, name, mode, batch_size, max_retries
     ):
@@ -1219,7 +1219,7 @@ class TestSyncRetryWithExponentialBackoff:
         mode=st.sampled_from([SyncMode.FULL, SyncMode.INCREMENTAL]),
         batch_size=st.integers(min_value=100, max_value=5000),
     )
-    @settings(max_examples=15, deadline=None)
+    @settings(deadline=None)
     def test_backoff_does_not_exceed_max_backoff(
         self, db_config_id, name, mode, batch_size
     ):
@@ -1295,7 +1295,7 @@ class TestSyncRetryWithExponentialBackoff:
     @given(
         num_strategies=st.integers(min_value=2, max_value=5),
     )
-    @settings(max_examples=10, deadline=None)
+    @settings(deadline=None)
     def test_failure_counters_are_independent_per_strategy(self, num_strategies):
         """
         Failure counters are tracked independently for each strategy.

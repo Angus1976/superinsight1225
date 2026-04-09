@@ -1,4 +1,20 @@
+import os from 'node:os'
 import { defineConfig, devices } from '@playwright/test'
+
+/**
+ * Local worker count: avoid defaulting to "all CPUs" (heavy on Apple Silicon, hurts thermals and can add flake).
+ * Override with PLAYWRIGHT_WORKERS=1 (or 2–8). In CI, default is 1 unless PLAYWRIGHT_WORKERS is set (e.g. GitHub Actions uses 2 for Chromium-only runs).
+ */
+function resolvePlaywrightWorkers(): number {
+  const raw = process.env.PLAYWRIGHT_WORKERS
+  if (raw !== undefined && raw !== '') {
+    const n = parseInt(raw, 10)
+    if (!Number.isNaN(n) && n >= 1) return Math.min(n, 8)
+  }
+  if (process.env.CI) return 1
+  const cores = os.cpus().length || 4
+  return Math.min(4, Math.max(2, Math.floor(cores / 2)))
+}
 
 /**
  * Playwright E2E Test Configuration
@@ -18,8 +34,8 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 1 : undefined,
+  /* CI: single worker for determinism. Local: capped parallel workers (see resolvePlaywrightWorkers). */
+  workers: resolvePlaywrightWorkers(),
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
     ['html', { outputFolder: 'playwright-report' }],

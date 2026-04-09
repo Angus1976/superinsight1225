@@ -47,7 +47,7 @@ class TestReadOnlyModeEnforcement:
             "TRUNCATE TABLE users"
         ])
     )
-    @settings(max_examples=15, deadline=None)
+    @settings(deadline=None)
     def test_write_operations_rejected_in_readonly_mode(self, db_type, write_operation):
         """
         Write operations are rejected when read-only mode is enabled.
@@ -94,7 +94,7 @@ class TestReadOnlyModeEnforcement:
             "SELECT u.name, o.total FROM users u JOIN orders o ON u.id = o.user_id"
         ])
     )
-    @settings(max_examples=15, deadline=None)
+    @settings(deadline=None)
     def test_read_operations_allowed_in_readonly_mode(self, db_type, select_query):
         """
         Read operations are allowed when read-only mode is enabled.
@@ -136,7 +136,7 @@ class TestReadOnlyModeEnforcement:
     @given(
         db_type=st.sampled_from([DatabaseType.POSTGRESQL, DatabaseType.MYSQL])
     )
-    @settings(max_examples=10, deadline=None)
+    @settings(deadline=None)
     def test_write_operations_allowed_when_readonly_disabled(self, db_type):
         """
         Write operations are allowed when read-only mode is disabled.
@@ -179,7 +179,7 @@ class TestReadOnlyModeEnforcement:
     @given(
         db_type=st.sampled_from([DatabaseType.POSTGRESQL, DatabaseType.MYSQL])
     )
-    @settings(max_examples=10, deadline=None)
+    @settings(deadline=None)
     def test_case_insensitive_write_detection(self, db_type):
         """
         Write operation detection is case-insensitive.
@@ -226,7 +226,7 @@ class TestReadOnlyModeEnforcement:
     @given(
         db_type=st.sampled_from([DatabaseType.POSTGRESQL, DatabaseType.MYSQL])
     )
-    @settings(max_examples=10, deadline=None)
+    @settings(deadline=None)
     def test_whitespace_handling_in_query_detection(self, db_type):
         """
         Write operation detection handles leading/trailing whitespace.

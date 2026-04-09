@@ -51,6 +51,18 @@ interface EditHistoryEntry {
   editedAt: string;
 }
 
+/** 与表单字段一致（due_date 为 Dayjs，与 Task 的 ISO 字符串区分） */
+type TaskEditFormValues = {
+  name: string;
+  description: string;
+  status: TaskStatus;
+  priority: TaskPriority;
+  annotation_type: AnnotationType;
+  assignee_id?: string;
+  due_date: dayjs.Dayjs | null;
+  tags: string[];
+};
+
 // Mock users for assignment - TODO: Replace with real API
 const mockUsers = [
   { id: 'b0000001-0000-4000-8000-000000000001', name: 'John Doe', email: 'john.doe@company.com', role: 'Business Expert' },
@@ -132,7 +144,7 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
   const [form] = Form.useForm();
   const [activeTab, setActiveTab] = useState('basic');
   const [editHistory, setEditHistory] = useState<EditHistoryEntry[]>([]);
-  const [originalValues, setOriginalValues] = useState<Partial<Task>>({});
+  const [originalValues, setOriginalValues] = useState<Partial<TaskEditFormValues>>({});
 
   // Fetch task data
   const { data: task, isLoading, error } = useTask(taskId || '', { enabled: !!taskId && open });
@@ -148,7 +160,7 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
   // Populate form when task data is loaded
   useEffect(() => {
     if (task && open) {
-      const formValues = {
+      const formValues: TaskEditFormValues = {
         name: task.name,
         description: task.description || '',
         status: task.status,
@@ -210,7 +222,9 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
       
       // Handle due_date comparison
       const newDueDate = values.due_date ? values.due_date.toISOString() : undefined;
-      const originalDueDate = originalValues.due_date ? (originalValues.due_date as dayjs.Dayjs).toISOString() : undefined;
+      const originalDueDate = originalValues.due_date
+        ? originalValues.due_date.toISOString()
+        : undefined;
       if (newDueDate !== originalDueDate) {
         payload.due_date = newDueDate;
         changes.push({ field: 'due_date', oldValue: originalDueDate || null, newValue: newDueDate || null });

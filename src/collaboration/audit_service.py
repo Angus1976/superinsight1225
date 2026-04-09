@@ -120,6 +120,51 @@ class AuditService:
         if self._lock is None:
             self._lock = asyncio.Lock()
 
+    def _append_log_unlocked(
+        self,
+        ontology_id: UUID,
+        user_id: UUID,
+        change_type: ChangeType,
+        ontology_area: OntologyArea,
+        affected_element_ids: List[UUID],
+        affected_element_names: List[str],
+        before_state: Dict[str, Any],
+        after_state: Dict[str, Any],
+        change_description: str,
+        ip_address: Optional[str] = None,
+        user_agent: Optional[str] = None,
+    ) -> AuditLogEntry:
+        """Append a log entry; caller must hold ``self._lock`` (asyncio.Lock is not re-entrant)."""
+        entry = AuditLogEntry(
+            ontology_id=ontology_id,
+            user_id=user_id,
+            change_type=change_type,
+            ontology_area=ontology_area,
+            affected_element_ids=affected_element_ids,
+            affected_element_names=affected_element_names,
+            before_state=before_state,
+            after_state=after_state,
+            change_description=change_description,
+            ip_address=ip_address,
+            user_agent=user_agent,
+        )
+
+        entry.hmac_signature = self._generate_hmac(entry)
+        self._logs[entry.log_id] = entry
+
+        if ontology_id not in self._ontology_index:
+            self._ontology_index[ontology_id] = []
+        self._ontology_index[ontology_id].append(entry.log_id)
+
+        if user_id not in self._user_index:
+            self._user_index[user_id] = []
+        self._user_index[user_id].append(entry.log_id)
+
+        self._timestamp_index.append((entry.timestamp, entry.log_id))
+        self._timestamp_index.sort(key=lambda x: x[0])
+
+        return entry
+
     async def log_change(
         self,
         ontology_id: UUID,
@@ -154,7 +199,7 @@ class AuditService:
         """
         await self._ensure_async_lock()
         async with self._lock:
-            entry = AuditLogEntry(
+            return self._append_log_unlocked(
                 ontology_id=ontology_id,
                 user_id=user_id,
                 change_type=change_type,
@@ -165,28 +210,8 @@ class AuditService:
                 after_state=after_state,
                 change_description=change_description,
                 ip_address=ip_address,
-                user_agent=user_agent
+                user_agent=user_agent,
             )
-
-            # Generate HMAC signature for integrity
-            entry.hmac_signature = self._generate_hmac(entry)
-
-            # Store log entry
-            self._logs[entry.log_id] = entry
-
-            # Update indexes
-            if ontology_id not in self._ontology_index:
-                self._ontology_index[ontology_id] = []
-            self._ontology_index[ontology_id].append(entry.log_id)
-
-            if user_id not in self._user_index:
-                self._user_index[user_id] = []
-            self._user_index[user_id].append(entry.log_id)
-
-            self._timestamp_index.append((entry.timestamp, entry.log_id))
-            self._timestamp_index.sort(key=lambda x: x[0])
-
-            return entry
 
     def _generate_hmac(self, entry: AuditLogEntry) -> str:
         """Generate HMAC signature for log entry.
@@ -357,8 +382,8 @@ class AuditService:
                 rollback_reason=rollback_reason
             )
 
-            # Create new log entry for the rollback action
-            new_log = await self.log_change(
+            # Create new log entry for the rollback action (must not await log_change: same lock)
+            new_log = self._append_log_unlocked(
                 ontology_id=target_log.ontology_id,
                 user_id=performed_by,
                 change_type=ChangeType.ROLLBACK,
@@ -367,7 +392,7 @@ class AuditService:
                 affected_element_names=target_log.affected_element_names,
                 before_state=target_log.after_state,  # Current state
                 after_state=target_log.before_state,  # Target state
-                change_description=f"Rollback to version {target_log_id}: {rollback_reason}"
+                change_description=f"Rollback to version {target_log_id}: {rollback_reason}",
             )
 
             rollback.new_version_log_id = new_log.log_id

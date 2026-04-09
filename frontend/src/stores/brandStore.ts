@@ -11,13 +11,13 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { 
-  BrandTheme, 
-  BrandThemeType, 
+import type {
+  BrandTheme,
+  BrandThemeType,
   BrandConfiguration,
   BrandColors,
-  LogoVariant
 } from '@/types/brand';
+import { LogoVariant } from '@/types/brand';
 
 // 默认品牌颜色
 const defaultColors: BrandColors = {

@@ -8,6 +8,7 @@
  */
 
 import { test, expect, Page } from '@playwright/test'
+import { E2E_VALID_ACCESS_TOKEN } from './e2e-tokens'
 
 // ============================================================================
 // Test Helpers
@@ -74,7 +75,8 @@ async function setupAuthWithRole(page: Page, role: WorkspaceRole) {
   const permissions = getPermissionsForRole(role)
 
   await page.addInitScript(
-    ({ role, permissions }) => {
+    ({ role, permissions, accessToken }) => {
+      localStorage.setItem('auth_token', JSON.stringify(accessToken))
       localStorage.setItem(
         'auth-storage',
         JSON.stringify({
@@ -84,13 +86,19 @@ async function setupAuthWithRole(page: Page, role: WorkspaceRole) {
               username: `${role}user`,
               name: `${role} 用户`,
               email: `${role}@example.com`,
+              role,
+              tenant_id: 'tenant-1',
               roles: [role],
               permissions: permissions,
             },
-            token: 'mock-jwt-token',
+            token: accessToken,
+            currentTenant: { id: 'tenant-1', name: '测试租户1' },
+            currentWorkspace: null,
+            workspaces: [],
             isAuthenticated: true,
           },
-        })
+          version: 0,
+        }),
       )
 
       localStorage.setItem(
@@ -99,10 +107,10 @@ async function setupAuthWithRole(page: Page, role: WorkspaceRole) {
           id: 'ws-1',
           name: '测试工作空间',
           role: role,
-        })
+        }),
       )
     },
-    { role, permissions }
+    { role, permissions, accessToken: E2E_VALID_ACCESS_TOKEN },
   )
 }
 
@@ -165,6 +173,24 @@ function getPermissionsForRole(role: WorkspaceRole): string[] {
  */
 async function mockApiWithRole(page: Page, role: WorkspaceRole) {
   const permissions = getPermissionsForRole(role)
+
+  await page.route('**/api/auth/me', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: `user-${role}`,
+        username: `${role}user`,
+        email: `${role}@example.com`,
+        role: 'admin',
+        tenant_id: 'tenant-1',
+        is_active: true,
+      }),
+    })
+  })
+  await page.route('**/api/workspaces/my', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' })
+  })
 
   // Mock workspace list
   await page.route('**/api/ls-workspaces', async (route) => {

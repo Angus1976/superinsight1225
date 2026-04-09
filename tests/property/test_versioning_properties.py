@@ -333,7 +333,7 @@ class TestVersionMonotonicity:
         current_version=version_strategy,
         version_type=version_type_strategy
     )
-    @settings(max_examples=100)
+    @settings()
     def test_version_monotonically_increasing(self, current_version, version_type):
         """
         **Feature: data-version-lineage, Property 1: Version Monotonicity**
@@ -351,7 +351,7 @@ class TestVersionMonotonicity:
     @given(
         versions=st.lists(version_type_strategy, min_size=1, max_size=20)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_version_sequence_monotonic(self, versions):
         """
         **Feature: data-version-lineage, Property 1: Version Sequence Monotonicity**
@@ -389,7 +389,7 @@ class TestChangeTrackingCompleteness:
         old_data=data_dict_strategy,
         new_data=data_dict_strategy
     )
-    @settings(max_examples=100)
+    @settings()
     def test_diff_completeness(self, old_data, new_data):
         """
         **Feature: data-version-lineage, Property 2: Change Tracking Completeness**
@@ -407,7 +407,7 @@ class TestChangeTrackingCompleteness:
     @given(
         data=data_dict_strategy
     )
-    @settings(max_examples=100)
+    @settings()
     def test_identical_data_no_diff(self, data):
         """
         **Feature: data-version-lineage, Property 2: No Changes for Identical Data**
@@ -444,7 +444,7 @@ class TestLineageGraphConsistency:
             unique=True
         )
     )
-    @settings(max_examples=100)
+    @settings()
     def test_lineage_node_uniqueness(self, nodes):
         """
         **Feature: data-version-lineage, Property 3: Lineage Node Uniqueness**
@@ -473,7 +473,7 @@ class TestSnapshotRestoreIdempotency:
     @given(
         data=data_dict_strategy
     )
-    @settings(max_examples=100)
+    @settings()
     def test_snapshot_restore_roundtrip(self, data):
         """
         **Feature: data-version-lineage, Property 4: Snapshot Restore Round-trip**
@@ -491,7 +491,7 @@ class TestSnapshotRestoreIdempotency:
         data=data_dict_strategy,
         restore_count=st.integers(min_value=1, max_value=5)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_multiple_restores_idempotent(self, data, restore_count):
         """
         **Feature: data-version-lineage, Property 4: Multiple Restores Idempotent**
@@ -526,7 +526,7 @@ class TestDiffReversibility:
         old_data=data_dict_strategy,
         new_data=data_dict_strategy
     )
-    @settings(max_examples=100)
+    @settings()
     def test_diff_reversibility(self, old_data, new_data):
         """
         **Feature: data-version-lineage, Property 5: Diff Reversibility**
@@ -557,7 +557,7 @@ class TestThreeWayMergeDeterminism:
         ours=data_dict_strategy,
         theirs=data_dict_strategy
     )
-    @settings(max_examples=100)
+    @settings()
     def test_merge_determinism(self, base, ours, theirs):
         """
         **Feature: data-version-lineage, Property 6: Three-way Merge Determinism**
@@ -578,7 +578,7 @@ class TestThreeWayMergeDeterminism:
         base=data_dict_strategy,
         changes=data_dict_strategy
     )
-    @settings(max_examples=100)
+    @settings()
     def test_merge_same_changes_no_conflict(self, base, changes):
         """
         **Feature: data-version-lineage, Property 6: Same Changes No Conflict**
@@ -610,7 +610,7 @@ class TestImpactAnalysisTransitivity:
         chain_length=st.integers(min_value=2, max_value=5),
         base_severity=st.sampled_from(["low", "medium", "high", "critical"])
     )
-    @settings(max_examples=100)
+    @settings()
     def test_impact_propagation(self, chain_length, base_severity):
         """
         **Feature: data-version-lineage, Property 7: Impact Analysis Transitivity**
@@ -655,7 +655,7 @@ class TestVersionRollbackCorrectness:
     @given(
         versions=st.lists(data_dict_strategy, min_size=2, max_size=5)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_rollback_restores_data(self, versions):
         """
         **Feature: data-version-lineage, Property 8: Version Rollback Correctness**

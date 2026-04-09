@@ -100,6 +100,10 @@ const arbitraryTaskId = () => fc.string({ minLength: 1, maxLength: 50 });
 const arbitraryToken = () => fc.string({ minLength: 10, maxLength: 200 });
 const arbitraryUrl = () => fc.webUrl({ validSchemes: ['https'] });
 
+/** Bounded epoch ms — avoids `fc.date()` edge cases that yield Invalid Date / toISOString throw */
+const arbitraryIsoDateString = () =>
+  fc.integer({ min: 946684800000, max: 4102444800000 }).map((ms) => new Date(ms).toISOString());
+
 const arbitraryPermission = (): fc.Arbitrary<Permission> =>
   fc.record({
     action: fc.constantFrom('read', 'write', 'delete', 'admin'),
@@ -122,8 +126,8 @@ const arbitraryProjectInfo = (): fc.Arbitrary<ProjectInfo> =>
     name: fc.string({ minLength: 1, maxLength: 100 }),
     description: fc.string({ maxLength: 500 }),
     status: fc.constantFrom('active', 'inactive', 'archived'),
-    createdAt: fc.date().map(d => d.toISOString()),
-    updatedAt: fc.date().map(d => d.toISOString()),
+    createdAt: arbitraryIsoDateString(),
+    updatedAt: arbitraryIsoDateString(),
   });
 
 const arbitraryTaskInfo = (): fc.Arbitrary<TaskInfo> =>
@@ -133,7 +137,7 @@ const arbitraryTaskInfo = (): fc.Arbitrary<TaskInfo> =>
     status: fc.constantFrom('active', 'completed', 'pending'),
     progress: fc.float({ min: 0, max: 100 }),
     assignedTo: fc.option(arbitraryUserId()),
-    dueDate: fc.option(fc.date().map(d => d.toISOString())),
+    dueDate: fc.option(arbitraryIsoDateString()),
   });
 
 const arbitraryAnnotationContext = (): fc.Arbitrary<AnnotationContext> =>

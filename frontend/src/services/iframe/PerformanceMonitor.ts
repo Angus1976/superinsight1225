@@ -79,8 +79,8 @@ export class PerformanceMonitor {
       },
       maxHistorySize: 1000,
       enableAlerts: true,
-      alertCallback: undefined,
       ...config,
+      alertCallback: config.alertCallback ?? (() => {}),
     };
   }
 

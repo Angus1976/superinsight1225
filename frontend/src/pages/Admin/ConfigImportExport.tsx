@@ -13,7 +13,7 @@
 import React, { useState } from 'react';
 import {
   Card, Button, Space, Tag, Upload, message, Row, Col, Checkbox, Divider,
-  Alert, Table, Modal, Result, Steps, Typography, Descriptions, Spin
+  Alert, Table, Modal, Result, Steps, Typography, Descriptions, Spin, Statistic,
 } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import type { UploadProps } from 'antd';

@@ -400,6 +400,57 @@ class CollaborationService:
         if element_id in self._locks:
             del self._locks[element_id]
 
+    async def _record_change_unlocked(
+        self,
+        session_id: UUID,
+        element_id: UUID,
+        element_type: str,
+        change_type: ChangeType,
+        user_id: UUID,
+        username: str,
+        before: Optional[Dict[str, Any]] = None,
+        after: Optional[Dict[str, Any]] = None,
+    ) -> Change:
+        """Record a change; caller must hold ``self._lock`` (not re-entrant)."""
+        session = self._sessions.get(session_id)
+        if not session:
+            raise ValueError(f"Session {session_id} not found")
+
+        version_number = len(self._versions.get(element_id, [])) + 1
+
+        change = Change(
+            element_id=element_id,
+            element_type=element_type,
+            change_type=change_type,
+            user_id=user_id,
+            username=username,
+            session_id=session_id,
+            before=before,
+            after=after,
+            version=version_number,
+        )
+
+        session.changes.append(change)
+        session.last_activity = datetime.utcnow()
+
+        version = Version(
+            element_id=element_id,
+            element_type=element_type,
+            version_number=version_number,
+            data=after or {},
+            change_summary=f"{change_type.value} by {username}",
+            created_by=user_id,
+        )
+
+        if element_id not in self._versions:
+            self._versions[element_id] = []
+        self._versions[element_id].append(version)
+
+        await self._detect_conflicts(session, change)
+        await self._broadcast_change(session, change)
+
+        return change
+
     async def record_change(
         self,
         session_id: UUID,
@@ -428,49 +479,16 @@ class CollaborationService:
         """
         await self._ensure_async_lock()
         async with self._lock:
-            session = self._sessions.get(session_id)
-            if not session:
-                raise ValueError(f"Session {session_id} not found")
-
-            # Create version
-            version_number = len(self._versions.get(element_id, [])) + 1
-
-            change = Change(
+            return await self._record_change_unlocked(
+                session_id=session_id,
                 element_id=element_id,
                 element_type=element_type,
                 change_type=change_type,
                 user_id=user_id,
                 username=username,
-                session_id=session_id,
                 before=before,
                 after=after,
-                version=version_number
             )
-
-            session.changes.append(change)
-            session.last_activity = datetime.utcnow()
-
-            # Create version entry
-            version = Version(
-                element_id=element_id,
-                element_type=element_type,
-                version_number=version_number,
-                data=after or {},
-                change_summary=f"{change_type.value} by {username}",
-                created_by=user_id
-            )
-
-            if element_id not in self._versions:
-                self._versions[element_id] = []
-            self._versions[element_id].append(version)
-
-            # Detect conflicts
-            await self._detect_conflicts(session, change)
-
-            # Broadcast change
-            await self._broadcast_change(session, change)
-
-            return change
 
     async def _detect_conflicts(
         self,
@@ -573,7 +591,7 @@ class CollaborationService:
                 final_data = merged_data
 
             if final_data:
-                await self.record_change(
+                await self._record_change_unlocked(
                     session_id=session_id,
                     element_id=conflict.element_id,
                     element_type=conflict.element_type,
@@ -581,7 +599,7 @@ class CollaborationService:
                     user_id=resolved_by,
                     username=session.participants[resolved_by].username if resolved_by in session.participants else "Unknown",
                     before=conflict.change2.before,
-                    after=final_data
+                    after=final_data,
                 )
 
             return True
@@ -667,7 +685,7 @@ class CollaborationService:
             current_version_number = len(versions)
             current_data = versions[-1].data if versions else {}
 
-            change = await self.record_change(
+            change = await self._record_change_unlocked(
                 session_id=session_id,
                 element_id=element_id,
                 element_type=target_version.element_type,
@@ -675,7 +693,7 @@ class CollaborationService:
                 user_id=user_id,
                 username=username,
                 before=current_data,
-                after=target_version.data
+                after=target_version.data,
             )
 
             # Return the newly created version

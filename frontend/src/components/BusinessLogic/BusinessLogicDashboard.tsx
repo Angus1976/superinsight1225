@@ -50,7 +50,7 @@ interface BusinessLogicDashboardProps {
   loading?: boolean;
 }
 
-interface BusinessRule {
+export interface BusinessRule {
   id: string;
   name: string;
   description: string;
@@ -63,7 +63,7 @@ interface BusinessRule {
   updated_at: string;
 }
 
-interface Pattern {
+export interface Pattern {
   id: string;
   pattern_type: string;
   description: string;
@@ -73,7 +73,7 @@ interface Pattern {
   last_seen: string;
 }
 
-interface BusinessInsight {
+export interface BusinessInsight {
   id: string;
   insight_type: string;
   title: string;
@@ -85,7 +85,7 @@ interface BusinessInsight {
   acknowledged_at?: string;
 }
 
-interface BusinessLogicStats {
+export interface BusinessLogicStats {
   total_rules: number;
   active_rules: number;
   total_patterns: number;
@@ -401,7 +401,7 @@ export const BusinessLogicDashboard: React.FC<BusinessLogicDashboardProps> = ({
               icon={<PlayCircleOutlined />}
               onClick={() => setAnalysisModalVisible(true)}
               loading={analysisLoading}
-              disabled={!annotationPerms.create}
+              disabled={!annotationPerms.canCreate}
             >
               {t('dashboard.runAnalysis')}
             </Button>
@@ -409,14 +409,14 @@ export const BusinessLogicDashboard: React.FC<BusinessLogicDashboardProps> = ({
               icon={<NodeIndexOutlined />}
               onClick={extractBusinessRules}
               loading={analysisLoading}
-              disabled={!annotationPerms.create}
+              disabled={!annotationPerms.canCreate}
             >
               {t('dashboard.extractRules')}
             </Button>
             <Button
               icon={<DownloadOutlined />}
               onClick={() => setExportModalVisible(true)}
-              disabled={!annotationPerms.view}
+              disabled={!annotationPerms.canView}
             >
               {t('dashboard.exportData')}
             </Button>
@@ -600,13 +600,15 @@ export const BusinessLogicDashboard: React.FC<BusinessLogicDashboardProps> = ({
             label={t('analysis.confidenceThreshold')}
             tooltip={t('analysis.confidenceThresholdTooltip')}
           >
-            <InputNumber
+            <InputNumber<number>
               min={0.1}
               max={1.0}
               step={0.1}
               style={{ width: '100%' }}
-              formatter={(value) => `${((value as number) * 100).toFixed(0)}%`}
-              parser={(value) => (parseFloat(value?.replace('%', '') || '0') / 100)}
+              formatter={(value) => `${((value ?? 0) * 100).toFixed(0)}%`}
+              parser={(value) =>
+                parseFloat(String(value ?? '').replace(/%/g, '') || '0') / 100
+              }
             />
           </Form.Item>
 

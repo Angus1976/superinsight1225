@@ -707,12 +707,14 @@ describe('Label Studio iframe Integration Tests', () => {
       
       // Retry sync
       await syncManager.forceSync();
-      
-      // Wait for sync to complete
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Verify sync manager is in valid state
-      const finalStatus = syncManager.getStatus();
+
+      // Coverage / busy runners need more than a fixed 1s to leave `error`
+      const deadline = Date.now() + 8000;
+      let finalStatus = syncManager.getStatus();
+      while (!['idle', 'syncing'].includes(finalStatus) && Date.now() < deadline) {
+        await new Promise((resolve) => setTimeout(resolve, 150));
+        finalStatus = syncManager.getStatus();
+      }
       expect(['idle', 'syncing']).toContain(finalStatus);
     });
 

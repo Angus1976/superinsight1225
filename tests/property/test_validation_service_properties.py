@@ -96,7 +96,7 @@ class TestChineseBusinessIdentifierValidation:
         assert error == "validation.uscc.invalid_checksum"
 
     @given(st.text(alphabet="0123456789ABCDEFGHJKLMNPQRTUWXY", min_size=18, max_size=18))
-    @settings(max_examples=50)
+    @settings()
     def test_uscc_checksum_consistency(self, code: str):
         """Property: USCC validation should be consistent.
 

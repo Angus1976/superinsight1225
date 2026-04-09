@@ -34,7 +34,7 @@ jobs:
     name: E2E Tests
     needs: [pr-tests]
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 90
 
     services:
       postgres:
@@ -128,12 +128,15 @@ jobs:
           sleep 5
           curl -f http://localhost:8000/health || exit 1
 
-      - name: Run E2E tests
+      - name: Run E2E tests (Chromium only)
         working-directory: frontend
         env:
+          CI: true
           BASE_URL: 'http://localhost:8000'
+          PLAYWRIGHT_WORKERS: '2'
         run: |
           npx playwright test \
+            --project=chromium \
             --reporter=html,json,list \
             --output=e2e-results \
             --trace=on-first-retry

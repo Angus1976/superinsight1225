@@ -9,7 +9,7 @@ import pytest
 import asyncio
 from uuid import UUID, uuid4
 from datetime import datetime
-from hypothesis import given, strategies as st, settings, assume
+from hypothesis import given, strategies as st, settings
 from typing import List
 
 from src.collaboration.knowledge_contribution_service import (
@@ -53,7 +53,7 @@ class TestKnowledgeContributionTracking:
         expert_id=uuid_strategy,
         content=medium_text_strategy
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_comment_tracking(
         self,
         element_id: UUID,
@@ -89,19 +89,19 @@ class TestKnowledgeContributionTracking:
         element_type=element_type_strategy,
         expert_id=uuid_strategy,
         root_content=medium_text_strategy,
-        reply_content=medium_text_strategy
+        reply_suffix=short_text_strategy,
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_comment_threading(
         self,
         element_id: UUID,
         element_type: str,
         expert_id: UUID,
         root_content: str,
-        reply_content: str
+        reply_suffix: str,
     ):
         """Comments support threaded discussions."""
-        assume(root_content != reply_content)
+        reply_content = root_content + reply_suffix
         service = KnowledgeContributionService()
 
         # Add root comment
@@ -138,7 +138,7 @@ class TestKnowledgeContributionTracking:
         entity_desc=medium_text_strategy,
         rationale=medium_text_strategy
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_entity_suggestion_tracking(
         self,
         expert_id: UUID,
@@ -181,7 +181,7 @@ class TestKnowledgeContributionTracking:
         cardinality=cardinality_strategy,
         rationale=medium_text_strategy
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_relation_suggestion_tracking(
         self,
         expert_id: UUID,
@@ -228,7 +228,7 @@ class TestKnowledgeContributionTracking:
         description=medium_text_strategy,
         url=st.from_regex(r"https?://[a-z0-9]+\.[a-z]{2,}", fullmatch=True)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_document_attachment_tracking(
         self,
         element_id: UUID,
@@ -265,24 +265,22 @@ class TestKnowledgeContributionTracking:
     @pytest.mark.asyncio
     @given(
         expert_id=uuid_strategy,
-        element_id1=uuid_strategy,
-        element_id2=uuid_strategy,
+        element_ids=st.lists(uuid_strategy, min_size=2, max_size=2, unique=True),
         element_type=element_type_strategy,
         content1=medium_text_strategy,
         content2=medium_text_strategy
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_expert_contributions_retrieval(
         self,
         expert_id: UUID,
-        element_id1: UUID,
-        element_id2: UUID,
+        element_ids: List[UUID],
         element_type: str,
         content1: str,
         content2: str
     ):
         """All contributions by an expert are retrievable."""
-        assume(element_id1 != element_id2)
+        element_id1, element_id2 = element_ids[0], element_ids[1]
         service = KnowledgeContributionService()
 
         # Add multiple contributions
@@ -322,7 +320,7 @@ class TestContributionMetricUpdates:
         ontology_id=uuid_strategy,
         suggestion_count=st.integers(min_value=1, max_value=10)
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     async def test_contribution_count_accuracy(
         self,
         expert_id: UUID,
@@ -359,7 +357,7 @@ class TestContributionMetricUpdates:
         accepted_count=st.integers(min_value=1, max_value=5),
         rejected_count=st.integers(min_value=1, max_value=5)
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     async def test_acceptance_rate_calculation(
         self,
         expert_id: UUID,
@@ -434,7 +432,7 @@ class TestContributionMetricUpdates:
             max_size=5
         )
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     async def test_quality_score_averaging(
         self,
         expert_id: UUID,
@@ -478,7 +476,7 @@ class TestContributionMetricUpdates:
         reviewer_id=uuid_strategy,
         quality_score=quality_score_strategy
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_contribution_score_reflects_quality(
         self,
         expert_id: UUID,
@@ -521,7 +519,7 @@ class TestContributionMetricUpdates:
         ontology_id=uuid_strategy,
         reviewer_id=uuid_strategy
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_rejection_updates_metrics(
         self,
         expert_id: UUID,
@@ -573,7 +571,7 @@ class TestCommentResolution:
         resolver_id=uuid_strategy,
         content=medium_text_strategy
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_comment_resolution(
         self,
         element_id: UUID,
@@ -653,7 +651,7 @@ class TestSuggestionStatusFiltering:
         ontology_id=uuid_strategy,
         reviewer_id=uuid_strategy
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     async def test_filter_suggestions_by_status(
         self,
         expert_id: UUID,

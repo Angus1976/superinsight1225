@@ -9,6 +9,7 @@
  */
 
 import { Page } from '@playwright/test'
+import { E2E_VALID_ACCESS_TOKEN } from '../e2e-tokens'
 
 export interface MockOptions {
   count?: number
@@ -23,17 +24,33 @@ export interface MockOptions {
 // Mock data generators
 // ---------------------------------------------------------------------------
 
-function generateTasks(count: number, tenantId: string, status?: string) {
-  return Array.from({ length: count }, (_, i) => ({
-    id: `task-${i + 1}`,
-    name: `测试任务 ${i + 1}`,
-    status: status || ['pending', 'in_progress', 'completed'][i % 3],
-    assignee: `用户${(i % 5) + 1}`,
-    progress: Math.min(100, (i + 1) * 20),
+function buildTaskRecord(id: string, tenantId: string, index: number, status?: string) {
+  const st = (status || ['pending', 'in_progress', 'completed'][index % 3]) as
+    | 'pending'
+    | 'in_progress'
+    | 'completed'
+  return {
+    id,
+    name: `测试任务 ${index + 1}`,
+    description: `E2E mock task ${id}`,
+    status: st,
+    priority: 'medium' as const,
+    annotation_type: 'text_classification' as const,
+    assignee_id: `user-${(index % 5) + 1}`,
+    assignee_name: `用户${(index % 5) + 1}`,
+    created_by: 'e2e',
+    created_at: new Date(Date.now() - index * 86400000).toISOString(),
+    updated_at: new Date().toISOString(),
+    progress: Math.min(100, (index + 1) * 20),
+    total_items: 10,
+    completed_items: Math.min(10, index * 2),
     tenant_id: tenantId,
-    createdAt: new Date(Date.now() - i * 86400000).toISOString(),
-    updatedAt: new Date().toISOString(),
-  }))
+    label_studio_project_id: String(40 + index),
+  }
+}
+
+function generateTasks(count: number, tenantId: string, status?: string) {
+  return Array.from({ length: count }, (_, i) => buildTaskRecord(`task-${i + 1}`, tenantId, i, status))
 }
 
 function generateBillingRecords(count: number, tenantId: string, status?: string) {
@@ -108,21 +125,33 @@ export async function mockTasksApi(page: Page, options: MockOptions = {}): Promi
     withDelay(route, delay, { total: count, pending: 1, in_progress: 2, completed: 2 }),
   )
 
-  await page.route('**/api/tasks?**', (route) =>
-    withDelay(route, delay, { data: tasks, total: count }),
-  )
+  const listBody = {
+    items: tasks,
+    total: count,
+    page: 1,
+    page_size: count,
+  }
+
+  await page.route('**/api/tasks?**', (route) => withDelay(route, delay, listBody))
 
   await page.route('**/api/tasks', (route) => {
     if (route.request().method() === 'GET') {
-      return withDelay(route, delay, { data: tasks, total: count })
+      return withDelay(route, delay, listBody)
     }
     return withDelay(route, delay, { ...tasks[0], id: `task-new-${Date.now()}` }, 201)
   })
 
   await page.route(/\/api\/tasks\/[^/]+$/, (route) => {
     const method = route.request().method()
-    if (method === 'GET') return withDelay(route, delay, tasks[0])
-    if (method === 'PUT' || method === 'PATCH') return withDelay(route, delay, tasks[0])
+    const url = route.request().url()
+    const id = new URL(url).pathname.split('/').pop() || tasks[0].id
+    let task = tasks.find((t) => t.id === id) ?? buildTaskRecord(id, tenantId, 0, status)
+    if (id.includes('no-project') || id === 'test-task-no-project') {
+      const { label_studio_project_id: _ls, ...rest } = task
+      task = { ...rest, label_studio_project_id: undefined }
+    }
+    if (method === 'GET') return withDelay(route, delay, task)
+    if (method === 'PUT' || method === 'PATCH') return withDelay(route, delay, { ...task, ...JSON.parse(route.request().postData() || '{}') })
     if (method === 'DELETE') return withDelay(route, delay, { success: true })
     return route.continue()
   })
@@ -654,6 +683,36 @@ export async function mockAllApis(page: Page, options: MockOptions = {}): Promis
     configs: options.llmConfigs ?? [],
   })
 
+  // Login: used by workflow E2E that exercise the real login form (no auth init script).
+  await page.route('**/api/auth/login', async (route) => {
+    if (route.request().method() !== 'POST') return route.continue()
+    let email = 'e2e@example.com'
+    try {
+      const j = route.request().postDataJSON() as { email?: string }
+      if (j?.email) email = j.email
+    } catch {
+      /* ignore */
+    }
+    const local = email.includes('@') ? email.split('@')[0] : email
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        access_token: E2E_VALID_ACCESS_TOKEN,
+        token_type: 'bearer',
+        user: {
+          id: 'e2e-user',
+          username: local,
+          email,
+          full_name: 'E2E User',
+          role: 'admin',
+          tenant_id: 'tenant-1',
+          is_active: true,
+        },
+      }),
+    })
+  })
+
   // Session + workspaces: avoid real 401s when E2E uses mocked localStorage auth
   await page.route('**/api/auth/me', (route) =>
     withDelay(route, options.delay, {
@@ -700,4 +759,51 @@ export async function mockAllApis(page: Page, options: MockOptions = {}): Promis
   await page.route('**/system/status', (route) =>
     withDelay(route, options.delay, { status: 'running' }),
   )
+
+  // Admin console (`Admin/Console` → multiTenantApi admin dashboard + services)
+  await page.route('**/api/v1/admin/dashboard', (route) =>
+    withDelay(route, options.delay, {
+      tenant_stats: {
+        total_tenants: 2,
+        active_tenants: 2,
+        suspended_tenants: 0,
+        disabled_tenants: 0,
+      },
+      workspace_stats: {
+        total_workspaces: 3,
+        active_workspaces: 3,
+        archived_workspaces: 0,
+      },
+      user_stats: {
+        total_users: 10,
+        active_users_today: 3,
+        active_users_week: 8,
+      },
+      system_health: {
+        database: 'healthy',
+        cache: 'healthy',
+        storage: 'healthy',
+        overall: 'healthy',
+      },
+      last_updated: new Date().toISOString(),
+    }),
+  )
+  await page.route('**/api/v1/admin/services', (route) =>
+    withDelay(route, options.delay, [
+      {
+        name: 'api',
+        status: 'running',
+        version: '1.0.0',
+        last_check: new Date().toISOString(),
+      },
+    ]),
+  )
+
+  await page.route('**/api/label-studio/projects/*/auth-url**', (route) =>
+    withDelay(route, options.delay, {
+      url: 'https://labelstudio.internal/projects/99/data?token=e2e-mock-token&lang=zh',
+    }),
+  )
 }
+
+export { buildTaskRecord, generateTasks, generateBillingRecords, generateDataSources, generateUsers }

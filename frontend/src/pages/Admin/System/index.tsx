@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, Form, Input, Select, Switch, Button, Space, message, Tabs, Statistic, Row, Col, Progress, Alert } from 'antd';
+import { Card, Form, Input, Select, Switch, Button, Space, message, Tabs, Statistic, Row, Col, Progress, Alert, Spin } from 'antd';
 import { SaveOutlined, ReloadOutlined, DatabaseOutlined, CloudOutlined, SettingOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
@@ -87,14 +87,20 @@ const AdminSystem: React.FC = () => {
   const [activeTab, setActiveTab] = useState('general');
   const queryClient = useQueryClient();
 
-  const { data: config, isLoading } = useQuery({
+  const { data: config, isLoading } = useQuery<SystemConfig>({
     queryKey: ['system-config'],
-    queryFn: () => api.get('/api/v1/admin/system/config').then(res => res.data),
+    queryFn: async () => {
+      const res = await api.get<SystemConfig>('/api/v1/admin/system/config');
+      return res.data;
+    },
   });
 
-  const { data: status, isLoading: statusLoading } = useQuery({
+  const { data: status, isLoading: statusLoading } = useQuery<SystemStatus>({
     queryKey: ['system-status'],
-    queryFn: () => api.get('/api/v1/admin/system/status').then(res => res.data),
+    queryFn: async () => {
+      const res = await api.get<SystemStatus>('/api/v1/admin/system/status');
+      return res.data;
+    },
     refetchInterval: 30000, // 每30秒刷新一次
   });
 
@@ -111,11 +117,12 @@ const AdminSystem: React.FC = () => {
 
   const testConnectionMutation = useMutation({
     mutationFn: (type: string) => api.post(`/api/v1/admin/system/test/${type}`),
-    onSuccess: (data, type) => {
-      if (data.data.success) {
+    onSuccess: (response, type) => {
+      const payload = response.data as { success?: boolean; error?: string };
+      if (payload.success) {
         message.success(t('system.connectionTestSuccess', { type }));
       } else {
-        message.error(t('system.connectionTestFailed', { type, error: data.data.error }));
+        message.error(t('system.connectionTestFailed', { type, error: payload.error ?? '' }));
       }
     },
     onError: (_, type) => {
@@ -256,11 +263,11 @@ const AdminSystem: React.FC = () => {
           </Space>
         }
       >
+        <Spin spinning={isLoading}>
         <Form
           form={form}
           layout="vertical"
           onFinish={handleSubmit}
-          loading={isLoading}
         >
           <Tabs activeKey={activeTab} onChange={setActiveTab}>
             {/* 基本设置 */}
@@ -466,6 +473,7 @@ const AdminSystem: React.FC = () => {
             </TabPane>
           </Tabs>
         </Form>
+        </Spin>
       </Card>
     </div>
   );

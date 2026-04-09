@@ -162,7 +162,7 @@ class TestTaskCompletionValidation:
         sample_count=st.integers(min_value=2, max_value=30),
         annotations_to_submit=st.integers(min_value=0, max_value=30)
     )
-    @settings(max_examples=30, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_incomplete_task_cannot_be_completed(
         self,
         db_session: Session,
@@ -190,7 +190,7 @@ class TestTaskCompletionValidation:
             service.complete_task(task['id'], completed_by=str(uuid4()))
 
     @given(sample_count=st.integers(min_value=1, max_value=30))
-    @settings(max_examples=30, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_fully_annotated_task_can_be_completed(
         self,
         db_session: Session,
@@ -217,7 +217,7 @@ class TestTaskCompletionValidation:
         assert completed_task['completed_at'] is not None
 
     @given(sample_count=st.integers(min_value=1, max_value=20))
-    @settings(max_examples=30, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_task_with_zero_annotations_cannot_be_completed(
         self,
         db_session: Session,
@@ -239,7 +239,7 @@ class TestTaskCompletionValidation:
             service.complete_task(task['id'], completed_by=str(uuid4()))
 
     @given(sample_count=st.integers(min_value=1, max_value=20))
-    @settings(max_examples=30, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_completed_task_has_progress_equal_to_total(
         self,
         db_session: Session,

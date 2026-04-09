@@ -4,4 +4,5 @@
 
 export { default } from './SampleLibrary';
 export { default as SearchFilters } from './SearchFilters';
-export type { SampleLibraryProps, SearchFilters as SearchFiltersType } from './SampleLibrary';
+export type { SampleLibraryProps } from './SampleLibrary';
+export type { SearchFilters as SearchFiltersType } from './SearchFilters';

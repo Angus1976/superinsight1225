@@ -369,7 +369,7 @@ class TestCronExpressionParsing:
     """
     
     @given(cron_expr=valid_cron_expression_strategy)
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     def test_valid_cron_expressions_are_parsed_successfully(self, cron_expr: str):
         """
         Property: 有效的 cron 表达式应该被成功解析
@@ -392,7 +392,7 @@ class TestCronExpressionParsing:
         assert result.error_message is None
     
     @given(cron_expr=invalid_cron_expression_strategy)
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_invalid_cron_expressions_return_error(self, cron_expr: str):
         """
         Property: 无效的 cron 表达式应该返回错误
@@ -414,7 +414,7 @@ class TestCronExpressionParsing:
     @example("0 0 1 * *")      # 每月 1 号
     @example("30 4 1,15 * *")  # 每月 1 号和 15 号凌晨 4:30
     @given(cron_expr=valid_cron_expression_strategy)
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_cron_expression_roundtrip(self, cron_expr: str):
         """
         Property: cron 表达式解析后应该保持字段值不变
@@ -449,7 +449,7 @@ class TestCronExpressionParsing:
         assert "empty" in result.error_message.lower()
     
     @given(num_fields=st.integers(min_value=1, max_value=10).filter(lambda x: x != 5))
-    @settings(max_examples=20, deadline=None)
+    @settings(deadline=None)
     def test_wrong_number_of_fields_returns_error(self, num_fields: int):
         """
         Property: 字段数量不是 5 的表达式应该返回错误
@@ -474,7 +474,7 @@ class TestCronFieldValidation:
     """
     
     @given(minute=st.integers(min_value=0, max_value=59))
-    @settings(max_examples=30, deadline=None)
+    @settings(deadline=None)
     def test_valid_minute_values(self, minute: int):
         """
         Property: 0-59 范围内的分钟值应该有效
@@ -486,7 +486,7 @@ class TestCronFieldValidation:
         assert result.is_valid, f"Minute {minute} should be valid"
     
     @given(minute=st.integers(min_value=60, max_value=100))
-    @settings(max_examples=20, deadline=None)
+    @settings(deadline=None)
     def test_invalid_minute_values(self, minute: int):
         """
         Property: 超出 0-59 范围的分钟值应该无效
@@ -498,7 +498,7 @@ class TestCronFieldValidation:
         assert not result.is_valid, f"Minute {minute} should be invalid"
     
     @given(hour=st.integers(min_value=0, max_value=23))
-    @settings(max_examples=24, deadline=None)
+    @settings(deadline=None)
     def test_valid_hour_values(self, hour: int):
         """
         Property: 0-23 范围内的小时值应该有效
@@ -510,7 +510,7 @@ class TestCronFieldValidation:
         assert result.is_valid, f"Hour {hour} should be valid"
     
     @given(hour=st.integers(min_value=24, max_value=50))
-    @settings(max_examples=20, deadline=None)
+    @settings(deadline=None)
     def test_invalid_hour_values(self, hour: int):
         """
         Property: 超出 0-23 范围的小时值应该无效
@@ -522,7 +522,7 @@ class TestCronFieldValidation:
         assert not result.is_valid, f"Hour {hour} should be invalid"
     
     @given(day=st.integers(min_value=1, max_value=31))
-    @settings(max_examples=31, deadline=None)
+    @settings(deadline=None)
     def test_valid_day_values(self, day: int):
         """
         Property: 1-31 范围内的日值应该有效
@@ -537,7 +537,7 @@ class TestCronFieldValidation:
         st.integers(min_value=-10, max_value=0),
         st.integers(min_value=32, max_value=50)
     ))
-    @settings(max_examples=20, deadline=None)
+    @settings(deadline=None)
     def test_invalid_day_values(self, day: int):
         """
         Property: 超出 1-31 范围的日值应该无效
@@ -549,7 +549,7 @@ class TestCronFieldValidation:
         assert not result.is_valid, f"Day {day} should be invalid"
     
     @given(month=st.integers(min_value=1, max_value=12))
-    @settings(max_examples=12, deadline=None)
+    @settings(deadline=None)
     def test_valid_month_values(self, month: int):
         """
         Property: 1-12 范围内的月值应该有效
@@ -564,7 +564,7 @@ class TestCronFieldValidation:
         st.integers(min_value=-10, max_value=0),
         st.integers(min_value=13, max_value=50)
     ))
-    @settings(max_examples=20, deadline=None)
+    @settings(deadline=None)
     def test_invalid_month_values(self, month: int):
         """
         Property: 超出 1-12 范围的月值应该无效
@@ -576,7 +576,7 @@ class TestCronFieldValidation:
         assert not result.is_valid, f"Month {month} should be invalid"
     
     @given(dow=st.integers(min_value=0, max_value=6))
-    @settings(max_examples=7, deadline=None)
+    @settings(deadline=None)
     def test_valid_day_of_week_values(self, dow: int):
         """
         Property: 0-6 范围内的星期值应该有效
@@ -591,7 +591,7 @@ class TestCronFieldValidation:
         st.integers(min_value=-10, max_value=-1),
         st.integers(min_value=7, max_value=50)
     ))
-    @settings(max_examples=20, deadline=None)
+    @settings(deadline=None)
     def test_invalid_day_of_week_values(self, dow: int):
         """
         Property: 超出 0-6 范围的星期值应该无效
@@ -626,7 +626,7 @@ class TestCronSpecialPatterns:
         assert result.day_of_week == "*"
     
     @given(step=st.integers(min_value=1, max_value=30))
-    @settings(max_examples=20, deadline=None)
+    @settings(deadline=None)
     def test_step_pattern_with_wildcard(self, step: int):
         """
         Property: */n 步长模式应该有效
@@ -641,7 +641,7 @@ class TestCronSpecialPatterns:
         start=st.integers(min_value=0, max_value=30),
         end=st.integers(min_value=31, max_value=59)
     )
-    @settings(max_examples=20, deadline=None)
+    @settings(deadline=None)
     def test_range_pattern(self, start: int, end: int):
         """
         Property: start-end 范围模式应该有效
@@ -656,7 +656,7 @@ class TestCronSpecialPatterns:
         start=st.integers(min_value=30, max_value=59),
         end=st.integers(min_value=0, max_value=29)
     )
-    @settings(max_examples=20, deadline=None)
+    @settings(deadline=None)
     def test_invalid_range_pattern(self, start: int, end: int):
         """
         Property: 起始大于结束的范围应该无效
@@ -673,7 +673,7 @@ class TestCronSpecialPatterns:
         max_size=5,
         unique=True
     ))
-    @settings(max_examples=20, deadline=None)
+    @settings(deadline=None)
     def test_list_pattern(self, values: List[int]):
         """
         Property: 逗号分隔的列表模式应该有效

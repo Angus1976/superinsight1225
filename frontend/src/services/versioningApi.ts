@@ -8,7 +8,7 @@
  * - Diff computation
  */
 
-import { apiClient } from './api/client';
+import apiClient from './api/client';
 
 // Types
 export interface Version {

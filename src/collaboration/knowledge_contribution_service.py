@@ -435,6 +435,18 @@ class KnowledgeContributionService:
             if expert_id:
                 await self._update_metrics_on_rejection(expert_id)
 
+    def _comments_for_element_unlocked(
+        self,
+        element_id: UUID,
+        include_resolved: bool,
+    ) -> List[Comment]:
+        """List comments for an element; caller must hold ``self._lock``."""
+        comments = [
+            c for c in self._comments.values()
+            if c.element_id == element_id and (include_resolved or not c.is_resolved)
+        ]
+        return sorted(comments, key=lambda c: c.created_at)
+
     async def get_comments(
         self,
         element_id: UUID,
@@ -451,11 +463,7 @@ class KnowledgeContributionService:
         """
         await self._ensure_async_lock()
         async with self._lock:
-            comments = [
-                c for c in self._comments.values()
-                if c.element_id == element_id and (include_resolved or not c.is_resolved)
-            ]
-            return sorted(comments, key=lambda c: c.created_at)
+            return self._comments_for_element_unlocked(element_id, include_resolved)
 
     async def get_threaded_comments(
         self,
@@ -471,7 +479,7 @@ class KnowledgeContributionService:
         """
         await self._ensure_async_lock()
         async with self._lock:
-            comments = await self.get_comments(element_id, include_resolved=True)
+            comments = self._comments_for_element_unlocked(element_id, include_resolved=True)
 
             # Build comment hierarchy
             comment_map = {c.comment_id: c for c in comments}

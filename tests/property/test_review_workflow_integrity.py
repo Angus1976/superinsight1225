@@ -248,7 +248,7 @@ class TestReviewWorkflowIntegrity:
         reviewer_id=user_id_strategy,
         comments=approval_comment_strategy
     )
-    @settings(max_examples=100, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_approve_data_transfers_to_sample_library(
         self,
         db_session: Session,
@@ -346,7 +346,7 @@ class TestReviewWorkflowIntegrity:
         reviewer_id=user_id_strategy,
         reason=rejection_reason_strategy
     )
-    @settings(max_examples=100, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_reject_data_marks_as_rejected_with_reason(
         self,
         db_session: Session,
@@ -438,7 +438,7 @@ class TestReviewWorkflowIntegrity:
         document_id=document_id_strategy,
         reviewer_id=user_id_strategy
     )
-    @settings(max_examples=50, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_submit_for_review_creates_review_request(
         self,
         db_session: Session,
@@ -497,7 +497,7 @@ class TestReviewWorkflowIntegrity:
         reviewer_id=user_id_strategy,
         comments=approval_comment_strategy
     )
-    @settings(max_examples=50, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_approval_preserves_content_in_sample(
         self,
         db_session: Session,
@@ -557,7 +557,7 @@ class TestReviewWorkflowIntegrity:
         reviewer_id=user_id_strategy,
         reason=rejection_reason_strategy
     )
-    @settings(max_examples=50, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_rejection_preserves_data_for_resubmit(
         self,
         db_session: Session,

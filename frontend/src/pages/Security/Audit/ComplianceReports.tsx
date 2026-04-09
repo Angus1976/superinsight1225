@@ -183,7 +183,9 @@ const ComplianceReports: React.FC = () => {
       key: 'report_type',
       render: (type) => (
         <Tag color={reportTypeColors[type.toLowerCase()] || 'default'}>
-          {t(`compliance.types.${type.toLowerCase()}`, reportTypeLabels[type.toLowerCase()] || type)}
+          {t(`compliance.types.${type.toLowerCase()}`, {
+            defaultValue: reportTypeLabels[type.toLowerCase()] || type,
+          })}
         </Tag>
       ),
     },

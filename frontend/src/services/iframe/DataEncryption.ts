@@ -73,13 +73,8 @@ export class DataEncryption {
    */
   public async initialize(keyMaterial: string | ArrayBuffer): Promise<void> {
     try {
-      let keyData: ArrayBuffer;
-      
-      if (typeof keyMaterial === 'string') {
-        keyData = new TextEncoder().encode(keyMaterial);
-      } else {
-        keyData = keyMaterial;
-      }
+      const keyData: BufferSource =
+        typeof keyMaterial === 'string' ? new TextEncoder().encode(keyMaterial) : keyMaterial;
 
       // Derive key using PBKDF2
       const baseKey = await crypto.subtle.importKey(
@@ -154,7 +149,7 @@ export class DataEncryption {
 
       const result: EncryptedData = {
         data: this.arrayBufferToBase64(encryptedData),
-        iv: this.arrayBufferToBase64(iv),
+        iv: this.arrayBufferToBase64(iv instanceof Uint8Array ? iv : new Uint8Array(iv)),
         algorithm: this.config.algorithm,
         timestamp: Date.now(),
         version: '1.0',
@@ -232,8 +227,8 @@ export class DataEncryption {
   /**
    * Convert ArrayBuffer to Base64
    */
-  private arrayBufferToBase64(buffer: ArrayBuffer): string {
-    const bytes = new Uint8Array(buffer);
+  private arrayBufferToBase64(buffer: ArrayBuffer | Uint8Array): string {
+    const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
     let binary = '';
     for (let i = 0; i < bytes.byteLength; i++) {
       binary += String.fromCharCode(bytes[i]);

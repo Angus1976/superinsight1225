@@ -65,7 +65,7 @@ class TestDataProfileCompleteness:
     """**Validates: Requirements 1.1, 1.2**"""
 
     @given(source=valid_data_sources())
-    @settings(max_examples=50, deadline=5000)
+    @settings(deadline=5000)
     def test_profile_has_basic_info_and_quality_metrics(self, source: DataSource):
         profiler = SimpleDataProfiler()
         profile = run_async(profiler.analyze_data(source))
@@ -90,7 +90,7 @@ class TestFingerprintDeterminism:
     """**Validates: Requirement 1.4**"""
 
     @given(source=valid_data_sources())
-    @settings(max_examples=50, deadline=5000)
+    @settings(deadline=5000)
     def test_same_source_produces_identical_fingerprints(self, source: DataSource):
         profiler = SimpleDataProfiler()
         fp1 = run_async(profiler.generate_fingerprint(source))
@@ -114,7 +114,7 @@ class TestSemanticDetectionForText:
     """**Validates: Requirement 1.3**"""
 
     @given(source=text_data_sources())
-    @settings(max_examples=50, deadline=5000)
+    @settings(deadline=5000)
     def test_text_source_has_language_and_domain(self, source: DataSource):
         profiler = SimpleDataProfiler()
         profile = run_async(profiler.analyze_data(source))

@@ -71,16 +71,18 @@ export const AccessibleButton = memo(forwardRef<HTMLButtonElement, AccessibleBut
       aria-expanded={expanded}
       aria-controls={controls}
       aria-pressed={pressed}
-      aria-disabled={disabled || loading}
-      aria-busy={loading}
-      {...props}
+      aria-disabled={disabled || Boolean(loading)}
+      aria-busy={Boolean(loading)}
+      {...(props as ButtonProps)}
     >
-      {children}
-      {accessibleDescription && (
-        <span id={`${props.id}-desc`} className="sr-only">
-          {accessibleDescription}
-        </span>
-      )}
+      <>
+        {children}
+        {accessibleDescription && (
+          <span id={`${props.id}-desc`} className="sr-only">
+            {accessibleDescription}
+          </span>
+        )}
+      </>
     </Button>
   );
 

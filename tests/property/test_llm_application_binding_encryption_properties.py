@@ -120,7 +120,7 @@ class TestAPIKeyEncryptionRoundTrip:
     - 12.1: WHEN an API key is stored, THE System SHALL encrypt it using AES-256 encryption
     """
     
-    @settings(max_examples=20, suppress_health_check=[HealthCheck.too_slow], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow], deadline=None)
     @given(api_key=api_key_strategy)
     def test_property_2_encryption_roundtrip_preserves_api_key(
         self,
@@ -148,7 +148,7 @@ class TestAPIKeyEncryptionRoundTrip:
         assert decrypted_api_key == api_key, \
             f"Decrypted API key should match original. Got: {decrypted_api_key[:10]}..."
     
-    @settings(max_examples=20, suppress_health_check=[HealthCheck.too_slow], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow], deadline=None)
     @given(api_key=api_key_strategy)
     def test_property_2_encrypted_value_differs_from_plaintext(
         self,
@@ -180,7 +180,7 @@ class TestAPIKeyEncryptionRoundTrip:
         except Exception as e:
             pytest.fail(f"Encrypted value should be valid Base64: {e}")
     
-    @settings(max_examples=20, suppress_health_check=[HealthCheck.too_slow], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow], deadline=None)
     @given(api_key=api_key_strategy)
     def test_property_2_same_key_different_ciphertext(
         self,
@@ -215,7 +215,7 @@ class TestAPIKeyEncryptionRoundTrip:
         assert decrypted1 == api_key
         assert decrypted2 == api_key
     
-    @settings(max_examples=20, suppress_health_check=[HealthCheck.too_slow], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow], deadline=None)
     @given(api_key=china_api_key_strategy)
     def test_property_2_china_provider_api_keys(
         self,
@@ -255,7 +255,7 @@ class TestAPIKeyEncryptionSecurity:
     **Validates: Requirements 1.3, 4.3, 12.1**
     """
     
-    @settings(max_examples=15, suppress_health_check=[HealthCheck.too_slow], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow], deadline=None)
     @given(
         api_key1=api_key_strategy,
         api_key2=api_key_strategy
@@ -292,7 +292,7 @@ class TestAPIKeyEncryptionSecurity:
         assert len(encryption_service._key) == 32, \
             "Encryption should use AES-256 (32-byte key)"
     
-    @settings(max_examples=15, suppress_health_check=[HealthCheck.too_slow], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow], deadline=None)
     @given(api_key=api_key_strategy)
     def test_encrypted_length_appropriate(
         self,
@@ -317,7 +317,7 @@ class TestAPIKeyEncryptionSecurity:
         assert len(encrypted) <= max_expected_length, \
             f"Encrypted length {len(encrypted)} exceeds expected max {max_expected_length}"
     
-    @settings(max_examples=15, suppress_health_check=[HealthCheck.too_slow], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow], deadline=None)
     @given(api_key=api_key_strategy)
     def test_wrong_key_fails_decryption(
         self,

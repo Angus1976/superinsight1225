@@ -33,7 +33,7 @@ class TestConfigurationEncryptionRoundTrip:
         plaintext=st.text(min_size=1, max_size=1000),
         encryption_key=st.text(min_size=8, max_size=64)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     def test_encrypt_decrypt_roundtrip(self, plaintext: str, encryption_key: str):
         """
         Encrypted data can be decrypted to original value.
@@ -73,7 +73,7 @@ class TestConfigurationEncryptionRoundTrip:
             max_codepoint=126
         ))
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     def test_sensitive_fields_encrypted_in_storage(self, api_key: str, password: str):
         """
         Verify encrypted data is not plaintext in storage.
@@ -111,7 +111,7 @@ class TestConfigurationEncryptionRoundTrip:
         key1=st.text(min_size=8, max_size=32),
         key2=st.text(min_size=8, max_size=32)
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_different_keys_produce_different_ciphertext(
         self, 
         credential: str, 
@@ -156,7 +156,7 @@ class TestConfigurationEncryptionRoundTrip:
     @given(
         plaintext=st.text(min_size=1, max_size=500)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     def test_same_plaintext_different_ciphertext_each_time(self, plaintext: str):
         """
         Same plaintext encrypted multiple times should produce different ciphertext.
@@ -221,7 +221,7 @@ class TestConfigurationEncryptionRoundTrip:
     @given(
         credential=st.text(min_size=10, max_size=100)
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_double_encryption_prevention(self, credential: str):
         """
         Encrypting already encrypted data should not double-encrypt.
@@ -249,7 +249,7 @@ class TestConfigurationEncryptionRoundTrip:
     @given(
         credential=st.text(min_size=10, max_size=100)
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_encrypt_if_needed_idempotent(self, credential: str):
         """
         encrypt_if_needed should be idempotent.
@@ -281,7 +281,7 @@ class TestConfigurationEncryptionRoundTrip:
     @given(
         credential=st.text(min_size=10, max_size=100)
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_decrypt_if_needed_handles_both_encrypted_and_plain(self, credential: str):
         """
         decrypt_if_needed should handle both encrypted and plaintext values.
@@ -306,7 +306,7 @@ class TestConfigurationEncryptionRoundTrip:
         credential=st.text(min_size=10, max_size=100),
         visible_chars=st.integers(min_value=1, max_value=10)
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_masking_preserves_length_information(self, credential: str, visible_chars: int):
         """
         Masking should preserve length information while hiding content.
@@ -343,7 +343,7 @@ class TestConfigurationEncryptionRoundTrip:
         new_key=st.text(min_size=8, max_size=32),
         credential=st.text(min_size=10, max_size=100)
     )
-    @settings(max_examples=30, deadline=None)
+    @settings(deadline=None)
     def test_key_rotation_preserves_plaintext(
         self, 
         old_key: str, 

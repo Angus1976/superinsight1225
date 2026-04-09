@@ -4,7 +4,7 @@
  */
 
 import { EventEmitter } from './EventEmitter';
-import { KeyboardManager, KeyboardShortcut } from './KeyboardManager';
+import { KeyboardManager, type KeyboardShortcut as KeyboardManagerShortcut } from './KeyboardManager';
 import { FocusManager } from './FocusManager';
 
 export interface UICoordinatorConfig {
@@ -28,7 +28,7 @@ export interface UIState {
   };
 }
 
-export interface KeyboardShortcut {
+export interface UICoordinatorShortcut {
   key: string;
   ctrlKey?: boolean;
   altKey?: boolean;
@@ -49,7 +49,7 @@ export interface UIEvent {
 export type UIEventCallback = (event: UIEvent) => void;
 
 export class UICoordinator extends EventEmitter {
-  private config: UICoordinatorConfig;
+  private coordinatorConfig: UICoordinatorConfig;
   private iframe: HTMLIFrameElement | null = null;
   private container: HTMLElement | null = null;
   private navigationElement: HTMLElement | null = null;
@@ -61,7 +61,7 @@ export class UICoordinator extends EventEmitter {
     iframeFocused: false,
     dimensions: { width: 0, height: 0 },
   };
-  private shortcuts: Map<string, KeyboardShortcut> = new Map();
+  private shortcuts: Map<string, UICoordinatorShortcut> = new Map();
   private resizeObserver: ResizeObserver | null = null;
   private focusCheckInterval: ReturnType<typeof setInterval> | null = null;
   private keyboardListenerActive = false;
@@ -69,7 +69,7 @@ export class UICoordinator extends EventEmitter {
 
   constructor(config: UICoordinatorConfig = {}) {
     super();
-    this.config = {
+    this.coordinatorConfig = {
       enableFullscreen: true,
       enableKeyboardShortcuts: true,
       enableFocusManagement: true,
@@ -103,11 +103,11 @@ export class UICoordinator extends EventEmitter {
     this.navigationElement = this.findNavigationElement();
 
     // Initialize managers
-    if (this.config.enableKeyboardShortcuts && this.keyboardManager && typeof this.keyboardManager.initialize === 'function') {
+    if (this.coordinatorConfig.enableKeyboardShortcuts && this.keyboardManager && typeof this.keyboardManager.initialize === 'function') {
       this.keyboardManager.initialize(iframe);
     }
     
-    if (this.config.enableFocusManagement && this.focusManager && typeof this.focusManager.initialize === 'function') {
+    if (this.coordinatorConfig.enableFocusManagement && this.focusManager && typeof this.focusManager.initialize === 'function') {
       this.focusManager.initialize(iframe, container);
     }
 
@@ -121,12 +121,12 @@ export class UICoordinator extends EventEmitter {
     this.setupResizeObserver();
 
     // Setup keyboard shortcuts
-    if (this.config.enableKeyboardShortcuts) {
+    if (this.coordinatorConfig.enableKeyboardShortcuts) {
       this.enableKeyboardShortcuts();
     }
 
     // Setup focus management
-    if (this.config.enableFocusManagement) {
+    if (this.coordinatorConfig.enableFocusManagement) {
       this.setupFocusManagement();
     }
 
@@ -309,7 +309,7 @@ export class UICoordinator extends EventEmitter {
   /**
    * Register keyboard shortcut
    */
-  registerShortcut(shortcut: KeyboardShortcut): void {
+  registerShortcut(shortcut: UICoordinatorShortcut): void {
     const key = this.getShortcutKey(shortcut);
     this.shortcuts.set(key, shortcut);
     
@@ -332,7 +332,7 @@ export class UICoordinator extends EventEmitter {
   /**
    * Get all registered shortcuts
    */
-  getShortcuts(): KeyboardShortcut[] {
+  getShortcuts(): UICoordinatorShortcut[] {
     return Array.from(this.shortcuts.values());
   }
 
@@ -340,7 +340,7 @@ export class UICoordinator extends EventEmitter {
    * Focus iframe
    */
   focusIframe(): void {
-    if (this.config.enableFocusManagement && this.focusManager && typeof this.focusManager.focusIframe === 'function') {
+    if (this.coordinatorConfig.enableFocusManagement && this.focusManager && typeof this.focusManager.focusIframe === 'function') {
       this.focusManager.focusIframe();
     } else if (this.iframe) {
       this.iframe.focus();
@@ -351,7 +351,7 @@ export class UICoordinator extends EventEmitter {
    * Focus main window
    */
   focusMain(): void {
-    if (this.config.enableFocusManagement && this.focusManager && typeof this.focusManager.focusMain === 'function') {
+    if (this.coordinatorConfig.enableFocusManagement && this.focusManager && typeof this.focusManager.focusMain === 'function') {
       this.focusManager.focusMain();
     } else {
       // Fallback focus management
@@ -366,7 +366,7 @@ export class UICoordinator extends EventEmitter {
    * Enable/disable event bubbling
    */
   setEventBubbling(enabled: boolean): void {
-    this.config.enableEventBubbling = enabled;
+    this.coordinatorConfig.enableEventBubbling = enabled;
     
     if (enabled) {
       // Allow events to bubble from iframe to main window
@@ -381,7 +381,7 @@ export class UICoordinator extends EventEmitter {
    * Trap focus within container (useful for modal-like behavior)
    */
   trapFocus(): void {
-    if (this.config.enableFocusManagement && this.container && this.focusManager && typeof this.focusManager.trapFocus === 'function') {
+    if (this.coordinatorConfig.enableFocusManagement && this.container && this.focusManager && typeof this.focusManager.trapFocus === 'function') {
       this.focusManager.trapFocus(this.container);
     }
   }
@@ -390,7 +390,7 @@ export class UICoordinator extends EventEmitter {
    * Release focus trap
    */
   releaseFocusTrap(): void {
-    if (this.config.enableFocusManagement && this.focusManager && typeof this.focusManager.releaseFocusTrap === 'function') {
+    if (this.coordinatorConfig.enableFocusManagement && this.focusManager && typeof this.focusManager.releaseFocusTrap === 'function') {
       this.focusManager.releaseFocusTrap();
     }
   }
@@ -413,7 +413,7 @@ export class UICoordinator extends EventEmitter {
    * Enter fullscreen mode
    */
   private enterFullscreen(): void {
-    if (!this.container || !this.config.enableFullscreen) {
+    if (!this.container || !this.coordinatorConfig.enableFullscreen) {
       return;
     }
 
@@ -433,7 +433,7 @@ export class UICoordinator extends EventEmitter {
     this.hideNavigation();
 
     // Trap focus if enabled
-    if (this.config.focusTrapOnFullscreen && this.config.enableFocusManagement) {
+    if (this.coordinatorConfig.focusTrapOnFullscreen && this.coordinatorConfig.enableFocusManagement) {
       this.trapFocus();
     }
 
@@ -456,7 +456,7 @@ export class UICoordinator extends EventEmitter {
     }
 
     // Release focus trap
-    if (this.config.focusTrapOnFullscreen && this.config.enableFocusManagement) {
+    if (this.coordinatorConfig.focusTrapOnFullscreen && this.coordinatorConfig.enableFocusManagement) {
       this.releaseFocusTrap();
     }
 
@@ -518,7 +518,7 @@ export class UICoordinator extends EventEmitter {
    * Find navigation element
    */
   private findNavigationElement(): HTMLElement | null {
-    const selector = this.config.navigationSelector!;
+    const selector = this.coordinatorConfig.navigationSelector!;
     return document.querySelector(selector) as HTMLElement;
   }
 
@@ -526,7 +526,7 @@ export class UICoordinator extends EventEmitter {
    * Find all navigation elements
    */
   private findAllNavigationElements(): HTMLElement[] {
-    const selector = this.config.navigationSelector!;
+    const selector = this.coordinatorConfig.navigationSelector!;
     return Array.from(document.querySelectorAll(selector)) as HTMLElement[];
   }
 
@@ -663,7 +663,7 @@ export class UICoordinator extends EventEmitter {
    * Initialize default shortcuts
    */
   private initializeShortcuts(): void {
-    const defaultShortcuts = this.config.shortcuts!;
+    const defaultShortcuts = this.coordinatorConfig.shortcuts!;
     
     Object.entries(defaultShortcuts).forEach(([key, action]) => {
       const shortcut = this.parseShortcutKey(key, action);
@@ -676,7 +676,7 @@ export class UICoordinator extends EventEmitter {
   /**
    * Parse shortcut key string
    */
-  private parseShortcutKey(keyString: string, action: string): KeyboardShortcut | null {
+  private parseShortcutKey(keyString: string, action: string): UICoordinatorShortcut | null {
     const parts = keyString.split('+');
     const key = parts[parts.length - 1];
     
@@ -694,7 +694,7 @@ export class UICoordinator extends EventEmitter {
   /**
    * Get shortcut key string
    */
-  private getShortcutKey(shortcut: KeyboardShortcut): string {
+  private getShortcutKey(shortcut: UICoordinatorShortcut): string {
     const parts: string[] = [];
     
     if (shortcut.ctrlKey) parts.push('Ctrl');
@@ -790,7 +790,7 @@ export class UICoordinator extends EventEmitter {
   /**
    * Check if event matches shortcut
    */
-  private matchesShortcut(event: KeyboardEvent, shortcut: KeyboardShortcut): boolean {
+  private matchesShortcut(event: KeyboardEvent, shortcut: UICoordinatorShortcut): boolean {
     return (
       event.key === shortcut.key &&
       !!event.ctrlKey === !!shortcut.ctrlKey &&
@@ -803,7 +803,7 @@ export class UICoordinator extends EventEmitter {
   /**
    * Execute shortcut action
    */
-  private executeShortcutAction(shortcut: KeyboardShortcut): void {
+  private executeShortcutAction(shortcut: UICoordinatorShortcut): void {
     switch (shortcut.action) {
       case 'toggle_fullscreen':
         this.toggleFullscreen();

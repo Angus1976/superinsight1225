@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, Form, Input, Select, Switch, Button, Space, message, Divider, Alert, Table, Tag } from 'antd';
+import { Card, Form, Input, Select, Switch, Button, Space, message, Divider, Alert, Table, Tag, Spin } from 'antd';
 import { SaveOutlined, ReloadOutlined, SafetyOutlined, KeyOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -51,14 +51,20 @@ const DataSyncSecurity: React.FC = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation(['dataSync', 'common']);
 
-  const { data: config, isLoading } = useQuery({
+  const { data: config, isLoading } = useQuery<SecurityConfig>({
     queryKey: ['data-sync-security-config'],
-    queryFn: () => api.get('/api/v1/data-sync/security/config').then(res => res.data),
+    queryFn: async () => {
+      const res = await api.get<SecurityConfig>('/api/v1/data-sync/security/config');
+      return res.data;
+    },
   });
 
-  const { data: rules = [], isLoading: rulesLoading } = useQuery({
+  const { data: rules = [], isLoading: rulesLoading } = useQuery<SecurityRule[]>({
     queryKey: ['data-sync-security-rules'],
-    queryFn: () => api.get('/api/v1/data-sync/security/rules').then(res => res.data),
+    queryFn: async () => {
+      const res = await api.get<SecurityRule[]>('/api/v1/data-sync/security/rules');
+      return res.data;
+    },
   });
 
   const updateConfigMutation = useMutation({
@@ -74,11 +80,12 @@ const DataSyncSecurity: React.FC = () => {
 
   const testConnectionMutation = useMutation({
     mutationFn: () => api.post('/api/v1/data-sync/security/test'),
-    onSuccess: (data) => {
-      if (data.data.success) {
+    onSuccess: (response) => {
+      const payload = response.data as { success?: boolean; error?: string };
+      if (payload.success) {
         message.success(t('security.testSuccess'));
       } else {
-        message.error(`${t('security.testFailed')}: ${data.data.error}`);
+        message.error(`${t('security.testFailed')}: ${payload.error ?? ''}`);
       }
     },
     onError: () => {
@@ -200,11 +207,11 @@ const DataSyncSecurity: React.FC = () => {
           </Space>
         }
       >
+        <Spin spinning={isLoading}>
         <Form
           form={form}
           layout="vertical"
           onFinish={handleSubmit}
-          loading={isLoading}
         >
           {/* 加密配置 */}
           <Card type="inner" title={t('security.encryption.title')} style={{ marginBottom: 16 }}>
@@ -335,6 +342,7 @@ const DataSyncSecurity: React.FC = () => {
             </Form.Item>
           </Card>
         </Form>
+        </Spin>
       </Card>
 
       {/* 安全规则 */}

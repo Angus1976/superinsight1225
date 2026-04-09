@@ -69,7 +69,7 @@ class TestProcessingPlanCompleteness:
     """**Validates: Requirements 2.1, 2.3, 2.5, 7.1**"""
 
     @given(profile=data_profiles())
-    @settings(max_examples=50, deadline=5000)
+    @settings(deadline=5000)
     def test_plan_has_stages_explanation_and_costs(self, profile: DataProfile):
         router = StrategyRouter()
         plan = router.select_strategy(profile, Requirements())
@@ -94,7 +94,7 @@ class TestStrategyDeterminism:
     """**Validates: Requirement 2.2**"""
 
     @given(profile=data_profiles(), reqs=requirements_strategy())
-    @settings(max_examples=50, deadline=5000)
+    @settings(deadline=5000)
     def test_same_inputs_produce_same_plan(
         self, profile: DataProfile, reqs: Requirements
     ):
@@ -124,7 +124,7 @@ class TestCostEstimationAccuracy:
     """**Validates: Requirements 7.1, 7.2**"""
 
     @given(profile=data_profiles())
-    @settings(max_examples=50, deadline=5000)
+    @settings(deadline=5000)
     def test_cost_estimation_determinism(self, profile: DataProfile):
         """Re-estimating the same plan yields identical costs."""
         estimator = CostEstimator()
@@ -141,7 +141,7 @@ class TestCostEstimationAccuracy:
         assert cost1.monetary_cost == cost2.monetary_cost
 
     @given(profile=data_profiles())
-    @settings(max_examples=50, deadline=5000)
+    @settings(deadline=5000)
     def test_more_stages_higher_time_cost(self, profile: DataProfile):
         """A plan with more stages should have higher total time cost."""
         estimator = CostEstimator()
@@ -163,7 +163,7 @@ class TestCostEstimationAccuracy:
         small_size=st.integers(min_value=0, max_value=9 * 1024 * 1024),
         large_size=st.integers(min_value=101 * 1024 * 1024, max_value=500 * 1024 * 1024),
     )
-    @settings(max_examples=50, deadline=5000)
+    @settings(deadline=5000)
     def test_larger_file_higher_cost(self, small_size: int, large_size: int):
         """A larger file should cost more than a smaller file."""
         estimator = CostEstimator()

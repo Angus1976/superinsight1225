@@ -213,15 +213,24 @@ const LLMConfigPage: React.FC = () => {
 
   // ==================== UI Helpers ====================
 
-  const toggleApiKeyVisibility = (field: string) => {
-    setShowApiKeys(prev => ({
+  const apiKeyFieldKey = (field: string | (string | number)[]): string =>
+    Array.isArray(field) ? field.join('.') : field;
+
+  const toggleApiKeyVisibility = (field: string | (string | number)[]) => {
+    const key = apiKeyFieldKey(field);
+    setShowApiKeys((prev) => ({
       ...prev,
-      [field]: !prev[field]
+      [key]: !prev[key],
     }));
   };
 
-  const renderApiKeyInput = (field: string, label: string, placeholder?: string) => {
-    const isVisible = showApiKeys[field];
+  const renderApiKeyInput = (
+    field: string | (string | number)[],
+    label: string,
+    placeholder?: string
+  ) => {
+    const key = apiKeyFieldKey(field);
+    const isVisible = showApiKeys[key];
     return (
       <Form.Item
         name={field}

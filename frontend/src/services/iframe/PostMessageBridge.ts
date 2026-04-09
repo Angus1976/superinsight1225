@@ -187,7 +187,7 @@ export class PostMessageBridge {
 
       // Handle response to pending request
       if (this.pendingRequests.has(message.id)) {
-        this.handleResponse(sanitizedMessage as Response);
+        this.handleResponse(sanitizedMessage as unknown as Response);
       } else {
         // Handle incoming message
         this.handleIncomingMessage(sanitizedMessage);

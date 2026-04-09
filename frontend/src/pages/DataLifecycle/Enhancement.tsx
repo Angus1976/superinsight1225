@@ -44,6 +44,10 @@ const EnhancementPage: React.FC = () => {
     setCreateModalVisible(true);
   }, []);
 
+  const handleViewResults = useCallback((_jobId: string) => {
+    // 占位：接入增强任务结果详情路由或抽屉后再实现
+  }, []);
+
   return (
     <div style={{ padding: 24 }}>
       <Space direction="vertical" style={{ width: '100%' }} size="large">

@@ -42,7 +42,9 @@ import {
 import type { ColumnsType } from 'antd/es/table';
 import { useTranslation } from 'react-i18next';
 import dayjs from 'dayjs';
+import type { Dayjs } from 'dayjs';
 import { useExportBilling } from '@/hooks/useBilling';
+import type { BillingStatus } from '@/types/billing';
 
 const { RangePicker } = DatePicker;
 const { TextArea } = Input;
@@ -235,7 +237,7 @@ export const ExcelExportManager: React.FC<ExcelExportManagerProps> = ({ tenantId
   ], []);
 
   // Handle export execution
-  const handleExport = async (values: Record<string, unknown>) => {
+  const handleExport = async (values: { dateRange?: [Dayjs, Dayjs]; status?: BillingStatus }) => {
     try {
       setCurrentStep(1);
       
@@ -414,7 +416,7 @@ export const ExcelExportManager: React.FC<ExcelExportManagerProps> = ({ tenantId
             <Text>{dayjs(record.lastRun).format('MMM DD, HH:mm')}</Text>
           )}
           {record.lastStatus && (
-            <Tag color={record.lastStatus === 'success' ? 'green' : 'red'} size="small">
+            <Tag color={record.lastStatus === 'success' ? 'green' : 'red'}>
               {t(`excelExport.status.${record.lastStatus}`)}
             </Tag>
           )}

@@ -55,25 +55,31 @@ const QualityReports: React.FC = () => {
   ]);
   const [reportType, setReportType] = useState<string>('all');
 
-  const { data: metrics, isLoading: metricsLoading } = useQuery({
+  const { data: metrics, isLoading: metricsLoading } = useQuery<QualityMetrics>({
     queryKey: ['quality-metrics', dateRange, reportType],
-    queryFn: () => api.get('/api/v1/quality/metrics', {
-      params: {
-        startDate: dateRange[0].format('YYYY-MM-DD'),
-        endDate: dateRange[1].format('YYYY-MM-DD'),
-        type: reportType,
-      },
-    }).then(res => res.data),
+    queryFn: async () => {
+      const res = await api.get<QualityMetrics>('/api/v1/quality/metrics', {
+        params: {
+          startDate: dateRange[0].format('YYYY-MM-DD'),
+          endDate: dateRange[1].format('YYYY-MM-DD'),
+          type: reportType,
+        },
+      });
+      return res.data;
+    },
   });
 
-  const { data: reports, isLoading: reportsLoading } = useQuery({
+  const { data: reports, isLoading: reportsLoading } = useQuery<QualityReport[]>({
     queryKey: ['quality-reports', dateRange],
-    queryFn: () => api.get('/api/v1/quality/reports', {
-      params: {
-        startDate: dateRange[0].format('YYYY-MM-DD'),
-        endDate: dateRange[1].format('YYYY-MM-DD'),
-      },
-    }).then(res => res.data),
+    queryFn: async () => {
+      const res = await api.get<QualityReport[]>('/api/v1/quality/reports', {
+        params: {
+          startDate: dateRange[0].format('YYYY-MM-DD'),
+          endDate: dateRange[1].format('YYYY-MM-DD'),
+        },
+      });
+      return res.data;
+    },
   });
 
   const trendConfig = {
@@ -240,7 +246,7 @@ const QualityReports: React.FC = () => {
           <Card>
             <Statistic
               title={t('reports.stats.overallScore')}
-              value={metrics?.overallScore * 100 || 0}
+              value={(metrics?.overallScore ?? 0) * 100}
               precision={1}
               suffix="%"
               valueStyle={{
@@ -304,7 +310,7 @@ const QualityReports: React.FC = () => {
               <Col span={12}>
                 <Statistic
                   title={t('reports.metricsLabels.semanticQuality')}
-                  value={metrics?.scoreDistribution?.find(item => item.type === 'semantic')?.score * 100 || 0}
+                  value={(metrics?.scoreDistribution?.find(item => item.type === 'semantic')?.score ?? 0) * 100}
                   precision={1}
                   suffix="%"
                 />
@@ -312,7 +318,7 @@ const QualityReports: React.FC = () => {
               <Col span={12}>
                 <Statistic
                   title={t('reports.metricsLabels.syntacticQuality')}
-                  value={metrics?.scoreDistribution?.find(item => item.type === 'syntactic')?.score * 100 || 0}
+                  value={(metrics?.scoreDistribution?.find(item => item.type === 'syntactic')?.score ?? 0) * 100}
                   precision={1}
                   suffix="%"
                 />
@@ -320,7 +326,7 @@ const QualityReports: React.FC = () => {
               <Col span={12}>
                 <Statistic
                   title={t('reports.metricsLabels.completeness')}
-                  value={metrics?.scoreDistribution?.find(item => item.type === 'completeness')?.score * 100 || 0}
+                  value={(metrics?.scoreDistribution?.find(item => item.type === 'completeness')?.score ?? 0) * 100}
                   precision={1}
                   suffix="%"
                 />
@@ -328,7 +334,7 @@ const QualityReports: React.FC = () => {
               <Col span={12}>
                 <Statistic
                   title={t('reports.metricsLabels.consistency')}
-                  value={metrics?.scoreDistribution?.find(item => item.type === 'consistency')?.score * 100 || 0}
+                  value={(metrics?.scoreDistribution?.find(item => item.type === 'consistency')?.score ?? 0) * 100}
                   precision={1}
                   suffix="%"
                 />

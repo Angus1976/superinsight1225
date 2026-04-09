@@ -88,8 +88,8 @@ const TaskManagement: React.FC<TaskManagementProps> = ({
   // Get status color
   const getStatusColor = (status: string): string => {
     const colorMap: Record<string, string> = {
-      pending: 'default',
-      inProgress: 'processing',
+      created: 'default',
+      in_progress: 'processing',
       completed: 'success',
       cancelled: 'error',
     };
@@ -107,10 +107,8 @@ const TaskManagement: React.FC<TaskManagementProps> = ({
     return colorMap[priority] || 'default';
   };
 
-  // Calculate progress percentage
   const calculateProgress = (task: AnnotationTask): number => {
-    if (!task.progress || task.progress.total === 0) return 0;
-    return Math.round((task.progress.completed / task.progress.total) * 100);
+    return Math.min(100, Math.max(0, Math.round(Number(task.progress) || 0)));
   };
 
   // Expandable row render
@@ -164,8 +162,8 @@ const TaskManagement: React.FC<TaskManagementProps> = ({
         </Tag>
       ),
       filters: [
-        { text: t('annotationTask.status.pending'), value: 'pending' },
-        { text: t('annotationTask.status.inProgress'), value: 'inProgress' },
+        { text: t('annotationTask.status.pending'), value: 'created' },
+        { text: t('annotationTask.status.inProgress'), value: 'in_progress' },
         { text: t('annotationTask.status.completed'), value: 'completed' },
         { text: t('annotationTask.status.cancelled'), value: 'cancelled' },
       ],
@@ -177,9 +175,10 @@ const TaskManagement: React.FC<TaskManagementProps> = ({
       width: 200,
       render: (_, record) => {
         const percentage = calculateProgress(record);
-        const completed = record.progress?.completed || 0;
-        const total = record.progress?.total || 0;
-        
+        const sampleTotal = record.sample_ids?.length ?? 0;
+        const labeledCount =
+          sampleTotal > 0 ? Math.round((percentage / 100) * sampleTotal) : 0;
+
         return (
           <Space direction="vertical" size="small" style={{ width: '100%' }}>
             <Progress
@@ -188,7 +187,7 @@ const TaskManagement: React.FC<TaskManagementProps> = ({
               status={record.status === 'completed' ? 'success' : 'active'}
             />
             <Text type="secondary" style={{ fontSize: 12 }}>
-              {completed}/{total} {t('annotationTask.progress.labeled')}
+              {labeledCount}/{sampleTotal || '—'} {t('annotationTask.progress.labeled')}
             </Text>
           </Space>
         );

@@ -317,16 +317,20 @@ class ImpactAnalysisService:
                 reason = self._determine_impact_reason(current_id, element_id, distance, change_type)
                 affected.append((current_id, distance, reason))
 
-            # Traverse outgoing relationships (DEPENDS_ON)
-            for dependent_id in self._graph.outgoing.get(current_id, []):
-                if dependent_id not in visited:
-                    queue.append((dependent_id, distance + 1))
-
-            # For deletes, also traverse incoming relationships (USED_BY)
+            # Edges are stored as dependent -> dependency (DEPENDS_ON).
+            # Impact propagates to dependents: follow incoming[current] for modify/add.
+            # Deletes also affect dependencies (outgoing) and dependents (incoming).
             if change_type == "delete":
-                for using_id in self._graph.incoming.get(current_id, []):
-                    if using_id not in visited:
-                        queue.append((using_id, distance + 1))
+                for neighbor_id in self._graph.outgoing.get(current_id, []):
+                    if neighbor_id not in visited:
+                        queue.append((neighbor_id, distance + 1))
+                for neighbor_id in self._graph.incoming.get(current_id, []):
+                    if neighbor_id not in visited:
+                        queue.append((neighbor_id, distance + 1))
+            else:
+                for dependent_id in self._graph.incoming.get(current_id, []):
+                    if dependent_id not in visited:
+                        queue.append((dependent_id, distance + 1))
 
         return affected
 
@@ -475,7 +479,12 @@ class ImpactAnalysisService:
                 if current == to_element:
                     return path
 
-                for neighbor in self._graph.outgoing.get(current, []):
+                # Walk both directions along DEPENDS_ON (dependent↔dependency).
+                neighbors = (
+                    self._graph.outgoing.get(current, [])
+                    + self._graph.incoming.get(current, [])
+                )
+                for neighbor in neighbors:
                     if neighbor not in visited:
                         visited.add(neighbor)
                         queue.append((neighbor, path + [neighbor]))

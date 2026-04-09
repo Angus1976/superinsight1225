@@ -132,8 +132,8 @@ export const designTokens = {
   },
 } as const;
 
-// Light Theme Configuration
-export const lightTheme: ThemeConfig = {
+// Light Theme Configuration (token keys vary slightly across antd minors; cast keeps design tokens authoritative)
+export const lightTheme = {
   token: {
     colorPrimary: designTokens.colors.primary,
     colorSuccess: designTokens.colors.success,
@@ -231,10 +231,10 @@ export const lightTheme: ThemeConfig = {
       cardBorderRadius: designTokens.borderRadius.lg,
     },
   },
-};
+} as ThemeConfig;
 
 // Dark Theme Configuration
-export const darkTheme: ThemeConfig = {
+export const darkTheme = {
   token: {
     ...lightTheme.token,
     colorText: 'rgba(255, 255, 255, 0.88)',
@@ -256,6 +256,6 @@ export const darkTheme: ThemeConfig = {
       headerBg: '#1f1f1f',
     },
   },
-};
+} as ThemeConfig;
 
 export type DesignTokens = typeof designTokens;

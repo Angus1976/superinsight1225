@@ -548,7 +548,13 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
             <Space>
               <DatePicker.RangePicker
                 value={selectedDateRange}
-                onChange={setSelectedDateRange}
+                onChange={(dates) => {
+                  if (!dates?.[0] || !dates[1]) {
+                    setSelectedDateRange(null);
+                    return;
+                  }
+                  setSelectedDateRange([dates[0], dates[1]]);
+                }}
                 placeholder={[t('startDate'), t('endDate')]}
               />
               <Select

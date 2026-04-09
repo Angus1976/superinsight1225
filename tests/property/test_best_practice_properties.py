@@ -7,6 +7,7 @@ This module tests universal correctness properties:
 
 import pytest
 import asyncio
+import statistics
 from uuid import UUID, uuid4
 from hypothesis import given, strategies as st, settings, assume
 from typing import List
@@ -56,7 +57,7 @@ class TestBestPracticeDisplayCompleteness:
         problem=medium_text_strategy,
         solution=long_text_strategy
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_practice_has_all_required_fields(
         self,
         author_id: UUID,
@@ -110,7 +111,7 @@ class TestBestPracticeDisplayCompleteness:
         author_id=uuid_strategy,
         step_count=st.integers(min_value=1, max_value=10)
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     async def test_configuration_steps_completeness(
         self,
         author_id: UUID,
@@ -158,7 +159,7 @@ class TestBestPracticeDisplayCompleteness:
         benefit_count=st.integers(min_value=1, max_value=5),
         example_count=st.integers(min_value=1, max_value=3)
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     async def test_benefits_and_examples_present(
         self,
         author_id: UUID,
@@ -194,7 +195,7 @@ class TestBestPracticeDisplayCompleteness:
         author_id=uuid_strategy,
         tags=st.lists(short_text_strategy, min_size=1, max_size=5, unique=True)
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     async def test_metadata_accuracy(
         self,
         author_id: UUID,
@@ -240,7 +241,7 @@ class TestUsageBasedBestPracticePromotion:
         author_id=uuid_strategy,
         usage_counts=st.lists(st.integers(min_value=0, max_value=100), min_size=10, max_size=10)
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     async def test_75th_percentile_promotion(
         self,
         author_id: UUID,
@@ -283,10 +284,8 @@ class TestUsageBasedBestPracticePromotion:
         # Trigger promotion update
         await service._update_promotion_status()
 
-        # Calculate 75th percentile
-        sorted_counts = sorted(usage_counts)
-        percentile_75_idx = int(len(sorted_counts) * 0.75)
-        threshold = sorted_counts[percentile_75_idx]
+        # Same 75th percentile as BestPracticeService._update_promotion_status
+        threshold = statistics.quantiles(usage_counts, n=4)[2]
 
         # Property: Practices above threshold are promoted
         for practice in practices:
@@ -302,7 +301,7 @@ class TestUsageBasedBestPracticePromotion:
         ontology_id=uuid_strategy,
         application_count=st.integers(min_value=1, max_value=5)
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     async def test_usage_count_tracking(
         self,
         author_id: UUID,
@@ -355,7 +354,7 @@ class TestUsageBasedBestPracticePromotion:
     @given(
         author_id=uuid_strategy
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     async def test_popular_practices_prioritized(
         self,
         author_id: UUID
@@ -426,7 +425,7 @@ class TestUsageBasedBestPracticePromotion:
     @given(
         author_id=uuid_strategy
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     async def test_promotion_requires_minimum_practices(
         self,
         author_id: UUID
@@ -479,7 +478,7 @@ class TestBestPracticeApplicationWorkflow:
         ontology_id=uuid_strategy,
         step_count=st.integers(min_value=1, max_value=5)
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     async def test_application_workflow_completion(
         self,
         author_id: UUID,
@@ -554,7 +553,7 @@ class TestBestPracticeApplicationWorkflow:
         user_id=uuid_strategy,
         ontology_id=uuid_strategy
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_next_step_guidance(
         self,
         author_id: UUID,
@@ -623,7 +622,7 @@ class TestBestPracticeReviewWorkflow:
         reviewer_id=uuid_strategy,
         rating=rating_strategy
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_approval_workflow(
         self,
         author_id: UUID,
@@ -672,7 +671,7 @@ class TestBestPracticeReviewWorkflow:
         author_id=uuid_strategy,
         reviewer_id=uuid_strategy
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_rejection_workflow(
         self,
         author_id: UUID,
@@ -715,15 +714,15 @@ class TestBestPracticeReviewWorkflow:
     @pytest.mark.asyncio
     @given(
         author_id=uuid_strategy,
-        ratings=st.lists(rating_strategy, min_size=1, max_size=5)
+        rating=rating_strategy,
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     async def test_average_rating_calculation(
         self,
         author_id: UUID,
-        ratings: List[float]
+        rating: float,
     ):
-        """Average rating is calculated correctly."""
+        """Average rating matches the single approve review (only one review while UNDER_REVIEW)."""
         service = BestPracticeService()
 
         # Create practice
@@ -740,24 +739,17 @@ class TestBestPracticeReviewWorkflow:
             configuration_steps=[ConfigurationStep(0, "Step", "Desc", [], [])]
         )
 
-        # Submit and approve with different ratings
         await service.submit_best_practice(practice.practice_id, [uuid4()])
+        await service.review_best_practice(
+            practice.practice_id,
+            uuid4(),
+            "approve",
+            "Good",
+            rating=rating,
+        )
 
-        for rating in ratings:
-            await service.review_best_practice(
-                practice.practice_id,
-                uuid4(),
-                "approve",
-                "Good",
-                rating=rating
-            )
-
-        # Get average rating
         avg_rating = await service.get_average_rating(practice.practice_id)
-
-        # Property: Average is correct
-        expected_avg = sum(ratings) / len(ratings)
-        assert abs(avg_rating - expected_avg) < 0.01
+        assert abs(avg_rating - rating) < 0.01
 
 
 class TestBestPracticeSearch:
@@ -769,7 +761,7 @@ class TestBestPracticeSearch:
         category=category_strategy,
         industry=industry_strategy
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     async def test_search_by_category_and_industry(
         self,
         author_id: UUID,

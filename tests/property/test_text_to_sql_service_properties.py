@@ -46,7 +46,7 @@ class TestComprehensiveMetricsTracking:
     @given(
         num_requests=st.integers(min_value=1, max_value=50)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_all_requests_tracked(self, num_requests: int):
         """Test that all requests are tracked in metrics."""
         await reset_text_to_sql_service()
@@ -81,7 +81,7 @@ class TestComprehensiveMetricsTracking:
         num_llm=st.integers(min_value=1, max_value=20),
         num_hybrid=st.integers(min_value=1, max_value=20),
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_method_usage_tracking(
         self,
         num_template: int,
@@ -137,7 +137,7 @@ class TestComprehensiveMetricsTracking:
     @given(
         use_cache=st.booleans()
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_cache_hit_rate_tracking(self, use_cache: bool):
         """Test that cache hit/miss rates are tracked."""
         await reset_text_to_sql_service()
@@ -219,7 +219,7 @@ class TestTenantDataIsolation:
     @given(
         num_tenants=st.integers(min_value=2, max_value=10)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_metrics_isolated_per_tenant(self, num_tenants: int):
         """Test that metrics are isolated per tenant."""
         await reset_text_to_sql_service()
@@ -252,7 +252,7 @@ class TestTenantDataIsolation:
     @given(
         num_tenants=st.integers(min_value=2, max_value=5)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_quotas_isolated_per_tenant(self, num_tenants: int):
         """Test that quotas are isolated per tenant."""
         await reset_text_to_sql_service()
@@ -301,7 +301,7 @@ class TestTenantUsageTracking:
     @given(
         num_llm_requests=st.integers(min_value=1, max_value=30)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_llm_request_counting(self, num_llm_requests: int):
         """Test that LLM requests are counted accurately."""
         await reset_text_to_sql_service()
@@ -328,7 +328,7 @@ class TestTenantUsageTracking:
     @given(
         query_length=st.integers(min_value=10, max_value=500)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_token_usage_tracking(self, query_length: int):
         """Test that token usage is tracked."""
         await reset_text_to_sql_service()
@@ -484,7 +484,7 @@ class TestTenantQuotaEnforcement:
     @given(
         requests_limit=st.integers(min_value=5, max_value=50)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_quota_limit_configurable(self, requests_limit: int):
         """Test that quota limits are configurable per tenant."""
         await reset_text_to_sql_service()

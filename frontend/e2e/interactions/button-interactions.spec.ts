@@ -8,7 +8,7 @@
 
 import { test, expect } from '../fixtures'
 import { mockAllApis } from '../helpers/mock-api-factory'
-import { setupAuth, waitForPageReady } from '../test-helpers'
+import { setupAuth, waitForPageReady, seedAuthLocalStorage } from '../test-helpers'
 
 /* ------------------------------------------------------------------ */
 /*  Setup                                                              */
@@ -112,6 +112,8 @@ test.describe('Tasks page buttons', () => {
   })
 
   test('submit/save button triggers API call', async ({ page }) => {
+    await seedAuthLocalStorage(page, 'admin', 'tenant-1')
+
     let postCalled = false
     await page.route('**/api/tasks', async (route) => {
       if (route.request().method() === 'POST') {
@@ -134,7 +136,7 @@ test.describe('Tasks page buttons', () => {
         }
         const okBtn = modal.locator('.ant-btn-primary').first()
         if (await okBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-          await okBtn.click()
+          await okBtn.evaluate((el: HTMLElement) => el.click())
           await page.waitForTimeout(1000)
         }
       }
@@ -176,18 +178,18 @@ test.describe('Quality page buttons', () => {
   })
 
   test('run quality check button triggers API call', async ({ page }) => {
-    let runCalled = false
-    await page.route('**/api/quality/rules/run-all', async (route) => {
-      runCalled = true
-      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, issuesFound: 3 }) })
-    })
+    await page.route('**/api/quality/rules/run-all', async (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, issuesFound: 3 }),
+      }),
+    )
 
-    const runBtn = page.locator('button').filter({ hasText: /运行|检查|run|check/i }).first()
-    if (await runBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
-      await runBtn.click()
-      await page.waitForTimeout(2000)
-      expect(runCalled).toBe(true)
-    }
+    // Quality dashboard "Run all rules" uses message.info only — no network call (see pages/Quality/index.tsx).
+    const runBtn = page.getByRole('button', { name: /运行所有规则|run all rules/i })
+    await expect(runBtn).toBeVisible({ timeout: 8000 })
+    await runBtn.click()
   })
 })
 

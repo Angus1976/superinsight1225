@@ -192,7 +192,13 @@ const ReportViewer: React.FC<ReportViewerProps> = ({ projectId }) => {
                     <Button icon={<ScheduleOutlined />} onClick={() => setScheduleModalVisible(true)}>
                       {t('reports.projectReport.scheduleReport')}
                     </Button>
-                    <Select defaultValue="pdf" style={{ width: 120 }} onChange={(v) => handleExport(v)}>
+                    <Select
+                      defaultValue="pdf"
+                      style={{ width: 120 }}
+                      onChange={(v) =>
+                        handleExport(v as 'pdf' | 'excel' | 'html' | 'json')
+                      }
+                    >
                       <Option value="pdf">{t('reports.projectReport.exportPdf')}</Option>
                       <Option value="excel">{t('reports.projectReport.exportExcel')}</Option>
                       <Option value="html">{t('reports.projectReport.exportHtml')}</Option>

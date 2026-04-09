@@ -203,7 +203,9 @@
       "actions": "Actions"
     },
     "status": {
+      "created": "Created",
       "pending": "Pending",
+      "in_progress": "In Progress",
       "inProgress": "In Progress",
       "completed": "Completed",
       "cancelled": "Cancelled"
@@ -389,6 +391,7 @@
     },
     "status": {
       "created": "Created",
+      "queued": "Queued",
       "pending": "Pending",
       "running": "Running",
       "completed": "Completed",

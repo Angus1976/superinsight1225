@@ -21,6 +21,8 @@ import {
 import { useTranslation } from 'react-i18next';
 import * as echarts from 'echarts';
 
+type EChartsInstance = ReturnType<typeof echarts.init>;
+
 const { Title, Text } = Typography;
 const { Option } = Select;
 
@@ -50,9 +52,9 @@ export const RuleVisualization: React.FC<RuleVisualizationProps> = ({
   const timelineChartRef = useRef<HTMLDivElement>(null);
   const dashboardChartRef = useRef<HTMLDivElement>(null);
   
-  const networkChart = useRef<echarts.ECharts | null>(null);
-  const timelineChart = useRef<echarts.ECharts | null>(null);
-  const dashboardChart = useRef<echarts.ECharts | null>(null);
+  const networkChart = useRef<EChartsInstance | null>(null);
+  const timelineChart = useRef<EChartsInstance | null>(null);
+  const dashboardChart = useRef<EChartsInstance | null>(null);
 
   // 生成可视化数据
   const generateVisualization = async (type: string) => {

@@ -38,7 +38,7 @@ class TestAuditTrailCompleteness:
     """
 
     @given(user_id=user_ids, op=operation_types, resource=resource_ids)
-    @settings(max_examples=50, deadline=5000)
+    @settings(deadline=5000)
     def test_log_operation_produces_audit_entry(
         self, user_id: str, op: str, resource: str
     ):
@@ -49,7 +49,7 @@ class TestAuditTrailCompleteness:
         assert isinstance(entry, AuditEntry)
 
     @given(user_id=user_ids, op=operation_types, resource=resource_ids)
-    @settings(max_examples=50, deadline=5000)
+    @settings(deadline=5000)
     def test_entry_contains_correct_fields(
         self, user_id: str, op: str, resource: str
     ):
@@ -62,7 +62,7 @@ class TestAuditTrailCompleteness:
         assert entry.resource_id == resource
 
     @given(user_id=user_ids, op=operation_types, resource=resource_ids)
-    @settings(max_examples=50, deadline=5000)
+    @settings(deadline=5000)
     def test_entry_has_timestamp_and_id(
         self, user_id: str, op: str, resource: str
     ):
@@ -76,7 +76,7 @@ class TestAuditTrailCompleteness:
         assert len(entry.entry_id) > 0
 
     @given(user_id=user_ids, op=operation_types, resource=resource_ids)
-    @settings(max_examples=50, deadline=5000)
+    @settings(deadline=5000)
     def test_entry_retrievable_from_trail(
         self, user_id: str, op: str, resource: str
     ):
@@ -97,7 +97,7 @@ class TestAuditTrailCompleteness:
             max_size=10,
         )
     )
-    @settings(max_examples=50, deadline=5000)
+    @settings(deadline=5000)
     def test_multiple_operations_all_recorded(self, data):
         """Multiple operations by different users are all recorded — no lost entries."""
         logger = AuditLogger()

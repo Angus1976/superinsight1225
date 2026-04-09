@@ -38,6 +38,14 @@ import { usageApi, LicenseUsageReport } from '../../services/licenseApi';
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
 
+type FeatureUsageRow = {
+  key: string;
+  feature: string;
+  total: number;
+  allowed: number;
+  denied: number;
+};
+
 const LicenseReport: React.FC = () => {
   const { t } = useTranslation(['license', 'common']);
   const [form] = Form.useForm();
@@ -100,12 +108,7 @@ const LicenseReport: React.FC = () => {
     },
   ];
 
-  const featureColumns: ColumnsType<{
-    feature: string;
-    total: number;
-    allowed: number;
-    denied: number;
-  }> = [
+  const featureColumns: ColumnsType<FeatureUsageRow> = [
     {
       title: t('reports.feature'),
       dataIndex: 'feature',
@@ -327,15 +330,20 @@ const LicenseReport: React.FC = () => {
                   {report.feature_usage_stats && 
                    (report.feature_usage_stats as Record<string, unknown>).by_feature &&
                    Object.keys((report.feature_usage_stats as Record<string, Record<string, unknown>>).by_feature).length > 0 ? (
-                    <Table
+                    <Table<FeatureUsageRow>
                       columns={featureColumns}
                       dataSource={Object.entries(
-                        (report.feature_usage_stats as Record<string, Record<string, Record<string, number>>>).by_feature
-                      ).map(([feature, stats]) => ({
-                        key: feature,
-                        feature,
-                        ...stats,
-                      }))}
+                        (report.feature_usage_stats as Record<string, Record<string, Record<string, number>>>)
+                          .by_feature
+                      ).map(
+                        ([feature, stats]): FeatureUsageRow => ({
+                          key: feature,
+                          feature,
+                          total: stats.total ?? 0,
+                          allowed: stats.allowed ?? 0,
+                          denied: stats.denied ?? 0,
+                        })
+                      )}
                       pagination={false}
                       size="small"
                     />

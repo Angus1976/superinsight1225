@@ -10,6 +10,23 @@ import { render, screen, fireEvent, waitFor, within } from '@testing-library/rea
 import { vi } from 'vitest';
 import TaskManagement from '../TaskManagement';
 import type { TaskManagementProps } from '../TaskManagement';
+import type { AnnotationTask } from '@/services/dataLifecycle';
+
+const sampleIds = (n: number, prefix = 'sample') =>
+  Array.from({ length: n }, (_, i) => `${prefix}-${i}`);
+
+function baseTask(
+  overrides: Partial<AnnotationTask> &
+    Pick<AnnotationTask, 'id' | 'name' | 'status' | 'progress' | 'created_at'>
+): AnnotationTask {
+  return {
+    annotation_type: 'classification',
+    instructions: 'Test instructions',
+    created_by: 'tester',
+    sample_ids: sampleIds(10),
+    ...overrides,
+  };
+}
 
 // Mock i18n
 vi.mock('react-i18next', () => ({
@@ -23,6 +40,9 @@ vi.mock('react-i18next', () => ({
       }
       if (key === 'annotationTask.progress.total') {
         return 'total';
+      }
+      if (key === 'sampleLibrary.title') {
+        return 'Sample Library';
       }
       return key;
     },
@@ -42,68 +62,36 @@ vi.mock('antd', async () => {
   };
 });
 
-// Extended AnnotationTask type matching component usage
-interface AnnotationTask {
-  id: string;
-  name: string;
-  description?: string;
-  status: 'pending' | 'inProgress' | 'completed' | 'cancelled';
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  assigned_to?: string[];
-  deadline?: string;
-  progress?: {
-    completed: number;
-    total: number;
-  };
-  sample_ids?: string[];
-  created_at: string;
-  updated_at?: string;
-}
-
 describe('TaskManagement Component', () => {
-  // Sample test data
+  // Sample test data（与 `AnnotationTask`：`progress` 为 0–100，`sample_ids.length` 为分母）
   const mockTasks: AnnotationTask[] = [
-    {
+    baseTask({
       id: 'task-1',
       name: 'Task 1',
       description: 'Description for task 1',
-      status: 'pending',
-      priority: 'high',
+      status: 'created',
       assigned_to: ['user1', 'user2'],
       deadline: '2024-12-31T23:59:59Z',
-      progress: {
-        completed: 5,
-        total: 10,
-      },
-      sample_ids: ['sample-1', 'sample-2'],
+      progress: 50,
       created_at: '2024-01-01T10:00:00Z',
-    },
-    {
+    }),
+    baseTask({
       id: 'task-2',
       name: 'Task 2',
       description: 'Description for task 2',
-      status: 'inProgress',
-      priority: 'medium',
+      status: 'in_progress',
       assigned_to: ['user3'],
       deadline: '2024-06-30T23:59:59Z',
-      progress: {
-        completed: 8,
-        total: 10,
-      },
-      sample_ids: ['sample-3'],
+      progress: 80,
       created_at: '2024-01-02T10:00:00Z',
-    },
-    {
+    }),
+    baseTask({
       id: 'task-3',
       name: 'Task 3',
       status: 'completed',
-      priority: 'low',
-      progress: {
-        completed: 10,
-        total: 10,
-      },
+      progress: 100,
       created_at: '2024-01-03T10:00:00Z',
-    },
+    }),
   ];
 
   const defaultProps: TaskManagementProps = {
@@ -179,8 +167,8 @@ describe('TaskManagement Component', () => {
     it('displays task statuses as tags', () => {
       render(<TaskManagement {...defaultProps} />);
       
-      expect(screen.getByText('annotationTask.status.pending')).toBeInTheDocument();
-      expect(screen.getByText('annotationTask.status.inProgress')).toBeInTheDocument();
+      expect(screen.getByText('annotationTask.status.created')).toBeInTheDocument();
+      expect(screen.getByText('annotationTask.status.in_progress')).toBeInTheDocument();
       expect(screen.getByText('annotationTask.status.completed')).toBeInTheDocument();
     });
 
@@ -195,17 +183,13 @@ describe('TaskManagement Component', () => {
 
     it('displays dash for tasks without assignees', () => {
       const tasksWithoutAssignees: AnnotationTask[] = [
-        {
+        baseTask({
           id: 'task-no-assignee',
           name: 'Task No Assignee',
-          status: 'pending',
-          priority: 'low',
-          progress: {
-            completed: 0,
-            total: 10,
-          },
+          status: 'created',
+          progress: 0,
           created_at: '2024-01-01T10:00:00Z',
-        },
+        }),
       ];
       
       const { container } = render(<TaskManagement {...defaultProps} tasks={tasksWithoutAssignees} />);
@@ -231,17 +215,13 @@ describe('TaskManagement Component', () => {
 
     it('displays dash for tasks without due dates', () => {
       const tasksWithoutDueDate: AnnotationTask[] = [
-        {
+        baseTask({
           id: 'task-no-due-date',
           name: 'Task No Due Date',
-          status: 'pending',
-          priority: 'low',
-          progress: {
-            completed: 0,
-            total: 10,
-          },
+          status: 'created',
+          progress: 0,
           created_at: '2024-01-01T10:00:00Z',
-        },
+        }),
       ];
       
       const { container } = render(<TaskManagement {...defaultProps} tasks={tasksWithoutDueDate} />);
@@ -308,55 +288,48 @@ describe('TaskManagement Component', () => {
 
     it('handles tasks with zero total correctly', () => {
       const tasksWithZeroTotal: AnnotationTask[] = [
-        {
+        baseTask({
           id: 'task-zero',
           name: 'Task Zero',
-          status: 'pending',
-          priority: 'low',
-          progress: {
-            completed: 0,
-            total: 0,
-          },
+          status: 'created',
+          progress: 0,
+          sample_ids: [],
           created_at: '2024-01-01T10:00:00Z',
-        },
+        }),
       ];
       
       render(<TaskManagement {...defaultProps} tasks={tasksWithZeroTotal} />);
       
-      // Should display 0/0 and 0%
-      expect(screen.getByText('0/0 labeled')).toBeInTheDocument();
+      expect(screen.getByText(/0\/— labeled/)).toBeInTheDocument();
     });
 
     it('handles tasks without progress data', () => {
       const tasksWithoutProgress: AnnotationTask[] = [
-        {
+        baseTask({
           id: 'task-no-progress',
           name: 'Task No Progress',
-          status: 'pending',
-          priority: 'low',
+          status: 'created',
+          progress: 0,
+          sample_ids: [],
           created_at: '2024-01-01T10:00:00Z',
-        },
+        }),
       ];
       
       render(<TaskManagement {...defaultProps} tasks={tasksWithoutProgress} />);
       
-      // Should display 0/0
-      expect(screen.getByText('0/0 labeled')).toBeInTheDocument();
+      expect(screen.getByText(/0\/— labeled/)).toBeInTheDocument();
     });
 
     it('rounds progress percentage correctly', () => {
       const tasksWithDecimalProgress: AnnotationTask[] = [
-        {
+        baseTask({
           id: 'task-decimal',
           name: 'Task Decimal',
-          status: 'inProgress',
-          priority: 'medium',
-          progress: {
-            completed: 1,
-            total: 3, // 33.33%
-          },
+          status: 'in_progress',
+          progress: 33,
+          sample_ids: sampleIds(3, 's'),
           created_at: '2024-01-01T10:00:00Z',
-        },
+        }),
       ];
       
       const { container } = render(<TaskManagement {...defaultProps} tasks={tasksWithDecimalProgress} />);
@@ -412,7 +385,7 @@ describe('TaskManagement Component', () => {
       fireEvent.click(expandIcons[0] as HTMLElement);
       
       await waitFor(() => {
-        expect(screen.getByText('2 total')).toBeInTheDocument();
+        expect(screen.getByText('10 total')).toBeInTheDocument();
       });
     });
 
@@ -619,17 +592,13 @@ describe('TaskManagement Component', () => {
 
     it('hides edit/assign/cancel buttons for cancelled tasks', () => {
       const cancelledTasks: AnnotationTask[] = [
-        {
+        baseTask({
           id: 'task-cancelled',
           name: 'Cancelled Task',
           status: 'cancelled',
-          priority: 'low',
-          progress: {
-            completed: 0,
-            total: 10,
-          },
+          progress: 0,
           created_at: '2024-01-01T10:00:00Z',
-        },
+        }),
       ];
       
       const { container } = render(<TaskManagement {...defaultProps} tasks={cancelledTasks} />);
@@ -647,29 +616,26 @@ describe('TaskManagement Component', () => {
       expect(cancelButtons.length).toBe(0);
     });
 
-    it('shows all action buttons for pending tasks', () => {
+    it('shows all action buttons for created tasks', () => {
       const { container } = render(<TaskManagement {...defaultProps} />);
       
-      // Find the pending task row (Task 1)
       const rows = container.querySelectorAll('tbody tr');
       
-      // Look for the row with pending status
-      let pendingTaskRow = null;
+      let createdTaskRow = null;
       for (let i = 0; i < rows.length; i++) {
         const statusTag = rows[i].querySelector('.ant-tag');
-        if (statusTag && statusTag.textContent === 'annotationTask.status.pending') {
-          pendingTaskRow = rows[i];
+        if (statusTag && statusTag.textContent === 'annotationTask.status.created') {
+          createdTaskRow = rows[i];
           break;
         }
       }
       
-      expect(pendingTaskRow).not.toBeNull();
+      expect(createdTaskRow).not.toBeNull();
       
-      // Should have view, edit, assign, and cancel buttons
-      const viewButtons = pendingTaskRow!.querySelectorAll('[aria-label="eye"]');
-      const editButtons = pendingTaskRow!.querySelectorAll('[aria-label="edit"]');
-      const assignButtons = pendingTaskRow!.querySelectorAll('[aria-label="user-add"]');
-      const cancelButtons = pendingTaskRow!.querySelectorAll('[aria-label="stop"]');
+      const viewButtons = createdTaskRow!.querySelectorAll('[aria-label="eye"]');
+      const editButtons = createdTaskRow!.querySelectorAll('[aria-label="edit"]');
+      const assignButtons = createdTaskRow!.querySelectorAll('[aria-label="user-add"]');
+      const cancelButtons = createdTaskRow!.querySelectorAll('[aria-label="stop"]');
       
       expect(viewButtons.length).toBe(1);
       expect(editButtons.length).toBe(1);
@@ -803,18 +769,14 @@ describe('TaskManagement Component', () => {
 
     it('highlights overdue tasks in red', () => {
       const overdueTask: AnnotationTask[] = [
-        {
+        baseTask({
           id: 'task-overdue',
           name: 'Overdue Task',
-          status: 'pending',
-          priority: 'urgent',
+          status: 'created',
           deadline: '2020-01-01T00:00:00Z', // Past date
-          progress: {
-            completed: 0,
-            total: 10,
-          },
+          progress: 0,
           created_at: '2024-01-01T10:00:00Z',
-        },
+        }),
       ];
       
       const { container } = render(<TaskManagement {...defaultProps} tasks={overdueTask} />);
@@ -832,17 +794,13 @@ describe('TaskManagement Component', () => {
   describe('Edge Cases', () => {
     it('handles very long task names', () => {
       const longNameTask: AnnotationTask[] = [
-        {
+        baseTask({
           id: 'task-long',
           name: 'This is a very long task name that should be truncated or handled properly in the UI',
-          status: 'pending',
-          priority: 'low',
-          progress: {
-            completed: 0,
-            total: 10,
-          },
+          status: 'created',
+          progress: 0,
           created_at: '2024-01-01T10:00:00Z',
-        },
+        }),
       ];
       
       render(<TaskManagement {...defaultProps} tasks={longNameTask} />);
@@ -852,18 +810,14 @@ describe('TaskManagement Component', () => {
 
     it('handles tasks with many assignees', () => {
       const manyAssigneesTask: AnnotationTask[] = [
-        {
+        baseTask({
           id: 'task-many',
           name: 'Task Many',
-          status: 'pending',
-          priority: 'low',
+          status: 'created',
           assigned_to: ['user1', 'user2', 'user3', 'user4', 'user5'],
-          progress: {
-            completed: 0,
-            total: 10,
-          },
+          progress: 0,
           created_at: '2024-01-01T10:00:00Z',
-        },
+        }),
       ];
       
       render(<TaskManagement {...defaultProps} tasks={manyAssigneesTask} />);

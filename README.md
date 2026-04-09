@@ -557,13 +557,15 @@ A:
 
 ## 贡献指南
 
-欢迎贡献代码！请遵循以下步骤：
+欢迎贡献代码！分支约定：**日常集成在 `develop`，发布就绪在 `main`**（详见 [`文档/开发流程/生产上线综合测试计划表-2026.md`](文档/开发流程/生产上线综合测试计划表-2026.md)）。
 
-1. Fork 本仓库
-2. 创建特性分支: `git checkout -b feature/my-feature`
-3. 提交更改: `git commit -am 'Add some feature'`
-4. 推送到分支: `git push origin feature/my-feature`
-5. 提交 Pull Request
+1. Fork 本仓库（或本组织内协作时直接 clone）
+2. 基于 **`develop`** 创建分支: `git fetch origin develop && git checkout -b feature/my-feature origin/develop`
+3. 提交更改并推送: `git push -u origin feature/my-feature`
+4. 打开 **Pull Request**：常规改动请将 **base 选为 `develop`**（热修/发版直合 `main` 时选 `main`，见 PR 模板说明）
+5. 确保相关 CI（如 `commit-tests` / `pr-tests`）通过
+
+若远程尚无 `develop`，维护者可执行：`bash scripts/git-bootstrap-develop.sh`。发版合并 `main` 后若需把稳定提交同步回集成线：`bash scripts/git-sync-develop-from-main.sh`。
 
 ## 许可证
 
@@ -584,6 +586,6 @@ A:
 
 ---
 
-**最后更新**: 2026-01-27  
+**最后更新**: 2026-04-08  
 **版本**: 2.3.0  
 **状态**: ✅ 生产就绪

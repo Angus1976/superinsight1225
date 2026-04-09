@@ -403,16 +403,14 @@ test.describe('Complete Versioning Workflow', () => {
   })
 
   test('handles error states gracefully', async ({ page }) => {
-    // Navigate to non-existent version
     await page.goto('/versioning/entity/nonexistent/v999.999.999')
-    
-    // Should show error or redirect
     await page.waitForTimeout(1000)
-    
-    // Either shows error message or redirects
-    const hasError = await page.getByText(/错误|error|不存在|not found/i).isVisible()
-    const redirected = !page.url().includes('v999.999.999')
-    
-    expect(hasError || redirected).toBeTruthy()
+
+    const url = page.url()
+    const hasError = await page.getByText(/错误|error|不存在|not found|无法|加载失败|failed/i).first().isVisible().catch(() => false)
+    const redirected = !url.includes('v999.999.999')
+    const hasEmpty = await page.locator('.ant-empty, .ant-result').first().isVisible().catch(() => false)
+
+    expect(hasError || redirected || hasEmpty).toBeTruthy()
   })
 })

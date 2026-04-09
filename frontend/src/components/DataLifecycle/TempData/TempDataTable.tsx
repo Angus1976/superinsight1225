@@ -6,6 +6,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Table, Button, Space, Tag, message, Modal, Dropdown, Typography, Tooltip } from 'antd';
+import type { MenuProps } from 'antd';
 import {
   EditOutlined,
   DeleteOutlined,
@@ -18,6 +19,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { useTempData } from '@/hooks/useDataLifecycle';
 import { useAuthStore } from '@/stores/authStore';
+import { useDataLifecycleStore } from '@/stores/dataLifecycleStore';
 import type { TempData } from '@/services/dataLifecycle';
 
 const { Text } = Typography;
@@ -63,7 +65,14 @@ const TempDataTable: React.FC<TempDataTableProps> = ({ onEdit, onView, refreshKe
     clearFilters,
   } = useTempData();
 
+  const stateFilter = useDataLifecycleStore((s) => s.tempDataFilters.state);
+
   const [searchText, setSearchText] = useState('');
+
+  const getTempDataByRow = useCallback(
+    (row: TableRow): TempData | undefined => data.find((d) => d.id === row.id),
+    [data]
+  );
 
   // Fetch data on mount and when refreshKey changes
   useEffect(() => {
@@ -88,10 +97,10 @@ const TempDataTable: React.FC<TempDataTableProps> = ({ onEdit, onView, refreshKe
       fetchTempData({
         page: pag.current || 1,
         pageSize: pag.pageSize || 10,
-        state: pagination.state,
+        state: stateFilter,
       });
     },
-    [fetchTempData, pagination]
+    [fetchTempData, stateFilter]
   );
 
   // Handle search
@@ -99,9 +108,9 @@ const TempDataTable: React.FC<TempDataTableProps> = ({ onEdit, onView, refreshKe
     (value: string) => {
       setSearchText(value);
       setFilters({ search: value });
-      fetchTempData({ page: 1, pageSize: 10, state: pagination.state });
+      fetchTempData({ page: 1, pageSize: 10, state: stateFilter });
     },
-    [setFilters, fetchTempData, pagination]
+    [setFilters, fetchTempData, stateFilter]
   );
 
   // Handle delete
@@ -245,12 +254,15 @@ const TempDataTable: React.FC<TempDataTableProps> = ({ onEdit, onView, refreshKe
       width: 150,
       fixed: 'right' as const,
       render: (_: unknown, record: TableRow) => {
-        const items = [
+        const items: MenuProps['items'] = [
           {
             key: 'view',
             label: t('tempData.actions.viewDetails'),
             icon: <EyeOutlined />,
-            onClick: () => onView?.(record),
+            onClick: () => {
+              const td = getTempDataByRow(record);
+              if (td) onView?.(td);
+            },
           },
         ];
 
@@ -259,7 +271,10 @@ const TempDataTable: React.FC<TempDataTableProps> = ({ onEdit, onView, refreshKe
             key: 'edit',
             label: t('tempData.actions.edit'),
             icon: <EditOutlined />,
-            onClick: () => onEdit?.(record),
+            onClick: () => {
+              const td = getTempDataByRow(record);
+              if (td) onEdit?.(td);
+            },
           });
         }
 
@@ -268,7 +283,9 @@ const TempDataTable: React.FC<TempDataTableProps> = ({ onEdit, onView, refreshKe
             key: 'archive',
             label: t('tempData.actions.archive'),
             icon: <InboxOutlined />,
-            onClick: () => handleArchive(record),
+            onClick: () => {
+              void handleArchive(record);
+            },
           });
         }
 
@@ -277,18 +294,22 @@ const TempDataTable: React.FC<TempDataTableProps> = ({ onEdit, onView, refreshKe
             key: 'restore',
             label: t('tempData.actions.restore'),
             icon: <RollbackOutlined />,
-            onClick: () => handleRestore(record),
+            onClick: () => {
+              void handleRestore(record);
+            },
           });
         }
 
         if (hasPermission('dataLifecycle.delete') && record.state !== 'deleted') {
-          items.push({ type: 'divider' as const });
+          items.push({ type: 'divider' });
           items.push({
             key: 'delete',
             label: t('tempData.actions.delete'),
             icon: <DeleteOutlined />,
             danger: true,
-            onClick: () => handleDelete(record),
+            onClick: () => {
+              void handleDelete(record);
+            },
           });
         }
 
@@ -298,14 +319,20 @@ const TempDataTable: React.FC<TempDataTableProps> = ({ onEdit, onView, refreshKe
               type="text"
               size="small"
               icon={<EyeOutlined />}
-              onClick={() => onView?.(record)}
+              onClick={() => {
+                const td = getTempDataByRow(record);
+                if (td) onView?.(td);
+              }}
             />
             {hasPermission('dataLifecycle.edit') && record.state !== 'deleted' && (
               <Button
                 type="text"
                 size="small"
                 icon={<EditOutlined />}
-                onClick={() => onEdit?.(record)}
+                onClick={() => {
+                  const td = getTempDataByRow(record);
+                  if (td) onEdit?.(td);
+                }}
               />
             )}
             <Dropdown menu={{ items }} trigger={['click']}>

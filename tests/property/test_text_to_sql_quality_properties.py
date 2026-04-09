@@ -52,7 +52,7 @@ class TestQualityAssessmentCompleteness:
     @given(
         num_queries=st.integers(min_value=1, max_value=30)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_all_generations_assessed(self, num_queries: int):
         """Test that all SQL generations receive quality assessment."""
         service = QualityAssessmentService()
@@ -85,7 +85,7 @@ class TestQualityAssessmentCompleteness:
     @given(
         score=st.floats(min_value=0.0, max_value=1.0)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_assessment_score_bounds(self, score: float):
         """Test that quality scores are always within valid bounds [0, 1]."""
         service = QualityAssessmentService()
@@ -106,7 +106,7 @@ class TestQualityAssessmentCompleteness:
     @given(
         num_dimensions=st.integers(min_value=1, max_value=5)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_assessment_has_required_dimensions(self, num_dimensions: int):
         """Test that assessments include required quality dimensions."""
         assessor = RagasQualityAssessor()
@@ -141,7 +141,7 @@ class TestQualityThresholdEnforcement:
         score=st.floats(min_value=0.0, max_value=0.45),  # Below critical threshold
         num_violations=st.integers(min_value=1, max_value=10)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_critical_threshold_triggers_alert(
         self,
         score: float,
@@ -177,7 +177,7 @@ class TestQualityThresholdEnforcement:
         score=st.floats(min_value=0.51, max_value=0.69),  # Between warning and critical
         num_violations=st.integers(min_value=1, max_value=10)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_warning_threshold_triggers_alert(
         self,
         score: float,
@@ -205,7 +205,7 @@ class TestQualityThresholdEnforcement:
     @given(
         good_score=st.floats(min_value=0.80, max_value=1.0)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_good_scores_no_alerts(self, good_score: float):
         """Test that good quality scores don't trigger alerts."""
         await reset_quality_monitoring_service()
@@ -233,7 +233,7 @@ class TestQualityTrendDetection:
     @given(
         degradation_amount=st.floats(min_value=0.15, max_value=0.30)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_degradation_detected(self, degradation_amount: float):
         """Test that quality degradation is detected."""
         await reset_quality_monitoring_service()
@@ -269,7 +269,7 @@ class TestQualityTrendDetection:
     @given(
         improvement_amount=st.floats(min_value=0.05, max_value=0.20)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_improvement_detected(self, improvement_amount: float):
         """Test that quality improvement is detected."""
         await reset_quality_monitoring_service()
@@ -337,7 +337,7 @@ class TestAlertGeneration:
     @given(
         num_alerts=st.integers(min_value=1, max_value=20)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_alerts_tracked(self, num_alerts: int):
         """Test that all alerts are tracked."""
         await reset_quality_monitoring_service()
@@ -359,7 +359,7 @@ class TestAlertGeneration:
     @given(
         num_alerts=st.integers(min_value=1, max_value=10)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_alert_resolution(self, num_alerts: int):
         """Test that alerts can be resolved."""
         await reset_quality_monitoring_service()

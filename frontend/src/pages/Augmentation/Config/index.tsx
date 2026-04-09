@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, Form, Input, Select, Switch, Button, Space, message, Divider, InputNumber, Slider } from 'antd';
+import { Card, Form, Input, Select, Switch, Button, Space, message, Divider, InputNumber, Slider, Spin } from 'antd';
 import { SaveOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -108,11 +108,11 @@ const AugmentationConfig: React.FC = () => {
           </Space>
         }
       >
+        <Spin spinning={isLoading}>
         <Form
           form={form}
           layout="vertical"
           onFinish={handleSubmit}
-          loading={isLoading}
         >
           {/* 文本增强配置 */}
           <Card type="inner" title={t('config.textAugmentation.title')} style={{ marginBottom: 16 }}>
@@ -283,6 +283,7 @@ const AugmentationConfig: React.FC = () => {
             </Form.Item>
           </Card>
         </Form>
+        </Spin>
       </Card>
     </div>
   );

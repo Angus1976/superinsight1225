@@ -149,7 +149,7 @@ class TestAuditLoggingCompleteness:
         ip_address=ip_address_strategy(),
         user_agent=user_agent_strategy()
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     def test_all_operations_create_audit_log(
         self,
         db_session: Session,
@@ -245,7 +245,7 @@ class TestAuditLoggingCompleteness:
         user_id=user_id_strategy(),
         details=details_strategy()
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_state_transitions_create_audit_log(
         self,
         db_session: Session,
@@ -343,7 +343,7 @@ class TestAuditLoggingCompleteness:
         user_id=user_id_strategy(),
         result=operation_result_strategy()
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_operation_result_recorded_correctly(
         self,
         db_session: Session,
@@ -439,7 +439,7 @@ class TestAuditLoggingCompleteness:
         user_id=user_id_strategy(),
         operation_type=operation_type_strategy()
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_failed_operations_logged_with_error(
         self,
         db_session: Session,

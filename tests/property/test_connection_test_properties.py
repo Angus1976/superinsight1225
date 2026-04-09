@@ -40,7 +40,7 @@ class TestConnectionTestTimeoutEnforcement:
         provider=st.sampled_from(["openai", "anthropic", "qianwen", "ollama"]),
         timeout=st.integers(min_value=1, max_value=5)
     )
-    @settings(max_examples=20, deadline=None)  # Reduced from 100 to 20
+    @settings(deadline=None)  # Reduced from 100 to 20
     def test_llm_connection_test_respects_timeout(self, provider, timeout):
         """
         LLM connection tests return within timeout period.
@@ -48,9 +48,8 @@ class TestConnectionTestTimeoutEnforcement:
         For any LLM provider and timeout value, the connection test should
         complete (success or timeout error) within the specified timeout.
         """
-        manager = LLMProviderManager()
-        
         async def run_test():
+            manager = LLMProviderManager()
             start_time = time.time()
             
             # Test connection with specified timeout
@@ -86,7 +85,7 @@ class TestConnectionTestTimeoutEnforcement:
     @given(
         timeout=st.integers(min_value=1, max_value=3)
     )
-    @settings(max_examples=15, deadline=None)  # Reduced from 100 to 15
+    @settings(deadline=None)  # Reduced from 100 to 15
     def test_timeout_error_returned_appropriately(self, timeout):
         """
         Timeout errors are returned with appropriate error details.
@@ -94,9 +93,8 @@ class TestConnectionTestTimeoutEnforcement:
         When a connection test times out, the result should include
         timeout error code and helpful suggestions.
         """
-        manager = LLMProviderManager()
-        
         async def run_test():
+            manager = LLMProviderManager()
             # Use unreachable endpoint to force timeout
             result = await manager.test_connection(
                 provider="openai",
@@ -131,9 +129,8 @@ class TestConnectionTestTimeoutEnforcement:
         When no timeout is specified, the default should be 10 seconds
         as per requirements.
         """
-        manager = LLMProviderManager()
-        
         async def run_test():
+            manager = LLMProviderManager()
             start_time = time.time()
             
             # Test without specifying timeout (should use default)
@@ -172,7 +169,7 @@ class TestConnectionTestIsolation:
     @given(
         provider=st.sampled_from(["openai", "anthropic", "ollama"])
     )
-    @settings(max_examples=15, deadline=None)  # Reduced from 100 to 15
+    @settings(deadline=None)  # Reduced from 100 to 15
     def test_connection_test_does_not_affect_production(self, provider):
         """
         Connection tests don't affect production configurations.
@@ -180,9 +177,8 @@ class TestConnectionTestIsolation:
         Running a connection test should not modify any production
         configurations or cached data.
         """
-        manager = LLMProviderManager()
-        
         async def run_test():
+            manager = LLMProviderManager()
             # Set up some "production" quota data
             await manager.update_quota_usage(
                 config_id="prod-config-1",
@@ -216,7 +212,7 @@ class TestConnectionTestIsolation:
     @given(
         num_tests=st.integers(min_value=2, max_value=5)
     )
-    @settings(max_examples=10, deadline=None)  # Reduced from 100 to 10
+    @settings(deadline=None)  # Reduced from 100 to 10
     def test_concurrent_connection_tests_isolated(self, num_tests):
         """
         Concurrent connection tests are isolated from each other.
@@ -224,9 +220,8 @@ class TestConnectionTestIsolation:
         Multiple connection tests running concurrently should not
         interfere with each other's results.
         """
-        manager = LLMProviderManager()
-        
         async def run_test():
+            manager = LLMProviderManager()
             # Run multiple connection tests concurrently
             tasks = [
                 manager.test_connection(
@@ -256,9 +251,8 @@ class TestConnectionTestIsolation:
         Each connection test should create its own HTTP session
         to avoid affecting other operations.
         """
-        manager = LLMProviderManager()
-        
         async def run_test():
+            manager = LLMProviderManager()
             # Run test and verify it completes without affecting manager state
             result = await manager.test_connection(
                 provider="openai",
@@ -301,7 +295,7 @@ class TestConnectionFailureLogging:
     @given(
         provider=st.sampled_from(["openai", "anthropic", "qianwen"])
     )
-    @settings(max_examples=15, deadline=None)  # Reduced from 100 to 15
+    @settings(deadline=None)  # Reduced from 100 to 15
     def test_connection_failure_includes_error_code(self, provider):
         """
         Connection failures include specific error codes.
@@ -309,9 +303,8 @@ class TestConnectionFailureLogging:
         When a connection test fails, the result should include
         a specific error code for programmatic handling.
         """
-        manager = LLMProviderManager()
-        
         async def run_test():
+            manager = LLMProviderManager()
             # Force failure with unreachable endpoint
             result = await manager.test_connection(
                 provider=provider,
@@ -340,7 +333,7 @@ class TestConnectionFailureLogging:
     @given(
         provider=st.sampled_from(["openai", "anthropic"])
     )
-    @settings(max_examples=15, deadline=None)  # Reduced from 100 to 15
+    @settings(deadline=None)  # Reduced from 100 to 15
     def test_connection_failure_includes_error_message(self, provider):
         """
         Connection failures include descriptive error messages.
@@ -348,9 +341,8 @@ class TestConnectionFailureLogging:
         Failed connection tests should return human-readable error
         messages explaining what went wrong.
         """
-        manager = LLMProviderManager()
-        
         async def run_test():
+            manager = LLMProviderManager()
             result = await manager.test_connection(
                 provider=provider,
                 api_key="test-key",
@@ -375,7 +367,7 @@ class TestConnectionFailureLogging:
     @given(
         provider=st.sampled_from(["openai", "anthropic"])
     )
-    @settings(max_examples=15, deadline=None)  # Reduced from 100 to 15
+    @settings(deadline=None)  # Reduced from 100 to 15
     def test_connection_failure_includes_timestamp(self, provider):
         """
         Connection test results include timestamps.
@@ -383,9 +375,8 @@ class TestConnectionFailureLogging:
         All connection test results (success or failure) should include
         a timestamp indicating when the test was performed.
         """
-        manager = LLMProviderManager()
-        
         async def run_test():
+            manager = LLMProviderManager()
             before_test = datetime.utcnow()
             
             result = await manager.test_connection(
@@ -410,7 +401,7 @@ class TestConnectionFailureLogging:
     @given(
         provider=st.sampled_from(["openai", "anthropic"])
     )
-    @settings(max_examples=15, deadline=None)  # Reduced from 100 to 15
+    @settings(deadline=None)  # Reduced from 100 to 15
     def test_connection_failure_includes_troubleshooting_suggestions(self, provider):
         """
         Connection failures include troubleshooting suggestions.
@@ -418,9 +409,8 @@ class TestConnectionFailureLogging:
         Failed connection tests should provide helpful suggestions
         for resolving the issue.
         """
-        manager = LLMProviderManager()
-        
         async def run_test():
+            manager = LLMProviderManager()
             result = await manager.test_connection(
                 provider=provider,
                 api_key="test-key",
@@ -450,9 +440,8 @@ class TestConnectionFailureLogging:
         Timeout, connection error, and authentication error should
         have distinct error codes.
         """
-        manager = LLMProviderManager()
-        
         async def run_test():
+            manager = LLMProviderManager()
             # Test timeout (unreachable)
             timeout_result = await manager.test_connection(
                 provider="openai",
@@ -523,7 +512,7 @@ class TestConnectionFailureLogging:
     @given(
         db_type=st.sampled_from([DatabaseType.POSTGRESQL, DatabaseType.MYSQL])
     )
-    @settings(max_examples=10, deadline=None)
+    @settings(deadline=None)
     def test_database_connection_failure_includes_all_details(self, db_type):
         """
         Database connection failures include comprehensive error details.

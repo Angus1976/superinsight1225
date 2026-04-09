@@ -104,7 +104,7 @@ class TestStorageSelectionCorrectness:
     """**Validates: Requirements 4.1, 4.2, 4.3**"""
 
     @given(profile=tabular_profiles_with_schema())
-    @settings(max_examples=50, deadline=5000)
+    @settings(deadline=5000)
     def test_tabular_with_schema_selects_postgresql(self, profile: DataProfile):
         sa = StorageAbstraction()
         adapter = sa.select_storage(profile)
@@ -113,7 +113,7 @@ class TestStorageSelectionCorrectness:
         )
 
     @given(data=st.data())
-    @settings(max_examples=50, deadline=5000)
+    @settings(deadline=5000)
     def test_semantic_search_selects_vector_db(self, data):
         profile = DataProfile()
         reqs = Requirements(needs_semantic_search=True)
@@ -124,7 +124,7 @@ class TestStorageSelectionCorrectness:
         )
 
     @given(profile=graph_profiles())
-    @settings(max_examples=50, deadline=5000)
+    @settings(deadline=5000)
     def test_graph_or_relationships_selects_graph_db(self, profile: DataProfile):
         sa = StorageAbstraction()
         adapter = sa.select_storage(profile)
@@ -133,7 +133,7 @@ class TestStorageSelectionCorrectness:
         )
 
     @given(profile=hierarchical_profiles())
-    @settings(max_examples=50, deadline=5000)
+    @settings(deadline=5000)
     def test_hierarchical_selects_document_db(self, profile):
         sa = StorageAbstraction()
         adapter = sa.select_storage(profile)
@@ -142,7 +142,7 @@ class TestStorageSelectionCorrectness:
         )
 
     @given(profile=time_series_profiles())
-    @settings(max_examples=50, deadline=5000)
+    @settings(deadline=5000)
     def test_time_series_selects_time_series_db(self, profile):
         sa = StorageAbstraction()
         adapter = sa.select_storage(profile)
@@ -151,7 +151,7 @@ class TestStorageSelectionCorrectness:
         )
 
     @given(data=st.data())
-    @settings(max_examples=50, deadline=5000)
+    @settings(deadline=5000)
     def test_needs_flexible_schema_selects_document_db(self, data):
         profile = DataProfile()
         reqs = Requirements(needs_flexible_schema=True)
@@ -162,7 +162,7 @@ class TestStorageSelectionCorrectness:
         )
 
     @given(data=st.data())
-    @settings(max_examples=50, deadline=5000)
+    @settings(deadline=5000)
     def test_needs_graph_traversal_selects_graph_db(self, data):
         profile = DataProfile()
         reqs = Requirements(needs_graph_traversal=True)
@@ -173,7 +173,7 @@ class TestStorageSelectionCorrectness:
         )
 
     @given(data=st.data())
-    @settings(max_examples=50, deadline=5000)
+    @settings(deadline=5000)
     def test_needs_time_range_queries_selects_time_series(self, data):
         profile = DataProfile()
         reqs = Requirements(needs_time_range_queries=True)
@@ -196,7 +196,7 @@ class TestStorageRoundTrip:
     """**Validates: Requirement 4.4**"""
 
     @given(data=storable_values)
-    @settings(max_examples=50, deadline=5000)
+    @settings(deadline=5000)
     def test_postgresql_round_trip(self, data):
         adapter = PostgreSQLAdapter()
         data_id = "rt-pg"
@@ -207,7 +207,7 @@ class TestStorageRoundTrip:
         assert result.data == data, "Retrieved data must equal stored data"
 
     @given(data=storable_values)
-    @settings(max_examples=50, deadline=5000)
+    @settings(deadline=5000)
     def test_document_db_round_trip(self, data):
         adapter = DocumentDBAdapter()
         data_id = "rt-doc"
@@ -218,7 +218,7 @@ class TestStorageRoundTrip:
         assert result.data == data, "Retrieved data must equal stored data"
 
     @given(data=storable_values)
-    @settings(max_examples=50, deadline=5000)
+    @settings(deadline=5000)
     def test_time_series_round_trip(self, data):
         adapter = TimeSeriesAdapter()
         data_id = "rt-ts"
@@ -229,7 +229,7 @@ class TestStorageRoundTrip:
         assert result.data == data, "Retrieved data must equal stored data"
 
     @given(data=storable_values)
-    @settings(max_examples=50, deadline=5000)
+    @settings(deadline=5000)
     def test_storage_abstraction_round_trip(self, data):
         """End-to-end round-trip through StorageAbstraction."""
         sa = StorageAbstraction()
@@ -260,7 +260,7 @@ class TestLineageCompleteness:
     """**Validates: Requirement 4.5**"""
 
     @given(stage_names=stage_names_strategy)
-    @settings(max_examples=50, deadline=5000)
+    @settings(deadline=5000)
     def test_lineage_has_all_nodes_and_edges(self, stage_names):
         tracker = LineageTracker()
         data_id = "lineage-test"
@@ -295,7 +295,7 @@ class TestLineageCompleteness:
         assert len(graph.edges) == expected_count - 1
 
     @given(stage_names=stage_names_strategy)
-    @settings(max_examples=50, deadline=5000)
+    @settings(deadline=5000)
     def test_lineage_edges_form_chain(self, stage_names):
         """Edges connect consecutive nodes from source to storage."""
         tracker = LineageTracker()
@@ -319,7 +319,7 @@ class TestLineageCompleteness:
             )
 
     @given(stage_names=stage_names_strategy)
-    @settings(max_examples=50, deadline=5000)
+    @settings(deadline=5000)
     def test_lineage_traceable_from_storage_to_source(self, stage_names):
         """Can trace back from the storage node to the source node."""
         tracker = LineageTracker()

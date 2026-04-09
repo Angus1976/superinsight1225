@@ -189,6 +189,11 @@ export const WorkHoursAnalysis: React.FC<WorkHoursAnalysisProps> = ({ tenantId }
     ];
   }, []);
 
+  const departmentCostPieData = useMemo(
+    () => departmentStats.map((d) => ({ name: d.department, value: d.cost })),
+    [departmentStats],
+  );
+
   // Detect anomalies (mock data for demo)
   const anomalies = useMemo((): AnomalyDetection[] => {
     return [
@@ -632,16 +637,16 @@ export const WorkHoursAnalysis: React.FC<WorkHoursAnalysisProps> = ({ tenantId }
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
-                      data={departmentStats}
+                      data={departmentCostPieData}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={({ department, cost }) => `${department}: ¥${cost.toLocaleString()}`}
+                      label={({ name, value }) => `${name}: ¥${Number(value).toLocaleString()}`}
                       outerRadius={80}
                       fill="#8884d8"
-                      dataKey="cost"
+                      dataKey="value"
                     >
-                      {departmentStats.map((_, index) => (
+                      {departmentCostPieData.map((_, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>

@@ -229,13 +229,13 @@ const QualityReportsAnalysis: React.FC<QualityReportsAnalysisProps> = ({
       render: (achievements: string[]) => (
         <Space wrap>
           {achievements.slice(0, 2).map((achievement, index) => (
-            <Tag key={index} color="green" size="small">
+            <Tag key={index} color="green">
               {achievement}
             </Tag>
           ))}
           {achievements.length > 2 && (
             <Tooltip title={achievements.slice(2).join(', ')}>
-              <Tag size="small">+{achievements.length - 2}</Tag>
+              <Tag>+{achievements.length - 2}</Tag>
             </Tooltip>
           )}
         </Space>
@@ -471,13 +471,20 @@ const QualityReportsAnalysis: React.FC<QualityReportsAnalysisProps> = ({
                         <ResponsiveContainer width="100%" height={250}>
                           <PieChart>
                             <Pie
-                              data={issueDistribution}
+                              data={issueDistribution.map((d) => ({
+                                name: d.category,
+                                count: d.count,
+                                color: d.color,
+                              }))}
                               cx="50%"
                               cy="50%"
                               outerRadius={80}
                               fill="#8884d8"
                               dataKey="count"
-                              label={({ name, percentage }) => `${name} ${percentage}%`}
+                              nameKey="name"
+                              label={({ name, percent }) =>
+                                `${name ?? ''} ${((percent ?? 0) * 100).toFixed(0)}%`
+                              }
                             >
                               {issueDistribution.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={entry.color} />

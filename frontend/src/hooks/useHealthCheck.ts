@@ -21,7 +21,7 @@ export const useHealthCheck = (): HealthStatus => {
     const checkHealth = async () => {
       try {
         setIsLoading(true);
-        const response = await api.get('/health');
+        const response = await api.get<{ status?: string }>('/health');
         setIsHealthy(response.data?.status === 'healthy');
         setError(null);
       } catch (err) {

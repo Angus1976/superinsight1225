@@ -51,25 +51,37 @@ const SecurityPermissions: React.FC = () => {
   // 权限数据
   const { data: permissions, isLoading: permissionsLoading } = useQuery({
     queryKey: ['permissions'],
-    queryFn: () => api.get('/api/v1/security/permissions').then(res => res.data),
+    queryFn: async (): Promise<Permission[]> => {
+      const res = await api.get<Permission[]>('/api/v1/security/permissions');
+      return res.data;
+    },
   });
 
   // 角色数据
   const { data: roles, isLoading: rolesLoading } = useQuery({
     queryKey: ['roles'],
-    queryFn: () => api.get('/api/v1/security/roles').then(res => res.data),
+    queryFn: async (): Promise<Role[]> => {
+      const res = await api.get<Role[]>('/api/v1/security/roles');
+      return res.data;
+    },
   });
 
   // 用户权限数据
   const { data: userPermissions, isLoading: userPermissionsLoading } = useQuery({
     queryKey: ['user-permissions'],
-    queryFn: () => api.get('/api/v1/security/user-permissions').then(res => res.data),
+    queryFn: async (): Promise<UserPermission[]> => {
+      const res = await api.get<UserPermission[]>('/api/v1/security/user-permissions');
+      return res.data;
+    },
   });
 
   // 权限树数据
   const { data: permissionTree } = useQuery({
     queryKey: ['permission-tree'],
-    queryFn: () => api.get('/api/v1/security/permission-tree').then(res => res.data),
+    queryFn: async (): Promise<DataNode[]> => {
+      const res = await api.get<DataNode[]>('/api/v1/security/permission-tree');
+      return res.data;
+    },
   });
 
   const createPermissionMutation = useMutation({

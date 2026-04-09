@@ -161,7 +161,7 @@ jobs:
   frontend-unit-tests:
     name: Frontend Unit Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
 
     steps:
       - name: Checkout code
@@ -177,6 +177,10 @@ jobs:
       - name: Install frontend dependencies
         working-directory: frontend
         run: npm ci
+
+      - name: Production build (tsc + Vite, TC-P0-05)
+        working-directory: frontend
+        run: npm run build
 
       - name: Run frontend unit tests
         working-directory: frontend
@@ -257,11 +261,53 @@ jobs:
           retention-days: 7
 
   # =============================================================================
-  # Quick Validation (fail-fast)
+  # Postgres backup/restore drill (TC-P1-04 local equivalent; scripts/pg-backup-restore-drill.sh)
+  # =============================================================================
+  postgres-backup-drill:
+    name: Postgres Backup/Restore Drill
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL clients
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Run backup/restore drill
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: test_user
+          PGPASSWORD: test_password
+          PGDATABASE: test_db
+          USE_DOCKER_EXEC: '0'
+        run: bash scripts/pg-backup-restore-drill.sh
+
+  # =============================================================================
+  # Quick Validation (aggregate gate)
   # =============================================================================
   quick-validation:
     name: Quick Validation
-    needs: [backend-unit-tests, frontend-unit-tests]
+    needs: [backend-unit-tests, frontend-unit-tests, postgres-backup-drill]
     runs-on: ubuntu-latest
     timeout-minutes: 2
 
@@ -270,10 +316,12 @@ jobs:
         run: |
           echo "=== Commit Test Results ==="
           echo "Backend unit tests: ${{ needs.backend-unit-tests.result }}"
-          echo "Frontend unit tests: ${{ needs.frontend-unit-tests.result }}"
+          echo "Frontend unit tests + production build: ${{ needs.frontend-unit-tests.result }}"
+          echo "Postgres backup/restore drill: ${{ needs.postgres-backup-drill.result }}"
           echo ""
           if [[ "${{ needs.backend-unit-tests.result }}" == "success" ]] && \
-             [[ "${{ needs.frontend-unit-tests.result }}" == "success" ]]; then
+             [[ "${{ needs.frontend-unit-tests.result }}" == "success" ]] && \
+             [[ "${{ needs.postgres-backup-drill.result }}" == "success" ]]; then
             echo "✓ All commit tests passed!"
             exit 0
           else

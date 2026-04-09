@@ -212,8 +212,12 @@ const ConfigHistory: React.FC = () => {
       key: 'summary',
       ellipsis: true,
       render: (_: unknown, record: ConfigHistoryResponse) => {
-        const newValue = record.new_value;
-        const name = newValue.name || newValue.id || t('configHistory.unnamed');
+        const nv = record.new_value;
+        const raw = nv.name ?? nv.id;
+        const name =
+          typeof raw === 'string' || typeof raw === 'number'
+            ? String(raw)
+            : t('configHistory.unnamed');
         return <Text>{name}</Text>;
       },
     },

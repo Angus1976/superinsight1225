@@ -189,7 +189,7 @@ export async function verifyTableSort(page: Page, columnHeader: string): Promise
 export async function verifyDropdownSelect(
   page: Page,
   selector: string,
-  optionText: string,
+  optionText: string | RegExp,
 ): Promise<void> {
   const selectTrigger = page.locator(selector).first()
   await selectTrigger.click()

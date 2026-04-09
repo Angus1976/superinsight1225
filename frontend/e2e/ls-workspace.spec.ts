@@ -10,6 +10,7 @@
  */
 
 import { test, expect, Page } from '@playwright/test'
+import { E2E_VALID_ACCESS_TOKEN } from './e2e-tokens'
 
 // ============================================================================
 // Test Helpers
@@ -37,7 +38,8 @@ async function setupAuthWithWorkspace(
   const permissions = getPermissionsForRole(role)
 
   await page.addInitScript(
-    ({ userId, role, workspaceId, workspaceName, permissions }) => {
+    ({ userId, role, workspaceId, workspaceName, permissions, accessToken }) => {
+      localStorage.setItem('auth_token', JSON.stringify(accessToken))
       localStorage.setItem(
         'auth-storage',
         JSON.stringify({
@@ -47,26 +49,31 @@ async function setupAuthWithWorkspace(
               username: `${role}user`,
               name: `${role} 用户`,
               email: `${role}@example.com`,
+              role,
+              tenant_id: 'tenant-1',
               roles: [role],
               permissions: permissions,
             },
-            token: 'mock-jwt-token',
+            token: accessToken,
+            currentTenant: { id: 'tenant-1', name: '测试租户1' },
+            currentWorkspace: null,
+            workspaces: [],
             isAuthenticated: true,
           },
-        })
+          version: 0,
+        }),
       )
 
-      // Store selected workspace
       localStorage.setItem(
         'ls-workspace-selected',
         JSON.stringify({
           id: workspaceId,
           name: workspaceName,
           role: role,
-        })
+        }),
       )
     },
-    { userId, role, workspaceId, workspaceName, permissions }
+    { userId, role, workspaceId, workspaceName, permissions, accessToken: E2E_VALID_ACCESS_TOKEN },
   )
 }
 
@@ -131,6 +138,24 @@ function getPermissionsForRole(role: string): string[] {
  * Mock Label Studio Workspace API responses
  */
 async function mockWorkspaceApi(page: Page) {
+  await page.route('**/api/auth/me', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'e2e-user',
+        username: 'e2euser',
+        email: 'e2e@example.com',
+        role: 'admin',
+        tenant_id: 'tenant-1',
+        is_active: true,
+      }),
+    })
+  })
+  await page.route('**/api/workspaces/my', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' })
+  })
+
   // Mock workspace list
   await page.route('**/api/ls-workspaces', async (route) => {
     if (route.request().method() === 'GET') {
@@ -439,9 +464,8 @@ test.describe('Label Studio Workspace - Lifecycle', () => {
         await descriptionInput.fill('这是一个测试工作空间')
       }
 
-      // Submit
-      const submitButton = modal.locator('button').filter({ hasText: /ok|确定|submit|提交/i })
-      await submitButton.click()
+      // Ant Design may render OK/Cancel with spaces between glyphs (e.g. "确 定"); use primary footer button.
+      await modal.locator('.ant-modal-footer .ant-btn-primary').click({ timeout: 15000 })
 
       // Should close modal on success
       await expect(modal).toBeHidden({ timeout: 5000 }).catch(() => {
@@ -492,9 +516,7 @@ test.describe('Label Studio Workspace - Lifecycle', () => {
       await nameInput.clear()
       await nameInput.fill('更新后的工作空间名称')
 
-      // Submit
-      const submitButton = modal.locator('button').filter({ hasText: /ok|确定|save|保存/i })
-      await submitButton.click()
+      await modal.locator('.ant-modal-footer .ant-btn-primary').click()
     }
   })
 

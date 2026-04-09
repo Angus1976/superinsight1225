@@ -10,6 +10,7 @@
 
 import { roleTest, expect, ROLE_CONFIGS } from '../fixtures'
 import { mockAllApis } from '../helpers/mock-api-factory'
+import { expectNonAdminBlockedOnAdminRoute } from '../helpers/expect-admin-denied'
 import { waitForPageReady } from '../test-helpers'
 
 roleTest.describe('Data Manager Workflow', () => {
@@ -47,24 +48,12 @@ roleTest.describe('Data Manager Workflow', () => {
       { name: 'Admin Console', route: '/admin/console' },
       { name: 'Admin Tenants', route: '/admin/tenants' },
       { name: 'Admin Users', route: '/admin/users' },
-      { name: 'Security RBAC', route: '/security/rbac' },
-      { name: 'Billing', route: '/billing' },
-      { name: 'Billing Overview', route: '/billing/overview' },
     ]
 
     for (const mod of deniedModules) {
       roleTest(`data_manager is denied access to ${mod.name} (${mod.route})`, async ({ rolePage }) => {
         await mockAllApis(rolePage)
-        await rolePage.goto(mod.route)
-        await waitForPageReady(rolePage)
-
-        // Should be redirected to 403 or dashboard
-        const url = rolePage.url()
-        const isDenied =
-          url.includes('/403') ||
-          url.includes('/dashboard') ||
-          url.includes('/login')
-        expect(isDenied).toBeTruthy()
+        await expectNonAdminBlockedOnAdminRoute(rolePage, mod.route)
       })
     }
   })

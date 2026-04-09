@@ -29,9 +29,12 @@ const QualityRules: React.FC = () => {
   const [form] = Form.useForm();
   const queryClient = useQueryClient();
 
-  const { data: rules, isLoading } = useQuery({
+  const { data: rules, isLoading } = useQuery<QualityRule[]>({
     queryKey: ['quality-rules'],
-    queryFn: () => api.get('/api/v1/quality/rules').then(res => res.data),
+    queryFn: async () => {
+      const res = await api.get<QualityRule[]>('/api/v1/quality/rules');
+      return res.data;
+    },
   });
 
   const createRuleMutation = useMutation({
@@ -186,7 +189,7 @@ const QualityRules: React.FC = () => {
               danger
               icon={<DeleteOutlined />}
               onClick={() => {
-                modal.confirm({
+                Modal.confirm({
                   title: t('messages.confirmDelete'),
                   content: t('rules.confirmDeleteContent', { name: record.name }),
                   onOk: () => deleteRuleMutation.mutate(record.id),

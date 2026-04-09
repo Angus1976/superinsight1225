@@ -548,7 +548,7 @@ class TestBusinessRuleCRUDRoundTrip:
     """Property 13.1: 业务规则 CRUD 往返测试"""
     
     @given(rule=business_rule_strategy)
-    @settings(max_examples=100)
+    @settings()
     def test_rule_save_and_retrieve_by_id(self, rule):
         """保存后通过 ID 检索应该返回等价的规则
         
@@ -580,10 +580,10 @@ class TestBusinessRuleCRUDRoundTrip:
             assert retrieved['frequency'] == rule['frequency'], "Frequency should match"
             assert retrieved['is_active'] == rule['is_active'], "Is active should match"
         
-        asyncio.get_event_loop().run_until_complete(run_test())
+        asyncio.run(run_test())
     
     @given(rule=business_rule_strategy, new_confidence=score_strategy)
-    @settings(max_examples=100)
+    @settings()
     def test_rule_update_confidence(self, rule, new_confidence):
         """更新置信度后应该反映更新的值
         
@@ -608,10 +608,10 @@ class TestBusinessRuleCRUDRoundTrip:
             assert abs(retrieved['confidence'] - new_confidence) < 0.0001, \
                 f"Confidence should be updated: {retrieved['confidence']} vs {new_confidence}"
         
-        asyncio.get_event_loop().run_until_complete(run_test())
+        asyncio.run(run_test())
     
     @given(rule=business_rule_strategy)
-    @settings(max_examples=100)
+    @settings()
     def test_rule_delete(self, rule):
         """删除后应该无法检索
         
@@ -638,10 +638,10 @@ class TestBusinessRuleCRUDRoundTrip:
             retrieved = await repository.get_by_id(rule['id'])
             assert retrieved is None, "Rule should not exist after deletion"
         
-        asyncio.get_event_loop().run_until_complete(run_test())
+        asyncio.run(run_test())
     
     @given(rule=business_rule_strategy)
-    @settings(max_examples=100)
+    @settings()
     def test_rule_toggle_active(self, rule):
         """切换状态后应该反映更新的值
         
@@ -667,13 +667,13 @@ class TestBusinessRuleCRUDRoundTrip:
             assert toggled_again is not None, "Second toggle should return updated rule"
             assert toggled_again['is_active'] == original_status, "Status should be back to original"
         
-        asyncio.get_event_loop().run_until_complete(run_test())
+        asyncio.run(run_test())
     
     @given(
         rules=st.lists(business_rule_strategy, min_size=2, max_size=10),
         rule_type=st.sampled_from(RULE_TYPES)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_rule_find_by_project_with_filter(self, rules, rule_type):
         """按项目和类型过滤应该返回正确的结果
         
@@ -716,7 +716,7 @@ class TestBusinessRuleCRUDRoundTrip:
             assert len(filtered) == expected_count, \
                 f"Expected {expected_count} rules, got {len(filtered)}"
         
-        asyncio.get_event_loop().run_until_complete(run_test())
+        asyncio.run(run_test())
 
 
 
@@ -724,7 +724,7 @@ class TestBusinessPatternCRUDRoundTrip:
     """Property 13.2: 业务模式 CRUD 往返测试"""
     
     @given(pattern=business_pattern_strategy)
-    @settings(max_examples=100)
+    @settings()
     def test_pattern_save_and_retrieve_by_id(self, pattern):
         """保存后通过 ID 检索应该返回等价的模式
         
@@ -752,10 +752,10 @@ class TestBusinessPatternCRUDRoundTrip:
             assert retrieved['pattern_type'] == pattern['pattern_type'], "Pattern type should match"
             assert abs(retrieved['strength'] - pattern['strength']) < 0.0001, "Strength should match"
         
-        asyncio.get_event_loop().run_until_complete(run_test())
+        asyncio.run(run_test())
     
     @given(patterns=st.lists(business_pattern_strategy, min_size=1, max_size=10))
-    @settings(max_examples=100)
+    @settings()
     def test_pattern_save_batch(self, patterns):
         """批量保存应该保存所有模式
         
@@ -783,13 +783,13 @@ class TestBusinessPatternCRUDRoundTrip:
                 retrieved = await repository.get_by_id(pattern['id'])
                 assert retrieved is not None, f"Pattern {pattern['id']} should be retrievable"
         
-        asyncio.get_event_loop().run_until_complete(run_test())
+        asyncio.run(run_test())
     
     @given(
         patterns=st.lists(business_pattern_strategy, min_size=2, max_size=10),
         min_strength=score_strategy
     )
-    @settings(max_examples=100)
+    @settings()
     def test_pattern_find_by_project_with_strength_filter(self, patterns, min_strength):
         """按项目和强度过滤应该返回正确的结果
         
@@ -831,10 +831,10 @@ class TestBusinessPatternCRUDRoundTrip:
             assert len(filtered) == expected_count, \
                 f"Expected {expected_count} patterns, got {len(filtered)}"
         
-        asyncio.get_event_loop().run_until_complete(run_test())
+        asyncio.run(run_test())
     
     @given(pattern=business_pattern_strategy)
-    @settings(max_examples=100)
+    @settings()
     def test_pattern_delete(self, pattern):
         """删除后应该无法检索
         
@@ -861,14 +861,14 @@ class TestBusinessPatternCRUDRoundTrip:
             retrieved = await repository.get_by_id(pattern['id'])
             assert retrieved is None, "Pattern should not exist after deletion"
         
-        asyncio.get_event_loop().run_until_complete(run_test())
+        asyncio.run(run_test())
 
 
 class TestBusinessInsightCRUDRoundTrip:
     """Property 13.3: 业务洞察 CRUD 往返测试"""
     
     @given(insight=business_insight_strategy)
-    @settings(max_examples=100)
+    @settings()
     def test_insight_save_and_retrieve_by_id(self, insight):
         """保存后通过 ID 检索应该返回等价的洞察
         
@@ -897,10 +897,10 @@ class TestBusinessInsightCRUDRoundTrip:
             assert retrieved['title'] == insight['title'], "Title should match"
             assert abs(retrieved['impact_score'] - insight['impact_score']) < 0.0001, "Impact score should match"
         
-        asyncio.get_event_loop().run_until_complete(run_test())
+        asyncio.run(run_test())
     
     @given(insight=business_insight_strategy)
-    @settings(max_examples=100)
+    @settings()
     def test_insight_acknowledge(self, insight):
         """确认后应该更新 acknowledged_at 时间戳
         
@@ -928,12 +928,12 @@ class TestBusinessInsightCRUDRoundTrip:
             retrieved = await repository.get_by_id(insight['id'])
             assert retrieved['acknowledged_at'] is not None, "Should be acknowledged after acknowledge()"
         
-        asyncio.get_event_loop().run_until_complete(run_test())
+        asyncio.run(run_test())
     
     @given(
         insights=st.lists(business_insight_strategy, min_size=2, max_size=10)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_insight_find_unacknowledged_only(self, insights):
         """按未确认过滤应该只返回未确认的洞察
         
@@ -975,10 +975,10 @@ class TestBusinessInsightCRUDRoundTrip:
             assert len(filtered) == expected_count, \
                 f"Expected {expected_count} unacknowledged insights, got {len(filtered)}"
         
-        asyncio.get_event_loop().run_until_complete(run_test())
+        asyncio.run(run_test())
     
     @given(insight=business_insight_strategy)
-    @settings(max_examples=100)
+    @settings()
     def test_insight_delete(self, insight):
         """删除后应该无法检索
         
@@ -1005,7 +1005,7 @@ class TestBusinessInsightCRUDRoundTrip:
             retrieved = await repository.get_by_id(insight['id'])
             assert retrieved is None, "Insight should not exist after deletion"
         
-        asyncio.get_event_loop().run_until_complete(run_test())
+        asyncio.run(run_test())
 
 
 
@@ -1037,7 +1037,7 @@ class TestEdgeCases:
             assert patterns == [], "Empty pattern repository should return empty list"
             assert insights == [], "Empty insight repository should return empty list"
         
-        asyncio.get_event_loop().run_until_complete(run_test())
+        asyncio.run(run_test())
     
     def test_delete_nonexistent_returns_false(self):
         """删除不存在的记录应该返回 False
@@ -1060,7 +1060,7 @@ class TestEdgeCases:
             assert pattern_result is False, "Deleting nonexistent pattern should return False"
             assert insight_result is False, "Deleting nonexistent insight should return False"
         
-        asyncio.get_event_loop().run_until_complete(run_test())
+        asyncio.run(run_test())
     
     def test_update_nonexistent_returns_false(self):
         """更新不存在的记录应该返回 False
@@ -1082,12 +1082,12 @@ class TestEdgeCases:
             assert toggle_result is None, "Toggling nonexistent rule should return None"
             assert ack_result is False, "Acknowledging nonexistent insight should return False"
         
-        asyncio.get_event_loop().run_until_complete(run_test())
+        asyncio.run(run_test())
     
     @given(
         confidence=st.floats(min_value=0.0, max_value=1.0, allow_nan=False)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_confidence_range(self, confidence):
         """置信度应该在 0.0 到 1.0 之间
         
@@ -1121,12 +1121,12 @@ class TestEdgeCases:
             assert 0.0 <= retrieved['confidence'] <= 1.0, \
                 f"Confidence should be between 0.0 and 1.0, got {retrieved['confidence']}"
         
-        asyncio.get_event_loop().run_until_complete(run_test())
+        asyncio.run(run_test())
     
     @given(
         strength=st.floats(min_value=0.0, max_value=1.0, allow_nan=False)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_strength_range(self, strength):
         """强度应该在 0.0 到 1.0 之间
         
@@ -1156,12 +1156,12 @@ class TestEdgeCases:
             assert 0.0 <= retrieved['strength'] <= 1.0, \
                 f"Strength should be between 0.0 and 1.0, got {retrieved['strength']}"
         
-        asyncio.get_event_loop().run_until_complete(run_test())
+        asyncio.run(run_test())
     
     @given(
         impact_score=st.floats(min_value=0.0, max_value=1.0, allow_nan=False)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_impact_score_range(self, impact_score):
         """影响分数应该在 0.0 到 1.0 之间
         
@@ -1193,7 +1193,7 @@ class TestEdgeCases:
             assert 0.0 <= retrieved['impact_score'] <= 1.0, \
                 f"Impact score should be between 0.0 and 1.0, got {retrieved['impact_score']}"
         
-        asyncio.get_event_loop().run_until_complete(run_test())
+        asyncio.run(run_test())
 
 
 if __name__ == "__main__":

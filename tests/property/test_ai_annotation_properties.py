@@ -456,7 +456,7 @@ class TestBatchPreAnnotationCompleteness:
         num_tasks=st.integers(min_value=1, max_value=100),
         annotation_type=st.sampled_from(list(AnnotationType))
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_batch_returns_same_count_as_input(
         self,
         num_tasks: int,
@@ -476,7 +476,7 @@ class TestBatchPreAnnotationCompleteness:
         asyncio.run(run_test())
 
     @given(tasks=st.lists(task_strategy(), min_size=1, max_size=50))
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_all_task_ids_in_results(self, tasks: List[Dict[str, Any]]):
         """Every input task ID should appear in results."""
         async def run_test():
@@ -512,7 +512,7 @@ class TestSampleBasedLearningInclusion:
         num_samples=st.integers(min_value=1, max_value=10),
         num_tasks=st.integers(min_value=1, max_value=20)
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_samples_improve_confidence(self, num_samples: int, num_tasks: int):
         """Providing samples should not decrease average confidence."""
         async def run_test():
@@ -558,7 +558,7 @@ class TestConfidenceBasedReviewFlagging:
         confidence_threshold=st.floats(min_value=0.1, max_value=0.9),
         num_tasks=st.integers(min_value=5, max_value=30)
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_low_confidence_flagged_for_review(
         self,
         confidence_threshold: float,
@@ -600,7 +600,7 @@ class TestConsistentPatternApplication:
     """
 
     @given(annotations=st.lists(annotation_strategy(), min_size=5, max_size=30))
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_pattern_extraction_consistent(self, annotations: List[Dict[str, Any]]):
         """Pattern extraction should be deterministic."""
         async def run_test():
@@ -638,7 +638,7 @@ class TestBatchCoverageApplication:
         similarity_threshold=st.floats(min_value=0.5, max_value=0.95),
         num_candidates=st.integers(min_value=5, max_value=20)
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_similar_tasks_found(
         self,
         similarity_threshold: float,
@@ -680,7 +680,7 @@ class TestQualityValidationPipeline:
     """
 
     @given(annotations=st.lists(annotation_strategy(), min_size=1, max_size=50))
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_validation_scores_bounded(self, annotations: List[Dict[str, Any]]):
         """All validation scores should be between 0 and 1."""
         async def run_test():
@@ -695,7 +695,7 @@ class TestQualityValidationPipeline:
         asyncio.run(run_test())
 
     @given(annotations=st.lists(annotation_strategy(), min_size=5, max_size=30))
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_validation_deterministic(self, annotations: List[Dict[str, Any]]):
         """Validation should produce consistent results."""
         async def run_test():
@@ -729,7 +729,7 @@ class TestQualityReportGeneration:
         quality_threshold=st.floats(min_value=0.5, max_value=0.95),
         annotations=st.lists(annotation_strategy(), min_size=5, max_size=30)
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_report_contains_all_metrics(
         self,
         quality_threshold: float,
@@ -751,7 +751,7 @@ class TestQualityReportGeneration:
         asyncio.run(run_test())
 
     @given(annotations=st.lists(annotation_strategy(), min_size=1, max_size=20))
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_low_quality_generates_issues(self, annotations: List[Dict[str, Any]]):
         """Low quality scores should generate corresponding issues."""
         async def run_test():
@@ -786,7 +786,7 @@ class TestOptimalEngineSelection:
         data_size=st.integers(min_value=1, max_value=5000),
         annotation_type=st.sampled_from(list(AnnotationType))
     )
-    @settings(max_examples=50)
+    @settings()
     def test_engine_selection_returns_registered_engine(
         self,
         data_size: int,
@@ -827,7 +827,7 @@ class TestEngineFallbackOnFailure:
     """
 
     @given(failed_engine=st.sampled_from(list(EngineType)))
-    @settings(max_examples=20)
+    @settings()
     def test_fallback_returns_different_engine(self, failed_engine: EngineType):
         """Fallback engine should be different from failed engine."""
         switcher = MockMethodSwitcher()
@@ -860,7 +860,7 @@ class TestTaskDistributionRules:
         num_tasks=st.integers(min_value=1, max_value=60),
         user_role=st.sampled_from(list(UserRole))
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_workload_limit_enforced(self, num_tasks: int, user_role: UserRole):
         """User workload should not exceed maximum limit."""
         async def run_test():
@@ -900,7 +900,7 @@ class TestProgressMetricsCompleteness:
         num_users=st.integers(min_value=1, max_value=5),
         tasks_per_user=st.integers(min_value=1, max_value=10)
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_workload_tracking_accurate(self, num_users: int, tasks_per_user: int):
         """Workload counts should accurately reflect assignments."""
         async def run_test():
@@ -1030,7 +1030,7 @@ class TestRealTimeCollaborationLatency:
         num_requests=st.integers(min_value=5, max_value=50),
         text_length=st.integers(min_value=10, max_value=200)
     )
-    @settings(max_examples=30, deadline=None)
+    @settings(deadline=None)
     def test_suggestion_latency_within_target(
         self,
         num_requests: int,
@@ -1058,7 +1058,7 @@ class TestRealTimeCollaborationLatency:
         asyncio.run(run_test())
 
     @given(num_concurrent=st.integers(min_value=2, max_value=10))
-    @settings(max_examples=20, deadline=None)
+    @settings(deadline=None)
     def test_concurrent_suggestions_handled(self, num_concurrent: int):
         """Concurrent suggestion requests should all be handled."""
         async def run_test():
@@ -1132,7 +1132,7 @@ class TestConfidenceBasedRouting:
             max_size=50
         )
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_low_confidence_routed_to_human(
         self,
         confidence_threshold: float,
@@ -1163,7 +1163,7 @@ class TestConfidenceBasedRouting:
         num_tasks=st.integers(min_value=20, max_value=100),
         confidence_threshold=st.floats(min_value=0.4, max_value=0.8)
     )
-    @settings(max_examples=30, deadline=None)
+    @settings(deadline=None)
     def test_routing_is_mutually_exclusive(
         self,
         num_tasks: int,
@@ -1237,7 +1237,7 @@ class TestEngineHotReload:
         num_engines=st.integers(min_value=1, max_value=5),
         num_reloads=st.integers(min_value=1, max_value=10)
     )
-    @settings(max_examples=30)
+    @settings()
     def test_hot_reload_preserves_engine_count(
         self,
         num_engines: int,
@@ -1264,7 +1264,7 @@ class TestEngineHotReload:
         )
 
     @given(num_operations=st.integers(min_value=5, max_value=20))
-    @settings(max_examples=30)
+    @settings()
     def test_engine_registration_tracking(self, num_operations: int):
         """Engine registration should be accurately tracked."""
         switcher = MockHotReloadSwitcher()
@@ -1344,7 +1344,7 @@ class TestEngineHealthCheckRetry:
         max_retries=st.integers(min_value=1, max_value=5),
         fail_count=st.integers(min_value=0, max_value=6)
     )
-    @settings(max_examples=30, deadline=None)
+    @settings(deadline=None)
     def test_retry_until_success_or_max(
         self,
         max_retries: int,
@@ -1429,7 +1429,7 @@ class TestEnginePerformanceComparison:
         num_engines=st.integers(min_value=2, max_value=5),
         num_test_items=st.integers(min_value=10, max_value=100)
     )
-    @settings(max_examples=30)
+    @settings()
     def test_comparison_ranks_all_engines(
         self,
         num_engines: int,
@@ -1446,7 +1446,7 @@ class TestEnginePerformanceComparison:
         assert results["winner"] in engine_ids, "Winner should be one of the engines"
 
     @given(engine_ids=st.lists(st.text(min_size=1, max_size=20), min_size=2, max_size=5, unique=True))
-    @settings(max_examples=30)
+    @settings()
     def test_comparison_is_deterministic(self, engine_ids: List[str]):
         """Comparison should produce consistent results."""
         comparer = MockPerformanceComparer()
@@ -1513,7 +1513,7 @@ class TestEngineFormatCompatibility:
         source_format=st.sampled_from(MockFormatConverter.SUPPORTED_FORMATS),
         target_format=st.sampled_from(MockFormatConverter.SUPPORTED_FORMATS)
     )
-    @settings(max_examples=30)
+    @settings()
     def test_format_conversion_preserves_data(
         self,
         source_format: str,
@@ -1534,7 +1534,7 @@ class TestEngineFormatCompatibility:
         assert result["format"] == target_format, "Target format should be set"
 
     @given(text=st.text(min_size=1, max_size=200))
-    @settings(max_examples=30)
+    @settings()
     def test_roundtrip_conversion(self, text: str):
         """Conversion should be reversible (roundtrip)."""
         converter = MockFormatConverter()
@@ -1572,7 +1572,7 @@ class TestAnnotationFormatNormalization:
             max_size=10
         )
     )
-    @settings(max_examples=30)
+    @settings()
     def test_annotations_preserve_structure(
         self,
         annotations: List[Dict[str, Any]]
@@ -1592,7 +1592,7 @@ class TestAnnotationFormatNormalization:
         )
 
     @given(num_annotations=st.integers(min_value=0, max_value=50))
-    @settings(max_examples=30)
+    @settings()
     def test_empty_and_large_annotation_sets(self, num_annotations: int):
         """Should handle empty and large annotation sets."""
         converter = MockFormatConverter()

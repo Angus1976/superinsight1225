@@ -2,6 +2,8 @@
 
 ## Overview
 
+**计划状态（2026-04）：** 下文任务 **1–24 及全部子任务均已勾选 `[x]`**，本文档内 **无剩余未完成条目**。后续仅随需求变更再开新项。
+
 Incrementally extend the existing SuperInsight E2E test infrastructure (35+ Playwright specs, `fixtures.ts`, `test-helpers.ts`) to achieve comprehensive coverage across all 16 requirement areas. New test files follow the `frontend/e2e/` convention, new helpers go in `frontend/e2e/helpers/`, and property-based tests use fast-check with Vitest in `frontend/src/__tests__/`. The implementation builds on existing patterns (localStorage auth, route interception, Ant Design selectors) without rewriting any existing tests.
 
 ## Tasks
@@ -56,7 +58,7 @@ Incrementally extend the existing SuperInsight E2E test infrastructure (35+ Play
     - Test annotator annotation submission flow
     - _Requirements: 1.4, 1.5, 1.6_
 
-  - [ ]* 3.5 Write property test for role-route access matrix
+  - [x] 3.5 Write property test for role-route access matrix
     - **Property 1: Role-Route Access Matrix**
     - Create `frontend/src/__tests__/role-permissions.property.test.ts` using fast-check
     - For any role × route combination, verify the access expectation matches `ROLE_CONFIGS`
@@ -90,7 +92,7 @@ Incrementally extend the existing SuperInsight E2E test infrastructure (35+ Play
     - Use `verifyTablePagination()`, `verifyTableSort()`, `verifyDropdownSelect()` helpers
     - _Requirements: 2.7, 2.8, 2.9, 2.10_
 
-  - [ ]* 4.5 Write property tests for form interactions
+  - [x] 4.5 Write property tests for form interactions
     - **Property 2: Empty Required Fields Trigger Validation**
     - **Property 3: Invalid Constrained Input Triggers Field-Level Errors**
     - **Property 4: Modal Lifecycle Correctness**
@@ -114,7 +116,7 @@ Incrementally extend the existing SuperInsight E2E test infrastructure (35+ Play
     - Verify record counts remain consistent across pipeline stages (acquisition count = annotation task count = export count)
     - _Requirements: 3.6_
 
-  - [ ]* 6.3 Write property test for data lifecycle count invariant
+  - [x] 6.3 Write property test for data lifecycle count invariant
     - **Property 10: Data Lifecycle Count Invariant**
     - Create test in `frontend/src/__tests__/data-lifecycle.property.test.ts` using fast-check
     - **Validates: Requirements 3.6**
@@ -126,7 +128,7 @@ Incrementally extend the existing SuperInsight E2E test infrastructure (35+ Play
     - Add test for concurrent sessions in different browser contexts maintaining independent state
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8_
 
-  - [ ]* 7.2 Write property tests for auth fixtures
+  - [x] 7.2 Write property tests for auth fixtures
     - **Property 11: Post-Logout Protected Route Redirect**
     - **Property 12: Tenant Switch Context Update**
     - **Property 34: Auth Fixture Role Correctness**
@@ -147,7 +149,7 @@ Incrementally extend the existing SuperInsight E2E test infrastructure (35+ Play
     - Add API error safety test: verify error responses don't leak stack traces or DB schema
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8, 5.9, 5.10_
 
-  - [ ]* 8.2 Write property tests for security invariants
+  - [x] 8.2 Write property tests for security invariants
     - **Property 13: XSS Input Sanitization**
     - **Property 14: Malicious API Response Escaping**
     - **Property 15: SQL Injection Input Escaping**
@@ -173,7 +175,7 @@ Incrementally extend the existing SuperInsight E2E test infrastructure (35+ Play
     - Add offline test (error state displayed, no crash)
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 6.9_
 
-  - [ ]* 10.2 Write property test for page load time threshold
+  - [x] 10.2 Write property test for page load time threshold
     - **Property 19: Page Load Time Threshold**
     - **Validates: Requirements 6.3**
 
@@ -195,7 +197,7 @@ Incrementally extend the existing SuperInsight E2E test infrastructure (35+ Play
     - Test form validation messages display in active language
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
 
-  - [ ]* 12.2 Write property tests for i18n invariants
+  - [x] 12.2 Write property tests for i18n invariants
     - **Property 20: Language Switch Text Update**
     - **Property 21: No Raw Translation Keys Displayed**
     - **Property 22: Language Preference Persistence**
@@ -215,7 +217,7 @@ Incrementally extend the existing SuperInsight E2E test infrastructure (35+ Play
     - Test empty states on Tasks, Billing, Quality, DataSync pages (`.ant-empty` component)
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 9.7, 9.8_
 
-  - [ ]* 13.2 Write property tests for error handling
+  - [x] 13.2 Write property tests for error handling
     - **Property 24: API 500 Graceful Degradation**
     - **Property 25: Form Data Preservation on Network Error**
     - **Property 26: Empty State Display**
@@ -235,7 +237,7 @@ Incrementally extend the existing SuperInsight E2E test infrastructure (35+ Play
     - Add color contrast test: minimum 4.5:1 ratio on Login, Dashboard, Tasks
     - _Requirements: 10.1, 10.2, 10.3, 10.4, 10.5, 10.6, 10.7_
 
-  - [ ]* 15.2 Write property tests for accessibility
+  - [x] 15.2 Write property tests for accessibility
     - **Property 27: Tab Focus Order**
     - **Property 28: Visible Focus Indicators**
     - **Property 29: Modal Focus Trap and Restore**
@@ -252,7 +254,7 @@ Incrementally extend the existing SuperInsight E2E test infrastructure (35+ Play
     - Test form inputs and buttons remain usable on mobile viewports
     - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5_
 
-  - [ ]* 16.2 Write property tests for responsive design
+  - [x] 16.2 Write property tests for responsive design
     - **Property 32: No Horizontal Overflow Across Viewports**
     - **Property 33: Touch Target Minimum Size**
     - **Validates: Requirements 11.1, 11.4, 11.5**
@@ -337,14 +339,14 @@ Incrementally extend the existing SuperInsight E2E test infrastructure (35+ Play
     - Test chat interface loads, accepts user messages, displays AI responses
     - _Requirements: 15.3_
 
-- [ ] 22. Implement test infrastructure validation
-  - [ ]* 22.1 Write property test for mock API schema validity
+- [x] 22. Implement test infrastructure validation
+  - [x] 22.1 Write property test for mock API schema validity
     - **Property 35: Mock API Schema Validity**
     - Create `frontend/src/__tests__/mock-schema.property.test.ts` using fast-check
     - For any endpoint in mock factory, verify response is valid JSON with expected fields and types
     - **Validates: Requirements 16.2**
 
-  - [ ]* 22.2 Write property test for console error filtering
+  - [x] 22.2 Write property test for console error filtering
     - **Property 36: Console Error Filtering**
     - Create `frontend/src/__tests__/console-filter.property.test.ts` using fast-check
     - Generate random error strings, verify known-issues exclusion list correctly filters

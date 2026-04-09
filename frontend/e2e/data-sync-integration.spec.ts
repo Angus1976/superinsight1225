@@ -4,43 +4,19 @@
  * Tests data synchronization features, real-time updates, and data consistency.
  */
 
-import { test, expect } from '@playwright/test'
-
-// Helper to set up authenticated state
-async function setupAuth(page: any) {
-  await page.addInitScript(() => {
-    localStorage.setItem(
-      'auth-storage',
-      JSON.stringify({
-        state: {
-          user: {
-            id: 'user-1',
-            username: 'testuser',
-            name: '测试用户',
-            email: 'test@example.com',
-            tenant_id: 'tenant-1',
-            roles: ['admin'],
-            permissions: ['read:all', 'write:all', 'sync:manage'],
-          },
-          token: 'mock-jwt-token',
-          currentTenant: {
-            id: 'tenant-1',
-            name: '测试租户',
-          },
-          isAuthenticated: true,
-        },
-      })
-    )
-  })
-}
+import { test, expect } from './fixtures'
+import { mockAllApis } from './helpers/mock-api-factory'
+import { setupAuth, waitForPageReady } from './test-helpers'
 
 test.describe('Data Sync Configuration', () => {
   test.beforeEach(async ({ page }) => {
-    await setupAuth(page)
+    await setupAuth(page, 'admin', 'tenant-1')
+    await mockAllApis(page)
   })
 
   test('can access data sync configuration page', async ({ page }) => {
     await page.goto('/data-sync')
+    await waitForPageReady(page)
 
     // Should show data sync interface
     await expect(page).toHaveURL(/data-sync/i)
@@ -121,7 +97,8 @@ test.describe('Data Sync Configuration', () => {
 
 test.describe('Real-time Data Updates', () => {
   test.beforeEach(async ({ page }) => {
-    await setupAuth(page)
+    await setupAuth(page, 'admin', 'tenant-1')
+    await mockAllApis(page)
   })
 
   test('dashboard metrics update in real-time', async ({ page }) => {
@@ -212,7 +189,8 @@ test.describe('Real-time Data Updates', () => {
 
 test.describe('Data Consistency', () => {
   test.beforeEach(async ({ page }) => {
-    await setupAuth(page)
+    await setupAuth(page, 'admin', 'tenant-1')
+    await mockAllApis(page)
   })
 
   test('data changes are reflected across different pages', async ({ page }) => {
@@ -312,7 +290,8 @@ test.describe('Data Consistency', () => {
 
 test.describe('Sync Status and Monitoring', () => {
   test.beforeEach(async ({ page }) => {
-    await setupAuth(page)
+    await setupAuth(page, 'admin', 'tenant-1')
+    await mockAllApis(page)
   })
 
   test('displays sync status indicators', async ({ page }) => {

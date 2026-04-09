@@ -51,6 +51,7 @@ const AITrialDashboard: React.FC<AITrialDashboardProps> = ({
   const getStatusColor = (status: string): string => {
     const colorMap: Record<string, string> = {
       created: 'default',
+      queued: 'default',
       running: 'processing',
       completed: 'success',
       failed: 'error',
@@ -122,7 +123,7 @@ const AITrialDashboard: React.FC<AITrialDashboardProps> = ({
       key: 'actions',
       render: (_: unknown, record: AITrial) => (
         <Space>
-          {record.status === 'created' && (
+          {(record.status === 'created' || record.status === 'queued') && (
             <Button
               type="text"
               icon={<PlayCircleOutlined />}

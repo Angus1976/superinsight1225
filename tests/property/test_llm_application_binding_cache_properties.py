@@ -99,7 +99,7 @@ class TestCacheTTLExpiration:
            that the cached entry has not expired
     """
     
-    @settings(max_examples=20, suppress_health_check=[HealthCheck.too_slow], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow], deadline=None)
     @given(
         key=cache_key_strategy,
         value=cache_value_strategy,
@@ -148,7 +148,7 @@ class TestCacheTTLExpiration:
         assert key not in cache.local_cache, \
             "Expired entry should be removed from cache"
     
-    @settings(max_examples=20, suppress_health_check=[HealthCheck.too_slow], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow], deadline=None)
     @given(
         key=cache_key_strategy,
         value=cache_value_strategy,
@@ -187,7 +187,7 @@ class TestCacheTTLExpiration:
         assert key in cache.local_cache, \
             "Valid entry should remain in cache"
     
-    @settings(max_examples=20, suppress_health_check=[HealthCheck.too_slow], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow], deadline=None)
     @given(
         key=cache_key_strategy,
         value=cache_value_strategy
@@ -222,7 +222,7 @@ class TestCacheTTLExpiration:
         assert entry.is_expired(), \
             "Entry with past expiration time should be expired"
     
-    @settings(max_examples=20, suppress_health_check=[HealthCheck.too_slow], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow], deadline=None)
     @given(
         key=cache_key_strategy,
         value=cache_value_strategy,
@@ -331,7 +331,7 @@ class TestCacheTTLBehavior:
     **Validates: Requirements 4.4, 4.5**
     """
     
-    @settings(max_examples=15, suppress_health_check=[HealthCheck.too_slow], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow], deadline=None)
     @given(
         key=cache_key_strategy,
         value=cache_value_strategy
@@ -364,7 +364,7 @@ class TestCacheTTLBehavior:
         assert cache._access_order[-1] == key, \
             "Accessed key should be at end of LRU order"
     
-    @settings(max_examples=15, suppress_health_check=[HealthCheck.too_slow], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow], deadline=None)
     @given(
         key=cache_key_strategy,
         value=cache_value_strategy
@@ -415,7 +415,7 @@ class TestCacheTTLBehavior:
         assert cache.local_ttl == 300, \
             "Default TTL should be 300 seconds"
     
-    @settings(max_examples=15, suppress_health_check=[HealthCheck.too_slow], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow], deadline=None)
     @given(
         key=cache_key_strategy,
         value=cache_value_strategy,

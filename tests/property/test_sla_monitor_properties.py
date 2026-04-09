@@ -222,7 +222,7 @@ class TestSLAMonitorPriorityChannels:
             unique=True
         )
     )
-    @settings(max_examples=100)
+    @settings()
     def test_priority_channel_configuration(self, priority, channels):
         """配置的优先级渠道应该被正确存储和检索
         
@@ -247,7 +247,7 @@ class TestSLAMonitorPriorityChannels:
         subject=st.text(min_size=1, max_size=100),
         message=st.text(min_size=1, max_size=500)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_notification_sent_to_all_configured_channels(
         self, ticket_priority, recipients, subject, message
     ):
@@ -294,7 +294,7 @@ class TestSLAMonitorPriorityChannels:
         ),
         recipients=st.lists(st.emails(), min_size=1, max_size=3, unique=True)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_custom_channel_configuration_override(
         self, priority, custom_channels, recipients
     ):
@@ -331,7 +331,7 @@ class TestSLAMonitorPriorityChannels:
             max_value=datetime(2030, 12, 31)
         )
     )
-    @settings(max_examples=100)
+    @settings()
     def test_ticket_priority_mapping(
         self, ticket_id, ticket_title, ticket_priority, sla_deadline
     ):
@@ -373,7 +373,7 @@ class TestExponentialBackoffRetry:
     @given(
         attempt=st.integers(min_value=0, max_value=10)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_retry_delay_exponential_backoff(self, attempt):
         """重试延迟应该遵循指数退避 (1s, 2s, 4s)
         
@@ -398,7 +398,7 @@ class TestExponentialBackoffRetry:
     @given(
         max_retries=st.integers(min_value=1, max_value=5)
     )
-    @settings(max_examples=50)
+    @settings()
     def test_max_retry_limit(self, max_retries):
         """重试次数不应超过配置的最大值
         
@@ -431,7 +431,7 @@ class TestNotificationResultIntegrity:
         error_message=st.one_of(st.none(), st.text(min_size=1, max_size=200)),
         retry_count=st.integers(min_value=0, max_value=10)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_notification_result_consistency(
         self, channel, success, recipient, error_message, retry_count
     ):
@@ -468,7 +468,7 @@ class TestNotificationResultIntegrity:
             unique=True
         )
     )
-    @settings(max_examples=100)
+    @settings()
     def test_batch_notification_results(self, recipients, channels):
         """批量通知结果应该正确统计
         
@@ -580,7 +580,7 @@ class TestNotificationMetadata:
         ),
         assigned_to=st.one_of(st.none(), st.emails())
     )
-    @settings(max_examples=100)
+    @settings()
     def test_notification_metadata_preserved(
         self, ticket_id, ticket_title, priority, sla_deadline, assigned_to
     ):

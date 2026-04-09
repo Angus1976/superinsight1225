@@ -133,10 +133,10 @@ export function withPerformanceMonitor<P extends object>(
 
   // Apply memo optimization if enabled
   if (enableMemo) {
-    return memo(PerformanceMonitoredComponent, arePropsEqual) as ComponentType<P>;
+    return memo(PerformanceMonitoredComponent, arePropsEqual) as unknown as ComponentType<P>;
   }
 
-  return PerformanceMonitoredComponent as ComponentType<P>;
+  return PerformanceMonitoredComponent as unknown as ComponentType<P>;
 }
 
 /**

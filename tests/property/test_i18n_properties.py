@@ -93,7 +93,7 @@ class TestI18nDisplayConsistency:
     """
     
     @given(language=language_strategy, key=translation_key_strategy)
-    @settings(max_examples=100)
+    @settings()
     def test_translation_returns_string_for_supported_language(
         self, language: str, key: str
     ):
@@ -118,7 +118,7 @@ class TestI18nDisplayConsistency:
             assert len(result) > 0
     
     @given(language=language_strategy)
-    @settings(max_examples=100)
+    @settings()
     def test_all_translations_complete_for_language(self, language: str):
         """
         Feature: ai-annotation-methods, Property 29: I18n Display Consistency
@@ -139,7 +139,7 @@ class TestI18nDisplayConsistency:
         language=language_strategy,
         metrics=quality_metric_strategy
     )
-    @settings(max_examples=100)
+    @settings()
     def test_quality_report_formatted_per_locale(
         self, language: str, metrics: Dict[str, float]
     ):
@@ -167,7 +167,7 @@ class TestI18nDisplayConsistency:
         language=language_strategy,
         dt=datetime_strategy
     )
-    @settings(max_examples=100)
+    @settings()
     def test_date_formatting_per_locale(self, language: str, dt: datetime):
         """
         Feature: ai-annotation-methods, Property 29: I18n Display Consistency
@@ -194,7 +194,7 @@ class TestI18nDisplayConsistency:
         language=language_strategy,
         value=positive_float_strategy
     )
-    @settings(max_examples=100)
+    @settings()
     def test_number_formatting_per_locale(self, language: str, value: float):
         """
         Feature: ai-annotation-methods, Property 29: I18n Display Consistency
@@ -214,7 +214,7 @@ class TestI18nDisplayConsistency:
         language=language_strategy,
         value=st.floats(min_value=0.0, max_value=1.0)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_percentage_formatting_per_locale(self, language: str, value: float):
         """
         Feature: ai-annotation-methods, Property 29: I18n Display Consistency
@@ -254,7 +254,7 @@ class TestI18nHotReload:
         key=st.text(min_size=5, max_size=50, alphabet=st.characters(whitelist_categories=('L', 'N', 'P'))),
         value=st.text(min_size=1, max_size=200)
     )
-    @settings(max_examples=100)
+    @settings()
     @pytest.mark.asyncio
     async def test_dynamic_translation_addition(
         self, language: str, key: str, value: str
@@ -279,7 +279,7 @@ class TestI18nHotReload:
 
     
     @given(language=language_strategy)
-    @settings(max_examples=100)
+    @settings()
     def test_fallback_to_builtin_translations(self, language: str):
         """
         Feature: ai-annotation-methods, Property 30: I18n Hot-Reload
@@ -306,7 +306,7 @@ class TestI18nHotReload:
         param_name=st.text(min_size=1, max_size=20, alphabet='abcdefghijklmnopqrstuvwxyz'),
         param_value=st.text(min_size=1, max_size=50)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_parameter_substitution_in_translations(
         self, language: str, key: str, param_name: str, param_value: str
     ):
@@ -344,7 +344,7 @@ class TestMultilingualGuidelines:
         language=language_strategy,
         content=st.text(min_size=10, max_size=1000)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_guideline_storage_and_retrieval(
         self, project_id: str, language: str, content: str
     ):
@@ -371,7 +371,7 @@ class TestMultilingualGuidelines:
         project_id=st.text(min_size=1, max_size=50, alphabet='abcdefghijklmnopqrstuvwxyz0123456789-_'),
         examples=st.lists(st.text(min_size=5, max_size=100), min_size=1, max_size=10)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_language_specific_examples(self, project_id: str, examples: list):
         """
         Feature: ai-annotation-methods, Property 29: I18n Display Consistency
@@ -405,7 +405,7 @@ class TestLocaleFormatting:
         language=language_strategy,
         seconds=st.floats(min_value=0.0, max_value=86400.0, allow_nan=False)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_duration_formatting(self, language: str, seconds: float):
         """
         Feature: ai-annotation-methods, Property 29: I18n Display Consistency
@@ -441,7 +441,7 @@ class TestLocaleFormatting:
         language=language_strategy,
         bytes_size=st.integers(min_value=0, max_value=10**15)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_file_size_formatting(self, language: str, bytes_size: int):
         """
         Feature: ai-annotation-methods, Property 29: I18n Display Consistency
@@ -463,7 +463,7 @@ class TestLocaleFormatting:
         language=language_strategy,
         value=st.floats(min_value=0.0, max_value=1e9, allow_nan=False, allow_infinity=False)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_currency_formatting(self, language: str, value: float):
         """
         Feature: ai-annotation-methods, Property 29: I18n Display Consistency
@@ -493,7 +493,7 @@ class TestLanguageManagement:
     """
     
     @given(language=language_strategy)
-    @settings(max_examples=100)
+    @settings()
     def test_language_setting_and_getting(self, language: str):
         """
         Feature: ai-annotation-methods, Property 29: I18n Display Consistency
@@ -514,7 +514,7 @@ class TestLanguageManagement:
             lambda x: x not in SUPPORTED_LANGUAGES
         )
     )
-    @settings(max_examples=100)
+    @settings()
     def test_invalid_language_raises_error(self, invalid_language: str):
         """
         Feature: ai-annotation-methods, Property 29: I18n Display Consistency
@@ -525,7 +525,7 @@ class TestLanguageManagement:
             set_language(invalid_language)
     
     @given(language=language_strategy)
-    @settings(max_examples=100)
+    @settings()
     def test_missing_translations_detection(self, language: str):
         """
         Feature: ai-annotation-methods, Property 29: I18n Display Consistency
@@ -561,7 +561,7 @@ class TestAnnotationSummaryFormatting:
         avg_confidence=st.floats(min_value=0.0, max_value=1.0),
         processing_time=st.floats(min_value=0.0, max_value=86400.0, allow_nan=False)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_annotation_summary_formatting(
         self,
         language: str,

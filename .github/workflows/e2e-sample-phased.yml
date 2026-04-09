@@ -1,0 +1,79 @@
+# 分阶段 E2E 抽样（与 scripts/e2e-sample-chromium.sh、计划表 §5 一致）。
+# 不启动后端：依赖 Playwright webServer（Vite）+ 前端 mock；约 10–15 分钟量级。
+# 与「全量 Chromium E2E」互补：更短、按依赖分阶段，便于定位失败阶段。
+name: E2E Sample Pack (phased)
+
+run-name: E2E sample (${{ github.event_name == 'workflow_dispatch' && inputs.git_ref || 'develop weekly' }})
+
+on:
+  workflow_dispatch:
+    inputs:
+      git_ref:
+        description: '分支或 SHA（默认 develop）'
+        required: false
+        default: 'develop'
+        type: string
+  schedule:
+    # 每周一 06:00 UTC（仓库不再跑每日全量 Chromium E2E，develop 靠本 workflow 做定时轻量回归）
+    - cron: '0 6 * * 1'
+
+concurrency:
+  group: e2e-sample-phased
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  e2e-sample-phased:
+    name: Phased Chromium sample
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Resolve git ref
+        id: ref
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            R="${{ inputs.git_ref }}"
+          else
+            R="develop"
+          fi
+          echo "ref=$R" >> "$GITHUB_OUTPUT"
+          echo "Checkout ref: $R"
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.ref.outputs.ref }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Run phased E2E sample
+        env:
+          CI: true
+          PLAYWRIGHT_WORKERS: '2'
+        run: bash scripts/e2e-sample-chromium.sh
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-sample-phased-report
+          path: |
+            frontend/playwright-report/
+            frontend/test-results/
+          retention-days: 7

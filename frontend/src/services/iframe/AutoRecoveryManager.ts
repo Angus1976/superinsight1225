@@ -275,7 +275,7 @@ export class AutoRecoveryManager {
     level: 'debug' | 'info' | 'warn' | 'error' | 'critical',
     message: string,
     context?: {
-      error?: Error | ErrorInfo;
+      error?: unknown;
       recoveryAction?: RecoveryAction;
       [key: string]: unknown;
     }
@@ -292,10 +292,10 @@ export class AutoRecoveryManager {
     };
 
     // Add error details if provided
-    if (context?.error) {
+    if (context?.error !== undefined && context?.error !== null) {
       if (context.error instanceof Error) {
         logEntry.stackTrace = context.error.stack;
-      } else {
+      } else if (typeof context.error === 'object' && 'type' in (context.error as object)) {
         logEntry.error = context.error as ErrorInfo;
       }
     }

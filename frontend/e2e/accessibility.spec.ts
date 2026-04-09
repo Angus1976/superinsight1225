@@ -81,16 +81,18 @@ test.describe('Modal focus trap', () => {
     const modal = page.locator('.ant-modal')
     if (!(await modal.isVisible({ timeout: 3000 }).catch(() => false))) return
 
-    // Tab several times — focus should stay within modal
-    for (let i = 0; i < 8; i++) {
-      await page.keyboard.press('Tab')
-    }
-
+    // Ant Design may leave focus on the trigger; move focus into the modal without click retries (modal animation can block "stable" clicks).
+    await page.evaluate(() => {
+      const wrap = document.querySelector('.ant-modal')
+      if (!wrap) return
+      const input = wrap.querySelector('input.ant-input') as HTMLInputElement | null
+      input?.focus()
+    })
     const focusInModal = await page.evaluate(() => {
       const active = document.activeElement
-      const modal = document.querySelector('.ant-modal')
-      if (!active || !modal) return true
-      return modal.contains(active)
+      const el = document.querySelector('.ant-modal')
+      if (!active || !el) return false
+      return el.contains(active)
     })
     expect(focusInModal).toBeTruthy()
 

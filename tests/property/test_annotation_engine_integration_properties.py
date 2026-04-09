@@ -63,7 +63,7 @@ class TestEngineHealthCheckRetry:
     @given(
         num_failures=st.integers(min_value=1, max_value=5)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_exponential_backoff_on_failure(self, num_failures: int):
         """Test that failed health checks trigger exponential backoff."""
         await reset_health_monitor()
@@ -123,7 +123,7 @@ class TestEngineHealthCheckRetry:
     @given(
         num_engines=st.integers(min_value=1, max_value=10)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_multiple_engine_health_tracking(self, num_engines: int):
         """Test that health monitor tracks multiple engines independently."""
         await reset_health_monitor()
@@ -215,7 +215,7 @@ class TestLabelStudioIntegration:
     @given(
         num_tasks=st.integers(min_value=1, max_value=20)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_batch_prediction(self, num_tasks: int):
         """Test batch prediction for multiple tasks."""
         await reset_label_studio_engines()
@@ -253,7 +253,7 @@ class TestLabelStudioIntegration:
     @given(
         num_annotations=st.integers(min_value=1, max_value=50)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_model_training(self, num_annotations: int):
         """Test model training with annotations."""
         await reset_label_studio_engines()
@@ -297,7 +297,7 @@ class TestLabelStudioIntegration:
     @given(
         num_versions=st.integers(min_value=1, max_value=10)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_version_management(self, num_versions: int):
         """Test model version management."""
         await reset_label_studio_engines()
@@ -373,7 +373,7 @@ class TestArgillaIntegration:
         num_fields=st.integers(min_value=1, max_value=5),
         num_questions=st.integers(min_value=1, max_value=5),
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_dataset_creation(self, num_fields: int, num_questions: int):
         """Test dataset creation with fields and questions."""
         await reset_argilla_engines()
@@ -429,7 +429,7 @@ class TestArgillaIntegration:
     @given(
         num_records=st.integers(min_value=1, max_value=30)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_record_management(self, num_records: int):
         """Test adding and managing records."""
         await reset_argilla_engines()
@@ -476,7 +476,7 @@ class TestArgillaIntegration:
     @given(
         num_suggestions=st.integers(min_value=1, max_value=10)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_suggestions(self, num_suggestions: int):
         """Test adding AI suggestions to records."""
         await reset_argilla_engines()

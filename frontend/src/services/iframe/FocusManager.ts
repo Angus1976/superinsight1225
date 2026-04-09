@@ -17,14 +17,14 @@ export interface FocusState {
   focusHistory: HTMLElement[];
 }
 
-export interface FocusEvent {
+export interface FocusManagerPayload {
   type: 'focus_in' | 'focus_out' | 'focus_trapped' | 'focus_restored' | 'focus_moved';
   element: HTMLElement | null;
   source: 'main' | 'iframe';
   timestamp: number;
 }
 
-export type FocusEventHandler = (event: FocusEvent) => void;
+export type FocusEventHandler = (event: FocusManagerPayload) => void;
 
 export class FocusManager {
   private iframe: HTMLIFrameElement | null = null;
@@ -409,7 +409,7 @@ export class FocusManager {
   /**
    * Handle focus in events
    */
-  private handleFocusIn = (event: FocusEvent): void => {
+  private handleFocusIn = (event: globalThis.FocusEvent): void => {
     const target = event.target as HTMLElement;
     this.focusState.activeElement = target;
     this.addToFocusHistory(target);
@@ -421,7 +421,7 @@ export class FocusManager {
   /**
    * Handle focus out events
    */
-  private handleFocusOut = (event: FocusEvent): void => {
+  private handleFocusOut = (event: globalThis.FocusEvent): void => {
     const target = event.target as HTMLElement;
     const source = target === this.iframe ? 'iframe' : 'main';
     this.emitFocusEvent('focus_out', target, source);
@@ -477,8 +477,8 @@ export class FocusManager {
   /**
    * Emit focus event
    */
-  private emitFocusEvent(type: FocusEvent['type'], element: HTMLElement | null, source: 'main' | 'iframe'): void {
-    const event: FocusEvent = {
+  private emitFocusEvent(type: FocusManagerPayload['type'], element: HTMLElement | null, source: 'main' | 'iframe'): void {
+    const event: FocusManagerPayload = {
       type,
       element,
       source,

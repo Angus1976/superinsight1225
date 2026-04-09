@@ -73,7 +73,7 @@ class TestLargeBatchPerformance:
         chunk_size=st.integers(min_value=10, max_value=100),
         parallelism=st.integers(min_value=1, max_value=10)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_batch_chunking_produces_correct_chunks(
         self, batch_size: int, chunk_size: int, parallelism: int
     ):
@@ -110,7 +110,7 @@ class TestLargeBatchPerformance:
         processing_time_per_item=st.floats(min_value=0.001, max_value=0.1),
         parallelism=st.integers(min_value=1, max_value=10)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_parallel_processing_reduces_total_time(
         self, batch_size: int, processing_time_per_item: float, parallelism: int
     ):
@@ -136,7 +136,7 @@ class TestLargeBatchPerformance:
         total_items=st.integers(min_value=10000, max_value=100000),
         items_per_second=st.floats(min_value=1.0, max_value=100.0)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_large_batch_completes_within_time_limit(
         self, total_items: int, items_per_second: float
     ):
@@ -178,7 +178,7 @@ class TestModelCaching:
         model_name=st.text(min_size=3, max_size=50, alphabet='abcdefghijklmnopqrstuvwxyz0123456789-_'),
         cache_ttl=st.integers(min_value=60, max_value=3600)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_cache_key_generation(self, model_name: str, cache_ttl: int):
         """
         Feature: ai-annotation-methods, Property 32: Model Caching
@@ -200,7 +200,7 @@ class TestModelCaching:
         model_name=st.text(min_size=3, max_size=50, alphabet='abcdefghijklmnopqrstuvwxyz0123456789-_'),
         version=st.text(min_size=1, max_size=20, alphabet='0123456789.')
     )
-    @settings(max_examples=100)
+    @settings()
     def test_versioned_cache_key(self, model_name: str, version: str):
         """
         Feature: ai-annotation-methods, Property 32: Model Caching
@@ -225,7 +225,7 @@ class TestModelCaching:
         access_count=st.integers(min_value=2, max_value=100),
         cache_hit_rate=st.floats(min_value=0.1, max_value=1.0)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_cache_hit_reduces_load_time(
         self, access_count: int, cache_hit_rate: float
     ):
@@ -274,7 +274,7 @@ class TestRateLimitingUnderLoad:
         rate_limit=st.integers(min_value=10, max_value=500),
         window_seconds=st.integers(min_value=1, max_value=60)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_rate_limit_enforcement(
         self, requests_per_second: int, rate_limit: int, window_seconds: int
     ):
@@ -302,7 +302,7 @@ class TestRateLimitingUnderLoad:
         processing_rate=st.integers(min_value=1, max_value=100),
         duration_seconds=st.integers(min_value=1, max_value=60)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_queue_management(
         self,
         queue_capacity: int,
@@ -348,7 +348,7 @@ class TestLLMAPIRetryLogic:
         initial_delay=st.floats(min_value=0.1, max_value=2.0),
         exponential_base=st.floats(min_value=1.5, max_value=3.0)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_exponential_backoff_calculation(
         self, max_retries: int, initial_delay: float, exponential_base: float
     ):
@@ -373,7 +373,7 @@ class TestLLMAPIRetryLogic:
         failure_probability=st.floats(min_value=0.0, max_value=1.0),
         max_retries=st.integers(min_value=1, max_value=5)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_retry_success_probability(
         self, failure_probability: float, max_retries: int
     ):
@@ -399,7 +399,7 @@ class TestLLMAPIRetryLogic:
         initial_delay=st.floats(min_value=0.5, max_value=2.0),
         max_delay=st.floats(min_value=30.0, max_value=120.0)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_delay_capped_at_maximum(
         self, attempt: int, initial_delay: float, max_delay: float
     ):
@@ -437,7 +437,7 @@ class TestNetworkFailureQueuing:
         queue_size=st.integers(min_value=0, max_value=1000),
         new_requests=st.integers(min_value=0, max_value=100)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_requests_queued_during_outage(
         self, queue_size: int, new_requests: int
     ):
@@ -460,7 +460,7 @@ class TestNetworkFailureQueuing:
         queued_requests=st.integers(min_value=1, max_value=100),
         processing_rate=st.integers(min_value=1, max_value=50)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_queue_processed_after_recovery(
         self, queued_requests: int, processing_rate: int
     ):
@@ -482,7 +482,7 @@ class TestNetworkFailureQueuing:
         queue_capacity=st.integers(min_value=100, max_value=10000),
         incoming_during_outage=st.integers(min_value=0, max_value=20000)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_queue_overflow_handling(
         self, queue_capacity: int, incoming_during_outage: int
     ):
@@ -521,7 +521,7 @@ class TestTransactionRollback:
         operations=st.integers(min_value=1, max_value=100),
         failure_at=st.integers(min_value=0, max_value=99)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_partial_transaction_rollback(
         self, operations: int, failure_at: int
     ):
@@ -559,7 +559,7 @@ class TestTransactionRollback:
         ]),
         operation_name=st.text(min_size=3, max_size=30, alphabet='abcdefghijklmnopqrstuvwxyz_')
     )
-    @settings(max_examples=100)
+    @settings()
     def test_error_message_clarity(self, error_type: str, operation_name: str):
         """
         Feature: ai-annotation-methods, Property 36: Transaction Rollback
@@ -603,7 +603,7 @@ class TestInputValidation:
     @given(
         confidence=st.floats(allow_nan=True, allow_infinity=True)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_confidence_score_validation(self, confidence: float):
         """
         Feature: ai-annotation-methods, Property 37: Input Validation
@@ -635,7 +635,7 @@ class TestInputValidation:
         batch_size=st.integers(min_value=-1000, max_value=100000),
         max_batch_size=st.integers(min_value=100, max_value=10000)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_batch_size_validation(self, batch_size: int, max_batch_size: int):
         """
         Feature: ai-annotation-methods, Property 37: Input Validation
@@ -654,7 +654,7 @@ class TestInputValidation:
     @given(
         annotation_type=st.text(min_size=0, max_size=50)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_annotation_type_validation(self, annotation_type: str):
         """
         Feature: ai-annotation-methods, Property 37: Input Validation
@@ -695,7 +695,7 @@ class TestErrorLoggingAndNotification:
         user_id=st.text(min_size=5, max_size=50, alphabet='abcdefghijklmnopqrstuvwxyz0123456789'),
         tenant_id=st.text(min_size=5, max_size=50, alphabet='abcdefghijklmnopqrstuvwxyz0123456789')
     )
-    @settings(max_examples=100)
+    @settings()
     def test_error_context_completeness(
         self, error_type: str, error_message: str, user_id: str, tenant_id: str
     ):
@@ -731,7 +731,7 @@ class TestErrorLoggingAndNotification:
             unique=True
         )
     )
-    @settings(max_examples=100)
+    @settings()
     def test_notification_routing_by_severity(
         self, severity: str, notification_channels: List[str]
     ):
@@ -763,7 +763,7 @@ class TestErrorLoggingAndNotification:
         time_window_seconds=st.integers(min_value=60, max_value=3600),
         alert_threshold=st.integers(min_value=1, max_value=50)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_error_rate_alerting(
         self, error_count: int, time_window_seconds: int, alert_threshold: int
     ):
@@ -800,7 +800,7 @@ class TestConcurrencyHandling:
         requests_per_user=st.integers(min_value=1, max_value=50),
         max_concurrent=st.integers(min_value=10, max_value=100)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_concurrent_request_limiting(
         self, concurrent_users: int, requests_per_user: int, max_concurrent: int
     ):
@@ -822,7 +822,7 @@ class TestConcurrencyHandling:
         semaphore_limit=st.integers(min_value=1, max_value=50),
         waiting_tasks=st.integers(min_value=0, max_value=100)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_semaphore_based_limiting(
         self, semaphore_limit: int, waiting_tasks: int
     ):

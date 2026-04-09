@@ -128,7 +128,7 @@ class TestReportServiceEmailFormat:
         ),
         format=st.sampled_from([ReportFormat.JSON, ReportFormat.HTML, ReportFormat.MARKDOWN])
     )
-    @settings(max_examples=100)
+    @settings()
     def test_report_format_consistency(self, content, format):
         """报告格式化应该产生一致的输出
         
@@ -148,7 +148,7 @@ class TestReportServiceEmailFormat:
             max_size=3
         )
     )
-    @settings(max_examples=100)
+    @settings()
     def test_html_format_structure(self, content):
         """HTML 格式应该包含正确的结构
         
@@ -167,7 +167,7 @@ class TestReportServiceEmailFormat:
             lambda t: f"<html><body><p>{t}</p></body></html>"
         )
     )
-    @settings(max_examples=100)
+    @settings()
     def test_html_to_text_removes_tags(self, html):
         """HTML 转文本应该移除所有标签
         
@@ -187,7 +187,7 @@ class TestReportServiceEmailFormat:
             max_size=3
         )
     )
-    @settings(max_examples=100)
+    @settings()
     def test_json_format_valid(self, content):
         """JSON 格式应该是有效的 JSON
         
@@ -217,7 +217,7 @@ class TestReportServiceSendLogs:
         error_message=st.one_of(st.none(), st.text(min_size=1, max_size=200)),
         retry_count=st.integers(min_value=0, max_value=10)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_send_log_entry_completeness(self, recipient, subject, success, error_message, retry_count):
         """发送日志条目应该包含所有必要字段
         
@@ -251,7 +251,7 @@ class TestReportServiceSendLogs:
         ),
         max_logs=st.integers(min_value=100, max_value=1000)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_send_logs_limit(self, logs, max_logs):
         """发送日志应该限制数量
         
@@ -276,7 +276,7 @@ class TestReportServiceSendLogs:
     @given(
         attempt=st.integers(min_value=0, max_value=10)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_retry_delay_exponential(self, attempt):
         """重试延迟应该遵循指数退避
         
@@ -310,7 +310,7 @@ class TestEmailValidation:
         domain=st.text(min_size=1, max_size=20, alphabet='abcdefghijklmnopqrstuvwxyz0123456789'),
         tld=st.sampled_from(["com", "org", "net", "io", "cn"])
     )
-    @settings(max_examples=100)
+    @settings()
     def test_valid_email_format(self, local_part, domain, tld):
         """有效的邮箱格式应该通过验证"""
         assume(len(local_part) > 0 and len(domain) > 0)
@@ -327,7 +327,7 @@ class TestEmailValidation:
             st.text(min_size=1, max_size=50).filter(lambda x: "." not in x.split("@")[-1] if "@" in x else True)
         )
     )
-    @settings(max_examples=100)
+    @settings()
     def test_invalid_email_format(self, invalid_email):
         """无效的邮箱格式应该不通过验证"""
         assume("@" not in invalid_email or "." not in invalid_email.split("@")[-1] if "@" in invalid_email else True)
@@ -350,7 +350,7 @@ class TestSendResultIntegrity:
         error_message=st.one_of(st.none(), st.text(min_size=1, max_size=200)),
         retry_count=st.integers(min_value=0, max_value=10)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_send_result_consistency(self, recipient, success, error_message, retry_count):
         """SendResult 应该保持数据一致性"""
         result = SendResult(
@@ -374,7 +374,7 @@ class TestSendResultIntegrity:
         recipients=st.lists(st.emails(), min_size=1, max_size=10),
         success_rate=st.floats(min_value=0, max_value=1)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_batch_send_results(self, recipients, success_rate):
         """批量发送结果应该正确统计"""
         import random

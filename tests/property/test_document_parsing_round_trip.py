@@ -266,7 +266,7 @@ class TestDocumentParsingRoundTrip:
             max_size=10
         )
     )
-    @settings(max_examples=100, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_parse_store_retrieve_preserves_content(
         self,
         db_session: Session,
@@ -412,7 +412,7 @@ class TestDocumentParsingRoundTrip:
             max_size=5
         )
     )
-    @settings(max_examples=50, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_parse_store_retrieve_preserves_section_order(
         self,
         db_session: Session,
@@ -498,7 +498,7 @@ class TestDocumentParsingRoundTrip:
         filename=filename_strategy,
         uploaded_by=user_id_strategy
     )
-    @settings(max_examples=50, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_parse_store_retrieve_preserves_metadata_tags(
         self,
         db_session: Session,

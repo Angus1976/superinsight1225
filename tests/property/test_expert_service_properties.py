@@ -156,7 +156,7 @@ class TestExpertProfileDataIntegrity:
         return ExpertService()
 
     @given(profile_data=expert_profile_create_strategy())
-    @settings(max_examples=30, deadline=None)
+    @settings(deadline=None)
     def test_created_profile_contains_all_fields(
         self,
         profile_data: ExpertProfileCreate,
@@ -181,7 +181,7 @@ class TestExpertProfileDataIntegrity:
         profile1_data=expert_profile_create_strategy(),
         profile2_data=expert_profile_create_strategy(),
     )
-    @settings(max_examples=20, deadline=None)
+    @settings(deadline=None)
     def test_email_uniqueness_enforced(
         self,
         profile1_data: ExpertProfileCreate,
@@ -206,7 +206,7 @@ class TestExpertProfileDataIntegrity:
         profile_data=expert_profile_create_strategy(),
         new_name=expert_name_strategy(),
     )
-    @settings(max_examples=20, deadline=None)
+    @settings(deadline=None)
     def test_update_preserves_unchanged_fields(
         self,
         profile_data: ExpertProfileCreate,
@@ -231,7 +231,7 @@ class TestExpertProfileDataIntegrity:
         asyncio.run(run_test())
 
     @given(profile_data=expert_profile_create_strategy())
-    @settings(max_examples=20, deadline=None)
+    @settings(deadline=None)
     def test_deleted_profile_not_retrievable(
         self,
         profile_data: ExpertProfileCreate,
@@ -269,7 +269,7 @@ class TestExpertiseAreaValidation:
     """
 
     @given(areas=expertise_areas_strategy())
-    @settings(max_examples=30, deadline=None)
+    @settings(deadline=None)
     def test_valid_expertise_areas_accepted(
         self,
         areas: List[ExpertiseArea],
@@ -293,7 +293,7 @@ class TestExpertiseAreaValidation:
             )
 
     @given(area=expertise_area_strategy())
-    @settings(max_examples=20, deadline=None)
+    @settings(deadline=None)
     def test_duplicate_expertise_areas_rejected(
         self,
         area: ExpertiseArea,
@@ -353,7 +353,7 @@ class TestExpertRecommendationRelevance:
     @given(
         required_expertise=expertise_areas_strategy(),
     )
-    @settings(max_examples=30, deadline=None)
+    @settings(deadline=None)
     def test_recommended_experts_have_matching_expertise(
         self,
         required_expertise: List[ExpertiseArea],
@@ -389,7 +389,7 @@ class TestExpertRecommendationRelevance:
     @given(
         required_expertise=expertise_areas_strategy(),
     )
-    @settings(max_examples=20, deadline=None)
+    @settings(deadline=None)
     def test_recommendations_sorted_by_score(
         self,
         required_expertise: List[ExpertiseArea],
@@ -445,7 +445,7 @@ class TestExpertRecommendationRelevance:
         asyncio.run(run_test())
 
     @given(required_expertise=expertise_areas_strategy())
-    @settings(max_examples=20, deadline=None)
+    @settings(deadline=None)
     def test_empty_results_when_no_matching_experts(
         self,
         required_expertise: List[ExpertiseArea],
@@ -479,7 +479,7 @@ class TestContributionMetrics:
         initial_score=quality_score_strategy(),
         new_score=quality_score_strategy(),
     )
-    @settings(max_examples=30, deadline=None)
+    @settings(deadline=None)
     def test_quality_score_updates_correctly(
         self,
         initial_score: float,
@@ -515,7 +515,11 @@ class TestContributionMetrics:
             # Quality score should be between initial and new (EMA)
             min_score = min(initial_score, new_score)
             max_score = max(initial_score, new_score)
-            assert min_score <= metrics.quality_score <= max_score
+            q = metrics.quality_score
+            eps = 1e-6
+            assert min_score - eps <= q <= max_score + eps, (
+                f"EMA quality_score {q} should lie in [{min_score}, {max_score}]"
+            )
 
         asyncio.run(run_test())
 
@@ -523,7 +527,7 @@ class TestContributionMetrics:
         accepted_count=st.integers(min_value=1, max_value=50),
         rejected_count=st.integers(min_value=0, max_value=50),
     )
-    @settings(max_examples=20, deadline=None)
+    @settings(deadline=None)
     def test_acceptance_rate_calculated_correctly(
         self,
         accepted_count: int,
@@ -575,7 +579,7 @@ class TestSearchAndFiltering:
     @given(
         filter_area=expertise_area_strategy(),
     )
-    @settings(max_examples=20, deadline=None)
+    @settings(deadline=None)
     def test_filter_by_expertise_returns_matching_experts(
         self,
         filter_area: ExpertiseArea,

@@ -247,7 +247,7 @@ class TestEvaluationResultRoundTrip:
     """Property 11: Ragas API 评估结果往返"""
     
     @given(result=evaluation_result_strategy)
-    @settings(max_examples=100)
+    @settings()
     def test_save_and_retrieve_by_id(self, result):
         """存储后通过 ID 检索应该返回等价的结果
         
@@ -288,7 +288,7 @@ class TestEvaluationResultRoundTrip:
         assert retrieved['metadata'] == result['metadata'], "Metadata should match"
     
     @given(result=evaluation_result_strategy)
-    @settings(max_examples=100)
+    @settings()
     def test_metrics_preserved_after_roundtrip(self, result):
         """所有指标和分数应该在往返后保持不变
         
@@ -313,7 +313,7 @@ class TestEvaluationResultRoundTrip:
                 f"Metric {metric_name} value should match"
     
     @given(result=evaluation_result_strategy)
-    @settings(max_examples=100)
+    @settings()
     def test_nonexistent_id_returns_none(self, result):
         """不存在的 ID 应该返回 None
         
@@ -334,7 +334,7 @@ class TestEvaluationResultRoundTrip:
     @given(
         results=st.lists(evaluation_result_strategy, min_size=2, max_size=5)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_multiple_results_independent(self, results):
         """多个评估结果应该独立存储和检索
         
@@ -373,7 +373,7 @@ class TestPaginationAndDateFiltering:
         skip=st.integers(min_value=0, max_value=100),
         limit=st.integers(min_value=1, max_value=100)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_pagination_limit(self, num_results, skip, limit):
         """返回的结果数量应该不超过指定的 limit
         
@@ -411,7 +411,7 @@ class TestPaginationAndDateFiltering:
         num_results=st.integers(min_value=5, max_value=20),
         skip=st.integers(min_value=0, max_value=10)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_pagination_skip(self, num_results, skip):
         """skip 参数应该正确跳过指定数量的记录
         
@@ -451,7 +451,7 @@ class TestPaginationAndDateFiltering:
         num_in_range=st.integers(min_value=0, max_value=10),
         num_after=st.integers(min_value=0, max_value=10)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_date_range_filtering(self, base_date, num_before, num_in_range, num_after):
         """返回的结果应该在指定的日期范围内
         
@@ -526,7 +526,7 @@ class TestPaginationAndDateFiltering:
         num_results=st.integers(min_value=5, max_value=20),
         limit=st.integers(min_value=1, max_value=10)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_combined_pagination_and_date_filter(self, num_results, limit):
         """分页和日期过滤应该能正确组合使用
         
@@ -579,7 +579,7 @@ class TestPaginationAndDateFiltering:
         ),
         results_per_task=st.integers(min_value=1, max_value=5)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_task_id_filtering(self, task_ids, results_per_task):
         """按任务 ID 过滤应该只返回匹配的结果
         
@@ -619,7 +619,7 @@ class TestPaginationAndDateFiltering:
     @given(
         num_results=st.integers(min_value=3, max_value=10)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_results_ordered_by_created_at_descending(self, num_results):
         """结果应该按创建时间降序排列（最新的在前）
         
@@ -663,7 +663,7 @@ class TestEdgeCases:
     @given(
         overall_score=st.floats(min_value=0.0, max_value=1.0, allow_nan=False)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_overall_score_range(self, overall_score):
         """总体分数应该在 0.0 到 1.0 之间
         
@@ -704,7 +704,7 @@ class TestEdgeCases:
     @given(
         annotation_ids=st.lists(st.uuids().map(str), min_size=0, max_size=100)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_annotation_ids_preserved(self, annotation_ids):
         """标注 ID 列表应该完整保留
         

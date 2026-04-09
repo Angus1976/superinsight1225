@@ -140,10 +140,78 @@ class ComplianceTemplateService:
         self._templates: Dict[UUID, ComplianceTemplate] = {}
         self._entity_classifications: Dict[UUID, EntityClassificationResult] = {}
         self._lock: Optional[asyncio.Lock] = None
-        try:
-            asyncio.get_running_loop().create_task(self._initialize_builtin_templates())
-        except RuntimeError:
-            pass
+        self._seed_builtin_templates_sync()
+
+    def _seed_builtin_templates_sync(self) -> None:
+        """Load DSL + PIPL templates synchronously (no locks, no async race with first classify)."""
+        dsl_template = ComplianceTemplate(
+            regulation=ComplianceRegulation.DSL,
+            name="Data Security Law Compliance",
+            description="数据安全法合规模板",
+            version="1.0",
+        )
+        self._templates[dsl_template.template_id] = dsl_template
+        template = self._templates[dsl_template.template_id]
+        template.classification_rules.append(
+            ClassificationRule(
+                regulation=ComplianceRegulation.DSL,
+                classification=DataClassification.CORE,
+                keywords=["国家安全", "经济命脉", "民生", "公共利益", "关键信息基础设施"],
+                description="关系国家安全、国民经济命脉、重要民生、重大公共利益等数据",
+                article_reference="数据安全法 第21条",
+            )
+        )
+        template.classification_rules.append(
+            ClassificationRule(
+                regulation=ComplianceRegulation.DSL,
+                classification=DataClassification.IMPORTANT,
+                keywords=["行业数据", "地区数据", "业务数据", "统计数据"],
+                description="一旦泄露可能直接影响政治安全、经济安全、社会稳定的数据",
+                article_reference="数据安全法 第21条",
+            )
+        )
+        template.classification_rules.append(
+            ClassificationRule(
+                regulation=ComplianceRegulation.DSL,
+                classification=DataClassification.GENERAL,
+                keywords=[],
+                description="不属于重要数据和核心数据的其他数据",
+                article_reference="数据安全法 第21条",
+            )
+        )
+
+        pipl_template = ComplianceTemplate(
+            regulation=ComplianceRegulation.PIPL,
+            name="Personal Information Protection Law Compliance",
+            description="个人信息保护法合规模板",
+            version="1.0",
+        )
+        self._templates[pipl_template.template_id] = pipl_template
+        pt = self._templates[pipl_template.template_id]
+        pt.pil_rules.append(
+            PILValidationRule(
+                pil_type=PILType.SENSITIVE,
+                required_consent=ConsentType.SEPARATE,
+                purpose_limitation=True,
+                data_minimization=True,
+                retention_period_days=None,
+                cross_border_allowed=False,
+                description="敏感个人信息包括生物识别、宗教信仰、特定身份、医疗健康、金融账户、行踪轨迹等",
+                article_reference="个人信息保护法 第28条",
+            )
+        )
+        pt.pil_rules.append(
+            PILValidationRule(
+                pil_type=PILType.BASIC,
+                required_consent=ConsentType.EXPLICIT,
+                purpose_limitation=True,
+                data_minimization=True,
+                retention_period_days=365,
+                cross_border_allowed=False,
+                description="一般个人信息包括姓名、联系方式、地址等",
+                article_reference="个人信息保护法 第13条",
+            )
+        )
 
     async def _ensure_async_lock(self) -> None:
         if self._lock is None:
@@ -309,11 +377,11 @@ class ComplianceTemplateService:
             Classification result
         """
         await self._ensure_async_lock()
-        async with self._lock:
-            template = await self.get_template(regulation)
-            if not template:
-                raise ValueError(f"Template for {regulation} not found")
+        template = await self.get_template(regulation)
+        if not template:
+            raise ValueError(f"Template for {regulation} not found")
 
+        async with self._lock:
             result = EntityClassificationResult(
                 entity_id=entity_id,
                 entity_name=entity_name

@@ -101,7 +101,7 @@ class TestPipelineDependencyOrdering:
     """**Validates: Requirement 3.3**"""
 
     @given(plan=any_valid_pipeline())
-    @settings(max_examples=50, deadline=10000)
+    @settings(deadline=10000)
     def test_dependencies_complete_before_dependents(self, plan: ProcessingPlan):
         """For every stage, all its dependencies completed before it started."""
         executor = PipelineExecutor()
@@ -156,7 +156,7 @@ class TestPipelineExecutionInvariants:
     """**Validates: Requirements 5.1, 5.2, 5.3**"""
 
     @given(plan=any_valid_pipeline())
-    @settings(max_examples=50, deadline=10000)
+    @settings(deadline=10000)
     def test_every_stage_emits_progress_produces_output_and_caches(
         self, plan: ProcessingPlan
     ):

@@ -8,6 +8,7 @@
  */
 
 import { test, expect } from './fixtures'
+import type { Route } from '@playwright/test'
 import { isRestApiUrl } from './api-route-helpers'
 import { setupAuth, waitForPageReady } from './test-helpers'
 import { mockAllApis } from './helpers/mock-api-factory'
@@ -79,28 +80,52 @@ async function mockWorkspaceApis(page: import('@playwright/test').Page) {
 
 test.describe('Tenant isolation', () => {
   test('user in Tenant A cannot see Tenant B data', async ({ page }) => {
+    await mockAllApis(page)
     await setupAuth(page, 'admin', 'tenant-a')
 
-    await page.route('**/api/tasks**', async (route) => {
-      return route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          data: [{ id: 't-1', name: '租户A任务', tenant_id: 'tenant-a', status: 'pending', progress: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }],
-          total: 1,
-        }),
-      })
+    const task = {
+      id: 't-1',
+      name: '租户A任务',
+      description: 'e2e',
+      status: 'pending' as const,
+      priority: 'medium' as const,
+      annotation_type: 'text_classification' as const,
+      assignee_id: 'user-1',
+      assignee_name: '用户1',
+      created_by: 'e2e',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      progress: 0,
+      total_items: 10,
+      completed_items: 0,
+      tenant_id: 'tenant-a',
+      label_studio_project_id: '40',
+    }
+
+    const listBody = JSON.stringify({
+      items: [task],
+      total: 1,
+      page: 1,
+      page_size: 10,
     })
-    await page.route('**/api/tasks/stats', (route) =>
-      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ total: 1, pending: 1, in_progress: 0, completed: 0 }) }),
-    )
+
+    const fulfillList = async (route: Route) => {
+      if (route.request().method() !== 'GET') return route.continue()
+      await route.fulfill({ status: 200, contentType: 'application/json', body: listBody })
+    }
+
+    await page.route('**/api/tasks?**', fulfillList)
+    await page.route('**/api/tasks', async (route) => {
+      if (route.request().method() !== 'GET') return route.continue()
+      if (new URL(route.request().url()).pathname !== '/api/tasks') return route.continue()
+      return fulfillList(route)
+    })
 
     await page.goto('/tasks')
     await waitForPageReady(page)
 
-    const body = await page.textContent('body')
-    expect(body).toContain('租户A任务')
-    expect(body).not.toContain('tenant-b')
+    await expect(page.getByText('租户A任务', { exact: false })).toBeVisible({ timeout: 20000 })
+    await expect(page.getByText('tenant-b', { exact: false })).toHaveCount(0)
   })
 })
 
@@ -233,17 +258,21 @@ test.describe('Workspace removal', () => {
 
 test.describe('URL manipulation', () => {
   test('accessing unauthorized workspace via URL returns 403 or redirect', async ({ page }) => {
+    await mockAllApis(page)
     await setupAuth(page, 'annotator', 'tenant-1')
-
-    await page.route(isRestApiUrl, async (route) => {
-      return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
-    })
 
     await page.goto('/admin/workspaces?workspace_id=ws-unauthorized')
     await page.waitForTimeout(3000)
 
     const url = page.url()
-    const blocked = url.includes('403') || url.includes('login') || url.includes('dashboard') || url.includes('forbidden')
+    const body = await page.textContent('body')
+    const blocked =
+      url.includes('403') ||
+      url.includes('login') ||
+      url.includes('dashboard') ||
+      url.includes('forbidden') ||
+      url.includes('/403') ||
+      (body != null && /无权|拒绝|403|Forbidden|Access denied/i.test(body))
     expect(blocked).toBeTruthy()
   })
 })

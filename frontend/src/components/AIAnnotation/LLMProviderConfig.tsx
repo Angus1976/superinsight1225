@@ -33,6 +33,7 @@ import {
   message,
   Collapse,
   Badge,
+  Slider,
 } from 'antd';
 import {
   CheckCircleOutlined,

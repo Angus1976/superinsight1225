@@ -48,7 +48,7 @@ class TestLargeBatchPerformance:
     @given(
         batch_size=st.integers(min_value=10, max_value=100)
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     async def test_batch_processing_completes(self, batch_size: int):
         """Test that batch processing completes successfully."""
         config = BatchJobConfig(
@@ -91,7 +91,7 @@ class TestLargeBatchPerformance:
     @given(
         concurrency=st.integers(min_value=1, max_value=20)
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     async def test_concurrency_improves_throughput(self, concurrency: int):
         """Test that higher concurrency improves throughput."""
         num_items = 100
@@ -182,7 +182,7 @@ class TestModelCachingEfficiency:
     @given(
         cache_strategy=st.sampled_from([CacheStrategy.LRU, CacheStrategy.LFU, CacheStrategy.TTL])
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_cache_hit_returns_cached_data(self, cache_strategy: CacheStrategy):
         """Test that cache hits return previously cached data."""
         cache = ModelCacheManager(
@@ -207,7 +207,7 @@ class TestModelCachingEfficiency:
     @given(
         num_accesses=st.integers(min_value=1, max_value=50)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_cache_hit_rate_improves_with_reuse(self, num_accesses: int):
         """Test that cache hit rate improves with data reuse."""
         cache = ModelCacheManager(max_size=50)
@@ -233,7 +233,7 @@ class TestModelCachingEfficiency:
     @given(
         max_size=st.integers(min_value=5, max_value=20)
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_cache_eviction_maintains_size_limit(self, max_size: int):
         """Test that cache eviction maintains size limit."""
         cache = ModelCacheManager(
@@ -288,7 +288,7 @@ class TestRateLimitingUnderLoad:
     @given(
         rate_per_minute=st.integers(min_value=10, max_value=100)
     )
-    @settings(max_examples=10, deadline=None)
+    @settings(deadline=None)
     async def test_rate_limiter_enforces_limit(self, rate_per_minute: int):
         """Test that rate limiter enforces configured rate."""
         limiter = RateLimiter(
@@ -321,7 +321,7 @@ class TestRateLimitingUnderLoad:
     @given(
         burst_size=st.integers(min_value=5, max_value=30)
     )
-    @settings(max_examples=12, deadline=None)
+    @settings(deadline=None)
     async def test_burst_allowance_works(self, burst_size: int):
         """Test that burst allowance allows initial burst of requests."""
         limiter = RateLimiter(
@@ -394,7 +394,7 @@ class TestParallelProcessingScalability:
     @given(
         num_items=st.integers(min_value=20, max_value=100)
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     async def test_all_items_processed_correctly(self, num_items: int):
         """Test that all items are processed correctly in parallel."""
         config = BatchJobConfig(
@@ -434,7 +434,7 @@ class TestParallelProcessingScalability:
     @given(
         priority=st.sampled_from([QueuePriority.LOW, QueuePriority.NORMAL, QueuePriority.HIGH])
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_job_priority_respected(self, priority: QueuePriority):
         """Test that job priority is respected."""
         config = BatchJobConfig(batch_size=10, max_concurrency=5)

@@ -49,9 +49,12 @@ const AugmentationSamples: React.FC = () => {
     video: 'sampleManagement.type.video',
   };
 
-  const { data: samples, isLoading } = useQuery<AugmentationSample[]>({
+  const { data: samples, isLoading } = useQuery({
     queryKey: ['augmentation-samples'],
-    queryFn: () => api.get('/api/v1/augmentation/samples').then(res => res.data),
+    queryFn: async (): Promise<AugmentationSample[]> => {
+      const res = await api.get<AugmentationSample[]>('/api/v1/augmentation/samples');
+      return res.data;
+    },
   });
 
   const createSampleMutation = useMutation({

@@ -11,6 +11,7 @@ import { test as base, Page, BrowserContext } from '@playwright/test'
 import { RoleConfig, ROLE_CONFIGS } from './helpers/role-permissions'
 import { setupAuth } from './test-helpers'
 import { E2E_VALID_ACCESS_TOKEN } from './e2e-tokens'
+import { shouldIgnoreConsoleNoise } from './helpers/console-filter'
 
 /**
  * Console log entry interface
@@ -136,17 +137,7 @@ export { expect } from '@playwright/test'
  * Helper to filter console errors (exclude known test environment issues)
  */
 export function filterConsoleErrors(logs: ConsoleLogEntry[]): ConsoleLogEntry[] {
-  const knownIssues = [
-    'Failed to fetch',
-    'Network request failed',
-    'DEPRECATION WARNING',
-    'React does not recognize',
-    'Warning:',
-  ]
-  
-  return logs.filter(log => 
-    !knownIssues.some(issue => log.text.includes(issue))
-  )
+  return logs.filter((log) => !shouldIgnoreConsoleNoise(log.text))
 }
 
 /**

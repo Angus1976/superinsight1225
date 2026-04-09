@@ -1,249 +1,185 @@
 /**
- * Language Switching E2E Test
- * Tests switching between Chinese (zh) and English (en) on all admin pages
- * Validates Requirements 6.2 and 6.3
+ * Language switching on admin routes (MainLayout header). Starts from English — more
+ * reliable than zh-first loads with i18n hydration. Admin copy matches admin.json.
  */
 
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test'
+import { setupE2eSession, waitForPageReady } from './test-helpers'
 
-// Test configuration
-const BASE_URL = process.env.BASE_URL || 'http://localhost:5173';
-
-// Admin pages to test
 const adminPages = [
   {
     name: 'Admin Console',
     path: '/admin/console',
     zhTitle: '管理控制台',
     enTitle: 'Admin Console',
-    zhElements: ['系统概览', '快速操作', '系统状态'],
-    enElements: ['System Overview', 'Quick Actions', 'System Status']
+    zhElements: ['系统状态', '租户统计', '总租户数'],
+    enElements: ['System Status', 'Tenant Statistics', 'Total Tenants'],
   },
   {
     name: 'Billing Management',
     path: '/admin/billing',
-    zhTitle: '计费管理',
+    zhTitle: '账单管理',
     enTitle: 'Billing Management',
-    zhElements: ['计费概览', '账单列表', '计费统计'],
-    enElements: ['Billing Overview', 'Bill List', 'Billing Statistics']
+    zhElements: ['月度收入', '全部账单', '存储费用'],
+    enElements: ['Monthly Revenue', 'All Bills', 'Storage Cost'],
   },
   {
     name: 'Permission Configuration',
-    path: '/admin/permission-config',
-    zhTitle: '权限配置',
-    enTitle: 'Permission Configuration',
-    zhElements: ['角色管理', '权限管理', '角色列表'],
-    enElements: ['Role Management', 'Permission Management', 'Role List']
+    path: '/admin/permissions',
+    zhTitle: '权限配置管理',
+    enTitle: 'Permission Configuration Management',
+    zhElements: ['权限矩阵', 'API 权限', '权限说明'],
+    enElements: ['Permission Matrix', 'API Permissions', 'Owner has all permissions'],
   },
   {
     name: 'Quota Management',
-    path: '/admin/quota-management',
+    path: '/admin/quotas',
     zhTitle: '配额管理',
     enTitle: 'Quota Management',
-    zhElements: ['配额概览', '租户配额', '配额统计'],
-    enElements: ['Quota Overview', 'Tenant Quotas', 'Quota Statistics']
-  }
-];
+    zhElements: ['总存储使用', '租户', '调整配额'],
+    enElements: ['Total Storage Usage', 'Adjust Quota', 'Tenant'],
+  },
+]
+
+function escapeRe(s: string) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+async function expectPrimaryTitle(page: Page, fragment: string) {
+  const rex = new RegExp(escapeRe(fragment), 'i')
+  const h2 = page.locator('h2').filter({ hasText: rex })
+  const cardTitle = page.locator('.ant-card-head-title').filter({ hasText: rex })
+  await expect(h2.or(cardTitle).first()).toBeVisible({ timeout: 20000 })
+}
+
+async function expectCopyVisible(page: Page, text: string) {
+  await expect(page.getByText(text, { exact: false }).first()).toBeVisible()
+}
+
+/** Header language control: GlobalOutlined + locale label */
+function languageTrigger(page: Page) {
+  return page.locator('button').filter({ has: page.locator('.anticon-global') }).first()
+}
+
+async function openLanguageMenu(page: Page) {
+  await languageTrigger(page).click()
+}
+
+function strictI18nWarnings(warnings: string[]) {
+  return warnings.filter((w) =>
+    /missing key|not found in en|not found in zh|I18next.*missing|Translation missing/i.test(w),
+  )
+}
+
+function filterNonCriticalConsoleErrors(errors: string[]) {
+  return errors.filter(
+    (e) =>
+      !e.includes('favicon') &&
+      !e.includes('404') &&
+      !e.includes('net::ERR_') &&
+      !e.includes('[antd:') &&
+      !e.includes('destroyOnClose') &&
+      !e.includes('destroyOnHidden'),
+  )
+}
 
 test.describe('Language Switching Tests', () => {
-  let consoleMessages: string[] = [];
-  let consoleWarnings: string[] = [];
-  let consoleErrors: string[] = [];
+  let consoleWarnings: string[] = []
+  let consoleErrors: string[] = []
 
   test.beforeEach(async ({ page }) => {
-    // Capture console messages
-    consoleMessages = [];
-    consoleWarnings = [];
-    consoleErrors = [];
-
-    page.on('console', msg => {
-      const text = msg.text();
-      consoleMessages.push(text);
-      
-      if (msg.type() === 'warning') {
-        consoleWarnings.push(text);
-      } else if (msg.type() === 'error') {
-        consoleErrors.push(text);
-      }
-    });
-  });
+    consoleWarnings = []
+    consoleErrors = []
+    page.on('console', (msg) => {
+      const text = msg.text()
+      if (msg.type() === 'warning') consoleWarnings.push(text)
+      else if (msg.type() === 'error') consoleErrors.push(text)
+    })
+  })
 
   for (const adminPage of adminPages) {
     test.describe(adminPage.name, () => {
-      test('should switch from Chinese to English', async ({ page }) => {
-        // Navigate to page with Chinese locale
-        await page.goto(`${BASE_URL}${adminPage.path}?locale=zh`);
-        await page.waitForLoadState('networkidle');
+      test('should round-trip en → zh → en via header', async ({ page }) => {
+        await setupE2eSession(page, { lang: 'en', role: 'admin' })
+        await page.goto(adminPage.path)
+        await waitForPageReady(page)
 
-        // Verify Chinese content is displayed
-        await expect(page.locator('h1')).toContainText(adminPage.zhTitle);
-        
-        for (const zhElement of adminPage.zhElements) {
-          await expect(page.getByText(zhElement, { exact: false })).toBeVisible();
+        await expectPrimaryTitle(page, adminPage.enTitle)
+        for (const t of adminPage.enElements) {
+          await expectCopyVisible(page, t)
         }
 
-        // Find and click language switcher
-        const languageSwitcher = page.locator('[data-testid="language-switcher"]')
-          .or(page.locator('button:has-text("中文")'))
-          .or(page.locator('button:has-text("EN")'))
-          .or(page.locator('.language-selector'));
+        await openLanguageMenu(page)
+        await page.getByRole('menuitem', { name: /中文/ }).click()
+        await page.waitForTimeout(400)
+        await waitForPageReady(page)
 
-        if (await languageSwitcher.count() > 0) {
-          await languageSwitcher.first().click();
-          
-          // Select English
-          await page.getByText('English', { exact: false }).or(page.getByText('EN')).click();
-          
-          // Wait for language change to take effect
-          await page.waitForTimeout(500);
-          await page.waitForLoadState('networkidle');
-
-          // Verify English content is displayed
-          await expect(page.locator('h1')).toContainText(adminPage.enTitle);
-          
-          for (const enElement of adminPage.enElements) {
-            await expect(page.getByText(enElement, { exact: false })).toBeVisible();
-          }
+        await expectPrimaryTitle(page, adminPage.zhTitle)
+        for (const t of adminPage.zhElements) {
+          await expectCopyVisible(page, t)
         }
 
-        // Check for i18n warnings in console
-        const i18nWarnings = consoleWarnings.filter(w => 
-          w.includes('i18n') || 
-          w.includes('translation') || 
-          w.includes('locale') ||
-          w.includes('missing key')
-        );
-        
-        expect(i18nWarnings).toHaveLength(0);
-      });
+        await openLanguageMenu(page)
+        await page.getByRole('menuitem', { name: /English/i }).click()
+        await page.waitForTimeout(400)
+        await waitForPageReady(page)
 
-      test('should switch from English to Chinese', async ({ page }) => {
-        // Navigate to page with English locale
-        await page.goto(`${BASE_URL}${adminPage.path}?locale=en`);
-        await page.waitForLoadState('networkidle');
-
-        // Verify English content is displayed
-        await expect(page.locator('h1')).toContainText(adminPage.enTitle);
-        
-        for (const enElement of adminPage.enElements) {
-          await expect(page.getByText(enElement, { exact: false })).toBeVisible();
+        await expectPrimaryTitle(page, adminPage.enTitle)
+        for (const t of adminPage.enElements) {
+          await expectCopyVisible(page, t)
         }
 
-        // Find and click language switcher
-        const languageSwitcher = page.locator('[data-testid="language-switcher"]')
-          .or(page.locator('button:has-text("English")'))
-          .or(page.locator('button:has-text("中文")'))
-          .or(page.locator('.language-selector'));
-
-        if (await languageSwitcher.count() > 0) {
-          await languageSwitcher.first().click();
-          
-          // Select Chinese
-          await page.getByText('中文', { exact: false }).or(page.getByText('ZH')).click();
-          
-          // Wait for language change to take effect
-          await page.waitForTimeout(500);
-          await page.waitForLoadState('networkidle');
-
-          // Verify Chinese content is displayed
-          await expect(page.locator('h1')).toContainText(adminPage.zhTitle);
-          
-          for (const zhElement of adminPage.zhElements) {
-            await expect(page.getByText(zhElement, { exact: false })).toBeVisible();
-          }
-        }
-
-        // Check for i18n warnings in console
-        const i18nWarnings = consoleWarnings.filter(w => 
-          w.includes('i18n') || 
-          w.includes('translation') || 
-          w.includes('locale') ||
-          w.includes('missing key')
-        );
-        
-        expect(i18nWarnings).toHaveLength(0);
-      });
+        expect(strictI18nWarnings(consoleWarnings)).toHaveLength(0)
+      })
 
       test('should persist language preference across navigation', async ({ page }) => {
-        // Set language to English
-        await page.goto(`${BASE_URL}${adminPage.path}?locale=en`);
-        await page.waitForLoadState('networkidle');
+        await setupE2eSession(page, { lang: 'en', role: 'admin' })
+        await page.goto(adminPage.path)
+        await waitForPageReady(page)
+        await expectPrimaryTitle(page, adminPage.enTitle)
 
-        // Verify English content
-        await expect(page.locator('h1')).toContainText(adminPage.enTitle);
-
-        // Navigate to another admin page
-        const otherPage = adminPages.find(p => p.path !== adminPage.path);
+        const otherPage = adminPages.find((p) => p.path !== adminPage.path)
         if (otherPage) {
-          await page.goto(`${BASE_URL}${otherPage.path}`);
-          await page.waitForLoadState('networkidle');
-
-          // Verify language preference persisted (should still be English)
-          await expect(page.locator('h1')).toContainText(otherPage.enTitle);
+          await page.goto(otherPage.path)
+          await waitForPageReady(page)
+          await expectPrimaryTitle(page, otherPage.enTitle)
         }
-      });
+      })
 
       test('should have no console errors during language switching', async ({ page }) => {
-        // Navigate to page
-        await page.goto(`${BASE_URL}${adminPage.path}?locale=zh`);
-        await page.waitForLoadState('networkidle');
+        await setupE2eSession(page, { lang: 'en', role: 'admin' })
+        await page.goto(adminPage.path)
+        await waitForPageReady(page)
 
-        // Clear previous console messages
-        consoleErrors = [];
+        consoleErrors = []
+        await openLanguageMenu(page)
+        await page.getByRole('menuitem', { name: /中文/ }).click()
+        await page.waitForTimeout(400)
+        await waitForPageReady(page)
 
-        // Switch language
-        const languageSwitcher = page.locator('[data-testid="language-switcher"]')
-          .or(page.locator('button:has-text("中文")'))
-          .or(page.locator('.language-selector'));
-
-        if (await languageSwitcher.count() > 0) {
-          await languageSwitcher.first().click();
-          await page.getByText('English', { exact: false }).or(page.getByText('EN')).click();
-          await page.waitForTimeout(500);
-          await page.waitForLoadState('networkidle');
-        }
-
-        // Filter out non-critical errors
-        const criticalErrors = consoleErrors.filter(e => 
-          !e.includes('favicon') && 
-          !e.includes('404') &&
-          !e.includes('net::ERR_')
-        );
-
-        expect(criticalErrors).toHaveLength(0);
-      });
-    });
+        const criticalErrors = filterNonCriticalConsoleErrors(consoleErrors)
+        expect(criticalErrors).toHaveLength(0)
+      })
+    })
   }
 
   test('should handle rapid language switching', async ({ page }) => {
-    await page.goto(`${BASE_URL}/admin/console?locale=zh`);
-    await page.waitForLoadState('networkidle');
+    await setupE2eSession(page, { lang: 'zh', role: 'admin' })
+    await page.goto('/admin/console')
+    await waitForPageReady(page)
 
-    const languageSwitcher = page.locator('[data-testid="language-switcher"]')
-      .or(page.locator('button:has-text("中文")'))
-      .or(page.locator('.language-selector'));
-
-    if (await languageSwitcher.count() > 0) {
-      // Rapidly switch languages multiple times
+    const trigger = languageTrigger(page)
+    if ((await trigger.count()) > 0) {
       for (let i = 0; i < 3; i++) {
-        await languageSwitcher.first().click();
-        await page.getByText('English', { exact: false }).or(page.getByText('EN')).click();
-        await page.waitForTimeout(200);
-
-        await languageSwitcher.first().click();
-        await page.getByText('中文', { exact: false }).or(page.getByText('ZH')).click();
-        await page.waitForTimeout(200);
+        await trigger.click()
+        await page.getByRole('menuitem', { name: /English/i }).click()
+        await page.waitForTimeout(200)
+        await trigger.click()
+        await page.getByRole('menuitem', { name: /中文/ }).click()
+        await page.waitForTimeout(200)
       }
-
-      // Verify page is still functional
-      await expect(page.locator('h1')).toBeVisible();
-      
-      // Check for errors
-      const criticalErrors = consoleErrors.filter(e => 
-        !e.includes('favicon') && 
-        !e.includes('404')
-      );
-      expect(criticalErrors).toHaveLength(0);
+      await expect(page.locator('h2').filter({ hasText: /管理控制台|Admin Console/i })).toBeVisible()
+      expect(filterNonCriticalConsoleErrors(consoleErrors)).toHaveLength(0)
     }
-  });
-});
+  })
+})

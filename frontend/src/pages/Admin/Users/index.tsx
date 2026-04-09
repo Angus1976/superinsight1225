@@ -23,6 +23,16 @@ interface User {
   permissions: string[];
 }
 
+interface TenantListItem {
+  id: string;
+  name: string;
+}
+
+interface RoleListItem {
+  code: string;
+  name: string;
+}
+
 const AdminUsers: React.FC = () => {
   const { t } = useTranslation('admin');
   const { modal, message } = App.useApp();
@@ -36,23 +46,32 @@ const AdminUsers: React.FC = () => {
 
   const { data: users, isLoading } = useQuery({
     queryKey: ['admin-users', selectedTenant, selectedRole, selectedStatus],
-    queryFn: () => api.get('/api/v1/admin/users', {
-      params: {
-        tenant: selectedTenant !== 'all' ? selectedTenant : undefined,
-        role: selectedRole !== 'all' ? selectedRole : undefined,
-        status: selectedStatus !== 'all' ? selectedStatus : undefined,
-      },
-    }).then(res => res.data),
+    queryFn: async (): Promise<User[]> => {
+      const res = await api.get<User[]>('/api/v1/admin/users', {
+        params: {
+          tenant: selectedTenant !== 'all' ? selectedTenant : undefined,
+          role: selectedRole !== 'all' ? selectedRole : undefined,
+          status: selectedStatus !== 'all' ? selectedStatus : undefined,
+        },
+      });
+      return res.data;
+    },
   });
 
   const { data: tenants } = useQuery({
     queryKey: ['tenants-list'],
-    queryFn: () => api.get('/api/v1/admin/tenants/list').then(res => res.data),
+    queryFn: async (): Promise<TenantListItem[]> => {
+      const res = await api.get<TenantListItem[]>('/api/v1/admin/tenants/list');
+      return res.data;
+    },
   });
 
   const { data: roles } = useQuery({
     queryKey: ['roles-list'],
-    queryFn: () => api.get('/api/v1/security/roles/list').then(res => res.data),
+    queryFn: async (): Promise<RoleListItem[]> => {
+      const res = await api.get<RoleListItem[]>('/api/v1/security/roles/list');
+      return res.data;
+    },
   });
 
   const createUserMutation = useMutation({
@@ -289,7 +308,7 @@ const AdminUsers: React.FC = () => {
               placeholder={t('users.filters.selectTenant')}
             >
               <Select.Option value="all">{t('users.filters.allTenants')}</Select.Option>
-              {tenants?.map((tenant: any) => (
+              {tenants?.map((tenant) => (
                 <Select.Option key={tenant.id} value={tenant.id}>
                   {tenant.name}
                 </Select.Option>
@@ -303,7 +322,7 @@ const AdminUsers: React.FC = () => {
               placeholder={t('users.filters.selectRole')}
             >
               <Select.Option value="all">{t('users.filters.allRoles')}</Select.Option>
-              {roles?.map((role: any) => (
+              {roles?.map((role) => (
                 <Select.Option key={role.code} value={role.code}>
                   {role.name}
                 </Select.Option>
@@ -339,7 +358,7 @@ const AdminUsers: React.FC = () => {
       >
         <Table
           columns={columns}
-          dataSource={users}
+          dataSource={users ?? []}
           loading={isLoading}
           rowKey="id"
           scroll={{ x: 1200 }}
@@ -397,7 +416,7 @@ const AdminUsers: React.FC = () => {
             rules={[{ required: true, message: t('users.form.tenantRequired') }]}
           >
             <Select placeholder={t('users.form.tenantPlaceholder')}>
-              {tenants?.map((tenant: any) => (
+              {tenants?.map((tenant) => (
                 <Select.Option key={tenant.id} value={tenant.id}>
                   {tenant.name}
                 </Select.Option>
@@ -411,7 +430,7 @@ const AdminUsers: React.FC = () => {
             rules={[{ required: true, message: t('users.form.rolesRequired') }]}
           >
             <Select mode="multiple" placeholder={t('users.form.rolesPlaceholder')}>
-              {roles?.map((role: any) => (
+              {roles?.map((role) => (
                 <Select.Option key={role.code} value={role.code}>
                   {role.name}
                 </Select.Option>

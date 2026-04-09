@@ -425,7 +425,7 @@ class TestQualityScoreRange:
             max_size=5
         )
     )
-    @settings(max_examples=100)
+    @settings()
     def test_quality_score_range(self, scores, weights):
         """质量分数必须在 0-1 范围内
         
@@ -449,7 +449,7 @@ class TestQualityScoreRange:
             max_size=5
         )
     )
-    @settings(max_examples=100)
+    @settings()
     def test_quality_score_range_with_outliers(self, scores, weights):
         """即使输入分数超出范围，输出也必须在 0-1 范围内"""
         total_score = calculate_weighted_score(scores, weights)
@@ -479,7 +479,7 @@ class TestRuleExecutionDeterministic:
             max_size=5
         )
     )
-    @settings(max_examples=100)
+    @settings()
     def test_rule_execution_deterministic(self, annotation_data, required_fields):
         """规则执行必须是确定性的
         
@@ -501,7 +501,7 @@ class TestRuleExecutionDeterministic:
             max_size=5
         )
     )
-    @settings(max_examples=100)
+    @settings()
     def test_rule_with_all_fields_present(self, annotation_data):
         """当所有必填字段都存在时，规则应该通过"""
         required_fields = list(annotation_data.keys())
@@ -533,7 +533,7 @@ class TestConsistencyScoreSymmetric:
             max_size=5
         )
     )
-    @settings(max_examples=100)
+    @settings()
     def test_consistency_score_symmetric(self, annotation1, annotation2):
         """一致性分数计算必须对称
         
@@ -553,7 +553,7 @@ class TestConsistencyScoreSymmetric:
             max_size=5
         )
     )
-    @settings(max_examples=100)
+    @settings()
     def test_identical_annotations_perfect_agreement(self, annotation):
         """相同的标注应该有完美的一致性"""
         kappa = calculate_cohens_kappa(annotation, annotation)
@@ -577,7 +577,7 @@ class TestPriorityMonotonicity:
             max_size=10
         )
     )
-    @settings(max_examples=100)
+    @settings()
     def test_priority_monotonicity(self, issues):
         """更严重的问题应该有更高的优先级
         
@@ -599,7 +599,7 @@ class TestPriorityMonotonicity:
         num_medium=st.integers(min_value=0, max_value=5),
         num_low=st.integers(min_value=0, max_value=5)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_priority_range(self, num_critical, num_high, num_medium, num_low):
         """优先级必须在 1-3 范围内"""
         issues = (
@@ -631,7 +631,7 @@ class TestReportDataConsistency:
             max_size=100
         )
     )
-    @settings(max_examples=100)
+    @settings()
     def test_report_data_consistency(self, annotations):
         """报告数据必须与原始数据一致
         
@@ -659,7 +659,7 @@ class TestReportDataConsistency:
         assert abs(report.average_score - expected_avg) < 0.001, \
             f"Average score mismatch: {report.average_score} vs {expected_avg}"
     
-    @settings(max_examples=100)
+    @settings()
     @given(st.data())
     def test_empty_report(self, data):
         """空数据应该生成空报告"""
@@ -682,7 +682,7 @@ class TestRagasScoreRange:
         answer=st.text(min_size=1, max_size=500),
         contexts=st.lists(st.text(min_size=1, max_size=200), min_size=1, max_size=5)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_ragas_score_range(self, question, answer, contexts):
         """Ragas 评分必须在 0-1 范围内
         
@@ -703,7 +703,7 @@ class TestRagasScoreRange:
         contexts=st.lists(st.text(min_size=1, max_size=100), min_size=1, max_size=3),
         ground_truth=st.text(min_size=1, max_size=200)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_ragas_with_ground_truth(self, question, answer, contexts, ground_truth):
         """带有标准答案的 Ragas 评估也必须在范围内"""
         result = ragas_evaluate(question, answer, contexts, ground_truth)
@@ -733,7 +733,7 @@ class TestAlertTriggerConsistency:
             max_size=3
         )
     )
-    @settings(max_examples=100)
+    @settings()
     def test_alert_trigger_consistency(self, scores, thresholds):
         """预警触发必须与阈值配置一致
         
@@ -756,7 +756,7 @@ class TestAlertTriggerConsistency:
     @given(
         threshold=st.floats(min_value=0.5, max_value=0.9, allow_nan=False, allow_infinity=False)
     )
-    @settings(max_examples=100)
+    @settings()
     def test_alert_severity_levels(self, threshold):
         """预警严重程度应该与分数成反比"""
         # 低分数应该触发高严重程度

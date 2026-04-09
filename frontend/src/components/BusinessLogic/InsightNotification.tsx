@@ -495,7 +495,7 @@ export const InsightNotification: React.FC<InsightNotificationProps> = ({
                   title={
                     <Space>
                       <Text strong>{insight.title}</Text>
-                      <Tag color={getImpactColor(insight.impact_score)} size="small">
+                      <Tag color={getImpactColor(insight.impact_score)}>
                         {getImpactText(insight.impact_score)}
                       </Tag>
                     </Space>

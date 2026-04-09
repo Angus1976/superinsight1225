@@ -41,6 +41,7 @@ export interface DatalakeSourceUpdate {
   name?: string;
   description?: string;
   connection_config?: Record<string, unknown>;
+  is_active?: boolean;
 }
 
 export interface DatalakeSourceResponse {
@@ -48,7 +49,14 @@ export interface DatalakeSourceResponse {
   name: string;
   source_type: DatalakeSourceType;
   status: DataSourceStatus;
+  description?: string;
+  is_active?: boolean;
   health_check_status?: string | null;
+  /** 详情/列表接口可能返回嵌套健康信息 */
+  health_status?: {
+    status: string;
+    message?: string;
+  };
   last_health_check?: string | null;
   created_at: string;
   connection_config: Record<string, unknown>;

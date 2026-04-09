@@ -77,7 +77,10 @@ export interface DropdownMenuProps {
 /**
  * Convert MenuItem to Ant Design menu item
  */
-function convertToAntMenuItem(item: MenuItem, onItemClick?: (key: string) => void): MenuProps['items'][number] {
+function convertToAntMenuItem(
+  item: MenuItem,
+  onItemClick?: (key: string) => void
+): NonNullable<MenuProps['items']>[number] {
   if (item.type === 'divider') {
     return { type: 'divider', key: item.key };
   }
@@ -91,7 +94,7 @@ function convertToAntMenuItem(item: MenuItem, onItemClick?: (key: string) => voi
     };
   }
 
-  const menuItem: MenuProps['items'][number] = {
+  const menuItem: NonNullable<MenuProps['items']>[number] = {
     key: item.key,
     label: item.label,
     icon: item.icon,
@@ -104,7 +107,7 @@ function convertToAntMenuItem(item: MenuItem, onItemClick?: (key: string) => voi
   };
 
   if (item.children && item.children.length > 0) {
-    (menuItem as { children: MenuProps['items'] }).children = item.children.map(child => 
+    (menuItem as unknown as { children: MenuProps['items'] }).children = item.children.map(child => 
       convertToAntMenuItem(child, onItemClick)
     );
   }

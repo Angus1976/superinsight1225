@@ -255,7 +255,7 @@ class TestDataSourceCRUDRoundTrip:
             }
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_create_and_retrieve_data_source(self, config):
         """创建数据源后应该能通过 ID 检索到相同的配置
 
@@ -316,7 +316,7 @@ class TestDataSourceCRUDRoundTrip:
             alphabet=st.characters(whitelist_categories=("L", "N")),
         ),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_update_data_source(self, config, new_name):
         """更新数据源后应该反映更新的值
 
@@ -364,7 +364,7 @@ class TestDataSourceCRUDRoundTrip:
             }
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_delete_data_source(self, config):
         """删除数据源后应该无法检索
 
@@ -399,7 +399,7 @@ class TestCredentialEncryption:
     """Property 7: 同步管道 API 凭据加密"""
 
     @given(password=st.text(min_size=1, max_size=100))
-    @settings(max_examples=25)
+    @settings()
     def test_encryption_roundtrip(self, password):
         """加密后解密应该返回原始密码
 
@@ -417,7 +417,7 @@ class TestCredentialEncryption:
         assert decrypted == password, "Decrypted password should match original"
 
     @given(password=st.text(min_size=1, max_size=100))
-    @settings(max_examples=25)
+    @settings()
     def test_encrypted_differs_from_original(self, password):
         """加密后的数据应该与原始数据不同
 
@@ -437,7 +437,7 @@ class TestCredentialEncryption:
         ), "Encrypted content should differ from original"
 
     @given(password=st.text(min_size=1, max_size=100))
-    @settings(max_examples=25)
+    @settings()
     def test_encrypted_has_prefix(self, password):
         """加密后的数据应该有加密前缀
 
@@ -454,7 +454,7 @@ class TestCredentialEncryption:
         ), "Encrypted value should have prefix"
 
     @given(password=st.text(min_size=1, max_size=100))
-    @settings(max_examples=25)
+    @settings()
     def test_double_encryption_prevention(self, password):
         """不应该重复加密已加密的数据
 
@@ -498,7 +498,7 @@ class TestCredentialEncryption:
             }
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_stored_password_is_encrypted(self, config):
         """存储到数据库的密码应该是加密的
 
@@ -536,7 +536,7 @@ class TestPaginationFiltering:
         skip=st.integers(min_value=0, max_value=100),
         limit=st.integers(min_value=1, max_value=100),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_pagination_limit(self, num_sources, skip, limit):
         """返回的结果数量应该不超过指定的 limit
 
@@ -577,7 +577,7 @@ class TestPaginationFiltering:
         num_sources=st.integers(min_value=5, max_value=20),
         skip=st.integers(min_value=0, max_value=10),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_pagination_skip(self, num_sources, skip):
         """skip 参数应该正确跳过指定数量的记录
 
@@ -620,7 +620,7 @@ class TestPaginationFiltering:
         num_active=st.integers(min_value=0, max_value=10),
         num_inactive=st.integers(min_value=0, max_value=10),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_active_filter(self, num_active, num_inactive):
         """is_active 过滤应该正确过滤结果
 
@@ -696,7 +696,7 @@ class TestSignatureAndIdempotency:
             alphabet=st.characters(whitelist_categories=("L", "N")),
         ),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_valid_signature_accepted(self, payload, secret_key):
         """有效签名应该被接受
 
@@ -720,7 +720,7 @@ class TestSignatureAndIdempotency:
         ),
         wrong_signature=st.text(min_size=64, max_size=64, alphabet="0123456789abcdef"),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_invalid_signature_rejected(self, payload, secret_key, wrong_signature):
         """无效签名应该被拒绝
 
@@ -744,7 +744,7 @@ class TestSignatureAndIdempotency:
         idempotency_key=st.uuids().map(str),
         rows_received=st.integers(min_value=0, max_value=1000),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_idempotency_returns_previous_result(self, idempotency_key, rows_received):
         """重复的幂等键应该返回之前的结果
 
@@ -769,7 +769,7 @@ class TestSignatureAndIdempotency:
         assert existing["rows_received"] == rows_received, "Should return same result"
 
     @given(key1=st.uuids().map(str), key2=st.uuids().map(str))
-    @settings(max_examples=25)
+    @settings()
     def test_different_idempotency_keys_independent(self, key1, key2):
         """不同的幂等键应该独立处理
 
@@ -818,7 +818,7 @@ class TestCheckpointIncrementalSync:
         ),
         rows_pulled=st.integers(min_value=0, max_value=10000),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_checkpoint_save_and_retrieve(
         self, source_id, checkpoint_field, last_value, rows_pulled
     ):
@@ -864,7 +864,7 @@ class TestCheckpointIncrementalSync:
             max_size=5,
         ),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_checkpoint_update(self, source_id, checkpoint_field, values):
         """检查点应该更新为最新处理的记录
 
@@ -898,7 +898,7 @@ class TestCheckpointIncrementalSync:
         field1=st.just("updated_at"),
         field2=st.just("created_at"),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_different_checkpoint_fields_independent(self, source_id, field1, field2):
         """不同的检查点字段应该独立存储
 
@@ -940,7 +940,7 @@ class TestCheckpointIncrementalSync:
         assert retrieved2.rows_pulled == 200, "Second checkpoint rows should be 200"
 
     @given(source_id=st.uuids().map(str), checkpoint_field=st.just("updated_at"))
-    @settings(max_examples=25)
+    @settings()
     def test_nonexistent_checkpoint_returns_none(self, source_id, checkpoint_field):
         """不存在的检查点应该返回 None
 
@@ -1149,7 +1149,7 @@ class TestLabelStudioIntegration:
             alphabet=st.characters(whitelist_categories=("L", "N")),
         ),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_data_sent_to_label_studio_when_enabled(self, data, project_id):
         """
         When Label Studio is enabled, data should be sent to Label Studio.
@@ -1207,7 +1207,7 @@ class TestLabelStudioIntegration:
             max_size=15,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_data_not_sent_when_label_studio_disabled(self, data):
         """
         When Label Studio is disabled, data should NOT be sent to Label Studio.
@@ -1263,7 +1263,7 @@ class TestLabelStudioIntegration:
             alphabet=st.characters(whitelist_categories=("L", "N")),
         ),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_annotations_merged_with_original_data(self, data, project_id):
         """
         When annotations are completed, they should be merged with original data.
@@ -1333,7 +1333,7 @@ class TestLabelStudioIntegration:
             max_size=10,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_original_data_preserved_after_merge(self, data):
         """
         Original data should be fully preserved after merging with annotations.
@@ -1381,7 +1381,7 @@ class TestLabelStudioIntegration:
             max_size=10,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_merged_result_contains_both_original_and_annotations(self, data):
         """
         Merged result should contain both original data fields and annotation fields.
@@ -1436,7 +1436,7 @@ class TestLabelStudioIntegration:
             max_size=0,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_empty_data_handling(self, data):
         """
         Empty data should be handled gracefully without errors.
@@ -1483,7 +1483,7 @@ class TestLabelStudioIntegration:
             max_size=10,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_label_studio_client_not_configured(self, data):
         """
         When Label Studio client is not configured, should handle gracefully.
@@ -1522,7 +1522,7 @@ class TestLabelStudioIntegration:
             alphabet=st.characters(whitelist_categories=("L", "N")),
         ),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_all_records_annotated(self, num_records, project_id):
         """
         All records should receive annotations when Label Studio is enabled.
@@ -1772,7 +1772,7 @@ class TestAIEnhancementIntegration:
             alphabet=st.characters(whitelist_categories=("L", "N", "P")),
         ),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_llm_service_invoked_when_enabled(self, data, ai_model):
         """
         When AI enhancement is enabled, LLM service should be invoked.
@@ -1827,7 +1827,7 @@ class TestAIEnhancementIntegration:
             max_size=15,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_llm_service_not_invoked_when_disabled(self, data):
         """
         When AI enhancement is disabled, LLM service should NOT be invoked.
@@ -1884,7 +1884,7 @@ class TestAIEnhancementIntegration:
             alphabet=st.characters(whitelist_categories=("L", "N")),
         ),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_result_contains_original_and_ai_fields(self, data, ai_model):
         """
         Result should contain both original data and AI-generated fields.
@@ -1966,7 +1966,7 @@ class TestAIEnhancementIntegration:
             max_size=10,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_original_data_preserved_after_enhancement(self, data):
         """
         Original data should be fully preserved after AI enhancement.
@@ -2011,7 +2011,7 @@ class TestAIEnhancementIntegration:
             max_size=10,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_ai_generated_fields_have_correct_types(self, data):
         """
         AI-generated fields should have correct data types.
@@ -2071,7 +2071,7 @@ class TestAIEnhancementIntegration:
             max_size=0,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_empty_data_handling(self, data):
         """
         Empty data should be handled gracefully without errors.
@@ -2113,7 +2113,7 @@ class TestAIEnhancementIntegration:
             max_size=10,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_llm_service_not_configured(self, data):
         """
         When LLM service is not configured, should handle gracefully.
@@ -2152,7 +2152,7 @@ class TestAIEnhancementIntegration:
             alphabet=st.characters(whitelist_categories=("L", "N")),
         ),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_all_records_enhanced(self, num_records, ai_model):
         """
         All records should receive AI enhancement when enabled.
@@ -2214,7 +2214,7 @@ class TestAIEnhancementIntegration:
             max_size=10,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_ai_category_based_on_content(self, data):
         """
         AI-suggested category should be based on data content.
@@ -2266,7 +2266,7 @@ class TestAIEnhancementIntegration:
             max_size=10,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_ai_entities_extracted_from_text(self, data):
         """
         AI should extract entities from text fields.
@@ -2312,7 +2312,7 @@ class TestAIEnhancementIntegration:
             max_size=10,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_ai_sentiment_analysis_result(self, data):
         """
         AI should provide sentiment analysis for records.
@@ -2603,7 +2603,7 @@ class TestRefinementErrorPreservation:
             alphabet=st.characters(whitelist_categories=("L", "N")),
         ),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_original_data_preserved_when_label_studio_fails(self, data, project_id):
         """
         When Label Studio fails, original data should be preserved.
@@ -2674,7 +2674,7 @@ class TestRefinementErrorPreservation:
             alphabet=st.characters(whitelist_categories=("L", "N")),
         ),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_original_data_preserved_when_ai_enhancement_fails(self, data, ai_model):
         """
         When AI enhancement fails, original data should be preserved.
@@ -2740,7 +2740,7 @@ class TestRefinementErrorPreservation:
             max_size=20,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_error_logged_with_details_when_label_studio_fails(self, data):
         """
         When Label Studio fails, error should be logged with details.
@@ -2808,7 +2808,7 @@ class TestRefinementErrorPreservation:
             alphabet=st.characters(whitelist_categories=("L", "N")),
         ),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_error_logged_with_details_when_ai_enhancement_fails(self, data, ai_model):
         """
         When AI enhancement fails, error should be logged with details.
@@ -2865,7 +2865,7 @@ class TestRefinementErrorPreservation:
             max_size=10,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_both_services_fail_preserves_original(self, data):
         """
         When both Label Studio and AI enhancement fail, original data preserved.
@@ -2939,7 +2939,7 @@ class TestRefinementErrorPreservation:
             max_size=10,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_label_studio_get_annotations_failure_preserves_original(self, data):
         """
         When Label Studio get_annotations fails, original data preserved.
@@ -2989,7 +2989,7 @@ class TestRefinementErrorPreservation:
         ), "Label Studio error should be captured"
 
     @given(num_records=st.integers(min_value=1, max_value=50))
-    @settings(max_examples=25)
+    @settings()
     def test_all_records_preserved_on_failure(self, num_records):
         """
         All records should be preserved when refinement fails.
@@ -3036,7 +3036,7 @@ class TestRefinementErrorPreservation:
             max_size=0,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_empty_data_no_error_on_failure(self, data):
         """
         Empty data should not cause errors even when services fail.
@@ -3088,7 +3088,7 @@ class TestRefinementErrorPreservation:
             max_size=10,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_nested_data_preserved_on_failure(self, data):
         """
         Nested data structures should be fully preserved on failure.
@@ -3150,7 +3150,7 @@ class TestRefinementErrorPreservation:
             max_size=10,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_error_details_contain_error_type(self, data):
         """
         Error details should contain the error type.
@@ -3188,7 +3188,7 @@ class TestRefinementErrorPreservation:
             max_size=10,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_error_details_contain_timestamp(self, data):
         """
         Error details should contain a timestamp.
@@ -3240,7 +3240,7 @@ class TestRefinementErrorPreservation:
             max_size=10,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_success_when_no_failure(self, data):
         """
         When refinement succeeds, success should be True and no errors.
@@ -3407,7 +3407,7 @@ class TestJSONExportRoundTrip:
             max_size=50,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_json_export_produces_valid_json(self, data):
         """
         Exported JSON should be valid and parseable.
@@ -3458,7 +3458,7 @@ class TestJSONExportRoundTrip:
             max_size=30,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_json_round_trip_preserves_data(self, data):
         """
         JSON export and parse should preserve all data.
@@ -3514,7 +3514,7 @@ class TestJSONExportRoundTrip:
             max_size=30,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_utf8_chinese_characters_preserved(self, data):
         """
         Chinese UTF-8 characters should be preserved in JSON export.
@@ -3563,7 +3563,7 @@ class TestJSONExportRoundTrip:
             max_size=20,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_utf8_emoji_and_special_chars_preserved(self, data):
         """
         Emoji and special UTF-8 characters should be preserved.
@@ -3615,7 +3615,7 @@ class TestJSONExportRoundTrip:
             max_size=20,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_utf8_multilingual_characters_preserved(self, data):
         """
         Multilingual UTF-8 characters should be preserved.
@@ -3665,7 +3665,7 @@ class TestJSONExportRoundTrip:
             max_size=30,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_json_schema_consistency(self, data):
         """
         JSON export should have consistent schema across all records.
@@ -3716,7 +3716,7 @@ class TestJSONExportRoundTrip:
             max_size=20,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_nested_structures_preserved(self, data):
         """
         Nested structures should be preserved in JSON export.
@@ -3763,7 +3763,7 @@ class TestJSONExportRoundTrip:
             max_size=20,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_edge_case_values_preserved(self, data):
         """
         Edge case values (null, empty string, zero, false) should be preserved.
@@ -3816,7 +3816,7 @@ class TestJSONExportRoundTrip:
             max_size=20,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_special_json_characters_escaped(self, data):
         """
         Special JSON characters should be properly escaped and preserved.
@@ -3848,7 +3848,7 @@ class TestJSONExportRoundTrip:
             ), f"Quote chars should be preserved at index {i}"
 
     @given(num_records=st.integers(min_value=0, max_value=100))
-    @settings(max_examples=25)
+    @settings()
     def test_empty_and_large_datasets(self, num_records):
         """
         JSON export should handle empty and large datasets.
@@ -3892,7 +3892,7 @@ class TestJSONExportRoundTrip:
             max_size=20,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_json_encoding_is_utf8(self, data):
         """
         JSON export should use UTF-8 encoding.
@@ -3939,7 +3939,7 @@ class TestJSONExportRoundTrip:
             max_size=20,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_json_is_deterministic(self, data):
         """
         JSON export should be deterministic (same input produces same output).
@@ -4121,7 +4121,7 @@ class TestCSVExportFormatValidation:
             max_size=50,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_csv_has_headers_matching_field_names(self, data):
         """
         CSV export should have headers matching field names.
@@ -4177,7 +4177,7 @@ class TestCSVExportFormatValidation:
             max_size=30,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_csv_escapes_commas_and_quotes(self, data):
         """
         CSV should properly escape values containing commas and quotes.
@@ -4235,7 +4235,7 @@ class TestCSVExportFormatValidation:
             max_size=30,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_csv_escapes_newlines(self, data):
         """
         CSV should properly escape values containing newlines.
@@ -4284,7 +4284,7 @@ class TestCSVExportFormatValidation:
             max_size=30,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_csv_parseable_by_standard_csv_module(self, data):
         """
         Exported CSV should be parseable by Python's standard csv module.
@@ -4336,7 +4336,7 @@ class TestCSVExportFormatValidation:
         ),
         delimiter=st.sampled_from([",", ";", "\t"]),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_csv_configurable_delimiters(self, data, delimiter):
         """
         CSV export should support configurable delimiters.
@@ -4395,7 +4395,7 @@ class TestCSVExportFormatValidation:
             max_size=30,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_csv_preserves_utf8_characters(self, data):
         """
         CSV export should preserve UTF-8 characters including Chinese.
@@ -4444,7 +4444,7 @@ class TestCSVExportFormatValidation:
             max_size=30,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_csv_handles_all_special_characters(self, data):
         """
         CSV should properly handle all special characters that need escaping.
@@ -4472,7 +4472,7 @@ class TestCSVExportFormatValidation:
             ), f"Special chars should be preserved at index {i}: '{repr(parsed_row['special_chars'])}' != '{repr(original['special_chars'])}'"
 
     @given(num_records=st.integers(min_value=0, max_value=100))
-    @settings(max_examples=25)
+    @settings()
     def test_csv_handles_empty_and_large_datasets(self, num_records):
         """
         CSV export should handle empty and large datasets.
@@ -4527,7 +4527,7 @@ class TestCSVExportFormatValidation:
             max_size=20,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_csv_handles_edge_case_values(self, data):
         """
         CSV should handle edge case values (null, empty string, zero, false).
@@ -4593,7 +4593,7 @@ class TestCSVExportFormatValidation:
             max_size=20,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_csv_flattens_nested_structures(self, data):
         """
         CSV should flatten nested structures to JSON strings.
@@ -4642,7 +4642,7 @@ class TestCSVExportFormatValidation:
             max_size=20,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_csv_is_deterministic(self, data):
         """
         CSV export should be deterministic (same input produces same output).
@@ -4682,7 +4682,7 @@ class TestCSVExportFormatValidation:
             max_size=30,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_csv_semicolon_delimiter_escapes_semicolons(self, data):
         """
         CSV with semicolon delimiter should properly escape semicolons in values.
@@ -4731,7 +4731,7 @@ class TestCSVExportFormatValidation:
             max_size=30,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_csv_tab_delimiter_escapes_tabs(self, data):
         """
         CSV with tab delimiter should properly escape tabs in values.
@@ -4986,7 +4986,7 @@ class TestCOCOFormatValidation:
         num_images=st.integers(min_value=1, max_value=20),
         num_categories=st.integers(min_value=1, max_value=10),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_coco_has_required_top_level_keys(self, num_images, num_categories):
         """
         COCO output should have required top-level keys: images, annotations, categories.
@@ -5048,7 +5048,7 @@ class TestCOCOFormatValidation:
             max_size=30,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_images_array_contains_valid_image_objects(self, images):
         """
         Images array should contain valid image objects with id, file_name, width, height.
@@ -5088,7 +5088,7 @@ class TestCOCOFormatValidation:
         num_categories=st.integers(min_value=1, max_value=5),
         num_annotations=st.integers(min_value=1, max_value=30),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_annotations_array_contains_valid_annotation_objects(
         self, num_images, num_categories, num_annotations
     ):
@@ -5156,7 +5156,7 @@ class TestCOCOFormatValidation:
             max_size=20,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_categories_array_contains_valid_category_objects(self, categories):
         """
         Categories array should contain valid category objects with id, name.
@@ -5194,7 +5194,7 @@ class TestCOCOFormatValidation:
         num_categories=st.integers(min_value=2, max_value=8),
         num_annotations=st.integers(min_value=5, max_value=40),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_annotation_image_id_references_match_existing_images(
         self, num_images, num_categories, num_annotations
     ):
@@ -5244,7 +5244,7 @@ class TestCOCOFormatValidation:
         num_categories=st.integers(min_value=2, max_value=8),
         num_annotations=st.integers(min_value=5, max_value=40),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_annotation_category_id_references_match_existing_categories(
         self, num_images, num_categories, num_annotations
     ):
@@ -5293,7 +5293,7 @@ class TestCOCOFormatValidation:
         num_images=st.integers(min_value=1, max_value=10),
         num_categories=st.integers(min_value=1, max_value=5),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_coco_json_is_valid_and_parseable(self, num_images, num_categories):
         """
         COCO export should produce valid, parseable JSON.
@@ -5342,7 +5342,7 @@ class TestCOCOFormatValidation:
             max_size=4,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_bbox_format_is_valid(self, bbox_values):
         """
         Bounding box should be in [x, y, width, height] format with numeric values.
@@ -5379,7 +5379,7 @@ class TestCOCOFormatValidation:
         num_categories=st.integers(min_value=0, max_value=5),
         num_annotations=st.integers(min_value=0, max_value=10),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_empty_arrays_are_valid(self, num_images, num_categories, num_annotations):
         """
         COCO format should handle empty arrays gracefully.
@@ -5435,7 +5435,7 @@ class TestCOCOFormatValidation:
             alphabet=st.sampled_from("中文日本語한국어émojis🎉特殊字符"),
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_unicode_characters_in_names(self, special_chars):
         """
         COCO format should handle Unicode characters in names.
@@ -5474,7 +5474,7 @@ class TestCOCOFormatValidation:
         num_images=st.integers(min_value=1, max_value=10),
         num_categories=st.integers(min_value=1, max_value=5),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_annotation_with_segmentation_instead_of_bbox(
         self, num_images, num_categories
     ):
@@ -5805,7 +5805,7 @@ class TestEnhancedDataCompleteness:
         add_entities=st.booleans(),
         add_sentiment=st.booleans(),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_enhanced_export_contains_original_fields(
         self, data, add_summary, add_entities, add_sentiment
     ):
@@ -5870,7 +5870,7 @@ class TestEnhancedDataCompleteness:
         add_semantics=st.booleans(),
         add_label_studio=st.booleans(),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_enhanced_export_contains_enhanced_fields(
         self, data, add_keywords, add_category, add_semantics, add_label_studio
     ):
@@ -5941,7 +5941,7 @@ class TestEnhancedDataCompleteness:
             max_size=30,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_no_original_data_lost_with_all_enhancements(self, data):
         """
         No original data should be lost when all enhancements are applied.
@@ -6007,7 +6007,7 @@ class TestEnhancedDataCompleteness:
             max_size=20,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_csv_export_contains_both_original_and_enhanced(self, data):
         """
         CSV export should contain both original and enhanced fields.
@@ -6070,7 +6070,7 @@ class TestEnhancedDataCompleteness:
             max_size=20,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_utf8_preserved_in_enhanced_export(self, data):
         """
         UTF-8 characters should be preserved in enhanced export.
@@ -6118,7 +6118,7 @@ class TestEnhancedDataCompleteness:
             max_size=20,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_nested_structures_preserved_with_enhancement(self, data):
         """
         Nested structures should be preserved when enhancement is applied.
@@ -6171,7 +6171,7 @@ class TestEnhancedDataCompleteness:
             max_size=20,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_edge_case_values_preserved_with_enhancement(self, data):
         """
         Edge case values (null, empty, zero, false) should be preserved.
@@ -6209,7 +6209,7 @@ class TestEnhancedDataCompleteness:
             ), f"False value should be preserved at record {i}"
 
     @given(num_records=st.integers(min_value=0, max_value=100))
-    @settings(max_examples=25)
+    @settings()
     def test_record_count_preserved_with_enhancement(self, num_records):
         """
         Record count should be preserved after enhancement.
@@ -6264,7 +6264,7 @@ class TestEnhancedDataCompleteness:
             max_size=20,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_export_deterministic_with_enhancement(self, data):
         """
         Enhanced export should be deterministic (same input produces same output).
@@ -6310,7 +6310,7 @@ class TestEnhancedDataCompleteness:
             max_size=20,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_original_only_export_excludes_enhanced_fields(self, data):
         """
         Export with include_enhanced=False should exclude enhanced fields.
@@ -6367,7 +6367,7 @@ class TestEnhancedDataCompleteness:
             max_size=20,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_enhanced_only_export_excludes_original_fields(self, data):
         """
         Export with include_original=False should exclude original fields.
@@ -6558,7 +6558,7 @@ class TestTenantIsolatedMetrics:
         tenant_a_jobs=st.integers(min_value=1, max_value=50),
         tenant_b_jobs=st.integers(min_value=1, max_value=50),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_tenant_metrics_isolation(
         self, tenant_a_id, tenant_b_id, tenant_a_jobs, tenant_b_jobs
     ):
@@ -6628,7 +6628,7 @@ class TestTenantIsolatedMetrics:
         failed_count=st.integers(min_value=0, max_value=50),
         running_count=st.integers(min_value=0, max_value=10),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_success_rate_calculation(
         self, tenant_id, completed_count, failed_count, running_count
     ):
@@ -6701,7 +6701,7 @@ class TestTenantIsolatedMetrics:
         completed_count=st.integers(min_value=0, max_value=50),
         failed_count=st.integers(min_value=0, max_value=50),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_error_rate_calculation(self, tenant_id, completed_count, failed_count):
         """
         Error rate should be accurately calculated as failed / total.
@@ -6764,7 +6764,7 @@ class TestTenantIsolatedMetrics:
             max_size=50,
         ),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_average_duration_calculation(self, tenant_id, durations):
         """
         Average duration should be accurately calculated.
@@ -6806,7 +6806,7 @@ class TestTenantIsolatedMetrics:
         pull_jobs=st.integers(min_value=0, max_value=20),
         push_jobs=st.integers(min_value=0, max_value=20),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_metrics_by_method(self, tenant_id, read_jobs, pull_jobs, push_jobs):
         """
         Metrics should be correctly broken down by sync method.
@@ -6888,7 +6888,7 @@ class TestTenantIsolatedMetrics:
         num_tenants=st.integers(min_value=2, max_value=10),
         jobs_per_tenant=st.integers(min_value=1, max_value=20),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_multi_tenant_isolation(self, num_tenants, jobs_per_tenant):
         """
         With multiple tenants, each tenant should only see their own metrics.
@@ -6937,7 +6937,7 @@ class TestTenantIsolatedMetrics:
             ), f"Tenant {tenant_idx} average duration should be {expected_duration}, got {metrics['average_duration']}"
 
     @given(tenant_id=st.uuids().map(str), other_tenant_id=st.uuids().map(str))
-    @settings(max_examples=25)
+    @settings()
     def test_tenant_b_data_never_visible_to_tenant_a(self, tenant_id, other_tenant_id):
         """
         Tenant B's data should never be visible to Tenant A.
@@ -6987,7 +6987,7 @@ class TestTenantIsolatedMetrics:
         completed_count=st.integers(min_value=0, max_value=20),
         failed_count=st.integers(min_value=0, max_value=20),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_method_specific_success_and_error_rates(
         self, tenant_id, method, completed_count, failed_count
     ):
@@ -7051,7 +7051,7 @@ class TestTenantIsolatedMetrics:
         ), f"Method {method} error rate should be {expected_error_rate}, got {method_metrics['error_rate']}"
 
     @given(tenant_id=st.uuids().map(str))
-    @settings(max_examples=25)
+    @settings()
     def test_empty_tenant_metrics(self, tenant_id):
         """
         Tenant with no jobs should get empty metrics (not error).
@@ -7094,7 +7094,7 @@ class TestTenantIsolatedMetrics:
             max_size=50,
         ),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_comprehensive_metrics_accuracy(self, tenant_id, jobs_data):
         """
         All metrics should be accurately calculated for any combination of jobs.
@@ -7562,7 +7562,7 @@ class TestInternationalizationConsistency:
         ),
         language=st.sampled_from(["zh-CN", "en-US"]),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_api_responses_use_i18n_keys(self, operation, language):
         """
         API responses should use i18n keys for all user-facing messages.
@@ -7613,7 +7613,7 @@ class TestInternationalizationConsistency:
         ),
         language=st.sampled_from(["zh-CN", "en-US"]),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_error_messages_localized_in_both_languages(self, error_type, language):
         """
         Error messages should be localized in the user's language (zh-CN or en-US).
@@ -7671,7 +7671,7 @@ class TestInternationalizationConsistency:
             ]
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_error_messages_differ_between_languages(self, error_type):
         """
         Error messages in zh-CN and en-US should be different (properly localized).
@@ -7727,7 +7727,7 @@ class TestInternationalizationConsistency:
         ),
         language=st.sampled_from(["zh-CN", "en-US"]),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_configuration_labels_translated(self, config_key, config_value, language):
         """
         Configuration labels should be translated using the i18n service.
@@ -7790,7 +7790,7 @@ class TestInternationalizationConsistency:
         ),
         language=st.sampled_from(["zh-CN", "en-US"]),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_all_config_labels_have_translations(self, config, language):
         """
         All configuration labels should have translations in both languages.
@@ -7837,7 +7837,7 @@ class TestInternationalizationConsistency:
             ]
         ),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_logs_use_english_for_technical_details(
         self, log_level, technical_message, user_facing_key
     ):
@@ -7901,7 +7901,7 @@ class TestInternationalizationConsistency:
             alphabet=st.characters(whitelist_categories=("L", "N", "P")),
         ),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_logs_without_user_facing_content(self, log_level, technical_message):
         """
         Logs without user-facing content should still have English technical details.
@@ -7951,7 +7951,7 @@ class TestInternationalizationConsistency:
             ]
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_all_i18n_keys_have_both_translations(self, i18n_key):
         """
         All i18n keys should have translations in both zh-CN and en-US.
@@ -7992,7 +7992,7 @@ class TestInternationalizationConsistency:
         ), f"en-US translation should not be the raw key for {i18n_key}"
 
     @given(language=st.sampled_from(["zh-CN", "en-US"]))
-    @settings(max_examples=25)
+    @settings()
     def test_language_switching(self, language):
         """
         Language switching should work correctly.
@@ -8026,7 +8026,7 @@ class TestInternationalizationConsistency:
             min_size=2, max_size=10, alphabet=st.characters(whitelist_categories=("L",))
         ).filter(lambda x: x not in ["zh-CN", "en-US", "zh", "en"])
     )
-    @settings(max_examples=25)
+    @settings()
     def test_unsupported_language_fallback(self, unsupported_language):
         """
         Unsupported languages should fall back to default language.
@@ -8059,7 +8059,7 @@ class TestInternationalizationConsistency:
         ), "Unsupported language should fall back to default"
 
     @given(num_keys=st.integers(min_value=1, max_value=20))
-    @settings(max_examples=25)
+    @settings()
     def test_translation_consistency_across_all_keys(self, num_keys):
         """
         All i18n keys should have consistent translations in both languages.
@@ -8111,7 +8111,7 @@ class TestInternationalizationConsistency:
             ]
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_zh_cn_returns_chinese_text(self, operation):
         """
         Requesting zh-CN should return Chinese text.
@@ -8149,7 +8149,7 @@ class TestInternationalizationConsistency:
             ]
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_en_us_returns_english_text(self, operation):
         """
         Requesting en-US should return English text.
@@ -8372,7 +8372,7 @@ class TestAlertThresholdTriggering:
             min_value=0.0, max_value=1.0, allow_nan=False, allow_infinity=False
         ),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_alert_triggers_when_error_rate_exceeds_threshold(
         self, tenant_id, source_id, threshold, error_rate
     ):
@@ -8425,7 +8425,7 @@ class TestAlertThresholdTriggering:
         ),
         num_checks=st.integers(min_value=2, max_value=10),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_alert_triggered_exactly_once_per_breach(
         self, tenant_id, source_id, threshold, num_checks
     ):
@@ -8472,7 +8472,7 @@ class TestAlertThresholdTriggering:
             min_value=0.05, max_value=0.30, allow_nan=False, allow_infinity=False
         ),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_alert_not_triggered_when_below_threshold(
         self, tenant_id, source_id, threshold
     ):
@@ -8507,7 +8507,7 @@ class TestAlertThresholdTriggering:
             min_value=0.05, max_value=0.30, allow_nan=False, allow_infinity=False
         ),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_breach_state_cleared_when_error_rate_drops(
         self, tenant_id, source_id, threshold
     ):
@@ -8561,7 +8561,7 @@ class TestAlertThresholdTriggering:
             min_value=0.05, max_value=0.30, allow_nan=False, allow_infinity=False
         ),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_alerts_independent_per_source(self, num_sources, threshold):
         """
         Alerts should be independent per source - each source can have
@@ -8606,7 +8606,7 @@ class TestAlertThresholdTriggering:
             min_value=0.05, max_value=0.30, allow_nan=False, allow_infinity=False
         ),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_alerts_independent_per_tenant(self, num_tenants, threshold):
         """
         Alerts should be independent per tenant - each tenant can have
@@ -8648,7 +8648,7 @@ class TestAlertThresholdTriggering:
         total_records=st.integers(min_value=10, max_value=1000),
         error_count=st.integers(min_value=0, max_value=1000),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_sync_error_tracker_integration(
         self, tenant_id, source_id, threshold, total_records, error_count
     ):
@@ -8702,7 +8702,7 @@ class TestAlertThresholdTriggering:
             max_size=20,
         ),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_alert_count_matches_breach_transitions(self, threshold, error_rates):
         """
         The number of alerts should match the number of transitions
@@ -8743,7 +8743,7 @@ class TestAlertThresholdTriggering:
             min_value=0.05, max_value=0.30, allow_nan=False, allow_infinity=False
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_boundary_error_rate_at_threshold(self, threshold):
         """
         Error rate exactly at threshold should not trigger alert
@@ -8772,7 +8772,7 @@ class TestAlertThresholdTriggering:
             min_value=0.05, max_value=0.30, allow_nan=False, allow_infinity=False
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_boundary_error_rate_just_above_threshold(self, threshold):
         """
         Error rate just above threshold should trigger alert.
@@ -8801,7 +8801,7 @@ class TestAlertThresholdTriggering:
             min_value=0.05, max_value=0.30, allow_nan=False, allow_infinity=False
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_zero_error_rate_never_triggers(self, threshold):
         """
         Zero error rate should never trigger an alert.
@@ -8825,7 +8825,7 @@ class TestAlertThresholdTriggering:
             min_value=0.05, max_value=0.30, allow_nan=False, allow_infinity=False
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_100_percent_error_rate_always_triggers(self, threshold):
         """
         100% error rate should always trigger an alert (assuming threshold < 100%).
@@ -9013,7 +9013,7 @@ class TestBatchProcessingOptimization:
         num_records=st.integers(min_value=1, max_value=5000),
         batch_size=st.integers(min_value=100, max_value=2000),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_large_datasets_processed_in_batches(self, num_records, batch_size):
         """
         Large datasets should be processed in batches.
@@ -9054,7 +9054,7 @@ class TestBatchProcessingOptimization:
         num_records=st.integers(min_value=1, max_value=5000),
         batch_size=st.integers(min_value=100, max_value=2000),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_each_batch_within_configured_size(self, num_records, batch_size):
         """
         Each batch should be <= configured batch size.
@@ -9090,7 +9090,7 @@ class TestBatchProcessingOptimization:
         num_records=st.integers(min_value=1, max_value=5000),
         batch_size=st.integers(min_value=100, max_value=2000),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_total_processed_equals_input_no_data_loss(self, num_records, batch_size):
         """
         Total processed count should equal input count (no data loss).
@@ -9130,7 +9130,7 @@ class TestBatchProcessingOptimization:
         ), "Processor should verify no data loss"
 
     @given(batch_size=st.integers(min_value=100, max_value=2000))
-    @settings(max_examples=25)
+    @settings()
     def test_default_batch_size_is_1000(self, batch_size):
         """
         Default batch size should be 1000 records.
@@ -9156,7 +9156,7 @@ class TestBatchProcessingOptimization:
         num_records=st.integers(min_value=1, max_value=100),
         batch_size=st.integers(min_value=500, max_value=2000),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_small_dataset_single_batch(self, num_records, batch_size):
         """
         Datasets smaller than batch size should be processed in a single batch.
@@ -9192,7 +9192,7 @@ class TestBatchProcessingOptimization:
         ), f"Single batch size should equal input size {num_records}"
 
     @given(batch_size=st.integers(min_value=100, max_value=1000))
-    @settings(max_examples=25)
+    @settings()
     def test_exact_batch_size_multiple(self, batch_size):
         """
         Dataset that is exact multiple of batch size should have full batches.
@@ -9231,7 +9231,7 @@ class TestBatchProcessingOptimization:
         batch_size=st.integers(min_value=100, max_value=1000),
         remainder=st.integers(min_value=1, max_value=99),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_last_batch_can_be_smaller(self, batch_size, remainder):
         """
         Last batch can be smaller than batch size when data doesn't divide evenly.
@@ -9275,7 +9275,7 @@ class TestBatchProcessingOptimization:
         ), f"Last batch size {result['batch_sizes'][-1]} should equal remainder {remainder}"
 
     @given(batch_size=st.integers(min_value=100, max_value=2000))
-    @settings(max_examples=25)
+    @settings()
     def test_empty_dataset_handling(self, batch_size):
         """
         Empty dataset should be handled gracefully.
@@ -9302,7 +9302,7 @@ class TestBatchProcessingOptimization:
         num_records=st.integers(min_value=100, max_value=3000),
         batch_size=st.integers(min_value=100, max_value=1000),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_data_integrity_preserved(self, num_records, batch_size):
         """
         Data integrity should be preserved through batch processing.
@@ -9340,7 +9340,7 @@ class TestBatchProcessingOptimization:
             ), f"Record order should be preserved at index {i}"
 
     @given(batch_size=st.integers(min_value=100, max_value=500))
-    @settings(max_examples=25)
+    @settings()
     def test_sum_of_batch_sizes_equals_total(self, batch_size):
         """
         Sum of all batch sizes should equal total records.
@@ -9377,7 +9377,7 @@ class TestBatchProcessingOptimization:
         num_records=st.integers(min_value=1000, max_value=5000),
         batch_size=st.sampled_from([100, 250, 500, 1000, 2000]),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_various_batch_sizes(self, num_records, batch_size):
         """
         Batch processing should work correctly with various batch sizes.
@@ -9659,7 +9659,7 @@ class TestConcurrentJobLimiting:
         max_concurrent=st.integers(min_value=1, max_value=10),
         num_jobs=st.integers(min_value=1, max_value=50),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_jobs_exceeding_limit_are_queued(self, max_concurrent, num_jobs):
         """
         Jobs exceeding the concurrent limit should be queued.
@@ -9712,7 +9712,7 @@ class TestConcurrentJobLimiting:
         max_concurrent=st.integers(min_value=1, max_value=10),
         num_jobs=st.integers(min_value=1, max_value=50),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_jobs_exceeding_limit_are_rejected_when_configured(
         self, max_concurrent, num_jobs
     ):
@@ -9760,7 +9760,7 @@ class TestConcurrentJobLimiting:
         max_concurrent=st.integers(min_value=1, max_value=5),
         num_jobs=st.integers(min_value=5, max_value=20),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_queued_jobs_run_after_completion(self, max_concurrent, num_jobs):
         """
         Queued jobs should start running after active jobs complete.
@@ -9830,7 +9830,7 @@ class TestConcurrentJobLimiting:
         num_tenants=st.integers(min_value=2, max_value=5),
         jobs_per_tenant=st.integers(min_value=1, max_value=10),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_different_tenants_have_independent_limits(
         self, max_concurrent, num_tenants, jobs_per_tenant
     ):
@@ -9877,7 +9877,7 @@ class TestConcurrentJobLimiting:
         max_concurrent=st.integers(min_value=2, max_value=5),
         num_jobs=st.integers(min_value=10, max_value=30),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_active_count_never_exceeds_limit(self, max_concurrent, num_jobs):
         """
         Active job count should never exceed the concurrent limit at any point.
@@ -9925,7 +9925,7 @@ class TestConcurrentJobLimiting:
         max_concurrent=st.integers(min_value=1, max_value=5),
         num_jobs=st.integers(min_value=5, max_value=20),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_queue_order_is_fifo(self, max_concurrent, num_jobs):
         """
         Queued jobs should be processed in FIFO order.
@@ -9967,7 +9967,7 @@ class TestConcurrentJobLimiting:
         max_concurrent=st.integers(min_value=1, max_value=10),
         num_jobs=st.integers(min_value=1, max_value=30),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_no_jobs_lost_or_duplicated(self, max_concurrent, num_jobs):
         """
         No jobs should be lost or duplicated during scheduling.
@@ -10020,7 +10020,7 @@ class TestConcurrentJobLimiting:
         max_concurrent=st.sampled_from([1, 2, 3, 5, 10]),
         num_jobs=st.integers(min_value=1, max_value=100),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_various_concurrency_limits(self, max_concurrent, num_jobs):
         """
         Concurrent job limiting should work correctly with various limit values.
@@ -10166,7 +10166,7 @@ class TestDataCompression:
     """
 
     @given(data=st.binary(min_size=100, max_size=10000))
-    @settings(max_examples=25)
+    @settings()
     def test_compression_decompression_roundtrip(self, data):
         """
         Compressing then decompressing data should produce the original data.
@@ -10195,7 +10195,7 @@ class TestDataCompression:
         pattern=st.binary(min_size=10, max_size=100),
         repetitions=st.integers(min_value=10, max_value=100),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_compressible_data_reduces_size(self, pattern, repetitions):
         """
         Compressible data (with repeated patterns) should have smaller compressed size.
@@ -10265,7 +10265,7 @@ class TestDataCompression:
             }
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_json_compression_roundtrip(self, json_data):
         """
         JSON data should be compressible and decompressible without data loss.
@@ -10317,7 +10317,7 @@ class TestDataCompression:
             max_size=100,
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_batch_data_compression(self, records):
         """
         Batch data (multiple records) should compress efficiently.
@@ -10361,7 +10361,7 @@ class TestDataCompression:
         compression_level=st.integers(min_value=1, max_value=9),
         data=st.binary(min_size=500, max_size=5000),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_different_compression_levels(self, compression_level, data):
         """
         Different compression levels should all produce valid compressed data.
@@ -10391,7 +10391,7 @@ class TestDataCompression:
             alphabet=st.characters(whitelist_categories=("L", "N", "P", "S")),
         )
     )
-    @settings(max_examples=25)
+    @settings()
     def test_text_data_compression(self, text_content):
         """
         Text data should compress and decompress correctly with UTF-8 encoding.
@@ -10430,7 +10430,7 @@ class TestDataCompression:
             alphabet=st.characters(whitelist_categories=("L", "N", "P")),
         ),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_multilingual_data_compression(self, chinese_text, english_text):
         """
         Multilingual data (Chinese + English) should compress correctly.
@@ -10467,7 +10467,7 @@ class TestDataCompression:
         ), "Mixed text should be preserved"
 
     @given(size_multiplier=st.integers(min_value=1, max_value=10))
-    @settings(max_examples=25)
+    @settings()
     def test_large_data_compression(self, size_multiplier):
         """
         Large data should compress efficiently.
@@ -10518,7 +10518,7 @@ class TestDataCompression:
         ), "All records should be preserved"
 
     @given(data=st.binary(min_size=1, max_size=100))
-    @settings(max_examples=25)
+    @settings()
     def test_small_data_compression_integrity(self, data):
         """
         Small data should still compress and decompress correctly.
@@ -10546,7 +10546,7 @@ class TestDataCompression:
         nested_depth=st.integers(min_value=1, max_value=5),
         items_per_level=st.integers(min_value=2, max_value=5),
     )
-    @settings(max_examples=25)
+    @settings()
     def test_nested_structure_compression(self, nested_depth, items_per_level):
         """
         Deeply nested data structures should compress correctly.
@@ -10775,7 +10775,7 @@ class TestTimeoutEnforcement:
         operation_duration=st.floats(min_value=0.01, max_value=0.5),
         timeout=st.floats(min_value=0.1, max_value=1.0),
     )
-    @settings(max_examples=25, deadline=None)
+    @settings(deadline=None)
     def test_operations_within_timeout_succeed(self, operation_duration, timeout):
         """
         Operations completing within timeout should succeed normally.
@@ -10816,7 +10816,7 @@ class TestTimeoutEnforcement:
         operation_duration=st.floats(min_value=0.3, max_value=1.0),
         timeout=st.floats(min_value=0.05, max_value=0.2),
     )
-    @settings(max_examples=25, deadline=None)
+    @settings(deadline=None)
     def test_operations_exceeding_timeout_are_cancelled(
         self, operation_duration, timeout
     ):
@@ -10858,7 +10858,7 @@ class TestTimeoutEnforcement:
         operation_duration=st.floats(min_value=0.3, max_value=1.0),
         timeout=st.floats(min_value=0.05, max_value=0.2),
     )
-    @settings(max_examples=25, deadline=None)
+    @settings(deadline=None)
     def test_timeout_error_is_returned(self, operation_duration, timeout):
         """
         Timeout errors should be returned when operations exceed timeout.
@@ -10904,7 +10904,7 @@ class TestTimeoutEnforcement:
             st.floats(min_value=0.05, max_value=0.3), min_size=3, max_size=5
         )
     )
-    @settings(max_examples=25, deadline=None)
+    @settings(deadline=None)
     def test_various_timeout_values(self, timeout_values):
         """
         Different timeout values should be enforced correctly.
@@ -10961,7 +10961,7 @@ class TestTimeoutEnforcement:
         num_operations=st.integers(min_value=2, max_value=5),
         base_timeout=st.floats(min_value=0.1, max_value=0.3),
     )
-    @settings(max_examples=25, deadline=None)
+    @settings(deadline=None)
     def test_multiple_operations_timeout_independently(
         self, num_operations, base_timeout
     ):
@@ -11028,7 +11028,7 @@ class TestTimeoutEnforcement:
         num_batches=st.integers(min_value=2, max_value=5),
         batch_timeout=st.floats(min_value=0.1, max_value=0.3),
     )
-    @settings(max_examples=25, deadline=None)
+    @settings(deadline=None)
     def test_batch_operations_with_timeout(self, num_batches, batch_timeout):
         """
         Batch operations should enforce per-batch timeout.
@@ -11084,7 +11084,7 @@ class TestTimeoutEnforcement:
         total_timeout=st.floats(min_value=0.3, max_value=0.6),
         num_batches=st.integers(min_value=3, max_value=5),
     )
-    @settings(max_examples=25, deadline=None)
+    @settings(deadline=None)
     def test_total_timeout_enforcement(self, total_timeout, num_batches):
         """
         Total operation timeout should be enforced across all batches.
@@ -11139,7 +11139,7 @@ class TestTimeoutEnforcement:
         operation_id=st.uuids().map(str),
         timeout=st.floats(min_value=0.05, max_value=0.2),
     )
-    @settings(max_examples=25, deadline=None)
+    @settings(deadline=None)
     def test_resources_released_on_timeout(self, operation_id, timeout):
         """
         Resources should be released when operation times out.
@@ -11190,7 +11190,7 @@ class TestTimeoutEnforcement:
         asyncio.get_event_loop().run_until_complete(run_test())
 
     @given(timeout=st.floats(min_value=0.05, max_value=0.2))
-    @settings(max_examples=25, deadline=None)
+    @settings(deadline=None)
     def test_zero_duration_operations_succeed(self, timeout):
         """
         Operations with zero/minimal duration should always succeed.

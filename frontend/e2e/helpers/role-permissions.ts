@@ -158,10 +158,10 @@ export function getRouteAccessMatrix(): RouteAccessExpectation[] {
   for (const route of allRoutes) {
     const expectation: RouteAccessExpectation = {
       route,
-      admin: resolveAccess(ROLE_CONFIGS.admin, route),
-      data_manager: resolveAccess(ROLE_CONFIGS.data_manager, route),
-      data_analyst: resolveAccess(ROLE_CONFIGS.data_analyst, route),
-      annotator: resolveAccess(ROLE_CONFIGS.annotator, route),
+      admin: getExpectedRouteAccess(ROLE_CONFIGS.admin, route),
+      data_manager: getExpectedRouteAccess(ROLE_CONFIGS.data_manager, route),
+      data_analyst: getExpectedRouteAccess(ROLE_CONFIGS.data_analyst, route),
+      annotator: getExpectedRouteAccess(ROLE_CONFIGS.annotator, route),
     }
     matrix.push(expectation)
   }
@@ -172,8 +172,10 @@ export function getRouteAccessMatrix(): RouteAccessExpectation[] {
 /**
  * Determine whether a role is allowed or denied for a given route.
  * Explicit deny takes precedence, then explicit allow, then default deny.
+ *
+ * Exported for property tests — keep in sync with route guards in the app.
  */
-function resolveAccess(config: RoleConfig, route: string): 'allow' | 'deny' {
+export function getExpectedRouteAccess(config: RoleConfig, route: string): 'allow' | 'deny' {
   if (config.deniedRoutes.includes(route)) return 'deny'
   if (config.accessibleRoutes.includes(route)) return 'allow'
   // Admin with empty deniedRoutes gets allow by default

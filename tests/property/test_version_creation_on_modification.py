@@ -155,7 +155,7 @@ class TestVersionCreationOnModification:
         category=category_strategy,
         quality=quality_score_strategy
     )
-    @settings(max_examples=30, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_version_created_on_sample_update(
         self,
         db_session: Session,
@@ -209,7 +209,7 @@ class TestVersionCreationOnModification:
         )
     
     @given(modification_count=modification_count_strategy)
-    @settings(max_examples=20, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_version_count_matches_modification_count(
         self,
         db_session: Session,
@@ -263,7 +263,7 @@ class TestVersionCreationOnModification:
         category=category_strategy,
         tags=tag_strategy
     )
-    @settings(max_examples=30, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_version_contains_updated_content(
         self,
         db_session: Session,
@@ -312,7 +312,7 @@ class TestVersionCreationOnModification:
         tags=tag_strategy,
         quality=quality_score_strategy
     )
-    @settings(max_examples=30, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_version_metadata_records_updated_fields(
         self,
         db_session: Session,
@@ -402,7 +402,7 @@ class TestVersionCreationOnModification:
         )
     
     @given(modification_count=st.integers(min_value=2, max_value=5))
-    @settings(max_examples=20, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_version_numbers_increment_monotonically(
         self,
         db_session: Session,
@@ -457,7 +457,7 @@ class TestVersionCreationOnModification:
         category=category_strategy,
         quality=quality_score_strategy
     )
-    @settings(max_examples=30, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_version_change_type_is_correction(
         self,
         db_session: Session,
@@ -504,7 +504,7 @@ class TestVersionCreationOnModification:
             max_size=5
         )
     )
-    @settings(max_examples=15, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_version_creation_independent_per_sample(
         self,
         db_session: Session,
@@ -560,7 +560,7 @@ class TestVersionCreationOnModification:
         category=category_strategy,
         quality=quality_score_strategy
     )
-    @settings(max_examples=30, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_version_has_valid_checksum(
         self,
         db_session: Session,

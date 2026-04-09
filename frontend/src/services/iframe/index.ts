@@ -23,7 +23,6 @@ export { SecurityAuditLogger, createDefaultAuditConfig, getGlobalSecurityAuditLo
 export type {
   IframeConfig,
   Permission,
-  IframeStatus,
   IframeLifecycleEvent,
   IframeLoadState,
   IframeEventCallback,
@@ -31,7 +30,6 @@ export type {
   Response,
   MessageHandler,
   PostMessageBridgeConfig,
-  BridgeStatus,
   UserInfo,
   ProjectInfo,
   TaskInfo,
@@ -63,17 +61,17 @@ export type {
   KeyboardEvent as KeyboardManagerEvent, 
   KeyboardEventHandler 
 } from './KeyboardManager';
-export type { 
-  FocusableElement, 
-  FocusState, 
-  FocusEvent as FocusManagerEvent, 
-  FocusEventHandler 
+export type {
+  FocusableElement,
+  FocusState,
+  FocusManagerPayload as FocusManagerEvent,
+  FocusEventHandler,
 } from './FocusManager';
 export type {
-  DataTransformConfig,
-  TransformRule,
+  TransformationConfig as DataTransformConfig,
+  TransformationRule as TransformRule,
   ValidationRule,
-  TransformResult,
+  TransformationResult as TransformResult,
   DataFormat,
 } from './DataTransformer';
 export type {

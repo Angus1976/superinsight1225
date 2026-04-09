@@ -221,7 +221,7 @@ const WorkspaceManagement: React.FC = () => {
         icon: <InboxOutlined />,
         label: t('common:archive'),
         onClick: () => {
-          modal.confirm({
+          Modal.confirm({
             title: t('confirmArchive'),
             content: t('confirmArchiveContent', { name: workspace.name }),
             onOk: () => archiveMutation.mutate(workspace.id),
@@ -239,7 +239,7 @@ const WorkspaceManagement: React.FC = () => {
         label: t('common:delete'),
         danger: true,
         onClick: () => {
-          modal.confirm({
+          Modal.confirm({
             title: t('confirmDelete'),
             content: t('confirmDeleteContent', { name: workspace.name }),
             onOk: () => deleteMutation.mutate(workspace.id),
@@ -376,7 +376,7 @@ const WorkspaceManagement: React.FC = () => {
                       danger
                       icon={<DeleteOutlined />}
                       onClick={() => {
-                        modal.confirm({
+                        Modal.confirm({
                           title: t('confirmDelete'),
                           content: t('confirmDeleteContent', { name: selectedWorkspace.name }),
                           onOk: () => deleteMutation.mutate(selectedWorkspace.id),

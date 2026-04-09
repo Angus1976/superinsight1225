@@ -5,11 +5,11 @@
  * WCAG 2.1 - Provides accessible names and descriptions
  */
 
-import { memo, ReactNode, CSSProperties } from 'react';
+import React, { memo, ReactNode, CSSProperties } from 'react';
 
 interface VisuallyHiddenProps {
   children: ReactNode;
-  as?: keyof JSX.IntrinsicElements;
+  as?: keyof React.JSX.IntrinsicElements;
   focusable?: boolean;
   id?: string;
   className?: string;
@@ -33,7 +33,7 @@ const focusableStyles: CSSProperties = {
 
 export const VisuallyHidden = memo<VisuallyHiddenProps>(({
   children,
-  as: Component = 'span',
+  as = 'span',
   focusable = false,
   id,
   className,
@@ -42,15 +42,16 @@ export const VisuallyHidden = memo<VisuallyHiddenProps>(({
   
   // For focusable elements, show on focus
   const focusableClassName = focusable ? 'sr-only-focusable' : 'sr-only';
-  
-  return (
-    <Component
-      style={!focusable ? styles : undefined}
-      className={`${focusableClassName} ${className || ''}`}
-      id={id}
-    >
-      {children}
-    </Component>
+  const Tag = as;
+
+  return React.createElement(
+    Tag,
+    {
+      style: !focusable ? styles : undefined,
+      className: `${focusableClassName} ${className || ''}`,
+      id,
+    },
+    children,
   );
 });
 

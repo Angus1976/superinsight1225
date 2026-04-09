@@ -8,6 +8,7 @@
 import { memo, forwardRef, ReactNode, useId, useCallback } from 'react';
 import { Form, Input, Select, Checkbox, Radio, DatePicker, InputNumber } from 'antd';
 import type { FormItemProps, InputProps, SelectProps } from 'antd';
+import type { InputRef } from 'antd/es/input';
 import { useLiveRegion } from './LiveRegion';
 
 // ============================================
@@ -98,7 +99,7 @@ interface AccessibleInputProps extends InputProps {
   accessibleDescription?: string;
 }
 
-export const AccessibleInput = memo(forwardRef<HTMLInputElement, AccessibleInputProps>(({
+export const AccessibleInput = memo(forwardRef<InputRef, AccessibleInputProps>(({
   accessibleLabel,
   hasError,
   accessibleDescription,

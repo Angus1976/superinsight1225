@@ -24,6 +24,9 @@ from src.admin.schemas import (
     ConfigType,
 )
 
+# ConfigManager requires tenant_id for multi-tenant isolation in tests.
+_PROP_TENANT = "prop_test_tenant"
+
 
 # ============================================================================
 # Test Strategies (Hypothesis Generators)
@@ -126,7 +129,7 @@ class TestConfigurationPersistenceRoundTrip:
     """
     
     @given(config=llm_config_strategy())
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     def test_llm_config_roundtrip_with_encryption(self, config):
         """
         LLM configuration round-trip preserves data and encrypts API keys.
@@ -150,7 +153,8 @@ class TestConfigurationPersistenceRoundTrip:
             saved_config = await config_manager.save_llm_config(
                 config=config,
                 user_id=user_id,
-                user_name="test_user"
+                user_name="test_user",
+                tenant_id=_PROP_TENANT,
             )
             
             # Verify saved config has an ID
@@ -171,7 +175,7 @@ class TestConfigurationPersistenceRoundTrip:
                 "Stored API key should be marked as encrypted"
             
             # Retrieve the configuration
-            retrieved_config = await config_manager.get_llm_config(config_id)
+            retrieved_config = await config_manager.get_llm_config(config_id, tenant_id=_PROP_TENANT)
             
             # Verify retrieved config is not None
             assert retrieved_config is not None, "Retrieved config should not be None"
@@ -200,7 +204,7 @@ class TestConfigurationPersistenceRoundTrip:
         asyncio.run(run_test())
     
     @given(config=db_config_strategy())
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     def test_db_config_roundtrip_with_encryption(self, config):
         """
         Database configuration round-trip preserves data and encrypts passwords.
@@ -224,7 +228,8 @@ class TestConfigurationPersistenceRoundTrip:
             saved_config = await config_manager.save_db_config(
                 config=config,
                 user_id=user_id,
-                user_name="test_user"
+                user_name="test_user",
+                tenant_id=_PROP_TENANT,
             )
             
             # Verify saved config has an ID
@@ -245,7 +250,7 @@ class TestConfigurationPersistenceRoundTrip:
                 "Stored password should be marked as encrypted"
             
             # Retrieve the configuration
-            retrieved_config = await config_manager.get_db_config(config_id)
+            retrieved_config = await config_manager.get_db_config(config_id, tenant_id=_PROP_TENANT)
             
             # Verify retrieved config is not None
             assert retrieved_config is not None, "Retrieved config should not be None"
@@ -273,7 +278,7 @@ class TestConfigurationPersistenceRoundTrip:
         asyncio.run(run_test())
     
     @given(config=llm_config_strategy())
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_multiple_saves_same_config_different_encryption(self, config):
         """
         Saving the same configuration multiple times produces different encrypted values.
@@ -294,9 +299,15 @@ class TestConfigurationPersistenceRoundTrip:
             user_id = str(uuid4())
             
             # Save the same config three times
-            saved1 = await config_manager.save_llm_config(config, user_id, "test_user")
-            saved2 = await config_manager.save_llm_config(config, user_id, "test_user")
-            saved3 = await config_manager.save_llm_config(config, user_id, "test_user")
+            saved1 = await config_manager.save_llm_config(
+                config, user_id, "test_user", tenant_id=_PROP_TENANT
+            )
+            saved2 = await config_manager.save_llm_config(
+                config, user_id, "test_user", tenant_id=_PROP_TENANT
+            )
+            saved3 = await config_manager.save_llm_config(
+                config, user_id, "test_user", tenant_id=_PROP_TENANT
+            )
             
             # Get encrypted values from storage
             stored1 = config_manager._in_memory_configs[ConfigType.LLM.value][saved1.id]
@@ -324,7 +335,7 @@ class TestConfigurationPersistenceRoundTrip:
         asyncio.run(run_test())
     
     @given(config=db_config_strategy())
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_config_update_preserves_encryption(self, config):
         """
         Updating a configuration preserves encryption of sensitive fields.
@@ -344,7 +355,9 @@ class TestConfigurationPersistenceRoundTrip:
             user_id = str(uuid4())
             
             # Save initial configuration
-            saved_config = await config_manager.save_db_config(config, user_id, "test_user")
+            saved_config = await config_manager.save_db_config(
+                config, user_id, "test_user", tenant_id=_PROP_TENANT
+            )
             config_id = saved_config.id
             
             # Verify password is encrypted in storage
@@ -364,7 +377,7 @@ class TestConfigurationPersistenceRoundTrip:
         asyncio.run(run_test())
     
     @given(config=llm_config_strategy())
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_config_deletion_removes_from_storage(self, config):
         """
         Deleting a configuration removes it from storage.
@@ -383,19 +396,25 @@ class TestConfigurationPersistenceRoundTrip:
             user_id = str(uuid4())
             
             # Save configuration
-            saved_config = await config_manager.save_llm_config(config, user_id, "test_user")
+            saved_config = await config_manager.save_llm_config(
+                config, user_id, "test_user", tenant_id=_PROP_TENANT
+            )
             config_id = saved_config.id
             
             # Verify it exists
-            retrieved = await config_manager.get_llm_config(config_id)
+            retrieved = await config_manager.get_llm_config(config_id, tenant_id=_PROP_TENANT)
             assert retrieved is not None
             
             # Delete the configuration
-            deleted = await config_manager.delete_llm_config(config_id, user_id, "test_user")
+            deleted = await config_manager.delete_llm_config(
+                config_id, user_id, "test_user", tenant_id=_PROP_TENANT
+            )
             assert deleted is True
             
             # Verify it no longer exists
-            retrieved_after_delete = await config_manager.get_llm_config(config_id)
+            retrieved_after_delete = await config_manager.get_llm_config(
+                config_id, tenant_id=_PROP_TENANT
+            )
             assert retrieved_after_delete is None
             
             # Verify it's not in storage
@@ -411,7 +430,7 @@ class TestConfigurationPersistenceRoundTrip:
             max_codepoint=122
         ))
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_config_with_tenant_isolation(self, config, tenant_id):
         """
         Configurations are properly isolated by tenant ID.
@@ -476,7 +495,9 @@ class TestConfigurationPersistenceRoundTrip:
             user_id = str(uuid4())
             
             # Should succeed - validation is lenient for testing
-            saved = await config_manager.save_llm_config(config, user_id, "test_user")
+            saved = await config_manager.save_llm_config(
+                config, user_id, "test_user", tenant_id=_PROP_TENANT
+            )
             assert saved is not None
             assert saved.id is not None
         
@@ -509,7 +530,9 @@ class TestConfigurationPersistenceRoundTrip:
             user_id = str(uuid4())
             
             # Should succeed with valid config
-            saved = await config_manager.save_llm_config(config, user_id, "test_user")
+            saved = await config_manager.save_llm_config(
+                config, user_id, "test_user", tenant_id=_PROP_TENANT
+            )
             assert saved is not None
             assert saved.name == "valid_config"
         

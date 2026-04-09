@@ -12,10 +12,12 @@ Properties: 11 - Retry With Exponential Backoff
 
 import pytest
 import asyncio
-import time
 from uuid import uuid4
 from hypothesis import given, strategies as st, settings, assume, HealthCheck
 from unittest.mock import AsyncMock, MagicMock, patch
+
+# Patch target: backoff uses ``await asyncio.sleep`` inside ApplicationLLMManager
+MANAGER_SLEEP = "src.ai.application_llm_manager.asyncio.sleep"
 
 from src.ai.application_llm_manager import ApplicationLLMManager
 from src.ai.cache_manager import CacheManager
@@ -51,12 +53,44 @@ priority_strategy = st.integers(min_value=1, max_value=99)
 
 # ==================== Fixtures ====================
 
+def _sync_execute_result_scalar(value):
+    """Sync Result with ``scalar_one_or_none()`` — matches ``Session.execute`` path in ``_execute``."""
+    r = MagicMock()
+    r.scalar_one_or_none.return_value = value
+    return r
+
+
+def _sync_execute_result_bindings(bindings: list):
+    """Sync Result with ``scalars().all()``."""
+    r = MagicMock()
+    scalars = MagicMock()
+    scalars.all.return_value = bindings
+    r.scalars.return_value = scalars
+    return r
+
+
+def _make_db_execute_sequence(app, bindings: list):
+    """Fresh sync ``execute`` for each Hypothesis example (side_effect lists are one-shot)."""
+    seq = [
+        _sync_execute_result_scalar(app),
+        _sync_execute_result_bindings(bindings),
+        _sync_execute_result_scalar(app),
+        _sync_execute_result_bindings(bindings),
+    ]
+
+    def execute(stmt):
+        if not seq:
+            raise AssertionError("unexpected db.execute call; sequence exhausted")
+        return seq.pop(0)
+
+    return execute
+
+
 @pytest.fixture
 def mock_db_session():
-    """Create a mock async database session."""
-    session = AsyncMock()
-    session.execute = AsyncMock()
-    session.scalar_one_or_none = AsyncMock()
+    """Sync DB mock — ``ApplicationLLMManager._execute`` uses sync ``execute`` unless ``AsyncSession``."""
+    session = MagicMock()
+    session.execute = MagicMock(return_value=_sync_execute_result_scalar(None))
     return session
 
 
@@ -172,7 +206,7 @@ class TestRetryWithExponentialBackoff:
            times with exponential backoff
     """
     
-    @settings(max_examples=100, suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture], deadline=None)
     @given(
         max_retries=max_retries_strategy,
         timeout_seconds=st.integers(min_value=5, max_value=10)
@@ -207,14 +241,15 @@ class TestRetryWithExponentialBackoff:
             attempt_count += 1
             raise RuntimeError("LLM request failed")
         
-        # Execute with retry
-        with pytest.raises(RuntimeError):
-            await app_llm_manager._execute_with_retry(
-                config,
-                counting_failing_operation,
-                max_retries,
-                timeout_seconds
-            )
+        # Without patching sleep, max_retries=10 implies ~1023s of real backoff per example.
+        with patch(MANAGER_SLEEP, new_callable=AsyncMock):
+            with pytest.raises(RuntimeError):
+                await app_llm_manager._execute_with_retry(
+                    config,
+                    counting_failing_operation,
+                    max_retries,
+                    timeout_seconds
+                )
         
         # Verify total attempts = max_retries + 1 (initial + retries)
         expected_attempts = max_retries + 1
@@ -222,7 +257,7 @@ class TestRetryWithExponentialBackoff:
             f"Should attempt {expected_attempts} times (1 initial + {max_retries} retries), got {attempt_count}"
 
     
-    @settings(max_examples=100, suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture], deadline=None)
     @given(
         max_retries=st.integers(min_value=1, max_value=5),  # Limit for timing test
         timeout_seconds=st.integers(min_value=5, max_value=10)
@@ -247,38 +282,31 @@ class TestRetryWithExponentialBackoff:
             openai_model="gpt-3.5-turbo"
         )
         
-        # Track timing of attempts
-        attempt_times = []
+        sleep_durations: list = []
         
         async def timing_failing_operation(cfg: CloudConfig) -> str:
-            attempt_times.append(time.time())
             raise RuntimeError("LLM request failed")
         
-        # Execute with retry
-        start_time = time.time()
-        with pytest.raises(RuntimeError):
-            await app_llm_manager._execute_with_retry(
-                config,
-                timing_failing_operation,
-                max_retries,
-                timeout_seconds
-            )
+        async def record_sleep(delay: float) -> None:
+            sleep_durations.append(delay)
         
-        # Verify exponential backoff delays
-        # Expected delays: 2^0=1s, 2^1=2s, 2^2=4s, 2^3=8s, 2^4=16s
-        for i in range(1, len(attempt_times)):
-            delay = attempt_times[i] - attempt_times[i-1]
-            expected_delay = 2 ** (i - 1)
-            
-            # Allow 0.5s tolerance for execution overhead
-            assert delay >= expected_delay - 0.5, \
-                f"Delay {i} should be at least {expected_delay}s, got {delay:.2f}s"
-            assert delay <= expected_delay + 1.0, \
-                f"Delay {i} should be at most {expected_delay + 1}s, got {delay:.2f}s"
+        with patch(MANAGER_SLEEP, side_effect=record_sleep):
+            with pytest.raises(RuntimeError):
+                await app_llm_manager._execute_with_retry(
+                    config,
+                    timing_failing_operation,
+                    max_retries,
+                    timeout_seconds
+                )
+        
+        assert len(sleep_durations) == max_retries
+        for i, d in enumerate(sleep_durations):
+            expected = 2 ** i
+            assert d == expected, f"Backoff {i} should sleep {expected}s, got {d}"
     
-    @settings(max_examples=100, suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture], deadline=None)
     @given(
-        max_retries=st.integers(min_value=0, max_value=3),
+        max_retries=st.integers(min_value=1, max_value=3),
         timeout_seconds=st.integers(min_value=5, max_value=10)
     )
     @pytest.mark.asyncio
@@ -310,13 +338,13 @@ class TestRetryWithExponentialBackoff:
                 raise RuntimeError("First attempt fails")
             return "success"
         
-        # Execute with retry
-        result = await app_llm_manager._execute_with_retry(
-            config,
-            eventually_successful_operation,
-            max_retries,
-            timeout_seconds
-        )
+        with patch(MANAGER_SLEEP, new_callable=AsyncMock):
+            result = await app_llm_manager._execute_with_retry(
+                config,
+                eventually_successful_operation,
+                max_retries,
+                timeout_seconds
+            )
         
         # Verify success and no extra retries
         assert result == "success", "Should return success"
@@ -342,7 +370,7 @@ class TestFailoverOnExhaustedRetries:
            LLM in priority order
     """
     
-    @settings(max_examples=100, suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture], deadline=None)
     @given(
         application_code=application_code_strategy,
         tenant_id=tenant_id_strategy,
@@ -380,25 +408,18 @@ class TestFailoverOnExhaustedRetries:
                 model_name=f"model-{i}"
             )
             binding = create_mock_binding(
-                config, app, 
-                priority=i+1, 
-                max_retries=1,  # Low retries for faster test
+                config, app,
+                priority=i+1,
+                max_retries=0,  # One attempt per config before failover (matches assertion below)
                 timeout_seconds=5
             )
             configs.append(config)
             bindings.append(binding)
         
-        # Mock database queries
-        app_result = AsyncMock()
-        app_result.scalar_one_or_none = AsyncMock(return_value=app)
+        app_llm_manager.db.execute = MagicMock(side_effect=_make_db_execute_sequence(app, bindings))
         
-        binding_result = AsyncMock()
-        binding_result.scalars = AsyncMock(return_value=AsyncMock(all=AsyncMock(return_value=bindings)))
-        
-        app_llm_manager.db.execute = AsyncMock(side_effect=[
-            app_result, binding_result,  # For get_llm_config
-            app_result, binding_result   # For _get_bindings
-        ])
+        # Hypothesis reuses the same manager; avoid stale get_llm_config cache across examples.
+        await app_llm_manager.invalidate_cache(application_code)
         
         # Track which configs were attempted
         attempted_configs = []
@@ -431,7 +452,7 @@ class TestFailoverOnExhaustedRetries:
                 f"Config {i} should be model-{i}, got {attempted_configs[i]}"
 
     
-    @settings(max_examples=100, suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture], deadline=None)
     @given(
         application_code=application_code_strategy,
         tenant_id=tenant_id_strategy,
@@ -466,23 +487,15 @@ class TestFailoverOnExhaustedRetries:
             binding = create_mock_binding(
                 config, app,
                 priority=i+1,
-                max_retries=1,
+                max_retries=0,
                 timeout_seconds=5
             )
             configs.append(config)
             bindings.append(binding)
         
-        # Mock database queries
-        app_result = AsyncMock()
-        app_result.scalar_one_or_none = AsyncMock(return_value=app)
+        app_llm_manager.db.execute = MagicMock(side_effect=_make_db_execute_sequence(app, bindings))
         
-        binding_result = AsyncMock()
-        binding_result.scalars = AsyncMock(return_value=AsyncMock(all=AsyncMock(return_value=bindings)))
-        
-        app_llm_manager.db.execute = AsyncMock(side_effect=[
-            app_result, binding_result,
-            app_result, binding_result
-        ])
+        await app_llm_manager.invalidate_cache(application_code)
         
         # Track attempts
         attempted_configs = []
@@ -507,7 +520,7 @@ class TestFailoverOnExhaustedRetries:
         assert application_code in str(exc_info.value), \
             "Error should mention application code"
     
-    @settings(max_examples=100, suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture], deadline=None)
     @given(
         application_code=application_code_strategy,
         tenant_id=tenant_id_strategy,
@@ -549,17 +562,9 @@ class TestFailoverOnExhaustedRetries:
             )
             bindings.append(binding)
         
-        # Mock database queries
-        app_result = AsyncMock()
-        app_result.scalar_one_or_none = AsyncMock(return_value=app)
+        app_llm_manager.db.execute = MagicMock(side_effect=_make_db_execute_sequence(app, bindings))
         
-        binding_result = AsyncMock()
-        binding_result.scalars = AsyncMock(return_value=AsyncMock(all=AsyncMock(return_value=bindings)))
-        
-        app_llm_manager.db.execute = AsyncMock(side_effect=[
-            app_result, binding_result,
-            app_result, binding_result
-        ])
+        await app_llm_manager.invalidate_cache(application_code)
         
         # Track attempt order
         attempt_order = []
@@ -601,7 +606,7 @@ class TestTimeoutTriggersFailover:
            it as a failure and trigger failover
     """
     
-    @settings(max_examples=100, suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture], deadline=None)
     @given(
         timeout_seconds=st.integers(min_value=1, max_value=3),  # Short timeout for testing
         max_retries=st.integers(min_value=0, max_value=2)
@@ -649,7 +654,7 @@ class TestTimeoutTriggersFailover:
         assert attempt_count == expected_attempts, \
             f"Should attempt {expected_attempts} times after timeout"
     
-    @settings(max_examples=100, suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture], deadline=None)
     @given(
         application_code=application_code_strategy,
         tenant_id=tenant_id_strategy,
@@ -680,17 +685,11 @@ class TestTimeoutTriggersFailover:
         binding1 = create_mock_binding(config1, app, priority=1, max_retries=0, timeout_seconds=timeout_seconds)
         binding2 = create_mock_binding(config2, app, priority=2, max_retries=0, timeout_seconds=timeout_seconds)
         
-        # Mock database queries
-        app_result = AsyncMock()
-        app_result.scalar_one_or_none = AsyncMock(return_value=app)
+        app_llm_manager.db.execute = MagicMock(
+            side_effect=_make_db_execute_sequence(app, [binding1, binding2])
+        )
         
-        binding_result = AsyncMock()
-        binding_result.scalars = AsyncMock(return_value=AsyncMock(all=AsyncMock(return_value=[binding1, binding2])))
-        
-        app_llm_manager.db.execute = AsyncMock(side_effect=[
-            app_result, binding_result,
-            app_result, binding_result
-        ])
+        await app_llm_manager.invalidate_cache(application_code)
         
         # Track attempts
         attempted_models = []
@@ -723,7 +722,7 @@ class TestTimeoutTriggersFailover:
             "Should failover to fast-model"
 
     
-    @settings(max_examples=100, suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture], deadline=None)
     @given(
         timeout_seconds=st.integers(min_value=1, max_value=3),
         operation_duration=st.integers(min_value=0, max_value=5)
@@ -772,7 +771,7 @@ class TestTimeoutTriggersFailover:
                     timeout_seconds=timeout_seconds
                 )
     
-    @settings(max_examples=50, suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture], deadline=None)
+    @settings(suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture], deadline=None)
     @given(
         application_code=application_code_strategy,
         tenant_id=tenant_id_strategy,
@@ -810,17 +809,9 @@ class TestTimeoutTriggersFailover:
             )
             bindings.append(binding)
         
-        # Mock database queries
-        app_result = AsyncMock()
-        app_result.scalar_one_or_none = AsyncMock(return_value=app)
+        app_llm_manager.db.execute = MagicMock(side_effect=_make_db_execute_sequence(app, bindings))
         
-        binding_result = AsyncMock()
-        binding_result.scalars = AsyncMock(return_value=AsyncMock(all=AsyncMock(return_value=bindings)))
-        
-        app_llm_manager.db.execute = AsyncMock(side_effect=[
-            app_result, binding_result,
-            app_result, binding_result
-        ])
+        await app_llm_manager.invalidate_cache(application_code)
         
         # Track attempts
         attempted_models = []

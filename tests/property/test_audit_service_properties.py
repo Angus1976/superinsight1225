@@ -50,7 +50,7 @@ class TestAuditLogFiltering:
         change_type=change_type_strategy,
         ontology_area=ontology_area_strategy
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_filter_by_user(
         self,
         ontology_id: UUID,
@@ -103,7 +103,7 @@ class TestAuditLogFiltering:
         user_id=uuid_strategy,
         change_type=change_type_strategy
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_filter_by_change_type(
         self,
         ontology_id: UUID,
@@ -153,7 +153,7 @@ class TestAuditLogFiltering:
         ontology_id=uuid_strategy,
         user_id=uuid_strategy
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     async def test_filter_by_date_range(
         self,
         ontology_id: UUID,
@@ -196,7 +196,7 @@ class TestAuditLogFiltering:
         user_id=uuid_strategy,
         limit=st.integers(min_value=1, max_value=5)
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     async def test_pagination(
         self,
         ontology_id: UUID,
@@ -252,7 +252,7 @@ class TestAuditLogFiltering:
         user_id=uuid_strategy,
         element_id=uuid_strategy
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_filter_by_affected_element(
         self,
         ontology_id: UUID,
@@ -313,7 +313,7 @@ class TestRollbackVersionCreation:
         user_id=uuid_strategy,
         rollback_user=uuid_strategy
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     async def test_rollback_creates_new_version(
         self,
         ontology_id: UUID,
@@ -372,7 +372,7 @@ class TestRollbackVersionCreation:
         user3=uuid_strategy,
         rollback_user=uuid_strategy
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     async def test_affected_users_identification(
         self,
         ontology_id: UUID,
@@ -444,7 +444,7 @@ class TestRollbackVersionCreation:
         rollback_user=uuid_strategy,
         rollback_reason=medium_text_strategy
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_rollback_logged_as_change(
         self,
         ontology_id: UUID,
@@ -501,7 +501,7 @@ class TestAuditLogIntegrity:
         user_id=uuid_strategy,
         change_type=change_type_strategy
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_hmac_signature_generated(
         self,
         ontology_id: UUID,
@@ -533,7 +533,7 @@ class TestAuditLogIntegrity:
         ontology_id=uuid_strategy,
         user_id=uuid_strategy
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_hmac_signature_verifiable(
         self,
         ontology_id: UUID,
@@ -566,7 +566,7 @@ class TestAuditLogIntegrity:
         ontology_id=uuid_strategy,
         user_id=uuid_strategy
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     async def test_tampered_log_detected(
         self,
         ontology_id: UUID,
@@ -602,7 +602,7 @@ class TestAuditLogIntegrity:
         ontology_id=uuid_strategy,
         user_id=uuid_strategy
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     async def test_signature_uniqueness(
         self,
         ontology_id: UUID,
@@ -649,7 +649,7 @@ class TestAuditLogQueries:
         user_id=uuid_strategy,
         element_id=uuid_strategy
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     async def test_change_history_for_element(
         self,
         ontology_id: UUID,
@@ -685,7 +685,7 @@ class TestAuditLogQueries:
         ontology_id=uuid_strategy,
         user_id=uuid_strategy
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     async def test_ontology_timeline(
         self,
         ontology_id: UUID,
@@ -725,7 +725,7 @@ class TestAuditLogExport:
         ontology_id=uuid_strategy,
         user_id=uuid_strategy
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     async def test_json_export(
         self,
         ontology_id: UUID,
@@ -762,7 +762,7 @@ class TestAuditLogExport:
         ontology_id=uuid_strategy,
         user_id=uuid_strategy
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     async def test_csv_export(
         self,
         ontology_id: UUID,

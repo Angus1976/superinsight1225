@@ -60,7 +60,7 @@ class TestSampleLibrarySearchCorrectness:
         limit=integers(min_value=1, max_value=10),
         offset=integers(min_value=0, max_value=5)
     )
-    @settings(max_examples=30, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_search_by_category_all_results_match(
         self, db_session: Session, category, quality_min, quality_max,
         num_samples, limit, offset
@@ -101,7 +101,7 @@ class TestSampleLibrarySearchCorrectness:
         limit=integers(min_value=1, max_value=10),
         offset=integers(min_value=0, max_value=5)
     )
-    @settings(max_examples=30, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_search_by_quality_score_all_results_in_range(
         self, db_session: Session, category, quality_min, quality_max,
         num_samples, limit, offset
@@ -147,7 +147,7 @@ class TestSampleLibrarySearchCorrectness:
         limit=integers(min_value=1, max_value=10),
         offset=integers(min_value=0, max_value=5)
     )
-    @settings(max_examples=30, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_search_by_date_range_all_results_in_range(
         self, db_session: Session, category, days_offset, date_range_days,
         num_samples, limit, offset
@@ -192,7 +192,7 @@ class TestSampleLibrarySearchCorrectness:
         limit=integers(min_value=1, max_value=10),
         offset=integers(min_value=0, max_value=10)
     )
-    @settings(max_examples=20, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_pagination_respects_limit(self, db_session: Session, num_samples, limit, offset):
         """Pagination results should be limited to page size.
         
@@ -222,7 +222,7 @@ class TestSampleLibrarySearchCorrectness:
         limit=integers(min_value=1, max_value=10),
         offset=integers(min_value=0, max_value=10)
     )
-    @settings(max_examples=20, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_pagination_offset_skips_samples(self, db_session: Session, num_samples, limit, offset):
         """Pagination offset should skip the correct number of samples.
         
@@ -269,7 +269,7 @@ class TestSampleLibrarySearchCorrectness:
             datetime.utcnow() + timedelta(days=7)
         ]))
     )
-    @settings(max_examples=20, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_search_no_matching_samples_returns_empty(
         self, db_session: Session, category, quality_min, quality_max,
         date_from, date_to
@@ -310,7 +310,7 @@ class TestSampleLibrarySearchCorrectness:
         num_samples=integers(min_value=1, max_value=20),
         limit=integers(min_value=1, max_value=50)
     )
-    @settings(max_examples=20, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_search_all_samples_match_empty_criteria(self, db_session: Session, num_samples, limit):
         """When search criteria is empty, all samples should be returned.
         
@@ -347,7 +347,7 @@ class TestSampleLibrarySearchCorrectness:
         num_samples=integers(min_value=10, max_value=30),
         limit=integers(min_value=5, max_value=15)
     )
-    @settings(max_examples=15, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_search_combined_criteria_all_results_match(
         self, db_session: Session, category, num_samples, limit
     ):
@@ -394,7 +394,7 @@ class TestSampleLibrarySearchCorrectness:
         num_samples=integers(min_value=1, max_value=50),
         limit=integers(min_value=1, max_value=20)
     )
-    @settings(max_examples=10, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_search_total_count_reflects_matching_samples(
         self, db_session: Session, num_samples, limit
     ):

@@ -40,7 +40,7 @@ export interface FlexContainerProps {
   /** Custom style */
   style?: React.CSSProperties;
   /** HTML element type */
-  as?: keyof JSX.IntrinsicElements;
+  as?: keyof React.JSX.IntrinsicElements;
   /** Click handler */
   onClick?: () => void;
   /** Responsive direction (column on mobile) */

@@ -691,11 +691,11 @@ const SyncTaskConfig: React.FC = () => {
                   name={['monitoring', 'thresholds', 'errorRate']}
                   label={t('dataSync:monitoring.errorRate')}
                 >
-                  <InputNumber
+                  <InputNumber<number>
                     min={0}
                     max={100}
-                    formatter={value => `${value}%`}
-                    parser={value => value!.replace('%', '')}
+                    formatter={(value) => `${value ?? 0}%`}
+                    parser={(value) => parseFloat(String(value ?? '').replace(/%/g, '') || '0')}
                   />
                 </Form.Item>
               </Col>
@@ -704,10 +704,10 @@ const SyncTaskConfig: React.FC = () => {
                   name={['monitoring', 'thresholds', 'latency']}
                   label={t('dataSync:monitoring.latency')}
                 >
-                  <InputNumber
+                  <InputNumber<number>
                     min={0}
                     formatter={value => `${value}ms`}
-                    parser={value => value!.replace('ms', '')}
+                    parser={(value) => Number(String(value ?? '').replace(/ms/g, '') || 0)}
                   />
                 </Form.Item>
               </Col>
@@ -945,7 +945,6 @@ const SyncTaskConfig: React.FC = () => {
                         <Alert
                           message={exec.errorMessage}
                           type="error"
-                          size="small"
                           style={{ marginTop: 8 }}
                         />
                       )}

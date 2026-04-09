@@ -14,7 +14,9 @@
  */
 
 import { test, expect } from './fixtures'
-import { waitForPageReady } from './test-helpers'
+import { E2E_VALID_ACCESS_TOKEN } from './e2e-tokens'
+import { mockAllApis as registerStandardE2eMocks } from './helpers/mock-api-factory'
+import { setupAuth, waitForPageReady } from './test-helpers'
 
 /* ------------------------------------------------------------------ */
 /*  Constants                                                          */
@@ -44,70 +46,11 @@ const MOCK_TASK = {
 } as const
 
 /* ------------------------------------------------------------------ */
-/*  JWT Helper                                                         */
+/*  Auth — same JWT shape as the rest of E2E (see test-helpers setupAuth) */
 /* ------------------------------------------------------------------ */
 
-function base64url(obj: Record<string, unknown>): string {
-  const b64 = btoa(JSON.stringify(obj))
-  return b64
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/, '')
-}
-
-function buildMockJwt(): string {
-  const header = base64url({ alg: 'HS256', typ: 'JWT' })
-  const payload = base64url({
-    sub: 'user-admin',
-    exp: Math.floor(Date.now() / 1000) + 3600,
-    tenant_id: 'tenant-1',
-    role: 'admin',
-  })
-  return `${header}.${payload}.mock-signature`
-}
-
-/* ------------------------------------------------------------------ */
-/*  Auth Setup with Valid JWT                                          */
-/* ------------------------------------------------------------------ */
-
-async function setupAuthWithJwt(
-  page: import('@playwright/test').Page,
-  role = 'admin',
-) {
-  const token = buildMockJwt()
-  await page.addInitScript(
-    ({ tkn, role }) => {
-      const permissions =
-        role === 'admin'
-          ? ['read:all', 'write:all', 'manage:all']
-          : role === 'annotator'
-            ? ['read:tasks', 'write:annotations']
-            : ['read:tasks', 'read:dashboard']
-
-      localStorage.setItem(
-        'auth-storage',
-        JSON.stringify({
-          state: {
-            user: {
-              id: `user-${role}`,
-              username: `${role}user`,
-              name: `${role} 用户`,
-              email: `${role}@example.com`,
-              tenant_id: 'tenant-1',
-              role,
-              roles: [role],
-              permissions,
-            },
-            token: tkn,
-            currentTenant: { id: 'tenant-1', name: '测试租户' },
-            isAuthenticated: true,
-          },
-        }),
-      )
-      localStorage.setItem('auth_token', JSON.stringify(tkn))
-    },
-    { tkn: token, role },
-  )
+async function setupAuthWithJwt(page: import('@playwright/test').Page, role = 'admin') {
+  await setupAuth(page, role, 'tenant-1')
 }
 
 /* ------------------------------------------------------------------ */
@@ -131,12 +74,43 @@ function buildTaskList() {
   ]
 }
 
+/** Advance TaskCreateModal wizard until the primary "Create task" action is available, then submit. */
+async function fillTaskNameAndSubmitCreateTaskModal(
+  page: import('@playwright/test').Page,
+  options: { taskName: string; description?: string },
+) {
+  const modal = page.locator('.ant-modal')
+  await expect(modal).toBeVisible({ timeout: 5000 })
+  const nameField = modal
+    .getByRole('textbox', { name: /task name|任务名称|任务名/i })
+    .or(modal.getByPlaceholder(/task name|任务名称|Enter task/i))
+    .or(modal.locator('input.ant-input').first())
+  await nameField.first().fill(options.taskName)
+  if (options.description) {
+    const descArea = modal.locator('textarea').first()
+    if (await descArea.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await descArea.fill(options.description)
+    }
+  }
+  // Wizard uses a custom footer: primary is either Next or Create task — prefer explicit create label, else click footer primary.
+  const createBtn = modal.getByRole('button', { name: /创建任务|create task|^create$/i })
+  for (let i = 0; i < 20; i++) {
+    if (await createBtn.isVisible({ timeout: 500 }).catch(() => false)) {
+      // Wizard footer can animate; avoid Playwright stability waits on viewport/scroll.
+      await createBtn.evaluate((el) => (el as HTMLElement).click())
+      return
+    }
+    const primary = modal.locator('.ant-modal-footer .ant-btn-primary')
+    if (!(await primary.isVisible({ timeout: 500 }).catch(() => false))) break
+    await primary.evaluate((el) => (el as HTMLElement).click())
+    await page.waitForTimeout(400)
+    if (!(await modal.isVisible({ timeout: 800 }).catch(() => false))) return
+  }
+}
+
 async function mockAllApis(page: import('@playwright/test').Page) {
-  // Auth catch-all FIRST (Playwright checks last-registered first,
-  // so specific routes registered after this will take priority)
-  await page.route('**/api/auth/**', async (route) => {
-    return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
-  })
+  // Full app mocks (tasks, dashboard, auth/me, …); workflow routes below override where needed.
+  await registerStandardE2eMocks(page)
 
   await page.route('**/api/auth/tenants**', async (route) => {
     return route.fulfill({
@@ -153,7 +127,7 @@ async function mockAllApis(page: import('@playwright/test').Page) {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          access_token: buildMockJwt(),
+          access_token: E2E_VALID_ACCESS_TOKEN,
           user: {
             id: 'user-admin',
             username: TEST_USER.username,
@@ -246,6 +220,30 @@ async function mockAllApis(page: import('@playwright/test').Page) {
   await page.route('**/api/users/**', async (route) => {
     return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' })
   })
+
+  // Registered last so LIFO matches these before the broad **/api/auth/** handler.
+  await page.route('**/api/auth/me', async (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'user-admin',
+        username: TEST_USER.username,
+        email: TEST_USER.email,
+        full_name: 'Workflow User',
+        role: 'admin',
+        tenant_id: 'tenant-1',
+        is_active: true,
+      }),
+    }),
+  )
+  await page.route('**/api/workspaces/my', async (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([]),
+    }),
+  )
 }
 
 
@@ -257,10 +255,12 @@ test.describe('Workflow: Login → Create task → Verify', () => {
   test('complete task creation workflow with API verification', async ({ page }) => {
     let postCalled = false
     let capturedPayload: Record<string, unknown> = {}
+    const taskName = 'Workflow Created Task'
 
-    await mockAllApis(page)
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await setupAuthWithJwt(page)
 
-    // Override POST to capture the creation payload
+    // Register before mockAllApis so this handler wins over mockTasksApi's **/api/tasks (first match wins).
     await page.route('**/api/tasks', async (route) => {
       if (route.request().method() === 'POST') {
         postCalled = true
@@ -284,62 +284,28 @@ test.describe('Workflow: Login → Create task → Verify', () => {
       })
     })
 
-    // Step 1: Login
-    await page.goto(ROUTES.LOGIN)
-    await waitForPageReady(page)
-    await page.locator('input[type="email"], input[placeholder*="@"]').first().fill(TEST_USER.email)
-    await page.locator('input[type="password"]').first().fill(TEST_USER.password)
+    await mockAllApis(page)
 
-    // Select tenant if the selector is visible
-    const tenantCombo = page.getByRole('combobox', { name: /选择租户|tenant/i }).first()
-    if (await tenantCombo.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await tenantCombo.click()
-      await page.locator('.ant-select-item-option').first().click({ timeout: 5000 })
-    }
-
-    await page.getByRole('button', { name: /登\s*录|login|sign in/i }).click()
-    await expect(page).toHaveURL(new RegExp(ROUTES.DASHBOARD), { timeout: 10000 })
-
-    // Step 2: Navigate to tasks
     await page.goto(ROUTES.TASKS)
     await waitForPageReady(page)
+    await expect(page).toHaveURL(/\/tasks/)
 
-    // Step 3: Create task
-    const createBtn = page.getByRole('button', { name: /创建任务|create task/i }).first()
-    if (!(await createBtn.isVisible({ timeout: 5000 }).catch(() => false))) {
+    // Tasks list toolbar (avoid Dashboard "Quick Actions" Create Task which also matches by name)
+    const createBtn = page.locator('[data-help-key="tasks.createButton"]').first()
+    if (!(await createBtn.isVisible({ timeout: 30000 }).catch(() => false))) {
       test.skip()
       return
     }
     await createBtn.click()
-    await expect(page.locator('.ant-modal')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('.ant-modal')).toBeVisible({ timeout: 10000 })
+    await fillTaskNameAndSubmitCreateTaskModal(page, {
+      taskName,
+      description: 'Created via complete workflow test',
+    })
+    await expect(page.locator('.ant-modal')).toBeHidden({ timeout: 15000 })
+    await page.waitForTimeout(1500)
 
-    const taskName = 'Workflow Created Task'
-    await page.getByLabel(/任务名称|task.*name/i).first().fill(taskName)
-
-    const descArea = page.locator('textarea').first()
-    if (await descArea.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await descArea.fill('Created via complete workflow test')
-    }
-
-    // Navigate through wizard steps
-    const nextBtn = page.getByRole('button', { name: /下一步|next/i })
-    for (let step = 0; step < 3; step++) {
-      if (await nextBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await nextBtn.click()
-        await page.waitForTimeout(300)
-      }
-    }
-
-    // Click submit inside the modal (not the header button)
-    const modal = page.locator('.ant-modal')
-    const submitBtn = modal.getByRole('button', { name: /创建|create|提交|submit|完成|finish/i }).first()
-    if (await submitBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await submitBtn.click()
-    }
-
-    await page.waitForTimeout(2000)
-
-    // Step 4: Verify POST was called with correct data
+    // Step 4: Verify POST was called with correct data (when wizard submitted)
     if (postCalled) {
       expect(capturedPayload).toHaveProperty('name', taskName)
     }
@@ -349,7 +315,7 @@ test.describe('Workflow: Login → Create task → Verify', () => {
     const newTaskName = 'Freshly Created Task'
     let created = false
 
-    await mockAllApis(page)
+    await page.setViewportSize({ width: 1440, height: 900 })
     await setupAuthWithJwt(page)
 
     await page.route('**/api/tasks', async (route) => {
@@ -372,39 +338,27 @@ test.describe('Workflow: Login → Create task → Verify', () => {
       })
     })
 
+    await mockAllApis(page)
+
     await page.goto(ROUTES.TASKS)
     await waitForPageReady(page)
+    await expect(page).toHaveURL(/\/tasks/)
 
-    const createBtn = page.getByRole('button', { name: /创建任务|create task/i }).first()
-    if (!(await createBtn.isVisible({ timeout: 5000 }).catch(() => false))) {
+    const createBtn = page.locator('[data-help-key="tasks.createButton"]').first()
+    if (!(await createBtn.isVisible({ timeout: 30000 }).catch(() => false))) {
       test.skip()
       return
     }
     await createBtn.click()
-    await expect(page.locator('.ant-modal')).toBeVisible({ timeout: 5000 })
+    await expect(page.locator('.ant-modal')).toBeVisible({ timeout: 10000 })
+    await fillTaskNameAndSubmitCreateTaskModal(page, { taskName: newTaskName })
+    await expect(page.locator('.ant-modal')).toBeHidden({ timeout: 15000 })
+    await page.waitForTimeout(1500)
 
-    await page.getByLabel(/任务名称|task.*name/i).first().fill(newTaskName)
-
-    const nextBtn = page.getByRole('button', { name: /下一步|next/i })
-    for (let step = 0; step < 3; step++) {
-      if (await nextBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await nextBtn.click()
-        await page.waitForTimeout(300)
-      }
-    }
-
-    // Click submit inside the modal
-    const modal = page.locator('.ant-modal')
-    const submitBtn = modal.getByRole('button', { name: /创建|create|提交|submit|完成|finish/i }).first()
-    if (await submitBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await submitBtn.click()
-    }
-
-    await page.waitForTimeout(2000)
-
-    // Verify the new task name appears on the page
     if (created) {
-      await expect(page.getByText(newTaskName).first()).toBeVisible({ timeout: 5000 })
+      await page.reload()
+      await waitForPageReady(page)
+      await expect(page.getByText(newTaskName).first()).toBeVisible({ timeout: 15000 })
     }
   })
 })

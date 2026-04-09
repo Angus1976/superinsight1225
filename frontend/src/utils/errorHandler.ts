@@ -159,7 +159,11 @@ export const parseFieldErrors = (data: unknown): FieldError[] => {
       if (typeof err === 'object' && err !== null) {
         const fieldErr = err as Record<string, unknown>;
         errors.push({
-          field: String(fieldErr.field || fieldErr.loc?.[1] || 'unknown'),
+          field: String(
+            fieldErr.field ||
+              (Array.isArray(fieldErr.loc) ? fieldErr.loc[1] : undefined) ||
+              'unknown',
+          ),
           message: String(fieldErr.message || fieldErr.msg || 'Invalid value'),
           code: fieldErr.code as string | undefined,
           value: fieldErr.value,

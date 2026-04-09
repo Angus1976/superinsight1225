@@ -25,6 +25,8 @@ from src.admin.schemas import (
     DatabaseType,
 )
 
+_PROP_TENANT = "prop_history_tenant"
+
 
 # ============================================================================
 # Test Strategies (Hypothesis Generators)
@@ -145,7 +147,7 @@ class TestConfigurationHistoryCompleteness:
         config=llm_config_strategy(),
         user_info=user_info_strategy()
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     def test_create_operation_creates_history_entry(self, config, user_info):
         """
         Creating a configuration creates a history entry.
@@ -170,7 +172,8 @@ class TestConfigurationHistoryCompleteness:
             saved_config = await config_manager.save_llm_config(
                 config=config,
                 user_id=user_id,
-                user_name=user_name
+                user_name=user_name,
+                tenant_id=_PROP_TENANT,
             )
             
             # Get history for this config type
@@ -218,7 +221,7 @@ class TestConfigurationHistoryCompleteness:
         updated_config=llm_config_strategy(),
         user_info=user_info_strategy()
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     def test_update_operation_creates_history_entry(self, initial_config, updated_config, user_info):
         """
         Updating a configuration creates a history entry with old and new values.
@@ -249,7 +252,8 @@ class TestConfigurationHistoryCompleteness:
             saved_config = await config_manager.save_llm_config(
                 config=initial_config,
                 user_id=user_id,
-                user_name=user_name
+                user_name=user_name,
+                tenant_id=_PROP_TENANT,
             )
             config_id = saved_config.id
             
@@ -261,7 +265,8 @@ class TestConfigurationHistoryCompleteness:
                 config=updated_config,
                 user_id=user_id,
                 user_name=user_name,
-                config_id=config_id
+                config_id=config_id,
+                tenant_id=_PROP_TENANT,
             )
             
             # Get history for this config
@@ -304,7 +309,7 @@ class TestConfigurationHistoryCompleteness:
         config=db_config_strategy(),
         user_info=user_info_strategy()
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     def test_delete_operation_creates_history_entry(self, config, user_info):
         """
         Deleting a configuration creates a history entry.
@@ -329,7 +334,8 @@ class TestConfigurationHistoryCompleteness:
             saved_config = await config_manager.save_db_config(
                 config=config,
                 user_id=user_id,
-                user_name=user_name
+                user_name=user_name,
+                tenant_id=_PROP_TENANT,
             )
             config_id = saved_config.id
             
@@ -340,7 +346,8 @@ class TestConfigurationHistoryCompleteness:
             deleted = await config_manager.delete_db_config(
                 config_id=config_id,
                 user_id=user_id,
-                user_name=user_name
+                user_name=user_name,
+                tenant_id=_PROP_TENANT,
             )
             
             assert deleted is True, "Configuration should be deleted"
@@ -384,7 +391,7 @@ class TestConfigurationHistoryCompleteness:
         updated_config=llm_config_strategy(),
         user_info=user_info_strategy()
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_rollback_operation_creates_history_entry(self, initial_config, updated_config, user_info):
         """
         Rolling back a configuration creates a history entry.
@@ -415,7 +422,8 @@ class TestConfigurationHistoryCompleteness:
             saved_config = await config_manager.save_llm_config(
                 config=initial_config,
                 user_id=user_id,
-                user_name=user_name
+                user_name=user_name,
+                tenant_id=_PROP_TENANT,
             )
             config_id = saved_config.id
             
@@ -424,7 +432,8 @@ class TestConfigurationHistoryCompleteness:
                 config=updated_config,
                 user_id=user_id,
                 user_name=user_name,
-                config_id=config_id
+                config_id=config_id,
+                tenant_id=_PROP_TENANT,
             )
             
             # Get the history entry for the update operation
@@ -454,6 +463,7 @@ class TestConfigurationHistoryCompleteness:
                 new_value=update_history.new_value,
                 user_id=user_id,
                 user_name=user_name,
+                tenant_id=_PROP_TENANT,
                 config_id=config_id
             )
             
@@ -522,7 +532,7 @@ class TestConfigurationHistoryCompleteness:
             max_codepoint=122
         ))
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_history_includes_tenant_id(self, config, user_info, tenant_id):
         """
         History entries include tenant_id for multi-tenant isolation.
@@ -573,7 +583,7 @@ class TestConfigurationHistoryCompleteness:
         config=db_config_strategy(),
         user_info=user_info_strategy()
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_history_sanitizes_sensitive_fields(self, config, user_info):
         """
         History entries sanitize sensitive fields.
@@ -598,7 +608,8 @@ class TestConfigurationHistoryCompleteness:
             saved_config = await config_manager.save_db_config(
                 config=config,
                 user_id=user_id,
-                user_name=user_name
+                user_name=user_name,
+                tenant_id=_PROP_TENANT,
             )
             
             # Get history
@@ -637,7 +648,7 @@ class TestConfigurationHistoryCompleteness:
         configs=st.lists(llm_config_strategy(), min_size=2, max_size=5),
         user_info=user_info_strategy()
     )
-    @settings(max_examples=30, deadline=None)
+    @settings(deadline=None)
     def test_multiple_changes_create_multiple_history_entries(self, configs, user_info):
         """
         Multiple configuration changes create multiple history entries.
@@ -665,7 +676,8 @@ class TestConfigurationHistoryCompleteness:
                 await config_manager.save_llm_config(
                     config=config,
                     user_id=user_id,
-                    user_name=user_name
+                    user_name=user_name,
+                    tenant_id=_PROP_TENANT,
                 )
             
             # Get all history entries
@@ -689,7 +701,7 @@ class TestConfigurationHistoryCompleteness:
         config=llm_config_strategy(),
         user_info=user_info_strategy()
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_history_entry_has_all_required_fields(self, config, user_info):
         """
         History entries contain all required fields.
@@ -722,7 +734,8 @@ class TestConfigurationHistoryCompleteness:
             saved_config = await config_manager.save_llm_config(
                 config=config,
                 user_id=user_id,
-                user_name=user_name
+                user_name=user_name,
+                tenant_id=_PROP_TENANT,
             )
             
             # Get history
@@ -780,7 +793,7 @@ class TestConfigurationRollbackRoundTrip:
         updated_config=llm_config_strategy(),
         user_info=user_info_strategy()
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     def test_rollback_restores_exact_previous_state(self, initial_config, updated_config, user_info):
         """
         Rolling back a configuration restores the exact previous state.
@@ -811,7 +824,8 @@ class TestConfigurationRollbackRoundTrip:
             saved_config = await config_manager.save_llm_config(
                 config=initial_config,
                 user_id=user_id,
-                user_name=user_name
+                user_name=user_name,
+                tenant_id=_PROP_TENANT,
             )
             config_id = saved_config.id
 
@@ -820,7 +834,8 @@ class TestConfigurationRollbackRoundTrip:
                 config=updated_config,
                 user_id=user_id,
                 user_name=user_name,
-                config_id=config_id
+                config_id=config_id,
+                tenant_id=_PROP_TENANT,
             )
 
             # Get history to find the update entry
@@ -878,7 +893,7 @@ class TestConfigurationRollbackRoundTrip:
         updated_config=llm_config_strategy(),
         user_info=user_info_strategy()
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     def test_rollback_creates_new_history_entry(self, initial_config, updated_config, user_info):
         """
         Rolling back creates a new history entry documenting the rollback.
@@ -908,7 +923,8 @@ class TestConfigurationRollbackRoundTrip:
             saved_config = await config_manager.save_llm_config(
                 config=initial_config,
                 user_id=user_id,
-                user_name=user_name
+                user_name=user_name,
+                tenant_id=_PROP_TENANT,
             )
             config_id = saved_config.id
 
@@ -916,7 +932,8 @@ class TestConfigurationRollbackRoundTrip:
                 config=updated_config,
                 user_id=user_id,
                 user_name=user_name,
-                config_id=config_id
+                config_id=config_id,
+                tenant_id=_PROP_TENANT,
             )
 
             # Get history to find the update entry
@@ -981,7 +998,7 @@ class TestConfigurationRollbackRoundTrip:
         updates=st.lists(llm_config_strategy(), min_size=2, max_size=4),
         user_info=user_info_strategy()
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_multiple_rollbacks_to_different_versions(self, config, updates, user_info):
         """
         Multiple rollbacks to different versions work correctly.
@@ -1010,7 +1027,8 @@ class TestConfigurationRollbackRoundTrip:
             saved_config = await config_manager.save_llm_config(
                 config=config,
                 user_id=user_id,
-                user_name=user_name
+                user_name=user_name,
+                tenant_id=_PROP_TENANT,
             )
             config_id = saved_config.id
 
@@ -1020,7 +1038,8 @@ class TestConfigurationRollbackRoundTrip:
                     config=update,
                     user_id=user_id,
                     user_name=user_name,
-                    config_id=config_id
+                    config_id=config_id,
+                    tenant_id=_PROP_TENANT,
                 )
 
             # Get full history
@@ -1057,7 +1076,7 @@ class TestConfigurationRollbackRoundTrip:
         config=db_config_strategy(),
         user_info=user_info_strategy()
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_rollback_works_for_database_configs(self, config, user_info):
         """
         Rollback works correctly for database configurations.
@@ -1068,6 +1087,7 @@ class TestConfigurationRollbackRoundTrip:
         # Skip configs with empty names or passwords
         assume(len(config.name.strip()) > 0)
         assume(len(config.password.strip()) >= 8)
+        assume(config.port < 65535)  # updated_config uses port + 1 (valid port range)
 
         user_id, user_name = user_info
         assume(len(user_id.strip()) >= 10)
@@ -1083,7 +1103,8 @@ class TestConfigurationRollbackRoundTrip:
             saved_config = await config_manager.save_db_config(
                 config=config,
                 user_id=user_id,
-                user_name=user_name
+                user_name=user_name,
+                tenant_id=_PROP_TENANT,
             )
             config_id = saved_config.id
             original_name = config.name
@@ -1105,7 +1126,8 @@ class TestConfigurationRollbackRoundTrip:
                 config=updated_config,
                 user_id=user_id,
                 user_name=user_name,
-                config_id=config_id
+                config_id=config_id,
+                tenant_id=_PROP_TENANT,
             )
 
             # Get history
@@ -1148,7 +1170,7 @@ class TestConfigurationRollbackRoundTrip:
         updated_config=llm_config_strategy(),
         user_info=user_info_strategy()
     )
-    @settings(max_examples=50, deadline=None)
+    @settings(deadline=None)
     def test_rollback_preserves_sensitive_field_security(self, config, updated_config, user_info):
         """
         Rollback preserves security of sensitive fields.
@@ -1177,7 +1199,8 @@ class TestConfigurationRollbackRoundTrip:
             saved_config = await config_manager.save_llm_config(
                 config=config,
                 user_id=user_id,
-                user_name=user_name
+                user_name=user_name,
+                tenant_id=_PROP_TENANT,
             )
             config_id = saved_config.id
 
@@ -1186,7 +1209,8 @@ class TestConfigurationRollbackRoundTrip:
                 config=updated_config,
                 user_id=user_id,
                 user_name=user_name,
-                config_id=config_id
+                config_id=config_id,
+                tenant_id=_PROP_TENANT,
             )
 
             # Get history

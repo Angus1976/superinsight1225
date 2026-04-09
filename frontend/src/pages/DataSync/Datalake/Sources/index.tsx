@@ -48,7 +48,7 @@ const canManageSources = (role: string): boolean => {
 const DatalakeSourcesPage: React.FC = () => {
   const { t } = useTranslation(['dataSync', 'common']);
   const { userRole } = usePermissions();
-  const actionRef = useRef<ActionType>();
+  const actionRef = useRef<ActionType | undefined>(undefined);
   const [form] = Form.useForm();
 
   const [modalVisible, setModalVisible] = useState(false);
@@ -151,11 +151,14 @@ const DatalakeSourcesPage: React.FC = () => {
       dataIndex: 'status',
       key: 'status',
       width: 100,
-      render: (status: DataSourceStatus) => (
-        <Tag color={STATUS_COLOR_MAP[status] || 'default'}>
-          {String(status)}
-        </Tag>
-      ),
+      render: (_, record) => {
+        const status = record.status;
+        return (
+          <Tag color={STATUS_COLOR_MAP[status] || 'default'}>
+            {String(status)}
+          </Tag>
+        );
+      },
     },
     {
       title: t('dataSync:datalake.sources.health', '健康状态'),
@@ -231,7 +234,7 @@ const DatalakeSourcesPage: React.FC = () => {
       <ProTable<DatalakeSourceResponse>
         actionRef={actionRef}
         columns={columns}
-        dataSource={sourcesData?.items || []}
+        dataSource={sourcesData ?? []}
         loading={isLoading}
         rowKey="id"
         search={false}

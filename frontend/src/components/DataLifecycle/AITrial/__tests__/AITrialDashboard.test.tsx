@@ -454,7 +454,7 @@ describe('AITrialDashboard Component', () => {
     it('displays execute icon in execute button', () => {
       const { container } = render(<AITrialDashboard {...defaultProps} />);
       
-      const executeIcon = container.querySelector('[aria-label="play-circle"]');
+      const executeIcon = container.querySelector('.anticon-play-circle');
       expect(executeIcon).toBeInTheDocument();
     });
 
@@ -1216,13 +1216,13 @@ describe('AITrialDashboard Component', () => {
       expect(checkboxes.length).toBeGreaterThan(0);
     });
 
-    it('displays icons with proper aria-labels', () => {
+    it('displays icons with proper anticon classes', () => {
       const { container } = render(<AITrialDashboard {...defaultProps} />);
       
-      expect(container.querySelector('[aria-label="plus"]')).toBeInTheDocument();
-      expect(container.querySelector('[aria-label="swap"]')).toBeInTheDocument();
-      expect(container.querySelector('[aria-label="play-circle"]')).toBeInTheDocument();
-      expect(container.querySelector('[aria-label="bar-chart"]')).toBeInTheDocument();
+      expect(container.querySelector('.anticon-plus')).toBeInTheDocument();
+      expect(container.querySelector('.anticon-swap')).toBeInTheDocument();
+      expect(container.querySelector('.anticon-play-circle')).toBeInTheDocument();
+      expect(container.querySelector('.anticon-bar-chart')).toBeInTheDocument();
     });
   });
 });

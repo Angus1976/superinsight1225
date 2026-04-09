@@ -100,11 +100,11 @@ const TaskAnnotatePage: React.FC = () => {
   }, [id, prefetchTask]);
 
   // 获取项目和任务数据 - Enhanced with better error handling
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (force = false) => {
     if (!id || !token) return;
     
-    // Prevent re-fetching if already done (avoid infinite loop)
-    if (initialFetchDone) return;
+    // Prevent re-fetching if already done (avoid infinite loop); allow explicit refetch (sync / retry)
+    if (!force && initialFetchDone) return;
 
     try {
       setLoading(true);
@@ -318,7 +318,7 @@ const TaskAnnotatePage: React.FC = () => {
     try {
       setSyncInProgress(true);
       setError(null);
-      await fetchData();
+      await fetchData(true);
       setLastSyncTime(new Date());
       message.success(t('annotate.syncComplete'));
     } catch (err) {
@@ -331,7 +331,7 @@ const TaskAnnotatePage: React.FC = () => {
   // Handle retry after error
   const handleRetry = useCallback(async () => {
     setError(null);
-    await fetchData();
+    await fetchData(true);
   }, [fetchData]);
 
   // Handle re-login for auth errors
@@ -617,6 +617,7 @@ const TaskAnnotatePage: React.FC = () => {
                     icon={<ReloadOutlined />}
                     loading={syncInProgress}
                     onClick={handleSyncProgress}
+                    data-testid="annotate-sync-progress"
                   />
                 </Tooltip>
                 <Tooltip title={fullscreen ? t('annotate.exitFullscreen') : t('annotate.fullscreenMode')}>

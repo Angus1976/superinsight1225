@@ -1,5 +1,5 @@
 // Main layout component
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { ProLayout, PageContainer } from '@ant-design/pro-components';
 import { HomeOutlined } from '@ant-design/icons';
@@ -67,13 +67,15 @@ export const MainLayout: React.FC = () => {
       )}
       headerContentRender={() => <HeaderContent />}
       footerRender={() => <LayoutFooter collapsed={sidebarCollapsed} />}
-      breadcrumbRender={(routers = []) => [
+      breadcrumbRender={() => [
         {
           path: '/',
           breadcrumbName: t('menu.dashboard'),
-          icon: <HomeOutlined />,
         },
-        ...breadcrumbItems,
+        ...breadcrumbItems.map((b) => ({
+          path: b.path ?? '',
+          breadcrumbName: b.title,
+        })),
       ]}
       pageTitleRender={() => pageTitle}
       contentStyle={{
@@ -95,7 +97,10 @@ export const MainLayout: React.FC = () => {
                   </span>
                 ),
               },
-              ...breadcrumbItems,
+              ...breadcrumbItems.map((b) => ({
+                path: b.path,
+                title: b.title,
+              })),
             ],
           },
         }}

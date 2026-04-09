@@ -48,7 +48,7 @@ class TestMultiTenantConfigurationIsolation:
         num_tenants=st.integers(min_value=2, max_value=5),
         configs_per_tenant=st.integers(min_value=1, max_value=5),
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     def test_llm_configs_isolated_between_tenants(
         self, num_tenants, configs_per_tenant
     ):
@@ -127,7 +127,7 @@ class TestMultiTenantConfigurationIsolation:
         num_tenants=st.integers(min_value=2, max_value=5),
         configs_per_tenant=st.integers(min_value=1, max_value=5),
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     def test_db_configs_isolated_between_tenants(
         self, num_tenants, configs_per_tenant
     ):
@@ -208,7 +208,7 @@ class TestMultiTenantConfigurationIsolation:
         )),
         num_configs=st.integers(min_value=1, max_value=3),
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     def test_cross_tenant_get_access_denied(
         self, tenant_a_id, tenant_b_id, num_configs
     ):
@@ -288,7 +288,7 @@ class TestMultiTenantConfigurationIsolation:
         )),
         num_configs=st.integers(min_value=1, max_value=3),
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     def test_cross_tenant_delete_access_denied(
         self, tenant_a_id, tenant_b_id, num_configs
     ):
@@ -377,7 +377,7 @@ class TestMultiTenantConfigurationIsolation:
         num_tenants=st.integers(min_value=3, max_value=6),
         configs_per_tenant=st.integers(min_value=2, max_value=4),
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     def test_tenant_isolation_with_concurrent_access(
         self, num_tenants, configs_per_tenant
     ):
@@ -468,7 +468,7 @@ class TestMultiTenantConfigurationIsolation:
         num_llm_configs=st.integers(min_value=1, max_value=3),
         num_db_configs=st.integers(min_value=1, max_value=3),
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     def test_tenant_isolation_across_all_config_types(
         self, num_tenants, num_llm_configs, num_db_configs
     ):
@@ -627,7 +627,7 @@ class TestMultiTenantConfigurationIsolation:
         num_tenants=st.integers(min_value=2, max_value=4),
         configs_per_tenant=st.integers(min_value=2, max_value=5),
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     def test_tenant_isolation_persists_across_manager_instances(
         self, num_tenants, configs_per_tenant
     ):
@@ -730,7 +730,7 @@ class TestTenantDefaultInitialization:
         include_database=st.booleans(),
         include_sync=st.booleans(),
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     def test_new_tenant_gets_default_configs(
         self, tenant_id, include_llm, include_database, include_sync
     ):
@@ -852,7 +852,7 @@ class TestTenantDefaultInitialization:
     @given(
         num_tenants=st.integers(min_value=2, max_value=5),
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     def test_default_configs_isolated_between_tenants(self, num_tenants):
         """
         Default configurations are isolated between tenants.
@@ -944,7 +944,7 @@ class TestTenantDefaultInitialization:
     @given(
         tenant_id=st.uuids().map(str),  # Generate valid UUID strings
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     def test_default_configs_include_all_types(self, tenant_id):
         """
         Default initialization includes all configuration types.
@@ -1008,7 +1008,7 @@ class TestTenantDefaultInitialization:
     @given(
         tenant_id=st.uuids().map(str),  # Generate valid UUID strings
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     def test_default_configs_are_valid(self, tenant_id):
         """
         Default configurations are valid and well-formed.
@@ -1103,7 +1103,7 @@ class TestTenantDefaultInitialization:
     @given(
         tenant_id=st.uuids().map(str),  # Generate valid UUID strings
     )
-    @settings(max_examples=100, deadline=None)
+    @settings(deadline=None)
     def test_idempotent_initialization(self, tenant_id):
         """
         Tenant initialization creates new configs each time.

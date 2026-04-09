@@ -393,7 +393,9 @@ const DataLifecycleDashboard: React.FC = () => {
   const tempDataCount = tempDataPagination?.total ?? 0;
   const sampleCount = samplePagination?.total ?? 0;
   const pendingReviews = reviews.filter(r => r.status === 'pending').length;
-  const pendingTasks = tasks.filter(t => t.status === 'pending').length;
+  const pendingTasks = tasks.filter(
+    (t) => t.status === 'created' || t.status === 'in_progress'
+  ).length;
   const runningEnhancements = enhancements.filter(e => e.status === 'running').length;
   const runningTrials = trials.filter(t => t.status === 'running').length;
 

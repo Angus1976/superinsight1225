@@ -501,7 +501,7 @@ export const dataLifecycleSelectors = {
     tempDataCount: state.tempDataList.length,
     sampleCount: state.sampleList.length,
     pendingReviews: state.reviewList.filter((r) => r.status === 'pending').length,
-    pendingTasks: state.annotationTaskList.filter((t) => t.status === 'pending').length,
+    pendingTasks: state.annotationTaskList.filter((t) => t.status === 'created').length,
     runningEnhancements: state.enhancementList.filter((e) => e.status === 'running').length,
     runningTrials: state.aiTrialList.filter((t) => t.status === 'running').length,
   }),

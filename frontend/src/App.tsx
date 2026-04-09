@@ -70,16 +70,9 @@ function App() {
           algorithm: currentTheme === THEMES.DARK ? theme.darkAlgorithm : theme.defaultAlgorithm,
           ...themeConfig,
         }}
-        tooltip={{
-          placement: 'bottom', // 默认显示在底部
-          mouseEnterDelay: 0.5, // 延迟显示
-          mouseLeaveDelay: 0.05, // 快速隐藏
-          arrow: false, // 隐藏默认箭头，使用CSS自定义箭头
-        }}
-        popover={{
-          // 确保popovers使用body作为容器以避免overflow和z-index问题
-          getPopupContainer: () => document.body,
-        }}
+        // antd 5.22+：ConfigProvider 的 tooltip/popover 仅支持 className/style/classNames/styles；
+        // 全局弹出层容器仍通过根级 getPopupContainer 统一挂到 body，避免 overflow / z-index 问题。
+        getPopupContainer={() => document.body}
       >
         <AntApp>
           <ErrorBoundary>

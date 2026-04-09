@@ -363,12 +363,12 @@ async def test_property_8_request_context_preservation(
 
 @pytest.mark.asyncio
 @settings(
-    max_examples=50,  # Fewer examples for timing-sensitive test
     deadline=None,
     suppress_health_check=[HealthCheck.function_scoped_fixture]
 )
 @given(
-    num_failures=st.integers(min_value=1, max_value=3)
+    # fail_count=3 needs a 4th successful call; switcher stops after MAX_RETRY_ATTEMPTS failures
+    num_failures=st.integers(min_value=1, max_value=2)
 )
 async def test_property_10_exponential_backoff_retry(
     num_failures: int,
@@ -420,11 +420,6 @@ async def test_property_10_exponential_backoff_retry(
 
 
 @pytest.mark.asyncio
-@settings(
-    max_examples=20,  # Fewer examples for timeout test
-    deadline=None,
-    suppress_health_check=[HealthCheck.function_scoped_fixture]
-)
 async def test_property_12_timeout_enforcement(mock_config_manager: MockConfigManager):
     """
     Property 12: Timeout Enforcement
@@ -443,12 +438,17 @@ async def test_property_12_timeout_enforcement(mock_config_manager: MockConfigMa
     )
     await switcher.initialize()
 
-    # Provider that exceeds timeout
+    # Timeout path only runs when the mock enters the failure branch (see MockLLMProvider.generate)
     provider = MockLLMProvider(
         method=LLMMethod.LOCAL_OLLAMA,
-        failure_type="timeout"
+        should_fail=True,
+        failure_type="timeout",
     )
     switcher._providers[LLMMethod.LOCAL_OLLAMA] = provider
+    switcher._providers[LLMMethod.CLOUD_OPENAI] = MockLLMProvider(
+        method=LLMMethod.CLOUD_OPENAI,
+        should_fail=True,
+    )
 
     # Property 1: Request times out
     start_time = time.time()
@@ -469,11 +469,6 @@ async def test_property_12_timeout_enforcement(mock_config_manager: MockConfigMa
 
 
 @pytest.mark.asyncio
-@settings(
-    max_examples=50,
-    deadline=None,
-    suppress_health_check=[HealthCheck.function_scoped_fixture]
-)
 async def test_property_13_rate_limit_handling(mock_config_manager: MockConfigManager):
     """
     Property 13: Rate Limit Handling
@@ -517,11 +512,6 @@ async def test_property_13_rate_limit_handling(mock_config_manager: MockConfigMa
 
 
 @pytest.mark.asyncio
-@settings(
-    max_examples=50,
-    deadline=None,
-    suppress_health_check=[HealthCheck.function_scoped_fixture]
-)
 async def test_property_usage_statistics_tracking(mock_config_manager: MockConfigManager):
     """
     Property 9: Usage Statistics Tracking

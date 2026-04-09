@@ -26,28 +26,23 @@ export type { ExtractData } from './api-enhanced';
 export {
   AsyncState,
   LoadingState,
-  ErrorState,
   FilterState,
   SortState,
-  createInitialAsyncState
+  createInitialAsyncState,
 } from './common';
 
+// Store-specific types (ErrorState lives in store.ts, not common.ts)
+export type { ErrorState, EntityState } from './store';
+
 // Store types - export non-conflicting types only
-export type {
-  StoreState,
-  StoreActions,
-  EntityState,
-  NormalizedData,
-  EntityAdapter,
-  ExtractData as ExtractStoreData
-} from './store';
+export type { ExtractData as ExtractStoreData } from './store';
 
 // Other type exports (no conflicts)
 export * from './auth';
 export * from './user';
 export * from './dashboard';
 export * from './task';
-export * from './label-studio';
+// label-studio: types are re-exported via task.ts with aliases; import from '@/types/label-studio' when needed
 export * from './billing';
 export * from './augmentation';
 export * from './quality';

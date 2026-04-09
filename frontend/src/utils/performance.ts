@@ -369,7 +369,7 @@ function sendToAnalytics(metric: PerformanceMetric): void {
   // Example: Google Analytics, custom backend, etc.
 
   // Using Beacon API for reliability
-  if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+  if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
     const data = JSON.stringify({
       type: 'web-vitals',
       metric: metric.name,

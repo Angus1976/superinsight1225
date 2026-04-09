@@ -216,7 +216,7 @@ class TestTemplateInstantiationCompleteness:
         return TemplateService()
 
     @given(template_data=template_create_strategy())
-    @settings(max_examples=30, deadline=None)
+    @settings(deadline=None)
     def test_all_entity_types_instantiated(
         self,
         template_data: OntologyTemplateCreate,
@@ -245,7 +245,7 @@ class TestTemplateInstantiationCompleteness:
         asyncio.run(run_test())
 
     @given(template_data=template_create_strategy())
-    @settings(max_examples=30, deadline=None)
+    @settings(deadline=None)
     def test_all_relation_types_instantiated(
         self,
         template_data: OntologyTemplateCreate,
@@ -274,7 +274,7 @@ class TestTemplateInstantiationCompleteness:
         asyncio.run(run_test())
 
     @given(template_data=template_create_strategy())
-    @settings(max_examples=30, deadline=None)
+    @settings(deadline=None)
     def test_all_validation_rules_instantiated(
         self,
         template_data: OntologyTemplateCreate,
@@ -303,7 +303,7 @@ class TestTemplateInstantiationCompleteness:
         asyncio.run(run_test())
 
     @given(template_data=template_create_strategy())
-    @settings(max_examples=30, deadline=None)
+    @settings(deadline=None)
     def test_instantiated_elements_have_unique_ids(
         self,
         template_data: OntologyTemplateCreate,
@@ -362,7 +362,7 @@ class TestTemplateExportImportRoundTrip:
         return TemplateService()
 
     @given(template_data=template_create_strategy())
-    @settings(max_examples=30, deadline=None)
+    @settings(deadline=None)
     def test_json_export_import_round_trip(
         self,
         template_data: OntologyTemplateCreate,
@@ -403,7 +403,7 @@ class TestTemplateExportImportRoundTrip:
         asyncio.run(run_test())
 
     @given(template_data=template_create_strategy())
-    @settings(max_examples=20, deadline=None)
+    @settings(deadline=None)
     def test_yaml_export_import_round_trip(
         self,
         template_data: OntologyTemplateCreate,
@@ -440,7 +440,7 @@ class TestTemplateExportImportRoundTrip:
         asyncio.run(run_test())
 
     @given(template_data=template_create_strategy())
-    @settings(max_examples=20, deadline=None)
+    @settings(deadline=None)
     def test_export_preserves_entity_attributes(
         self,
         template_data: OntologyTemplateCreate,
@@ -485,7 +485,7 @@ class TestTemplateVersioning:
     """
 
     @given(template_data=template_create_strategy())
-    @settings(max_examples=20, deadline=None)
+    @settings(deadline=None)
     def test_new_version_increments_version_number(
         self,
         template_data: OntologyTemplateCreate,
@@ -511,7 +511,7 @@ class TestTemplateVersioning:
         asyncio.run(run_test())
 
     @given(template_data=template_create_strategy())
-    @settings(max_examples=20, deadline=None)
+    @settings(deadline=None)
     def test_new_version_deprecates_old_version(
         self,
         template_data: OntologyTemplateCreate,
@@ -547,7 +547,7 @@ class TestTemplateCustomization:
     """
 
     @given(template_data=template_create_strategy())
-    @settings(max_examples=20, deadline=None)
+    @settings(deadline=None)
     def test_customization_adds_entity_types(
         self,
         template_data: OntologyTemplateCreate,
@@ -584,7 +584,7 @@ class TestTemplateCustomization:
         asyncio.run(run_test())
 
     @given(template_data=template_create_strategy())
-    @settings(max_examples=20, deadline=None)
+    @settings(deadline=None)
     def test_customization_removes_entity_types(
         self,
         template_data: OntologyTemplateCreate,
@@ -632,7 +632,7 @@ class TestTemplateSearch:
     @given(
         category=template_category_strategy(),
     )
-    @settings(max_examples=20, deadline=None)
+    @settings(deadline=None)
     def test_filter_by_category_returns_matching_templates(
         self,
         category: TemplateCategory,

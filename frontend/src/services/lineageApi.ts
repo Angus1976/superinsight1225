@@ -8,7 +8,7 @@
  * - Visualization data
  */
 
-import { apiClient } from './api/client';
+import apiClient from './api/client';
 
 // Types
 export interface LineageNode {

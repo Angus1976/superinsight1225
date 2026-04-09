@@ -23,7 +23,7 @@ export type SemJobStatus =
 
 export type SemanticRecordType = 'entity' | 'relationship' | 'summary';
 
-export interface ProgressInfo {
+export interface SemanticProgressInfo {
   stage: string;
   current: number;
   total: number;
@@ -37,7 +37,7 @@ export interface SemanticJob {
   file_type: string;
   record_count: number;
   error_message: string | null;
-  progress_info: ProgressInfo | null;
+  progress_info: SemanticProgressInfo | null;
   created_at: string;
   updated_at: string;
 }
@@ -74,7 +74,7 @@ interface SemJobListItem {
   status: string;
   file_name: string;
   file_type: string;
-  progress_info: ProgressInfo | null;
+  progress_info: SemanticProgressInfo | null;
   created_at: string;
 }
 

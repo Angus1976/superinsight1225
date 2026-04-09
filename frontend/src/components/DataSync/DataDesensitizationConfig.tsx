@@ -481,10 +481,10 @@ const DataDesensitizationConfig: React.FC = () => {
       render: (tables) => (
         <Space wrap>
           {tables.slice(0, 2).map((table: string) => (
-            <Tag key={table} size="small">{table}</Tag>
+            <Tag key={table}>{table}</Tag>
           ))}
           {tables.length > 2 && (
-            <Tag size="small">+{tables.length - 2}</Tag>
+            <Tag>+{tables.length - 2}</Tag>
           )}
         </Space>
       ),

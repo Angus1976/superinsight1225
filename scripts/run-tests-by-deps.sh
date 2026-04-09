@@ -23,10 +23,11 @@ python3 -m pytest tests/unit/ --tb=short -v --no-cov --maxfail=10
 echo "=== [2/5] Backend property (pytest -m property) ==="
 python3 -m pytest tests/ -m property --tb=short -v --no-cov --hypothesis-seed=0 --maxfail=5
 
-echo "=== [3/5] Frontend unit (Vitest) ==="
+echo "=== [3/5] Frontend (Vitest + typecheck) ==="
 (
   cd frontend
   npm run test:run
+  npm run typecheck
 )
 
 if [[ "${RUN_INTEGRATION:-0}" == "1" ]]; then

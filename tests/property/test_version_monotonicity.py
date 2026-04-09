@@ -139,7 +139,7 @@ class TestVersionMonotonicity:
     """
     
     @given(version_count=version_count_strategy)
-    @settings(max_examples=30, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_version_numbers_strictly_increase(
         self,
         db_session: Session,
@@ -179,7 +179,7 @@ class TestVersionMonotonicity:
             )
     
     @given(version_count=version_count_strategy)
-    @settings(max_examples=30, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_version_timestamps_correlate_with_numbers(
         self,
         db_session: Session,
@@ -215,7 +215,7 @@ class TestVersionMonotonicity:
         version_count=version_count_strategy,
         content=content_strategy
     )
-    @settings(max_examples=30, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_version_monotonicity_independent_of_content(
         self,
         db_session: Session,
@@ -267,7 +267,7 @@ class TestVersionMonotonicity:
             max_size=5
         )
     )
-    @settings(max_examples=20, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_version_monotonicity_per_data_item(
         self,
         db_session: Session,
@@ -320,7 +320,7 @@ class TestVersionMonotonicity:
                 )
     
     @given(version_count=version_count_strategy)
-    @settings(max_examples=30, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_version_history_ordered_by_version_number(
         self,
         db_session: Session,
@@ -370,7 +370,7 @@ class TestVersionMonotonicity:
         version_count=version_count_strategy,
         change_type=change_type_strategy
     )
-    @settings(max_examples=30, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_version_monotonicity_independent_of_change_type(
         self,
         db_session: Session,
@@ -413,7 +413,7 @@ class TestVersionMonotonicity:
             )
     
     @given(version_count=st.integers(min_value=3, max_value=15))
-    @settings(max_examples=20, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_no_version_number_gaps(
         self,
         db_session: Session,
@@ -453,7 +453,7 @@ class TestVersionMonotonicity:
         )
     
     @given(version_count=version_count_strategy)
-    @settings(max_examples=30, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_version_number_always_positive(
         self,
         db_session: Session,
@@ -492,7 +492,7 @@ class TestVersionMonotonicity:
         version_count=version_count_strategy,
         rollback_target=st.integers(min_value=1, max_value=10)
     )
-    @settings(max_examples=20, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_version_monotonicity_after_rollback(
         self,
         db_session: Session,
@@ -554,7 +554,7 @@ class TestVersionMonotonicity:
             )
     
     @given(version_count=st.integers(min_value=5, max_value=15))
-    @settings(max_examples=20, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
     def test_version_comparison_respects_monotonicity(
         self,
         db_session: Session,

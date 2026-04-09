@@ -476,18 +476,30 @@ export class ErrorLogger {
     }
   }
 
+  /** Resolve a user id from ErrorInfo.context (AnnotationContext or loose test payloads). */
+  private getContextUserId(error: ErrorInfo): string | undefined {
+    const ctx = error.context as
+      | { user?: { id?: string }; userId?: string }
+      | undefined;
+    if (!ctx) return undefined;
+    if (ctx.user?.id) return ctx.user.id;
+    if (typeof ctx.userId === 'string') return ctx.userId;
+    return undefined;
+  }
+
   /**
    * Aggregate error for analysis
    */
   private aggregateError(error: ErrorInfo): void {
     const key = `${error.type}_${error.message}`;
     const existing = this.errorAggregations.get(key);
+    const contextUserId = this.getContextUserId(error);
 
     if (existing) {
       existing.count++;
       existing.lastOccurrence = error.timestamp;
-      if (error.context?.userId) {
-        existing.affectedUsers.add(error.context.userId as string);
+      if (contextUserId) {
+        existing.affectedUsers.add(contextUserId);
       }
       if (!existing.errorMessages.includes(error.message)) {
         existing.errorMessages.push(error.message);
@@ -498,7 +510,7 @@ export class ErrorLogger {
         count: 1,
         firstOccurrence: error.timestamp,
         lastOccurrence: error.timestamp,
-        affectedUsers: new Set(error.context?.userId ? [error.context.userId as string] : []),
+        affectedUsers: new Set(contextUserId ? [contextUserId] : []),
         errorMessages: [error.message],
         severity: error.severity,
       };

@@ -9,13 +9,13 @@ export * from './MemoryMonitor';
 // Smooth interaction components
 export * from './SmoothTransition';
 export * from './InteractiveFeedback';
-// Export SmoothScroll but rename InfiniteScroll to avoid conflict
-export { 
-  SmoothScroll,
+// SmoothScroll 模块内导出名为 *Container / *Button / Parallax，此处别名以保持对外 API
+export {
+  SmoothScrollContainer as SmoothScroll,
   InfiniteScroll as SmoothInfiniteScroll,
-  ScrollToTop,
+  ScrollToTopButton as ScrollToTop,
   ScrollProgress,
-  ParallaxScroll
+  Parallax as ParallaxScroll,
 } from './SmoothScroll';
 
 // Responsive design components

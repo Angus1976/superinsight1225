@@ -33,7 +33,18 @@ import {
 import { useTranslation } from 'react-i18next';
 import type { AnnotationTask } from '@/services/dataLifecycle';
 
-const { Text, Title } = Typography;
+const { Text } = Typography;
+
+type AnnotationMetadata = {
+  completed_at?: string;
+  annotations?: Array<{ annotator_id: string; sample_id: string; comments?: string }>;
+};
+
+function getAnnotationMetadata(task: AnnotationTask): AnnotationMetadata {
+  const m = task.metadata;
+  if (m && typeof m === 'object') return m as AnnotationMetadata;
+  return {};
+}
 
 // ============================================================================
 // Types
@@ -67,22 +78,24 @@ const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
 
   if (!task) return null;
 
+  const meta = getAnnotationMetadata(task);
+  const sampleTotal = task.sample_ids?.length ?? 0;
+  const progressPercent = Math.min(100, Math.max(0, Math.round(Number(task.progress) || 0)));
+  const labeledCount =
+    sampleTotal > 0 ? Math.round((progressPercent / 100) * sampleTotal) : 0;
+
   // Get status color
-  const getStatusColor = (status: string): string => {
-    const colorMap: Record<string, string> = {
-      pending: 'default',
-      inProgress: 'processing',
+  const getStatusColor = (status: AnnotationTask['status']): string => {
+    const colorMap: Record<AnnotationTask['status'], string> = {
+      created: 'default',
+      in_progress: 'processing',
       completed: 'success',
       cancelled: 'error',
     };
     return colorMap[status] || 'default';
   };
 
-  // Calculate progress percentage
-  const calculateProgress = (): number => {
-    if (!task.progress || task.progress.total === 0) return 0;
-    return Math.round((task.progress.completed / task.progress.total) * 100);
-  };
+  const calculateProgress = (): number => progressPercent;
 
   // Render overview tab
   const renderOverview = () => (
@@ -93,13 +106,13 @@ const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
           <Col span={8}>
             <Statistic
               title={t('annotationTask.progress.total')}
-              value={task.progress?.total || 0}
+              value={sampleTotal}
             />
           </Col>
           <Col span={8}>
             <Statistic
               title={t('annotationTask.progress.labeled')}
-              value={task.progress?.completed || 0}
+              value={labeledCount}
               valueStyle={{ color: '#3f8600' }}
             />
           </Col>
@@ -153,9 +166,9 @@ const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
             </Text>
           ) : '-'}
         </Descriptions.Item>
-        {task.completed_at && (
+        {meta.completed_at && (
           <Descriptions.Item label={t('annotationTask.fields.completedAt')}>
-            {new Date(task.completed_at).toLocaleString()}
+            {new Date(meta.completed_at).toLocaleString()}
           </Descriptions.Item>
         )}
       </Descriptions>
@@ -197,11 +210,13 @@ const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
   );
 
   // Render annotations tab
+  const annotations = meta.annotations ?? [];
+
   const renderAnnotations = () => (
     <div>
-      {task.annotations && task.annotations.length > 0 ? (
+      {annotations.length > 0 ? (
         <List
-          dataSource={task.annotations}
+          dataSource={annotations}
           renderItem={(annotation) => (
             <List.Item>
               <List.Item.Meta
@@ -286,7 +301,7 @@ const TaskDetailDrawer: React.FC<TaskDetailDrawerProps> = ({
         </Button>
       );
 
-      if (task.status === 'inProgress' && calculateProgress() === 100) {
+      if (task.status === 'in_progress' && calculateProgress() === 100) {
         actions.push(
           <Button
             key="complete"

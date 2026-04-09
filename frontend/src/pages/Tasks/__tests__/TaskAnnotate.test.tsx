@@ -177,29 +177,33 @@ describe('TaskAnnotate Page - Error Handling', () => {
   });
 
   describe('fetchData error handling', () => {
-    it('should display appropriate error message for 404 (project not found)', async () => {
-      mockApiGet.mockRejectedValueOnce({
-        response: { status: 404, data: { detail: 'Not found' } },
-        isAxiosError: true,
-      });
+    it(
+      'should display appropriate error message for 404 (project not found)',
+      async () => {
+        mockApiGet.mockRejectedValueOnce({
+          response: { status: 404, data: { detail: 'Not found' } },
+          isAxiosError: true,
+        });
 
-      const { default: TaskAnnotatePage } = await import('../TaskAnnotate');
+        const { default: TaskAnnotatePage } = await import('../TaskAnnotate');
 
-      render(
-        <TestWrapper>
-          <TaskAnnotatePage />
-        </TestWrapper>
-      );
+        render(
+          <TestWrapper>
+            <TaskAnnotatePage />
+          </TestWrapper>
+        );
 
-      await waitFor(() => expect(mockApiGet).toHaveBeenCalled(), { timeout: 3000 });
+        await waitFor(() => expect(mockApiGet).toHaveBeenCalled(), { timeout: 15000 });
 
-      await waitFor(
-        () => {
-          expect(screen.getByText(/Project not found|项目未找到|找不到项目/i)).toBeInTheDocument();
-        },
-        { timeout: 3000 }
-      );
-    });
+        await waitFor(
+          () => {
+            expect(screen.getByText(/Project not found|项目未找到|找不到项目/i)).toBeInTheDocument();
+          },
+          { timeout: 15000 }
+        );
+      },
+      30000
+    );
 
     it('should display appropriate error message for 401 (authentication failed)', async () => {
       mockApiGet.mockRejectedValueOnce({

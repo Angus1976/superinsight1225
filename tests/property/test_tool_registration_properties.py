@@ -83,7 +83,7 @@ class TestToolRegistrationRoundTrip:
     """**Validates: Requirement 3.1**"""
 
     @given(tool=tool_strategy())
-    @settings(max_examples=50, deadline=5000)
+    @settings(deadline=5000)
     def test_registered_tool_discoverable_by_capabilities(self, tool: Tool):
         """A registered tool is found when searching by its capabilities."""
         registry = ToolRegistry()
@@ -99,7 +99,7 @@ class TestToolRegistrationRoundTrip:
             )
 
     @given(tool=tool_strategy())
-    @settings(max_examples=50, deadline=5000)
+    @settings(deadline=5000)
     def test_registered_tool_discoverable_by_category(self, tool: Tool):
         """A registered tool is found when searching by its category."""
         registry = ToolRegistry()
@@ -112,7 +112,7 @@ class TestToolRegistrationRoundTrip:
         )
 
     @given(tool=tool_strategy())
-    @settings(max_examples=50, deadline=5000)
+    @settings(deadline=5000)
     def test_get_tool_metadata_returns_correct_metadata(self, tool: Tool):
         """get_tool_metadata returns the exact metadata that was registered."""
         registry = ToolRegistry()

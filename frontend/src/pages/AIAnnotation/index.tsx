@@ -294,9 +294,12 @@ const AIAnnotationIndex: React.FC = () => {
           <Route path="collaboration" element={<AnnotationCollaboration projectId="default" />} />
           <Route path="engines" element={<EngineConfiguration />} />
           <Route path="execution" element={<ExecutionPanel taskId="default" />} />
-          <Route path="trial" element={<TrialRunner />} />
-          <Route path="batch" element={<BatchExecutor />} />
-          <Route path="rhythm" element={<RhythmController />} />
+          <Route path="trial" element={<TrialRunner projectId="default" />} />
+          <Route
+            path="batch"
+            element={<BatchExecutor projectId="default" totalItems={100} />}
+          />
+          <Route path="rhythm" element={<RhythmController projectId="default" />} />
           <Route path="*" element={<Navigate to="/ai-annotation" replace />} />
         </Routes>
       </div>

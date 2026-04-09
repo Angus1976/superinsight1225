@@ -19,7 +19,14 @@ export type DataState =
 
 export type ReviewStatus = 'pending' | 'approved' | 'rejected';
 
-export type JobStatus = 'queued' | 'running' | 'completed' | 'failed' | 'cancelled';
+/** `created`：已创建待执行；`queued`：与后端/旧数据兼容的同义态 */
+export type JobStatus =
+  | 'created'
+  | 'queued'
+  | 'running'
+  | 'completed'
+  | 'failed'
+  | 'cancelled';
 
 export type LifecycleTaskStatus = 'created' | 'in_progress' | 'completed' | 'cancelled';
 

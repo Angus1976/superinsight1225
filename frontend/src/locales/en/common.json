@@ -111,6 +111,7 @@
     "dataSecurity": "Data Security",
     "settings": "Settings",
     "admin": "Admin Console",
+    "console": "Console",
     "tenants": "Tenant Management",
     "users": "User Management",
     "system": "System Monitoring",

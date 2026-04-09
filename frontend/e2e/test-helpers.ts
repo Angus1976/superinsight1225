@@ -8,6 +8,70 @@ import { Page, expect } from '@playwright/test'
 import { E2E_VALID_ACCESS_TOKEN } from './e2e-tokens'
 import { mockAllApis } from './helpers/mock-api-factory'
 
+function rolePermissions(role: string): string[] {
+  if (role === 'admin') return ['read:all', 'write:all', 'manage:all']
+  if (role === 'manager') return ['read:all', 'write:tasks', 'read:billing']
+  return ['read:tasks', 'read:dashboard']
+}
+
+/**
+ * Write auth localStorage only (no init script). Use when tests mutate or clear auth
+ * so navigation does not re-inject tokens via {@link setupAuth}.
+ */
+export async function seedAuthLocalStorage(
+  page: Page,
+  role: string = 'admin',
+  tenantId: string = 'tenant-1',
+  accessToken: string = E2E_VALID_ACCESS_TOKEN,
+) {
+  const permissions = rolePermissions(role)
+  await page.evaluate(
+    ({ role, tenantId, accessToken, permissions }) => {
+      localStorage.setItem('auth_token', JSON.stringify(accessToken))
+      localStorage.setItem(
+        'auth-storage',
+        JSON.stringify({
+          state: {
+            user: {
+              id: `user-${role}`,
+              username: `${role}user`,
+              name: `${role} 用户`,
+              email: `${role}@example.com`,
+              role,
+              tenant_id: tenantId,
+              roles: [role],
+              permissions,
+            },
+            token: accessToken,
+            currentTenant: {
+              id: tenantId,
+              name: `测试租户${tenantId.slice(-1)}`,
+            },
+            isAuthenticated: true,
+          },
+          version: 0,
+        }),
+      )
+    },
+    { role, tenantId, accessToken, permissions },
+  )
+}
+
+/**
+ * Same as {@link setupE2eSession} but auth is seeded once via localStorage (no auth init script).
+ * Needed for logout tests and localStorage role mutations across reload.
+ */
+export async function setupE2eSessionMutable(
+  page: Page,
+  options: { lang?: 'zh' | 'en'; role?: string; tenantId?: string } = {},
+) {
+  const { lang = 'zh', role = 'admin', tenantId = 'tenant-1' } = options
+  await seedLanguageStores(page, lang)
+  await mockAllApis(page)
+  await page.goto('/login')
+  await seedAuthLocalStorage(page, role, tenantId)
+}
+
 /**
  * Set up authenticated state with mock data
  */

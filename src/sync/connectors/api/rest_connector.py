@@ -677,7 +677,7 @@ class RESTConnector(BaseConnector):
         for item in data:
             record_id = str(item.get(self.rest_config.id_field, ""))
             if not record_id:
-                record_id = hashlib.md5(json.dumps(item, sort_keys=True).encode()).hexdigest()[:16]
+                record_id = hashlib.md5(json.dumps(item, sort_keys=True).encode(), usedforsecurity=False).hexdigest()[:16]
 
             timestamp = None
             if self.rest_config.timestamp_field:

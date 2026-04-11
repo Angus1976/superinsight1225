@@ -418,7 +418,8 @@ class SyncSecurityHandler:
         """Create a threat event."""
         event = ThreatEvent(
             id=hashlib.md5(
-                f"{threat_type.value}{time.time()}".encode()
+                f"{threat_type.value}{time.time()}".encode(),
+                usedforsecurity=False,
             ).hexdigest()[:16],
             threat_type=threat_type,
             level=level,

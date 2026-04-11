@@ -22,11 +22,12 @@ Requirements Implemented:
 import asyncio
 import logging
 from datetime import datetime
-from typing import Dict, List, Optional, Any, TYPE_CHECKING
+from typing import Dict, List, Optional, Any, TYPE_CHECKING, Union
 from uuid import UUID
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 if TYPE_CHECKING:
@@ -41,6 +42,28 @@ except ImportError:
 
 
 logger = logging.getLogger(__name__)
+
+
+async def _db_execute(db: Union[Session, AsyncSession], stmt: Any) -> Any:
+    """Execute ORM statement; supports sync Session (app lifespan) or AsyncSession."""
+    if isinstance(db, AsyncSession):
+        return await db.execute(stmt)
+    return db.execute(stmt)
+
+
+async def _db_commit(db: Union[Session, AsyncSession]) -> None:
+    if isinstance(db, AsyncSession):
+        await db.commit()
+    else:
+        db.commit()
+
+
+async def _db_rollback(db: Union[Session, AsyncSession]) -> None:
+    if isinstance(db, AsyncSession):
+        await db.rollback()
+    else:
+        db.rollback()
+
 
 # Health check interval in seconds (Requirement 5.1)
 HEALTH_CHECK_INTERVAL_SECONDS = 60
@@ -65,7 +88,7 @@ class HealthMonitor:
     def __init__(
         self,
         switcher: "LLMSwitcher",
-        db_session: Optional[AsyncSession] = None,
+        db_session: Optional[Union[Session, AsyncSession]] = None,
         metrics_collector: Optional[Any] = None,
     ):
         """
@@ -101,8 +124,8 @@ class HealthMonitor:
         
         logger.debug("HealthMonitor initialized")
     
-    async def _get_db(self) -> Optional[AsyncSession]:
-        """Get database session."""
+    async def _get_db(self) -> Optional[Union[Session, AsyncSession]]:
+        """Get database session (sync or async)."""
         if self._db:
             return self._db
         # Database session is optional - health monitoring can work without persistence
@@ -244,7 +267,7 @@ class HealthMonitor:
                 LLMConfiguration.default_method == method.value,
                 LLMConfiguration.is_active == True
             )
-            result = await db.execute(stmt)
+            result = await _db_execute(db, stmt)
             config = result.scalar_one_or_none()
             
             if config:
@@ -253,7 +276,7 @@ class HealthMonitor:
             stmt = select(LLMConfiguration).where(
                 LLMConfiguration.is_active == True
             ).limit(1)
-            result = await db.execute(stmt)
+            result = await _db_execute(db, stmt)
             config = result.scalar_one_or_none()
             
             return str(config.id) if config else f"provider_{method.value}"
@@ -262,7 +285,7 @@ class HealthMonitor:
             logger.warning(f"Failed to get provider ID for {method}: {e}")
             # Rollback to clear failed transaction state
             try:
-                await db.rollback()
+                await _db_rollback(db)
             except Exception:
                 pass
             return f"provider_{method.value}"
@@ -379,13 +402,13 @@ class HealthMonitor:
                 }
             )
             
-            await db.execute(stmt)
-            await db.commit()
+            await _db_execute(db, stmt)
+            await _db_commit(db)
             
         except Exception as e:
             logger.error(f"Failed to persist health status for {provider_id}: {e}")
             try:
-                await db.rollback()
+                await _db_rollback(db)
             except Exception:
                 pass
     
@@ -560,7 +583,7 @@ class HealthMonitor:
             stmt = select(LLMHealthStatus).where(
                 LLMHealthStatus.provider_id == UUID(provider_id)
             )
-            result = await db.execute(stmt)
+            result = await _db_execute(db, stmt)
             status = result.scalar_one_or_none()
             
             if status:

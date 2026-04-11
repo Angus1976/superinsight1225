@@ -46,6 +46,11 @@ def upgrade():
             user_agent TEXT,
             details JSONB DEFAULT '{}',
             timestamp TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+            workspace_id VARCHAR(36),
+            session_id VARCHAR(100),
+            correlation_id VARCHAR(100),
+            source_system VARCHAR(50),
+            event_version VARCHAR(10) NOT NULL DEFAULT '1.0',
             PRIMARY KEY (id, timestamp)
         ) PARTITION BY RANGE (timestamp);
     """)
@@ -63,6 +68,15 @@ def upgrade():
         
         CREATE INDEX idx_audit_logs_partitioned_ip_address 
         ON audit_logs_partitioned (ip_address);
+
+        CREATE INDEX idx_audit_logs_partitioned_workspace_id
+        ON audit_logs_partitioned (workspace_id);
+        CREATE INDEX idx_audit_logs_partitioned_session_id
+        ON audit_logs_partitioned (session_id);
+        CREATE INDEX idx_audit_logs_partitioned_correlation_id
+        ON audit_logs_partitioned (correlation_id);
+        CREATE INDEX idx_audit_logs_partitioned_source_system
+        ON audit_logs_partitioned (source_system);
     """)
     
     # Create initial monthly partitions (current month + next 11 months)
@@ -92,10 +106,18 @@ def upgrade():
             ON {partition_name} (resource_type, resource_id);
         """)
     
-    # Migrate existing data from old table to partitioned table
+    # Migrate existing data from old table to partitioned table（列须与 004_extend_audit_tables 后一致）
     op.execute("""
-        INSERT INTO audit_logs_partitioned 
-        SELECT * FROM audit_logs;
+        INSERT INTO audit_logs_partitioned (
+            id, user_id, tenant_id, action, resource_type, resource_id,
+            ip_address, user_agent, details, timestamp,
+            workspace_id, session_id, correlation_id, source_system, event_version
+        )
+        SELECT
+            id, user_id, tenant_id, action, resource_type, resource_id,
+            ip_address, user_agent, details, timestamp,
+            workspace_id, session_id, correlation_id, source_system, event_version
+        FROM audit_logs;
     """)
     
     # Rename tables to complete the migration

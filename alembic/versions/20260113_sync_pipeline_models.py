@@ -17,6 +17,12 @@ depends_on = None
 
 
 def upgrade() -> None:
+    bind = op.get_bind()
+    insp = sa.inspect(bind)
+
+    def _has(t: str) -> bool:
+        return insp.has_table(t)
+
     # Create sync_data_sources table
     op.create_table(
         'sync_data_sources',
@@ -62,50 +68,52 @@ def upgrade() -> None:
     )
     op.create_index('ix_sync_checkpoints_source_id', 'sync_checkpoints', ['source_id'])
     
-    # Create sync_jobs table
-    op.create_table(
-        'sync_jobs',
-        sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column('source_id', postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column('name', sa.String(200), nullable=False),
-        sa.Column('cron_expression', sa.String(100), nullable=False),
-        sa.Column('priority', sa.Integer(), server_default='0'),
-        sa.Column('enabled', sa.Boolean(), server_default='true'),
-        sa.Column('pull_config', postgresql.JSONB(), server_default='{}'),
-        sa.Column('status', sa.String(20), server_default='pending'),
-        sa.Column('last_run_at', sa.DateTime(), nullable=True),
-        sa.Column('next_run_at', sa.DateTime(), nullable=True),
-        sa.Column('last_error', sa.Text(), nullable=True),
-        sa.Column('total_runs', sa.Integer(), server_default='0'),
-        sa.Column('successful_runs', sa.Integer(), server_default='0'),
-        sa.Column('failed_runs', sa.Integer(), server_default='0'),
-        sa.Column('total_rows_synced', sa.Integer(), server_default='0'),
-        sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()')),
-        sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()')),
-        sa.ForeignKeyConstraint(['source_id'], ['sync_data_sources.id'], ondelete='CASCADE'),
-        sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index('ix_sync_jobs_source_id', 'sync_jobs', ['source_id'])
+    # sync_jobs 与 add_sync_system_tables 共用表名；任一迁移先执行则另一方跳过
+    if not _has('sync_jobs'):
+        op.create_table(
+            'sync_jobs',
+            sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
+            sa.Column('source_id', postgresql.UUID(as_uuid=True), nullable=False),
+            sa.Column('name', sa.String(200), nullable=False),
+            sa.Column('cron_expression', sa.String(100), nullable=False),
+            sa.Column('priority', sa.Integer(), server_default='0'),
+            sa.Column('enabled', sa.Boolean(), server_default='true'),
+            sa.Column('pull_config', postgresql.JSONB(), server_default='{}'),
+            sa.Column('status', sa.String(20), server_default='pending'),
+            sa.Column('last_run_at', sa.DateTime(), nullable=True),
+            sa.Column('next_run_at', sa.DateTime(), nullable=True),
+            sa.Column('last_error', sa.Text(), nullable=True),
+            sa.Column('total_runs', sa.Integer(), server_default='0'),
+            sa.Column('successful_runs', sa.Integer(), server_default='0'),
+            sa.Column('failed_runs', sa.Integer(), server_default='0'),
+            sa.Column('total_rows_synced', sa.Integer(), server_default='0'),
+            sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()')),
+            sa.Column('updated_at', sa.DateTime(), server_default=sa.text('now()')),
+            sa.ForeignKeyConstraint(['source_id'], ['sync_data_sources.id'], ondelete='CASCADE'),
+            sa.PrimaryKeyConstraint('id')
+        )
+        op.create_index('ix_sync_jobs_source_id', 'sync_jobs', ['source_id'])
     
-    # Create sync_history table
-    op.create_table(
-        'sync_history',
-        sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column('job_id', postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column('started_at', sa.DateTime(), nullable=False),
-        sa.Column('completed_at', sa.DateTime(), nullable=True),
-        sa.Column('status', sa.String(20), nullable=False),
-        sa.Column('rows_synced', sa.Integer(), server_default='0'),
-        sa.Column('bytes_processed', sa.Integer(), server_default='0'),
-        sa.Column('duration_ms', sa.Float(), server_default='0'),
-        sa.Column('error_message', sa.Text(), nullable=True),
-        sa.Column('error_details', postgresql.JSONB(), nullable=True),
-        sa.Column('retry_count', sa.Integer(), server_default='0'),
-        sa.Column('checkpoint_value', sa.Text(), nullable=True),
-        sa.ForeignKeyConstraint(['job_id'], ['sync_jobs.id'], ondelete='CASCADE'),
-        sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index('ix_sync_history_job_id', 'sync_history', ['job_id'])
+    # sync_history 与 012_add_admin_configuration_tables 共用表名（语义不同）；已存在则跳过
+    if not _has('sync_history'):
+        op.create_table(
+            'sync_history',
+            sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
+            sa.Column('job_id', postgresql.UUID(as_uuid=True), nullable=False),
+            sa.Column('started_at', sa.DateTime(), nullable=False),
+            sa.Column('completed_at', sa.DateTime(), nullable=True),
+            sa.Column('status', sa.String(20), nullable=False),
+            sa.Column('rows_synced', sa.Integer(), server_default='0'),
+            sa.Column('bytes_processed', sa.Integer(), server_default='0'),
+            sa.Column('duration_ms', sa.Float(), server_default='0'),
+            sa.Column('error_message', sa.Text(), nullable=True),
+            sa.Column('error_details', postgresql.JSONB(), nullable=True),
+            sa.Column('retry_count', sa.Integer(), server_default='0'),
+            sa.Column('checkpoint_value', sa.Text(), nullable=True),
+            sa.ForeignKeyConstraint(['job_id'], ['sync_jobs.id'], ondelete='CASCADE'),
+            sa.PrimaryKeyConstraint('id')
+        )
+        op.create_index('ix_sync_history_job_id', 'sync_history', ['job_id'])
     
     # Create sync_semantic_cache table
     op.create_table(

@@ -23,13 +23,6 @@ depends_on = None
 
 
 def upgrade() -> None:
-    # Create enum types
-    op.execute("CREATE TYPE IF NOT EXISTS extended_tenant_status AS ENUM ('active', 'suspended', 'disabled')")
-    op.execute("CREATE TYPE IF NOT EXISTS extended_workspace_status AS ENUM ('active', 'archived', 'deleted')")
-    op.execute("CREATE TYPE IF NOT EXISTS member_role AS ENUM ('owner', 'admin', 'member', 'guest')")
-    op.execute("CREATE TYPE IF NOT EXISTS share_permission AS ENUM ('read_only', 'edit')")
-    op.execute("CREATE TYPE IF NOT EXISTS entity_type AS ENUM ('tenant', 'workspace')")
-    
     # Create tenant_quotas table
     op.create_table(
         'tenant_quotas',
@@ -52,7 +45,11 @@ def upgrade() -> None:
         'quota_usage',
         sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column('entity_id', sa.String(100), nullable=False),
-        sa.Column('entity_type', sa.Enum('tenant', 'workspace', name='entity_type'), nullable=False),
+        sa.Column(
+            'entity_type',
+            postgresql.ENUM('tenant', 'workspace', name='entity_type', create_type=True),
+            nullable=False,
+        ),
         sa.Column('storage_bytes', sa.BigInteger(), nullable=False, server_default='0'),
         sa.Column('project_count', sa.Integer(), nullable=False, server_default='0'),
         sa.Column('user_count', sa.Integer(), nullable=False, server_default='0'),
@@ -68,7 +65,11 @@ def upgrade() -> None:
         'temporary_quotas',
         sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column('entity_id', sa.String(100), nullable=False),
-        sa.Column('entity_type', sa.Enum('tenant', 'workspace', name='entity_type'), nullable=False),
+        sa.Column(
+            'entity_type',
+            postgresql.ENUM('tenant', 'workspace', name='entity_type', create_type=False),
+            nullable=False,
+        ),
         sa.Column('storage_bytes', sa.BigInteger(), nullable=True),
         sa.Column('project_count', sa.Integer(), nullable=True),
         sa.Column('user_count', sa.Integer(), nullable=True),
@@ -89,8 +90,12 @@ def upgrade() -> None:
         sa.Column('parent_id', postgresql.UUID(as_uuid=True), nullable=True),
         sa.Column('name', sa.String(200), nullable=False),
         sa.Column('description', sa.Text(), nullable=True),
-        sa.Column('status', sa.Enum('active', 'archived', 'deleted', name='extended_workspace_status'), 
-                  nullable=False, server_default='active'),
+        sa.Column(
+            'status',
+            postgresql.ENUM('active', 'archived', 'deleted', name='extended_workspace_status', create_type=True),
+            nullable=False,
+            server_default='active',
+        ),
         sa.Column('config', postgresql.JSONB(), nullable=False, server_default='{}'),
         sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.func.now()),
         sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.func.now(), onupdate=sa.func.now()),
@@ -125,8 +130,12 @@ def upgrade() -> None:
         sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column('workspace_id', postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column('user_id', postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column('role', sa.Enum('owner', 'admin', 'member', 'guest', name='member_role'), 
-                  nullable=False, server_default='member'),
+        sa.Column(
+            'role',
+            postgresql.ENUM('owner', 'admin', 'member', 'guest', name='member_role', create_type=True),
+            nullable=False,
+            server_default='member',
+        ),
         sa.Column('custom_role_id', postgresql.UUID(as_uuid=True), nullable=True),
         sa.Column('joined_at', sa.DateTime(timezone=True), server_default=sa.func.now()),
         sa.Column('last_active_at', sa.DateTime(timezone=True), nullable=True),
@@ -161,8 +170,12 @@ def upgrade() -> None:
         sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column('workspace_id', postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column('email', sa.String(255), nullable=False),
-        sa.Column('role', sa.Enum('owner', 'admin', 'member', 'guest', name='member_role'), 
-                  nullable=False, server_default='member'),
+        sa.Column(
+            'role',
+            postgresql.ENUM('owner', 'admin', 'member', 'guest', name='member_role', create_type=False),
+            nullable=False,
+            server_default='member',
+        ),
         sa.Column('token', sa.String(64), nullable=False, unique=True),
         sa.Column('message', sa.Text(), nullable=True),
         sa.Column('invited_by', postgresql.UUID(as_uuid=True), nullable=False),
@@ -184,8 +197,12 @@ def upgrade() -> None:
         sa.Column('resource_id', postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column('resource_type', sa.String(50), nullable=False),
         sa.Column('owner_tenant_id', sa.String(100), nullable=False),
-        sa.Column('permission', sa.Enum('read_only', 'edit', name='share_permission'), 
-                  nullable=False, server_default='read_only'),
+        sa.Column(
+            'permission',
+            postgresql.ENUM('read_only', 'edit', name='share_permission', create_type=True),
+            nullable=False,
+            server_default='read_only',
+        ),
         sa.Column('token', sa.String(64), nullable=False, unique=True),
         sa.Column('expires_at', sa.DateTime(timezone=True), nullable=False),
         sa.Column('revoked', sa.Boolean(), nullable=False, server_default='false'),

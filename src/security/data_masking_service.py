@@ -104,7 +104,7 @@ class EncryptionMasking(MaskingAlgorithm):
         if algorithm == "sha256":
             hashed = hashlib.sha256(value.encode()).hexdigest()
         elif algorithm == "md5":
-            hashed = hashlib.md5(value.encode()).hexdigest()
+            hashed = hashlib.md5(value.encode(), usedforsecurity=False).hexdigest()
         else:
             hashed = hashlib.sha256(value.encode()).hexdigest()
         

@@ -276,7 +276,8 @@ def cached_response(
             else:
                 key_data = {"args": str(args), "kwargs": str(kwargs)}
                 key = hashlib.md5(
-                    json.dumps(key_data, sort_keys=True).encode()
+                    json.dumps(key_data, sort_keys=True).encode(),
+                    usedforsecurity=False,
                 ).hexdigest()
 
             # Try cache

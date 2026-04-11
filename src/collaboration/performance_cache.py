@@ -117,7 +117,7 @@ class InMemoryCache:
         key_parts.extend(str(arg) for arg in args)
         key_parts.extend(f"{k}={v}" for k, v in sorted(kwargs.items()))
         key_str = ":".join(key_parts)
-        return hashlib.md5(key_str.encode()).hexdigest()
+        return hashlib.md5(key_str.encode(), usedforsecurity=False).hexdigest()
     
     async def get(
         self,
@@ -818,7 +818,8 @@ def cached(
                 cache_key = key_func(*args, **kwargs)
             else:
                 cache_key = hashlib.md5(
-                    f"{args}:{kwargs}".encode()
+                    f"{args}:{kwargs}".encode(),
+                    usedforsecurity=False,
                 ).hexdigest()
             
             # 尝试从缓存获取

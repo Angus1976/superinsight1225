@@ -189,7 +189,7 @@ class AnnotationCacheService:
     
     def _hash_content(self, content: str) -> str:
         """Generate hash for content."""
-        return hashlib.md5(content.encode()).hexdigest()[:16]
+        return hashlib.md5(content.encode(), usedforsecurity=False).hexdigest()[:16]
     
     async def _get_from_redis(self, key: str) -> Optional[Any]:
         """Get value from Redis."""

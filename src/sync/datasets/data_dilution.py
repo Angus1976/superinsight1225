@@ -520,7 +520,7 @@ class DataMerger:
     def _compute_hash(self, sample: DataSample) -> str:
         """Compute content hash for deduplication."""
         content_str = str(sorted(sample.content.items()))
-        return hashlib.md5(content_str.encode()).hexdigest()
+        return hashlib.md5(content_str.encode(), usedforsecurity=False).hexdigest()
 
     async def merge(
         self,

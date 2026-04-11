@@ -22,8 +22,12 @@ services:
       - postgres
       - redis
     volumes:
+      - ./main.py:/app/main.py
       - ./src:/app/src
-      - ./logs:/var/log/superinsight
+      - ./alembic:/app/alembic
+      - ./alembic.ini:/app/alembic.ini
+      - ./logs:/app/logs
+      - ./uploads:/app/uploads
     restart: unless-stopped
 
   # ===========================================================================
@@ -75,6 +79,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        NPM_CONFIG_REGISTRY: ${NPM_CONFIG_REGISTRY:-}
     container_name: superinsight-frontend
     ports:
       - "5173:5173"

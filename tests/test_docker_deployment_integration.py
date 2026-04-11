@@ -68,6 +68,7 @@ def test_env_file():
         f.write("OPENCLAW_LOCALE=zh-CN\n")
         f.write("OPENCLAW_LOG_LEVEL=info\n")
         f.write("NODE_ENV=test\n")
+        f.write("OPENCLAW_GATEWAY_TOKEN=test-gateway-token-789\n")
         env_path = f.name
     
     yield env_path
@@ -185,6 +186,8 @@ class TestDockerDeployment:
                 test_env_file,
                 "up",
                 "-d",
+                "ollama",
+                "openclaw-core",
                 "openclaw-gateway",
                 "openclaw-agent",
             ]

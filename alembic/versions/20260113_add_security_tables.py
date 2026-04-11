@@ -49,38 +49,9 @@ def upgrade() -> None:
         END $$;
     """)
     
-    op.execute("""
-        DO $$ BEGIN
-            CREATE TYPE sso_protocol AS ENUM ('saml', 'oauth2', 'oidc', 'ldap');
-        EXCEPTION
-            WHEN duplicate_object THEN null;
-        END $$;
-    """)
-    
-    op.execute("""
-        DO $$ BEGIN
-            CREATE TYPE security_event_severity AS ENUM ('low', 'medium', 'high', 'critical');
-        EXCEPTION
-            WHEN duplicate_object THEN null;
-        END $$;
-    """)
-    
-    op.execute("""
-        DO $$ BEGIN
-            CREATE TYPE security_event_status AS ENUM ('open', 'investigating', 'resolved', 'false_positive');
-        EXCEPTION
-            WHEN duplicate_object THEN null;
-        END $$;
-    """)
-    
-    op.execute("""
-        DO $$ BEGIN
-            CREATE TYPE policy_type AS ENUM ('time_range', 'ip_whitelist', 'sensitivity_level', 'attribute', 'rate_limit');
-        EXCEPTION
-            WHEN duplicate_object THEN null;
-        END $$;
-    """)
-    
+    # sso_protocol / security_event_* / policy_type 由下方表字段的 postgresql.ENUM(create_type=True) 创建，
+    # 避免与显式 CREATE TYPE 重复执行导致 DuplicateObject。
+
     # Create security_roles table
     op.create_table(
         'security_roles',
@@ -125,7 +96,15 @@ def upgrade() -> None:
         sa.Column('name', sa.String(100), nullable=False),
         sa.Column('description', sa.Text, nullable=True),
         sa.Column('tenant_id', sa.String(100), nullable=False),
-        sa.Column('policy_type', sa.Enum('time_range', 'ip_whitelist', 'sensitivity_level', 'attribute', 'rate_limit', name='policy_type'), nullable=False),
+        sa.Column(
+            'policy_type',
+            postgresql.ENUM(
+                'time_range', 'ip_whitelist', 'sensitivity_level', 'attribute', 'rate_limit',
+                name='policy_type',
+                create_type=True,
+            ),
+            nullable=False,
+        ),
         sa.Column('resource_pattern', sa.String(200), nullable=False),
         sa.Column('config', postgresql.JSONB, nullable=False),
         sa.Column('enabled', sa.Boolean, default=True),
@@ -147,7 +126,11 @@ def upgrade() -> None:
         sa.Column('name', sa.String(100), nullable=False),
         sa.Column('display_name', sa.String(200), nullable=True),
         sa.Column('tenant_id', sa.String(100), nullable=False),
-        sa.Column('protocol', sa.Enum('saml', 'oauth2', 'oidc', 'ldap', name='sso_protocol'), nullable=False),
+        sa.Column(
+            'protocol',
+            postgresql.ENUM('saml', 'oauth2', 'oidc', 'ldap', name='sso_protocol', create_type=True),
+            nullable=False,
+        ),
         sa.Column('entity_id', sa.String(500), nullable=True),
         sa.Column('sso_url', sa.String(500), nullable=True),
         sa.Column('slo_url', sa.String(500), nullable=True),
@@ -214,8 +197,16 @@ def upgrade() -> None:
         sa.Column('id', postgresql.UUID(as_uuid=True), primary_key=True),
         sa.Column('event_id', sa.String(100), unique=True, nullable=False),
         sa.Column('event_type', sa.String(50), nullable=False),
-        sa.Column('severity', sa.Enum('low', 'medium', 'high', 'critical', name='security_event_severity'), nullable=False),
-        sa.Column('status', sa.Enum('open', 'investigating', 'resolved', 'false_positive', name='security_event_status'), default='open'),
+        sa.Column(
+            'severity',
+            postgresql.ENUM('low', 'medium', 'high', 'critical', name='security_event_severity', create_type=True),
+            nullable=False,
+        ),
+        sa.Column(
+            'status',
+            postgresql.ENUM('open', 'investigating', 'resolved', 'false_positive', name='security_event_status', create_type=True),
+            default='open',
+        ),
         sa.Column('tenant_id', sa.String(100), nullable=False),
         sa.Column('user_id', postgresql.UUID(as_uuid=True), nullable=True),
         sa.Column('ip_address', postgresql.INET, nullable=True),

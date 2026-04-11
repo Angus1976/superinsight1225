@@ -4,6 +4,7 @@ import os
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
+from sqlalchemy import text
 
 from alembic import context
 
@@ -58,6 +59,34 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 
+def _ensure_alembic_version_num_width(connection) -> None:
+    """Alembic 默认 version_num 为 VARCHAR(32)，本仓库 revision id 更长会截断失败。"""
+    if connection.dialect.name != "postgresql":
+        return
+    connection.execute(
+        text(
+            """
+            DO $$
+            BEGIN
+              IF NOT EXISTS (
+                SELECT 1 FROM information_schema.tables
+                WHERE table_schema = 'public' AND table_name = 'alembic_version'
+              ) THEN
+                CREATE TABLE alembic_version (
+                  version_num VARCHAR(255) NOT NULL,
+                  CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num)
+                );
+              ELSE
+                ALTER TABLE alembic_version
+                  ALTER COLUMN version_num TYPE VARCHAR(255);
+              END IF;
+            END $$;
+            """
+        )
+    )
+    connection.commit()
+
+
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode.
 
@@ -76,6 +105,7 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
+        _ensure_alembic_version_num_width(connection)
         context.configure(
             connection=connection, target_metadata=target_metadata
         )

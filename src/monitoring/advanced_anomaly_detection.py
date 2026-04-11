@@ -327,7 +327,7 @@ class AlertAggregator:
 
     def _generate_anomaly_key(self, metric_name: str, anomaly_type: AnomalyType) -> str:
         """Generate unique key for anomaly aggregation."""
-        return hashlib.md5(f"{metric_name}:{anomaly_type.value}".encode()).hexdigest()[:12]
+        return hashlib.md5(f"{metric_name}:{anomaly_type.value}".encode(), usedforsecurity=False).hexdigest()[:12]
 
     def add_anomaly(
         self,

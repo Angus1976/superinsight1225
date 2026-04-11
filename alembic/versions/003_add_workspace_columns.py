@@ -18,31 +18,26 @@ depends_on = None
 
 def upgrade() -> None:
     """Add workspace_id columns to existing tables."""
-    
-    # Add workspace_id column to existing tables if they don't exist
-    try:
-        op.add_column('documents', sa.Column('workspace_id', postgresql.UUID(as_uuid=True), nullable=True))
-        op.create_index(op.f('ix_documents_workspace_id'), 'documents', ['workspace_id'], unique=False)
-    except Exception:
-        pass  # Column might already exist
-    
-    try:
-        op.add_column('tasks', sa.Column('workspace_id', postgresql.UUID(as_uuid=True), nullable=True))
-        op.create_index(op.f('ix_tasks_workspace_id'), 'tasks', ['workspace_id'], unique=False)
-    except Exception:
-        pass  # Column might already exist
-    
-    try:
-        op.add_column('quality_issues', sa.Column('workspace_id', postgresql.UUID(as_uuid=True), nullable=True))
-        op.create_index(op.f('ix_quality_issues_workspace_id'), 'quality_issues', ['workspace_id'], unique=False)
-    except Exception:
-        pass  # Column might already exist
-    
-    try:
-        op.add_column('billing_records', sa.Column('workspace_id', postgresql.UUID(as_uuid=True), nullable=True))
-        op.create_index(op.f('ix_billing_records_workspace_id'), 'billing_records', ['workspace_id'], unique=False)
-    except Exception:
-        pass  # Column might already exist
+    bind = op.get_bind()
+    insp = sa.inspect(bind)
+    tables = set(insp.get_table_names())
+
+    def _add_workspace(table: str) -> None:
+        if table not in tables:
+            return
+        cols = {c["name"] for c in insp.get_columns(table)}
+        if "workspace_id" in cols:
+            return
+        op.add_column(
+            table,
+            sa.Column("workspace_id", postgresql.UUID(as_uuid=True), nullable=True),
+        )
+        op.create_index(op.f(f"ix_{table}_workspace_id"), table, ["workspace_id"], unique=False)
+
+    _add_workspace("documents")
+    _add_workspace("tasks")
+    _add_workspace("quality_issues")
+    _add_workspace("billing_records")
 
 
 def downgrade() -> None:

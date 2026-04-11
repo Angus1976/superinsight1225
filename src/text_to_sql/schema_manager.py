@@ -82,7 +82,7 @@ class SchemaManager:
 
     def get_engine(self, connection_string: str) -> Engine:
         """Get or create database engine."""
-        engine_key = hashlib.md5(connection_string.encode()).hexdigest()
+        engine_key = hashlib.md5(connection_string.encode(), usedforsecurity=False).hexdigest()
 
         if engine_key not in self._engines:
             self._engines[engine_key] = create_engine(
@@ -349,7 +349,7 @@ class SchemaManager:
                       schema_name: Optional[str]) -> str:
         """Generate cache key for schema."""
         key_data = f"{connection_string}:{schema_name or 'default'}"
-        return hashlib.md5(key_data.encode()).hexdigest()
+        return hashlib.md5(key_data.encode(), usedforsecurity=False).hexdigest()
 
     def clear_cache(self, connection_string: Optional[str] = None) -> None:
         """Clear schema cache."""

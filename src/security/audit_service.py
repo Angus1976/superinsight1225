@@ -978,7 +978,7 @@ class EnhancedAuditService(AuditService):
     def _generate_browser_fingerprint(self, user_agent: str) -> str:
         """生成浏览器指纹"""
         import hashlib
-        return hashlib.md5(user_agent.encode()).hexdigest()[:16]
+        return hashlib.md5(user_agent.encode(), usedforsecurity=False).hexdigest()[:16]
     
     async def _get_ip_info(self, ip_address: str) -> Dict[str, Any]:
         """获取IP信息（简化版本）"""

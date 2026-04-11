@@ -633,7 +633,7 @@ class ChangeDetectionEngine:
         if self.config.hash_algorithm == "sha256":
             hash_value = hashlib.sha256(hash_str.encode()).hexdigest()
         elif self.config.hash_algorithm == "md5":
-            hash_value = hashlib.md5(hash_str.encode()).hexdigest()
+            hash_value = hashlib.md5(hash_str.encode(), usedforsecurity=False).hexdigest()
         else:
             hash_value = hashlib.sha1(hash_str.encode()).hexdigest()
         

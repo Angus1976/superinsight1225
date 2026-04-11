@@ -7,18 +7,30 @@ const PORT = process.env.GATEWAY_PORT || 3000;
 
 app.use(bodyParser.json());
 
-const AGENT_URL = process.env.AGENT_URL || 'http://superinsight-openclaw-agent:8080';
+// Compose 服务名为 openclaw-agent（与 container_name 无关）
+const AGENT_URL = process.env.AGENT_URL || 'http://openclaw-agent:8080';
 const SUPERINSIGHT_URL = process.env.SUPERINSIGHT_API_URL || 'http://app:8000';
+const OPENCLAW_CORE_URL = (process.env.OPENCLAW_CORE_URL || '').replace(/\/$/, '');
+const OPENCLAW_GATEWAY_TOKEN = process.env.OPENCLAW_GATEWAY_TOKEN || '';
 
 // ---------------------------------------------------------------------------
 // Health check
 // ---------------------------------------------------------------------------
 app.get('/health', async (req, res) => {
   let agentOk = false;
+  let coreOk = null;
   try {
     const r = await axios.get(`${AGENT_URL}/health`, { timeout: 3000 });
     agentOk = r.data?.status === 'healthy';
   } catch { /* ignore */ }
+
+  if (OPENCLAW_CORE_URL) {
+    coreOk = false;
+    try {
+      const r = await axios.get(`${OPENCLAW_CORE_URL}/healthz`, { timeout: 3000 });
+      coreOk = r.status === 200;
+    } catch { /* ignore */ }
+  }
 
   res.json({
     status: 'healthy',
@@ -26,6 +38,7 @@ app.get('/health', async (req, res) => {
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     agent_connected: agentOk,
+    openclaw_core_connected: coreOk,
   });
 });
 
@@ -35,7 +48,8 @@ app.get('/health', async (req, res) => {
 app.get('/api/info', (req, res) => {
   res.json({
     name: 'OpenClaw Gateway',
-    version: '2.0.0',
+    version: '2.1.0',
+    upstream_openclaw: OPENCLAW_CORE_URL || null,
     superinsight_api: SUPERINSIGHT_URL,
     tenant_id: process.env.SUPERINSIGHT_TENANT_ID,
   });
@@ -90,9 +104,44 @@ app.post('/api/skills/execute', async (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
-// Proxy: Chat (forward to Agent)
+// Proxy: Chat — official OpenClaw Gateway (HTTP) when configured, else Agent
 // ---------------------------------------------------------------------------
+async function chatViaOpenClawCore(body) {
+  const message = body.message || '';
+  const systemPrompt = body.system_prompt || '';
+  const messages = [];
+  if (systemPrompt) {
+    messages.push({ role: 'system', content: systemPrompt });
+  }
+  messages.push({ role: 'user', content: message });
+
+  const headers = { 'Content-Type': 'application/json' };
+  if (OPENCLAW_GATEWAY_TOKEN) {
+    headers.Authorization = `Bearer ${OPENCLAW_GATEWAY_TOKEN}`;
+  }
+
+  const r = await axios.post(
+    `${OPENCLAW_CORE_URL}/v1/chat/completions`,
+    {
+      model: 'openclaw/default',
+      messages,
+    },
+    { headers, timeout: 120000 }
+  );
+  const choice = r.data?.choices?.[0]?.message;
+  const reply = choice?.content ?? choice?.reasoning_content ?? '';
+  return { success: true, reply };
+}
+
 app.post('/api/chat', async (req, res) => {
+  if (OPENCLAW_CORE_URL) {
+    try {
+      const out = await chatViaOpenClawCore(req.body);
+      return res.json(out);
+    } catch (err) {
+      console.warn('OpenClaw core chat failed, falling back to agent:', err.message);
+    }
+  }
   try {
     const r = await axios.post(`${AGENT_URL}/api/chat`, req.body, { timeout: 120000 });
     res.json(r.data);
@@ -130,7 +179,8 @@ app.get('/api/channels', (req, res) => {
 // Start
 // ---------------------------------------------------------------------------
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`OpenClaw Gateway v2.0 listening on port ${PORT}`);
+  console.log(`SuperInsight OpenClaw compat gateway listening on port ${PORT}`);
+  console.log(`OpenClaw core URL: ${OPENCLAW_CORE_URL || '(disabled — chat via agent)'}`);
   console.log(`Agent URL: ${AGENT_URL}`);
   console.log(`SuperInsight API: ${SUPERINSIGHT_URL}`);
 });

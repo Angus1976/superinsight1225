@@ -1,0 +1,28 @@
+# Dependencies & build output
+node_modules
+dist
+.vite
+
+# VCS & IDE
+.git
+.gitignore
+.idea
+.vscode
+*.swp
+.DS_Store
+
+# Tests & artifacts
+coverage
+test-results
+playwright-report
+.hypothesis
+*.log
+
+# Env (never bake secrets)
+.env
+.env.*
+!.env.example
+
+# Docs (not needed in image)
+*.md
+!README.md

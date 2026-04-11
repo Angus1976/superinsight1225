@@ -30,7 +30,7 @@ def upgrade() -> None:
     op.create_table(
         'llm_configurations',
         sa.Column('id', UUID(as_uuid=True), primary_key=True),
-        sa.Column('tenant_id', UUID(as_uuid=True), sa.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=True),
+        sa.Column('tenant_id', sa.String(100), sa.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=True),
         sa.Column('config_data', JSONB, nullable=False, server_default='{}'),
         sa.Column('default_method', sa.String(50), nullable=False, server_default='local_ollama'),
         sa.Column('is_active', sa.Boolean, nullable=False, server_default='true'),
@@ -53,7 +53,7 @@ def upgrade() -> None:
     op.create_table(
         'llm_usage_logs',
         sa.Column('id', UUID(as_uuid=True), primary_key=True),
-        sa.Column('tenant_id', UUID(as_uuid=True), sa.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=True),
+        sa.Column('tenant_id', sa.String(100), sa.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=True),
         sa.Column('user_id', UUID(as_uuid=True), sa.ForeignKey('users.id', ondelete='SET NULL'), nullable=True),
         sa.Column('method', sa.String(50), nullable=False),
         sa.Column('model', sa.String(100), nullable=False),

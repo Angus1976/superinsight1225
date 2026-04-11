@@ -27,13 +27,19 @@ def upgrade() -> None:
         sa.UniqueConstraint('role', 'source_id', name='uq_role_source'),
     )
 
-    # Indexes for efficient querying by role or source_id
-    op.create_index('idx_role_permission_role', 'ai_data_source_role_permission', ['role'])
-    op.create_index('idx_role_permission_source_id', 'ai_data_source_role_permission', ['source_id'])
+    # 索引名须全局唯一，勿与 rbac 的 idx_role_permission_* 冲突
+    op.create_index(
+        'ix_ai_ds_role_perm_role', 'ai_data_source_role_permission', ['role']
+    )
+    op.create_index(
+        'ix_ai_ds_role_perm_source_id',
+        'ai_data_source_role_permission',
+        ['source_id'],
+    )
 
 
 def downgrade() -> None:
     """Drop ai_data_source_role_permission table."""
-    op.drop_index('idx_role_permission_source_id', 'ai_data_source_role_permission')
-    op.drop_index('idx_role_permission_role', 'ai_data_source_role_permission')
+    op.drop_index('ix_ai_ds_role_perm_source_id', 'ai_data_source_role_permission')
+    op.drop_index('ix_ai_ds_role_perm_role', 'ai_data_source_role_permission')
     op.drop_table('ai_data_source_role_permission')

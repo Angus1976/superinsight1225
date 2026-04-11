@@ -24,6 +24,13 @@ from src.database.connection import db_manager
 logger = logging.getLogger(__name__)
 
 
+def _as_entity_uuid(entity_id) -> UUID:
+    """data_versions.entity_id 列为 UUID；路由入参多为 str。"""
+    if isinstance(entity_id, UUID):
+        return entity_id
+    return UUID(str(entity_id))
+
+
 class VersionType(str, Enum):
     """Version type for semantic versioning."""
     MAJOR = "major"
@@ -116,9 +123,10 @@ class VersionManager:
         Returns:
             Created version dictionary
         """
-        from src.models.versioning import DataVersion, VersionStatus
-        from src.models.versioning import VersionType as ModelVersionType
-        
+        from src.version.models import DataVersion, VersionStatus
+        from src.version.models import VersionType as ModelVersionType
+
+        eid = _as_entity_uuid(entity_id)
         with self.get_session() as session:
             # Get current version
             current = await self._get_current_version(
@@ -137,7 +145,7 @@ class VersionManager:
             # Create version record
             version = DataVersion(
                 entity_type=entity_type,
-                entity_id=entity_id,
+                entity_id=eid,
                 version=new_version,
                 version_number=version_number,
                 version_type=ModelVersionType.FULL,
@@ -171,11 +179,12 @@ class VersionManager:
         tenant_id: Optional[str] = None
     ):
         """Get the current (latest) version for an entity."""
-        from src.models.versioning import DataVersion, VersionStatus
-        
+        from src.version.models import DataVersion, VersionStatus
+
+        eid = _as_entity_uuid(entity_id)
         stmt = select(DataVersion).where(
             DataVersion.entity_type == entity_type,
-            DataVersion.entity_id == entity_id,
+            DataVersion.entity_id == eid,
             DataVersion.status == VersionStatus.ACTIVE
         )
         
@@ -195,12 +204,13 @@ class VersionManager:
         tenant_id: Optional[str] = None
     ) -> Optional[Dict[str, Any]]:
         """Get a specific version by version string."""
-        from src.models.versioning import DataVersion
-        
+        from src.version.models import DataVersion
+
+        eid = _as_entity_uuid(entity_id)
         with self.get_session() as session:
             stmt = select(DataVersion).where(
                 DataVersion.entity_type == entity_type,
-                DataVersion.entity_id == entity_id,
+                DataVersion.entity_id == eid,
                 DataVersion.version == version
             )
             
@@ -220,12 +230,13 @@ class VersionManager:
         limit: int = 50
     ) -> List[Dict[str, Any]]:
         """Get version history for an entity."""
-        from src.models.versioning import DataVersion, VersionStatus
-        
+        from src.version.models import DataVersion, VersionStatus
+
+        eid = _as_entity_uuid(entity_id)
         with self.get_session() as session:
             stmt = select(DataVersion).where(
                 DataVersion.entity_type == entity_type,
-                DataVersion.entity_id == entity_id,
+                DataVersion.entity_id == eid,
                 DataVersion.status == VersionStatus.ACTIVE
             )
             
@@ -247,8 +258,8 @@ class VersionManager:
         tenant_id: Optional[str] = None
     ) -> Dict[str, Any]:
         """Add a tag to a version."""
-        from src.models.versioning import DataVersion, DataVersionTag
-        
+        from src.version.models import DataVersion, DataVersionTag
+
         with self.get_session() as session:
             # Get version
             stmt = select(DataVersion).where(DataVersion.id == UUID(version_id))
@@ -303,12 +314,13 @@ class VersionManager:
             raise ValueError(f"Target version {target_version} not found")
         
         # Get the actual data from the version
-        from src.models.versioning import DataVersion
-        
+        from src.version.models import DataVersion
+
+        eid = _as_entity_uuid(entity_id)
         with self.get_session() as session:
             stmt = select(DataVersion).where(
                 DataVersion.entity_type == entity_type,
-                DataVersion.entity_id == entity_id,
+                DataVersion.entity_id == eid,
                 DataVersion.version == target_version
             )
             if tenant_id:

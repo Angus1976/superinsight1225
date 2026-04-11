@@ -259,45 +259,48 @@ def upgrade():
     # ========================================================================
     # Create sync_jobs table
     # ========================================================================
-    op.create_table('sync_jobs',
-        sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False, default=sa.text('gen_random_uuid()')),
-        sa.Column('tenant_id', sa.String(100), nullable=False),
-        sa.Column('name', sa.String(200), nullable=False),
-        sa.Column('description', sa.Text(), nullable=True),
-        sa.Column('source_id', postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column('target_config', postgresql.JSONB(astext_type=sa.Text()), nullable=False, server_default='{}'),
-        sa.Column('direction', postgresql.ENUM('local_to_cloud', 'cloud_to_local', 'bidirectional', 'pull', 'push', name='syncdirection', create_type=False), nullable=True, server_default=sa.text("'pull'")),
-        sa.Column('frequency', postgresql.ENUM('real_time', 'scheduled', 'manual', 'on_change', name='syncfrequency', create_type=False), nullable=True, server_default=sa.text("'manual'")),
-        sa.Column('status', postgresql.ENUM('draft', 'active', 'paused', 'disabled', 'archived', name='syncjobstatus', create_type=False), nullable=True, server_default=sa.text("'draft'")),
-        sa.Column('schedule_cron', sa.String(100), nullable=True),
-        sa.Column('schedule_timezone', sa.String(50), nullable=True, server_default=sa.text("'UTC'")),
-        sa.Column('batch_size', sa.Integer(), nullable=True, server_default='1000'),
-        sa.Column('max_retries', sa.Integer(), nullable=True, server_default='3'),
-        sa.Column('retry_delay', sa.Integer(), nullable=True, server_default='60'),
-        sa.Column('timeout', sa.Integer(), nullable=True, server_default='3600'),
-        sa.Column('enable_incremental', sa.Boolean(), nullable=True, server_default='true'),
-        sa.Column('incremental_field', sa.String(100), nullable=True),
-        sa.Column('last_sync_value', sa.String(500), nullable=True),
-        sa.Column('conflict_resolution', postgresql.ENUM('timestamp_based', 'source_wins', 'target_wins', 'manual', 'field_merge', 'business_rule', name='conflictresolutionstrategy', create_type=False), nullable=True, server_default=sa.text("'timestamp_based'")),
-        sa.Column('transformation_rules', postgresql.JSONB(astext_type=sa.Text()), nullable=True, server_default='[]'),
-        sa.Column('filter_conditions', postgresql.JSONB(astext_type=sa.Text()), nullable=True, server_default='{}'),
-        sa.Column('enable_encryption', sa.Boolean(), nullable=True, server_default='true'),
-        sa.Column('enable_compression', sa.Boolean(), nullable=True, server_default='false'),
-        sa.Column('total_executions', sa.Integer(), nullable=True, server_default='0'),
-        sa.Column('successful_executions', sa.Integer(), nullable=True, server_default='0'),
-        sa.Column('failed_executions', sa.Integer(), nullable=True, server_default='0'),
-        sa.Column('total_records_synced', sa.BigInteger(), nullable=True, server_default='0'),
-        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
-        sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
-        sa.Column('last_executed_at', sa.DateTime(timezone=True), nullable=True),
-        sa.Column('next_scheduled_at', sa.DateTime(timezone=True), nullable=True),
-        sa.Column('created_by', sa.String(100), nullable=True),
-        sa.ForeignKeyConstraint(['source_id'], ['data_sources.id']),
-        sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index('idx_sync_jobs_tenant_status', 'sync_jobs', ['tenant_id', 'status'])
-    op.create_index('idx_sync_jobs_next_scheduled', 'sync_jobs', ['next_scheduled_at'])
-    op.create_index('idx_sync_jobs_tenant_id', 'sync_jobs', ['tenant_id'])
+    _insp = sa.inspect(op.get_bind())
+    if not _insp.has_table('sync_jobs'):
+        op.create_table(
+            'sync_jobs',
+            sa.Column('id', postgresql.UUID(as_uuid=True), nullable=False, default=sa.text('gen_random_uuid()')),
+            sa.Column('tenant_id', sa.String(100), nullable=False),
+            sa.Column('name', sa.String(200), nullable=False),
+            sa.Column('description', sa.Text(), nullable=True),
+            sa.Column('source_id', postgresql.UUID(as_uuid=True), nullable=False),
+            sa.Column('target_config', postgresql.JSONB(astext_type=sa.Text()), nullable=False, server_default='{}'),
+            sa.Column('direction', postgresql.ENUM('local_to_cloud', 'cloud_to_local', 'bidirectional', 'pull', 'push', name='syncdirection', create_type=False), nullable=True, server_default=sa.text("'pull'")),
+            sa.Column('frequency', postgresql.ENUM('real_time', 'scheduled', 'manual', 'on_change', name='syncfrequency', create_type=False), nullable=True, server_default=sa.text("'manual'")),
+            sa.Column('status', postgresql.ENUM('draft', 'active', 'paused', 'disabled', 'archived', name='syncjobstatus', create_type=False), nullable=True, server_default=sa.text("'draft'")),
+            sa.Column('schedule_cron', sa.String(100), nullable=True),
+            sa.Column('schedule_timezone', sa.String(50), nullable=True, server_default=sa.text("'UTC'")),
+            sa.Column('batch_size', sa.Integer(), nullable=True, server_default='1000'),
+            sa.Column('max_retries', sa.Integer(), nullable=True, server_default='3'),
+            sa.Column('retry_delay', sa.Integer(), nullable=True, server_default='60'),
+            sa.Column('timeout', sa.Integer(), nullable=True, server_default='3600'),
+            sa.Column('enable_incremental', sa.Boolean(), nullable=True, server_default='true'),
+            sa.Column('incremental_field', sa.String(100), nullable=True),
+            sa.Column('last_sync_value', sa.String(500), nullable=True),
+            sa.Column('conflict_resolution', postgresql.ENUM('timestamp_based', 'source_wins', 'target_wins', 'manual', 'field_merge', 'business_rule', name='conflictresolutionstrategy', create_type=False), nullable=True, server_default=sa.text("'timestamp_based'")),
+            sa.Column('transformation_rules', postgresql.JSONB(astext_type=sa.Text()), nullable=True, server_default='[]'),
+            sa.Column('filter_conditions', postgresql.JSONB(astext_type=sa.Text()), nullable=True, server_default='{}'),
+            sa.Column('enable_encryption', sa.Boolean(), nullable=True, server_default='true'),
+            sa.Column('enable_compression', sa.Boolean(), nullable=True, server_default='false'),
+            sa.Column('total_executions', sa.Integer(), nullable=True, server_default='0'),
+            sa.Column('successful_executions', sa.Integer(), nullable=True, server_default='0'),
+            sa.Column('failed_executions', sa.Integer(), nullable=True, server_default='0'),
+            sa.Column('total_records_synced', sa.BigInteger(), nullable=True, server_default='0'),
+            sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+            sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+            sa.Column('last_executed_at', sa.DateTime(timezone=True), nullable=True),
+            sa.Column('next_scheduled_at', sa.DateTime(timezone=True), nullable=True),
+            sa.Column('created_by', sa.String(100), nullable=True),
+            sa.ForeignKeyConstraint(['source_id'], ['data_sources.id']),
+            sa.PrimaryKeyConstraint('id')
+        )
+        op.create_index('idx_sync_jobs_tenant_status', 'sync_jobs', ['tenant_id', 'status'])
+        op.create_index('idx_sync_jobs_next_scheduled', 'sync_jobs', ['next_scheduled_at'])
+        op.create_index('idx_sync_jobs_tenant_id', 'sync_jobs', ['tenant_id'])
 
     # ========================================================================
     # Create sync_executions table

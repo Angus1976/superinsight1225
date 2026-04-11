@@ -7,6 +7,7 @@ Create Date: 2026-01-10 15:30:00.000000
 """
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy import text
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
@@ -18,20 +19,43 @@ depends_on = None
 
 def upgrade():
     """Add RBAC tables for enhanced role-based access control."""
-    
-    # Create enum types
+    bind = op.get_bind()
+    if sa.inspect(bind).has_table('rbac_roles'):
+        return
+
+    # 显式建 ENUM 且 create_type=False，避免 create_table 再次 emit CREATE TYPE（会 DuplicateObject）
+    bind.execute(
+        text("""
+        DO $$ BEGIN
+            CREATE TYPE permissionscope AS ENUM ('global', 'tenant', 'resource');
+        EXCEPTION
+            WHEN duplicate_object THEN NULL;
+        END $$;
+        """)
+    )
+    bind.execute(
+        text("""
+        DO $$ BEGIN
+            CREATE TYPE resourcetype AS ENUM (
+                'project', 'dataset', 'model', 'pipeline', 'report',
+                'dashboard', 'user', 'role', 'permission', 'audit_log', 'system_config'
+            );
+        EXCEPTION
+            WHEN duplicate_object THEN NULL;
+        END $$;
+        """)
+    )
     permission_scope_enum = postgresql.ENUM(
-        'global', 'tenant', 'resource', 
-        name='permissionscope'
+        'global', 'tenant', 'resource',
+        name='permissionscope',
+        create_type=False,
     )
-    permission_scope_enum.create(op.get_bind())
-    
     resource_type_enum = postgresql.ENUM(
-        'project', 'dataset', 'model', 'pipeline', 'report', 
+        'project', 'dataset', 'model', 'pipeline', 'report',
         'dashboard', 'user', 'role', 'permission', 'audit_log', 'system_config',
-        name='resourcetype'
+        name='resourcetype',
+        create_type=False,
     )
-    resource_type_enum.create(op.get_bind())
     
     # Create rbac_roles table
     op.create_table(

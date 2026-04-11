@@ -11,11 +11,24 @@ import {
   getAvailableDataSources, getOpenClawStatus,
 } from '@/services/aiAssistantApi';
 import type { WorkflowItem, AIDataSource, SkillInfo, DataSourceAuth } from '@/types/aiAssistant';
+import { skillDisplayName } from '@/utils/skillI18n';
 
 const { Text } = Typography;
 
 const ROLES = ['admin', 'business_expert', 'annotator', 'viewer'];
 const OUTPUT_MODES = ['merge', 'compare'];
+
+function apiErrorDetailMessage(err: unknown): string | null {
+  if (!err || typeof err !== 'object') return null;
+  const ax = err as { response?: { data?: { detail?: unknown } } };
+  const d = ax.response?.data?.detail;
+  if (typeof d === 'string') return d;
+  if (d && typeof d === 'object' && 'message' in d) {
+    const m = (d as { message?: unknown }).message;
+    if (typeof m === 'string' && m.trim()) return m;
+  }
+  return null;
+}
 
 // ---------------------------------------------------------------------------
 // Helper: DataSourceAuth[] → tree checked keys
@@ -64,15 +77,9 @@ function checkedKeysToAuth(checkedKeys: string[]): DataSourceAuth[] {
   return Array.from(sourceMap.entries()).map(([source_id, tables]) => ({ source_id, tables }));
 }
 
-// ---------------------------------------------------------------------------
-// Helper: translate skill name — if already Chinese keep it, else use i18n
-// ---------------------------------------------------------------------------
-function isChineseText(text: string): boolean {
-  return /[\u4e00-\u9fff]/.test(text);
-}
-
 const WorkflowAdmin: React.FC = () => {
   const { t } = useTranslation('workflow');
+  const { t: tAi } = useTranslation('aiAssistant');
   const [workflows, setWorkflows] = useState<WorkflowItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -80,14 +87,6 @@ const WorkflowAdmin: React.FC = () => {
   const [searchText, setSearchText] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [form] = Form.useForm();
-
-  // Helper: translate skill name
-  const translateSkillName = (name: string): string => {
-    if (isChineseText(name)) return name;
-    const key = `skillNames.${name}`;
-    const translated = t(key);
-    return translated === key ? name : translated;
-  };
 
   // --- Real data from backend ---
   const [skills, setSkills] = useState<SkillInfo[]>([]);
@@ -230,7 +229,7 @@ const WorkflowAdmin: React.FC = () => {
       fetchWorkflows();
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'errorFields' in err) return;
-      message.error(t('errors.saveFailed'));
+      message.error(apiErrorDetailMessage(err) ?? t('errors.saveFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -310,7 +309,7 @@ const WorkflowAdmin: React.FC = () => {
           <Space size={4} wrap>
             {ids.map((id) => {
               const sk = skills.find((s) => s.id === id);
-              return <Tag key={id}>{sk ? translateSkillName(sk.name) : id.slice(0, 8)}</Tag>;
+              return <Tag key={id}>{sk ? skillDisplayName(sk.name, tAi) : id.slice(0, 8)}</Tag>;
             })}
           </Space>
         );
@@ -404,7 +403,7 @@ const WorkflowAdmin: React.FC = () => {
         onCancel={handleModalCancel}
         confirmLoading={submitting}
         width={640}
-        destroyOnHidden
+        destroyOnClose={false}
       >
         <Form form={form} layout="vertical">
           <Form.Item
@@ -434,7 +433,10 @@ const WorkflowAdmin: React.FC = () => {
             <Select
               mode="multiple"
               placeholder={t('admin.selectSkills')}
-              options={skills.map((s) => ({ label: `${translateSkillName(s.name)} (${s.version})`, value: s.id }))}
+              options={skills.map((s) => ({
+                label: `${skillDisplayName(s.name, tAi)} (${s.version})`,
+                value: s.id,
+              }))}
             />
           </Form.Item>
 

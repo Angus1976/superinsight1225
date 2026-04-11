@@ -69,6 +69,7 @@ class LLMConfiguration(Base):
             "id": str(self.id),
             "tenant_id": str(self.tenant_id) if self.tenant_id else None,
             "config_data": self.config_data,
+            "provider": self.provider,
             "default_method": self.default_method,
             "is_active": self.is_active,
             "is_default": self.is_default,

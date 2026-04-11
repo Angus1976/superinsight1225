@@ -463,7 +463,7 @@ class SchemaAnalyzer:
     def _get_cache_key(self, connection_info: Dict[str, Any]) -> str:
         """Generate cache key from connection info."""
         key_data = str(sorted(connection_info.items()))
-        return hashlib.md5(key_data.encode()).hexdigest()
+        return hashlib.md5(key_data.encode(), usedforsecurity=False).hexdigest()
     
     def _compute_schema_hash(self, tables: List[Dict]) -> str:
         """Compute hash of schema for change detection."""

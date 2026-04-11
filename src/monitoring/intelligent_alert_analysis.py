@@ -296,7 +296,7 @@ class AlertPatternRecognizer:
             alert_rate = len(window_alerts) / 5.0  # alerts per minute
             
             if alert_rate >= self.burst_threshold:
-                pattern_id = f"burst_{hashlib.md5(f'{window_start}'.encode()).hexdigest()[:8]}"
+                pattern_id = f"burst_{hashlib.md5(f'{window_start}'.encode(), usedforsecurity=False).hexdigest()[:8]}"
                 
                 pattern = AlertPatternMatch(
                     pattern_id=pattern_id,
@@ -368,7 +368,7 @@ class AlertPatternRecognizer:
             
             # Create patterns for escalation sequences
             for sequence in escalation_sequences:
-                pattern_id = f"cascade_{hashlib.md5(f'{source}_{sequence[0].id}'.encode()).hexdigest()[:8]}"
+                pattern_id = f"cascade_{hashlib.md5(f'{source}_{sequence[0].id}'.encode(), usedforsecurity=False).hexdigest()[:8]}"
                 
                 pattern = AlertPatternMatch(
                     pattern_id=pattern_id,
@@ -425,7 +425,7 @@ class AlertPatternRecognizer:
             
             # Consider it periodic if standard deviation is low relative to mean
             if mean_interval > 0 and std_interval / mean_interval < 0.3:  # 30% variation allowed
-                pattern_id = f"periodic_{hashlib.md5(alert_type.encode()).hexdigest()[:8]}"
+                pattern_id = f"periodic_{hashlib.md5(alert_type.encode(), usedforsecurity=False).hexdigest()[:8]}"
                 
                 pattern = AlertPatternMatch(
                     pattern_id=pattern_id,
@@ -514,7 +514,7 @@ class AlertPatternRecognizer:
             
             # Create correlation patterns
             for correlation in correlations:
-                pattern_id = f"correlation_{hashlib.md5(f'{window_start}_{correlation}'.encode()).hexdigest()[:8]}"
+                pattern_id = f"correlation_{hashlib.md5(f'{window_start}_{correlation}'.encode(), usedforsecurity=False).hexdigest()[:8]}"
                 
                 pattern = AlertPatternMatch(
                     pattern_id=pattern_id,
@@ -581,7 +581,7 @@ class AlertPatternRecognizer:
             
             # Create storm patterns
             for storm_start, storm_alerts in merged_storms:
-                pattern_id = f"storm_{hashlib.md5(f'{storm_start}'.encode()).hexdigest()[:8]}"
+                pattern_id = f"storm_{hashlib.md5(f'{storm_start}'.encode(), usedforsecurity=False).hexdigest()[:8]}"
                 
                 storm_end = max(alert.created_at for alert in storm_alerts)
                 storm_duration = (storm_end - storm_start).total_seconds() / 60  # minutes

@@ -307,7 +307,7 @@ class MidCoverageEngine:
                 structure[key] = type(value).__name__
         
         structure_str = json.dumps(structure, sort_keys=True)
-        return hashlib.md5(structure_str.encode()).hexdigest()[:8]
+        return hashlib.md5(structure_str.encode(), usedforsecurity=False).hexdigest()[:8]
     
     def _extract_common_features(
         self,

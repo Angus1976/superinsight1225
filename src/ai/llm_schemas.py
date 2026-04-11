@@ -178,6 +178,32 @@ class CloudConfig(BaseModel):
     max_retries: int = Field(default=3, ge=0, le=10, description="Maximum retry attempts")
 
 
+class OpenClawIntegrationConfig(BaseModel):
+    """OpenClaw 兼容网关 / Core 集成（存于 llm_configurations.config_data.openclaw）。
+
+    优先级（解析时）：租户 LLM 行 → 全局 LLM 行 → 环境变量 → 内置默认。
+    """
+
+    gateway_base_url: Optional[str] = Field(
+        default=None,
+        description="后端访问的 OpenClaw 兼容网关根 URL，例如 http://openclaw-gateway:3000",
+    )
+    core_url: Optional[str] = Field(
+        default=None,
+        description="官方 OpenClaw Core HTTP 根 URL（供网关容器 OPENCLAW_CORE_URL 等与文档对齐；后端主要用 gateway）",
+    )
+    gateway_token: Optional[str] = Field(
+        default=None,
+        description="访问 Core 的 Bearer Token，需与 Core gateway.auth.token 一致",
+    )
+    agent_url: Optional[str] = Field(
+        default=None,
+        description="OpenClaw Agent 根 URL（可选，供运维/Agent 部署对齐）",
+    )
+
+    model_config = ConfigDict(extra="allow")
+
+
 class ChinaLLMConfig(BaseModel):
     """Configuration for China LLM providers."""
     
@@ -214,7 +240,11 @@ class LLMConfig(BaseModel):
         default_factory=lambda: [LLMMethod.LOCAL_OLLAMA],
         description="List of enabled methods"
     )
-    
+    openclaw: Optional[OpenClawIntegrationConfig] = Field(
+        default=None,
+        description="OpenClaw 网关/Core 集成；未配置时从环境变量与 AIGateway 记录回退",
+    )
+
     model_config = ConfigDict(extra='allow')
     
     def get_method_config(self, method: LLMMethod) -> Union[LocalConfig, CloudConfig, ChinaLLMConfig]:

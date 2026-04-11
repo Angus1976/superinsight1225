@@ -38,7 +38,7 @@ def upgrade():
         sa.Column('id', sa.String(), nullable=False),
         sa.Column('policy_id', sa.String(), nullable=False),
         sa.Column('tenant_id', sa.String(), nullable=False),
-        sa.Column('user_id', sa.String(), nullable=False),
+        sa.Column('user_id', postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column('action', sa.String(100), nullable=False),
         sa.Column('old_values', postgresql.JSON(astext_type=sa.Text()), nullable=True),
         sa.Column('new_values', postgresql.JSON(astext_type=sa.Text()), nullable=True),

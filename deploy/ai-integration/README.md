@@ -4,6 +4,8 @@
 
 本目录包含 OpenClaw AI 助手与 SuperInsight 平台集成所需的 Docker 配置和部署脚本。
 
+**生产环境变量与数据库优先级**（LLM / OpenClaw Core、网关、Token）：见 [PRODUCTION_CONFIGURATION.md](./PRODUCTION_CONFIGURATION.md)。
+
 ## 架构
 
 ```
@@ -18,20 +20,36 @@
           │
 ┌─────────▼──────────────────────────────┐
 │      OpenClaw Services                  │
-│  ┌──────────────┐  ┌─────────────────┐ │
-│  │   Gateway    │◄─┤     Agent       │ │
-│  │   (路由)     │  │   (技能执行)    │ │
+│  ┌──────────────┐  ghcr.io/openclaw/   │
+│  │ OpenClaw Core│  openclaw:latest      │
+│  │ (官方 Gateway)│  HTTP /v1/* :18789   │
+│  └──────▲───────┘                       │
+│         │ /v1/chat/completions          │
+│  ┌──────┴───────┐  ┌─────────────────┐ │
+│  │ Compat 网关  │◄─┤     Agent       │ │
+│  │ (SuperInsight│  │   (技能执行)    │ │
+│  │  /api/* :3000)│  │                 │ │
 │  └──────────────┘  └─────────────────┘ │
 └─────────────────────────────────────────┘
 ```
 
 ## 组件说明
 
-### OpenClaw Gateway
-- **端口**: 3000
-- **功能**: 多渠道消息路由和通信
-- **健康检查**: `http://localhost:3000/health`
-- **API 信息**: `http://localhost:3000/api/info`
+### OpenClaw Core（官方镜像）
+
+- **镜像**: [`ghcr.io/openclaw/openclaw:latest`](https://github.com/openclaw/openclaw/pkgs/container/openclaw)（`docker compose pull openclaw-core` 可更新至当前 latest）
+- **端口**: 宿主机默认 `18789`（`OPENCLAW_CORE_HOST_PORT` 可改）
+- **配置目录**: `deploy/ai-integration/openclaw-core/dot-openclaw` 挂载到容器内 `~/.openclaw`
+- **HTTP API**: `GET /healthz`、`POST /v1/chat/completions`（需在配置中启用，见已提交的 `openclaw.json`）
+- **认证**: 与 `OPENCLAW_GATEWAY_TOKEN` 一致（Bearer）
+
+### OpenClaw Gateway（兼容代理）
+- **端口**: 容器内 `3000`；映射到宿主机默认 **`3001`**（`OPENCLAW_GATEWAY_HOST_PORT`，避免与主栈 Grafana 占用的 `3000` 冲突）
+- **功能**: SuperInsight 既有 `/api/chat`、`/api/skills` 等入口；在设置 `OPENCLAW_CORE_URL` 时将对话转发至官方 Core 的 `/v1/chat/completions`，失败时回退到 Agent
+- **健康检查**: `http://localhost:3001/health`（若未改端口变量）
+- **API 信息**: `http://localhost:3001/api/info`
+
+后端容器通过 Docker 网络访问网关时使用 **`http://openclaw-gateway:3000`**（与宿主机映射端口无关）。若未启动 `openclaw-gateway` 服务，后端会在连接失败时 **自动回退到内置 LLM Bridge**（仍可通过技能编排走平台 LLM）。也可设置环境变量 **`OPENCLAW_GATEWAY_BASE_URL`** 指向可达的网关地址。
 
 ### OpenClaw Agent
 - **端口**: 8081 (映射到容器内的 8080)
@@ -60,6 +78,9 @@ OPENCLAW_LLM_PROVIDER=ollama
 OPENCLAW_LLM_MODEL=llama2
 OPENCLAW_LLM_API_URL=http://ollama:11434
 
+# Official OpenClaw gateway token (must match between Core and compat proxy)
+OPENCLAW_GATEWAY_TOKEN=your-long-random-secret
+
 # Language Configuration
 OPENCLAW_USER_LANGUAGE=zh-CN
 OPENCLAW_LOCALE=zh-CN
@@ -68,13 +89,14 @@ OPENCLAW_LOCALE=zh-CN
 ### 2. 构建镜像
 
 ```bash
+docker compose -f docker-compose.yml -f docker-compose.ai-integration.yml pull openclaw-core
 docker compose -f docker-compose.yml -f docker-compose.ai-integration.yml build openclaw-gateway openclaw-agent
 ```
 
 ### 3. 启动服务
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.ai-integration.yml up -d openclaw-gateway openclaw-agent
+docker compose -f docker-compose.yml -f docker-compose.ai-integration.yml up -d ollama openclaw-core openclaw-gateway openclaw-agent
 ```
 
 ### 4. 验证部署

@@ -1045,9 +1045,13 @@ class DBConnectionManager:
         """Execute query on Oracle."""
         import cx_Oracle
         
-        # Add ROWNUM limit for Oracle
-        if 'ROWNUM' not in query.upper():
-            query = f"SELECT * FROM ({query}) WHERE ROWNUM <= {limit}"
+        # Add ROWNUM limit for Oracle. Inner `query` is admin-auth SQL Explorer input;
+        # `safe_limit` is a bounded int. Oracle has no portable param for wrapping arbitrary SQL.
+        safe_limit = max(1, min(int(limit), 1_000_000))
+        if "ROWNUM" not in query.upper():
+            query = (
+                f"SELECT * FROM ({query}) WHERE ROWNUM <= {safe_limit}"  # nosec B608
+            )
         
         loop = asyncio.get_event_loop()
         
@@ -1215,15 +1219,16 @@ class DBConnectionManager:
         
         try:
             async with conn.cursor(aiomysql.DictCursor) as cursor:
-                # Get tables
-                await cursor.execute(f"SHOW TABLES FROM `{config.database}`")
+                # Connection is already scoped to config.database — avoid interpolating DB name
+                await cursor.execute("SHOW TABLES")
                 table_rows = await cursor.fetchall()
                 tables = [list(row.values())[0] for row in table_rows]
                 
-                # Get views
+                # Get views (parameterized — no string SQL injection on schema name)
                 await cursor.execute(
-                    f"SELECT table_name FROM information_schema.views "
-                    f"WHERE table_schema = '{config.database}'"
+                    "SELECT table_name FROM information_schema.views "
+                    "WHERE table_schema = %s",
+                    (config.database,),
                 )
                 view_rows = await cursor.fetchall()
                 views = [row['table_name'] for row in view_rows]

@@ -17,7 +17,51 @@ version: '3.8'
 
 services:
   # ===========================================================================
-  # OpenClaw Gateway
+  # OpenClaw Core (official ghcr.io/openclaw/openclaw — multi-channel AI gateway)
+  # ===========================================================================
+  # Control plane + HTTP API (/v1/chat/completions). Version tracks :latest on pull.
+  # Config: deploy/ai-integration/openclaw-core/dot-openclaw/openclaw.json
+  # ===========================================================================
+  openclaw-core:
+    image: ghcr.io/openclaw/openclaw:latest
+    container_name: superinsight-openclaw-core
+    environment:
+      HOME: /home/node
+      TERM: xterm-256color
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN:-dev-openclaw-shared-secret}
+      TZ: ${OPENCLAW_TZ:-UTC}
+    volumes:
+      - ./deploy/ai-integration/openclaw-core/dot-openclaw:/home/node/.openclaw
+    ports:
+      - "${OPENCLAW_CORE_HOST_PORT:-18789}:18789"
+    networks:
+      - superinsight_network
+    depends_on:
+      - ollama
+    command:
+      - node
+      - dist/index.js
+      - gateway
+      - --bind
+      - lan
+      - --port
+      - "18789"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:18789/healthz').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    restart: unless-stopped
+
+  # ===========================================================================
+  # OpenClaw Gateway (compat proxy — SuperInsight /api/* + forwards to core)
   # ===========================================================================
   # Main routing and communication component for multi-channel messaging
   # Handles connections to WhatsApp, Telegram, Slack, Discord, etc.
@@ -27,8 +71,9 @@ services:
       context: ./deploy/ai-integration/openclaw-gateway
       dockerfile: Dockerfile
     container_name: superinsight-openclaw-gateway
+    # 默认映射到主机 3001，避免与 Grafana（3000）冲突；容器内仍为 3000
     ports:
-      - "3000:3000"
+      - "${OPENCLAW_GATEWAY_HOST_PORT:-3001}:3000"
     environment:
       # SuperInsight API Configuration
       - SUPERINSIGHT_API_URL=http://app:8000
@@ -39,6 +84,11 @@ services:
       - GATEWAY_PORT=3000
       - GATEWAY_HOST=0.0.0.0
       - NODE_ENV=${NODE_ENV:-production}
+      # Official OpenClaw HTTP API (set OPENCLAW_CORE_URL empty to use agent-only chat)
+      - OPENCLAW_CORE_URL=${OPENCLAW_CORE_URL:-http://openclaw-core:18789}
+      # 必须与 deploy/ai-integration/openclaw-core/dot-openclaw/openclaw.json 中 gateway.auth.token 一致
+      - OPENCLAW_GATEWAY_TOKEN=${OPENCLAW_GATEWAY_TOKEN:-dev-openclaw-shared-secret}
+      - AGENT_URL=${AGENT_URL:-http://openclaw-agent:8080}
       
       # Logging
       - LOG_LEVEL=${OPENCLAW_LOG_LEVEL:-info}

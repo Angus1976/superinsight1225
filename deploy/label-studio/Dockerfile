@@ -1,7 +1,14 @@
 # Custom Label Studio with SSO support
 FROM heartexlabs/label-studio:latest
 
-# Install label-studio-sso package
+# 与根 Dockerfile 一致的 PyPI 源（可由 compose build.args 覆盖）
+ARG PIP_INDEX_URL=https://repo.huaweicloud.com/repository/pypi/simple
+ARG PIP_TRUSTED_HOST=repo.huaweicloud.com
+
+# Install label-studio-sso package（拉大 pip 超时，避免弱网构建失败）
+ENV PIP_DEFAULT_TIMEOUT=600
+RUN pip config set global.index-url "${PIP_INDEX_URL}" && \
+    pip config set install.trusted-host "${PIP_TRUSTED_HOST}"
 RUN pip install label-studio-sso
 
 # Copy custom settings that will be imported

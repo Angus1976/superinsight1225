@@ -427,7 +427,7 @@ class OptimizedPresidioEngine:
             salt = config.get("salt", "")
             
             if hash_type == "md5":
-                return hashlib.md5((text + salt).encode()).hexdigest()[:8]
+                return hashlib.md5((text + salt).encode(), usedforsecurity=False).hexdigest()[:8]
             else:  # Default to SHA256
                 return hashlib.sha256((text + salt).encode()).hexdigest()[:8]
                 

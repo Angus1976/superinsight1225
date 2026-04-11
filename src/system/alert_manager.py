@@ -174,7 +174,7 @@ class AlertManager:
         key_parts.extend(f"{k}={v}" for k, v in sorted(alert.labels.items()))
         
         fingerprint_str = "|".join(key_parts)
-        return hashlib.md5(fingerprint_str.encode()).hexdigest()[:16]
+        return hashlib.md5(fingerprint_str.encode(), usedforsecurity=False).hexdigest()[:16]
     
     async def create_alert(
         self,

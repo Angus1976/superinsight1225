@@ -4,6 +4,10 @@
 # 使用 Python 3.11 以获得更好的 Debian Bookworm 兼容性
 FROM python:3.11-slim
 
+# PyPI 源（构建时可通过 compose / build-arg 覆盖；默认华为云在本机测速较快）
+ARG PIP_INDEX_URL=https://repo.huaweicloud.com/repository/pypi/simple
+ARG PIP_TRUSTED_HOST=repo.huaweicloud.com
+
 # 设置环境变量
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
@@ -32,9 +36,9 @@ RUN if [ -f /etc/apt/sources.list.d/debian.sources ]; then \
         sed -i 's|security.debian.org/debian-security|mirrors.aliyun.com/debian-security|g' /etc/apt/sources.list; \
     fi
 
-# 配置 pip 使用阿里云镜像
-RUN pip config set global.index-url https://mirrors.aliyun.com/pypi/simple/ && \
-    pip config set install.trusted-host mirrors.aliyun.com
+# 配置 pip 镜像（备选：阿里云 mirrors.aliyun.com、清华 pypi.tuna.tsinghua.edu.cn）
+RUN pip config set global.index-url "${PIP_INDEX_URL}" && \
+    pip config set install.trusted-host "${PIP_TRUSTED_HOST}"
 
 # 安装系统依赖 (移除 git 以避免依赖冲突)
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -50,6 +54,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 
 # 安装 Python 依赖（先安装 setuptools 以支持旧版包如 cx-Oracle）
+# 国内镜像偶发 ReadTimeout，拉长默认超时避免 compose build --no-cache 失败
+ENV PIP_DEFAULT_TIMEOUT=600
 RUN pip install --no-cache-dir setuptools wheel && \
     pip install --no-cache-dir -r requirements.txt
 
@@ -60,6 +66,9 @@ COPY main.py .
 # 复制数据库迁移文件
 COPY alembic/ ./alembic/
 COPY alembic.ini .
+
+# 空库时一键种子管理员（可选 docker exec 运行）
+COPY scripts/seed_default_admin.py ./scripts/seed_default_admin.py
 
 # 创建必要的目录
 RUN mkdir -p /app/logs /app/uploads /app/exports /app/data

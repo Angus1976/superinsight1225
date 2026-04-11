@@ -305,7 +305,7 @@ class IntelligentNotificationFilter:
         signature_data = {
             'category': error_context.category.value,
             'service': error_context.service_name or 'unknown',
-            'message_hash': hashlib.md5(normalized_message.encode()).hexdigest()[:8],
+            'message_hash': hashlib.md5(normalized_message.encode(), usedforsecurity=False).hexdigest()[:8],
             'severity': error_context.severity.value
         }
         

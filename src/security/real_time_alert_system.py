@@ -607,12 +607,12 @@ IP地址: {event.ip_address or 'N/A'}
     def _generate_alert_id(self, event: SecurityEvent, rule: AlertRule) -> str:
         """生成告警ID"""
         content = f"{event.event_id}_{rule.rule_id}_{datetime.now().isoformat()}"
-        return f"ALERT_{hashlib.md5(content.encode()).hexdigest()[:12]}"
+        return f"ALERT_{hashlib.md5(content.encode(), usedforsecurity=False).hexdigest()[:12]}"
     
     def _generate_notification_id(self) -> str:
         """生成通知ID"""
         content = f"{datetime.now().isoformat()}_{id(self)}"
-        return f"NOTIF_{hashlib.md5(content.encode()).hexdigest()[:12]}"
+        return f"NOTIF_{hashlib.md5(content.encode(), usedforsecurity=False).hexdigest()[:12]}"
     
     async def start_notification_processing(self):
         """启动通知处理"""

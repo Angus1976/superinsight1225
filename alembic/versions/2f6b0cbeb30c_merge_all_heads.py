@@ -1,7 +1,10 @@
 """merge_all_heads
 
 Revision ID: 2f6b0cbeb30c
-Revises: 001_add_multi_tenant_support, 002_optimize_tenant_indexes, add_business_logic_001, sync_001
+Revises: 001_add_multi_tenant_support, 002_optimize_tenant_indexes, version_lineage_002
+
+add_business_logic_001 与 sync_001 分别为 002 / version_lineage_002 的祖先，不应与后代同时作为 merge 父节点，
+否则 Alembic 在合并时无法从 heads 中移除已过时的 revision（KeyError）。
 Create Date: 2026-01-10 22:02:39.912346
 
 """
@@ -13,7 +16,11 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = '2f6b0cbeb30c'
-down_revision: Union[str, Sequence[str], None] = ('001_add_multi_tenant_support', '002_optimize_tenant_indexes', 'add_business_logic_001', 'sync_001')
+down_revision: Union[str, Sequence[str], None] = (
+    '001_add_multi_tenant_support',
+    '002_optimize_tenant_indexes',
+    'version_lineage_002',
+)
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

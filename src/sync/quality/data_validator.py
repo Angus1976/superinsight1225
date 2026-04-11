@@ -492,7 +492,7 @@ class DataValidator:
                 unique_values[field_name] = set()
             
             # Check for duplicate
-            value_hash = hashlib.md5(str(value).encode()).hexdigest()
+            value_hash = hashlib.md5(str(value).encode(), usedforsecurity=False).hexdigest()
             if value_hash in unique_values[field_name]:
                 issues.append(ValidationIssue(
                     validation_type=ValidationType.UNIQUENESS,

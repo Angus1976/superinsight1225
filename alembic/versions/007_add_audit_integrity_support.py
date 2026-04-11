@@ -22,23 +22,21 @@ def upgrade():
     # The integrity information is already stored in the JSONB details field
     # This migration adds indexes and constraints to optimize integrity queries
     
-    # Add index for integrity data queries
+    # 不用 CONCURRENTLY：Alembic env 在单事务中跑迁移，PG 会报 ActiveSqlTransaction
     op.execute("""
-        CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_audit_logs_integrity_exists 
+        CREATE INDEX IF NOT EXISTS idx_audit_logs_integrity_exists 
         ON audit_logs USING GIN ((details->'integrity')) 
         WHERE details ? 'integrity'
     """)
     
-    # Add index for integrity hash queries
     op.execute("""
-        CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_audit_logs_integrity_hash 
+        CREATE INDEX IF NOT EXISTS idx_audit_logs_integrity_hash 
         ON audit_logs USING BTREE ((details->'integrity'->>'hash')) 
         WHERE details->'integrity'->>'hash' IS NOT NULL
     """)
     
-    # Add index for integrity timestamp queries
     op.execute("""
-        CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_audit_logs_integrity_timestamp 
+        CREATE INDEX IF NOT EXISTS idx_audit_logs_integrity_timestamp 
         ON audit_logs USING BTREE ((details->'integrity'->>'timestamp')) 
         WHERE details->'integrity'->>'timestamp' IS NOT NULL
     """)
@@ -260,7 +258,6 @@ def downgrade():
     # Drop constraint
     op.execute("ALTER TABLE audit_logs DROP CONSTRAINT IF EXISTS check_audit_integrity_format")
     
-    # Drop indexes
-    op.execute("DROP INDEX CONCURRENTLY IF EXISTS idx_audit_logs_integrity_timestamp")
-    op.execute("DROP INDEX CONCURRENTLY IF EXISTS idx_audit_logs_integrity_hash")
-    op.execute("DROP INDEX CONCURRENTLY IF EXISTS idx_audit_logs_integrity_exists")
+    op.execute("DROP INDEX IF EXISTS idx_audit_logs_integrity_timestamp")
+    op.execute("DROP INDEX IF EXISTS idx_audit_logs_integrity_hash")
+    op.execute("DROP INDEX IF EXISTS idx_audit_logs_integrity_exists")

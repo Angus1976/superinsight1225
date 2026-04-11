@@ -30,211 +30,126 @@ def upgrade() -> None:
     """Add optimization indexes for improved query performance."""
     bind = op.get_bind()
     inspector = sa.inspect(bind)
-    existing_tables = inspector.get_table_names()
-    
-    # Helper function to check if index exists
+    existing_tables = set(inspector.get_table_names())
+
     def index_exists(table_name: str, index_name: str) -> bool:
         try:
             indexes = inspector.get_indexes(table_name)
-            return any(idx['name'] == index_name for idx in indexes)
+            return any(idx["name"] == index_name for idx in indexes)
         except Exception:
             return False
-    
+
+    def table_cols(table_name: str) -> set:
+        if table_name not in existing_tables:
+            return set()
+        return {c["name"] for c in inspector.get_columns(table_name)}
+
+    def safe_create_index(name: str, table_name: str, columns: list) -> None:
+        if table_name not in existing_tables or index_exists(table_name, name):
+            return
+        colset = table_cols(table_name)
+        if not all(c in colset for c in columns):
+            return
+        op.create_index(name, table_name, columns, unique=False)
+
     # Data sources table indexes
-    if 'data_sources' in existing_tables:
-        if not index_exists('data_sources', 'ix_data_sources_tenant_active'):
-            op.create_index(
-                'ix_data_sources_tenant_active',
-                'data_sources',
-                ['tenant_id', 'is_active'],
-                unique=False
-            )
-        
-        if not index_exists('data_sources', 'ix_data_sources_db_type'):
-            op.create_index(
-                'ix_data_sources_db_type',
-                'data_sources',
-                ['db_type'],
-                unique=False
-            )
+    safe_create_index(
+        "ix_data_sources_tenant_active", "data_sources", ["tenant_id", "is_active"]
+    )
+    safe_create_index("ix_data_sources_db_type", "data_sources", ["db_type"])
     
-    # Ragas evaluation results table indexes
-    if 'ragas_evaluation_results' in existing_tables:
-        if not index_exists('ragas_evaluation_results', 'ix_evaluation_results_created_at'):
-            op.create_index(
-                'ix_evaluation_results_created_at',
-                'ragas_evaluation_results',
-                ['created_at'],
-                unique=False
-            )
-        
-        if not index_exists('ragas_evaluation_results', 'ix_evaluation_results_task_id'):
-            op.create_index(
-                'ix_evaluation_results_task_id',
-                'ragas_evaluation_results',
-                ['task_id'],
-                unique=False
-            )
-    
-    # Business rules table indexes (if not already added)
-    if 'business_rules' in existing_tables:
-        if not index_exists('business_rules', 'ix_business_rules_project_type_active'):
-            op.create_index(
-                'ix_business_rules_project_type_active',
-                'business_rules',
-                ['project_id', 'rule_type', 'is_active'],
-                unique=False
-            )
-        
-        if not index_exists('business_rules', 'ix_business_rules_confidence'):
-            op.create_index(
-                'ix_business_rules_confidence',
-                'business_rules',
-                ['confidence'],
-                unique=False
-            )
-    
-    # Tickets table indexes for SLA monitoring
-    if 'tickets' in existing_tables:
-        if not index_exists('tickets', 'ix_tickets_sla_status'):
-            op.create_index(
-                'ix_tickets_sla_status',
-                'tickets',
-                ['sla_deadline', 'status', 'sla_breached'],
-                unique=False
-            )
-        
-        if not index_exists('tickets', 'ix_tickets_priority_status'):
-            op.create_index(
-                'ix_tickets_priority_status',
-                'tickets',
-                ['priority', 'status'],
-                unique=False
-            )
-        
-        if not index_exists('tickets', 'ix_tickets_assignee'):
-            op.create_index(
-                'ix_tickets_assignee',
-                'tickets',
-                ['assignee_id', 'status'],
-                unique=False
-            )
-    
-    # Documents table indexes
-    if 'documents' in existing_tables:
-        if not index_exists('documents', 'ix_documents_source_created'):
-            op.create_index(
-                'ix_documents_source_created',
-                'documents',
-                ['source_type', 'created_at'],
-                unique=False
-            )
-        
-        if not index_exists('documents', 'ix_documents_updated_at'):
-            op.create_index(
-                'ix_documents_updated_at',
-                'documents',
-                ['updated_at'],
-                unique=False
-            )
-        
-        if not index_exists('documents', 'ix_documents_sync_status'):
-            op.create_index(
-                'ix_documents_sync_status',
-                'documents',
-                ['sync_status', 'last_synced_at'],
-                unique=False
-            )
-    
-    # Tasks table indexes
-    if 'tasks' in existing_tables:
-        if not index_exists('tasks', 'ix_tasks_status_quality'):
-            op.create_index(
-                'ix_tasks_status_quality',
-                'tasks',
-                ['status', 'quality_score'],
-                unique=False
-            )
-        
-        if not index_exists('tasks', 'ix_tasks_project_status'):
-            op.create_index(
-                'ix_tasks_project_status',
-                'tasks',
-                ['project_id', 'status'],
-                unique=False
-            )
-        
-        if not index_exists('tasks', 'ix_tasks_sync_status'):
-            op.create_index(
-                'ix_tasks_sync_status',
-                'tasks',
-                ['sync_status', 'last_synced_at'],
-                unique=False
-            )
-    
-    # Quality issues table indexes
-    if 'quality_issues' in existing_tables:
-        if not index_exists('quality_issues', 'ix_quality_issues_severity_status'):
-            op.create_index(
-                'ix_quality_issues_severity_status',
-                'quality_issues',
-                ['severity', 'status'],
-                unique=False
-            )
-        
-        if not index_exists('quality_issues', 'ix_quality_issues_assignee'):
-            op.create_index(
-                'ix_quality_issues_assignee',
-                'quality_issues',
-                ['assignee_id', 'status'],
-                unique=False
-            )
-    
-    # Billing records table indexes
-    if 'billing_records' in existing_tables:
-        if not index_exists('billing_records', 'ix_billing_tenant_date'):
-            op.create_index(
-                'ix_billing_tenant_date',
-                'billing_records',
-                ['tenant_id', 'billing_date'],
-                unique=False
-            )
-        
-        if not index_exists('billing_records', 'ix_billing_user_date'):
-            op.create_index(
-                'ix_billing_user_date',
-                'billing_records',
-                ['user_id', 'billing_date'],
-                unique=False
-            )
-    
-    # Sync jobs table indexes
-    if 'sync_jobs' in existing_tables:
-        if not index_exists('sync_jobs', 'ix_sync_jobs_status_scheduled'):
-            op.create_index(
-                'ix_sync_jobs_status_scheduled',
-                'sync_jobs',
-                ['status', 'scheduled_at'],
-                unique=False
-            )
-        
-        if not index_exists('sync_jobs', 'ix_sync_jobs_source_status'):
-            op.create_index(
-                'ix_sync_jobs_source_status',
-                'sync_jobs',
-                ['source_id', 'status'],
-                unique=False
-            )
-    
-    # Sync executions table indexes
-    if 'sync_executions' in existing_tables:
-        if not index_exists('sync_executions', 'ix_sync_executions_job_started'):
-            op.create_index(
-                'ix_sync_executions_job_started',
-                'sync_executions',
-                ['job_id', 'started_at'],
-                unique=False
-            )
+    safe_create_index(
+        "ix_evaluation_results_created_at",
+        "ragas_evaluation_results",
+        ["created_at"],
+    )
+    safe_create_index(
+        "ix_evaluation_results_task_id",
+        "ragas_evaluation_results",
+        ["task_id"],
+    )
+
+    safe_create_index(
+        "ix_business_rules_project_type_active",
+        "business_rules",
+        ["project_id", "rule_type", "is_active"],
+    )
+    safe_create_index(
+        "ix_business_rules_confidence", "business_rules", ["confidence"]
+    )
+
+    safe_create_index(
+        "ix_tickets_sla_status",
+        "tickets",
+        ["sla_deadline", "status", "sla_breached"],
+    )
+    safe_create_index(
+        "ix_tickets_priority_status", "tickets", ["priority", "status"]
+    )
+    safe_create_index(
+        "ix_tickets_assignee", "tickets", ["assignee_id", "status"]
+    )
+
+    safe_create_index(
+        "ix_documents_source_created",
+        "documents",
+        ["source_type", "created_at"],
+    )
+    safe_create_index("ix_documents_updated_at", "documents", ["updated_at"])
+    safe_create_index(
+        "ix_documents_sync_status",
+        "documents",
+        ["sync_status", "last_synced_at"],
+    )
+
+    safe_create_index(
+        "ix_tasks_status_quality", "tasks", ["status", "quality_score"]
+    )
+    safe_create_index(
+        "ix_tasks_project_status", "tasks", ["project_id", "status"]
+    )
+    safe_create_index(
+        "ix_tasks_sync_status",
+        "tasks",
+        ["sync_status", "last_synced_at"],
+    )
+
+    safe_create_index(
+        "ix_quality_issues_severity_status",
+        "quality_issues",
+        ["severity", "status"],
+    )
+    safe_create_index(
+        "ix_quality_issues_assignee",
+        "quality_issues",
+        ["assignee_id", "status"],
+    )
+
+    safe_create_index(
+        "ix_billing_tenant_date",
+        "billing_records",
+        ["tenant_id", "billing_date"],
+    )
+    safe_create_index(
+        "ix_billing_user_date",
+        "billing_records",
+        ["user_id", "billing_date"],
+    )
+
+    safe_create_index(
+        "ix_sync_jobs_status_scheduled",
+        "sync_jobs",
+        ["status", "scheduled_at"],
+    )
+    safe_create_index(
+        "ix_sync_jobs_source_status", "sync_jobs", ["source_id", "status"]
+    )
+
+    safe_create_index(
+        "ix_sync_executions_job_started",
+        "sync_executions",
+        ["job_id", "started_at"],
+    )
 
 
 def downgrade() -> None:

@@ -197,7 +197,7 @@ class BaseFileSystemConnector(BaseConnector):
     
     def _compute_checksum(self, content: bytes) -> str:
         """Compute MD5 checksum of content."""
-        return hashlib.md5(content).hexdigest()
+        return hashlib.md5(content, usedforsecurity=False).hexdigest()
 
 
 class LocalFileSystemConnector(BaseFileSystemConnector):

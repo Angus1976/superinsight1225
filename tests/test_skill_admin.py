@@ -32,6 +32,12 @@ TENANT_A = "tenant-a"
 TENANT_B = "tenant-b"
 
 
+@pytest.fixture(autouse=True)
+def disable_openclaw_auto_bootstrap(monkeypatch):
+    """Skill admin tests assume explicit gateway/skill seeds (no auto-bootstrap)."""
+    monkeypatch.setenv("OPENCLAW_AUTO_BOOTSTRAP_SKILLS", "0")
+
+
 @pytest.fixture(scope="function")
 def test_engine():
     """In-memory SQLite engine with JSONB→JSON patching."""

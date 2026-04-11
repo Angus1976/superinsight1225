@@ -395,7 +395,7 @@ class KnowledgeBase:
     def _content_hash(self, entry: KnowledgeEntry) -> str:
         """Generate content hash for duplicate detection."""
         content = f"{entry.title.lower()}{entry.content.lower()}"
-        return hashlib.md5(content.encode()).hexdigest()
+        return hashlib.md5(content.encode(), usedforsecurity=False).hexdigest()
 
     def _calculate_average_quality(self) -> float:
         """Calculate average quality score across all entries."""

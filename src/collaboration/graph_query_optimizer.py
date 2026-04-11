@@ -526,7 +526,7 @@ class GraphQueryOptimizer:
         """生成缓存键"""
         import hashlib
         key_str = f"{query}:{sorted(params.items())}"
-        return hashlib.md5(key_str.encode()).hexdigest()
+        return hashlib.md5(key_str.encode(), usedforsecurity=False).hexdigest()
     
     async def get_cached_result(
         self,

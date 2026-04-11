@@ -148,7 +148,7 @@ class NotificationAggregator:
             if label in labels:
                 key_parts.append(f"{label}={labels[label]}")
         
-        return hashlib.md5('|'.join(key_parts).encode()).hexdigest()
+        return hashlib.md5('|'.join(key_parts).encode(), usedforsecurity=False).hexdigest()
 
     def _cleanup_old_groups(self):
         """Remove old alert groups."""
@@ -676,7 +676,8 @@ class IntelligentNotificationService:
             message = template.body_template.format(**context)
             
             notification_id = hashlib.md5(
-                f"{alert.get('rule_name', '')}:{recipient}:{datetime.now().isoformat()}".encode()
+                f"{alert.get('rule_name', '')}:{recipient}:{datetime.now().isoformat()}".encode(),
+                usedforsecurity=False,
             ).hexdigest()
             
             return PendingNotification(

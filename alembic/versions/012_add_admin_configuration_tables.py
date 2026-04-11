@@ -34,7 +34,7 @@ def upgrade() -> None:
     op.create_table(
         'admin_configurations',
         sa.Column('id', UUID(as_uuid=True), primary_key=True),
-        sa.Column('tenant_id', UUID(as_uuid=True), sa.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=True),
+        sa.Column('tenant_id', sa.String(100), sa.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=True),
         sa.Column('config_type', sa.String(50), nullable=False),
         sa.Column('name', sa.String(100), nullable=True),
         sa.Column('description', sa.Text, nullable=True),
@@ -58,7 +58,7 @@ def upgrade() -> None:
     op.create_table(
         'database_connections',
         sa.Column('id', UUID(as_uuid=True), primary_key=True),
-        sa.Column('tenant_id', UUID(as_uuid=True), sa.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=True),
+        sa.Column('tenant_id', sa.String(100), sa.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=True),
         sa.Column('name', sa.String(100), nullable=False),
         sa.Column('description', sa.Text, nullable=True),
         sa.Column('db_type', sa.String(50), nullable=False),
@@ -90,7 +90,7 @@ def upgrade() -> None:
     op.create_table(
         'config_change_history',
         sa.Column('id', UUID(as_uuid=True), primary_key=True),
-        sa.Column('tenant_id', UUID(as_uuid=True), sa.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=True),
+        sa.Column('tenant_id', sa.String(100), sa.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=True),
         sa.Column('config_type', sa.String(50), nullable=False),
         sa.Column('config_id', UUID(as_uuid=True), nullable=True),
         sa.Column('old_value', JSONB, nullable=True),
@@ -114,7 +114,7 @@ def upgrade() -> None:
     op.create_table(
         'sync_strategies',
         sa.Column('id', UUID(as_uuid=True), primary_key=True),
-        sa.Column('tenant_id', UUID(as_uuid=True), sa.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=True),
+        sa.Column('tenant_id', sa.String(100), sa.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=True),
         sa.Column('db_config_id', UUID(as_uuid=True), sa.ForeignKey('database_connections.id', ondelete='CASCADE'), nullable=False),
         sa.Column('name', sa.String(100), nullable=True),
         sa.Column('mode', sa.String(20), nullable=False, server_default='full'),
@@ -138,30 +138,30 @@ def upgrade() -> None:
     op.create_index('ix_sync_strategy_enabled', 'sync_strategies', ['enabled'])
     op.create_index('ix_sync_strategy_mode', 'sync_strategies', ['mode'])
     
-    # Create sync_history table
-    op.create_table(
-        'sync_history',
-        sa.Column('id', UUID(as_uuid=True), primary_key=True),
-        sa.Column('strategy_id', UUID(as_uuid=True), sa.ForeignKey('sync_strategies.id', ondelete='CASCADE'), nullable=False),
-        sa.Column('status', sa.String(50), nullable=False, server_default='running'),
-        sa.Column('started_at', sa.DateTime, nullable=False, server_default=sa.func.now()),
-        sa.Column('completed_at', sa.DateTime, nullable=True),
-        sa.Column('records_synced', sa.Integer, nullable=False, server_default='0'),
-        sa.Column('records_failed', sa.Integer, nullable=False, server_default='0'),
-        sa.Column('error_message', sa.Text, nullable=True),
-        sa.Column('details', JSONB, nullable=True),
-    )
-    
-    # Create indexes for sync_history
-    op.create_index('ix_sync_history_strategy', 'sync_history', ['strategy_id'])
-    op.create_index('ix_sync_history_status', 'sync_history', ['status'])
-    op.create_index('ix_sync_history_started', 'sync_history', ['started_at'])
+    # sync_history 可能与 sync_pipeline_001 撞名；已存在则跳过（保留先创建的表结构）
+    bind = op.get_bind()
+    if not sa.inspect(bind).has_table('sync_history'):
+        op.create_table(
+            'sync_history',
+            sa.Column('id', UUID(as_uuid=True), primary_key=True),
+            sa.Column('strategy_id', UUID(as_uuid=True), sa.ForeignKey('sync_strategies.id', ondelete='CASCADE'), nullable=False),
+            sa.Column('status', sa.String(50), nullable=False, server_default='running'),
+            sa.Column('started_at', sa.DateTime, nullable=False, server_default=sa.func.now()),
+            sa.Column('completed_at', sa.DateTime, nullable=True),
+            sa.Column('records_synced', sa.Integer, nullable=False, server_default='0'),
+            sa.Column('records_failed', sa.Integer, nullable=False, server_default='0'),
+            sa.Column('error_message', sa.Text, nullable=True),
+            sa.Column('details', JSONB, nullable=True),
+        )
+        op.create_index('ix_sync_history_strategy', 'sync_history', ['strategy_id'])
+        op.create_index('ix_sync_history_status', 'sync_history', ['status'])
+        op.create_index('ix_sync_history_started', 'sync_history', ['started_at'])
     
     # Create query_templates table
     op.create_table(
         'query_templates',
         sa.Column('id', UUID(as_uuid=True), primary_key=True),
-        sa.Column('tenant_id', UUID(as_uuid=True), sa.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=True),
+        sa.Column('tenant_id', sa.String(100), sa.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=True),
         sa.Column('db_config_id', UUID(as_uuid=True), sa.ForeignKey('database_connections.id', ondelete='CASCADE'), nullable=False),
         sa.Column('name', sa.String(100), nullable=False),
         sa.Column('description', sa.Text, nullable=True),
@@ -184,7 +184,7 @@ def upgrade() -> None:
     op.create_table(
         'third_party_tool_configs',
         sa.Column('id', UUID(as_uuid=True), primary_key=True),
-        sa.Column('tenant_id', UUID(as_uuid=True), sa.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=True),
+        sa.Column('tenant_id', sa.String(100), sa.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=True),
         sa.Column('name', sa.String(100), nullable=False),
         sa.Column('description', sa.Text, nullable=True),
         sa.Column('tool_type', sa.String(50), nullable=False),

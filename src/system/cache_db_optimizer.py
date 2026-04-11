@@ -538,7 +538,7 @@ class DatabaseConnectionPool:
     ) -> Optional[List[Tuple]]:
         """Execute query with performance monitoring."""
         start_time = time.time()
-        query_hash = hashlib.md5(query.encode()).hexdigest()[:8]
+        query_hash = hashlib.md5(query.encode(), usedforsecurity=False).hexdigest()[:8]
         
         try:
             async with self.get_connection() as conn:

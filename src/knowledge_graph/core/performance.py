@@ -96,7 +96,7 @@ class QueryCache:
         key_data = query
         if params:
             key_data += str(sorted(params.items()))
-        return hashlib.md5(key_data.encode()).hexdigest()
+        return hashlib.md5(key_data.encode(), usedforsecurity=False).hexdigest()
 
     async def get(self, query: str, params: Optional[Dict[str, Any]] = None) -> Optional[Any]:
         """Get cached result for query."""
@@ -714,7 +714,7 @@ def cached_query(ttl_seconds: int = 300):
 
             # Generate cache key
             key_parts = [func.__name__, str(args), str(sorted(kwargs.items()))]
-            cache_key = hashlib.md5("".join(key_parts).encode()).hexdigest()
+            cache_key = hashlib.md5("".join(key_parts).encode(), usedforsecurity=False).hexdigest()
 
             # Try cache
             cached = await cache.get(cache_key)
@@ -755,7 +755,7 @@ def tracked_query(query_name: str):
                 execution_time = (time.time() - start_time) * 1000
 
                 await tracker.record(QueryMetrics(
-                    query_hash=hashlib.md5(query_name.encode()).hexdigest(),
+                    query_hash=hashlib.md5(query_name.encode(), usedforsecurity=False).hexdigest(),
                     query_template=query_name,
                     execution_time_ms=execution_time,
                     result_count=result_count,

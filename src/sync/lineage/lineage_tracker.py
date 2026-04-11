@@ -367,12 +367,14 @@ class LineageTracker:
         
         if source_data:
             source_checksum = hashlib.md5(
-                str(sorted(source_data.items())).encode()
+                str(sorted(source_data.items())).encode(),
+                usedforsecurity=False,
             ).hexdigest()
         
         if target_data:
             target_checksum = hashlib.md5(
-                str(sorted(target_data.items())).encode()
+                str(sorted(target_data.items())).encode(),
+                usedforsecurity=False,
             ).hexdigest()
         
         record = LineageRecord(

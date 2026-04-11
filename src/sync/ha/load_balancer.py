@@ -169,7 +169,7 @@ class LoadBalancer:
             return random.choice(instances)
         
         # Create consistent hash
-        hash_value = int(hashlib.md5(hash_key.encode()).hexdigest(), 16)
+        hash_value = int(hashlib.md5(hash_key.encode(), usedforsecurity=False).hexdigest(), 16)
         index = hash_value % len(instances)
         
         return instances[index]

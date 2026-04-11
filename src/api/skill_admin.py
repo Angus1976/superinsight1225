@@ -17,6 +17,12 @@ from src.database.connection import get_db
 from src.models.ai_integration import AIGateway, AISkill
 from src.security.models import UserModel
 from src.ai_integration.skill_sync_service import SkillSyncService
+from src.ai_integration.openclaw_bootstrap import (
+    bootstrap_openclaw_skill_library,
+    ensure_default_openclaw_gateway,
+    openclaw_auto_bootstrap_enabled,
+    should_auto_bootstrap_skills,
+)
 from src.ai_integration.schemas import (
     ExecuteRequest,
     ExecuteResultResponse,
@@ -102,6 +108,12 @@ async def list_skills(
     Ordered by deployed_at DESC. Excludes removed skills.
     Requirements: 1.1, 1.3, 1.4, 2.1, 2.2
     """
+    if should_auto_bootstrap_skills(db, current_user.tenant_id):
+        try:
+            bootstrap_openclaw_skill_library(db, current_user.tenant_id)
+        except Exception as exc:
+            logger.warning("OpenClaw skill auto-bootstrap skipped: %s", exc)
+
     gateway = (
         db.query(AIGateway)
         .filter(
@@ -134,7 +146,10 @@ async def sync_skills(
 
     Requirements: 3.1–3.7
     """
-    gateway = _get_active_gateway(db, current_user.tenant_id)
+    if openclaw_auto_bootstrap_enabled():
+        gateway = ensure_default_openclaw_gateway(db, current_user.tenant_id)
+    else:
+        gateway = _get_active_gateway(db, current_user.tenant_id)
     service = SkillSyncService(db)
     result = await service.sync_from_agent(gateway)
     return SyncResultResponse(**result)
@@ -150,18 +165,7 @@ async def seed_clawhub_skills(
     Idempotent: skips already existing skills. Also initializes
     admin role permissions for all newly added skills.
     """
-    gateway = _get_active_gateway(db, current_user.tenant_id)
-
-    from src.ai_integration.clawhub_seed_skills import seed_clawhub_skills as do_seed
-    result = do_seed(db, gateway.id)
-
-    # Auto-init admin permissions for new skills
-    if result.get("added", 0) > 0:
-        from src.ai.skill_permission_service import SkillPermissionService
-        perm_service = SkillPermissionService(db)
-        perm_added = perm_service.init_admin_all_skills()
-        result["admin_permissions_added"] = perm_added
-
+    result = bootstrap_openclaw_skill_library(db, current_user.tenant_id)
     return result
 
 

@@ -139,9 +139,16 @@ class TaskModel(Base):
     # Primary key
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
 
-    # Basic task information
-    title: Mapped[str] = mapped_column(String(255), nullable=False, default="Untitled Task")
+    # Basic task information — 历史库仅有 name 列；title 为 Python 属性别名（不参与 SQL，避免查询不存在的 title 列）
     name: Mapped[str] = mapped_column(String(255), nullable=False, default="Untitled Task")
+
+    @property
+    def title(self) -> str:
+        return self.name
+
+    @title.setter
+    def title(self, value: str) -> None:
+        self.name = value
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     status: Mapped[TaskStatus] = mapped_column(SQLEnum(TaskStatus), default=TaskStatus.PENDING)
     priority: Mapped[TaskPriority] = mapped_column(SQLEnum(TaskPriority), default=TaskPriority.MEDIUM)

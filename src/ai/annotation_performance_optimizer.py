@@ -639,7 +639,7 @@ class ParallelBatchProcessor:
         """Generate cache key for an item."""
         # Simple hash-based key
         item_str = str(item)
-        return hashlib.md5(item_str.encode()).hexdigest()
+        return hashlib.md5(item_str.encode(), usedforsecurity=False).hexdigest()
 
     async def get_job_status(self, job_id: UUID) -> Optional[BatchJob]:
         """Get status of a batch job."""

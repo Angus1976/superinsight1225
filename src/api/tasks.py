@@ -10,7 +10,7 @@ from uuid import UUID, uuid4
 from fastapi import APIRouter, Depends, HTTPException, status, Query, BackgroundTasks
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
-from sqlalchemy import or_, func as sql_func
+from sqlalchemy import or_, func as sql_func, text
 
 from src.database.connection import get_db_session
 from src.api.auth_simple import get_current_user, SimpleUser
@@ -134,7 +134,11 @@ def task_model_to_response(task: TaskModel) -> TaskResponse:
         tenant_id=task.tenant_id,
         label_studio_project_id=task.label_studio_project_id,
         label_studio_project_created_at=task.label_studio_project_created_at,
-        label_studio_sync_status=task.label_studio_sync_status.value if task.label_studio_sync_status else None,
+        label_studio_sync_status=(
+            task.label_studio_sync_status.value
+            if task.label_studio_sync_status is not None and hasattr(task.label_studio_sync_status, "value")
+            else (str(task.label_studio_sync_status) if task.label_studio_sync_status is not None else None)
+        ),
         label_studio_last_sync=task.label_studio_last_sync,
         label_studio_task_count=task.label_studio_task_count or 0,
         label_studio_annotation_count=task.label_studio_annotation_count or 0,
@@ -316,7 +320,6 @@ async def create_task(
         # Create task model
         task = TaskModel(
             id=uuid4(),
-            title=request.name,  # Set title field
             name=request.name,
             description=request.description,
             status=TaskStatus.PENDING,
@@ -372,30 +375,53 @@ def get_task_stats(
 ):
     """Get task statistics from database."""
     try:
-        # Base query with tenant filter
-        base_query = db.query(TaskModel).filter(TaskModel.tenant_id == current_user.tenant_id)
+        # 使用原生 SQL 计数：历史库里 taskstatus 枚举标签与 Python TaskStatus 取值不完全一致，
+        # 用 ORM 比较会触发 PostgreSQL invalid enum 错误；此处按文本兼容多种写法。
+        row = db.execute(
+            text(
+                """
+                SELECT
+                    COUNT(*)::int AS total,
+                    COUNT(*) FILTER (
+                        WHERE status::text IN ('PENDING', 'pending')
+                    )::int AS pending,
+                    COUNT(*) FILTER (
+                        WHERE status::text IN ('IN_PROGRESS', 'in_progress')
+                    )::int AS in_progress,
+                    COUNT(*) FILTER (
+                        WHERE status::text IN ('COMPLETED', 'completed')
+                    )::int AS completed,
+                    COUNT(*) FILTER (
+                        WHERE status::text IN ('cancelled', 'CANCELLED')
+                    )::int AS cancelled,
+                    COUNT(*) FILTER (
+                        WHERE due_date IS NOT NULL
+                          AND due_date < NOW()
+                          AND status::text NOT IN (
+                              'COMPLETED', 'completed',
+                              'REVIEWED', 'reviewed',
+                              'cancelled', 'CANCELLED'
+                          )
+                    )::int AS overdue
+                FROM tasks
+                WHERE tenant_id = :tenant_id
+                """
+            ),
+            {"tenant_id": current_user.tenant_id},
+        ).mappings().first()
 
-        # Count tasks by status
-        total = base_query.count()
-        pending = base_query.filter(TaskModel.status == TaskStatus.PENDING).count()
-        in_progress = base_query.filter(TaskModel.status == TaskStatus.IN_PROGRESS).count()
-        completed = base_query.filter(TaskModel.status == TaskStatus.COMPLETED).count()
-        cancelled = base_query.filter(TaskModel.status == TaskStatus.CANCELLED).count()
-
-        # Count overdue tasks (due_date < now and status not completed/cancelled)
-        now = datetime.utcnow()
-        overdue = base_query.filter(
-            TaskModel.due_date < now,
-            TaskModel.status.notin_([TaskStatus.COMPLETED, TaskStatus.CANCELLED])
-        ).count()
+        if not row:
+            return TaskStatsResponse(
+                total=0, pending=0, in_progress=0, completed=0, cancelled=0, overdue=0
+            )
 
         return TaskStatsResponse(
-            total=total,
-            pending=pending,
-            in_progress=in_progress,
-            completed=completed,
-            cancelled=cancelled,
-            overdue=overdue
+            total=row["total"] or 0,
+            pending=row["pending"] or 0,
+            in_progress=row["in_progress"] or 0,
+            completed=row["completed"] or 0,
+            cancelled=row["cancelled"] or 0,
+            overdue=row["overdue"] or 0,
         )
 
     except Exception as e:

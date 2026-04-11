@@ -881,7 +881,7 @@ class SecurityEventMonitor(PrometheusMetricsExporter):
     def _generate_event_id(self) -> str:
         """生成事件ID"""
         timestamp = datetime.utcnow().strftime('%Y%m%d%H%M%S')
-        random_suffix = hashlib.md5(str(datetime.utcnow()).encode()).hexdigest()[:8]
+        random_suffix = hashlib.md5(str(datetime.utcnow()).encode(), usedforsecurity=False).hexdigest()[:8]
         return f"SEC_{timestamp}_{random_suffix}"
     
     # 辅助方法

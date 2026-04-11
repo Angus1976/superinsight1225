@@ -97,6 +97,77 @@ CLAWHUB_DATA_SKILLS = [
             "tags": ["lineage", "provenance", "dependency", "tracing"],
         },
     },
+    # --- 与 OpenClaw / ClawHub 常见数据技能对齐：文件处理、梳理、分析、智能问数 ---
+    {
+        "name": "data-structuring",
+        "version": "1.1.0",
+        "configuration": {
+            "description": "数据梳理：自动识别非结构化或半结构化数据的 schema、实体与关系，便于建模与治理",
+            "category": "data-structuring",
+            "source": "clawhub-official",
+            "tags": ["schema", "profiling", "entity", "structuring"],
+        },
+    },
+    {
+        "name": "data-analysis",
+        "version": "1.1.0",
+        "configuration": {
+            "description": "数据分析：对治理后的标注/业务数据进行分布、质量与趋势分析，输出可读结论",
+            "category": "data-analysis",
+            "source": "clawhub-official",
+            "tags": ["analysis", "statistics", "distribution", "trend"],
+        },
+    },
+    {
+        "name": "data-cleaning",
+        "version": "1.1.0",
+        "configuration": {
+            "description": "数据清洗：检测并修复异常值、重复项与格式不一致，提升数据可用性",
+            "category": "data-processing",
+            "source": "clawhub-official",
+            "tags": ["cleaning", "dedupe", "outlier", "normalize"],
+        },
+    },
+    {
+        "name": "file-document-parse",
+        "version": "1.1.0",
+        "configuration": {
+            "description": "文件与文档解析：从 CSV、Excel、JSON、日志与文本中提取结构化字段供下游使用",
+            "category": "file-processing",
+            "source": "clawhub-official",
+            "tags": ["file", "csv", "excel", "parse", "extract"],
+        },
+    },
+    {
+        "name": "nl-data-query",
+        "version": "1.1.0",
+        "configuration": {
+            "description": "智能问数：用自然语言描述需求，转换为查询条件或分析步骤（自然语言到数据意图）",
+            "category": "intelligent-query",
+            "source": "clawhub-official",
+            "tags": ["nl2query", "intent", "问答", "问数"],
+        },
+    },
+    {
+        "name": "text-to-sql-assisted",
+        "version": "1.1.0",
+        "configuration": {
+            "description": "Text-to-SQL 辅助：在受控数据源上生成、解释与校验 SQL，支持人工确认后执行",
+            "category": "intelligent-query",
+            "source": "clawhub-official",
+            "tags": ["sql", "text-to-sql", "database", "governed"],
+        },
+    },
+    {
+        "name": "metrics-dashboard-insight",
+        "version": "1.1.0",
+        "configuration": {
+            "description": "指标与看板解读：解释 KPI、图表与报表含义，辅助业务理解与决策",
+            "category": "data-analysis",
+            "source": "clawhub-official",
+            "tags": ["kpi", "dashboard", "report", "insight"],
+        },
+    },
 ]
 
 

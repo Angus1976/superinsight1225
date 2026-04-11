@@ -17,6 +17,7 @@ from src.ai_integration.openclaw_llm_bridge import OpenClawLLMBridge
 from src.ai.llm_schemas import GenerateOptions, LLMResponse
 from src.models.ai_integration import AIGateway, AISkill
 from src.ai_integration.schemas import SkillInfoResponse, OpenClawStatusResponse
+from src.ai.openclaw_integration_settings import resolve_openclaw_gateway_base_url
 
 logger = logging.getLogger(__name__)
 
@@ -89,7 +90,7 @@ class OpenClawChatService:
                 f"Gateway {gateway_id} is not available"
             )
 
-        chat_url = self._resolve_chat_url(gateway)
+        chat_url = self._resolve_chat_url(gateway, tenant_id)
         if not chat_url:
             # Fallback: wrap non-streaming response as SSE chunks
             async for chunk in self._fallback_stream(
@@ -103,23 +104,44 @@ class OpenClawChatService:
                 chat_url, prompt, system_prompt
             ):
                 yield chunk
-        except OpenClawUnavailableError:
-            raise
+        except OpenClawUnavailableError as exc:
+            # 502/503 等：网关已可达但上游 Agent/Core 不可用 — 与连接失败同样回退到内置 LLM
+            logger.warning(
+                "OpenClaw HTTP gateway error for %s: %s — using LLM bridge fallback",
+                gateway_id,
+                exc,
+            )
+            yield self._sse_status("网关上游不可用，已切换为内置 LLM 通道…")
+            async for chunk in self._fallback_stream(
+                gateway_id, tenant_id, prompt, options, system_prompt, skill_ids
+            ):
+                yield chunk
         except asyncio.TimeoutError:
-            logger.warning("Stream timeout for gateway %s", gateway_id)
-            yield self._sse_chunk(
-                error="OpenClaw 网关响应超时", done=True
-            )
+            logger.warning("Stream timeout for gateway %s, using LLM bridge fallback", gateway_id)
+            async for chunk in self._fallback_stream(
+                gateway_id, tenant_id, prompt, options, system_prompt, skill_ids
+            ):
+                yield chunk
         except httpx.ConnectTimeout:
-            logger.warning("Connect timeout for gateway %s", gateway_id)
-            yield self._sse_chunk(
-                error="OpenClaw 网关连接超时（10s）", done=True
+            logger.warning(
+                "Connect timeout for gateway %s, using LLM bridge fallback", gateway_id
             )
+            yield self._sse_status("OpenClaw 网关不可达，已切换为内置 LLM 通道…")
+            async for chunk in self._fallback_stream(
+                gateway_id, tenant_id, prompt, options, system_prompt, skill_ids
+            ):
+                yield chunk
         except httpx.ConnectError:
-            logger.warning("Connection failed for gateway %s", gateway_id)
-            yield self._sse_chunk(
-                error="OpenClaw 网关连接失败", done=True
+            logger.warning(
+                "Connection failed for gateway %s (is openclaw-gateway running?). "
+                "Using LLM bridge fallback",
+                gateway_id,
             )
+            yield self._sse_status("OpenClaw 网关不可达，已切换为内置 LLM 通道…")
+            async for chunk in self._fallback_stream(
+                gateway_id, tenant_id, prompt, options, system_prompt, skill_ids
+            ):
+                yield chunk
         except BaseException as exc:
             # Catch BaseException to handle all exceptions
             logger.error("Stream error for gateway %s: %s (type: %s)", gateway_id, exc, type(exc).__name__)
@@ -169,6 +191,17 @@ class OpenClawChatService:
 
     def _query_status(self, tenant_id: str) -> OpenClawStatusResponse:
         """Query DB for the first active openclaw gateway and its deployed skills."""
+        try:
+            from src.ai_integration.openclaw_bootstrap import (
+                bootstrap_openclaw_skill_library,
+                should_auto_bootstrap_skills,
+            )
+
+            if should_auto_bootstrap_skills(self.db, tenant_id):
+                bootstrap_openclaw_skill_library(self.db, tenant_id)
+        except Exception as exc:
+            logger.warning("OpenClaw skill bootstrap (status): %s", exc)
+
         gateway = (
             self.db.query(AIGateway)
             .filter(
@@ -211,14 +244,16 @@ class OpenClawChatService:
 
     # --- Streaming internals ---
 
-    def _resolve_chat_url(self, gateway: AIGateway) -> Optional[str]:
-        """Extract the chat endpoint URL from gateway configuration."""
-        config = gateway.configuration or {}
-        network = config.get("network_settings", {})
-        base_url = network.get("base_url", "")
-        if not base_url:
+    def _resolve_chat_url(self, gateway: AIGateway, tenant_id: str) -> Optional[str]:
+        """HTTP 聊天入口：LLM 库 openclaw → 网关 configuration → 环境变量 → 默认。"""
+        base = resolve_openclaw_gateway_base_url(
+            self.db,
+            tenant_id,
+            gateway.configuration if gateway else None,
+        )
+        if not base:
             return None
-        return f"{base_url.rstrip('/')}/api/chat"
+        return f"{base.rstrip('/')}/api/chat"
 
     async def _call_gateway_as_stream(
         self, url: str, prompt: str, system_prompt: str

@@ -206,14 +206,19 @@ def verify_health(
 ) -> bool:
     """Verify gateway health after deployment."""
     gateway_url = "http://localhost:3000/health"
-    agent_url = "http://localhost:8080/health"
+    # Host port from docker-compose.ai-integration.yml (openclaw-agent 8081:8080)
+    agent_url = "http://localhost:8081/health"
+    core_url = os.environ.get(
+        "OPENCLAW_CORE_HEALTH_URL", "http://127.0.0.1:18789/healthz"
+    )
     
     print(f"Waiting for services to be healthy (timeout: {timeout}s)...")
     
     start_time = time.time()
     gateway_healthy = False
     agent_healthy = False
-    
+    core_healthy = False
+
     while time.time() - start_time < timeout:
         # Check gateway health
         if not gateway_healthy:
@@ -242,17 +247,35 @@ def verify_health(
                     print("✓ OpenClaw agent is healthy")
             except (subprocess.TimeoutExpired, subprocess.CalledProcessError):
                 pass
-        
+
+        if not core_healthy:
+            try:
+                result = subprocess.run(
+                    ["curl", "-f", "-s", core_url],
+                    capture_output=True,
+                    timeout=5
+                )
+                if result.returncode == 0:
+                    core_healthy = True
+                    print("✓ OpenClaw core (official gateway) is healthy")
+            except (subprocess.TimeoutExpired, subprocess.CalledProcessError):
+                pass
+
         if gateway_healthy and agent_healthy:
+            if not core_healthy:
+                print(
+                    "Note: OpenClaw core not reachable at "
+                    f"{core_url} — ensure ghcr.io/openclaw/openclaw:latest is running"
+                )
             return True
-        
+
         time.sleep(5)
-    
+
     if not gateway_healthy:
         print("✗ OpenClaw gateway health check failed")
     if not agent_healthy:
         print("✗ OpenClaw agent health check failed")
-    
+
     return False
 
 

@@ -47,7 +47,9 @@ habit-tracker/
 # Deployment (保留 deploy/sealos/ 供 Dockerfile 使用)
 deploy/docker/
 deploy/k8s/
-scripts/
+# 仅将种子脚本纳入后端镜像；其余 scripts 仍排除以减小上下文
+scripts/*
+!scripts/seed_default_admin.py
 文档/
 脚本/
 

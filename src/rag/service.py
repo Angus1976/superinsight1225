@@ -322,7 +322,7 @@ class RAGService:
             
             for i, chunk_text in enumerate(doc_chunks):
                 # Pre-calculate chunk hash for deduplication
-                chunk_hash = hashlib.md5(chunk_text.encode()).hexdigest()[:8]
+                chunk_hash = hashlib.md5(chunk_text.encode(), usedforsecurity=False).hexdigest()[:8]
                 
                 chunk = DocumentChunk(
                     id=f"{doc.id}_{i}_{chunk_hash}",
@@ -790,7 +790,7 @@ class RAGService:
         }
         
         key_str = str(sorted(key_data.items()))
-        return hashlib.md5(key_str.encode()).hexdigest()
+        return hashlib.md5(key_str.encode(), usedforsecurity=False).hexdigest()
     
     def _get_cached_response(self, cache_key: str) -> Optional[RAGResponse]:
         """Get cached response if available and not expired."""

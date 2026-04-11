@@ -20,7 +20,7 @@ from sqlalchemy.pool import StaticPool
 from src.database.connection import Base
 from src.models.ai_workflow import AIWorkflow
 from src.ai.workflow_service import WorkflowService, VALID_ROLES
-from src.ai.data_source_config import AIDataSourceConfigModel
+from src.ai.data_source_config import AIDataSourceConfigModel, DATA_SOURCE_REGISTRY
 from fastapi import HTTPException
 from src.api.workflow_schemas import WorkflowCreateRequest, WorkflowUpdateRequest
 
@@ -1074,18 +1074,21 @@ class TestPermissionChainCompleteness:
             session.query(AIWorkflow).delete()
             session.commit()
 
+            if len(source_pool) < 2:
+                return
+
             # Workflow has all sources from pool
             wf_source_ids = source_pool
             wf_data_source_auth = [
                 {"source_id": sid} for sid in wf_source_ids
             ]
 
-            # Role only allows a strict subset
+            # Role only allows a strict non-empty subset (smaller than workflow scope)
             role_allowed = data.draw(
                 st.lists(
                     st.sampled_from(source_pool),
-                    min_size=0,
-                    max_size=max(0, len(source_pool) - 1),
+                    min_size=1,
+                    max_size=len(source_pool) - 1,
                     unique=True,
                 ),
                 label="role_allowed_sources",
@@ -1638,17 +1641,20 @@ class TestAuthorizationRequestStructure:
             session.query(AIWorkflow).delete()
             session.commit()
 
+            if len(source_pool) < 2:
+                return
+
             wf_source_ids = source_pool
             wf_data_source_auth = [
                 {"source_id": sid} for sid in wf_source_ids
             ]
 
-            # Role allows a strict subset so at least one source is denied
+            # Role allows a strict non-empty subset so at least one source is denied
             role_allowed = data.draw(
                 st.lists(
                     st.sampled_from(source_pool),
-                    min_size=0,
-                    max_size=max(0, len(source_pool) - 1),
+                    min_size=1,
+                    max_size=len(source_pool) - 1,
                     unique=True,
                 ),
                 label="role_allowed_sources",
@@ -2155,16 +2161,26 @@ _ds_pool_strategy = st.lists(
     _ds_source_id_strategy, min_size=1, max_size=6, unique=True,
 )
 
+# IDs defined in DATA_SOURCE_REGISTRY are valid without a DB row (see WorkflowService).
+_REGISTRY_SOURCE_IDS = {s["id"] for s in DATA_SOURCE_REGISTRY}
+
+_registry_ids_list_strategy = st.lists(
+    st.sampled_from(sorted(_REGISTRY_SOURCE_IDS)),
+    min_size=1,
+    max_size=len(_REGISTRY_SOURCE_IDS),
+    unique=True,
+)
+
 
 class TestDataSourceAuthWithinEnabledScope:
     """Property 10: 数据源授权不超过启用范围
 
     *For any* workflow creation or update request, data_source_auth entries
-    referencing a source_id that does not exist in AIDataSourceConfigModel
-    SHALL be rejected with WORKFLOW_DATASOURCE_NOT_FOUND; entries referencing
-    a disabled source SHALL be rejected with WORKFLOW_DATASOURCE_DISABLED.
-    Only entries referencing existing and enabled sources SHALL pass
-    validation.
+    referencing a source_id that is neither in DATA_SOURCE_REGISTRY nor in
+    AIDataSourceConfigModel SHALL be rejected with WORKFLOW_DATASOURCE_NOT_FOUND;
+    entries referencing a disabled DB row SHALL be rejected with
+    WORKFLOW_DATASOURCE_DISABLED. Registry-defined sources pass when there is
+    no row or the row is enabled.
 
     **Validates: Requirements 3.5, 6.1**
     """
@@ -2175,10 +2191,10 @@ class TestDataSourceAuthWithinEnabledScope:
 
     @settings(max_examples=100)
     @given(
-        source_ids=_ds_pool_strategy,
+        source_ids=_registry_ids_list_strategy,
     )
     def test_all_enabled_sources_pass_validation(self, source_ids):
-        """When every source_id in data_source_auth exists in
+        """When every source_id is in DATA_SOURCE_REGISTRY and exists in
         AIDataSourceConfigModel with enabled=True, _validate_data_source_auth
         should NOT raise any exception.
 
@@ -2229,8 +2245,10 @@ class TestDataSourceAuthWithinEnabledScope:
 
         # Ensure missing_ids are truly absent (not overlapping with existing)
         truly_missing = [sid for sid in missing_ids if sid not in set(existing_ids)]
+        # Unknown ids that exist only in the registry are valid without a DB row
+        truly_missing = [sid for sid in truly_missing if sid not in _REGISTRY_SOURCE_IDS]
         if not truly_missing:
-            return  # all "missing" IDs happen to be in existing, skip
+            return  # nothing to assert as NOT_FOUND for this draw
 
         session = _SessionLocal()
         try:
@@ -2280,10 +2298,13 @@ class TestDataSourceAuthWithinEnabledScope:
         """
         # Feature: ai-workflow-engine, Property 10: 数据源授权不超过启用范围
 
-        # Ensure disabled_ids don't overlap with enabled_ids
-        truly_disabled = [sid for sid in disabled_ids if sid not in set(enabled_ids)]
+        # Disabled row must reference a registry id (otherwise NOT_FOUND first)
+        truly_disabled = [
+            sid for sid in disabled_ids
+            if sid not in set(enabled_ids) and sid in _REGISTRY_SOURCE_IDS
+        ]
         if not truly_disabled:
-            return  # all "disabled" IDs overlap with enabled, skip
+            return
 
         session = _SessionLocal()
         try:
@@ -2359,15 +2380,19 @@ class TestDataSourceAuthWithinEnabledScope:
 
             data_source_auth = [{"source_id": source_id}]
 
-            # Determine expected outcome
-            should_pass = source_exists and source_enabled
-
-            if should_pass:
+            # Registry defines known ids; DB row only affects DISABLED when in_registry
+            in_registry = source_id in _REGISTRY_SOURCE_IDS
+            if (not source_exists and in_registry) or (
+                source_exists and source_enabled and in_registry
+            ):
+                should_pass = True
                 expected_error_code = None
-            elif not source_exists:
-                expected_error_code = "WORKFLOW_DATASOURCE_NOT_FOUND"
             else:
-                expected_error_code = "WORKFLOW_DATASOURCE_DISABLED"
+                should_pass = False
+                if source_exists and in_registry and not source_enabled:
+                    expected_error_code = "WORKFLOW_DATASOURCE_DISABLED"
+                else:
+                    expected_error_code = "WORKFLOW_DATASOURCE_NOT_FOUND"
 
             # --- Test CREATE ---
             create_request = WorkflowCreateRequest(

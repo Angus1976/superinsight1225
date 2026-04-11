@@ -71,7 +71,7 @@ class UltraFastCache:
         if base_key in self._hash_cache:
             hash_part = self._hash_cache[base_key]
         else:
-            hash_part = hashlib.md5(base_key.encode()).hexdigest()[:16]
+            hash_part = hashlib.md5(base_key.encode(), usedforsecurity=False).hexdigest()[:16]
             if len(self._hash_cache) < 1000:  # Limit hash cache size
                 self._hash_cache[base_key] = hash_part
         

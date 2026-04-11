@@ -27,7 +27,7 @@ def upgrade() -> None:
     op.create_table(
         'text_to_sql_configurations',
         sa.Column('id', postgresql.UUID(as_uuid=True), primary_key=True),
-        sa.Column('tenant_id', postgresql.UUID(as_uuid=True), sa.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=True),
+        sa.Column('tenant_id', sa.String(100), sa.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=True),
         sa.Column('name', sa.String(100), nullable=False, default='default'),
         sa.Column('default_method', sa.String(50), nullable=False, default='hybrid'),
         sa.Column('template_config', postgresql.JSONB, nullable=False, default={}),
@@ -50,7 +50,7 @@ def upgrade() -> None:
     op.create_table(
         'third_party_plugins',
         sa.Column('id', postgresql.UUID(as_uuid=True), primary_key=True),
-        sa.Column('tenant_id', postgresql.UUID(as_uuid=True), sa.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=True),
+        sa.Column('tenant_id', sa.String(100), sa.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=True),
         sa.Column('name', sa.String(100), nullable=False),
         sa.Column('display_name', sa.String(200), nullable=True),
         sa.Column('description', sa.Text, nullable=True),
@@ -84,7 +84,7 @@ def upgrade() -> None:
     op.create_table(
         'sql_generation_logs',
         sa.Column('id', postgresql.UUID(as_uuid=True), primary_key=True),
-        sa.Column('tenant_id', postgresql.UUID(as_uuid=True), sa.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=True),
+        sa.Column('tenant_id', sa.String(100), sa.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=True),
         sa.Column('user_id', postgresql.UUID(as_uuid=True), sa.ForeignKey('users.id', ondelete='SET NULL'), nullable=True),
         sa.Column('query', sa.Text, nullable=False),
         sa.Column('requested_method', sa.String(100), nullable=True),
@@ -115,7 +115,7 @@ def upgrade() -> None:
     op.create_table(
         'sql_templates',
         sa.Column('id', postgresql.UUID(as_uuid=True), primary_key=True),
-        sa.Column('tenant_id', postgresql.UUID(as_uuid=True), sa.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=True),
+        sa.Column('tenant_id', sa.String(100), sa.ForeignKey('tenants.id', ondelete='CASCADE'), nullable=True),
         sa.Column('template_id', sa.String(100), nullable=False),
         sa.Column('name', sa.String(200), nullable=False),
         sa.Column('description', sa.Text, nullable=True),

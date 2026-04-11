@@ -243,7 +243,8 @@ class SyncManager:
             
             # 生成批次 ID
             batch_id = hashlib.md5(
-                f"annotation_sync_{datetime.now().isoformat()}".encode()
+                f"annotation_sync_{datetime.now().isoformat()}".encode(),
+                usedforsecurity=False,
             ).hexdigest()
             
             # 创建新记录
@@ -302,7 +303,8 @@ class SyncManager:
             else:
                 # 大量数据，使用批量插入
                 batch_id = hashlib.md5(
-                    f"annotation_batch_{datetime.now().isoformat()}".encode()
+                    f"annotation_batch_{datetime.now().isoformat()}".encode(),
+                    usedforsecurity=False,
                 ).hexdigest()
                 
                 # 获取已存在的 ID 列表

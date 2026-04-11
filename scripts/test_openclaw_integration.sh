@@ -64,7 +64,12 @@ test_json_endpoint() {
     fi
 }
 
-echo "1. Testing OpenClaw Gateway"
+echo "1. Testing OpenClaw Core (official)"
+echo "-------------------------------------"
+test_endpoint "OpenClaw Core Health (healthz)" "http://localhost:18789/healthz"
+echo ""
+
+echo "2. Testing OpenClaw Gateway (compat)"
 echo "----------------------------"
 test_endpoint "Gateway Health Check" "http://localhost:3000/health"
 test_json_endpoint "Gateway Service Name" "http://localhost:3000/health" "['service']" "openclaw-gateway"
@@ -73,7 +78,7 @@ test_json_endpoint "Gateway Tenant ID" "http://localhost:3000/api/info" "['tenan
 test_endpoint "Gateway Channels" "http://localhost:3000/api/channels"
 echo ""
 
-echo "2. Testing OpenClaw Agent"
+echo "3. Testing OpenClaw Agent"
 echo "-------------------------"
 test_endpoint "Agent Health Check" "http://localhost:8081/health"
 test_json_endpoint "Agent Service Name" "http://localhost:8081/health" "['service']" "openclaw-agent"
@@ -83,7 +88,7 @@ test_json_endpoint "Agent Language" "http://localhost:8081/api/info" "['language
 test_endpoint "Agent Skills List" "http://localhost:8081/api/skills"
 echo ""
 
-echo "3. Testing Skill Execution"
+echo "4. Testing Skill Execution"
 echo "--------------------------"
 echo -n "Testing SuperInsight Data Query Skill... "
 response=$(curl -s -X POST http://localhost:8081/api/skills/execute \
@@ -101,7 +106,7 @@ else
 fi
 echo ""
 
-echo "4. Testing Container Health"
+echo "5. Testing Container Health"
 echo "---------------------------"
 echo -n "Checking OpenClaw Gateway container... "
 gateway_status=$(docker inspect -f '{{.State.Health.Status}}' superinsight-openclaw-gateway 2>/dev/null || echo "unknown")

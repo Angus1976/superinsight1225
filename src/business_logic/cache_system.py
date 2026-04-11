@@ -614,7 +614,7 @@ class SmartCacheManager:
             'kwargs': str(sorted(kwargs.items()))
         }
         key_string = json.dumps(key_data, sort_keys=True)
-        return hashlib.md5(key_string.encode()).hexdigest()
+        return hashlib.md5(key_string.encode(), usedforsecurity=False).hexdigest()
     
     def _record_access_pattern(self, cache_key: str):
         """记录访问模式"""

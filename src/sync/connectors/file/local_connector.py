@@ -249,7 +249,8 @@ class LocalConnector(BaseConnector):
             record_id = str(record.get(self.local_config.id_field, ""))
             if not record_id:
                 record_id = hashlib.md5(
-                    json.dumps(record, sort_keys=True, default=str).encode()
+                    json.dumps(record, sort_keys=True, default=str).encode(),
+                    usedforsecurity=False,
                 ).hexdigest()[:16]
 
             timestamp = None
@@ -328,7 +329,8 @@ class LocalConnector(BaseConnector):
                     record_id = str(record.get(self.local_config.id_field, ""))
                     if not record_id:
                         record_id = hashlib.md5(
-                            json.dumps(record, sort_keys=True, default=str).encode()
+                            json.dumps(record, sort_keys=True, default=str).encode(),
+                            usedforsecurity=False,
                         ).hexdigest()[:16]
 
                     current_batch.append(DataRecord(

@@ -105,7 +105,7 @@ def hash_data(data: str, algorithm: str = "sha256") -> str:
         if algorithm == "sha256":
             hasher = hashlib.sha256()
         elif algorithm == "md5":
-            hasher = hashlib.md5()
+            hasher = hashlib.md5(usedforsecurity=False)
         elif algorithm == "sha1":
             hasher = hashlib.sha1()
         else:

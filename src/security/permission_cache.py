@@ -91,7 +91,7 @@ class PermissionCache:
             tenant_id or "default"
         ]
         key = ":".join(key_parts)
-        return hashlib.md5(key.encode()).hexdigest()
+        return hashlib.md5(key.encode(), usedforsecurity=False).hexdigest()
     
     def get_permission(
         self,

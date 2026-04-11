@@ -733,7 +733,7 @@ class ExpertService:
         """Generate cache key for recommendations."""
         expertise_str = ",".join(sorted(e.value for e in expertise))
         key_data = f"{expertise_str}:{max_results}:{include_fallback}:{min_quality_score}"
-        return hashlib.md5(key_data.encode()).hexdigest()
+        return hashlib.md5(key_data.encode(), usedforsecurity=False).hexdigest()
 
     async def _get_from_cache(
         self,

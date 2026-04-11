@@ -122,7 +122,14 @@
     "data-transform": "数据转换",
     "data-summary": "数据摘要",
     "data-comparison": "数据对比",
-    "data-annotation-assist": "AI标注辅助"
+    "data-annotation-assist": "AI标注辅助",
+    "data-structuring": "数据梳理",
+    "data-analysis": "数据分析",
+    "data-cleaning": "数据清洗",
+    "file-document-parse": "文件与文档解析",
+    "nl-data-query": "智能问数",
+    "text-to-sql-assisted": "Text-to-SQL 辅助",
+    "metrics-dashboard-insight": "指标与看板解读"
   },
   "roles": {
     "admin": "管理员",

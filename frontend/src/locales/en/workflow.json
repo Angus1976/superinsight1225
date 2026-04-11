@@ -122,7 +122,14 @@
     "data-transform": "Data Transform",
     "data-summary": "Data Summary",
     "data-comparison": "Data Comparison",
-    "data-annotation-assist": "Annotation Assist"
+    "data-annotation-assist": "Annotation Assist",
+    "data-structuring": "Data Structuring",
+    "data-analysis": "Data Analysis",
+    "data-cleaning": "Data Cleaning",
+    "file-document-parse": "File & Document Parse",
+    "nl-data-query": "NL Data Query",
+    "text-to-sql-assisted": "Text-to-SQL Assist",
+    "metrics-dashboard-insight": "Metrics & Dashboard Insight"
   },
   "roles": {
     "admin": "Admin",

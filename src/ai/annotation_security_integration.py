@@ -428,9 +428,6 @@ def secure_annotation_operation(
                 operation_description=f"{func.__name__}",
                 project_id=project_id,
                 desensitize_input=desensitize_input,
-                context=context,
-                object_id=object_id,
-                project_id=project_id,
                 **kwargs
             )
 

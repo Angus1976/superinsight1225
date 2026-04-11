@@ -243,7 +243,7 @@ class SQLValidator:
         warnings: List[ValidationWarning] = []
 
         # Generate SQL hash
-        sql_hash = hashlib.md5(sql.encode()).hexdigest()
+        sql_hash = hashlib.md5(sql.encode(), usedforsecurity=False).hexdigest()
 
         # Run validations
         if self.config.check_sql_injection:

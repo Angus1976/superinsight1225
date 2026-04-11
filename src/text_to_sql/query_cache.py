@@ -180,7 +180,7 @@ class QueryCache:
         normalized_query = self._normalize_query(query)
 
         # Generate query hash
-        query_hash = hashlib.md5(normalized_query.encode()).hexdigest()
+        query_hash = hashlib.md5(normalized_query.encode(), usedforsecurity=False).hexdigest()
 
         # Build key
         key = f"{CACHE_KEY_PREFIX}:{database_type}:{schema_hash[:8]}:{query_hash}"

@@ -9,6 +9,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy import text
 from sqlalchemy.dialects import postgresql
 
 
@@ -21,18 +22,44 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Add RBAC tables for enhanced role-based access control."""
-    
-    # Create enum types if they don't exist
-    try:
-        op.execute("CREATE TYPE permissionscope AS ENUM ('global', 'tenant', 'resource')")
-    except Exception:
-        pass  # Enum already exists
-    
-    try:
-        op.execute("CREATE TYPE resourcetype AS ENUM ('project', 'dataset', 'model', 'pipeline', 'report', 'dashboard', 'user', 'role', 'permission', 'audit_log', 'system_config')")
-    except Exception:
-        pass  # Enum already exists
-    
+    bind = op.get_bind()
+    # 与 006_add_rbac_tables 并行合并时只应执行其一，避免 rbac_* 与 ENUM 重复创建
+    if sa.inspect(bind).has_table('rbac_roles'):
+        return
+
+    bind.execute(
+        text("""
+        DO $$ BEGIN
+            CREATE TYPE permissionscope AS ENUM ('global', 'tenant', 'resource');
+        EXCEPTION
+            WHEN duplicate_object THEN NULL;
+        END $$;
+        """)
+    )
+    bind.execute(
+        text("""
+        DO $$ BEGIN
+            CREATE TYPE resourcetype AS ENUM (
+                'project', 'dataset', 'model', 'pipeline', 'report',
+                'dashboard', 'user', 'role', 'permission', 'audit_log', 'system_config'
+            );
+        EXCEPTION
+            WHEN duplicate_object THEN NULL;
+        END $$;
+        """)
+    )
+    permission_scope_enum = postgresql.ENUM(
+        'global', 'tenant', 'resource',
+        name='permissionscope',
+        create_type=False,
+    )
+    resource_type_enum = postgresql.ENUM(
+        'project', 'dataset', 'model', 'pipeline', 'report',
+        'dashboard', 'user', 'role', 'permission', 'audit_log', 'system_config',
+        name='resourcetype',
+        create_type=False,
+    )
+
     # Create rbac_roles table
     op.create_table(
         'rbac_roles',
@@ -65,8 +92,8 @@ def upgrade() -> None:
         sa.Column('id', postgresql.UUID(as_uuid=True), primary_key=True),
         sa.Column('name', sa.String(100), nullable=False, unique=True),
         sa.Column('description', sa.Text, nullable=True),
-        sa.Column('scope', sa.Enum('global', 'tenant', 'resource', name='permissionscope'), nullable=False),
-        sa.Column('resource_type', sa.Enum('project', 'dataset', 'model', 'pipeline', 'report', 'dashboard', 'user', 'role', 'permission', 'audit_log', 'system_config', name='resourcetype'), nullable=True),
+        sa.Column('scope', permission_scope_enum, nullable=False),
+        sa.Column('resource_type', resource_type_enum, nullable=True),
         sa.Column('is_active', sa.Boolean, default=True),
         sa.Column('is_system_permission', sa.Boolean, default=False),
         sa.Column('metadata', sa.JSON, nullable=True),
@@ -132,7 +159,7 @@ def upgrade() -> None:
         'rbac_resources',
         sa.Column('id', postgresql.UUID(as_uuid=True), primary_key=True),
         sa.Column('resource_id', sa.String(255), nullable=False),
-        sa.Column('resource_type', sa.Enum('project', 'dataset', 'model', 'pipeline', 'report', 'dashboard', 'user', 'role', 'permission', 'audit_log', 'system_config', name='resourcetype'), nullable=False),
+        sa.Column('resource_type', resource_type_enum, nullable=False),
         sa.Column('name', sa.String(255), nullable=False),
         sa.Column('description', sa.Text, nullable=True),
         sa.Column('parent_resource_id', postgresql.UUID(as_uuid=True), nullable=True),
@@ -162,7 +189,7 @@ def upgrade() -> None:
         sa.Column('id', postgresql.UUID(as_uuid=True), primary_key=True),
         sa.Column('user_id', postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column('resource_id', sa.String(255), nullable=False),
-        sa.Column('resource_type', sa.Enum('project', 'dataset', 'model', 'pipeline', 'report', 'dashboard', 'user', 'role', 'permission', 'audit_log', 'system_config', name='resourcetype'), nullable=False),
+        sa.Column('resource_type', resource_type_enum, nullable=False),
         sa.Column('permission_id', postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column('granted_by', postgresql.UUID(as_uuid=True), nullable=True),
         sa.Column('granted_at', sa.DateTime(timezone=True), server_default=sa.func.now()),

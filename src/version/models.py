@@ -14,10 +14,19 @@ from uuid import uuid4
 from typing import Optional, List, Dict, Any
 
 from sqlalchemy import (
-    String, Text, Float, Integer, DateTime, ForeignKey, 
-    Enum as SQLEnum, Boolean, Index, UniqueConstraint
+    String,
+    Text,
+    Float,
+    Integer,
+    DateTime,
+    ForeignKey,
+    Enum as SQLEnum,
+    Boolean,
+    Index,
+    UniqueConstraint,
+    text,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
 from sqlalchemy.orm import relationship, Mapped, mapped_column
 from sqlalchemy.sql import func
 
@@ -129,6 +138,31 @@ class DataVersion(Base):
         Text, nullable=True,
         comment="Version comment or description"
     )
+    # add_versioning_extended_tables / VersionManager 语义版本与冗余快照列
+    version: Mapped[Optional[str]] = mapped_column(
+        "version",
+        String(20),
+        nullable=True,
+        server_default=text("'1.0.0'"),
+        comment="Semantic version string (major.minor.patch)",
+    )
+    data: Mapped[dict] = mapped_column(
+        "data",
+        JSONB,
+        nullable=False,
+        default=dict,
+        comment="Snapshot payload (mirrors version_data for newer code paths)",
+    )
+    message: Mapped[Optional[str]] = mapped_column(
+        "message", Text, nullable=True, comment="Version message"
+    )
+    tags: Mapped[Optional[List[str]]] = mapped_column(
+        "tags",
+        ARRAY(String(100)),
+        nullable=True,
+        default=list,
+        comment="Inline tag strings",
+    )
 
     # Multi-tenant support
     tenant_id: Mapped[Optional[str]] = mapped_column(
@@ -155,7 +189,7 @@ class DataVersion(Base):
         "DataVersion", remote_side="DataVersion.id",
         foreign_keys=[parent_version_id]
     )
-    tags: Mapped[List["DataVersionTag"]] = relationship(
+    version_tags: Mapped[List["DataVersionTag"]] = relationship(
         "DataVersionTag", back_populates="version"
     )
     
@@ -175,6 +209,7 @@ class DataVersion(Base):
             "id": str(self.id),
             "entity_type": self.entity_type,
             "entity_id": str(self.entity_id),
+            "version": self.version,
             "version_number": self.version_number,
             "version_type": self.version_type.value if self.version_type else None,
             "status": self.status.value if self.status else None,
@@ -182,8 +217,11 @@ class DataVersion(Base):
             "branch_id": str(self.branch_id) if self.branch_id else None,
             "checksum": self.checksum,
             "data_size_bytes": self.data_size_bytes,
+            "data": self.data if self.data is not None else self.version_data,
             "metadata": self.version_metadata,
+            "message": self.message,
             "comment": self.comment,
+            "tags": list(self.tags) if self.tags is not None else [],
             "tenant_id": self.tenant_id,
             "created_by": self.created_by,
             "created_at": self.created_at.isoformat() if self.created_at else None,
@@ -222,7 +260,7 @@ class DataVersionTag(Base):
     
     # Relationships
     version: Mapped["DataVersion"] = relationship(
-        "DataVersion", back_populates="tags"
+        "DataVersion", back_populates="version_tags"
     )
     
     __table_args__ = (

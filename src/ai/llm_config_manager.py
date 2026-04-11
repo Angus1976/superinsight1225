@@ -21,6 +21,7 @@ try:
         ValidationResult, mask_api_key
     )
     from src.models.llm_configuration import LLMConfiguration, LLMUsageLog
+    from src.ai.llm_env_merge import merge_llm_config_with_env_defaults
 except ImportError:
     import sys
     import os
@@ -30,6 +31,7 @@ except ImportError:
         ValidationResult, mask_api_key
     )
     from models.llm_configuration import LLMConfiguration, LLMUsageLog
+    from ai.llm_env_merge import merge_llm_config_with_env_defaults
 
 # Async session is optional - only needed if using database persistence
 get_async_session = None
@@ -131,9 +133,10 @@ class LLMConfigManager:
             except Exception as e:
                 logger.warning(f"Redis cache read failed: {e}")
         
-        # Load from database
+        # Load from database, then fill missing optional fields from environment
         config = await self._load_from_db(tenant_id)
-        
+        config = merge_llm_config_with_env_defaults(config)
+
         # Update caches
         await self._update_caches(cache_key, config)
         

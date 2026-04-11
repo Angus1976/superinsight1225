@@ -487,7 +487,11 @@ class AnnotationEngineHealthMonitor:
 
         self.alerts[alert.alert_id] = alert
 
-        logger.warning(f"Health alert [{severity}]: {message}")
+        # 外部标注引擎（Label Studio / Argilla 等）首次探测失败很常见，warning 会污染启动日志
+        if severity == "critical":
+            logger.warning("Health alert [critical]: %s", message)
+        else:
+            logger.debug("Health alert [warning]: %s", message)
 
     def _clear_alerts(self, engine_id: str):
         """Clear all alerts for engine.

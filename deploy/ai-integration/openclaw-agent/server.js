@@ -56,6 +56,96 @@ const SKILL_CATALOG = {
     status: 'active',
     deployed_at: new Date().toISOString(),
   },
+  'data-summary': {
+    name: 'data-summary',
+    displayName: '数据摘要',
+    description: '数据摘要与统计分析，生成关键指标与分布概览',
+    version: '1.0.0',
+    category: 'data-analysis',
+    status: 'active',
+    deployed_at: new Date().toISOString(),
+  },
+  'data-quality-check': {
+    name: 'data-quality-check',
+    displayName: '数据质量检测',
+    description: '识别缺失值、异常值、重复记录等质量问题',
+    version: '1.0.0',
+    category: 'data-quality',
+    status: 'active',
+    deployed_at: new Date().toISOString(),
+  },
+  'data-transform': {
+    name: 'data-transform',
+    displayName: '数据转换',
+    description: '格式转换、字段映射与标准化',
+    version: '1.0.0',
+    category: 'data-processing',
+    status: 'active',
+    deployed_at: new Date().toISOString(),
+  },
+  'data-export': {
+    name: 'data-export',
+    displayName: '数据导出',
+    description: '导出为 CSV/JSON/Excel 等格式',
+    version: '1.0.0',
+    category: 'data-export',
+    status: 'active',
+    deployed_at: new Date().toISOString(),
+  },
+  'data-comparison': {
+    name: 'data-comparison',
+    displayName: '数据对比',
+    description: '多数据源字段级差异与变更追踪',
+    version: '1.0.0',
+    category: 'data-analysis',
+    status: 'active',
+    deployed_at: new Date().toISOString(),
+  },
+  'data-lineage': {
+    name: 'data-lineage',
+    displayName: '数据血缘',
+    description: '追踪数据来源、流转路径与依赖关系',
+    version: '1.0.0',
+    category: 'data-governance',
+    status: 'active',
+    deployed_at: new Date().toISOString(),
+  },
+  'file-document-parse': {
+    name: 'file-document-parse',
+    displayName: '文件与文档解析',
+    description: '从 CSV、Excel、JSON、日志与文本中提取结构化字段',
+    version: '1.1.0',
+    category: 'file-processing',
+    status: 'active',
+    deployed_at: new Date().toISOString(),
+  },
+  'nl-data-query': {
+    name: 'nl-data-query',
+    displayName: '智能问数',
+    description: '自然语言描述需求，转换为查询意图或分析步骤',
+    version: '1.1.0',
+    category: 'intelligent-query',
+    status: 'active',
+    deployed_at: new Date().toISOString(),
+  },
+  'text-to-sql-assisted': {
+    name: 'text-to-sql-assisted',
+    displayName: 'Text-to-SQL 辅助',
+    description: '在受控数据源上生成、解释与校验 SQL',
+    version: '1.1.0',
+    category: 'intelligent-query',
+    status: 'active',
+    deployed_at: new Date().toISOString(),
+  },
+  'metrics-dashboard-insight': {
+    name: 'metrics-dashboard-insight',
+    displayName: '指标与看板解读',
+    description: '解释 KPI、图表与报表含义，辅助业务理解',
+    version: '1.1.0',
+    category: 'data-analysis',
+    status: 'active',
+    deployed_at: new Date().toISOString(),
+  },
 };
 
 // Track deployed skills (start with all active)
@@ -205,6 +295,22 @@ app.post('/api/skills/execute', async (req, res) => {
   }
 });
 
+async function executeGenericDataSkill(skillName, params) {
+  const skill = deployedSkills[skillName];
+  const label = skill?.displayName || skillName;
+  const prompt = `你是 SuperInsight 数据治理助手。当前技能：${label}（${skillName}）。
+请根据技能目标，结合用户参数，用中文给出结构化、可落地的建议；若适合请使用 JSON 输出关键字段。
+
+用户参数：${JSON.stringify(params).slice(0, 6000)}`;
+
+  const llmResult = await callOllama(prompt, { temperature: 0.35 });
+  return {
+    message: `${label} 已完成（LLM 辅助）`,
+    skill: skillName,
+    result: llmResult.success ? llmResult.text : '(LLM 不可用)',
+  };
+}
+
 async function executeSkill(skillName, params) {
   switch (skillName) {
     case 'data-query':
@@ -218,7 +324,7 @@ async function executeSkill(skillName, params) {
     case 'data-cleaning':
       return await executeDataCleaning(params);
     default:
-      throw new Error(`未知技能: ${skillName}`);
+      return await executeGenericDataSkill(skillName, params);
   }
 }
 
@@ -437,7 +543,7 @@ app.get('/api/llm/status', async (req, res) => {
 // Start server
 // ---------------------------------------------------------------------------
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`OpenClaw Agent v2.0 listening on port ${PORT}`);
+  console.log(`OpenClaw Agent v2.1 listening on port ${PORT}`);
   console.log(`Gateway URL: ${process.env.GATEWAY_URL}`);
   console.log(`SuperInsight API: ${process.env.SUPERINSIGHT_API_URL}`);
   console.log(`LLM: ${process.env.LLM_PROVIDER} / ${process.env.LLM_MODEL}`);

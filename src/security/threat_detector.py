@@ -1086,7 +1086,7 @@ class AdvancedThreatDetector:
     def _generate_event_id(self, signature_id: str) -> str:
         """生成事件ID"""
         timestamp = datetime.utcnow().strftime('%Y%m%d%H%M%S')
-        hash_suffix = hashlib.md5(f"{signature_id}_{timestamp}".encode()).hexdigest()[:8]
+        hash_suffix = hashlib.md5(f"{signature_id}_{timestamp}".encode(), usedforsecurity=False).hexdigest()[:8]
         return f"THR_{signature_id.upper()}_{timestamp}_{hash_suffix}"
     
     # 公共接口方法

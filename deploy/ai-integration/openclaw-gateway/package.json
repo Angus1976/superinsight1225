@@ -1,7 +1,7 @@
 {
-  "name": "openclaw-gateway-mock",
-  "version": "1.0.0",
-  "description": "Mock OpenClaw Gateway for testing SuperInsight AI Integration",
+  "name": "openclaw-gateway-compat",
+  "version": "2.1.0",
+  "description": "SuperInsight compat proxy for OpenClaw (forwards /api/chat to official ghcr.io/openclaw/openclaw)",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

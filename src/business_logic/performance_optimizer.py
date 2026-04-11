@@ -95,7 +95,7 @@ class CacheManager:
             'kwargs': str(sorted(kwargs.items()))
         }
         key_string = str(key_data)
-        return f"bl_cache:{hashlib.md5(key_string.encode()).hexdigest()}"
+        return f"bl_cache:{hashlib.md5(key_string.encode(), usedforsecurity=False).hexdigest()}"
     
     def get(self, key: str) -> Optional[Any]:
         """获取缓存"""

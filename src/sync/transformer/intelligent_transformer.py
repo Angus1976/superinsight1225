@@ -381,7 +381,7 @@ class TransformationRuleEngine:
             "abs": lambda x: abs(float(x)) if x else 0,
             "now": lambda: datetime.utcnow().isoformat(),
             "date_format": lambda x, fmt="%Y-%m-%d": datetime.fromisoformat(str(x)).strftime(fmt) if x else "",
-            "hash_md5": lambda x: hashlib.md5(str(x).encode()).hexdigest() if x else "",
+            "hash_md5": lambda x: hashlib.md5(str(x).encode(), usedforsecurity=False).hexdigest() if x else "",
             "hash_sha256": lambda x: hashlib.sha256(str(x).encode()).hexdigest() if x else "",
         })
     

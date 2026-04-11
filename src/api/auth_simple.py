@@ -52,14 +52,23 @@ class UserResponse(BaseModel):
 
 class SimpleUser:
     """Simple user object for dependency injection."""
-    def __init__(self, user_id: str, email: str, username: Optional[str], name: Optional[str], is_active: bool, is_superuser: bool):
+    def __init__(
+        self,
+        user_id: str,
+        email: str,
+        username: Optional[str],
+        name: Optional[str],
+        is_active: bool,
+        is_superuser: bool,
+        tenant_id: str = "default_tenant",
+    ):
         self.id = user_id
         self.email = email
         self.username = username
         self.name = name
         self.is_active = is_active
         self.is_superuser = is_superuser
-        self.tenant_id = "system"  # Default tenant
+        self.tenant_id = tenant_id or "default_tenant"
 
 
 def verify_password(plain_password: str, password_hash: str) -> bool:
@@ -126,7 +135,8 @@ async def get_current_user(
     
     result = db.execute(text(
         "SELECT id, email, username, full_name AS name, is_active, "
-        "(role = 'admin') AS is_superuser FROM users WHERE id = CAST(:user_id AS uuid)"
+        "(role = 'admin') AS is_superuser, COALESCE(tenant_id, 'default_tenant') AS tenant_id "
+        "FROM users WHERE id = CAST(:user_id AS uuid)"
     ), {"user_id": user_id})
     
     user_row = result.fetchone()
@@ -138,7 +148,7 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    user_id, email, username, name, is_active, is_superuser = user_row
+    user_id, email, username, name, is_active, is_superuser, tenant_id = user_row
     
     return SimpleUser(
         user_id=str(user_id),
@@ -146,7 +156,8 @@ async def get_current_user(
         username=username,
         name=name,
         is_active=is_active,
-        is_superuser=is_superuser
+        is_superuser=is_superuser,
+        tenant_id=str(tenant_id) if tenant_id is not None else "default_tenant",
     )
 
 

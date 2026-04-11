@@ -910,11 +910,11 @@ async def lifespan(app: FastAPI):
                     apps = db_session.execute(
                         select(LLMApplication).where(LLMApplication.is_active == True)
                     ).scalars().all()
-                    for app in apps:
+                    for llm_app in apps:
                         # Skip if priority 2 slot already taken
                         slot_taken = db_session.execute(
                             select(LLMApplicationBinding).where(
-                                LLMApplicationBinding.application_id == app.id,
+                                LLMApplicationBinding.application_id == llm_app.id,
                                 LLMApplicationBinding.priority == 2,
                             )
                         ).scalar_one_or_none()
@@ -922,7 +922,7 @@ async def lifespan(app: FastAPI):
                             continue
                         db_session.add(LLMApplicationBinding(
                             llm_config_id=ollama_7b.id,
-                            application_id=app.id,
+                            application_id=llm_app.id,
                             priority=2,
                             max_retries=1,
                             timeout_seconds=60,

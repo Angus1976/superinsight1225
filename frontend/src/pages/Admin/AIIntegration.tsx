@@ -39,6 +39,7 @@ import { getDataSourceConfig, updateDataSourceConfig, getAccessLogs, getServiceS
 import type { AccessLogItem, ServiceStatusResponse } from '@/services/aiAssistantApi';
 import type { SkillDetail } from '@/types/aiAssistant';
 import type { AIDataSource } from '@/types/aiAssistant';
+import { skillDisplayName, skillCategoryLabel } from '@/utils/skillI18n';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -200,13 +201,29 @@ const AIIntegration: React.FC = () => {
   // Table columns
   // ---------------------------------------------------------------------------
   const skillColumns: ColumnsType<SkillDetail> = [
-    { title: t('skillTable.name'), dataIndex: 'name', key: 'name', render: (name: string) => t(`skillName.${name}` as never, name) },
+    {
+      title: t('skillTable.name'),
+      dataIndex: 'name',
+      key: 'name',
+      render: (name: string) => skillDisplayName(name, t),
+    },
     { title: t('skillTable.description'), dataIndex: 'description', key: 'description', ellipsis: true },
     {
       title: t('skillTable.category'), dataIndex: 'category', key: 'category',
       render: (cat: string) => {
-        const colors: Record<string, string> = { 'data-annotation': 'blue', 'data-structuring': 'purple', 'data-analysis': 'orange', 'data-processing': 'green' };
-        return <Tag color={colors[cat] || 'default'}>{cat}</Tag>;
+        const colors: Record<string, string> = {
+          'data-annotation': 'blue',
+          'data-structuring': 'purple',
+          'data-analysis': 'orange',
+          'data-processing': 'green',
+          'data-quality': 'cyan',
+          'data-export': 'geekblue',
+          'data-governance': 'magenta',
+          'file-processing': 'gold',
+          'intelligent-query': 'lime',
+          'data-query': 'processing',
+        };
+        return <Tag color={colors[cat] || 'default'}>{skillCategoryLabel(cat, t)}</Tag>;
       },
     },
     { title: t('skillTable.version'), dataIndex: 'version', key: 'version', render: (v: string) => <Tag>{v}</Tag> },

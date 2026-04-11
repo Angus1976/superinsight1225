@@ -17,64 +17,38 @@ depends_on = None
 
 def upgrade():
     """Create composite indexes for efficient multi-tenant queries."""
-    
-    # Composite indexes for common query patterns
-    
-    # Documents: tenant_id + sync_status for sync operations
-    op.create_index('ix_documents_tenant_sync_status', 'documents', 
-                   ['tenant_id', 'sync_status'])
-    
-    # Tasks: tenant_id + status for task management
-    op.create_index('ix_tasks_tenant_status', 'tasks', 
-                   ['tenant_id', 'status'])
-    
-    # Tasks: tenant_id + project_id for project-specific queries
-    op.create_index('ix_tasks_tenant_project', 'tasks', 
-                   ['tenant_id', 'project_id'])
-    
-    # Quality Issues: tenant_id + status for issue tracking
-    op.create_index('ix_quality_issues_tenant_status', 'quality_issues', 
-                   ['tenant_id', 'status'])
-    
-    # Tickets: tenant_id + status for ticket management
-    op.create_index('ix_tickets_tenant_status', 'tickets', 
-                   ['tenant_id', 'status'])
-    
-    # Tickets: tenant_id + assigned_to for workload queries
-    op.create_index('ix_tickets_tenant_assigned', 'tickets', 
-                   ['tenant_id', 'assigned_to'])
-    
-    # Business Rules: tenant_id + project_id for business logic queries
-    op.create_index('ix_business_rules_tenant_project', 'business_rules', 
-                   ['tenant_id', 'project_id'])
-    
-    # Business Rules: tenant_id + rule_type for type-specific queries
-    op.create_index('ix_business_rules_tenant_type', 'business_rules', 
-                   ['tenant_id', 'rule_type'])
-    
-    # Business Patterns: tenant_id + project_id
-    op.create_index('ix_business_patterns_tenant_project', 'business_patterns', 
-                   ['tenant_id', 'project_id'])
-    
-    # Business Insights: tenant_id + project_id
-    op.create_index('ix_business_insights_tenant_project', 'business_insights', 
-                   ['tenant_id', 'project_id'])
-    
-    # Performance Records: tenant_id + user_id for user performance queries
-    op.create_index('ix_performance_records_tenant_user', 'performance_records', 
-                   ['tenant_id', 'user_id'])
-    
-    # Audit Logs: tenant_id + action for audit queries
-    op.create_index('ix_audit_logs_tenant_action', 'audit_logs', 
-                   ['tenant_id', 'action'])
-    
-    # Sync Jobs: tenant_id + status for sync management
-    op.create_index('ix_sync_jobs_tenant_status_updated', 'sync_jobs', 
-                   ['tenant_id', 'status', 'updated_at'])
-    
-    # Billing Records: tenant_id + billing_date for billing queries
-    op.create_index('ix_billing_records_tenant_date', 'billing_records', 
-                   ['tenant_id', 'billing_date'])
+    bind = op.get_bind()
+    insp = sa.inspect(bind)
+    tables = set(insp.get_table_names())
+
+    def _cols(t: str) -> set:
+        if t not in tables:
+            return set()
+        return {c["name"] for c in insp.get_columns(t)}
+
+    def _safe_index(name: str, table: str, columns: list[str]) -> None:
+        if table not in tables:
+            return
+        colset = _cols(table)
+        if not all(c in colset for c in columns):
+            return
+        op.create_index(name, table, columns)
+
+    # 各表可能分属不同迁移分支，缺表或缺列时跳过（避免 PG 事务被单条 DDL 失败毒化）
+    _safe_index("ix_documents_tenant_sync_status", "documents", ["tenant_id", "sync_status"])
+    _safe_index("ix_tasks_tenant_status", "tasks", ["tenant_id", "status"])
+    _safe_index("ix_tasks_tenant_project", "tasks", ["tenant_id", "project_id"])
+    _safe_index("ix_quality_issues_tenant_status", "quality_issues", ["tenant_id", "status"])
+    _safe_index("ix_tickets_tenant_status", "tickets", ["tenant_id", "status"])
+    _safe_index("ix_tickets_tenant_assigned", "tickets", ["tenant_id", "assigned_to"])
+    _safe_index("ix_business_rules_tenant_project", "business_rules", ["tenant_id", "project_id"])
+    _safe_index("ix_business_rules_tenant_type", "business_rules", ["tenant_id", "rule_type"])
+    _safe_index("ix_business_patterns_tenant_project", "business_patterns", ["tenant_id", "project_id"])
+    _safe_index("ix_business_insights_tenant_project", "business_insights", ["tenant_id", "project_id"])
+    _safe_index("ix_performance_records_tenant_user", "performance_records", ["tenant_id", "user_id"])
+    _safe_index("ix_audit_logs_tenant_action", "audit_logs", ["tenant_id", "action"])
+    _safe_index("ix_sync_jobs_tenant_status_updated", "sync_jobs", ["tenant_id", "status", "updated_at"])
+    _safe_index("ix_billing_records_tenant_date", "billing_records", ["tenant_id", "billing_date"])
 
 
 def downgrade():

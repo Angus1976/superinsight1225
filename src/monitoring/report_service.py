@@ -1245,7 +1245,8 @@ class MonitoringReportService:
     ) -> str:
         """Add a new report schedule."""
         schedule_id = hashlib.md5(
-            f"{report_type.value}:{frequency.value}:{','.join(recipients)}".encode()
+            f"{report_type.value}:{frequency.value}:{','.join(recipients)}".encode(),
+            usedforsecurity=False,
         ).hexdigest()[:12]
 
         schedule = ReportSchedule(

@@ -216,7 +216,7 @@ def cached(
             key_parts = [key_prefix, func.__name__]
             key_parts.extend(str(arg) for arg in args)
             key_parts.extend(f"{k}={v}" for k, v in sorted(kwargs.items()))
-            cache_key = hashlib.md5(":".join(key_parts).encode()).hexdigest()
+            cache_key = hashlib.md5(":".join(key_parts).encode(), usedforsecurity=False).hexdigest()
 
             # Check cache
             result = cache.get(cache_key)
@@ -270,7 +270,7 @@ class QueryOptimizer:
 
     def analyze_query(self, query: str, table_name: str) -> QueryPlan:
         """Analyze a query and suggest optimizations"""
-        query_id = hashlib.md5(query.encode()).hexdigest()[:8]
+        query_id = hashlib.md5(query.encode(), usedforsecurity=False).hexdigest()[:8]
         suggestions = []
         indexes_used = []
 
@@ -319,7 +319,7 @@ class QueryOptimizer:
 
     def record_execution(self, query: str, execution_time_ms: float) -> None:
         """Record query execution time for analysis"""
-        query_id = hashlib.md5(query.encode()).hexdigest()[:8]
+        query_id = hashlib.md5(query.encode(), usedforsecurity=False).hexdigest()[:8]
 
         with self._lock:
             if query_id not in self._query_stats:
@@ -346,7 +346,7 @@ class QueryOptimizer:
 
     def get_query_stats(self, query: str) -> Optional[QueryStats]:
         """Get statistics for a specific query"""
-        query_id = hashlib.md5(query.encode()).hexdigest()[:8]
+        query_id = hashlib.md5(query.encode(), usedforsecurity=False).hexdigest()[:8]
         return self._query_stats.get(query_id)
 
 
@@ -390,7 +390,7 @@ class BatchProcessor(Generic[T]):
         on_progress: Optional[Callable[[int, int], None]] = None
     ) -> BatchResult[T]:
         """Process items in batches"""
-        batch_id = hashlib.md5(str(time.time()).encode()).hexdigest()[:8]
+        batch_id = hashlib.md5(str(time.time()).encode(), usedforsecurity=False).hexdigest()[:8]
         start_time = time.time()
 
         results: List[T] = []

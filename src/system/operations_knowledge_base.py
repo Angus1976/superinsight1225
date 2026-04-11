@@ -388,7 +388,8 @@ class CaseLibrary:
         try:
             # Create cache key
             cache_key = hashlib.md5(
-                (str(sorted(symptoms)) + str(sorted(metrics.items()))).encode()
+                (str(sorted(symptoms)) + str(sorted(metrics.items()))).encode(),
+                usedforsecurity=False,
             ).hexdigest()
             
             if cache_key in self.similarity_cache:

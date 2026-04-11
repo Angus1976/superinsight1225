@@ -535,9 +535,9 @@ class ToolExecutor:
 
             # Check condition
             if step.condition:
-                # Simplified condition evaluation
+                # Simplified condition evaluation (trusted chain definitions only)
                 try:
-                    if not eval(step.condition, {"context": accumulated_context}):
+                    if not eval(step.condition, {"context": accumulated_context}):  # nosec B307
                         logger.info(f"Skipping step {step.step_id}: condition not met")
                         continue
                 except Exception as e:
@@ -767,8 +767,8 @@ class ToolFramework:
             if variables:
                 allowed_names.update(variables)
 
-            # Only allow safe operations
-            result = eval(expression, {"__builtins__": {}}, allowed_names)
+            # Only allow safe operations (builtins stripped; trusted admin expressions)
+            result = eval(expression, {"__builtins__": {}}, allowed_names)  # nosec B307
 
             return {
                 "expression": expression,

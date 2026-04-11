@@ -6,6 +6,7 @@ Main web application with all API endpoints and system integration.
 
 import logging
 import asyncio
+import os
 import time
 import importlib
 from contextlib import asynccontextmanager
@@ -983,7 +984,19 @@ app.add_middleware(MonitoringMiddleware)
 # Add CORS middleware
 # Configure CORS based on environment settings
 # Note: When using wildcard origins ["*"], credentials cannot be enabled
-cors_origins = settings.app.cors_origins
+# Dev: 合并常见本机前端源，避免 .env 仍写 5173 而 Vite 用 15173 导致 CORS 失败
+_cors_set = list(dict.fromkeys(settings.app.cors_origins))
+if settings.app.debug:
+    for _o in (
+        "http://localhost:15173",
+        "http://127.0.0.1:15173",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:3000",
+    ):
+        if _o not in _cors_set:
+            _cors_set.append(_o)
+cors_origins = _cors_set
 allow_credentials = "*" not in cors_origins
 
 app.add_middleware(
@@ -991,18 +1004,22 @@ app.add_middleware(
     allow_origins=cors_origins,
     allow_credentials=allow_credentials,
     allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allow_headers=[
-        "Content-Type",
-        "Authorization",
-        "Accept",
-        "Origin",
-        "User-Agent",
-        "DNT",
-        "Cache-Control",
-        "X-Requested-With",
-        # SSE streaming headers
-        "X-Accel-Buffering",
-    ],
+    # 开发环境允许任意请求头，避免预检因缺头被拒绝；生产保持白名单
+    allow_headers=(
+        ["*"]
+        if settings.app.debug
+        else [
+            "Content-Type",
+            "Authorization",
+            "Accept",
+            "Origin",
+            "User-Agent",
+            "DNT",
+            "Cache-Control",
+            "X-Requested-With",
+            "X-Accel-Buffering",
+        ]
+    ),
     expose_headers=[
         "Content-Type",
         "Cache-Control",
@@ -3010,7 +3027,7 @@ if __name__ == "__main__":
     uvicorn.run(
         "src.app:app",
         host="0.0.0.0",
-        port=8000,
+        port=int(os.getenv("PORT", "18080")),
         reload=settings.app.debug,
         log_level=settings.app.log_level.lower()
     )

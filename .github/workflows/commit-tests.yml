@@ -21,7 +21,7 @@ on:
 env:
   PYTHON_VERSION: '3.11'
   NODE_VERSION: '18'
-  BACKEND_URL: 'http://localhost:8000'
+  BACKEND_URL: 'http://localhost:18080'
   FRONTEND_URL: 'http://localhost:3000'
 
 jobs:

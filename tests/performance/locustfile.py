@@ -6,13 +6,13 @@ for the SuperInsight API endpoints.
 
 Usage:
     # Run with 100 concurrent users for 60 seconds
-    locust -f tests/performance/locustfile.py --host=http://localhost:8000 -u 100 -t 60s
+    locust -f tests/performance/locustfile.py --host=http://localhost:18080 -u 100 -t 60s
     
     # Run with HTML report
-    locust -f tests/performance/locustfile.py --host=http://localhost:8000 -u 100 -t 60s --html-report=report.html
+    locust -f tests/performance/locustfile.py --host=http://localhost:18080 -u 100 -t 60s --html-report=report.html
     
     # Run headless for CI
-    locust -f tests/performance/locustfile.py --host=http://localhost:8000 -u 100 -t 60s --headless
+    locust -f tests/performance/locustfile.py --host=http://localhost:18080 -u 100 -t 60s --headless
 """
 
 import os
@@ -746,7 +746,7 @@ class StressTestUser(HttpUser):
 # =============================================================================
 
 def run_performance_test(
-    host: str = "http://localhost:8000",
+    host: str = "http://localhost:18080",
     users: int = CONCURRENT_USERS,
     duration: int = TEST_DURATION_SECONDS,
     spawn_rate: float = 10
@@ -796,7 +796,7 @@ if __name__ == "__main__":
     import argparse
     
     parser = argparse.ArgumentParser(description="SuperInsight Performance Testing")
-    parser.add_argument("--host", default="http://localhost:8000", help="Target host")
+    parser.add_argument("--host", default="http://localhost:18080", help="Target host")
     parser.add_argument("-u", "--users", type=int, default=CONCURRENT_USERS, help="Number of users")
     parser.add_argument("-t", "--time", type=str, default=f"{TEST_DURATION_SECONDS}s", help="Test duration")
     parser.add_argument("-r", "--rate", type=float, default=10, help="Spawn rate")

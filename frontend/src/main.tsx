@@ -1,3 +1,6 @@
+/** Ant Design v5 + React 19 官方补丁，需在任意 antd 组件之前加载 */
+import '@ant-design/v5-patch-for-react-19'
+
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'

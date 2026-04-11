@@ -1,4 +1,6 @@
 version: '3.8'
+# 本机跑 API（python main.py 占用 18080）时，不要同时启动 Docker 里的 app，否则会抢端口。
+# 默认 compose 不启动 app/celery-worker；需要容器内后端时加：docker compose --profile docker-backend up -d
 
 services:
   # ===========================================================================
@@ -12,15 +14,18 @@ services:
         NPM_CONFIG_REGISTRY: ${NPM_CONFIG_REGISTRY:-}
     container_name: superinsight-frontend
     ports:
-      - "5173:5173"
+      - "15173:5173"
     environment:
-      - VITE_API_BASE_URL=http://localhost:8000
+      # 与 frontend/.env.development 一致：避免浏览器对 localhost→::1 时与 IPv4 后端/Docker 双监听冲突
+      - VITE_API_BASE_URL=http://127.0.0.1:18080
+      # 本机 API 时默认代理到宿主机 18080；若启用 profile docker-backend 跑容器 app，请在 .env 设 VITE_DEV_PROXY_TARGET=http://app:8000
+      - VITE_DEV_PROXY_TARGET=${VITE_DEV_PROXY_TARGET:-http://host.docker.internal:18080}
       - NODE_ENV=development
+    # node_modules 来自镜像构建时的 npm ci；若新增/升级 frontend 依赖，请执行:
+    #   docker compose build frontend && docker compose up -d frontend
     volumes:
       - ./frontend/src:/app/src
       - ./frontend/public:/app/public
-    depends_on:
-      - app
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5173"]
       interval: 30s
@@ -29,9 +34,11 @@ services:
     restart: unless-stopped
 
   # ===========================================================================
-  # Core Application
+  # Core Application（可选：与本机 main.py 二选一占用 18080，见文件头说明）
   # ===========================================================================
   app:
+    profiles:
+      - docker-backend
     build:
       context: .
       dockerfile: Dockerfile
@@ -40,7 +47,7 @@ services:
         PIP_TRUSTED_HOST: ${PIP_TRUSTED_HOST:-repo.huaweicloud.com}
     container_name: superinsight-app
     ports:
-      - "8000:8000"
+      - "18080:8000"
     environment:
       - APP_ENV=development
       - DATABASE_URL=postgresql://superinsight:password@postgres:5432/superinsight
@@ -56,7 +63,7 @@ services:
       - OPENAI_BASE_URL=${OPENAI_BASE_URL}
       - OPENAI_MODEL=${OPENAI_MODEL}
       - LLM_ENCRYPTION_KEY=${LLM_ENCRYPTION_KEY}
-      - CORS_ORIGINS=http://localhost:3000,http://localhost:5173
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:15173
       # OpenClaw HTTP 网关（需与 docker-compose.ai-integration 一并启动）；连不上时会回退到内置 LLM
       - OPENCLAW_GATEWAY_BASE_URL=${OPENCLAW_GATEWAY_BASE_URL:-http://openclaw-gateway:3000}
     depends_on:
@@ -84,6 +91,8 @@ services:
   # Celery Worker (Background Tasks)
   # ===========================================================================
   celery-worker:
+    profiles:
+      - docker-backend
     build:
       context: .
       dockerfile: Dockerfile

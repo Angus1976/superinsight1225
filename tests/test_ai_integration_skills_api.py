@@ -138,7 +138,7 @@ def valid_skill_request():
             "name": "superinsight-skill",
             "description": "SuperInsight data access skill",
             "entry_point": "index.js",
-            "environment_variables": {"API_URL": "http://localhost:8000"},
+            "environment_variables": {"API_URL": "http://localhost:18080"},
             "permissions": ["data:read"],
             "timeout_seconds": 30
         }
@@ -449,7 +449,7 @@ def test_hot_reload_skill_wrong_gateway(client, db_session, sample_gateway):
 def test_create_skill_package_with_complex_config(client, valid_skill_request):
     """Test skill creation with complex configuration."""
     valid_skill_request["configuration"]["environment_variables"] = {
-        "API_URL": "http://localhost:8000",
+        "API_URL": "http://localhost:18080",
         "API_KEY": "test-key",
         "TIMEOUT": "30"
     }

@@ -132,9 +132,9 @@ jobs:
       - name: Start backend server
         run: |
           source .env.test
-          uvicorn src.app:app --host 0.0.0.0 --port 8000 &
+          uvicorn src.app:app --host 0.0.0.0 --port 18080 &
           sleep 5
-          curl -f http://localhost:8000/health || exit 1
+          curl -f http://localhost:18080/health || exit 1
 
       - name: Set up OWASP ZAP
         uses: zaproxy/action-setup-zap@v3
@@ -144,14 +144,14 @@ jobs:
       - name: Run OWASP ZAP Spider Scan
         uses: zaproxy/action-baseline@v3
         with:
-          target: 'http://localhost:8000/health'
+          target: 'http://localhost:18080/health'
           rules_file_name: '.zap/rules.tsv'
         continue-on-error: true
 
       - name: Run OWASP ZAP Active Scan
         run: |
           echo "Running OWASP ZAP active scan..."
-          zap.sh -cmd -quickurl http://localhost:8000 -quickout zap-report.html -quickprogress
+          zap.sh -cmd -quickurl http://localhost:18080 -quickout zap-report.html -quickprogress
         continue-on-error: true
 
       - name: Parse ZAP results
@@ -229,7 +229,7 @@ jobs:
       - name: Start backend server
         run: |
           source .env.test
-          uvicorn src.app:app --host 0.0.0.0 --port 8000 &
+          uvicorn src.app:app --host 0.0.0.0 --port 18080 &
           sleep 5
 
       - name: Run SQL injection tests
@@ -241,7 +241,7 @@ jobs:
           import requests
           import time
 
-          base_url = "http://localhost:8000"
+          base_url = "http://localhost:18080"
           payloads = [
               "' OR '1'='1",
               "' OR 1=1--",
@@ -343,7 +343,7 @@ jobs:
       - name: Start backend server
         run: |
           source .env.test
-          uvicorn src.app:app --host 0.0.0.0 --port 8000 &
+          uvicorn src.app:app --host 0.0.0.0 --port 18080 &
           sleep 5
 
       - name: Run XSS tests
@@ -354,7 +354,7 @@ jobs:
           import requests
           from bs4 import BeautifulSoup
 
-          base_url = "http://localhost:8000"
+          base_url = "http://localhost:18080"
           xss_payloads = [
               "<script>alert('XSS')</script>",
               "<img src=x onerror=alert('XSS')>",

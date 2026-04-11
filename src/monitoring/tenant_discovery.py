@@ -298,7 +298,7 @@ class TenantDiscoveryService:
                 
                 # Create target for tenant-specific metrics endpoint
                 target = TenantTarget(
-                    targets=[f"localhost:8000"],  # Main API server
+                    targets=[f"localhost:18080"],  # Main API server (host port)
                     labels={
                         "__meta_tenant_id": tenant_id,
                         "__meta_tenant_name": tenant_name,

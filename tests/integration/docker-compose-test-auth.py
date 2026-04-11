@@ -26,7 +26,7 @@ from typing import Dict, Optional, Tuple
 from dataclasses import dataclass
 
 # Configuration
-API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
+API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:18080")
 LABEL_STUDIO_URL = os.getenv("LABEL_STUDIO_URL", "http://label-studio:8080")
 TEST_USERNAME = os.getenv("TEST_USERNAME", "admin")
 TEST_PASSWORD = os.getenv("TEST_PASSWORD", "admin")

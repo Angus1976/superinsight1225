@@ -287,7 +287,7 @@
         async function checkSystemStatus() {
             try {
                 // 检查后端健康状态
-                const healthResponse = await fetch('http://localhost:8000/health');
+                const healthResponse = await fetch('http://localhost:18080/health');
                 if (healthResponse.ok) {
                     document.getElementById('backendStatus').innerHTML = '<span class="status-ok">✅ 正常</span>';
                     document.getElementById('dbStatus').innerHTML = '<span class="status-ok">✅ 已连接</span>';
@@ -333,7 +333,7 @@
             loginBtn.innerHTML = '<span class="loading"></span>登录中...';
             
             try {
-                const response = await fetch('http://localhost:8000/api/security/login', {
+                const response = await fetch('http://localhost:18080/api/security/login', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

@@ -5,7 +5,7 @@ Provides basic login functionality for testing and development.
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Header
 from pydantic import BaseModel, EmailStr
@@ -135,7 +135,7 @@ async def get_current_user(
     
     result = db.execute(text(
         "SELECT id, email, username, full_name AS name, is_active, "
-        "(role = 'admin') AS is_superuser, COALESCE(tenant_id, 'default_tenant') AS tenant_id "
+        "(role::text = 'admin') AS is_superuser, COALESCE(tenant_id, 'default_tenant') AS tenant_id "
         "FROM users WHERE id = CAST(:user_id AS uuid)"
     ), {"user_id": user_id})
     
@@ -172,7 +172,8 @@ def login(
         login_id = (request.email or "").strip()
         result = db.execute(text(
             "SELECT id, email, username, full_name AS name, password_hash, is_active, "
-            "(role = 'admin') AS is_superuser FROM users "
+            "(role::text = 'admin') AS is_superuser, "
+            "COALESCE(tenant_id, 'default_tenant') AS tenant_id FROM users "
             "WHERE LOWER(email) = LOWER(:login) OR LOWER(username) = LOWER(:login)"
         ), {"login": login_id})
         
@@ -186,7 +187,7 @@ def login(
                 headers={"WWW-Authenticate": "Bearer"},
             )
         
-        user_id, email, username, name, password_hash, is_active, is_superuser = user_row
+        user_id, email, username, name, password_hash, is_active, is_superuser, tenant_id = user_row
         
         if not is_active:
             logger.warning(f"Login attempt for inactive user: {email}")
@@ -211,11 +212,18 @@ def login(
             data={"sub": str(user_id), "user_id": str(user_id), "email": email}
         )
         
-        # Update last login
-        db.execute(text(
-            "UPDATE users SET last_login = :now WHERE id = :user_id"
-        ), {"now": datetime.utcnow(), "user_id": user_id})
-        db.commit()
+        # Update last login（时区与列类型一致；失败不阻断登录）
+        try:
+            db.execute(text(
+                "UPDATE users SET last_login = :now WHERE id = :user_id"
+            ), {"now": datetime.now(timezone.utc), "user_id": user_id})
+            db.commit()
+        except Exception as upd_err:
+            logger.warning("last_login update failed (login still succeeds): %s", upd_err)
+            try:
+                db.rollback()
+            except Exception:
+                pass
         
         logger.info(f"Successful login for user: {email}")
         
@@ -231,17 +239,21 @@ def login(
                 "name": name,
                 "role": user_role,  # Add role field for frontend
                 "is_active": is_active,
-                "is_superuser": is_superuser
+                "is_superuser": is_superuser,
+                "tenant_id": str(tenant_id) if tenant_id is not None else "default_tenant",
             }
         )
         
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Login error: {e}")
+        logger.exception("Login error")
+        detail = "Internal server error"
+        if settings.app.debug:
+            detail = f"Internal server error: {e!s}"
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Internal server error"
+            detail=detail,
         )
 
 

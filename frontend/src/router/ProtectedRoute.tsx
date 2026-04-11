@@ -8,6 +8,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { ROUTES } from '@/constants';
 import { Permission } from '@/utils/permissions';
 import { isTokenExpired } from '@/utils/token';
+import { assignTopWindowSameOrigin } from '@/utils/iframeNavigation';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -57,13 +58,26 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // 检查认证状态
   if (!isAuthenticated || !token) {
+    if (assignTopWindowSameOrigin(ROUTES.LOGIN)) {
+      return (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+          <Spin size="large" />
+        </div>
+      );
+    }
     return <Navigate to={ROUTES.LOGIN} state={{ from: location }} replace />;
   }
 
   // 额外检查 token 是否过期（防止 store 状态与实际 token 不同步）
   if (isTokenExpired(token)) {
-    // Token 已过期，清除认证状态并重定向到登录页
     clearAuth();
+    if (assignTopWindowSameOrigin(ROUTES.LOGIN)) {
+      return (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+          <Spin size="large" />
+        </div>
+      );
+    }
     return <Navigate to={ROUTES.LOGIN} state={{ from: location }} replace />;
   }
 

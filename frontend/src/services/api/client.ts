@@ -47,7 +47,7 @@ function isPublicAuthRequest(config: InternalAxiosRequestConfig | undefined): bo
 
 // Create axios instance with optimized settings
 const apiClient: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000',
+  baseURL: import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:18080',
   timeout: OPTIMIZED_TIMEOUT,
   headers: {
     'Content-Type': 'application/json',

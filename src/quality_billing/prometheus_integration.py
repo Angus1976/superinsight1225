@@ -329,7 +329,7 @@ class PrometheusIntegrationService:
                 "job_name": "quality-billing-system",
                 "static_configs": [
                     {
-                        "targets": ["localhost:8000"],  # Main application
+                        "targets": ["localhost:18080"],  # Main application (host port)
                         "labels": {
                             "service": "quality-billing",
                             "component": "application"

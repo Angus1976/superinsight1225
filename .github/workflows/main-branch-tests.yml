@@ -13,7 +13,7 @@ on:
 env:
   PYTHON_VERSION: '3.11'
   NODE_VERSION: '18'
-  BACKEND_URL: 'http://localhost:8000'
+  BACKEND_URL: 'http://localhost:18080'
   FRONTEND_URL: 'http://localhost:3000'
 
 jobs:
@@ -124,15 +124,15 @@ jobs:
       - name: Start backend server
         run: |
           source backend.env
-          uvicorn src.app:app --host 0.0.0.0 --port 8000 &
+          uvicorn src.app:app --host 0.0.0.0 --port 18080 &
           sleep 5
-          curl -f http://localhost:8000/health || exit 1
+          curl -f http://localhost:18080/health || exit 1
 
       - name: Run E2E tests (Chromium only)
         working-directory: frontend
         env:
           CI: true
-          BASE_URL: 'http://localhost:8000'
+          BASE_URL: 'http://localhost:18080'
           PLAYWRIGHT_WORKERS: '2'
         run: |
           npx playwright test \

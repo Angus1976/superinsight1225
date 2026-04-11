@@ -187,6 +187,17 @@ class HealthCheckSettings:
     max_response_time_ms: int = field(default_factory=lambda: get_env_int("MAX_RESPONSE_TIME_MS", 5000))
 
 
+def _parse_cors_origins() -> list[str]:
+    """Comma-separated CORS origins; strip whitespace so 'http://a, http://b' matches."""
+    default = (
+        "http://localhost:3000,"
+        "http://localhost:5173,http://localhost:15173,"
+        "http://127.0.0.1:5173,http://127.0.0.1:15173"
+    )
+    raw = get_env("CORS_ORIGINS", default)
+    return [o.strip() for o in raw.split(",") if o.strip()]
+
+
 @dataclass
 class AppSettings:
     """Application configuration settings"""
@@ -197,7 +208,7 @@ class AppSettings:
     log_level: str = field(default_factory=lambda: get_env("LOG_LEVEL", "INFO"))
 
     # CORS settings
-    cors_origins: list[str] = field(default_factory=lambda: get_env("CORS_ORIGINS", "http://localhost:3000,http://localhost:5173").split(","))
+    cors_origins: list[str] = field(default_factory=_parse_cors_origins)
 
     # File storage settings
     upload_dir: str = field(default_factory=lambda: get_env("UPLOAD_DIR", "./uploads"))

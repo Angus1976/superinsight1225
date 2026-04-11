@@ -20,7 +20,7 @@ scrape_configs:
   # =============================================================================
   - job_name: 'superinsight-api'
     static_configs:
-      - targets: ['localhost:8000']
+      - targets: ['localhost:18080']
     metrics_path: '/metrics'
     scrape_interval: 10s
     scrape_timeout: 5s
@@ -104,7 +104,7 @@ scrape_configs:
   # =============================================================================
   - job_name: 'business-metrics'
     static_configs:
-      - targets: ['localhost:8000']
+      - targets: ['localhost:18080']
     metrics_path: '/api/v1/metrics/business'
     scrape_interval: 30s
     params:
@@ -120,7 +120,7 @@ scrape_configs:
   # =============================================================================
   - job_name: 'tenant-metrics'
     http_sd_configs:
-      - url: 'http://localhost:8000/api/v1/discovery/tenants'
+      - url: 'http://localhost:18080/api/v1/discovery/tenants'
         refresh_interval: 300s
     relabel_configs:
       - source_labels: [__meta_tenant_id]

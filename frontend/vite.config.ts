@@ -1,4 +1,4 @@
-import { defineConfig, type BuildOptions } from 'vite'
+import { defineConfig, type BuildOptions, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 
@@ -99,10 +99,33 @@ const buildConfig: BuildOptions = {
   reportCompressedSize: true,
 }
 
+/** 终端里提示当前默认端口，避免仍用 5173 / 8000 的旧书签 */
+function devPortsHint(): Plugin {
+  return {
+    name: 'superinsight-dev-ports-hint',
+    configureServer(server) {
+      server.httpServer?.once('listening', () => {
+        const addr = server.httpServer?.address()
+        const port =
+          addr && typeof addr === 'object' && 'port' in addr ? String(addr.port) : '?'
+        console.log(
+          `\n  [SuperInsight] 请用此地址打开前端: http://localhost:${port}/\n` +
+            `  [SuperInsight] API 默认端口为 18080（与 5173/8000 不同）；请先启动后端: python main.py\n`
+        )
+      })
+    },
+  }
+}
+
 // https://vite.dev/config/
-export default defineConfig(({ mode }) => ({
+export default defineConfig(({ mode }) => {
+  /** 本地直连后端宿主机端口；Docker 内由 compose 注入 VITE_DEV_PROXY_TARGET=http://app:8000 */
+  const devProxyTarget = process.env.VITE_DEV_PROXY_TARGET || 'http://127.0.0.1:18080'
+
+  return {
   plugins: [
     react(),
+    ...(mode !== 'production' ? [devPortsHint()] : []),
   ],
 
   resolve: {
@@ -121,7 +144,8 @@ export default defineConfig(({ mode }) => ({
   },
 
   server: {
-    port: 5173,
+    port: 15173,
+    strictPort: true,
     host: '0.0.0.0',
     // Suppress specific warnings
     hmr: {
@@ -129,7 +153,7 @@ export default defineConfig(({ mode }) => ({
     },
     proxy: {
       '/api': {
-        target: 'http://superinsight-app:8000',
+        target: devProxyTarget,
         changeOrigin: true,
         // Enable SSE streaming support
         configure: (proxy, _options) => {
@@ -142,11 +166,11 @@ export default defineConfig(({ mode }) => ({
         },
       },
       '/health': {
-        target: 'http://superinsight-app:8000',
+        target: devProxyTarget,
         changeOrigin: true,
       },
       '/system': {
-        target: 'http://superinsight-app:8000',
+        target: devProxyTarget,
         changeOrigin: true,
       },
       '/label-studio': {
@@ -216,7 +240,7 @@ export default defineConfig(({ mode }) => ({
 
   // Preview server configuration
   preview: {
-    port: 4173,
+    port: 14173,
     strictPort: true,
   },
 
@@ -224,4 +248,5 @@ export default defineConfig(({ mode }) => ({
   json: {
     stringify: true, // Smaller JSON imports
   },
-}))
+}
+})

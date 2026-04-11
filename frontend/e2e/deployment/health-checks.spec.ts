@@ -11,7 +11,7 @@ import { test, expect } from '@playwright/test'
 
 declare const process: { env: Record<string, string | undefined> }
 
-const BACKEND_URL = process.env.DEPLOY_URL || 'http://localhost:8000'
+const BACKEND_URL = process.env.DEPLOY_URL || 'http://localhost:18080'
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000'
 
 /* ================================================================== */

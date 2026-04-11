@@ -1,13 +1,14 @@
 // Authentication hook
 import { useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { message } from 'antd';
+import { App } from 'antd';
 import { useAuthStore } from '@/stores/authStore';
 import { authService } from '@/services/auth';
 import { ROUTES } from '@/constants';
 import type { LoginCredentials, Workspace } from '@/types';
 
 export function useAuth() {
+  const { message } = App.useApp();
   const navigate = useNavigate();
   const { 
     user, 

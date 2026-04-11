@@ -10,7 +10,7 @@ services:
       dockerfile: Dockerfile
     container_name: superinsight-app
     ports:
-      - "8000:8000"
+      - "18080:8000"
     environment:
       - APP_ENV=development
       - DATABASE_URL=postgresql://superinsight:password@postgres:5432/superinsight
@@ -83,9 +83,10 @@ services:
         NPM_CONFIG_REGISTRY: ${NPM_CONFIG_REGISTRY:-}
     container_name: superinsight-frontend
     ports:
-      - "5173:5173"
+      - "15173:5173"
     environment:
-      - VITE_API_BASE_URL=http://localhost:8000
+      - VITE_API_BASE_URL=http://127.0.0.1:18080
+      - VITE_DEV_PROXY_TARGET=http://app:8000
       - NODE_ENV=development
     volumes:
       - ./frontend/src:/app/src

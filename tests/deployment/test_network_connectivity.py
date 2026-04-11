@@ -297,7 +297,7 @@ class NetworkConnectivityTests:
     def test_frontend_to_backend_connectivity(self):
         """Test frontend can reach backend API."""
         result = self._check_http_connectivity(
-            url="http://localhost:8000/health",
+            url="http://localhost:18080/health",
             timeout=10
         )
         
@@ -407,8 +407,8 @@ class NetworkConnectivityTests:
         
         # HTTP connectivity tests
         http_tests = [
-            ("test", "backend", "http://localhost:8000/health", 10),
-            ("test", "frontend", "http://localhost:5173", 10),
+            ("test", "backend", "http://localhost:18080/health", 10),
+            ("test", "frontend", "http://localhost:15173", 10),
             ("test", "label-studio", "http://localhost:8080/health", 15),
             ("test", "argilla", "http://localhost:6900", 15),
             ("test", "elasticsearch", "http://localhost:9200/_cluster/health", 15),

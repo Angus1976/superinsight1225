@@ -46,7 +46,11 @@ export function addResourceHint(
  */
 export function preloadCriticalResources(): void {
   // Preconnect to API server
-  addResourceHint('http://localhost:8000', 'preconnect', { crossOrigin: 'anonymous' });
+  addResourceHint(
+    import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:18080',
+    'preconnect',
+    { crossOrigin: 'anonymous' }
+  );
   
   // DNS prefetch for common CDNs
   addResourceHint('https://fonts.googleapis.com', 'dns-prefetch');

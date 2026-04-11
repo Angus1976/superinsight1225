@@ -1000,10 +1000,10 @@ class TestSecurityValidation:
         
         # HTTP localhost should be allowed
         config = APIConfig(
-            base_url="http://localhost:8000",
+            base_url="http://localhost:18080",
             headers={"User-Agent": "Test"}
         )
-        assert config.base_url == "http://localhost:8000"
+        assert config.base_url == "http://localhost:18080"
         
         # HTTP non-localhost should be rejected
         with pytest.raises(ValueError, match="API connections must use HTTPS"):

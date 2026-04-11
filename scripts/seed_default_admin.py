@@ -6,6 +6,9 @@ Usage (from repo root, with DATABASE_URL set — e.g. Docker host):
   DATABASE_URL=postgresql://superinsight:password@localhost:5432/superinsight \\
     python3 scripts/seed_default_admin.py
 
+Reset password for existing admin (dev only):
+  DATABASE_URL=... python3 scripts/seed_default_admin.py --force
+
 Inside app container (postgres hostname is `postgres`):
   docker exec -w /app superinsight-app python scripts/seed_default_admin.py
 """
@@ -38,12 +41,25 @@ def main() -> int:
     engine = create_engine(url)
     pw_hash = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
+    force = "--force" in sys.argv or os.environ.get("SEED_FORCE_UPDATE", "").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+
     with engine.begin() as conn:
         n = conn.execute(
             text("SELECT COUNT(*) FROM users WHERE LOWER(email) = LOWER(:e)"),
             {"e": email},
         ).scalar()
         if n and int(n) > 0:
+            if force:
+                conn.execute(
+                    text("UPDATE users SET password_hash = :ph, updated_at = NOW() WHERE LOWER(email) = LOWER(:e)"),
+                    {"ph": pw_hash, "e": email},
+                )
+                print(f"Updated password for {email} (use SEED_ADMIN_PASSWORD or default Admin@123456)")
+                return 0
             print(f"Already exists: {email} (skip)")
             return 0
 

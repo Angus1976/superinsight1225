@@ -16,11 +16,11 @@ import os
 
 def test_cors_origins_from_env():
     """Test that CORS origins are read from environment variable."""
-    with patch.dict(os.environ, {"CORS_ORIGINS": "http://localhost:3000,http://localhost:5173"}):
+    with patch.dict(os.environ, {"CORS_ORIGINS": "http://localhost:3000,http://localhost:15173"}):
         from src.config.settings import Settings
         settings = Settings()
         
-        assert settings.app.cors_origins == ["http://localhost:3000", "http://localhost:5173"]
+        assert settings.app.cors_origins == ["http://localhost:3000", "http://localhost:15173"]
         assert "*" not in settings.app.cors_origins
 
 
@@ -39,7 +39,7 @@ def test_cors_wildcard_no_credentials():
 
 def test_cors_specific_origins_allow_credentials():
     """Test that specific origins allow credentials."""
-    with patch.dict(os.environ, {"CORS_ORIGINS": "http://localhost:5173"}):
+    with patch.dict(os.environ, {"CORS_ORIGINS": "http://localhost:15173"}):
         from src.config.settings import Settings
         settings = Settings()
         
@@ -70,7 +70,7 @@ def test_cors_preflight_request(client: TestClient):
     response = client.options(
         "/api/chat/stream",
         headers={
-            "Origin": "http://localhost:5173",
+            "Origin": "http://localhost:15173",
             "Access-Control-Request-Method": "POST",
             "Access-Control-Request-Headers": "Content-Type,Authorization",
         }
@@ -89,7 +89,7 @@ def test_sse_endpoint_cors_headers(client: TestClient):
             "messages": [{"role": "user", "content": "test"}],
             "mode": "direct"
         },
-        headers={"Origin": "http://localhost:5173"}
+        headers={"Origin": "http://localhost:15173"}
     )
     
     # Should return 401 (unauthorized) or 200, but not 404

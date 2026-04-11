@@ -42,7 +42,7 @@ class ChatGLMAnnotator(AIAnnotator):
         )
         
         # Default to local deployment endpoint
-        self.api_base = self.config.base_url or "http://localhost:8000"
+        self.api_base = self.config.base_url or "http://localhost:18080"
     
     def _validate_config(self) -> None:
         """Validate ChatGLM-specific configuration."""

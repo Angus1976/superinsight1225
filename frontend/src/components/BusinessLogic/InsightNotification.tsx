@@ -79,7 +79,10 @@ export const InsightNotification: React.FC<InsightNotificationProps> = ({
   const initWebSocket = useCallback(() => {
     if (!settings.enabled) return;
 
-    const wsUrl = `ws://localhost:8000/ws/business-logic/${projectId}`;
+    const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:18080';
+    const u = new URL(apiBase);
+    const wsScheme = u.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${wsScheme}//${u.host}/ws/business-logic/${projectId}`;
     const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {

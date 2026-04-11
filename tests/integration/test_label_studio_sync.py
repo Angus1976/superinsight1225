@@ -16,7 +16,7 @@ from datetime import datetime
 
 
 # Configuration
-API_BASE_URL = "http://localhost:8000"
+API_BASE_URL = "http://localhost:18080"
 LABEL_STUDIO_URL = "http://localhost:8080"
 API_TOKEN = "YOUR_LABEL_STUDIO_API_TOKEN_HERE"  # Get from Label Studio: Account & Settings > Legacy Tokens
 

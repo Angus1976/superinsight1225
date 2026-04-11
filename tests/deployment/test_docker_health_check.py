@@ -41,12 +41,12 @@ class DockerHealthCheckTests:
     # Service health check endpoints and timeouts
     HEALTH_CHECKS = {
         "app": {
-            "url": "http://localhost:8000/health",
+            "url": "http://localhost:18080/health",
             "timeout": 10,
             "expected_status": 200,
         },
         "frontend": {
-            "url": "http://localhost:5173",
+            "url": "http://localhost:15173",
             "timeout": 10,
             "expected_status": 200,
         },
@@ -252,7 +252,7 @@ class DockerHealthCheckTests:
     def test_backend_health_endpoint(self):
         """Test backend application health endpoint."""
         result = self._check_http_health(
-            url="http://localhost:8000/health",
+            url="http://localhost:18080/health",
             timeout=10,
             expected_status=200
         )
@@ -268,7 +268,7 @@ class DockerHealthCheckTests:
     def test_frontend_health_endpoint(self):
         """Test frontend health endpoint."""
         result = self._check_http_health(
-            url="http://localhost:5173",
+            url="http://localhost:15173",
             timeout=10,
             expected_status=200
         )
@@ -383,8 +383,8 @@ class DockerHealthCheckTests:
         
         # HTTP health checks
         http_services = [
-            ("app", "http://localhost:8000/health", 10, 200),
-            ("frontend", "http://localhost:5173", 10, 200),
+            ("app", "http://localhost:18080/health", 10, 200),
+            ("frontend", "http://localhost:15173", 10, 200),
             ("label-studio", "http://localhost:8080/health", 15, 200),
             ("argilla", "http://localhost:6900", 15, 200),
             ("elasticsearch", "http://localhost:9200/_cluster/health", 15, 200),
@@ -427,7 +427,7 @@ class DockerHealthCheckTests:
         """Test that health checks respect timeout limits."""
         # Test with a very short timeout to verify timeout handling
         result = self._check_http_health(
-            url="http://localhost:8000/health",
+            url="http://localhost:18080/health",
             timeout=1,  # Very short timeout
             expected_status=200
         )

@@ -20,7 +20,7 @@ class DataProxy:
     """混合云数据代理"""
     
     def __init__(self):
-        self.local_endpoint = os.getenv('LOCAL_ENDPOINT', 'http://localhost:8000')
+        self.local_endpoint = os.getenv('LOCAL_ENDPOINT', 'http://localhost:18080')
         self.cloud_endpoint = os.getenv('CLOUD_ENDPOINT')
         self.proxy_key = os.getenv('PROXY_KEY')
         self.encryption_enabled = os.getenv('PROXY_ENCRYPTION', 'true').lower() == 'true'

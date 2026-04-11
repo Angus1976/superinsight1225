@@ -398,9 +398,9 @@ docker exec superinsight-app python scripts/reset_admin_password.py
 
 ### 4. 访问服务
 
-- **前端**: http://localhost:5173
-- **后端 API**: http://localhost:8000
-- **API 文档**: http://localhost:8000/docs
+- **前端**: http://localhost:15173
+- **后端 API**: http://localhost:18080
+- **API 文档**: http://localhost:18080/docs
 - **Label Studio**: http://localhost:8080
 - **Grafana**: http://localhost:3001
 
@@ -496,13 +496,13 @@ docker compose down
 
 ```bash
 # API 健康检查
-curl http://localhost:8000/health
+curl http://localhost:18080/health
 
 # 系统状态
-curl http://localhost:8000/system/status
+curl http://localhost:18080/system/status
 
 # Label Studio 连接测试
-curl http://localhost:8000/api/tasks/label-studio/test-connection \
+curl http://localhost:18080/api/tasks/label-studio/test-connection \
   -H "Authorization: Bearer <jwt-token>"
 ```
 

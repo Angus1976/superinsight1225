@@ -57,8 +57,8 @@ def parse_args():
     parser.add_argument(
         "--port",
         type=int,
-        default=int(os.getenv("PORT", "8000")),
-        help="Port to bind to (default: 8000)"
+        default=int(os.getenv("PORT", "18080")),
+        help="Port to bind to (default: 18080; container内仍常用 8000)"
     )
     parser.add_argument(
         "--reload",

@@ -118,7 +118,7 @@ export function sendMessageStream(
   callbacks: StreamCallbacks,
 ): { abort: () => void } {
   const controller = new AbortController();
-  const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+  const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:18080';
   const token = getToken();
 
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };

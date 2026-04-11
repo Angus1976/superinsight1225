@@ -511,7 +511,7 @@ test.describe('Access Control Compliance', () => {
       } else {
         // Current shell may still mount /admin for authenticated non-admins; RBAC is often per-action.
         const url = page.url()
-        expect(url).toMatch(/http:\/\/localhost:5173\/(admin|dashboard|login|403)/)
+        expect(url).toMatch(/http:\/\/localhost:15173\/(admin|dashboard|login|403)/)
       }
     }
   })

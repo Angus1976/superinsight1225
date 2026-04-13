@@ -63,11 +63,7 @@ export const PerformanceProfiler: React.FC<PerformanceProfilerProps> = memo(({
     averageRenderTime: 0,
   });
   const [autoRefresh, setAutoRefresh] = useState(true);
-
-  // Don't render in production if devOnly is true
-  if (devOnly && !import.meta.env.DEV) {
-    return null;
-  }
+  const shouldRender = !devOnly || import.meta.env.DEV;
 
   // Refresh metrics
   const refreshMetrics = useCallback(() => {
@@ -131,6 +127,11 @@ export const PerformanceProfiler: React.FC<PerformanceProfilerProps> = memo(({
     clearRenderMetrics();
     refreshMetrics();
   }, [refreshMetrics]);
+
+  // Don't render in production if devOnly is true.
+  if (!shouldRender) {
+    return null;
+  }
 
   // Position styles
   const positionStyles: React.CSSProperties = {

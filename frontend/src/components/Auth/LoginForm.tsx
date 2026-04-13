@@ -72,11 +72,20 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
         name="username"
         rules={[{ required: true, message: t('login.usernamePlaceholder') }]}
       >
-        <Input prefix={<UserOutlined />} placeholder="admin@superinsight.local" type="email" />
+        <Input
+          data-testid="login-email"
+          prefix={<UserOutlined />}
+          placeholder="admin@superinsight.local"
+          type="email"
+        />
       </Form.Item>
 
       <Form.Item name="password" rules={[{ required: true, message: t('login.passwordPlaceholder') }]}>
-        <Input.Password prefix={<LockOutlined />} placeholder={t('login.passwordPlaceholder')} />
+        <Input.Password
+          data-testid="login-password"
+          prefix={<LockOutlined />}
+          placeholder={t('login.passwordPlaceholder')}
+        />
       </Form.Item>
 
       {/* Tenant Selection - Show if tenants are available */}
@@ -87,6 +96,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
           rules={[{ required: true, message: t('tenant.selectRequired') }]}
         >
           <Select
+            data-testid="login-tenant"
             placeholder={t('tenant.selectPlaceholder')}
             loading={loadingTenants}
             prefix={<TeamOutlined />}
@@ -121,7 +131,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSuccess }) => {
       </Form.Item>
 
       <Form.Item>
-        <Button type="primary" htmlType="submit" loading={loading} block>
+        <Button type="primary" htmlType="submit" loading={loading} block data-testid="login-submit">
           {t('login.submit')}
         </Button>
       </Form.Item>

@@ -55,13 +55,13 @@ export const useWebSocket = (
   const manualCloseRef = useRef(false);
   const isConnectedRef = useRef(false);
   const [isConnected, setIsConnected] = useState(false);
-
-  // In SSR / test environments, WebSocket may be unavailable.
-  if (typeof WebSocket === 'undefined') {
-    return null;
-  }
+  const isWebSocketSupported = typeof WebSocket !== 'undefined';
 
   const connect = useCallback(() => {
+    if (!isWebSocketSupported) {
+      return;
+    }
+
     try {
       // If a previous socket instance exists, we avoid force-closing it here.
       // Closing can trigger additional `onclose` events in some test / browser
@@ -159,7 +159,7 @@ export const useWebSocket = (
     } catch (error) {
       console.error('Failed to connect WebSocket:', error);
     }
-  }, [url, reconnectAttempts, reconnectInterval, onConnect, onDisconnect, onError]);
+  }, [isWebSocketSupported, url, reconnectAttempts, reconnectInterval, onConnect, onDisconnect, onError]);
 
   useEffect(() => {
     connect();
@@ -220,6 +220,10 @@ export const useWebSocket = (
   const isConnectedCheck = useCallback(() => {
     return isConnected;
   }, [isConnected]);
+
+  if (!isWebSocketSupported) {
+    return null;
+  }
 
   return {
     on,

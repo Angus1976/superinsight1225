@@ -1,7 +1,7 @@
 """Add Text-to-SQL tables
 
 Revision ID: text_to_sql_001
-Revises: 
+Revises: 001_add_multi_tenant_support
 Create Date: 2026-01-14
 
 Creates tables for Text-to-SQL Methods module:
@@ -17,7 +17,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers
 revision = 'text_to_sql_001'
-down_revision = None
+down_revision = '001_add_multi_tenant_support'
 branch_labels = None
 depends_on = None
 

@@ -60,7 +60,7 @@ const { Option } = Select;
 
 // ==================== Types ====================
 
-interface ConfigFormData extends LLMConfig {}
+type ConfigFormData = LLMConfig;
 
 interface ConnectionTestResult {
   method: LLMMethod;

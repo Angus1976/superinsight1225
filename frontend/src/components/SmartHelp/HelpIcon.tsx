@@ -18,11 +18,6 @@ const HelpIcon: React.FC<HelpIconProps> = ({
   size = 'default',
   className,
 }) => {
-  // 卫语句：无效 helpKey 不渲染
-  if (!helpKey || !validateHelpKey(helpKey)) {
-    return null;
-  }
-
   const fontSize = size === 'small' ? 12 : 16;
 
   const handleKeyDown = useCallback(
@@ -33,6 +28,11 @@ const HelpIcon: React.FC<HelpIconProps> = ({
     },
     [],
   );
+
+  // 卫语句：无效 helpKey 不渲染
+  if (!helpKey || !validateHelpKey(helpKey)) {
+    return null;
+  }
 
   return (
     <HelpPopover helpKey={helpKey} trigger="click">

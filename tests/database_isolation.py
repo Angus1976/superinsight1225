@@ -21,10 +21,30 @@ from sqlalchemy import create_engine, event, text, pool
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.pool import StaticPool, NullPool, QueuePool
 from sqlalchemy.engine import Engine
+from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.dialects.postgresql import ARRAY, INET, JSONB
 
 from src.database.connection import Base
 
 logger = logging.getLogger(__name__)
+
+
+# PostgreSQL-specific SQLAlchemy types appear across the shared ORM metadata.
+# Many unit tests use SQLite for speed, so teach SQLite how to render the PG
+# types well enough for local test schemas.
+@compiles(JSONB, "sqlite")
+def _compile_jsonb_sqlite(type_, compiler, **kw):
+    return "JSON"
+
+
+@compiles(INET, "sqlite")
+def _compile_inet_sqlite(type_, compiler, **kw):
+    return "VARCHAR(45)"
+
+
+@compiles(ARRAY, "sqlite")
+def _compile_array_sqlite(type_, compiler, **kw):
+    return "JSON"
 
 
 def ensure_sqlite_test_schema(engine: Engine) -> None:
@@ -138,14 +158,6 @@ class TestDatabaseEngineFactory:
             poolclass=StaticPool,
             echo=False,
         )
-
-        # SQLite cannot create tables that use PostgreSQL JSONB unless compiled to JSON.
-        from sqlalchemy.dialects.postgresql import JSONB
-        from sqlalchemy.ext.compiler import compiles
-
-        @compiles(JSONB, "sqlite")
-        def _compile_jsonb_sqlite(type_, compiler, **kw):
-            return "JSON"
 
         # Register all ORM models on Base.metadata (connection.Base alone is not enough).
         import src.database.models  # noqa: F401

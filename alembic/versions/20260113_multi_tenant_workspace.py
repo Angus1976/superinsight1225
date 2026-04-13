@@ -1,7 +1,7 @@
 """Multi-tenant workspace extended models
 
 Revision ID: 20260113_mtw
-Revises: 
+Revises: 001_add_multi_tenant_support
 Create Date: 2026-01-13
 
 This migration adds extended multi-tenant workspace models including:
@@ -17,7 +17,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = '20260113_mtw'
-down_revision = None
+down_revision = '001_add_multi_tenant_support'
 branch_labels = None
 depends_on = None
 

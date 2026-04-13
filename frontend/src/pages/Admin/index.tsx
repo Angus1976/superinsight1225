@@ -33,20 +33,6 @@ const AdminPage: React.FC = () => {
     isNavigatingRef.current = false;
   }, [location.pathname, queryClient]);
 
-  // Check admin access
-  if (user?.role !== 'admin') {
-    return (
-      <Alert
-        type="error"
-        message="Access Denied"
-        description="You don't have permission to access the admin console."
-        showIcon
-        icon={<SecurityScanOutlined />}
-        style={{ margin: 24 }}
-      />
-    );
-  }
-
   // Check if we're on a sub-route
   const isSubRoute = location.pathname !== '/admin';
 
@@ -92,6 +78,20 @@ const AdminPage: React.FC = () => {
     isNavigatingRef.current = true;
     navigate(path);
   }, [navigate, location.pathname]);
+
+  // Check admin access after all hooks are initialized.
+  if (user?.role !== 'admin') {
+    return (
+      <Alert
+        type="error"
+        message="Access Denied"
+        description="You don't have permission to access the admin console."
+        showIcon
+        icon={<SecurityScanOutlined />}
+        style={{ margin: 24 }}
+      />
+    );
+  }
 
   // Config submenu items
   const configMenuItems: MenuProps['items'] = [

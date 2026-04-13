@@ -114,7 +114,10 @@ const importConfigs = async (data: {
 }): Promise<ImportResponse> => {
   // Replace with actual API call: POST /api/v1/admin/config-import
   const results: ImportResult[] = [];
-  let created = 0, updated = 0, skipped = 0, errors = 0;
+  let created = 0;
+  let errors = 0;
+  const updated = 0;
+  const skipped = 0;
 
   for (const [type, configs] of Object.entries(data.configs)) {
     if (Array.isArray(configs)) {

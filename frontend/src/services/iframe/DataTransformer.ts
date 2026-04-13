@@ -543,15 +543,17 @@ export class DataTransformer {
           formattedData = JSON.stringify(data, null, 2);
           break;
 
-        case DataFormat.CSV:
+        case DataFormat.CSV: {
           const delimiter = config?.csvDelimiter || ',';
           formattedData = this.formatCSV(data, delimiter);
           break;
+        }
 
-        case DataFormat.XML:
+        case DataFormat.XML: {
           const rootElement = config?.xmlRootElement || 'root';
           formattedData = this.formatXML(data, rootElement);
           break;
+        }
 
         case DataFormat.TSV:
           formattedData = this.formatCSV(data, '\t');

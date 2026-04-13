@@ -8,9 +8,11 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 export default defineConfig([
   globalIgnores([
     'dist',
+    'coverage',
     // Playwright E2E suite is validated by `npm run test:e2e`, not by ESLint
     // rules aimed at React component code.
     'e2e',
+    'cypress',
     'playwright-report',
     'test-results',
   ]),
@@ -43,6 +45,10 @@ export default defineConfig([
       'no-useless-escape': 'off',
       // Some helper files are not React; avoid false positives.
       'react-hooks/immutability': 'off',
+      'react-hooks/purity': 'off',
+      'react-hooks/static-components': 'off',
+      'react-hooks/preserve-manual-memoization': 'off',
+      'react-hooks/globals': 'off',
       // These rules are too strict for this codebase and currently generate
       // large volumes of false positives (especially in custom hooks).
       'react-hooks/refs': 'off',

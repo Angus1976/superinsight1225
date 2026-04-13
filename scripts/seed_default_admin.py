@@ -6,10 +6,13 @@ Usage (from repo root, with DATABASE_URL set — e.g. Docker host):
   DATABASE_URL=postgresql://superinsight:password@localhost:5432/superinsight \\
     python3 scripts/seed_default_admin.py
 
+  注意：若本机也装了 PostgreSQL 并占用 5432，上述 URL 可能连到「本机库」而非 Docker 内 postgres。
+  此时应在 app 容器内执行（见下），或改用仅 Docker 暴露的端口/网络。
+
 Reset password for existing admin (dev only):
   DATABASE_URL=... python3 scripts/seed_default_admin.py --force
 
-Inside app container (postgres hostname is `postgres`):
+Inside app container (postgres hostname is `postgres`; 与 compose 中 app 使用同一数据库):
   docker exec -w /app superinsight-app python scripts/seed_default_admin.py
 """
 from __future__ import annotations
@@ -64,6 +67,7 @@ def main() -> int:
             return 0
 
         uid = str(uuid4())
+        # role：仅 000_core_tables 时为 varchar；若已跑安全相关迁移则为 userrole 枚举，直接写入字面量即可
         conn.execute(
             text(
                 """
@@ -73,7 +77,7 @@ def main() -> int:
                 )
                 VALUES (
                     CAST(:id AS uuid), :username, :email, :ph, :fn,
-                    CAST(:role AS userrole), :tid, true, NOW(), NOW()
+                    :role, :tid, true, NOW(), NOW()
                 )
                 """
             ),

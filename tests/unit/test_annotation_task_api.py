@@ -18,9 +18,10 @@ from sqlalchemy.pool import StaticPool
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.dialects.postgresql import JSONB, INET
 
-from src.database.connection import Base, get_db_session
+from src.database.connection import get_db_session
 from src.api.annotation_task_api import router
 from src.models.data_lifecycle import (
+    AuditLogModel,
     SampleModel,
     AnnotationTaskModel,
     AnnotationType,
@@ -49,22 +50,35 @@ def _compile_inet_sqlite(type_, compiler, **kw):
 # Test Fixtures
 # ============================================================================
 
+TEST_TABLES = [
+    SampleModel.__table__,
+    AnnotationTaskModel.__table__,
+    AuditLogModel.__table__,
+]
+
 @pytest.fixture
 def test_db():
-    """Create test database."""
+    """Create only the tables required by the annotation task API tests.
+
+    Using the full ``Base.metadata`` here pulls in unrelated PostgreSQL-only
+    tables (for example ``data_versions.tags`` with ``ARRAY``), which makes
+    this SQLite unit test fail before the API logic even runs.
+    """
     engine = create_engine(
         "sqlite:///:memory:",
         connect_args={"check_same_thread": False},
         poolclass=StaticPool
     )
-    Base.metadata.create_all(engine)
+    for table in TEST_TABLES:
+        table.create(bind=engine, checkfirst=True)
     TestingSessionLocal = sessionmaker(bind=engine)
     db = TestingSessionLocal()
     try:
         yield db
     finally:
         db.close()
-        Base.metadata.drop_all(engine)
+        for table in reversed(TEST_TABLES):
+            table.drop(bind=engine, checkfirst=True)
 
 
 @pytest.fixture

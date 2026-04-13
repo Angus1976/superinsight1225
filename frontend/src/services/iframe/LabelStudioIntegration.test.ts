@@ -30,6 +30,8 @@ import type {
   TaskInfo,
 } from './types';
 
+type MockEventHandler = (...args: unknown[]) => void;
+
 // Mock DOM APIs
 const mockDocument = {
   createElement: vi.fn(() => ({
@@ -205,8 +207,8 @@ describe('Label Studio iframe Integration Tests', () => {
     };
 
     // Store event handlers for later triggering
-    const eventHandlers: Record<string, Function> = {};
-    mockIframe.addEventListener.mockImplementation((event: string, handler: Function) => {
+    const eventHandlers: Record<string, MockEventHandler> = {};
+    mockIframe.addEventListener.mockImplementation((event: string, handler: MockEventHandler) => {
       eventHandlers[event] = handler;
     });
 

@@ -11,6 +11,7 @@
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
 import * as fs from 'fs';
+import { createRequire } from 'node:module';
 import * as path from 'path';
 
 // Resolve paths relative to project root
@@ -25,7 +26,7 @@ const i18nSource = fs.readFileSync(I18N_INJECT_PATH, 'utf-8');
 const lsEmbedSource = fs.readFileSync(LS_EMBED_PATH, 'utf-8');
 
 // Load i18n module for runtime checks
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+const require = createRequire(import.meta.url);
 const i18nModule = require(I18N_INJECT_PATH);
 
 describe('Preservation Property: 现有品牌替换和标注功能不受影响', () => {

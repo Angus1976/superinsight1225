@@ -1,7 +1,7 @@
 """Add multi-tenant support
 
 Revision ID: 001_add_multi_tenant_support
-Revises: 
+Revises: 000_core_tables
 Create Date: 2026-01-10 22:00:00.000000
 
 """
@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = '001_add_multi_tenant_support'
-down_revision = None
+down_revision = '000_core_tables'
 branch_labels = None
 depends_on = None
 

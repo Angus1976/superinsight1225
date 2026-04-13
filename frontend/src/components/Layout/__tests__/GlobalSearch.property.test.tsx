@@ -180,7 +180,7 @@ describe('Property 9: Global search query sanitization', () => {
         // No leading/trailing whitespace
         expect(result).toBe(result.trim());
         // No consecutive spaces
-        expect(result).not.toMatch(/  /);
+        expect(result).not.toMatch(/ {2,}/);
       }),
       { numRuns: 200 },
     );

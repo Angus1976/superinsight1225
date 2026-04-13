@@ -49,6 +49,8 @@ services:
     ports:
       - "18080:8000"
     environment:
+      # 与 ports 中 18080:8000 一致：容器内必须监听 8000，宿主机才映射到 18080
+      - PORT=8000
       - APP_ENV=development
       - DATABASE_URL=postgresql://superinsight:password@postgres:5432/superinsight
       - REDIS_URL=redis://redis:6379/0
@@ -75,6 +77,7 @@ services:
     volumes:
       - ./main.py:/app/main.py
       - ./src:/app/src
+      - ./scripts:/app/scripts
       - ./alembic:/app/alembic
       - ./alembic.ini:/app/alembic.ini
       - ./logs:/app/logs

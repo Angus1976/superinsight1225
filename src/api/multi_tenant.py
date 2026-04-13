@@ -20,6 +20,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
 from src.database.connection import get_db_session
+from src.database.multi_tenant_models import TenantStatus as DbTenantStatus
 
 from src.multi_tenant.workspace.schemas import (
     # Enums
@@ -83,6 +84,48 @@ def get_quota_manager(db: Session = Depends(get_db_session)) -> QuotaManager:
     return QuotaManager(db)
 
 
+def _db_status_to_api(status_obj) -> TenantStatus:
+    """Map ORM/database tenant status to API ``TenantStatus``."""
+    v = status_obj.value if hasattr(status_obj, "value") else str(status_obj)
+    v = (v or "").lower()
+    if v == "active":
+        return TenantStatus.ACTIVE
+    if v == "suspended":
+        return TenantStatus.SUSPENDED
+    if v in ("inactive", "pending"):
+        return TenantStatus.DISABLED
+    return TenantStatus.ACTIVE
+
+
+_API_TO_DB_STATUS = {
+    TenantStatus.ACTIVE: DbTenantStatus.ACTIVE,
+    TenantStatus.SUSPENDED: DbTenantStatus.SUSPENDED,
+    TenantStatus.DISABLED: DbTenantStatus.INACTIVE,
+}
+
+
+def tenant_model_to_response(tenant) -> TenantResponse:
+    """Map ORM ``TenantModel`` (billing_*, configuration, string id) to ``TenantResponse``."""
+    raw = tenant.configuration if getattr(tenant, "configuration", None) is not None else {}
+    if not isinstance(raw, dict):
+        raw = {}
+    try:
+        config = TenantConfig(**raw)
+    except Exception:
+        config = TenantConfig()
+    return TenantResponse(
+        id=str(tenant.id),
+        name=tenant.name,
+        description=tenant.description,
+        status=_db_status_to_api(tenant.status),
+        admin_email=tenant.billing_email or "",
+        plan=tenant.billing_plan or "basic",
+        config=config,
+        created_at=tenant.created_at,
+        updated_at=tenant.updated_at,
+    )
+
+
 def get_cross_tenant_collaborator(db: Session = Depends(get_db_session)) -> CrossTenantCollaborator:
     """Get CrossTenantCollaborator instance."""
     return CrossTenantCollaborator(db)
@@ -93,6 +136,10 @@ from fastapi import Header
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy import text
 import jwt
+import os
+
+# Must match src/api/auth_simple.py (JWT signing)
+_JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-in-production")
 
 security_bearer = HTTPBearer()
 
@@ -123,10 +170,7 @@ async def get_current_user(
     token = credentials.credentials
     
     try:
-        # Use the same secret key as auth_simple.py for compatibility
-        secret_key = "your-secret-key-change-in-production"
-        
-        payload = jwt.decode(token, secret_key, algorithms=["HS256"])
+        payload = jwt.decode(token, _JWT_SECRET_KEY, algorithms=["HS256"])
         user_id = payload.get("user_id") or payload.get("sub")
         
         if not user_id:
@@ -142,13 +186,17 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    # Query user from database using raw SQL for compatibility
+    # Query user from database using raw SQL (aligned with auth_simple / current users schema)
     try:
-        # Query user - the users table has 'name' not 'full_name', and no 'tenant_id' or 'role' columns
-        result = db.execute(text("""
-            SELECT id, username, email, name, is_active, is_superuser
-            FROM users WHERE id = :user_id
-        """), {"user_id": user_id})
+        result = db.execute(
+            text(
+                "SELECT id, username, email, full_name AS name, is_active, "
+                "(role::text = 'admin') AS is_superuser, "
+                "COALESCE(tenant_id, 'default_tenant') AS tenant_id, role "
+                "FROM users WHERE id = CAST(:user_id AS uuid)"
+            ),
+            {"user_id": user_id},
+        )
         row = result.fetchone()
     except Exception as e:
         logger.error(f"Failed to query user: {e}")
@@ -165,24 +213,25 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    user_id, username, email, name, is_active, is_superuser = row
-    
+    user_id, username, email, name, is_active, is_superuser, tenant_id, role = row
+
     if not is_active:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User is inactive",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
+    role_str = str(role) if role is not None else None
     return SimpleUserModel(
         id=str(user_id),
         username=username,
         email=email,
-        full_name=name,  # Use 'name' field as full_name
-        tenant_id="system",  # Default tenant since column doesn't exist
+        full_name=name,
+        tenant_id=str(tenant_id) if tenant_id is not None else "default_tenant",
         is_active=is_active,
-        is_superuser=is_superuser,
-        role=None  # No role column in this table
+        is_superuser=bool(is_superuser),
+        role=role_str,
     )
 
 
@@ -239,17 +288,7 @@ async def create_tenant(
     
     try:
         tenant = tenant_manager.create_tenant(request)
-        return TenantResponse(
-            id=tenant.id,
-            name=tenant.name,
-            description=tenant.description,
-            status=TenantStatus(tenant.status),
-            admin_email=tenant.admin_email,
-            plan=tenant.plan,
-            config=TenantConfig(**tenant.config) if tenant.config else TenantConfig(),
-            created_at=tenant.created_at,
-            updated_at=tenant.updated_at,
-        )
+        return tenant_model_to_response(tenant)
     except Exception as e:
         logger.error(f"Failed to create tenant: {e}")
         raise HTTPException(
@@ -276,30 +315,20 @@ async def list_tenants(
                 is_super_admin = True
         
         if is_super_admin:
+            db_status_filter = None
+            if status_filter is not None:
+                db_status_filter = _API_TO_DB_STATUS.get(status_filter)
             tenants = tenant_manager.list_tenants(
-                status=status_filter.value if status_filter else None,
-                skip=skip,
-                limit=limit
+                status=db_status_filter,
+                offset=skip,
+                limit=limit,
             )
         else:
             # Non-admin users can only see their own tenant
             tenant = tenant_manager.get_tenant(current_user.tenant_id)
             tenants = [tenant] if tenant else []
         
-        return [
-            TenantResponse(
-                id=t.id,
-                name=t.name,
-                description=t.description,
-                status=TenantStatus(t.status),
-                admin_email=t.admin_email,
-                plan=t.plan,
-                config=TenantConfig(**t.config) if t.config else TenantConfig(),
-                created_at=t.created_at,
-                updated_at=t.updated_at,
-            )
-            for t in tenants
-        ]
+        return [tenant_model_to_response(t) for t in tenants]
     except Exception as e:
         logger.error(f"Failed to list tenants: {e}")
         raise HTTPException(
@@ -325,17 +354,7 @@ async def get_tenant(
                 detail="Tenant not found"
             )
         
-        return TenantResponse(
-            id=tenant.id,
-            name=tenant.name,
-            description=tenant.description,
-            status=TenantStatus(tenant.status),
-            admin_email=tenant.admin_email,
-            plan=tenant.plan,
-            config=TenantConfig(**tenant.config) if tenant.config else TenantConfig(),
-            created_at=tenant.created_at,
-            updated_at=tenant.updated_at,
-        )
+        return tenant_model_to_response(tenant)
     except HTTPException:
         raise
     except Exception as e:
@@ -365,17 +384,7 @@ async def update_tenant(
                 detail="Tenant not found"
             )
         
-        return TenantResponse(
-            id=tenant.id,
-            name=tenant.name,
-            description=tenant.description,
-            status=TenantStatus(tenant.status),
-            admin_email=tenant.admin_email,
-            plan=tenant.plan,
-            config=TenantConfig(**tenant.config) if tenant.config else TenantConfig(),
-            created_at=tenant.created_at,
-            updated_at=tenant.updated_at,
-        )
+        return tenant_model_to_response(tenant)
     except HTTPException:
         raise
     except Exception as e:
@@ -397,24 +406,20 @@ async def set_tenant_status(
     check_admin_permission(current_user)
     
     try:
-        tenant = tenant_manager.set_status(tenant_id, new_status.value)
+        db_new = _API_TO_DB_STATUS.get(new_status)
+        if db_new is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Unsupported tenant status",
+            )
+        tenant = tenant_manager.set_status(tenant_id, db_new)
         if not tenant:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Tenant not found"
             )
         
-        return TenantResponse(
-            id=tenant.id,
-            name=tenant.name,
-            description=tenant.description,
-            status=TenantStatus(tenant.status),
-            admin_email=tenant.admin_email,
-            plan=tenant.plan,
-            config=TenantConfig(**tenant.config) if tenant.config else TenantConfig(),
-            created_at=tenant.created_at,
-            updated_at=tenant.updated_at,
-        )
+        return tenant_model_to_response(tenant)
     except HTTPException:
         raise
     except Exception as e:

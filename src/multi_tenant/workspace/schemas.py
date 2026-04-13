@@ -109,7 +109,7 @@ class TenantUpdateConfig(BaseModel):
 
 class TenantResponse(BaseModel):
     """Tenant response schema."""
-    id: UUID
+    id: str
     name: str
     description: Optional[str]
     status: TenantStatus

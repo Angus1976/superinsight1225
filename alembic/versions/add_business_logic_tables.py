@@ -1,7 +1,7 @@
 """Add business logic tables
 
 Revision ID: add_business_logic_001
-Revises: previous_revision
+Revises: 000_core_tables
 Create Date: 2026-01-05 12:00:00.000000
 
 实现需求 13: 客户业务逻辑提炼与智能化 - 数据库表结构
@@ -12,7 +12,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = 'add_business_logic_001'
-down_revision = None  # 替换为实际的上一个版本ID
+down_revision = '000_core_tables'
 branch_labels = None
 depends_on = None
 

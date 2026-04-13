@@ -63,7 +63,7 @@ interface SyncCache {
 
 const CACHE_TTL = 30 * 1000;
 
-let syncCache: SyncCache = {
+const syncCache: SyncCache = {
   projects: new Map(),
   projectTasks: new Map(),
   lastFetch: 0,

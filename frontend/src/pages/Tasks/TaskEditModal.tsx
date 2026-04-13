@@ -325,20 +325,24 @@ export const TaskEditModal: React.FC<TaskEditModalProps> = ({
     if (!value) return '-';
     
     switch (field) {
-      case 'status':
+      case 'status': {
         const statusOpt = statusOptions.find(s => s.value === value);
         return statusOpt ? t(statusOpt.label) : value;
-      case 'priority':
+      }
+      case 'priority': {
         const priorityOpt = priorityOptions.find(p => p.value === value);
         return priorityOpt ? t(priorityOpt.label) : value;
-      case 'annotation_type':
+      }
+      case 'annotation_type': {
         const typeOpt = annotationTypeOptions.find(a => a.value === value);
         return typeOpt ? t(typeOpt.label) : value;
+      }
       case 'due_date':
         return dayjs(value).format('YYYY-MM-DD');
-      case 'assignee_id':
+      case 'assignee_id': {
         const user = mockUsers.find(u => u.id === value);
         return user ? user.name : value;
+      }
       default:
         return value;
     }

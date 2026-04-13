@@ -37,12 +37,12 @@ def upgrade():
         -- Create new partitioned audit_logs table
         CREATE TABLE audit_logs_partitioned (
             id UUID DEFAULT gen_random_uuid(),
-            user_id UUID,
+            user_id VARCHAR(100),
             tenant_id VARCHAR(100) NOT NULL,
-            action auditaction NOT NULL,
-            resource_type VARCHAR(50) NOT NULL,
-            resource_id VARCHAR(255),
-            ip_address INET,
+            action VARCHAR(100) NOT NULL,
+            resource_type VARCHAR(100) NOT NULL,
+            resource_id VARCHAR(100),
+            ip_address VARCHAR(50),
             user_agent TEXT,
             details JSONB DEFAULT '{}',
             timestamp TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),

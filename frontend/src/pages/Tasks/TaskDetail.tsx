@@ -77,18 +77,20 @@ const TaskDetailPage: React.FC = () => {
   }
   
   console.log('[TaskDetail] Final ID:', id);
-  
-  // If still no ID, redirect to tasks list
-  if (!id || id === 'undefined') {
-    console.error('[TaskDetail] No valid ID found, redirecting to tasks list');
-    return <Navigate to="/tasks" replace />;
-  }
-  
-  const { data: task, isLoading, error } = useTask(id);
+  const hasValidId = Boolean(id && id !== 'undefined');
+  const taskId = hasValidId ? String(id) : '';
+
+  const { data: task, isLoading, error } = useTask(taskId, { enabled: hasValidId });
   const { annotation: annotationPerms } = usePermissions();
   const { openLabelStudio, isValidProject, navigateToAnnotate } = useLabelStudio();
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
+
+  // If still no ID, redirect to tasks list
+  if (!hasValidId) {
+    console.error('[TaskDetail] No valid ID found, redirecting to tasks list');
+    return <Navigate to="/tasks" replace />;
+  }
 
   // Debug: Log permission state
   console.log('[TaskDetail] annotationPerms:', annotationPerms);
@@ -105,15 +107,15 @@ const TaskDetailPage: React.FC = () => {
     console.log('[handleStartAnnotation] id:', id);
     console.log('[handleStartAnnotation] task:', task);
     
-    if (!id || !task) {
+    if (!taskId || !task) {
       console.error('[handleStartAnnotation] Task ID or task data is missing');
       message.error(t('detail.taskDataLoadFailed'));
       return;
     }
     
     // Navigate directly to annotation page using the hook
-    console.log('[handleStartAnnotation] Navigating to:', `/tasks/${id}/annotate`);
-    navigateToAnnotate(id);
+    console.log('[handleStartAnnotation] Navigating to:', `/tasks/${taskId}/annotate`);
+    navigateToAnnotate(taskId);
     console.log('[handleStartAnnotation] ========== END ==========');
   };
 
@@ -125,7 +127,7 @@ const TaskDetailPage: React.FC = () => {
   const handleOpenInNewWindow = () => {
     console.log('[handleOpenInNewWindow] ========== START ==========');
     
-    if (!id || !task) {
+    if (!taskId || !task) {
       console.error('[handleOpenInNewWindow] Task ID or task data is missing');
       message.error(t('detail.taskDataLoadFailed'));
       return;
@@ -136,7 +138,7 @@ const TaskDetailPage: React.FC = () => {
     if (!isValidProject(projectId)) {
       // No valid project ID, navigate to annotation page first to create project
       message.info(t('detail.projectNotCreated'));
-      navigateToAnnotate(id);
+      navigateToAnnotate(taskId);
       return;
     }
     
@@ -146,14 +148,14 @@ const TaskDetailPage: React.FC = () => {
   };
 
   const handleStatusChange = async (newStatus: TaskStatus) => {
-    if (id) {
-      await updateTask.mutateAsync({ id, payload: { status: newStatus } });
+    if (taskId) {
+      await updateTask.mutateAsync({ id: taskId, payload: { status: newStatus } });
     }
   };
 
   const handleDelete = async () => {
-    if (id) {
-      await deleteTask.mutateAsync(id);
+    if (taskId) {
+      await deleteTask.mutateAsync(taskId);
       navigate('/tasks');
     }
   };

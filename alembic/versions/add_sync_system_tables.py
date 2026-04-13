@@ -205,31 +205,96 @@ def upgrade():
     # Extend existing tables with sync-related fields
     # ========================================================================
 
-    # Extend documents table
-    op.add_column('documents', sa.Column('tenant_id', sa.String(100), nullable=True))
-    op.add_column('documents', sa.Column('sync_status', postgresql.ENUM('pending', 'syncing', 'synced', 'conflict', 'failed', name='syncstatus', create_type=False), nullable=True))
-    op.add_column('documents', sa.Column('sync_version', sa.Integer(), nullable=True, server_default='1'))
-    op.add_column('documents', sa.Column('sync_hash', sa.String(64), nullable=True))
-    op.add_column('documents', sa.Column('last_synced_at', sa.DateTime(timezone=True), nullable=True))
-    op.add_column('documents', sa.Column('sync_source_id', sa.String(200), nullable=True))
-    op.add_column('documents', sa.Column('sync_job_id', sa.String(36), nullable=True))
-    op.add_column('documents', sa.Column('is_from_sync', sa.Boolean(), nullable=True, server_default='false'))
-    op.add_column('documents', sa.Column('sync_metadata', postgresql.JSONB(astext_type=sa.Text()), nullable=True, server_default='{}'))
+    _bind = op.get_bind()
+    _insp_cols = sa.inspect(_bind)
 
-    # Add index for tenant_id on documents
-    op.create_index('idx_documents_tenant_id', 'documents', ['tenant_id'])
+    def _dcolumns(table: str) -> set:
+        if not _insp_cols.has_table(table):
+            return set()
+        return {c["name"] for c in _insp_cols.get_columns(table)}
 
-    # Extend tasks table
-    op.add_column('tasks', sa.Column('tenant_id', sa.String(100), nullable=True))
-    op.add_column('tasks', sa.Column('sync_status', postgresql.ENUM('pending', 'syncing', 'synced', 'conflict', 'failed', name='syncstatus', create_type=False), nullable=True))
-    op.add_column('tasks', sa.Column('sync_version', sa.Integer(), nullable=True, server_default='1'))
-    op.add_column('tasks', sa.Column('last_synced_at', sa.DateTime(timezone=True), nullable=True))
-    op.add_column('tasks', sa.Column('sync_execution_id', sa.String(36), nullable=True))
-    op.add_column('tasks', sa.Column('is_from_sync', sa.Boolean(), nullable=True, server_default='false'))
-    op.add_column('tasks', sa.Column('sync_metadata', postgresql.JSONB(astext_type=sa.Text()), nullable=True, server_default='{}'))
+    def _idx_names(table: str) -> set:
+        if not _insp_cols.has_table(table):
+            return set()
+        return {i["name"] for i in _insp_cols.get_indexes(table)}
 
-    # Add index for tenant_id on tasks
-    op.create_index('idx_tasks_tenant_id', 'tasks', ['tenant_id'])
+    _docs = _dcolumns("documents")
+    if "tenant_id" not in _docs:
+        op.add_column("documents", sa.Column("tenant_id", sa.String(100), nullable=True))
+    if "sync_status" not in _docs:
+        op.add_column(
+            "documents",
+            sa.Column(
+                "sync_status",
+                postgresql.ENUM(
+                    "pending",
+                    "syncing",
+                    "synced",
+                    "conflict",
+                    "failed",
+                    name="syncstatus",
+                    create_type=False,
+                ),
+                nullable=True,
+            ),
+        )
+    if "sync_version" not in _docs:
+        op.add_column("documents", sa.Column("sync_version", sa.Integer(), nullable=True, server_default="1"))
+    if "sync_hash" not in _docs:
+        op.add_column("documents", sa.Column("sync_hash", sa.String(64), nullable=True))
+    if "last_synced_at" not in _docs:
+        op.add_column("documents", sa.Column("last_synced_at", sa.DateTime(timezone=True), nullable=True))
+    if "sync_source_id" not in _docs:
+        op.add_column("documents", sa.Column("sync_source_id", sa.String(200), nullable=True))
+    if "sync_job_id" not in _docs:
+        op.add_column("documents", sa.Column("sync_job_id", sa.String(36), nullable=True))
+    if "is_from_sync" not in _docs:
+        op.add_column("documents", sa.Column("is_from_sync", sa.Boolean(), nullable=True, server_default="false"))
+    if "sync_metadata" not in _docs:
+        op.add_column(
+            "documents",
+            sa.Column("sync_metadata", postgresql.JSONB(astext_type=sa.Text()), nullable=True, server_default="{}"),
+        )
+
+    if "idx_documents_tenant_id" not in _idx_names("documents"):
+        op.create_index("idx_documents_tenant_id", "documents", ["tenant_id"])
+
+    _tasks = _dcolumns("tasks")
+    if "tenant_id" not in _tasks:
+        op.add_column("tasks", sa.Column("tenant_id", sa.String(100), nullable=True))
+    if "sync_status" not in _tasks:
+        op.add_column(
+            "tasks",
+            sa.Column(
+                "sync_status",
+                postgresql.ENUM(
+                    "pending",
+                    "syncing",
+                    "synced",
+                    "conflict",
+                    "failed",
+                    name="syncstatus",
+                    create_type=False,
+                ),
+                nullable=True,
+            ),
+        )
+    if "sync_version" not in _tasks:
+        op.add_column("tasks", sa.Column("sync_version", sa.Integer(), nullable=True, server_default="1"))
+    if "last_synced_at" not in _tasks:
+        op.add_column("tasks", sa.Column("last_synced_at", sa.DateTime(timezone=True), nullable=True))
+    if "sync_execution_id" not in _tasks:
+        op.add_column("tasks", sa.Column("sync_execution_id", sa.String(36), nullable=True))
+    if "is_from_sync" not in _tasks:
+        op.add_column("tasks", sa.Column("is_from_sync", sa.Boolean(), nullable=True, server_default="false"))
+    if "sync_metadata" not in _tasks:
+        op.add_column(
+            "tasks",
+            sa.Column("sync_metadata", postgresql.JSONB(astext_type=sa.Text()), nullable=True, server_default="{}"),
+        )
+
+    if "idx_tasks_tenant_id" not in _idx_names("tasks"):
+        op.create_index("idx_tasks_tenant_id", "tasks", ["tenant_id"])
 
     # ========================================================================
     # Create data_sources table

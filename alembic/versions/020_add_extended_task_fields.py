@@ -45,57 +45,105 @@ annotation_type_enum = postgresql.ENUM(
 def upgrade() -> None:
     """Add extended task management fields to tasks table."""
 
-    # Create enum types
-    task_priority_enum.create(op.get_bind(), checkfirst=True)
-    annotation_type_enum.create(op.get_bind(), checkfirst=True)
+    bind = op.get_bind()
+    insp = sa.inspect(bind)
+    if not insp.has_table("tasks"):
+        return
 
-    # Add 'cancelled' to taskstatus enum if not exists
+    task_cols = {c["name"] for c in insp.get_columns("tasks")}
+
+    # Create enum types
+    task_priority_enum.create(bind, checkfirst=True)
+    annotation_type_enum.create(bind, checkfirst=True)
+
     op.execute("""
         DO $$
         BEGIN
-            IF NOT EXISTS (SELECT 1 FROM pg_enum WHERE enumlabel = 'cancelled'
-                           AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'taskstatus')) THEN
-                ALTER TYPE taskstatus ADD VALUE 'cancelled';
+            IF EXISTS (SELECT 1 FROM pg_type WHERE typname = 'taskstatus') THEN
+                IF NOT EXISTS (
+                    SELECT 1 FROM pg_enum e
+                    JOIN pg_type t ON e.enumtypid = t.oid
+                    WHERE t.typname = 'taskstatus' AND e.enumlabel = 'cancelled'
+                ) THEN
+                    ALTER TYPE taskstatus ADD VALUE 'cancelled';
+                END IF;
             END IF;
         END
         $$;
     """)
 
-    # Add new columns to tasks table (all nullable initially for migration safety)
+    # 000_core_tables 已含 title/description/assignee_id/priority(int)/due_date/updated_at 等，按列名跳过重复添加
+    if "name" not in task_cols:
+        op.add_column("tasks", sa.Column("name", sa.String(255), nullable=True))
+        if "title" in task_cols:
+            op.execute("UPDATE tasks SET name = title WHERE name IS NULL")
+        op.execute(
+            "UPDATE tasks SET name = COALESCE(name, 'Task ' || SUBSTRING(id::text, 1, 8))"
+        )
+        task_cols.add("name")
 
-    # Basic task information
-    op.add_column('tasks', sa.Column('name', sa.String(255), nullable=True))
-    op.add_column('tasks', sa.Column('description', sa.Text(), nullable=True))
-    op.add_column('tasks', sa.Column('priority', task_priority_enum, nullable=True))
-    op.add_column('tasks', sa.Column('annotation_type', annotation_type_enum, nullable=True))
+    if "description" not in task_cols:
+        op.add_column("tasks", sa.Column("description", sa.Text(), nullable=True))
+        task_cols.add("description")
 
-    # Assignment and ownership
-    op.add_column('tasks', sa.Column('assignee_id', postgresql.UUID(as_uuid=True), nullable=True))
-    op.add_column('tasks', sa.Column('created_by', sa.String(100), nullable=True))
+    if "priority" not in task_cols:
+        op.add_column("tasks", sa.Column("priority", task_priority_enum, nullable=True))
+        task_cols.add("priority")
 
-    # Progress tracking
-    op.add_column('tasks', sa.Column('progress', sa.Integer(), nullable=True))
-    op.add_column('tasks', sa.Column('total_items', sa.Integer(), nullable=True))
-    op.add_column('tasks', sa.Column('completed_items', sa.Integer(), nullable=True))
+    if "annotation_type" not in task_cols:
+        op.add_column(
+            "tasks", sa.Column("annotation_type", annotation_type_enum, nullable=True)
+        )
+        task_cols.add("annotation_type")
 
-    # Timestamps
-    op.add_column('tasks', sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True))
-    op.add_column('tasks', sa.Column('due_date', sa.DateTime(timezone=True), nullable=True))
+    if "assignee_id" not in task_cols:
+        op.add_column(
+            "tasks", sa.Column("assignee_id", postgresql.UUID(as_uuid=True), nullable=True)
+        )
+        task_cols.add("assignee_id")
 
-    # Additional metadata
-    op.add_column('tasks', sa.Column('tags', postgresql.JSONB(), nullable=True))
-    op.add_column('tasks', sa.Column('task_metadata', postgresql.JSONB(), nullable=True))
+    if "created_by" not in task_cols:
+        op.add_column("tasks", sa.Column("created_by", sa.String(100), nullable=True))
+        task_cols.add("created_by")
 
-    # Make document_id nullable (not all tasks need a document)
-    op.alter_column('tasks', 'document_id', existing_type=postgresql.UUID(as_uuid=True), nullable=True)
+    for col, typ in (
+        ("progress", sa.Integer()),
+        ("total_items", sa.Integer()),
+        ("completed_items", sa.Integer()),
+    ):
+        if col not in task_cols:
+            op.add_column("tasks", sa.Column(col, typ, nullable=True))
+            task_cols.add(col)
 
-    # Fill default values for existing rows
+    if "updated_at" not in task_cols:
+        op.add_column(
+            "tasks", sa.Column("updated_at", sa.DateTime(timezone=True), nullable=True)
+        )
+        task_cols.add("updated_at")
+
+    if "due_date" not in task_cols:
+        op.add_column(
+            "tasks", sa.Column("due_date", sa.DateTime(timezone=True), nullable=True)
+        )
+        task_cols.add("due_date")
+
+    if "tags" not in task_cols:
+        op.add_column("tasks", sa.Column("tags", postgresql.JSONB(), nullable=True))
+        task_cols.add("tags")
+
+    if "task_metadata" not in task_cols:
+        op.add_column("tasks", sa.Column("task_metadata", postgresql.JSONB(), nullable=True))
+        task_cols.add("task_metadata")
+
+    op.alter_column(
+        "tasks",
+        "document_id",
+        existing_type=postgresql.UUID(as_uuid=True),
+        nullable=True,
+    )
+
     op.execute("""
         UPDATE tasks SET
-            name = COALESCE(name, 'Task ' || SUBSTRING(id::text, 1, 8)),
-            description = COALESCE(description, ''),
-            priority = COALESCE(priority, 'medium'),
-            annotation_type = COALESCE(annotation_type, 'custom'),
             created_by = COALESCE(created_by, 'system'),
             progress = COALESCE(progress, 0),
             total_items = COALESCE(total_items, 1),
@@ -104,43 +152,39 @@ def upgrade() -> None:
             tags = COALESCE(tags, '[]'::jsonb),
             task_metadata = COALESCE(task_metadata, '{}'::jsonb),
             tenant_id = COALESCE(tenant_id, 'default_tenant')
-        WHERE name IS NULL OR priority IS NULL OR annotation_type IS NULL
+    """)
+    op.execute("""
+        UPDATE tasks SET annotation_type = 'custom'::annotationtype
+        WHERE annotation_type IS NULL
     """)
 
-    # Set NOT NULL constraints after data population
-    op.alter_column('tasks', 'name', existing_type=sa.String(255), nullable=False)
-    op.alter_column('tasks', 'created_by', existing_type=sa.String(100), nullable=False)
-    op.alter_column('tasks', 'tenant_id', existing_type=sa.String(100), nullable=False)
+    insp = sa.inspect(bind)
+    fk_names = {fk["name"] for fk in insp.get_foreign_keys("tasks")}
+    if "fk_tasks_assignee_id" not in fk_names:
+        op.create_foreign_key(
+            "fk_tasks_assignee_id",
+            "tasks",
+            "users",
+            ["assignee_id"],
+            ["id"],
+            ondelete="SET NULL",
+        )
 
-    # Set default values
-    op.alter_column('tasks', 'priority', server_default='medium')
-    op.alter_column('tasks', 'annotation_type', server_default='custom')
-    op.alter_column('tasks', 'progress', server_default='0')
-    op.alter_column('tasks', 'total_items', server_default='1')
-    op.alter_column('tasks', 'completed_items', server_default='0')
-    op.alter_column('tasks', 'tags', server_default='[]')
-    op.alter_column('tasks', 'task_metadata', server_default='{}')
+    existing_idx = {i["name"] for i in insp.get_indexes("tasks")}
+    for idx, cols in (
+        ("idx_tasks_name", ["name"]),
+        ("idx_tasks_priority", ["priority"]),
+        ("idx_tasks_annotation_type", ["annotation_type"]),
+        ("idx_tasks_assignee_id", ["assignee_id"]),
+        ("idx_tasks_created_by", ["created_by"]),
+        ("idx_tasks_due_date", ["due_date"]),
+        ("idx_tasks_updated_at", ["updated_at"]),
+        ("idx_tasks_status_priority", ["status", "priority"]),
+        ("idx_tasks_tenant_status", ["tenant_id", "status"]),
+    ):
+        if idx not in existing_idx:
+            op.create_index(idx, "tasks", cols)
 
-    # Create foreign key for assignee_id
-    op.create_foreign_key(
-        'fk_tasks_assignee_id',
-        'tasks', 'users',
-        ['assignee_id'], ['id'],
-        ondelete='SET NULL'
-    )
-
-    # Create indexes for better query performance
-    op.create_index('idx_tasks_name', 'tasks', ['name'])
-    op.create_index('idx_tasks_priority', 'tasks', ['priority'])
-    op.create_index('idx_tasks_annotation_type', 'tasks', ['annotation_type'])
-    op.create_index('idx_tasks_assignee_id', 'tasks', ['assignee_id'])
-    op.create_index('idx_tasks_created_by', 'tasks', ['created_by'])
-    op.create_index('idx_tasks_due_date', 'tasks', ['due_date'])
-    op.create_index('idx_tasks_updated_at', 'tasks', ['updated_at'])
-    op.create_index('idx_tasks_status_priority', 'tasks', ['status', 'priority'])
-    op.create_index('idx_tasks_tenant_status', 'tasks', ['tenant_id', 'status'])
-
-    # Create trigger for automatic updated_at timestamp
     op.execute("""
         CREATE OR REPLACE FUNCTION update_tasks_updated_at_column()
         RETURNS TRIGGER AS $$
@@ -156,7 +200,7 @@ def upgrade() -> None:
         CREATE TRIGGER update_tasks_updated_at
             BEFORE UPDATE ON tasks
             FOR EACH ROW
-            EXECUTE FUNCTION update_tasks_updated_at_column();
+            EXECUTE PROCEDURE update_tasks_updated_at_column();
     """)
 
 

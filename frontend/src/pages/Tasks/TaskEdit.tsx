@@ -1,5 +1,5 @@
 // Task edit page - reuses TaskCreateModal in edit mode
-import { useParams, useNavigate } from 'react-router-dom';
+import { Navigate, useParams, useNavigate } from 'react-router-dom';
 import { Card, Button, Space, Skeleton, Alert, message } from 'antd';
 import { ArrowLeftOutlined, SaveOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
@@ -10,23 +10,24 @@ const TaskEditPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation('tasks');
-  
-  // Redirect if ID is invalid (e.g., "create")
-  if (id === 'create' || !id) {
-    navigate('/tasks', { replace: true });
-    return null;
-  }
-  
-  const { data: task, isLoading, error } = useTask(id);
+  const taskId = id && id !== 'create' ? id : '';
+  const hasValidId = Boolean(taskId);
+
+  const { data: task, isLoading, error } = useTask(taskId, { enabled: hasValidId });
   const updateTask = useUpdateTask();
 
+  // Redirect if ID is invalid (e.g., "create")
+  if (!hasValidId) {
+    return <Navigate to="/tasks" replace />;
+  }
+
   const handleSave = async (values: any) => {
-    if (!id) return;
+    if (!taskId) return;
     
     try {
-      await updateTask.mutateAsync({ id, payload: values });
+      await updateTask.mutateAsync({ id: taskId, payload: values });
       message.success(t('taskUpdated'));
-      navigate(`/tasks/${id}`);
+      navigate(`/tasks/${taskId}`);
     } catch (error) {
       message.error(t('taskUpdateFailed'));
     }
@@ -60,7 +61,7 @@ const TaskEditPage: React.FC = () => {
     <div>
       <Card style={{ marginBottom: 16 }}>
         <Space>
-          <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(`/tasks/${id}`)}>
+          <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(`/tasks/${taskId}`)}>
             {t('backToDetail')}
           </Button>
         </Space>
@@ -71,7 +72,7 @@ const TaskEditPage: React.FC = () => {
         <TaskEditForm
           initialValues={task}
           onSubmit={handleSave}
-          onCancel={() => navigate(`/tasks/${id}`)}
+          onCancel={() => navigate(`/tasks/${taskId}`)}
           loading={updateTask.isPending}
         />
       </Card>

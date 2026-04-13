@@ -106,12 +106,14 @@ def run_migrations_online() -> None:
 
     with connectable.connect() as connection:
         _ensure_alembic_version_num_width(connection)
+        # 单事务包裹全部迁移会导致 PG 上长时间持锁/idle in transaction，upgrade heads 易卡住。
+        # 按迁移脚本分别提交，失败时已有部分版本落地，也便于排查。
         context.configure(
-            connection=connection, target_metadata=target_metadata
+            connection=connection,
+            target_metadata=target_metadata,
+            transaction_per_migration=True,
         )
-
-        with context.begin_transaction():
-            context.run_migrations()
+        context.run_migrations()
 
 
 if context.is_offline_mode():

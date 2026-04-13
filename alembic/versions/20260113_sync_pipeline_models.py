@@ -1,7 +1,7 @@
 """Add sync pipeline models
 
 Revision ID: sync_pipeline_001
-Revises: 
+Revises: 001_add_multi_tenant_support
 Create Date: 2026-01-13
 
 """
@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = 'sync_pipeline_001'
-down_revision = None
+down_revision = '001_add_multi_tenant_support'
 branch_labels = ('sync_pipeline',)
 depends_on = None
 

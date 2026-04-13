@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = '013_ragas_eval'
-down_revision = None  # Will be set during migration
+down_revision = '012_add_admin_config'
 branch_labels = None
 depends_on = None
 

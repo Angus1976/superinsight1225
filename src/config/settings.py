@@ -76,7 +76,7 @@ class AISettings:
     
     # Ollama Configuration
     ollama_base_url: str = field(default_factory=lambda: get_env("OLLAMA_BASE_URL", "http://localhost:11434"))
-    ollama_model: str = field(default_factory=lambda: get_env("OLLAMA_MODEL", "llama2"))
+    ollama_model: str = field(default_factory=lambda: get_env("OLLAMA_MODEL", "qwen2.5:7b"))
     
     # HuggingFace Configuration
     huggingface_api_token: Optional[str] = field(default_factory=lambda: get_env("HUGGINGFACE_API_TOKEN") or None)

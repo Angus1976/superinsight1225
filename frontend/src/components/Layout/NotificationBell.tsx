@@ -27,6 +27,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
     <Tooltip title={t('header.notifications', '通知')}>
       <Badge count={count} size="small" offset={[-2, 2]}>
         <span
+          data-testid="header-notification-bell"
           role="button"
           tabIndex={0}
           aria-label={t('header.notifications', '通知')}

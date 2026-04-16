@@ -14,7 +14,7 @@ from sqlalchemy import select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session, selectinload
 
-from src.ai.llm_schemas import CloudConfig
+from src.ai.llm_schemas import CloudConfig, extra_headers_from_llm_config_data
 from src.ai.encryption_service import EncryptionService
 from src.ai.cache_manager import CacheManager
 from src.models.llm_configuration import LLMConfiguration
@@ -321,6 +321,7 @@ class ApplicationLLMManager:
             openai_api_key=api_key,
             openai_base_url=base_url,
             openai_model=model_name,
+            extra_headers=extra_headers_from_llm_config_data(config_data),
         )
     
     def _load_from_env(self) -> Optional[CloudConfig]:

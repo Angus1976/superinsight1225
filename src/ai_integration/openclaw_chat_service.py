@@ -100,8 +100,11 @@ class OpenClawChatService:
             return
 
         try:
+            openclaw_model = self.bridge.sync_resolve_openclaw_chat_model_for_gateway(
+                self.db, gateway
+            )
             async for chunk in self._call_gateway_as_stream(
-                chat_url, prompt, system_prompt
+                chat_url, prompt, system_prompt, openclaw_model=openclaw_model
             ):
                 yield chunk
         except OpenClawUnavailableError as exc:
@@ -158,17 +161,54 @@ class OpenClawChatService:
     # ------------------------------------------------------------------
 
     async def get_status(self, tenant_id: str) -> OpenClawStatusResponse:
-        """Return gateway availability and deployed skills for a tenant.
+        """Return gateway availability, HTTP 可达性 and deployed skills for a tenant.
 
         Never raises — catches all errors internally.
         """
         try:
-            return self._query_status(tenant_id)
+            data = self._query_status(tenant_id)
+            if not data.available or not data.gateway_id:
+                return OpenClawStatusResponse(
+                    **{**data.model_dump(), "gateway_reachable": False}
+                )
+            gw = (
+                self.db.query(AIGateway)
+                .filter(AIGateway.id == data.gateway_id)
+                .first()
+            )
+            reachable = await self._probe_gateway_http(gw, tenant_id) if gw else False
+            return OpenClawStatusResponse(
+                **{**data.model_dump(), "gateway_reachable": reachable}
+            )
         except Exception as exc:
             logger.error("Failed to query OpenClaw status: %s", exc)
             return OpenClawStatusResponse(
-                available=False, error=f"状态查询失败: {exc}"
+                available=False,
+                error=f"状态查询失败: {exc}",
+                gateway_reachable=False,
             )
+
+    async def _probe_gateway_http(
+        self, gateway: Optional[AIGateway], tenant_id: str
+    ) -> bool:
+        """对兼容网关根 URL 发起 HTTP /health，用于与「库里有网关记录」区分。"""
+        if not gateway:
+            return False
+        base = resolve_openclaw_gateway_base_url(
+            self.db,
+            tenant_id,
+            gateway.configuration if gateway else None,
+        )
+        if not base:
+            return False
+        url = f"{base.rstrip('/')}/health"
+        try:
+            async with httpx.AsyncClient(timeout=3.0) as client:
+                r = await client.get(url)
+                return r.status_code == 200
+        except Exception as exc:
+            logger.debug("OpenClaw gateway HTTP probe failed %s: %s", url, exc)
+            return False
 
     # ------------------------------------------------------------------
     # Private helpers
@@ -256,10 +296,15 @@ class OpenClawChatService:
         return f"{base.rstrip('/')}/api/chat"
 
     async def _call_gateway_as_stream(
-        self, url: str, prompt: str, system_prompt: str
+        self,
+        url: str,
+        prompt: str,
+        system_prompt: str,
+        *,
+        openclaw_model: str,
     ) -> AsyncIterator[str]:
         """Call Gateway /api/chat and wrap the response as SSE chunks."""
-        payload = {"message": prompt}
+        payload = {"message": prompt, "openclaw_model": openclaw_model}
         if system_prompt:
             payload["system_prompt"] = system_prompt
 

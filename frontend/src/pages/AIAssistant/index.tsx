@@ -1,4 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, {
+  useState, useRef, useEffect, useMemo, useCallback,
+} from 'react';
 import {
   Card, Input, Button, Space, Typography, Avatar, List, Tag, Empty,
   Divider, Row, Col, message,
@@ -9,8 +11,18 @@ import {
   ClockCircleOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import { sendMessageStream, getWorkflows } from '@/services/aiAssistantApi';
-import type { ChatMessage as ApiChatMessage, WorkflowItem } from '@/types/aiAssistant';
+import {
+  sendMessageStream,
+  getWorkflows,
+  getOpenClawStatus,
+  getServiceStatus,
+  type ServiceStatusResponse,
+} from '@/services/aiAssistantApi';
+import type {
+  ChatMessage as ApiChatMessage,
+  WorkflowItem,
+  OpenClawStatus,
+} from '@/types/aiAssistant';
 import { useAuthStore } from '@/stores/authStore';
 import WorkflowSelector from './components/WorkflowSelector';
 import StatsPanel from './components/StatsPanel';
@@ -20,6 +32,19 @@ import './styles.css';
 
 const { TextArea } = Input;
 const { Title, Text, Paragraph } = Typography;
+
+/** 当前工作流所需技能是否均已在 OpenClaw 侧部署 */
+function workflowSkillsDeployed(
+  wf: WorkflowItem | null,
+  oc: OpenClawStatus | null,
+): boolean {
+  if (!wf?.skill_ids?.length) return true;
+  if (!oc?.skills?.length) return false;
+  const deployed = new Set(
+    oc.skills.filter((s) => s.status === 'deployed').map((s) => s.id),
+  );
+  return wf.skill_ids.every((id) => deployed.has(id));
+}
 
 interface Message {
   id: string;
@@ -43,6 +68,10 @@ const AIAssistant: React.FC = () => {
   const [selectedWorkflowId, setSelectedWorkflowId] = useState<string | null>(null);
   const [workflowsLoading, setWorkflowsLoading] = useState(false);
 
+  /** OpenClaw / 基础设施探测：用于页头区分「LLM 直连」与「技能/OpenClaw」状态 */
+  const [ocStatus, setOcStatus] = useState<OpenClawStatus | null>(null);
+  const [svcStatus, setSvcStatus] = useState<ServiceStatusResponse | null>(null);
+
   // Auth state
   const user = useAuthStore((s) => s.user);
   const userRole = user?.role || 'viewer';
@@ -58,6 +87,88 @@ const AIAssistant: React.FC = () => {
   };
 
   useEffect(() => { scrollToBottom(); }, [messages]);
+
+  const refreshConnectionStatus = useCallback(async () => {
+    try {
+      const [oc, svc] = await Promise.allSettled([
+        getOpenClawStatus(),
+        getServiceStatus(),
+      ]);
+      if (oc.status === 'fulfilled') setOcStatus(oc.value);
+      else setOcStatus(null);
+      if (svc.status === 'fulfilled') setSvcStatus(svc.value);
+      else setSvcStatus(null);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshConnectionStatus();
+    const timer = window.setInterval(refreshConnectionStatus, 30_000);
+    return () => window.clearInterval(timer);
+  }, [refreshConnectionStatus]);
+
+  const effectiveWorkflow = useMemo((): WorkflowItem | null => {
+    if (!selectedWorkflowId) {
+      return workflows.find((w) => w.is_preset && w.name === 'LLM 直连') ?? null;
+    }
+    return workflows.find((w) => w.id === selectedWorkflowId) ?? null;
+  }, [workflows, selectedWorkflowId]);
+
+  const isLlmDirectMode = useMemo(() => {
+    const w = effectiveWorkflow;
+    if (!w) return true;
+    const name = (w.name || '').trim();
+    if (name === 'LLM 直连' || name === 'LLM Direct') return true;
+    return (w.skill_ids?.length ?? 0) === 0;
+  }, [effectiveWorkflow]);
+
+  const openClawChannelOk = useMemo(() => {
+    if (!ocStatus || !svcStatus) return null;
+    if (!ocStatus.available) return false;
+    if (ocStatus.gateway_reachable === false) return false;
+    if (!svcStatus.openclaw?.healthy) return false;
+    if (!workflowSkillsDeployed(effectiveWorkflow, ocStatus)) return false;
+    return true;
+  }, [ocStatus, svcStatus, effectiveWorkflow]);
+
+  /** OpenClaw 通道（openclaw 应用 / 网关固定）— 与直连通道相互独立 */
+  const openClawLlmSubtitle = useMemo(() => {
+    const llm = svcStatus?.openclaw?.llm;
+    if (!llm?.model) return null;
+    const sk = `openclawLlmSource.${llm.source}` as const;
+    const srcLabel = t(sk, { defaultValue: llm.source });
+    return t('openclawLlmLine', { model: llm.model, source: srcLabel });
+  }, [svcStatus, t]);
+
+  /** LLM 直连通道（ai_assistant 应用绑定）— get_llm_switcher 同源 */
+  const directLlmSubtitle = useMemo(() => {
+    const llm = svcStatus?.llm_direct?.llm;
+    if (!llm?.model) return null;
+    const sk = `directLlmSource.${llm.source}` as const;
+    const srcLabel = t(sk, { defaultValue: llm.source });
+    return t('directLlmLine', { model: llm.model, source: srcLabel });
+  }, [svcStatus, t]);
+
+  /**
+   * 直连「在线」：后端可用，且若解析为 ollama 提供商则要求 Ollama 探活通过。
+   * （云端直连不依赖 Ollama 侧车。）
+   */
+  const llmChannelOk = useMemo(() => {
+    if (!svcStatus?.backend?.healthy) return false;
+    const prov = (svcStatus.llm_direct?.llm?.provider || '').toLowerCase();
+    if (prov === 'ollama') {
+      return !!svcStatus.ollama?.healthy;
+    }
+    return true;
+  }, [svcStatus]);
+
+  const statusBadgeLoading = useMemo(() => {
+    if (svcStatus === null) return true;
+    if (!isLlmDirectMode && ocStatus === null) return true;
+    return false;
+  }, [svcStatus, ocStatus, isLlmDirectMode]);
 
   // Load workflows on mount
   useEffect(() => {
@@ -159,6 +270,7 @@ const AIAssistant: React.FC = () => {
         setStatusSteps([]);
         abortRef.current = null;
         setStatsRefreshKey((k) => k + 1);
+        refreshConnectionStatus();
       },
       onError: (error) => {
         const errorMsg = error.message || '';
@@ -215,7 +327,44 @@ const AIAssistant: React.FC = () => {
                     {workflows.find(w => w.id === selectedWorkflowId)?.name || ''}
                   </Tag>
                 )}
-                <Tag color="success">{t('online')}</Tag>
+                {statusBadgeLoading ? (
+                  <Tag color="default">{t('statusChecking')}</Tag>
+                ) : isLlmDirectMode ? (
+                  <Space direction="vertical" size={0} align="end">
+                    <Tag color={llmChannelOk ? 'success' : 'error'}>
+                      {t('statusLlm')} · {llmChannelOk ? t('online') : t('offline')}
+                    </Tag>
+                    {directLlmSubtitle ? (
+                      <Text type="secondary" style={{ fontSize: 11, maxWidth: 300, textAlign: 'right' }}>
+                        {directLlmSubtitle}
+                      </Text>
+                    ) : null}
+                    {(svcStatus?.llm_direct?.llm?.provider || '').toLowerCase() === 'ollama' ? (
+                      <Text type="secondary" style={{ fontSize: 10, maxWidth: 300, textAlign: 'right' }}>
+                        {t('ollamaProbeNote')}
+                        {typeof svcStatus?.ollama?.healthy === 'boolean'
+                          ? ` · Ollama ${svcStatus.ollama.healthy ? t('online') : t('offline')}`
+                          : ''}
+                      </Text>
+                    ) : null}
+                  </Space>
+                ) : (
+                  <Space direction="vertical" size={0} align="end">
+                    <Tag color={openClawChannelOk ? 'success' : 'error'}>
+                      {t('statusOpenClaw')} · {openClawChannelOk ? t('online') : t('offline')}
+                    </Tag>
+                    {openClawLlmSubtitle ? (
+                      <Text type="secondary" style={{ fontSize: 11, maxWidth: 300, textAlign: 'right' }}>
+                        {openClawLlmSubtitle}
+                      </Text>
+                    ) : null}
+                    {directLlmSubtitle ? (
+                      <Text type="secondary" style={{ fontSize: 10, maxWidth: 300, textAlign: 'right' }}>
+                        {t('directFallbackNote', { line: directLlmSubtitle })}
+                      </Text>
+                    ) : null}
+                  </Space>
+                )}
               </Space>
             </div>
 

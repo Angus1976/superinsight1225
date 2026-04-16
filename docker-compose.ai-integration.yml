@@ -139,7 +139,7 @@ services:
       
       # LLM Configuration (will be injected by deployment script)
       - LLM_PROVIDER=${OPENCLAW_LLM_PROVIDER:-ollama}
-      - LLM_MODEL=${OPENCLAW_LLM_MODEL:-llama2}
+      - LLM_MODEL=${OPENCLAW_LLM_MODEL:-qwen2.5:7b}
       - LLM_API_URL=${OPENCLAW_LLM_API_URL:-http://ollama:11434}
       - LLM_API_KEY=${OPENCLAW_LLM_API_KEY:-}
       

@@ -24,6 +24,7 @@ export const HelpButton: React.FC = () => {
   return (
     <Tooltip title={t('header.help', '帮助')}>
       <span
+        data-testid="header-help-button"
         role="button"
         tabIndex={0}
         aria-label={t('header.help', '帮助')}

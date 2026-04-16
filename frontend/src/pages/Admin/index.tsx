@@ -217,12 +217,38 @@ const AdminPage: React.FC = () => {
   if (isSubRoute) {
     return (
       <div key={location.pathname}>
-        <Card style={{ marginBottom: 16 }}>
-          <Menu 
-            mode="horizontal" 
-            selectedKeys={[selectedKey]} 
-            items={menuItems}
-          />
+        <Card
+          style={{ marginBottom: 16 }}
+          styles={{
+            body: {
+              padding: '8px 12px',
+              overflow: 'hidden',
+            },
+          }}
+        >
+          {/* 横向 Tab 较多时允许横向滚动，避免右侧项被裁切「出界」 */}
+          <div
+            className="admin-console-top-nav-scroll"
+            style={{
+              width: '100%',
+              maxWidth: '100%',
+              overflowX: 'auto',
+              overflowY: 'hidden',
+              WebkitOverflowScrolling: 'touch',
+              scrollbarGutter: 'stable',
+            }}
+          >
+            <Menu
+              mode="horizontal"
+              selectedKeys={[selectedKey]}
+              items={menuItems}
+              style={{
+                borderBottom: 'none',
+                minWidth: 'max-content',
+                flexWrap: 'nowrap',
+              }}
+            />
+          </div>
         </Card>
         <Outlet />
       </div>

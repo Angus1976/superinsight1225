@@ -76,6 +76,7 @@ async def test_get_openclaw_env_vars_ollama(llm_bridge, mock_config_manager):
     assert env_vars['LLM_PROVIDER'] == 'ollama'
     assert env_vars['LLM_API_ENDPOINT'] == 'http://ollama:11434'
     assert env_vars['LLM_MODEL'] == 'qwen:7b'
+    assert env_vars.get("OPENCLAW_CORE_CHAT_MODEL") == "ollama/qwen:7b"
     assert 'LLM_TEMPERATURE' in env_vars
     assert 'LLM_MAX_TOKENS' in env_vars
     mock_config_manager.get_config.assert_called_once_with("test-tenant")
@@ -110,6 +111,7 @@ async def test_get_openclaw_env_vars_openai(llm_bridge, mock_config_manager):
     assert env_vars['LLM_PROVIDER'] == 'openai'
     assert env_vars['LLM_API_ENDPOINT'] == 'https://api.openai.com/v1'
     assert env_vars['LLM_MODEL'] == 'gpt-4'
+    assert env_vars.get("OPENCLAW_CORE_CHAT_MODEL") == "openai/gpt-4"
     assert env_vars['LLM_API_KEY'] == 'sk-test-key-123'
 
 
@@ -141,6 +143,7 @@ async def test_get_openclaw_env_vars_qwen(llm_bridge, mock_config_manager):
     assert env_vars['LLM_PROVIDER'] == 'qwen'
     assert env_vars['LLM_API_ENDPOINT'] == 'https://dashscope.aliyuncs.com/api/v1'
     assert env_vars['LLM_MODEL'] == 'qwen-turbo'
+    assert env_vars.get("OPENCLAW_CORE_CHAT_MODEL") == "qwen/qwen-turbo"
     assert env_vars['LLM_API_KEY'] == 'qwen-test-key'
 
 
@@ -177,6 +180,7 @@ async def test_get_openclaw_env_vars_azure(llm_bridge, mock_config_manager):
     assert env_vars['LLM_API_KEY'] == 'azure-test-key'
     assert env_vars['LLM_AZURE_DEPLOYMENT'] == 'gpt-35-turbo'
     assert env_vars['LLM_AZURE_API_VERSION'] == '2024-02-15-preview'
+    assert env_vars.get("OPENCLAW_CORE_CHAT_MODEL") == "azure/gpt-35-turbo"
 
 
 @pytest.mark.asyncio
@@ -199,6 +203,7 @@ async def test_get_openclaw_env_vars_fallback_on_error(llm_bridge, mock_config_m
     assert env_vars['LLM_PROVIDER'] == 'ollama'
     assert env_vars['LLM_API_ENDPOINT'] == 'http://ollama:11434'
     assert env_vars['LLM_MODEL'] == 'qwen:7b'
+    assert env_vars.get("OPENCLAW_CORE_CHAT_MODEL") == "ollama/qwen:7b"
 
 
 # ============================================================================

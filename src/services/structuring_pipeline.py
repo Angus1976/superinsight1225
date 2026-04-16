@@ -382,7 +382,7 @@ async def _load_cloud_config(
         ValueError: If no valid LLM configuration is found or decryption fails.
     """
     import os
-    from src.ai.llm_schemas import CloudConfig
+    from src.ai.llm_schemas import CloudConfig, extra_headers_from_llm_config_data
     from src.models.llm_configuration import LLMConfiguration
     from src.models.llm_application import LLMApplication, LLMApplicationBinding
     from src.ai.encryption_service import get_encryption_service
@@ -467,7 +467,8 @@ async def _load_cloud_config(
                             openai_base_url=base_url,
                             openai_model=model_name,
                             timeout=timeout,
-                            max_retries=max_retries
+                            max_retries=max_retries,
+                            extra_headers=extra_headers_from_llm_config_data(config_data),
                         )
                         
                         logger.info(
@@ -538,7 +539,7 @@ async def _load_all_cloud_configs(
     Falls back to environment variables when no database configs exist.
     """
     import os
-    from src.ai.llm_schemas import CloudConfig
+    from src.ai.llm_schemas import CloudConfig, extra_headers_from_llm_config_data
     from src.models.llm_configuration import LLMConfiguration
     from src.models.llm_application import LLMApplication, LLMApplicationBinding
     from src.ai.encryption_service import get_encryption_service
@@ -586,8 +587,16 @@ async def _load_all_cloud_configs(
                     # Handle Ollama / local_ollama configs (different structure)
                     if llm_cfg.default_method == "local_ollama" or llm_cfg.provider == "ollama":
                         local = config_data.get("local_config", {})
-                        ollama_url = local.get("ollama_url", "http://ollama:11434")
-                        ollama_model = local.get("ollama_model", "qwen2.5vl:7b")
+                        ollama_url = (
+                            local.get("ollama_url")
+                            or config_data.get("base_url")
+                            or "http://ollama:11434"
+                        )
+                        ollama_model = (
+                            local.get("ollama_model")
+                            or config_data.get("model_name")
+                            or "qwen2.5:7b"
+                        )
                         # Ollama supports OpenAI-compatible API at /v1
                         if not ollama_url.rstrip("/").endswith("/v1"):
                             ollama_url = ollama_url.rstrip("/") + "/v1"
@@ -616,6 +625,7 @@ async def _load_all_cloud_configs(
                         openai_model=config_data.get("model_name", "gpt-3.5-turbo"),
                         timeout=binding.timeout_seconds or 60,
                         max_retries=binding.max_retries or 3,
+                        extra_headers=extra_headers_from_llm_config_data(config_data),
                     ))
                     logger.info(
                         f"Loaded config: {llm_cfg.name} (priority={binding.priority})"

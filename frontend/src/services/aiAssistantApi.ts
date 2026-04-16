@@ -288,12 +288,48 @@ export interface ServiceStatusItem {
   label: string;
   models?: string[];
   skills_count?: number;
+  /** 侧车探活等语义，见后端 service-status */
+  scope?: string;
+  role?: string;
+}
+
+/** AI 助手 · LLM 直连通道（llm_applications.code = ai_assistant） */
+export interface LlmDirectChannelPreview {
+  channel: 'ai_assistant_direct';
+  application_code: 'ai_assistant';
+  provider: string;
+  model: string;
+  source: 'application_binding' | 'tenant_default_row' | 'config_manager_fallback';
+}
+
+/** OpenClaw 通道当前解析出的 LLM（openclaw 应用绑定或网关固定） */
+export interface OpenClawLlmPreview {
+  channel: 'openclaw_gateway';
+  application_code: 'openclaw';
+  provider: string;
+  model: string;
+  openclaw_core_model: string;
+  source: 'gateway_pinned' | 'application_binding' | 'tenant_default_row';
+}
+
+export interface LlmDirectServiceStatus {
+  llm?: LlmDirectChannelPreview | null;
+}
+
+export interface OpenClawServiceStatus extends ServiceStatusItem {
+  skills_count?: number;
+  role?: string;
+  llm?: OpenClawLlmPreview | null;
 }
 
 export interface ServiceStatusResponse {
   backend: ServiceStatusItem;
+  /** 仅表示 Docker/本地 Ollama 服务是否可达，与直连选用模型无必然关系 */
   ollama: ServiceStatusItem;
-  openclaw: ServiceStatusItem;
+  /** 技能工作流 / 网关 → Core */
+  openclaw: OpenClawServiceStatus;
+  /** AI 助手直连 / 内置 LLM（与 OpenClaw 通道相互独立） */
+  llm_direct: LlmDirectServiceStatus;
 }
 
 /**

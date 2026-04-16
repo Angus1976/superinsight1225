@@ -26,6 +26,7 @@ from src.ai_integration.openclaw_chat_service import (
 from src.ai_integration.openclaw_llm_bridge import get_openclaw_llm_bridge
 from src.ai_integration.schemas import SkillInfoResponse, OpenClawStatusResponse
 from src.database.connection import get_db
+from src.models.ai_integration import AIGateway
 from src.api.workflow_schemas import WorkflowCreateRequest, WorkflowUpdateRequest
 
 logger = logging.getLogger(__name__)
@@ -832,20 +833,22 @@ async def get_service_status(
     current_user: UserModel = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> dict:
-    """Check health of backend services from within Docker network.
+    """聚合基础设施与 **两条 LLM 通道** 的解析结果（见 ``llm_application_channels`` 模块文档）。
 
-    Checks: App backend (self), Ollama, OpenClaw gateway (DB-based).
-    Returns status dict for each service.
+    - ``llm_direct``：AI 助手直连 / 内置 LLM（``ai_assistant`` 应用绑定）。
+    - ``openclaw``：技能工作流经网关 → Core（``openclaw`` 应用绑定，可被网关固定配置覆盖）。
+    - ``ollama``：仅表示本机/容器内 Ollama 服务探活，**不等于**上述通道当前选用的提供商。
     """
     import httpx
     import os
 
-    results = {}
+    results: dict = {}
+    tid = current_user.tenant_id or ""
 
     # 1. App backend — if we're responding, we're healthy
     results["backend"] = {"healthy": True, "label": "running"}
 
-    # 2. Ollama health check
+    # 2. Ollama — 侧车探活（本地推理运行时）
     ollama_url = os.getenv("OLLAMA_BASE_URL", "http://ollama:11434")
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
@@ -857,25 +860,71 @@ async def get_service_status(
                     "healthy": True,
                     "label": "running",
                     "models": models,
+                    "scope": "local_ollama_runtime_probe",
                 }
             else:
-                results["ollama"] = {"healthy": False, "label": "unhealthy"}
+                results["ollama"] = {
+                    "healthy": False,
+                    "label": "unhealthy",
+                    "scope": "local_ollama_runtime_probe",
+                }
     except Exception as exc:
         logger.warning("Ollama health check failed: %s", exc)
-        results["ollama"] = {"healthy": False, "label": "offline"}
+        results["ollama"] = {
+            "healthy": False,
+            "label": "offline",
+            "scope": "local_ollama_runtime_probe",
+        }
 
-    # 3. OpenClaw gateway (DB-based check)
+    # 3. LLM 直连通道（ai_assistant）— 与 get_llm_switcher 绑定一致
+    try:
+        bridge = get_openclaw_llm_bridge()
+        results["llm_direct"] = {
+            "llm": bridge.sync_llm_direct_channel_preview(db, tid),
+        }
+    except Exception as exc:
+        logger.debug("llm_direct preview skipped: %s", exc)
+        results["llm_direct"] = {"llm": None}
+
+    # 4. OpenClaw 网关 + 该通道解析出的 LLM
     try:
         service = get_openclaw_chat_service(db)
         status = await service.get_status(tenant_id=current_user.tenant_id)
+        oc_ok = bool(
+            status.available
+            and getattr(status, "gateway_reachable", False)
+        )
+        gw = (
+            db.query(AIGateway)
+            .filter(
+                AIGateway.tenant_id == current_user.tenant_id,
+                AIGateway.gateway_type == "openclaw",
+                AIGateway.status == "active",
+            )
+            .first()
+        )
+        llm_preview: Optional[dict] = None
+        try:
+            bridge = get_openclaw_llm_bridge()
+            llm_preview = bridge.sync_openclaw_llm_preview(db, tid, gw)
+        except Exception as prev_exc:
+            logger.debug("OpenClaw LLM preview skipped: %s", prev_exc)
+
         results["openclaw"] = {
-            "healthy": status.available,
-            "label": "running" if status.available else "offline",
+            "healthy": oc_ok,
+            "label": "running" if oc_ok else "offline",
             "skills_count": len(status.skills) if status.skills else 0,
+            "role": "skills_workflow_gateway",
+            "llm": llm_preview,
         }
     except Exception as exc:
         logger.warning("OpenClaw status check failed: %s", exc)
-        results["openclaw"] = {"healthy": False, "label": "offline"}
+        results["openclaw"] = {
+            "healthy": False,
+            "label": "offline",
+            "role": "skills_workflow_gateway",
+            "llm": None,
+        }
 
     return results
 

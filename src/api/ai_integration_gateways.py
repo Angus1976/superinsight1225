@@ -445,6 +445,10 @@ async def check_gateway_health(
 
 class LinkLLMConfigRequest(BaseModel):
     """Request to link gateway to LLM configuration."""
+    llm_configuration_id: Optional[str] = Field(
+        None,
+        description="Platform LLM row id (llm_configurations.id). Omit to use tenant default aggregate config.",
+    )
     model_override: Optional[str] = Field(None, description="Override model name")
     temperature_override: Optional[float] = Field(None, ge=0.0, le=2.0, description="Override temperature")
     max_tokens_override: Optional[int] = Field(None, ge=1, le=32000, description="Override max tokens")
@@ -454,11 +458,44 @@ class LLMStatusResponse(BaseModel):
     """LLM status response for gateway."""
     gateway_id: str
     tenant_id: str
-    provider: str
-    model: str
-    health: Dict[str, Any]
-    enabled_methods: List[str]
+    provider: str = "unknown"
+    model: str = "unknown"
+    health: Dict[str, Any] = Field(default_factory=dict)
+    enabled_methods: List[str] = Field(default_factory=list)
     timestamp: str
+    error: Optional[str] = None
+    llm_configuration_id: Optional[str] = Field(
+        None, description="Pinned platform LLM row, if any."
+    )
+
+
+def _mask_llm_env_vars(env: Dict[str, str]) -> Dict[str, str]:
+    out = dict(env)
+    if out.get("LLM_API_KEY"):
+        out["LLM_API_KEY"] = "***"
+    return out
+
+
+def _gateway_llm_configuration_id(gateway: AIGateway) -> Optional[str]:
+    cfg = gateway.configuration or {}
+    lc = cfg.get("llm_config")
+    if isinstance(lc, dict):
+        raw = lc.get("llm_configuration_id")
+        return str(raw) if raw else None
+    return None
+
+
+class GatewayLLMLinkView(BaseModel):
+    """Read-only view of gateway ↔ platform LLM link (secrets masked)."""
+    gateway_id: str
+    tenant_id: str
+    linked: bool
+    llm_configuration_id: Optional[str] = None
+    llm_provider: Optional[str] = None
+    llm_model: Optional[str] = None
+    linked_at: Optional[str] = None
+    source: str = "tenant_default"
+    env_preview: Dict[str, str] = Field(default_factory=dict)
 
 
 @router.post("/{gateway_id}/llm-config", status_code=status.HTTP_200_OK)
@@ -472,6 +509,7 @@ async def link_gateway_llm_config(
     
     Associates a gateway with the tenant's LLM configuration,
     allowing the gateway to use configured LLM providers.
+    固定 ``llm_configuration_id`` 后优先级高于 LLM 应用 ``openclaw`` 的绑定；未固定时网关/OpenClaw 通道随 ``openclaw`` 应用绑定更新。
     Optional overrides can be specified for model, temperature, and max tokens.
     
     **Validates: Requirements 17.3, 17.4**
@@ -490,11 +528,16 @@ async def link_gateway_llm_config(
         
         # Get LLM bridge
         llm_bridge = get_openclaw_llm_bridge()
-        
-        # Generate environment variables for OpenClaw
+
+        # 复制为新 dict 再写回，确保 JSON/JSONB 列被标记为已修改（原地改嵌套 dict 可能不触发 UPDATE）
+        base_cfg = dict(gateway.configuration or {})
+
+        # Generate environment variables for OpenClaw (tenant default or pinned row)
         env_vars = await llm_bridge.get_openclaw_env_vars(
             gateway_id=gateway_id,
-            tenant_id=gateway.tenant_id
+            tenant_id=gateway.tenant_id,
+            llm_configuration_id=request.llm_configuration_id,
+            sync_db=db,
         )
         
         # Apply overrides if provided
@@ -504,15 +547,18 @@ async def link_gateway_llm_config(
             env_vars['LLM_TEMPERATURE'] = str(request.temperature_override)
         if request.max_tokens_override is not None:
             env_vars['LLM_MAX_TOKENS'] = str(request.max_tokens_override)
-        
-        # Store LLM config in gateway configuration
-        gateway.configuration['llm_config'] = {
+        env_vars["OPENCLAW_CORE_CHAT_MODEL"] = llm_bridge.openclaw_core_chat_model(env_vars)
+
+        # Store LLM config in gateway configuration (env_vars may contain secrets — never log raw)
+        base_cfg['llm_config'] = {
             'env_vars': env_vars,
+            'llm_configuration_id': request.llm_configuration_id,
             'model_override': request.model_override,
             'temperature_override': request.temperature_override,
             'max_tokens_override': request.max_tokens_override,
-            'linked_at': datetime.utcnow().isoformat()
+            'linked_at': datetime.utcnow().isoformat(),
         }
+        gateway.configuration = base_cfg
         gateway.updated_at = datetime.utcnow()
         db.commit()
         
@@ -525,19 +571,78 @@ async def link_gateway_llm_config(
             "gateway_id": gateway_id,
             "status": "linked",
             "message": "Gateway successfully linked to LLM configuration",
-            "llm_provider": env_vars.get('LLM_PROVIDER'),
-            "llm_model": env_vars.get('LLM_MODEL'),
-            "env_vars": env_vars
+            "llm_provider": env_vars.get("LLM_PROVIDER"),
+            "llm_model": env_vars.get("LLM_MODEL"),
+            "llm_configuration_id": request.llm_configuration_id,
+            "env_vars": _mask_llm_env_vars(env_vars),
         }
         
     except HTTPException:
         raise
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
     except Exception as e:
         logger.error(f"Failed to link gateway LLM config: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to link gateway LLM config: {str(e)}"
         )
+
+
+@router.get("/{gateway_id}/llm-link", response_model=GatewayLLMLinkView)
+async def get_gateway_llm_link(
+    gateway_id: str,
+    db: Session = Depends(get_db),
+):
+    """
+    Current gateway ↔ platform LLM association (for UI closed loop).
+
+    Recomputes provider/model from the bridge so values stay aligned with DB.
+    """
+    gateway = db.query(AIGateway).filter(AIGateway.id == gateway_id).first()
+    if not gateway:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Gateway with ID '{gateway_id}' not found",
+        )
+    lc = (gateway.configuration or {}).get("llm_config") or {}
+    if not isinstance(lc, dict):
+        lc = {}
+    pinned = lc.get("llm_configuration_id")
+    pinned_s = str(pinned) if pinned else None
+
+    llm_bridge = get_openclaw_llm_bridge()
+    env_vars = await llm_bridge.get_openclaw_env_vars(
+        gateway_id=gateway_id,
+        tenant_id=gateway.tenant_id,
+        llm_configuration_id=pinned_s,
+        sync_db=db,
+    )
+    # 与保存关联时一致：应用网关中已存的覆盖项
+    if isinstance(lc, dict):
+        if lc.get("model_override"):
+            env_vars["LLM_MODEL"] = str(lc["model_override"])
+        if lc.get("temperature_override") is not None:
+            env_vars["LLM_TEMPERATURE"] = str(lc["temperature_override"])
+        if lc.get("max_tokens_override") is not None:
+            env_vars["LLM_MAX_TOKENS"] = str(lc["max_tokens_override"])
+    env_vars["OPENCLAW_CORE_CHAT_MODEL"] = llm_bridge.openclaw_core_chat_model(env_vars)
+    masked = _mask_llm_env_vars(env_vars)
+    linked = bool(lc.get("linked_at"))
+    return GatewayLLMLinkView(
+        gateway_id=gateway_id,
+        tenant_id=gateway.tenant_id,
+        linked=linked,
+        llm_configuration_id=pinned_s,
+        llm_provider=masked.get("LLM_PROVIDER"),
+        llm_model=masked.get("LLM_MODEL"),
+        linked_at=lc.get("linked_at"),
+        source="platform_row" if pinned_s else "tenant_default",
+        env_preview=masked,
+    )
 
 
 @router.get("/{gateway_id}/llm-status", response_model=LLMStatusResponse)
@@ -565,15 +670,16 @@ async def get_gateway_llm_status(
                 detail=f"Gateway with ID '{gateway_id}' not found"
             )
         
-        # Get LLM bridge
         llm_bridge = get_openclaw_llm_bridge()
-        
-        # Get LLM status
+        pinned = _gateway_llm_configuration_id(gateway)
+
         status_data = await llm_bridge.get_llm_status(
             gateway_id=gateway_id,
-            tenant_id=gateway.tenant_id
+            tenant_id=gateway.tenant_id,
+            llm_configuration_id=pinned,
+            sync_db=db,
         )
-        
+        status_data["llm_configuration_id"] = pinned
         return LLMStatusResponse(**status_data)
         
     except HTTPException:

@@ -875,69 +875,17 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             logger.warning(f"Preset workflow seeding skipped: {e}")
 
-        # Seed Ollama qwen2.5:7b config if not present (idempotent)
+        # Seed local Ollama qwen2.5:7b + qwen2.5:1.5b (idempotent upsert + bindings)
         try:
-            from src.database.connection import get_db_session
-            from src.models.llm_configuration import LLMConfiguration
-            from src.models.llm_application import LLMApplication, LLMApplicationBinding
-            from sqlalchemy import select
+            from src.database.connection import db_manager
+            from src.database.seed_ollama_llm import seed_ollama_qwen_pair
 
-            db_gen = get_db_session()
-            db_session = next(db_gen)
-            try:
-                exists = db_session.execute(
-                    select(LLMConfiguration).where(
-                        LLMConfiguration.name == "Ollama qwen2.5:7b",
-                        LLMConfiguration.is_active == True,
-                    )
-                ).scalar_one_or_none()
-                if not exists:
-                    ollama_7b = LLMConfiguration(
-                        name="Ollama qwen2.5:7b",
-                        provider="ollama",
-                        default_method="local_ollama",
-                        config_data={
-                            "provider": "ollama",
-                            "base_url": "http://ollama:11434/v1",
-                            "model_name": "qwen2.5:7b",
-                            "api_key": "ollama",
-                        },
-                        is_active=True,
-                    )
-                    db_session.add(ollama_7b)
-                    db_session.flush()
-
-                    # Auto-bind to all active applications (priority 2)
-                    apps = db_session.execute(
-                        select(LLMApplication).where(LLMApplication.is_active == True)
-                    ).scalars().all()
-                    for llm_app in apps:
-                        # Skip if priority 2 slot already taken
-                        slot_taken = db_session.execute(
-                            select(LLMApplicationBinding).where(
-                                LLMApplicationBinding.application_id == llm_app.id,
-                                LLMApplicationBinding.priority == 2,
-                            )
-                        ).scalar_one_or_none()
-                        if slot_taken:
-                            continue
-                        db_session.add(LLMApplicationBinding(
-                            llm_config_id=ollama_7b.id,
-                            application_id=llm_app.id,
-                            priority=2,
-                            max_retries=1,
-                            timeout_seconds=60,
-                            is_active=True,
-                        ))
-
-                    db_session.commit()
-                    logger.info("Seeded Ollama qwen2.5:7b config + bindings")
-                else:
-                    logger.debug("Ollama qwen2.5:7b config already exists")
-            finally:
-                db_session.close()
+            db_manager.initialize()
+            with db_manager.get_session() as db_session:
+                seed_ollama_qwen_pair(db_session)
+            logger.info("Seeded/updated Ollama qwen2.5:7b + qwen2.5:1.5b configs + bindings")
         except Exception as e:
-            logger.warning(f"Ollama qwen2.5:7b seeding skipped: {e}")
+            logger.warning(f"Ollama Qwen seeding skipped: {e}")
 
         # Include optional routers
         await include_optional_routers()

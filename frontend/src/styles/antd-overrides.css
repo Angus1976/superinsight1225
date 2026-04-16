@@ -298,3 +298,28 @@ html body .ant-checkbox {
   pointer-events: auto !important;
   cursor: pointer !important;
 }
+
+/* 管理控制台顶栏：横向菜单项过多时可滚动，滚动条略收窄以免占高 */
+.admin-console-top-nav-scroll {
+  padding-bottom: 2px;
+}
+
+.admin-console-top-nav-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+
+.admin-console-top-nav-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: 3px;
+}
+
+.admin-console-top-nav-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.28);
+}
+
+/* 让横向 Menu 按内容宽度展开，父级滚动容器才能出现横向滚动条 */
+.admin-console-top-nav-scroll .ant-menu.ant-menu-horizontal {
+  width: max-content;
+  min-width: max-content;
+  max-width: none;
+}

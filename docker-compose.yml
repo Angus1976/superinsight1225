@@ -1,6 +1,8 @@
 version: '3.8'
 # 本机跑 API（python main.py 占用 18080）时，不要同时启动 Docker 里的 app，否则会抢端口。
 # 默认 compose 不启动 app/celery-worker；需要容器内后端时加：docker compose --profile docker-backend up -d
+# docker-backend 同时包含 openclaw-core + openclaw-gateway，使 app 可访问 http://openclaw-gateway:3000。
+# 若还需 openclaw-agent，请叠加：-f docker-compose.ai-integration.yml（勿重复定义同名服务时可去掉 ai 文件中的 gateway/core）。
 
 services:
   # ===========================================================================
@@ -60,13 +62,13 @@ services:
       - LABEL_STUDIO_SSO_EMAIL=admin@superinsight.local
       - ARGILLA_URL=http://argilla:6900
       - OLLAMA_BASE_URL=http://ollama:11434
-      - OLLAMA_MODEL=qwen2.5vl:7b
+      - OLLAMA_MODEL=qwen2.5:7b
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OPENAI_BASE_URL=${OPENAI_BASE_URL}
       - OPENAI_MODEL=${OPENAI_MODEL}
       - LLM_ENCRYPTION_KEY=${LLM_ENCRYPTION_KEY}
       - CORS_ORIGINS=http://localhost:3000,http://localhost:15173
-      # OpenClaw HTTP 网关（需与 docker-compose.ai-integration 一并启动）；连不上时会回退到内置 LLM
+      # OpenClaw：与 openclaw-gateway 同 profile docker-backend 一并启动；连不上时回退内置 LLM
       - OPENCLAW_GATEWAY_BASE_URL=${OPENCLAW_GATEWAY_BASE_URL:-http://openclaw-gateway:3000}
     depends_on:
       - postgres
@@ -114,7 +116,7 @@ services:
       - LABEL_STUDIO_SSO_EMAIL=admin@superinsight.local
       - ARGILLA_URL=http://argilla:6900
       - OLLAMA_BASE_URL=http://ollama:11434
-      - OLLAMA_MODEL=qwen2.5vl:7b
+      - OLLAMA_MODEL=qwen2.5:7b
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - OPENAI_BASE_URL=${OPENAI_BASE_URL}
       - OPENAI_MODEL=${OPENAI_MODEL}
@@ -136,6 +138,83 @@ services:
       timeout: 15s
       start_period: 30s
       retries: 3
+    restart: unless-stopped
+
+  # ===========================================================================
+  # OpenClaw（与 app 同 profile，便于 superinsight-app 直连 openclaw-gateway:3000）
+  # 完整 Agent 栈仍可用：docker compose -f docker-compose.yml -f docker-compose.ai-integration.yml up -d
+  # ===========================================================================
+  openclaw-core:
+    profiles:
+      - docker-backend
+    image: ghcr.io/openclaw/openclaw:latest
+    container_name: superinsight-openclaw-core
+    environment:
+      HOME: /home/node
+      TERM: xterm-256color
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN:-dev-openclaw-shared-secret}
+      TZ: ${OPENCLAW_TZ:-UTC}
+    volumes:
+      - ./deploy/ai-integration/openclaw-core/dot-openclaw:/home/node/.openclaw
+    ports:
+      - "${OPENCLAW_CORE_HOST_PORT:-18789}:18789"
+    depends_on:
+      - ollama
+    command:
+      - node
+      - dist/index.js
+      - gateway
+      - --bind
+      - lan
+      - --port
+      - "18789"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:18789/healthz').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    restart: unless-stopped
+
+  openclaw-gateway:
+    profiles:
+      - docker-backend
+    build:
+      context: ./deploy/ai-integration/openclaw-gateway
+      dockerfile: Dockerfile
+    container_name: superinsight-openclaw-gateway
+    ports:
+      - "${OPENCLAW_GATEWAY_HOST_PORT:-3001}:3000"
+    environment:
+      - SUPERINSIGHT_API_URL=http://app:8000
+      - SUPERINSIGHT_API_KEY=${OPENCLAW_API_KEY:-dev-openclaw-api-key}
+      - SUPERINSIGHT_TENANT_ID=${TENANT_ID:-00000000-0000-0000-0000-000000000001}
+      - GATEWAY_PORT=3000
+      - GATEWAY_HOST=0.0.0.0
+      - NODE_ENV=${NODE_ENV:-production}
+      - OPENCLAW_CORE_URL=${OPENCLAW_CORE_URL:-http://openclaw-core:18789}
+      - OPENCLAW_GATEWAY_TOKEN=${OPENCLAW_GATEWAY_TOKEN:-dev-openclaw-shared-secret}
+      - AGENT_URL=${AGENT_URL:-http://openclaw-agent:8080}
+      - LOG_LEVEL=${OPENCLAW_LOG_LEVEL:-info}
+    volumes:
+      - openclaw_config:/app/config
+      - openclaw_memory:/app/memory
+      - openclaw_logs:/app/logs
+    depends_on:
+      - app
+      - openclaw-core
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     restart: unless-stopped
 
   # ===========================================================================
@@ -360,6 +439,12 @@ volumes:
   prometheus_data:
     driver: local
   grafana_data:
+    driver: local
+  openclaw_config:
+    driver: local
+  openclaw_memory:
+    driver: local
+  openclaw_logs:
     driver: local
 
 # =============================================================================

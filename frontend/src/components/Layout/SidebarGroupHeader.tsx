@@ -49,7 +49,11 @@ export const SidebarMenuItem: React.FC<SidebarMenuItemProps> = ({
   }
 
   return (
-    <div className={styles.menuItem} onClick={() => item.path && onNavigate(item.path)}>
+    <div
+      className={styles.menuItem}
+      data-nav-path={item.path}
+      onClick={() => item.path && onNavigate(item.path)}
+    >
       {dom}
     </div>
   );

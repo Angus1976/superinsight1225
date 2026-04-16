@@ -176,6 +176,33 @@ class CloudConfig(BaseModel):
     azure_api_version: str = Field(default="2024-02-15-preview", description="Azure API version")
     timeout: int = Field(default=60, ge=1, le=600, description="Request timeout in seconds")
     max_retries: int = Field(default=3, ge=0, le=10, description="Maximum retry attempts")
+    extra_headers: Dict[str, str] = Field(
+        default_factory=dict,
+        description="Extra HTTP headers for OpenAI-compatible calls (e.g. Qianfan V2 appid)",
+    )
+
+
+def extra_headers_from_llm_config_data(config_data: Optional[Dict[str, Any]]) -> Dict[str, str]:
+    """Map llm_configurations.config_data fields to optional request headers.
+
+    Baidu Qianfan V2 (https://cloud.baidu.com/doc/qianfan-api/s/3m9b5lqft) optional ``appid`` header.
+    """
+    if not config_data:
+        return {}
+    appid = config_data.get("qianfan_appid") or config_data.get("appid")
+    if appid:
+        return {"appid": str(appid)}
+    return {}
+
+
+def openai_compatible_chat_headers(cfg: CloudConfig) -> Dict[str, str]:
+    """Headers for POST {base}/chat/completions (OpenAI-compatible providers)."""
+    h: Dict[str, str] = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {cfg.openai_api_key}",
+    }
+    h.update(cfg.extra_headers or {})
+    return h
 
 
 class OpenClawIntegrationConfig(BaseModel):

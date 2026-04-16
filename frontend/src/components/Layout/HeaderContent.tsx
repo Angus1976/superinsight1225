@@ -130,7 +130,10 @@ export const HeaderContent: React.FC = () => {
         placement="bottomRight"
         trigger={['click']}
       >
-        <Space style={{ cursor: 'pointer', padding: '4px 8px', borderRadius: 6 }}>
+        <Space
+          data-testid="header-user-menu"
+          style={{ cursor: 'pointer', padding: '4px 8px', borderRadius: 6 }}
+        >
           <Avatar size="small" icon={<UserOutlined />} src={user?.avatar} />
           <span style={{ maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {user?.username || 'User'}

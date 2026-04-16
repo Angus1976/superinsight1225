@@ -12,13 +12,19 @@ from uuid import UUID, uuid4
 import logging
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, delete
-from sqlalchemy.orm import selectinload
+from sqlalchemy import select, update, delete, or_
+from sqlalchemy.orm import Session, selectinload
 
 try:
     from src.ai.llm_schemas import (
-        LLMConfig, LLMMethod, LocalConfig, CloudConfig, ChinaLLMConfig,
-        ValidationResult, mask_api_key
+        LLMConfig,
+        LLMMethod,
+        LocalConfig,
+        CloudConfig,
+        ChinaLLMConfig,
+        ValidationResult,
+        mask_api_key,
+        extra_headers_from_llm_config_data,
     )
     from src.models.llm_configuration import LLMConfiguration, LLMUsageLog
     from src.ai.llm_env_merge import merge_llm_config_with_env_defaults
@@ -27,8 +33,14 @@ except ImportError:
     import os
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
     from ai.llm_schemas import (
-        LLMConfig, LLMMethod, LocalConfig, CloudConfig, ChinaLLMConfig,
-        ValidationResult, mask_api_key
+        LLMConfig,
+        LLMMethod,
+        LocalConfig,
+        CloudConfig,
+        ChinaLLMConfig,
+        ValidationResult,
+        mask_api_key,
+        extra_headers_from_llm_config_data,
     )
     from models.llm_configuration import LLMConfiguration, LLMUsageLog
     from ai.llm_env_merge import merge_llm_config_with_env_defaults
@@ -44,6 +56,174 @@ except ImportError:
         pass  # Database not available, will use in-memory config only
 
 logger = logging.getLogger(__name__)
+
+
+def _looks_like_full_llm_config_dump(data: Dict[str, Any]) -> bool:
+    """``config_data`` 已存成完整 ``LLMConfig.model_dump()`` 形态。"""
+    if not isinstance(data, dict) or not data:
+        return False
+    if "default_method" not in data:
+        return False
+    return any(k in data for k in ("local_config", "cloud_config", "china_config"))
+
+
+def _provider_str_to_method(provider: str) -> Optional[LLMMethod]:
+    """与 ``LLMSwitcher._provider_to_method`` 保持一致。"""
+    if not provider:
+        return None
+    p = provider.strip().lower()
+    mapping = {
+        "ollama": LLMMethod.LOCAL_OLLAMA,
+        "local_ollama": LLMMethod.LOCAL_OLLAMA,
+        "openai": LLMMethod.CLOUD_OPENAI,
+        "cloud_openai": LLMMethod.CLOUD_OPENAI,
+        "deepseek": LLMMethod.CLOUD_OPENAI,
+        "azure": LLMMethod.CLOUD_AZURE,
+        "cloud_azure": LLMMethod.CLOUD_AZURE,
+        "china_qwen": LLMMethod.CHINA_QWEN,
+        "china_zhipu": LLMMethod.CHINA_ZHIPU,
+        "china_baidu": LLMMethod.CHINA_BAIDU,
+        "baidu": LLMMethod.CHINA_BAIDU,
+        "baidu_qianfan": LLMMethod.CLOUD_OPENAI,
+        "china_hunyuan": LLMMethod.CHINA_HUNYUAN,
+    }
+    return mapping.get(p)
+
+
+def configuration_row_to_llm_config(row: LLMConfiguration) -> LLMConfig:
+    """
+    将 ``llm_configurations`` 行转为 ``LLMConfig``（支持管理端写入的扁平 config_data）。
+
+    供异步 ``get_config_by_id`` 与 **同步 Session（OpenClaw 网关路由）** 共用。
+    """
+    data = row.config_data or {}
+    if _looks_like_full_llm_config_dump(data):
+        try:
+            return LLMConfig.model_validate(data)
+        except Exception as e:
+            logger.warning(
+                "LLMConfig.model_validate failed for row %s, trying API-shaped parse: %s",
+                row.id,
+                e,
+            )
+
+    try:
+        from src.ai.encryption_service import get_encryption_service
+    except ImportError:
+        from ai.encryption_service import get_encryption_service  # type: ignore
+
+    enc = get_encryption_service()
+    config_data = dict(data) if isinstance(data, dict) else {}
+    prov = (row.provider or config_data.get("provider") or row.default_method or "").strip()
+    method = _provider_str_to_method(prov)
+    if not method:
+        raise ValueError(f"Unknown LLM provider string: {prov!r}")
+
+    timeout = 60
+    max_retries = 3
+
+    if method == LLMMethod.LOCAL_OLLAMA:
+        base_url = config_data.get("base_url", "http://localhost:11434")
+        ollama_url = base_url.rstrip("/").removesuffix("/v1")
+        return LLMConfig(
+            default_method=method,
+            local_config=LocalConfig(
+                ollama_url=ollama_url,
+                default_model=config_data.get("model_name", "qwen2.5:7b"),
+                timeout=timeout,
+                max_retries=max_retries,
+            ),
+            enabled_methods=[method],
+        )
+
+    if method not in (LLMMethod.CLOUD_OPENAI, LLMMethod.CLOUD_AZURE):
+        raise ValueError(
+            f"LLM row {row.id} provider {prov!r} maps to {method}; "
+            "use full LLMConfig JSON in config_data or an OpenAI-compatible provider row."
+        )
+
+    api_key = ""
+    enc_blob = config_data.get("api_key_encrypted")
+    if enc_blob:
+        try:
+            api_key = enc.decrypt(enc_blob)
+        except Exception as e:
+            logger.warning("API key decrypt failed for LLM row %s: %s", row.id, e)
+            api_key = config_data.get("api_key", "")
+    else:
+        api_key = config_data.get("api_key", "")
+
+    if not api_key and "ollama" in (config_data.get("base_url") or "").lower():
+        api_key = "ollama"
+    if not api_key:
+        raise ValueError(f"No API key for LLM configuration {row.id}")
+
+    cloud_config = CloudConfig(
+        openai_api_key=api_key,
+        openai_base_url=config_data.get("base_url", "https://api.openai.com/v1"),
+        openai_model=config_data.get("model_name", "gpt-3.5-turbo"),
+        timeout=timeout,
+        max_retries=max_retries,
+        extra_headers=extra_headers_from_llm_config_data(config_data),
+    )
+    return LLMConfig(
+        default_method=method,
+        cloud_config=cloud_config,
+        enabled_methods=[method],
+    )
+
+
+def resolve_llm_config_for_openclaw_sync(
+    db: Session,
+    tenant_id: str,
+    llm_configuration_id: Optional[str],
+) -> LLMConfig:
+    """
+    使用 **同步** ``Session`` 解析网关所需的 ``LLMConfig``。
+
+    OpenClaw 桥接使用的全局 ``LLMConfigManager`` 往往未注入 ``AsyncSession``，
+    ``get_config_by_id`` 会退化为空配置 → 环境变量始终为本地 Ollama；网关 API 必须走此路径。
+
+    当 ``llm_configuration_id`` 为空时，优先采用 LLM 应用 ``openclaw`` 的绑定（priority 最小），
+    再回退到租户单条 ``llm_configurations`` 行（与历史行为兼容）。
+    """
+    if llm_configuration_id:
+        try:
+            uid = UUID(llm_configuration_id)
+        except ValueError as e:
+            raise ValueError(f"Invalid LLM configuration id: {llm_configuration_id}") from e
+        stmt = select(LLMConfiguration).where(
+            LLMConfiguration.id == uid,
+            LLMConfiguration.is_active == True,  # noqa: E712
+        )
+        stmt = stmt.where(
+            or_(
+                LLMConfiguration.tenant_id == tenant_id,
+                LLMConfiguration.tenant_id.is_(None),
+            )
+        )
+        row = db.execute(stmt).scalar_one_or_none()
+        if not row or not row.config_data:
+            raise ValueError(f"LLM configuration not found for id={llm_configuration_id}")
+        cfg = configuration_row_to_llm_config(row)
+    else:
+        # 未固定配置行时：优先使用 LLM 应用「openclaw」的绑定（与网关/OpenClaw 通道对齐）
+        from src.ai.llm_application_channels import get_openclaw_primary_llm_configuration_row
+
+        oc_row = get_openclaw_primary_llm_configuration_row(db, tenant_id)
+        if oc_row and oc_row.config_data:
+            cfg = configuration_row_to_llm_config(oc_row)
+        else:
+            stmt = select(LLMConfiguration).where(
+                LLMConfiguration.tenant_id == (tenant_id if tenant_id else None),
+                LLMConfiguration.is_active == True,  # noqa: E712
+            )
+            row = db.execute(stmt).scalar_one_or_none()
+            if not row or not row.config_data:
+                cfg = LLMConfig()
+            else:
+                cfg = configuration_row_to_llm_config(row)
+    return merge_llm_config_with_env_defaults(cfg)
 
 
 class LLMConfigManager:
@@ -141,7 +321,48 @@ class LLMConfigManager:
         await self._update_caches(cache_key, config)
         
         return self._mask_config(config) if mask_keys else config
-    
+
+    async def get_config_by_id(
+        self,
+        tenant_id: Optional[str],
+        config_id: str,
+        mask_keys: bool = False,
+    ) -> LLMConfig:
+        """
+        Load a specific ``llm_configurations`` row by UUID.
+
+        Used when an OpenClaw gateway (or other consumer) pins to one platform
+        LLM row instead of the tenant's single active default.
+        """
+        db = await self.get_db()
+        if db is None:
+            return LLMConfig()
+
+        try:
+            uid = UUID(config_id)
+        except ValueError as e:
+            raise ValueError(f"Invalid LLM configuration id: {config_id}") from e
+
+        stmt = select(LLMConfiguration).where(
+            LLMConfiguration.id == uid,
+            LLMConfiguration.is_active == True,  # noqa: E712
+        )
+        if tenant_id:
+            stmt = stmt.where(
+                or_(
+                    LLMConfiguration.tenant_id == tenant_id,
+                    LLMConfiguration.tenant_id.is_(None),
+                )
+            )
+        result = await db.execute(stmt)
+        row = result.scalar_one_or_none()
+        if not row or not row.config_data:
+            raise ValueError(f"LLM configuration not found for id={config_id}")
+
+        config = configuration_row_to_llm_config(row)
+        config = merge_llm_config_with_env_defaults(config)
+        return self._mask_config(config) if mask_keys else config
+
     async def save_config(
         self,
         config: LLMConfig,
@@ -549,7 +770,15 @@ class LLMConfigManager:
         db_config = await self._get_db_config(db, tenant_id)
         
         if db_config and db_config.config_data:
-            return LLMConfig(**db_config.config_data)
+            try:
+                return configuration_row_to_llm_config(db_config)
+            except Exception as e:
+                logger.warning(
+                    "Failed to parse LLM configuration row for tenant %s: %s",
+                    tenant_id,
+                    e,
+                )
+                return LLMConfig()
         
         # Return default config if not found
         return LLMConfig()

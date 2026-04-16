@@ -391,10 +391,13 @@ class CloudLLMProvider(LLMProvider):
                 "api-key": self._api_key,
                 "Content-Type": "application/json"
             }
-        return {
+        h = {
             "Authorization": f"Bearer {self._api_key}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
         }
+        if getattr(self._config, "extra_headers", None):
+            h.update(self._config.extra_headers)
+        return h
     
     def _get_chat_endpoint(self) -> str:
         """Get chat completions endpoint."""

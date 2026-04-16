@@ -20,6 +20,8 @@ import {
   Descriptions,
   Badge,
   Spin,
+  Input,
+  InputNumber,
 } from 'antd';
 import {
   RocketOutlined,
@@ -40,6 +42,15 @@ import type { AccessLogItem, ServiceStatusResponse } from '@/services/aiAssistan
 import type { SkillDetail } from '@/types/aiAssistant';
 import type { AIDataSource } from '@/types/aiAssistant';
 import { skillDisplayName, skillCategoryLabel } from '@/utils/skillI18n';
+import { llmConfigApi } from '@/services/llmConfigApi';
+import type { LLMConfig } from '@/types/llmConfig';
+import {
+  listGateways,
+  getGatewayLlmLink,
+  linkGatewayLlm,
+  type AIGatewayRow,
+  type GatewayLlmLinkView,
+} from '@/services/aiIntegrationGatewayApi';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -64,6 +75,18 @@ const AIIntegration: React.FC = () => {
   const [logPage, setLogPage] = useState(1);
   const [logFilter, setLogFilter] = useState<string | undefined>(undefined);
   const [logLoading, setLogLoading] = useState(false);
+
+  // Gateway ↔ platform LLM (config tab)
+  const [gatewayList, setGatewayList] = useState<AIGatewayRow[]>([]);
+  const [llmPlatformConfigs, setLlmPlatformConfigs] = useState<LLMConfig[]>([]);
+  const [selectedGatewayId, setSelectedGatewayId] = useState<string | undefined>();
+  const [selectedLlmConfigId, setSelectedLlmConfigId] = useState<string | undefined>();
+  const [modelOverride, setModelOverride] = useState('');
+  const [tempOverride, setTempOverride] = useState<number | null>(null);
+  const [maxTokensOverride, setMaxTokensOverride] = useState<number | null>(null);
+  const [linkDetail, setLinkDetail] = useState<GatewayLlmLinkView | null>(null);
+  const [configTabLoading, setConfigTabLoading] = useState(false);
+  const [linkSaving, setLinkSaving] = useState(false);
 
   // ---------------------------------------------------------------------------
   // Data fetching
@@ -116,6 +139,62 @@ const AIIntegration: React.FC = () => {
   };
 
   useEffect(() => { refreshAll(); }, [refreshAll]);
+
+  useEffect(() => {
+    if (activeTab !== 'config') return;
+    let cancelled = false;
+    setConfigTabLoading(true);
+    Promise.all([
+      listGateways({ gateway_type: 'openclaw' }),
+      llmConfigApi.fetchConfigs(),
+    ])
+      .then(([gw, cfgs]) => {
+        if (cancelled) return;
+        setGatewayList(gw);
+        setLlmPlatformConfigs(cfgs);
+        setSelectedGatewayId((prev) => prev || gw[0]?.id);
+      })
+      .catch(() => {
+        message.error(t('config.gatewayLlm.loadFailed'));
+      })
+      .finally(() => {
+        if (!cancelled) setConfigTabLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [activeTab, t]);
+
+  useEffect(() => {
+    if (activeTab !== 'config' || !selectedGatewayId) return;
+    getGatewayLlmLink(selectedGatewayId)
+      .then((d) => {
+        setLinkDetail(d);
+        setSelectedLlmConfigId(d.llm_configuration_id || undefined);
+      })
+      .catch(() => { setLinkDetail(null); });
+  }, [activeTab, selectedGatewayId]);
+
+  const handleSaveGatewayLlmLink = async () => {
+    if (!selectedGatewayId) {
+      message.warning(t('config.gatewayLlm.pickGateway'));
+      return;
+    }
+    setLinkSaving(true);
+    try {
+      await linkGatewayLlm(selectedGatewayId, {
+        llm_configuration_id: selectedLlmConfigId || undefined,
+        model_override: modelOverride.trim() || undefined,
+        temperature_override: tempOverride ?? undefined,
+        max_tokens_override: maxTokensOverride ?? undefined,
+      });
+      message.success(t('config.gatewayLlm.linkSuccess'));
+      const d = await getGatewayLlmLink(selectedGatewayId);
+      setLinkDetail(d);
+    } catch {
+      message.error(t('config.gatewayLlm.linkFailed'));
+    } finally {
+      setLinkSaving(false);
+    }
+  };
 
   // ---------------------------------------------------------------------------
   // Skill actions
@@ -325,6 +404,26 @@ const AIIntegration: React.FC = () => {
                         <Descriptions.Item label={t('serviceStatus.openclawSkills')}>
                           {serviceStatus?.openclaw?.skills_count ?? 0}
                         </Descriptions.Item>
+                        <Descriptions.Item label={t('serviceStatus.llmDirectChannel')} span={2}>
+                          <Text code style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+                            {(() => {
+                              const L = serviceStatus?.llm_direct?.llm;
+                              if (!L?.model) return t('serviceStatus.notResolved');
+                              const src = t(`directLlmSource.${L.source}`, { defaultValue: L.source });
+                              return `${L.provider} / ${L.model} · ${src}`;
+                            })()}
+                          </Text>
+                        </Descriptions.Item>
+                        <Descriptions.Item label={t('serviceStatus.openclawLlmEffective')} span={2}>
+                          <Text code style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+                            {(() => {
+                              const L = serviceStatus?.openclaw?.llm;
+                              if (!L?.model) return t('serviceStatus.notResolved');
+                              const src = t(`openclawLlmSource.${L.source}`, { defaultValue: L.source });
+                              return `${L.provider} / ${L.model} → ${L.openclaw_core_model} · ${src}`;
+                            })()}
+                          </Text>
+                        </Descriptions.Item>
                       </Descriptions>
                     </Card>
 
@@ -360,17 +459,131 @@ const AIIntegration: React.FC = () => {
                 key: 'config',
                 label: <span><SettingOutlined /> {t('tabs.config')}</span>,
                 children: (
-                  <Space direction="vertical" size="large" style={{ width: '100%' }}>
-                    <Alert message={t('config.llmAlert')} type="info" showIcon />
-                    <Card title="LLM">
-                      <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-                        <Paragraph>{t('config.llmConfigDesc')}</Paragraph>
-                        <Button type="primary" icon={<LinkOutlined />} onClick={() => navigate('/admin/llm-config')}>
-                          {t('config.goToLLMConfig')}
-                        </Button>
-                      </Space>
-                    </Card>
-                  </Space>
+                  <Spin spinning={configTabLoading}>
+                    <Space direction="vertical" size="large" style={{ width: '100%' }}>
+                      <Alert message={t('config.llmAlert')} type="info" showIcon />
+                      <Alert message={t('config.gatewayLlm.intro')} type="success" showIcon />
+
+                      <Card title={t('config.gatewayLlm.title')}>
+                        {!gatewayList.length ? (
+                          <Alert type="warning" showIcon message={t('config.gatewayLlm.noGateways')} />
+                        ) : (
+                          <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+                            <div>
+                              <Text strong>{t('config.gatewayLlm.step1')}</Text>
+                              <Select
+                                style={{ width: '100%', marginTop: 8 }}
+                                value={selectedGatewayId}
+                                onChange={(v) => setSelectedGatewayId(v)}
+                                options={gatewayList.map((g) => ({
+                                  label: `${g.name} (${g.id.slice(0, 8)}…)`,
+                                  value: g.id,
+                                }))}
+                              />
+                            </div>
+                            <div>
+                              <Text strong>{t('config.gatewayLlm.step2')}</Text>
+                              <Paragraph type="secondary" style={{ marginBottom: 8, marginTop: 4 }}>
+                                {t('config.gatewayLlm.tenantDefaultHint')}
+                              </Paragraph>
+                              <Select
+                                allowClear
+                                placeholder={t('config.gatewayLlm.tenantDefault')}
+                                style={{ width: '100%' }}
+                                value={selectedLlmConfigId}
+                                onChange={(v) => setSelectedLlmConfigId(v || undefined)}
+                                options={llmPlatformConfigs.map((c) => ({
+                                  label: `${c.name} — ${c.provider} / ${c.model_name}`,
+                                  value: c.id,
+                                }))}
+                              />
+                            </div>
+                            <div>
+                              <Text strong>{t('config.gatewayLlm.step3')}</Text>
+                              <Space wrap style={{ marginTop: 8 }}>
+                                <Input
+                                  style={{ width: 220 }}
+                                  placeholder={t('config.gatewayLlm.modelOverride')}
+                                  value={modelOverride}
+                                  onChange={(e) => setModelOverride(e.target.value)}
+                                />
+                                <InputNumber
+                                  placeholder={t('config.gatewayLlm.tempOverride')}
+                                  min={0}
+                                  max={2}
+                                  step={0.1}
+                                  value={tempOverride ?? undefined}
+                                  onChange={(v) => setTempOverride(typeof v === 'number' ? v : null)}
+                                />
+                                <InputNumber
+                                  placeholder={t('config.gatewayLlm.maxTokensOverride')}
+                                  min={1}
+                                  max={32000}
+                                  value={maxTokensOverride ?? undefined}
+                                  onChange={(v) => setMaxTokensOverride(typeof v === 'number' ? v : null)}
+                                />
+                              </Space>
+                            </div>
+                            <Space>
+                              <Button
+                                type="primary"
+                                icon={<LinkOutlined />}
+                                loading={linkSaving}
+                                onClick={handleSaveGatewayLlmLink}
+                              >
+                                {t('config.gatewayLlm.linkButton')}
+                              </Button>
+                              <Button
+                                onClick={() => selectedGatewayId && getGatewayLlmLink(selectedGatewayId).then(setLinkDetail)}
+                              >
+                                {t('config.gatewayLlm.refreshLink')}
+                              </Button>
+                              <Button onClick={() => navigate('/admin/llm-config')}>
+                                {t('config.goToLLMConfig')}
+                              </Button>
+                            </Space>
+
+                            {linkDetail && (
+                              <Card size="small" title={t('config.gatewayLlm.currentLink')}>
+                                <Descriptions column={1} size="small" bordered>
+                                  <Descriptions.Item label={t('config.gatewayLlm.status')}>
+                                    {linkDetail.linked ? t('config.gatewayLlm.linked') : t('config.gatewayLlm.notLinked')}
+                                  </Descriptions.Item>
+                                  <Descriptions.Item label={t('config.gatewayLlm.source')}>
+                                    {linkDetail.source === 'platform_row'
+                                      ? t('config.gatewayLlm.sourceRow')
+                                      : t('config.gatewayLlm.sourceTenant')}
+                                  </Descriptions.Item>
+                                  <Descriptions.Item label="Provider / Model">
+                                    {(linkDetail.llm_provider || '—') + ' / ' + (linkDetail.llm_model || '—')}
+                                  </Descriptions.Item>
+                                  <Descriptions.Item label={t('config.gatewayLlm.linkedAt')}>
+                                    {linkDetail.linked_at
+                                      ? new Date(linkDetail.linked_at).toLocaleString()
+                                      : '—'}
+                                  </Descriptions.Item>
+                                </Descriptions>
+                                <Paragraph style={{ marginTop: 12 }} type="secondary">
+                                  {t('config.gatewayLlm.envPreview')}
+                                </Paragraph>
+                                <pre style={{
+                                  maxHeight: 200,
+                                  overflow: 'auto',
+                                  fontSize: 12,
+                                  background: '#fafafa',
+                                  padding: 8,
+                                  borderRadius: 4,
+                                }}
+                                >
+                                  {JSON.stringify(linkDetail.env_preview, null, 2)}
+                                </pre>
+                              </Card>
+                            )}
+                          </Space>
+                        )}
+                      </Card>
+                    </Space>
+                  </Spin>
                 ),
               },
               {

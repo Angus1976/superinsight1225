@@ -53,7 +53,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({ actions = defaultAct
   const { t } = useTranslation('dashboard');
 
   return (
-    <Card title={t('quickActions.title')}>
+    <Card title={t('quickActions.title')} data-testid="dashboard-quick-actions">
       <Space wrap>
         {actions.map((action) => (
           <Button

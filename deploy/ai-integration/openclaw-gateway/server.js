@@ -120,10 +120,16 @@ async function chatViaOpenClawCore(body) {
     headers.Authorization = `Bearer ${OPENCLAW_GATEWAY_TOKEN}`;
   }
 
+  // 由 SuperInsight 后端根据网关关联的 LLM 配置解析，勿在网关内写死模型
+  const model =
+    (typeof body.openclaw_model === 'string' && body.openclaw_model.trim()) ||
+    process.env.OPENCLAW_CORE_CHAT_MODEL ||
+    'openclaw/default';
+
   const r = await axios.post(
     `${OPENCLAW_CORE_URL}/v1/chat/completions`,
     {
-      model: 'openclaw/default',
+      model,
       messages,
     },
     { headers, timeout: 120000 }

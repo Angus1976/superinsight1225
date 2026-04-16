@@ -42,6 +42,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ onSearch }) => {
   return (
     <>
       <div
+        data-testid="global-search-trigger"
         className={styles.trigger}
         onClick={open}
         role="button"

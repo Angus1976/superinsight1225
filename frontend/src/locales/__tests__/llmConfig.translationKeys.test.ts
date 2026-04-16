@@ -100,6 +100,7 @@ describe('LLM Config Translation Key Completeness', () => {
       'applications.structuring.name',
       'applications.knowledge_graph.name',
       'applications.ai_assistant.name',
+      'applications.openclaw.name',
       'configList.title',
       'configList.addButton',
       'configForm.createTitle',

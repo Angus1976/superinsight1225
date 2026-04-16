@@ -33,6 +33,8 @@ export interface OpenClawStatus {
   gateway_name: string | null;
   skills: SkillInfo[];
   error?: string;
+  /** 与 available 区分：HTTP /health 是否可达 */
+  gateway_reachable?: boolean;
 }
 
 export interface TokenUsage {

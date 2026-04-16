@@ -45,6 +45,10 @@
     "embedding": {
       "name": "文本嵌入",
       "description": "文本嵌入向量生成"
+    },
+    "openclaw": {
+      "name": "OpenClaw 网关",
+      "description": "技能工作流 / OpenClaw Core 通道使用的 LLM；在集成页固定网关配置时可覆盖此绑定"
     }
   },
   

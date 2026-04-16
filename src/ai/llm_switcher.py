@@ -294,11 +294,14 @@ class LLMSwitcher:
             "local_ollama": LLMMethod.LOCAL_OLLAMA,
             "openai": LLMMethod.CLOUD_OPENAI,
             "cloud_openai": LLMMethod.CLOUD_OPENAI,
+            "deepseek": LLMMethod.CLOUD_OPENAI,
             "azure": LLMMethod.CLOUD_AZURE,
             "cloud_azure": LLMMethod.CLOUD_AZURE,
             "china_qwen": LLMMethod.CHINA_QWEN,
             "china_zhipu": LLMMethod.CHINA_ZHIPU,
             "china_baidu": LLMMethod.CHINA_BAIDU,
+            "baidu": LLMMethod.CHINA_BAIDU,
+            "baidu_qianfan": LLMMethod.CLOUD_OPENAI,
             "china_hunyuan": LLMMethod.CHINA_HUNYUAN,
         }
         return mapping.get(provider)
@@ -355,12 +358,15 @@ class LLMSwitcher:
                 logger.warning(f"No API key for {llm_cfg.name}")
                 return None
 
+        from src.ai.llm_schemas import extra_headers_from_llm_config_data
+
         cloud_config = CloudConfig(
             openai_api_key=api_key,
             openai_base_url=config_data.get("base_url", "https://api.openai.com/v1"),
             openai_model=config_data.get("model_name", "gpt-3.5-turbo"),
             timeout=timeout,
             max_retries=max_retries,
+            extra_headers=extra_headers_from_llm_config_data(config_data),
         )
         return LLMConfig(
             default_method=method,
@@ -395,12 +401,15 @@ class LLMSwitcher:
         else:
             api_key = self._decrypt_api_key(config_data, encryption_service)
             if api_key:
+                from src.ai.llm_schemas import extra_headers_from_llm_config_data
+
                 config.cloud_config = CloudConfig(
                     openai_api_key=api_key,
                     openai_base_url=config_data.get("base_url", "https://api.openai.com/v1"),
                     openai_model=config_data.get("model_name", "gpt-3.5-turbo"),
                     timeout=timeout,
                     max_retries=max_retries,
+                    extra_headers=extra_headers_from_llm_config_data(config_data),
                 )
 
     async def _initialize_providers(self) -> None:

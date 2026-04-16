@@ -27,6 +27,8 @@ class OpenClawStatusResponse(BaseModel):
     gateway_name: Optional[str] = None
     skills: list[SkillInfoResponse] = []
     error: Optional[str] = None
+    # True when HTTP GET {gateway_base}/health returns 200（与 DB 有网关记录不同）
+    gateway_reachable: bool = False
 
 
 class SkillDetailResponse(SkillInfoResponse):

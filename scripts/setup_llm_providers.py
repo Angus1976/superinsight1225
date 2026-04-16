@@ -142,21 +142,6 @@ def bind_config_to_apps(session, config, apps, provider_def):
     return bound
 
 
-def deactivate_old_ollama(session):
-    """Deactivate old qwen2.5:1.5b configs so 7b takes over."""
-    result = session.execute(
-        select(LLMConfiguration).where(
-            LLMConfiguration.name.like("%1.5b%"),
-            LLMConfiguration.is_active == True,
-        )
-    )
-    old_configs = result.scalars().all()
-    for cfg in old_configs:
-        cfg.is_active = False
-        print(f"  ⏹ 停用旧配置: {cfg.name}")
-    return len(old_configs)
-
-
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -214,10 +199,7 @@ def run_setup(session):
 
     print(f"📋 找到 {len(apps)} 个活跃应用")
 
-    # Deactivate old 1.5b
-    deactivated = deactivate_old_ollama(session)
-    if deactivated:
-        print(f"  停用了 {deactivated} 个旧 1.5b 配置")
+    # 不再停用 1.5b：可与 7b 并存（见 scripts/seed_local_ollama_qwen_configs.py）
 
     # Create/get each provider and bind
     for pdef in PROVIDERS:

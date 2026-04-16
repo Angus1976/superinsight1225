@@ -65,6 +65,7 @@ def _call_llm(text: str, system_prompt: str, tenant_id: str | None) -> str:
     back to the next one on HTTP / auth errors.
     """
     from src.services.structuring_pipeline import _load_all_cloud_configs
+    from src.ai.llm_schemas import openai_compatible_chat_headers
 
     configs = asyncio.run(
         _load_all_cloud_configs(tenant_id=tenant_id, application_code="semantic_analysis")
@@ -78,7 +79,7 @@ def _call_llm(text: str, system_prompt: str, tenant_id: str | None) -> str:
         try:
             resp = httpx.post(
                 f"{base_url}/chat/completions",
-                headers={"Authorization": f"Bearer {cfg.openai_api_key}"},
+                headers=openai_compatible_chat_headers(cfg),
                 json={
                     "model": cfg.openai_model,
                     "messages": [

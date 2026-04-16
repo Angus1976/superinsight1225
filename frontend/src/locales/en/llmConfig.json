@@ -45,6 +45,10 @@
     "embedding": {
       "name": "Text Embedding",
       "description": "Text embedding vector generation"
+    },
+    "openclaw": {
+      "name": "OpenClaw Gateway",
+      "description": "LLM used for skill workflows / OpenClaw Core; gateway-level pin overrides this binding when set"
     }
   },
   

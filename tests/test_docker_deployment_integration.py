@@ -63,7 +63,7 @@ def test_env_file():
         f.write("OPENCLAW_API_KEY=test-api-key-123\n")
         f.write("TENANT_ID=test-tenant-456\n")
         f.write("OPENCLAW_LLM_PROVIDER=ollama\n")
-        f.write("OPENCLAW_LLM_MODEL=llama2\n")
+        f.write("OPENCLAW_LLM_MODEL=qwen2.5:7b\n")
         f.write("OPENCLAW_USER_LANGUAGE=zh-CN\n")
         f.write("OPENCLAW_LOCALE=zh-CN\n")
         f.write("OPENCLAW_LOG_LEVEL=info\n")
@@ -327,7 +327,7 @@ class TestDockerDeployment:
             "superinsight-openclaw-agent",
             "LLM_MODEL"
         )
-        assert agent_llm_model == "llama2", \
+        assert agent_llm_model == "qwen2.5:7b", \
             f"Agent LLM model mismatch: {agent_llm_model}"
         
         agent_language = get_container_env(

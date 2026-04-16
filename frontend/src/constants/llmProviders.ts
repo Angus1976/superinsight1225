@@ -58,8 +58,8 @@ export const CHINA_LLM_PROVIDERS: LLMProvider[] = [
   },
   {
     value: 'baidu',
-    label: '文心一言 (ERNIE)',
-    labelEn: 'ERNIE (Baidu)',
+    label: '文心一言 · 旧版应用 (AK/SK + OAuth)',
+    labelEn: 'ERNIE legacy (app AK/SK)',
     defaultEndpoint: 'https://aip.baidubce.com/rpc/2.0/ai_custom/v1',
     models: [
       { value: 'ernie-4.0-8k', label: 'ERNIE 4.0 8K' },
@@ -67,6 +67,20 @@ export const CHINA_LLM_PROVIDERS: LLMProvider[] = [
       { value: 'ernie-3.5-8k', label: 'ERNIE 3.5 8K' },
       { value: 'ernie-speed-128k', label: 'ERNIE Speed 128K' },
       { value: 'ernie-lite-8k', label: 'ERNIE Lite 8K' },
+    ],
+  },
+  /** 控制台「API Key」格式如 bce-v3/ALTAK-…，走 OpenAI 兼容 Chat Completions */
+  {
+    value: 'baidu_qianfan',
+    label: '百度千帆 (Qianfan · OpenAI 兼容)',
+    labelEn: 'Baidu Qianfan (OpenAI-compatible)',
+    defaultEndpoint: 'https://qianfan.baidubce.com/v2',
+    models: [
+      { value: 'ernie-4.0-8k', label: 'ERNIE 4.0 8K（通用）' },
+      { value: 'ernie-4.0-turbo-8k', label: 'ERNIE 4.0 Turbo 8K' },
+      { value: 'ernie-speed-128k', label: 'ERNIE Speed 128K（长文本）' },
+      { value: 'ernie-3.5-8k', label: 'ERNIE 3.5 8K' },
+      { value: 'ernie-lite-8k', label: 'ERNIE Lite 8K（低成本）' },
     ],
   },
   {

@@ -22,6 +22,7 @@ from src.models.structuring import (
     VectorRecord,
 )
 from src.services.structuring_pipeline import get_celery_app
+from src.ai.llm_schemas import openai_compatible_chat_headers
 
 logger = logging.getLogger(__name__)
 
@@ -231,9 +232,10 @@ def _embed_single_with_fallback(text: str, configs: list) -> list[float]:
 
             # Standard OpenAI-compatible embedding endpoint
             embed_url = base_url.rstrip("/") + "/embeddings"
+            h = openai_compatible_chat_headers(cfg)
             resp = httpx.post(
                 embed_url,
-                headers={"Authorization": f"Bearer {cfg.openai_api_key}"},
+                headers=h,
                 json={"input": text, "model": cfg.openai_model},
                 timeout=60,
             )

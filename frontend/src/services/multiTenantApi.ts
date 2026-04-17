@@ -11,6 +11,10 @@
  */
 
 import { api } from './api';
+import { keysToSnakeDeep } from '@/utils/jsonCase';
+
+const norm = <T>(data: unknown): T => keysToSnakeDeep(data) as T;
+const snakeBody = (data: unknown) => keysToSnakeDeep(data);
 
 // ============================================================================
 // Types
@@ -261,23 +265,34 @@ export interface AuditLogEntry {
 // ============================================================================
 
 export const tenantApi = {
-  create: (data: TenantCreateRequest) => 
-    api.post<Tenant>('/api/v1/tenants', data),
-  
-  list: (params?: { status?: TenantStatus; skip?: number; limit?: number }) =>
-    api.get<Tenant[]>('/api/v1/tenants', { params }),
-  
-  get: (tenantId: string) =>
-    api.get<Tenant>(`/api/v1/tenants/${tenantId}`),
-  
-  update: (tenantId: string, data: TenantUpdateRequest) =>
-    api.put<Tenant>(`/api/v1/tenants/${tenantId}`, data),
-  
-  setStatus: (tenantId: string, status: TenantStatus) =>
-    api.put<Tenant>(`/api/v1/tenants/${tenantId}/status`, null, { params: { new_status: status } }),
-  
-  delete: (tenantId: string) =>
-    api.delete(`/api/v1/tenants/${tenantId}`),
+  async create(data: TenantCreateRequest): Promise<Tenant> {
+    const r = await api.post<Tenant>('/api/v1/tenants', snakeBody(data));
+    return norm<Tenant>(r.data);
+  },
+
+  async list(params?: { status?: TenantStatus; skip?: number; limit?: number }): Promise<Tenant[]> {
+    const r = await api.get<Tenant[]>('/api/v1/tenants', { params });
+    return norm<Tenant[]>(r.data);
+  },
+
+  async get(tenantId: string): Promise<Tenant> {
+    const r = await api.get<Tenant>(`/api/v1/tenants/${tenantId}`);
+    return norm<Tenant>(r.data);
+  },
+
+  async update(tenantId: string, data: TenantUpdateRequest): Promise<Tenant> {
+    const r = await api.put<Tenant>(`/api/v1/tenants/${tenantId}`, snakeBody(data));
+    return norm<Tenant>(r.data);
+  },
+
+  async setStatus(tenantId: string, status: TenantStatus): Promise<Tenant> {
+    const r = await api.put<Tenant>(`/api/v1/tenants/${tenantId}/status`, null, { params: { new_status: status } });
+    return norm<Tenant>(r.data);
+  },
+
+  async delete(tenantId: string): Promise<void> {
+    await api.delete(`/api/v1/tenants/${tenantId}`);
+  },
 };
 
 // ============================================================================
@@ -285,32 +300,49 @@ export const tenantApi = {
 // ============================================================================
 
 export const workspaceApi = {
-  create: (data: WorkspaceCreateRequest) =>
-    api.post<Workspace>('/api/v1/workspaces', data),
-  
-  list: (params?: { tenant_id?: string; status?: WorkspaceStatus; skip?: number; limit?: number }) =>
-    api.get<Workspace[]>('/api/v1/workspaces', { params }),
-  
-  getHierarchy: (tenantId?: string) =>
-    api.get<WorkspaceNode[]>('/api/v1/workspaces/hierarchy', { params: { tenant_id: tenantId } }),
-  
-  get: (workspaceId: string) =>
-    api.get<Workspace>(`/api/v1/workspaces/${workspaceId}`),
-  
-  update: (workspaceId: string, data: WorkspaceUpdateRequest) =>
-    api.put<Workspace>(`/api/v1/workspaces/${workspaceId}`, data),
-  
-  archive: (workspaceId: string) =>
-    api.post<Workspace>(`/api/v1/workspaces/${workspaceId}/archive`),
-  
-  restore: (workspaceId: string) =>
-    api.post<Workspace>(`/api/v1/workspaces/${workspaceId}/restore`),
-  
-  move: (workspaceId: string, newParentId?: string) =>
-    api.put<Workspace>(`/api/v1/workspaces/${workspaceId}/move`, null, { params: { new_parent_id: newParentId } }),
-  
-  delete: (workspaceId: string) =>
-    api.delete(`/api/v1/workspaces/${workspaceId}`),
+  async create(data: WorkspaceCreateRequest): Promise<Workspace> {
+    const r = await api.post<Workspace>('/api/v1/workspaces', snakeBody(data));
+    return norm<Workspace>(r.data);
+  },
+
+  async list(params?: { tenant_id?: string; status?: WorkspaceStatus; skip?: number; limit?: number }): Promise<Workspace[]> {
+    const r = await api.get<Workspace[]>('/api/v1/workspaces', { params });
+    return norm<Workspace[]>(r.data);
+  },
+
+  async getHierarchy(tenantId?: string): Promise<WorkspaceNode[]> {
+    const r = await api.get<WorkspaceNode[]>('/api/v1/workspaces/hierarchy', { params: { tenant_id: tenantId } });
+    return norm<WorkspaceNode[]>(r.data);
+  },
+
+  async get(workspaceId: string): Promise<Workspace> {
+    const r = await api.get<Workspace>(`/api/v1/workspaces/${workspaceId}`);
+    return norm<Workspace>(r.data);
+  },
+
+  async update(workspaceId: string, data: WorkspaceUpdateRequest): Promise<Workspace> {
+    const r = await api.put<Workspace>(`/api/v1/workspaces/${workspaceId}`, snakeBody(data));
+    return norm<Workspace>(r.data);
+  },
+
+  async archive(workspaceId: string): Promise<Workspace> {
+    const r = await api.post<Workspace>(`/api/v1/workspaces/${workspaceId}/archive`);
+    return norm<Workspace>(r.data);
+  },
+
+  async restore(workspaceId: string): Promise<Workspace> {
+    const r = await api.post<Workspace>(`/api/v1/workspaces/${workspaceId}/restore`);
+    return norm<Workspace>(r.data);
+  },
+
+  async move(workspaceId: string, newParentId?: string): Promise<Workspace> {
+    const r = await api.put<Workspace>(`/api/v1/workspaces/${workspaceId}/move`, null, { params: { new_parent_id: newParentId } });
+    return norm<Workspace>(r.data);
+  },
+
+  async delete(workspaceId: string): Promise<void> {
+    await api.delete(`/api/v1/workspaces/${workspaceId}`);
+  },
 };
 
 // ============================================================================
@@ -318,26 +350,39 @@ export const workspaceApi = {
 // ============================================================================
 
 export const memberApi = {
-  invite: (workspaceId: string, data: InvitationConfig) =>
-    api.post<Invitation>(`/api/v1/workspaces/${workspaceId}/members/invite`, data),
-  
-  add: (workspaceId: string, data: MemberAddRequest) =>
-    api.post<WorkspaceMember>(`/api/v1/workspaces/${workspaceId}/members`, data),
-  
-  list: (workspaceId: string, params?: { skip?: number; limit?: number }) =>
-    api.get<WorkspaceMember[]>(`/api/v1/workspaces/${workspaceId}/members`, { params }),
-  
-  updateRole: (workspaceId: string, userId: string, role: MemberRole) =>
-    api.put<WorkspaceMember>(`/api/v1/workspaces/${workspaceId}/members/${userId}/role`, null, { params: { role } }),
-  
-  remove: (workspaceId: string, userId: string) =>
-    api.delete(`/api/v1/workspaces/${workspaceId}/members/${userId}`),
-  
-  batchAdd: (workspaceId: string, members: MemberAddRequest[]) =>
-    api.post<WorkspaceMember[]>(`/api/v1/workspaces/${workspaceId}/members/batch`, { members }),
-  
-  createCustomRole: (workspaceId: string, data: CustomRoleConfig) =>
-    api.post<CustomRole>(`/api/v1/workspaces/${workspaceId}/roles`, data),
+  async invite(workspaceId: string, data: InvitationConfig): Promise<Invitation> {
+    const r = await api.post<Invitation>(`/api/v1/workspaces/${workspaceId}/members/invite`, snakeBody(data));
+    return norm<Invitation>(r.data);
+  },
+
+  async add(workspaceId: string, data: MemberAddRequest): Promise<WorkspaceMember> {
+    const r = await api.post<WorkspaceMember>(`/api/v1/workspaces/${workspaceId}/members`, snakeBody(data));
+    return norm<WorkspaceMember>(r.data);
+  },
+
+  async list(workspaceId: string, params?: { skip?: number; limit?: number }): Promise<WorkspaceMember[]> {
+    const r = await api.get<WorkspaceMember[]>(`/api/v1/workspaces/${workspaceId}/members`, { params });
+    return norm<WorkspaceMember[]>(r.data);
+  },
+
+  async updateRole(workspaceId: string, userId: string, role: MemberRole): Promise<WorkspaceMember> {
+    const r = await api.put<WorkspaceMember>(`/api/v1/workspaces/${workspaceId}/members/${userId}/role`, null, { params: { role } });
+    return norm<WorkspaceMember>(r.data);
+  },
+
+  async remove(workspaceId: string, userId: string): Promise<void> {
+    await api.delete(`/api/v1/workspaces/${workspaceId}/members/${userId}`);
+  },
+
+  async batchAdd(workspaceId: string, members: MemberAddRequest[]): Promise<WorkspaceMember[]> {
+    const r = await api.post<WorkspaceMember[]>(`/api/v1/workspaces/${workspaceId}/members/batch`, snakeBody({ members }));
+    return norm<WorkspaceMember[]>(r.data);
+  },
+
+  async createCustomRole(workspaceId: string, data: CustomRoleConfig): Promise<CustomRole> {
+    const r = await api.post<CustomRole>(`/api/v1/workspaces/${workspaceId}/roles`, snakeBody(data));
+    return norm<CustomRole>(r.data);
+  },
 };
 
 // ============================================================================
@@ -345,19 +390,32 @@ export const memberApi = {
 // ============================================================================
 
 export const quotaApi = {
-  get: (entityType: EntityType, entityId: string) =>
-    api.get<QuotaResponse>(`/api/v1/quotas/${entityType}/${entityId}`),
-  
-  set: (entityType: EntityType, entityId: string, data: QuotaConfig) =>
-    api.put<QuotaResponse>(`/api/v1/quotas/${entityType}/${entityId}`, data),
-  
-  getUsage: (entityType: EntityType, entityId: string) =>
-    api.get<QuotaUsage>(`/api/v1/quotas/${entityType}/${entityId}/usage`),
-  
-  check: (entityType: EntityType, entityId: string, resourceType: ResourceType, amount?: number) =>
-    api.post<QuotaCheckResult>(`/api/v1/quotas/${entityType}/${entityId}/check`, null, {
+  async get(entityType: EntityType, entityId: string): Promise<QuotaResponse> {
+    const r = await api.get<QuotaResponse>(`/api/v1/quotas/${entityType}/${entityId}`);
+    return norm<QuotaResponse>(r.data);
+  },
+
+  async set(entityType: EntityType, entityId: string, data: QuotaConfig): Promise<QuotaResponse> {
+    const r = await api.put<QuotaResponse>(`/api/v1/quotas/${entityType}/${entityId}`, snakeBody(data));
+    return norm<QuotaResponse>(r.data);
+  },
+
+  async getUsage(entityType: EntityType, entityId: string): Promise<QuotaUsage> {
+    const r = await api.get<QuotaUsage>(`/api/v1/quotas/${entityType}/${entityId}/usage`);
+    return norm<QuotaUsage>(r.data);
+  },
+
+  async check(
+    entityType: EntityType,
+    entityId: string,
+    resourceType: ResourceType,
+    amount?: number,
+  ): Promise<QuotaCheckResult> {
+    const r = await api.post<QuotaCheckResult>(`/api/v1/quotas/${entityType}/${entityId}/check`, null, {
       params: { resource_type: resourceType, amount },
-    }),
+    });
+    return norm<QuotaCheckResult>(r.data);
+  },
 };
 
 // ============================================================================
@@ -365,23 +423,33 @@ export const quotaApi = {
 // ============================================================================
 
 export const shareApi = {
-  create: (data: CreateShareRequest) =>
-    api.post<ShareLink>('/api/v1/shares', data),
-  
-  access: (token: string) =>
-    api.get<any>(`/api/v1/shares/${token}`),
-  
-  revoke: (shareId: string) =>
-    api.delete(`/api/v1/shares/${shareId}`),
-  
-  list: (params?: { skip?: number; limit?: number }) =>
-    api.get<ShareLink[]>('/api/v1/shares', { params }),
-  
-  setWhitelist: (tenantId: string, data: WhitelistConfig) =>
-    api.put(`/api/v1/tenants/${tenantId}/whitelist`, data),
-  
-  getWhitelist: (tenantId: string) =>
-    api.get<WhitelistConfig>(`/api/v1/tenants/${tenantId}/whitelist`),
+  async create(data: CreateShareRequest): Promise<ShareLink> {
+    const r = await api.post<ShareLink>('/api/v1/shares', snakeBody(data));
+    return norm<ShareLink>(r.data);
+  },
+
+  async access(token: string): Promise<unknown> {
+    const r = await api.get<unknown>(`/api/v1/shares/${token}`);
+    return norm(r.data);
+  },
+
+  async revoke(shareId: string): Promise<void> {
+    await api.delete(`/api/v1/shares/${shareId}`);
+  },
+
+  async list(params?: { skip?: number; limit?: number }): Promise<ShareLink[]> {
+    const r = await api.get<ShareLink[]>('/api/v1/shares', { params });
+    return norm<ShareLink[]>(r.data);
+  },
+
+  async setWhitelist(tenantId: string, data: WhitelistConfig): Promise<void> {
+    await api.put(`/api/v1/tenants/${tenantId}/whitelist`, snakeBody(data));
+  },
+
+  async getWhitelist(tenantId: string): Promise<WhitelistConfig> {
+    const r = await api.get<WhitelistConfig>(`/api/v1/tenants/${tenantId}/whitelist`);
+    return norm<WhitelistConfig>(r.data);
+  },
 };
 
 // ============================================================================
@@ -389,19 +457,27 @@ export const shareApi = {
 // ============================================================================
 
 export const adminApi = {
-  getDashboard: () =>
-    api.get<AdminDashboard>('/api/v1/admin/dashboard'),
-  
-  getServices: () =>
-    api.get<ServiceStatus[]>('/api/v1/admin/services'),
-  
-  getConfig: () =>
-    api.get<SystemConfig>('/api/v1/admin/config'),
-  
-  updateConfig: (data: SystemConfigRequest) =>
-    api.put<SystemConfig>('/api/v1/admin/config', data),
-  
-  getAuditLogs: (params?: {
+  async getDashboard(): Promise<AdminDashboard> {
+    const r = await api.get<AdminDashboard>('/api/v1/admin/dashboard');
+    return norm<AdminDashboard>(r.data);
+  },
+
+  async getServices(): Promise<ServiceStatus[]> {
+    const r = await api.get<ServiceStatus[]>('/api/v1/admin/services');
+    return norm<ServiceStatus[]>(r.data);
+  },
+
+  async getConfig(): Promise<SystemConfig> {
+    const r = await api.get<SystemConfig>('/api/v1/admin/config');
+    return norm<SystemConfig>(r.data);
+  },
+
+  async updateConfig(data: SystemConfigRequest): Promise<SystemConfig> {
+    const r = await api.put<SystemConfig>('/api/v1/admin/config', snakeBody(data));
+    return norm<SystemConfig>(r.data);
+  },
+
+  async getAuditLogs(params?: {
     tenant_id?: string;
     user_id?: string;
     action?: string;
@@ -410,8 +486,10 @@ export const adminApi = {
     end_date?: string;
     skip?: number;
     limit?: number;
-  }) =>
-    api.get<AuditLogEntry[]>('/api/v1/admin/audit-logs', { params }),
+  }): Promise<AuditLogEntry[]> {
+    const r = await api.get<AuditLogEntry[]>('/api/v1/admin/audit-logs', { params });
+    return norm<AuditLogEntry[]>(r.data);
+  },
 };
 
 export default {

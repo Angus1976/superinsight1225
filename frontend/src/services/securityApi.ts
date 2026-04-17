@@ -5,6 +5,7 @@
  */
 
 import apiClient from './api/client';
+import { apiRequestToSnake, apiResponseToSnake } from '@/utils/jsonCase';
 
 // ============================================================================
 // Security Event Types
@@ -136,22 +137,22 @@ export const securityMonitorApi = {
       `${SECURITY_BASE_URL}/events`,
       { params }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async getEvent(eventId: string): Promise<SecurityEvent> {
     const response = await apiClient.get<SecurityEvent>(
       `${SECURITY_BASE_URL}/events/${eventId}`
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async resolveEvent(eventId: string, data: ResolveEventRequest): Promise<SecurityEvent> {
     const response = await apiClient.post<SecurityEvent>(
       `${SECURITY_BASE_URL}/events/${eventId}/resolve`,
-      data
+      apiRequestToSnake(data)
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async markEventInvestigating(
@@ -163,7 +164,7 @@ export const securityMonitorApi = {
       null,
       { params: { investigator_id: investigatorId } }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Security Posture
@@ -172,14 +173,14 @@ export const securityMonitorApi = {
       `${SECURITY_BASE_URL}/posture`,
       { params: { days } }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async getSummary(): Promise<SecuritySummary> {
     const response = await apiClient.get<SecuritySummary>(
       `${SECURITY_BASE_URL}/posture/summary`
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Thresholds Configuration
@@ -187,7 +188,7 @@ export const securityMonitorApi = {
     const response = await apiClient.get<SecurityThresholds>(
       `${SECURITY_BASE_URL}/thresholds`
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async updateThresholds(
@@ -196,10 +197,10 @@ export const securityMonitorApi = {
   ): Promise<SecurityThresholds> {
     const response = await apiClient.put<SecurityThresholds>(
       `${SECURITY_BASE_URL}/thresholds`,
-      data,
+      apiRequestToSnake(data),
       { params: { admin_user_id: adminUserId } }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Statistics
@@ -208,7 +209,7 @@ export const securityMonitorApi = {
       `${SECURITY_BASE_URL}/statistics`,
       { params: { days } }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 };
 
@@ -221,8 +222,8 @@ const SESSION_BASE_URL = '/api/v1/sessions';
 export const sessionApi = {
   // Session CRUD
   async createSession(data: CreateSessionRequest): Promise<Session> {
-    const response = await apiClient.post<Session>(SESSION_BASE_URL, data);
-    return response.data;
+    const response = await apiClient.post<Session>(SESSION_BASE_URL, apiRequestToSnake(data));
+    return apiResponseToSnake(response.data);
   },
 
   async listSessions(params?: {
@@ -232,12 +233,12 @@ export const sessionApi = {
     const response = await apiClient.get<SessionListResponse>(SESSION_BASE_URL, {
       params,
     });
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async getSession(sessionId: string): Promise<Session> {
     const response = await apiClient.get<Session>(`${SESSION_BASE_URL}/${sessionId}`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async destroySession(sessionId: string): Promise<void> {
@@ -254,7 +255,7 @@ export const sessionApi = {
       null,
       { params: { admin_user_id: adminUserId } }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async extendSession(
@@ -263,16 +264,16 @@ export const sessionApi = {
   ): Promise<Session> {
     const response = await apiClient.post<Session>(
       `${SESSION_BASE_URL}/${sessionId}/extend`,
-      { additional_seconds: additionalSeconds }
+      apiRequestToSnake({ additional_seconds: additionalSeconds })
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async validateSession(sessionId: string): Promise<Session> {
     const response = await apiClient.post<Session>(
       `${SESSION_BASE_URL}/${sessionId}/validate`
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Configuration
@@ -280,7 +281,7 @@ export const sessionApi = {
     const response = await apiClient.get<SessionConfig>(
       `${SESSION_BASE_URL}/config/current`
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async updateConfig(
@@ -289,10 +290,10 @@ export const sessionApi = {
   ): Promise<SessionConfig> {
     const response = await apiClient.put<SessionConfig>(
       `${SESSION_BASE_URL}/config`,
-      data,
+      apiRequestToSnake(data),
       { params: { admin_user_id: adminUserId } }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Statistics
@@ -300,7 +301,7 @@ export const sessionApi = {
     const response = await apiClient.get<SessionStatistics>(
       `${SESSION_BASE_URL}/stats/overview`
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async cleanup(adminUserId: string): Promise<{
@@ -312,7 +313,7 @@ export const sessionApi = {
     const response = await apiClient.post(`${SESSION_BASE_URL}/cleanup`, null, {
       params: { admin_user_id: adminUserId },
     });
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // User Sessions
@@ -320,7 +321,7 @@ export const sessionApi = {
     const response = await apiClient.get<SessionListResponse>(
       `${SESSION_BASE_URL}/users/${userId}`
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async destroyUserSessions(userId: string, adminUserId: string): Promise<void> {

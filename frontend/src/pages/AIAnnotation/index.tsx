@@ -250,7 +250,7 @@ const AIAnnotationIndex: React.FC = () => {
             }
           >
             <TaskManagement
-              onTaskSelect={(task) => navigate(`/ai-annotation/tasks/${task.taskId}`)}
+              onTaskSelect={(task) => navigate(`/ai-annotation/tasks/${task.task_id}`)}
             />
           </Card>
         </Col>

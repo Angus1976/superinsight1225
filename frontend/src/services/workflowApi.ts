@@ -4,6 +4,7 @@
  */
 
 import apiClient from './api/client';
+import { apiRequestToSnake, apiResponseToSnake } from '@/utils/jsonCase';
 
 // Types
 export interface QualityIssue {
@@ -104,52 +105,58 @@ export interface TaskListResponse {
 export const workflowApi = {
   // Workflow Configuration
   async configureWorkflow(request: WorkflowConfigRequest): Promise<QualityWorkflow> {
-    const response = await apiClient.post<QualityWorkflow>('/api/v1/quality-workflow/configure', request);
-    return response.data;
+    const response = await apiClient.post<QualityWorkflow>(
+      '/api/v1/quality-workflow/configure',
+      apiRequestToSnake(request)
+    );
+    return apiResponseToSnake<QualityWorkflow>(response.data);
   },
 
   async getWorkflowConfig(projectId: string): Promise<QualityWorkflow> {
     const response = await apiClient.get<QualityWorkflow>(`/api/v1/quality-workflow/config/${projectId}`);
-    return response.data;
+    return apiResponseToSnake<QualityWorkflow>(response.data);
   },
 
   // Improvement Tasks
   async createTask(request: CreateTaskRequest): Promise<ImprovementTask> {
-    const response = await apiClient.post<ImprovementTask>('/api/v1/quality-workflow/tasks', request);
-    return response.data;
+    const response = await apiClient.post<ImprovementTask>(
+      '/api/v1/quality-workflow/tasks',
+      apiRequestToSnake(request)
+    );
+    return apiResponseToSnake<ImprovementTask>(response.data);
   },
 
   async listTasks(params?: TaskListParams): Promise<TaskListResponse> {
     const response = await apiClient.get<TaskListResponse>('/api/v1/quality-workflow/tasks', { params });
-    return response.data;
+    return apiResponseToSnake<TaskListResponse>(response.data);
   },
 
   async getTask(taskId: string): Promise<ImprovementTask> {
     const response = await apiClient.get<ImprovementTask>(`/api/v1/quality-workflow/tasks/${taskId}`);
-    return response.data;
+    return apiResponseToSnake<ImprovementTask>(response.data);
   },
 
   async submitImprovement(taskId: string, request: SubmitImprovementRequest): Promise<ImprovementTask> {
     const response = await apiClient.post<ImprovementTask>(
       `/api/v1/quality-workflow/tasks/${taskId}/submit`,
-      request
+      apiRequestToSnake(request)
     );
-    return response.data;
+    return apiResponseToSnake<ImprovementTask>(response.data);
   },
 
   async reviewImprovement(taskId: string, request: ReviewImprovementRequest): Promise<ImprovementTask> {
     const response = await apiClient.post<ImprovementTask>(
       `/api/v1/quality-workflow/tasks/${taskId}/review`,
-      request
+      apiRequestToSnake(request)
     );
-    return response.data;
+    return apiResponseToSnake<ImprovementTask>(response.data);
   },
 
   async getTaskHistory(taskId: string): Promise<ImprovementHistory[]> {
     const response = await apiClient.get<ImprovementHistory[]>(
       `/api/v1/quality-workflow/tasks/${taskId}/history`
     );
-    return response.data;
+    return apiResponseToSnake<ImprovementHistory[]>(response.data);
   },
 
   // Effect Evaluation
@@ -158,16 +165,16 @@ export const workflowApi = {
       `/api/v1/quality-workflow/effect/${projectId}`,
       { params: { period } }
     );
-    return response.data;
+    return apiResponseToSnake<ImprovementEffectReport>(response.data);
   },
 
   // Batch Operations
   async batchAssign(taskIds: string[], assigneeId: string): Promise<ImprovementTask[]> {
-    const response = await apiClient.post<ImprovementTask[]>('/api/v1/quality-workflow/tasks/batch-assign', {
-      task_ids: taskIds,
-      assignee_id: assigneeId,
-    });
-    return response.data;
+    const response = await apiClient.post<ImprovementTask[]>(
+      '/api/v1/quality-workflow/tasks/batch-assign',
+      apiRequestToSnake({ task_ids: taskIds, assignee_id: assigneeId })
+    );
+    return apiResponseToSnake<ImprovementTask[]>(response.data);
   },
 
   async batchReview(
@@ -175,12 +182,11 @@ export const workflowApi = {
     approved: boolean,
     comments?: string
   ): Promise<ImprovementTask[]> {
-    const response = await apiClient.post<ImprovementTask[]>('/api/v1/quality-workflow/tasks/batch-review', {
-      task_ids: taskIds,
-      approved,
-      comments,
-    });
-    return response.data;
+    const response = await apiClient.post<ImprovementTask[]>(
+      '/api/v1/quality-workflow/tasks/batch-review',
+      apiRequestToSnake({ task_ids: taskIds, approved, comments })
+    );
+    return apiResponseToSnake<ImprovementTask[]>(response.data);
   },
 };
 

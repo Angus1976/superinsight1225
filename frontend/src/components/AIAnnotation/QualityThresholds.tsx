@@ -39,6 +39,7 @@ import { useTranslation } from 'react-i18next';
 import type { ColumnsType } from 'antd/es/table';
 
 import type { EngineConfig } from '@/pages/AIAnnotation/EngineConfiguration';
+import { fetchJsonResponseToSnake } from '@/utils/jsonCase';
 
 interface QualityThresholdsProps {
   engines: EngineConfig[];
@@ -51,7 +52,7 @@ interface QualityMetrics {
   consistency: number;
   completeness: number;
   recall: number;
-  f1Score: number;
+  f1_score: number;
   precision: number;
 }
 
@@ -76,7 +77,7 @@ const QualityThresholds: React.FC<QualityThresholdsProps> = ({
     consistency: 0.82,
     completeness: 0.91,
     recall: 0.78,
-    f1Score: 0.84,
+    f1_score: 0.84,
     precision: 0.89,
   });
   const [thresholds, setThresholds] = useState({
@@ -91,12 +92,12 @@ const QualityThresholds: React.FC<QualityThresholdsProps> = ({
       setSelectedEngine(engines[0]);
       const engine = engines[0];
       setThresholds({
-        accuracy: engine.qualityThresholds.accuracy,
-        consistency: engine.qualityThresholds.consistency,
-        completeness: engine.qualityThresholds.completeness,
-        recall: engine.qualityThresholds.recall,
+        accuracy: engine.quality_thresholds.accuracy,
+        consistency: engine.quality_thresholds.consistency,
+        completeness: engine.quality_thresholds.completeness,
+        recall: engine.quality_thresholds.recall,
       });
-      form.setFieldsValue(engine.qualityThresholds);
+      form.setFieldsValue(engine.quality_thresholds);
       loadMetrics(engine.id!);
     }
   }, [engines, form]);
@@ -105,7 +106,7 @@ const QualityThresholds: React.FC<QualityThresholdsProps> = ({
     try {
       const response = await fetch(`/api/v1/annotation/engines/${engineId}/metrics`);
       if (!response.ok) return;
-      const data = await response.json();
+      const data = await fetchJsonResponseToSnake<{ metrics?: QualityMetrics }>(response);
       setCurrentMetrics(data.metrics || currentMetrics);
     } catch (error) {
       console.error('Failed to load metrics:', error);
@@ -117,12 +118,12 @@ const QualityThresholds: React.FC<QualityThresholdsProps> = ({
     if (engine) {
       setSelectedEngine(engine);
       setThresholds({
-        accuracy: engine.qualityThresholds.accuracy,
-        consistency: engine.qualityThresholds.consistency,
-        completeness: engine.qualityThresholds.completeness,
-        recall: engine.qualityThresholds.recall,
+        accuracy: engine.quality_thresholds.accuracy,
+        consistency: engine.quality_thresholds.consistency,
+        completeness: engine.quality_thresholds.completeness,
+        recall: engine.quality_thresholds.recall,
       });
-      form.setFieldsValue(engine.qualityThresholds);
+      form.setFieldsValue(engine.quality_thresholds);
       loadMetrics(engineId);
     }
   };
@@ -144,7 +145,7 @@ const QualityThresholds: React.FC<QualityThresholdsProps> = ({
       const values = await form.validateFields();
       const updatedConfig: EngineConfig = {
         ...selectedEngine,
-        qualityThresholds: values,
+        quality_thresholds: values,
       };
 
       await onSave(updatedConfig);
@@ -367,7 +368,7 @@ const QualityThresholds: React.FC<QualityThresholdsProps> = ({
               {engines.map((engine) => (
                 <Select.Option key={engine.id} value={engine.id}>
                   <Space>
-                    <Tag color="blue">{engine.engineType}</Tag>
+                    <Tag color="blue">{engine.engine_type}</Tag>
                     {engine.model}
                   </Space>
                 </Select.Option>
@@ -529,7 +530,7 @@ const QualityThresholds: React.FC<QualityThresholdsProps> = ({
                   <Card size="small">
                     <Statistic
                       title={t('ai_annotation:metrics.f1_score')}
-                      value={currentMetrics.f1Score * 100}
+                      value={currentMetrics.f1_score * 100}
                       precision={1}
                       suffix="%"
                       prefix={<LineChartOutlined />}

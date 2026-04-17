@@ -143,14 +143,15 @@ vi.mock('react-i18next', () => ({
 global.fetch = vi.fn();
 
 const mockProgress = {
-  totalTasks: 100,
-  completedTasks: 45,
-  inProgressTasks: 10,
-  pendingTasks: 45,
-  completionRate: 0.45,
-  avgTimePerTaskMinutes: 2.5,
-  activeAnnotators: 3,
-  activeReviewers: 1,
+  project_id: 'project_1',
+  total_tasks: 100,
+  completed_tasks: 45,
+  in_progress_tasks: 10,
+  pending_tasks: 45,
+  completion_rate: 0.45,
+  avg_time_per_task_minutes: 2.5,
+  active_annotators: 3,
+  active_reviewers: 1,
 };
 
 describe('AnnotationCollaboration', () => {
@@ -301,12 +302,12 @@ describe('AnnotationCollaboration', () => {
     await act(async () => {
       MockWebSocket.instances[0].simulateMessage({
         type: 'user_joined',
-        payload: { 
-          id: 'user_1', 
-          name: 'Alice', 
-          status: 'annotating', 
-          currentDocument: 'doc_1', 
-          lastActivity: '2026-01-24T10:00:00Z' 
+        payload: {
+          id: 'user_1',
+          name: 'Alice',
+          status: 'annotating',
+          current_document: 'doc_1',
+          last_activity: '2026-01-24T10:00:00Z',
         },
       });
     });

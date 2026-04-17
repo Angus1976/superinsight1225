@@ -5,6 +5,7 @@
  */
 
 import apiClient from './api/client';
+import { apiRequestToSnake, apiResponseToSnake } from '@/utils/jsonCase';
 
 // ============================================================================
 // Types
@@ -92,22 +93,25 @@ const BASE_URL = '/api/v1/sso';
 export const ssoApi = {
   // Provider Management
   async createProvider(data: CreateSSOProviderRequest): Promise<SSOProvider> {
-    const response = await apiClient.post<SSOProvider>(`${BASE_URL}/providers`, data);
-    return response.data;
+    const response = await apiClient.post<SSOProvider>(
+      `${BASE_URL}/providers`,
+      apiRequestToSnake(data)
+    );
+    return apiResponseToSnake<SSOProvider>(response.data);
   },
 
   async listProviders(enabledOnly?: boolean): Promise<SSOProvider[]> {
     const response = await apiClient.get<SSOProvider[]>(`${BASE_URL}/providers`, {
       params: { enabled_only: enabledOnly },
     });
-    return response.data;
+    return apiResponseToSnake<SSOProvider[]>(response.data);
   },
 
   async getProvider(providerName: string): Promise<SSOProvider> {
     const response = await apiClient.get<SSOProvider>(
       `${BASE_URL}/providers/${providerName}`
     );
-    return response.data;
+    return apiResponseToSnake<SSOProvider>(response.data);
   },
 
   async updateProvider(
@@ -116,9 +120,9 @@ export const ssoApi = {
   ): Promise<SSOProvider> {
     const response = await apiClient.put<SSOProvider>(
       `${BASE_URL}/providers/${providerName}`,
-      data
+      apiRequestToSnake(data)
     );
-    return response.data;
+    return apiResponseToSnake<SSOProvider>(response.data);
   },
 
   async deleteProvider(providerName: string): Promise<void> {
@@ -135,7 +139,7 @@ export const ssoApi = {
       `${BASE_URL}/login/${providerName}`,
       { params: { redirect_uri: redirectUri, state } }
     );
-    return response.data;
+    return apiResponseToSnake<SSOLoginInitResponse>(response.data);
   },
 
   async handleCallback(
@@ -144,9 +148,9 @@ export const ssoApi = {
   ): Promise<SSOLoginResponse> {
     const response = await apiClient.post<SSOLoginResponse>(
       `${BASE_URL}/callback/${providerName}`,
-      callbackData
+      apiRequestToSnake(callbackData)
     );
-    return response.data;
+    return apiResponseToSnake<SSOLoginResponse>(response.data);
   },
 
   async logout(
@@ -156,10 +160,10 @@ export const ssoApi = {
   ): Promise<SSOLogoutResponse> {
     const response = await apiClient.post<SSOLogoutResponse>(
       `${BASE_URL}/logout`,
-      { provider_name: providerName, session_id: sessionId },
+      apiRequestToSnake({ provider_name: providerName, session_id: sessionId }),
       { params: { current_user_id: currentUserId } }
     );
-    return response.data;
+    return apiResponseToSnake<SSOLogoutResponse>(response.data);
   },
 
   // Provider Testing
@@ -167,21 +171,21 @@ export const ssoApi = {
     const response = await apiClient.post<SSOTestResponse>(
       `${BASE_URL}/providers/${providerName}/test`
     );
-    return response.data;
+    return apiResponseToSnake<SSOTestResponse>(response.data);
   },
 
   async enableProvider(providerName: string): Promise<SSOProvider> {
     const response = await apiClient.post<SSOProvider>(
       `${BASE_URL}/providers/${providerName}/enable`
     );
-    return response.data;
+    return apiResponseToSnake<SSOProvider>(response.data);
   },
 
   async disableProvider(providerName: string): Promise<SSOProvider> {
     const response = await apiClient.post<SSOProvider>(
       `${BASE_URL}/providers/${providerName}/disable`
     );
-    return response.data;
+    return apiResponseToSnake<SSOProvider>(response.data);
   },
 };
 

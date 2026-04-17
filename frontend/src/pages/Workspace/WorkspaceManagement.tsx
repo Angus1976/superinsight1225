@@ -41,13 +41,13 @@ const WorkspaceManagement: React.FC = () => {
   // Fetch tenants for selector
   const { data: tenants } = useQuery({
     queryKey: ['tenants'],
-    queryFn: () => tenantApi.list({ status: 'active' }).then(res => res.data),
+    queryFn: () => tenantApi.list({ status: 'active' }),
   });
 
   // Fetch workspace hierarchy
   const { data: hierarchy, isLoading, refetch } = useQuery({
     queryKey: ['workspace-hierarchy', selectedTenantId],
-    queryFn: () => workspaceApi.getHierarchy(selectedTenantId).then(res => res.data),
+    queryFn: () => workspaceApi.getHierarchy(selectedTenantId),
     enabled: !!selectedTenantId,
   });
 

@@ -43,57 +43,14 @@ import {
 import { useTranslation } from 'react-i18next';
 import type { ColumnsType } from 'antd/es/table';
 
-// Types
-export interface QualityOverview {
-  aiAccuracy: number;
-  agreementRate: number;
-  totalSamples: number;
-  activeAlerts: number;
-}
+import type { QualityMetrics, Inconsistency } from '@/services/aiAnnotationApi';
+import { fetchJsonResponseToSnake } from '@/utils/jsonCase';
 
-export interface AccuracyTrend {
-  date: string;
-  aiAccuracy: number;
-  humanAccuracy: number;
-  agreementRate: number;
-  sampleCount: number;
-}
-
-export interface ConfidenceDistribution {
-  range: string;
-  count: number;
-  acceptanceRate: number;
-}
-
-export interface EnginePerformance {
-  engineId: string;
-  engineName: string;
-  accuracy: number;
-  confidence: number;
-  samples: number;
-  suggestions: number;
-  acceptanceRate: number;
-}
-
-export interface DegradationAlert {
-  alertId: string;
-  metric: string;
-  currentValue: number;
-  previousValue: number;
-  degradationRate: number;
-  severity: 'warning' | 'critical';
-  recommendation: string;
-  timestamp: string;
-}
-
-export interface Inconsistency {
-  id: string;
-  type: string;
-  severity: 'low' | 'medium' | 'high';
-  affectedDocuments: string[];
-  description: string;
-  suggestedFix?: string;
-}
+export type QualityOverview = QualityMetrics['overview'];
+export type AccuracyTrend = QualityMetrics['accuracy_trend'][number];
+export type ConfidenceDistribution = QualityMetrics['confidence_distribution'][number];
+export type EnginePerformance = QualityMetrics['engine_performance'][number];
+export type DegradationAlert = QualityMetrics['degradation_alerts'][number];
 
 interface QualityDashboardProps {
   projectId: string;
@@ -137,18 +94,17 @@ const QualityDashboard: React.FC<QualityDashboardProps> = ({
 
       const response = await fetch(`/api/v1/annotation/quality-metrics?${params}`);
       if (response.ok) {
-        const data = await response.json();
+        const data = await fetchJsonResponseToSnake<QualityMetrics>(response);
         setOverview(data.overview);
-        setAccuracyTrend(data.accuracy_trend || data.accuracyTrend || []);
-        setConfidenceDistribution(data.confidence_distribution || data.confidenceDistribution || []);
-        setEnginePerformance(data.engine_performance || data.enginePerformance || []);
-        setAlerts(data.degradation_alerts || data.degradationAlerts || []);
+        setAccuracyTrend(data.accuracy_trend ?? []);
+        setConfidenceDistribution(data.confidence_distribution ?? []);
+        setEnginePerformance(data.engine_performance ?? []);
+        setAlerts(data.degradation_alerts ?? []);
       }
 
-      // Load inconsistencies
       const inconsistenciesRes = await fetch(`/api/v1/annotation/inconsistencies/${projectId}?limit=10`);
       if (inconsistenciesRes.ok) {
-        const inconsistenciesData = await inconsistenciesRes.json();
+        const inconsistenciesData = await fetchJsonResponseToSnake<Inconsistency[]>(inconsistenciesRes);
         setInconsistencies(inconsistenciesData);
       }
     } catch (error) {
@@ -189,8 +145,8 @@ const QualityDashboard: React.FC<QualityDashboardProps> = ({
   const engineColumns: ColumnsType<EnginePerformance> = [
     {
       title: t('ai_annotation:quality.engine'),
-      dataIndex: 'engineName',
-      key: 'engineName',
+      dataIndex: 'engine_name',
+      key: 'engine_name',
     },
     {
       title: t('ai_annotation:quality.accuracy'),
@@ -219,8 +175,8 @@ const QualityDashboard: React.FC<QualityDashboardProps> = ({
     },
     {
       title: t('ai_annotation:quality.acceptance_rate'),
-      dataIndex: 'acceptanceRate',
-      key: 'acceptanceRate',
+      dataIndex: 'acceptance_rate',
+      key: 'acceptance_rate',
       render: (value: number) => (
         <Tag color={value >= 0.8 ? 'green' : value >= 0.6 ? 'orange' : 'red'}>
           {(value * 100).toFixed(0)}%
@@ -247,8 +203,8 @@ const QualityDashboard: React.FC<QualityDashboardProps> = ({
     },
     {
       title: t('ai_annotation:quality.affected_documents'),
-      dataIndex: 'affectedDocuments',
-      key: 'affectedDocuments',
+      dataIndex: 'affected_documents',
+      key: 'affected_documents',
       render: (docs: string[]) => (
         <Tooltip title={docs.join(', ')}>
           <span>{docs.length} {t('ai_annotation:quality.documents')}</span>
@@ -263,8 +219,8 @@ const QualityDashboard: React.FC<QualityDashboardProps> = ({
     },
     {
       title: t('ai_annotation:quality.suggested_fix'),
-      dataIndex: 'suggestedFix',
-      key: 'suggestedFix',
+      dataIndex: 'suggested_fix',
+      key: 'suggested_fix',
       render: (fix?: string) =>
         fix ? (
           <Tooltip title={fix}>
@@ -306,8 +262,8 @@ const QualityDashboard: React.FC<QualityDashboardProps> = ({
             placeholder={t('ai_annotation:quality.all_engines')}
           >
             {enginePerformance.map((engine) => (
-              <Select.Option key={engine.engineId} value={engine.engineId}>
-                {engine.engineName}
+              <Select.Option key={engine.engine_id} value={engine.engine_id}>
+                {engine.engine_name}
               </Select.Option>
             ))}
           </Select>
@@ -322,12 +278,12 @@ const QualityDashboard: React.FC<QualityDashboardProps> = ({
         <div style={{ marginBottom: 16 }}>
           {alerts.map((alert) => (
             <Alert
-              key={alert.alertId}
+              key={alert.alert_id}
               message={
                 <Space>
                   <span>{alert.metric}</span>
                   <Tag color={alert.severity === 'critical' ? 'red' : 'orange'}>
-                    {alert.degradationRate > 0 ? '+' : ''}{(alert.degradationRate * 100).toFixed(1)}%
+                    {alert.degradation_rate > 0 ? '+' : ''}{(alert.degradation_rate * 100).toFixed(1)}%
                   </Tag>
                 </Space>
               }
@@ -347,10 +303,10 @@ const QualityDashboard: React.FC<QualityDashboardProps> = ({
           <Card>
             <Statistic
               title={t('ai_annotation:quality.ai_accuracy')}
-              value={overview?.aiAccuracy ? (overview.aiAccuracy * 100).toFixed(1) : 0}
+              value={overview?.ai_accuracy ? (overview.ai_accuracy * 100).toFixed(1) : 0}
               suffix="%"
               prefix={<CheckCircleOutlined />}
-              valueStyle={{ color: getScoreColor(overview?.aiAccuracy || 0) }}
+              valueStyle={{ color: getScoreColor(overview?.ai_accuracy || 0) }}
             />
           </Card>
         </Col>
@@ -358,10 +314,10 @@ const QualityDashboard: React.FC<QualityDashboardProps> = ({
           <Card>
             <Statistic
               title={t('ai_annotation:quality.agreement_rate')}
-              value={overview?.agreementRate ? (overview.agreementRate * 100).toFixed(1) : 0}
+              value={overview?.agreement_rate ? (overview.agreement_rate * 100).toFixed(1) : 0}
               suffix="%"
               prefix={<LineChartOutlined />}
-              valueStyle={{ color: getScoreColor(overview?.agreementRate || 0) }}
+              valueStyle={{ color: getScoreColor(overview?.agreement_rate || 0) }}
             />
           </Card>
         </Col>
@@ -369,7 +325,7 @@ const QualityDashboard: React.FC<QualityDashboardProps> = ({
           <Card>
             <Statistic
               title={t('ai_annotation:quality.total_samples')}
-              value={overview?.totalSamples || 0}
+              value={overview?.total_samples || 0}
               prefix={<InfoCircleOutlined />}
             />
           </Card>
@@ -378,9 +334,9 @@ const QualityDashboard: React.FC<QualityDashboardProps> = ({
           <Card>
             <Statistic
               title={t('ai_annotation:quality.active_alerts')}
-              value={overview?.activeAlerts || 0}
+              value={overview?.active_alerts || 0}
               prefix={<WarningOutlined />}
-              valueStyle={{ color: (overview?.activeAlerts || 0) > 0 ? '#faad14' : '#52c41a' }}
+              valueStyle={{ color: (overview?.active_alerts || 0) > 0 ? '#faad14' : '#52c41a' }}
             />
           </Card>
         </Col>
@@ -399,7 +355,6 @@ const QualityDashboard: React.FC<QualityDashboardProps> = ({
           >
             {accuracyTrend.length > 0 ? (
               <div style={{ height: 200 }}>
-                {/* Simple trend display - in production, use a charting library */}
                 <Table
                   dataSource={accuracyTrend.slice(-7)}
                   rowKey="date"
@@ -409,20 +364,20 @@ const QualityDashboard: React.FC<QualityDashboardProps> = ({
                     { title: t('ai_annotation:quality.date'), dataIndex: 'date', key: 'date' },
                     {
                       title: t('ai_annotation:quality.ai_accuracy'),
-                      dataIndex: 'aiAccuracy',
-                      key: 'aiAccuracy',
+                      dataIndex: 'ai_accuracy',
+                      key: 'ai_accuracy',
                       render: (v: number) => `${(v * 100).toFixed(1)}%`,
                     },
                     {
                       title: t('ai_annotation:quality.human_accuracy'),
-                      dataIndex: 'humanAccuracy',
-                      key: 'humanAccuracy',
+                      dataIndex: 'human_accuracy',
+                      key: 'human_accuracy',
                       render: (v: number) => `${(v * 100).toFixed(1)}%`,
                     },
                     {
                       title: t('ai_annotation:quality.samples'),
-                      dataIndex: 'sampleCount',
-                      key: 'sampleCount',
+                      dataIndex: 'sample_count',
+                      key: 'sample_count',
                     },
                   ]}
                 />
@@ -451,15 +406,15 @@ const QualityDashboard: React.FC<QualityDashboardProps> = ({
                       <span>{item.range}</span>
                       <Space>
                         <span>{item.count} {t('ai_annotation:quality.samples')}</span>
-                        <Tag color={item.acceptanceRate >= 0.8 ? 'green' : 'orange'}>
-                          {(item.acceptanceRate * 100).toFixed(0)}% {t('ai_annotation:quality.accepted')}
+                        <Tag color={item.acceptance_rate >= 0.8 ? 'green' : 'orange'}>
+                          {(item.acceptance_rate * 100).toFixed(0)}% {t('ai_annotation:quality.accepted')}
                         </Tag>
                       </Space>
                     </div>
                     <Progress
-                      percent={Math.round((item.count / (overview?.totalSamples || 1)) * 100)}
+                      percent={Math.round((item.count / (overview?.total_samples || 1)) * 100)}
                       showInfo={false}
-                      strokeColor={item.acceptanceRate >= 0.8 ? '#52c41a' : '#faad14'}
+                      strokeColor={item.acceptance_rate >= 0.8 ? '#52c41a' : '#faad14'}
                     />
                   </div>
                 ))}
@@ -484,7 +439,7 @@ const QualityDashboard: React.FC<QualityDashboardProps> = ({
         <Table
           dataSource={enginePerformance}
           columns={engineColumns}
-          rowKey="engineId"
+          rowKey="engine_id"
           pagination={false}
           size="small"
         />
@@ -505,7 +460,7 @@ const QualityDashboard: React.FC<QualityDashboardProps> = ({
           <Table
             dataSource={inconsistencies}
             columns={inconsistencyColumns}
-            rowKey="id"
+            rowKey="inconsistency_id"
             pagination={{ pageSize: 5 }}
             size="small"
           />

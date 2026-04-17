@@ -2,6 +2,7 @@
  * AI Integration — gateway management & platform LLM bridge (OpenClaw).
  */
 import apiClient from './api/client';
+import { apiRequestToSnake, apiResponseToSnake } from '@/utils/jsonCase';
 
 const BASE = '/api/v1/ai-integration/gateways';
 
@@ -43,23 +44,23 @@ export async function listGateways(params?: {
   gateway_type?: string;
 }): Promise<AIGatewayRow[]> {
   const r = await apiClient.get(BASE, { params });
-  return r.data;
+  return apiResponseToSnake<AIGatewayRow[]>(r.data);
 }
 
 export async function linkGatewayLlm(
   gatewayId: string,
   body: LinkGatewayLlmBody
 ): Promise<Record<string, unknown>> {
-  const r = await apiClient.post(`${BASE}/${gatewayId}/llm-config`, body);
-  return r.data;
+  const r = await apiClient.post(`${BASE}/${gatewayId}/llm-config`, apiRequestToSnake(body));
+  return apiResponseToSnake<Record<string, unknown>>(r.data);
 }
 
 export async function getGatewayLlmLink(gatewayId: string): Promise<GatewayLlmLinkView> {
   const r = await apiClient.get(`${BASE}/${gatewayId}/llm-link`);
-  return r.data;
+  return apiResponseToSnake<GatewayLlmLinkView>(r.data);
 }
 
 export async function getGatewayLlmStatus(gatewayId: string): Promise<Record<string, unknown>> {
   const r = await apiClient.get(`${BASE}/${gatewayId}/llm-status`);
-  return r.data;
+  return apiResponseToSnake<Record<string, unknown>>(r.data);
 }

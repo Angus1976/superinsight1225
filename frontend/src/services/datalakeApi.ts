@@ -4,6 +4,7 @@
  */
 
 import apiClient from './api/client';
+import { apiRequestToSnake, apiResponseToSnake } from '@/utils/jsonCase';
 import type {
   DatalakeSourceCreate,
   DatalakeSourceUpdate,
@@ -25,22 +26,22 @@ export const datalakeApi = {
 
   getSources: async (): Promise<DatalakeSourceResponse[]> => {
     const res = await apiClient.get<DatalakeSourceResponse[]>(`${BASE}/sources`);
-    return res.data;
+    return apiResponseToSnake(res.data);
   },
 
   getSource: async (id: string): Promise<DatalakeSourceResponse> => {
     const res = await apiClient.get<DatalakeSourceResponse>(`${BASE}/sources/${id}`);
-    return res.data;
+    return apiResponseToSnake(res.data);
   },
 
   createSource: async (data: DatalakeSourceCreate): Promise<DatalakeSourceResponse> => {
-    const res = await apiClient.post<DatalakeSourceResponse>(`${BASE}/sources`, data);
-    return res.data;
+    const res = await apiClient.post<DatalakeSourceResponse>(`${BASE}/sources`, apiRequestToSnake(data));
+    return apiResponseToSnake(res.data);
   },
 
   updateSource: async (id: string, data: DatalakeSourceUpdate): Promise<DatalakeSourceResponse> => {
-    const res = await apiClient.put<DatalakeSourceResponse>(`${BASE}/sources/${id}`, data);
-    return res.data;
+    const res = await apiClient.put<DatalakeSourceResponse>(`${BASE}/sources/${id}`, apiRequestToSnake(data));
+    return apiResponseToSnake(res.data);
   },
 
   deleteSource: async (id: string): Promise<void> => {
@@ -49,65 +50,65 @@ export const datalakeApi = {
 
   testConnection: async (id: string): Promise<ConnectionTestResult> => {
     const res = await apiClient.post<ConnectionTestResult>(`${BASE}/sources/${id}/test`);
-    return res.data;
+    return apiResponseToSnake(res.data);
   },
 
   // --- Schema Browsing ---
 
   getDatabases: async (id: string): Promise<string[]> => {
     const res = await apiClient.get<string[]>(`${BASE}/sources/${id}/databases`);
-    return res.data;
+    return apiResponseToSnake(res.data);
   },
 
   getTables: async (id: string, database: string): Promise<unknown[]> => {
     const res = await apiClient.get<unknown[]>(`${BASE}/sources/${id}/tables`, {
       params: { database },
     });
-    return res.data;
+    return apiResponseToSnake(res.data);
   },
 
   getTableSchema: async (id: string, database: string, table: string): Promise<TableSchema> => {
     const res = await apiClient.get<TableSchema>(`${BASE}/sources/${id}/schema`, {
       params: { database, table },
     });
-    return res.data;
+    return apiResponseToSnake(res.data);
   },
 
   getTablePreview: async (id: string, database: string, table: string, limit = 100): Promise<TablePreview> => {
     const res = await apiClient.get<TablePreview>(`${BASE}/sources/${id}/preview`, {
       params: { database, table, limit },
     });
-    return res.data;
+    return apiResponseToSnake(res.data);
   },
 
   // --- Dashboard ---
 
   getDashboardOverview: async (): Promise<DashboardOverview> => {
     const res = await apiClient.get<DashboardOverview>(`${BASE}/dashboard/overview`);
-    return res.data;
+    return apiResponseToSnake(res.data);
   },
 
   getDashboardHealth: async (): Promise<SourceHealthStatus[]> => {
     const res = await apiClient.get<SourceHealthStatus[]>(`${BASE}/dashboard/health`);
-    return res.data;
+    return apiResponseToSnake(res.data);
   },
 
   getVolumeTrends: async (period = '7d'): Promise<VolumeTrendData> => {
     const res = await apiClient.get<VolumeTrendData>(`${BASE}/dashboard/volume-trends`, {
       params: { period },
     });
-    return res.data;
+    return apiResponseToSnake(res.data);
   },
 
   getQueryPerformance: async (sourceId?: string): Promise<QueryPerformanceData> => {
     const res = await apiClient.get<QueryPerformanceData>(`${BASE}/dashboard/query-performance`, {
       params: sourceId ? { source_id: sourceId } : undefined,
     });
-    return res.data;
+    return apiResponseToSnake(res.data);
   },
 
   getDataFlow: async (): Promise<DataFlowGraph> => {
     const res = await apiClient.get<DataFlowGraph>(`${BASE}/dashboard/data-flow`);
-    return res.data;
+    return apiResponseToSnake(res.data);
   },
 };

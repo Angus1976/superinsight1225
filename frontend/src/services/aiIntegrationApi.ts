@@ -4,6 +4,7 @@
  */
 
 import axios from 'axios';
+import { apiRequestToSnake, apiResponseToSnake } from '@/utils/jsonCase';
 
 const API_BASE = '/api/v1/ai-integration';
 
@@ -51,14 +52,14 @@ export interface ChatMessage {
 
 // Parse natural language to workflow
 export const parseWorkflow = async (description: string): Promise<WorkflowDefinition> => {
-  const response = await axios.post(`${API_BASE}/workflows/parse`, { description });
-  return response.data;
+  const response = await axios.post(`${API_BASE}/workflows/parse`, apiRequestToSnake({ description }));
+  return apiResponseToSnake<WorkflowDefinition>(response.data);
 };
 
 // Save workflow
 export const saveWorkflow = async (workflow: WorkflowDefinition): Promise<WorkflowDefinition> => {
-  const response = await axios.post(`${API_BASE}/workflows`, workflow);
-  return response.data;
+  const response = await axios.post(`${API_BASE}/workflows`, apiRequestToSnake(workflow));
+  return apiResponseToSnake<WorkflowDefinition>(response.data);
 };
 
 // Execute workflow
@@ -66,8 +67,11 @@ export const executeWorkflow = async (
   workflowId: string,
   dataSource: 'governed' | 'raw'
 ): Promise<WorkflowExecutionResult> => {
-  const response = await axios.post(`${API_BASE}/workflows/${workflowId}/execute`, { dataSource });
-  return response.data;
+  const response = await axios.post(
+    `${API_BASE}/workflows/${workflowId}/execute`,
+    apiRequestToSnake({ dataSource })
+  );
+  return apiResponseToSnake<WorkflowExecutionResult>(response.data);
 };
 
 // Compare workflow results
@@ -75,17 +79,17 @@ export const compareWorkflowResults = async (
   workflowId: string
 ): Promise<{ governed: WorkflowExecutionResult; raw: WorkflowExecutionResult }> => {
   const response = await axios.post(`${API_BASE}/workflows/${workflowId}/compare`);
-  return response.data;
+  return apiResponseToSnake(response.data);
 };
 
 // Get workflow execution history
 export const getWorkflowHistory = async (workflowId: string): Promise<WorkflowExecutionResult[]> => {
   const response = await axios.get(`${API_BASE}/workflows/${workflowId}/history`);
-  return response.data;
+  return apiResponseToSnake<WorkflowExecutionResult[]>(response.data);
 };
 
 // List workflows
 export const listWorkflows = async (): Promise<WorkflowDefinition[]> => {
   const response = await axios.get(`${API_BASE}/workflows`);
-  return response.data;
+  return apiResponseToSnake<WorkflowDefinition[]>(response.data);
 };

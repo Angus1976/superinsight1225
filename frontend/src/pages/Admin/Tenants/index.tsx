@@ -43,19 +43,19 @@ const AdminTenants: React.FC = () => {
   // Fetch tenants
   const { data: tenants, isLoading, refetch } = useQuery({
     queryKey: ['tenants', statusFilter],
-    queryFn: () => tenantApi.list({ status: statusFilter }).then(res => res.data),
+    queryFn: () => tenantApi.list({ status: statusFilter }),
   });
 
   // Fetch quota for selected tenant
   const { data: tenantQuota } = useQuery({
     queryKey: ['tenant-quota', selectedTenant?.id],
-    queryFn: () => selectedTenant ? quotaApi.get('tenant', selectedTenant.id).then(res => res.data) : null,
+    queryFn: () => (selectedTenant ? quotaApi.get('tenant', selectedTenant.id) : null),
     enabled: !!selectedTenant,
   });
 
   const { data: tenantUsage } = useQuery({
     queryKey: ['tenant-usage', selectedTenant?.id],
-    queryFn: () => selectedTenant ? quotaApi.getUsage('tenant', selectedTenant.id).then(res => res.data) : null,
+    queryFn: () => (selectedTenant ? quotaApi.getUsage('tenant', selectedTenant.id) : null),
     enabled: !!selectedTenant,
   });
 

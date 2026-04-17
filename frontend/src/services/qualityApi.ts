@@ -4,6 +4,7 @@
  */
 
 import apiClient from './api/client';
+import { apiRequestToSnake, apiResponseToSnake } from '@/utils/jsonCase';
 
 // Types
 export interface QualityScore {
@@ -239,25 +240,28 @@ export interface SilenceRequest {
 export const qualityApi = {
   // Quality Rules
   async createRule(request: CreateRuleRequest): Promise<QualityRule> {
-    const response = await apiClient.post<QualityRule>('/api/v1/quality-rules', request);
-    return response.data;
+    const response = await apiClient.post<QualityRule>('/api/v1/quality-rules', apiRequestToSnake(request));
+    return apiResponseToSnake(response.data);
   },
 
   async listRules(projectId: string): Promise<QualityRule[]> {
     const response = await apiClient.get<QualityRule[]>('/api/v1/quality-rules', {
       params: { project_id: projectId },
     });
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async getRule(ruleId: string): Promise<QualityRule> {
     const response = await apiClient.get<QualityRule>(`/api/v1/quality-rules/${ruleId}`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async updateRule(ruleId: string, request: UpdateRuleRequest): Promise<QualityRule> {
-    const response = await apiClient.put<QualityRule>(`/api/v1/quality-rules/${ruleId}`, request);
-    return response.data;
+    const response = await apiClient.put<QualityRule>(
+      `/api/v1/quality-rules/${ruleId}`,
+      apiRequestToSnake(request)
+    );
+    return apiResponseToSnake(response.data);
   },
 
   async deleteRule(ruleId: string): Promise<void> {
@@ -265,107 +269,131 @@ export const qualityApi = {
   },
 
   async createRuleFromTemplate(templateId: string, projectId: string): Promise<QualityRule[]> {
-    const response = await apiClient.post<QualityRule[]>('/api/v1/quality-rules/from-template', {
-      template_id: templateId,
-      project_id: projectId,
-    });
-    return response.data;
+    const response = await apiClient.post<QualityRule[]>(
+      '/api/v1/quality-rules/from-template',
+      apiRequestToSnake({
+        template_id: templateId,
+        project_id: projectId,
+      })
+    );
+    return apiResponseToSnake(response.data);
   },
 
   async listTemplates(): Promise<QualityRuleTemplate[]> {
     const response = await apiClient.get<QualityRuleTemplate[]>('/api/v1/quality-rules/templates/list');
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Quality Scoring
   async scoreAnnotation(annotationId: string, request?: ScoreRequest): Promise<QualityScore> {
     const response = await apiClient.post<QualityScore>(
       `/api/v1/quality/score/${annotationId}`,
-      request || {}
+      apiRequestToSnake(request ?? {})
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async calculateConsistency(taskId: string): Promise<ConsistencyScore> {
     const response = await apiClient.post<ConsistencyScore>(`/api/v1/quality/consistency/${taskId}`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Quality Checking
   async checkAnnotation(annotationId: string): Promise<CheckResult> {
     const response = await apiClient.post<CheckResult>(`/api/v1/quality/check/${annotationId}`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async batchCheck(request: BatchCheckRequest): Promise<BatchCheckResult> {
-    const response = await apiClient.post<BatchCheckResult>('/api/v1/quality/batch-check', request);
-    return response.data;
+    const response = await apiClient.post<BatchCheckResult>(
+      '/api/v1/quality/batch-check',
+      apiRequestToSnake(request)
+    );
+    return apiResponseToSnake(response.data);
   },
 
   // Ragas Evaluation
   async ragasEvaluate(request: RagasEvaluateRequest): Promise<RagasEvaluationResult> {
-    const response = await apiClient.post<RagasEvaluationResult>('/api/v1/quality/ragas/evaluate', request);
-    return response.data;
+    const response = await apiClient.post<RagasEvaluationResult>(
+      '/api/v1/quality/ragas/evaluate',
+      apiRequestToSnake(request)
+    );
+    return apiResponseToSnake(response.data);
   },
 
   async ragasBatchEvaluate(request: RagasBatchRequest): Promise<BatchRagasResult> {
-    const response = await apiClient.post<BatchRagasResult>('/api/v1/quality/ragas/batch-evaluate', request);
-    return response.data;
+    const response = await apiClient.post<BatchRagasResult>(
+      '/api/v1/quality/ragas/batch-evaluate',
+      apiRequestToSnake(request)
+    );
+    return apiResponseToSnake(response.data);
   },
 
   // Quality Reports
   async generateProjectReport(request: ProjectReportRequest): Promise<ProjectQualityReport> {
-    const response = await apiClient.post<ProjectQualityReport>('/api/v1/quality-reports/project', request);
-    return response.data;
+    const response = await apiClient.post<ProjectQualityReport>(
+      '/api/v1/quality-reports/project',
+      apiRequestToSnake(request)
+    );
+    return apiResponseToSnake(response.data);
   },
 
   async generateAnnotatorRanking(request: RankingRequest): Promise<AnnotatorRankingReport> {
-    const response = await apiClient.post<AnnotatorRankingReport>('/api/v1/quality-reports/annotator-ranking', request);
-    return response.data;
+    const response = await apiClient.post<AnnotatorRankingReport>(
+      '/api/v1/quality-reports/annotator-ranking',
+      apiRequestToSnake(request)
+    );
+    return apiResponseToSnake(response.data);
   },
 
   async generateTrendReport(request: TrendReportRequest): Promise<QualityTrendReport> {
-    const response = await apiClient.post<QualityTrendReport>('/api/v1/quality-reports/trend', request);
-    return response.data;
+    const response = await apiClient.post<QualityTrendReport>(
+      '/api/v1/quality-reports/trend',
+      apiRequestToSnake(request)
+    );
+    return apiResponseToSnake(response.data);
   },
 
   async exportReport(request: ExportRequest): Promise<Blob> {
-    const response = await apiClient.post('/api/v1/quality-reports/export', request, {
+    const response = await apiClient.post('/api/v1/quality-reports/export', apiRequestToSnake(request), {
       responseType: 'blob',
     });
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async scheduleReport(request: ScheduleReportRequest): Promise<{ id: string; schedule: string }> {
-    const response = await apiClient.post('/api/v1/quality-reports/schedule', request);
-    return response.data;
+    const response = await apiClient.post('/api/v1/quality-reports/schedule', apiRequestToSnake(request));
+    return apiResponseToSnake(response.data);
   },
 
   // Quality Alerts
   async configureAlerts(request: AlertConfigRequest): Promise<AlertConfig> {
-    const response = await apiClient.post<AlertConfig>('/api/v1/quality-alerts/configure', request);
-    return response.data;
+    const response = await apiClient.post<AlertConfig>(
+      '/api/v1/quality-alerts/configure',
+      apiRequestToSnake(request)
+    );
+    return apiResponseToSnake(response.data);
   },
 
   async listAlerts(projectId: string, status?: string): Promise<QualityAlert[]> {
     const response = await apiClient.get<QualityAlert[]>('/api/v1/quality-alerts', {
       params: { project_id: projectId, status },
     });
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async acknowledgeAlert(alertId: string): Promise<QualityAlert> {
     const response = await apiClient.post<QualityAlert>(`/api/v1/quality-alerts/${alertId}/acknowledge`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async resolveAlert(alertId: string): Promise<QualityAlert> {
     const response = await apiClient.post<QualityAlert>(`/api/v1/quality-alerts/${alertId}/resolve`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async setSilencePeriod(request: SilenceRequest): Promise<void> {
-    await apiClient.post('/api/v1/quality-alerts/silence', request);
+    await apiClient.post('/api/v1/quality-alerts/silence', apiRequestToSnake(request));
   },
 };
 

@@ -1,6 +1,7 @@
 // Quality management service
 import apiClient from './api/client';
 import { API_ENDPOINTS } from '@/constants';
+import { apiRequestToSnake, apiResponseToSnake } from '@/utils/jsonCase';
 
 export interface QualityRule {
   id: string;
@@ -82,30 +83,30 @@ export const qualityService = {
       API_ENDPOINTS.QUALITY?.RULES || '/api/quality/rules',
       { params }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async getRule(id: string): Promise<QualityRule> {
     const response = await apiClient.get<QualityRule>(
       `${API_ENDPOINTS.QUALITY?.RULES || '/api/quality/rules'}/${id}`
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async createRule(payload: CreateRulePayload): Promise<QualityRule> {
     const response = await apiClient.post<QualityRule>(
       API_ENDPOINTS.QUALITY?.RULES || '/api/quality/rules',
-      payload
+      apiRequestToSnake(payload)
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async updateRule(id: string, payload: UpdateRulePayload): Promise<QualityRule> {
     const response = await apiClient.put<QualityRule>(
       `${API_ENDPOINTS.QUALITY?.RULES || '/api/quality/rules'}/${id}`,
-      payload
+      apiRequestToSnake(payload)
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async deleteRule(id: string): Promise<void> {
@@ -117,23 +118,23 @@ export const qualityService = {
   async toggleRule(id: string, enabled: boolean): Promise<QualityRule> {
     const response = await apiClient.patch<QualityRule>(
       `${API_ENDPOINTS.QUALITY?.RULES || '/api/quality/rules'}/${id}/toggle`,
-      { enabled }
+      apiRequestToSnake({ enabled })
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async runRule(id: string): Promise<{ violations_found: number }> {
     const response = await apiClient.post<{ violations_found: number }>(
       `${API_ENDPOINTS.QUALITY?.RULES || '/api/quality/rules'}/${id}/run`
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async runAllRules(): Promise<{ total_violations: number }> {
     const response = await apiClient.post<{ total_violations: number }>(
       API_ENDPOINTS.QUALITY?.RUN_ALL || '/api/quality/rules/run-all'
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Issue management
@@ -142,14 +143,14 @@ export const qualityService = {
       API_ENDPOINTS.QUALITY?.ISSUES || '/api/quality/issues',
       { params }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async getIssue(id: string): Promise<QualityIssue> {
     const response = await apiClient.get<QualityIssue>(
       `${API_ENDPOINTS.QUALITY?.ISSUES || '/api/quality/issues'}/${id}`
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async updateIssueStatus(
@@ -158,17 +159,17 @@ export const qualityService = {
   ): Promise<QualityIssue> {
     const response = await apiClient.patch<QualityIssue>(
       `${API_ENDPOINTS.QUALITY?.ISSUES || '/api/quality/issues'}/${id}/status`,
-      { status }
+      apiRequestToSnake({ status })
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async assignIssue(id: string, userId: string): Promise<QualityIssue> {
     const response = await apiClient.patch<QualityIssue>(
       `${API_ENDPOINTS.QUALITY?.ISSUES || '/api/quality/issues'}/${id}/assign`,
-      { user_id: userId }
+      apiRequestToSnake({ user_id: userId })
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Statistics
@@ -182,6 +183,6 @@ export const qualityService = {
     const response = await apiClient.get(
       API_ENDPOINTS.QUALITY?.STATS || '/api/quality/stats'
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 };

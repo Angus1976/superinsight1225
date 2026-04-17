@@ -6,6 +6,7 @@
  */
 
 import apiClient from './api/client';
+import { apiRequestToSnake, apiResponseToSnake } from '@/utils/jsonCase';
 
 // ============================================================================
 // Enumerations
@@ -419,18 +420,18 @@ const MASKING_URL = '/api/v1/masking';
 export const dataPermissionApi = {
   // Permission Management
   async checkPermission(data: PermissionCheckRequest): Promise<PermissionResult> {
-    const response = await apiClient.post<PermissionResult>(`${BASE_URL}/check`, data);
-    return response.data;
+    const response = await apiClient.post<PermissionResult>(`${BASE_URL}/check`, apiRequestToSnake(data));
+    return apiResponseToSnake(response.data);
   },
 
   async grantPermission(data: GrantPermissionRequest): Promise<DataPermission> {
-    const response = await apiClient.post<DataPermission>(`${BASE_URL}/grant`, data);
-    return response.data;
+    const response = await apiClient.post<DataPermission>(`${BASE_URL}/grant`, apiRequestToSnake(data));
+    return apiResponseToSnake(response.data);
   },
 
   async revokePermission(data: RevokePermissionRequest): Promise<{ success: boolean }> {
-    const response = await apiClient.post<{ success: boolean }>(`${BASE_URL}/revoke`, data);
-    return response.data;
+    const response = await apiClient.post<{ success: boolean }>(`${BASE_URL}/revoke`, apiRequestToSnake(data));
+    return apiResponseToSnake(response.data);
   },
 
   async listPermissions(params?: {
@@ -445,114 +446,115 @@ export const dataPermissionApi = {
       BASE_URL,
       { params }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async getUserPermissions(userId: string): Promise<DataPermission[]> {
     const response = await apiClient.get<DataPermission[]>(`${BASE_URL}/user/${userId}`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async testPermission(data: PermissionCheckRequest): Promise<PermissionResult> {
-    const response = await apiClient.post<PermissionResult>(`${BASE_URL}/test`, data);
-    return response.data;
+    const response = await apiClient.post<PermissionResult>(`${BASE_URL}/test`, apiRequestToSnake(data));
+    return apiResponseToSnake(response.data);
   },
 
   // Policy Management
   async importLDAPPolicies(config: LDAPConfig): Promise<ImportResult> {
-    const response = await apiClient.post<ImportResult>(`${POLICY_URL}/import/ldap`, config);
-    return response.data;
+    const response = await apiClient.post<ImportResult>(`${POLICY_URL}/import/ldap`, apiRequestToSnake(config));
+    return apiResponseToSnake(response.data);
   },
 
   async importOAuthPolicies(config: OAuthConfig): Promise<ImportResult> {
-    const response = await apiClient.post<ImportResult>(`${POLICY_URL}/import/oauth`, config);
-    return response.data;
+    const response = await apiClient.post<ImportResult>(`${POLICY_URL}/import/oauth`, apiRequestToSnake(config));
+    return apiResponseToSnake(response.data);
   },
 
   async importCustomPolicies(config: CustomPolicyConfig): Promise<ImportResult> {
-    const response = await apiClient.post<ImportResult>(`${POLICY_URL}/import/custom`, config);
-    return response.data;
+    const response = await apiClient.post<ImportResult>(`${POLICY_URL}/import/custom`, apiRequestToSnake(config));
+    return apiResponseToSnake(response.data);
   },
 
   async listPolicySources(): Promise<PolicySource[]> {
     const response = await apiClient.get<PolicySource[]>(`${POLICY_URL}/sources`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async syncPolicies(sourceId: string): Promise<SyncResult> {
     const response = await apiClient.post<SyncResult>(`${POLICY_URL}/sync/${sourceId}`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async getConflicts(): Promise<PolicyConflict[]> {
     const response = await apiClient.get<PolicyConflict[]>(`${POLICY_URL}/conflicts`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async resolveConflict(data: ConflictResolution): Promise<{ success: boolean }> {
     const response = await apiClient.post<{ success: boolean }>(
       `${POLICY_URL}/conflicts/resolve`,
-      data
+      apiRequestToSnake(data)
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async configureSyncSchedule(sourceId: string, cronExpression: string): Promise<SyncSchedule> {
-    const response = await apiClient.post<SyncSchedule>(`${POLICY_URL}/sources/${sourceId}/schedule`, {
-      cron_expression: cronExpression,
-    });
-    return response.data;
+    const response = await apiClient.post<SyncSchedule>(
+      `${POLICY_URL}/sources/${sourceId}/schedule`,
+      apiRequestToSnake({ cron_expression: cronExpression })
+    );
+    return apiResponseToSnake(response.data);
   },
 
   // Approval Workflow
   async createApprovalRequest(data: CreateApprovalRequest): Promise<ApprovalRequest> {
-    const response = await apiClient.post<ApprovalRequest>(`${APPROVAL_URL}/request`, data);
-    return response.data;
+    const response = await apiClient.post<ApprovalRequest>(`${APPROVAL_URL}/request`, apiRequestToSnake(data));
+    return apiResponseToSnake(response.data);
   },
 
   async approveRequest(requestId: string, decision: ApprovalDecision): Promise<ApprovalResult> {
     const response = await apiClient.post<ApprovalResult>(
       `${APPROVAL_URL}/${requestId}/approve`,
-      decision
+      apiRequestToSnake(decision)
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async getPendingApprovals(userId?: string): Promise<ApprovalRequest[]> {
     const response = await apiClient.get<ApprovalRequest[]>(`${APPROVAL_URL}/pending`, {
       params: { user_id: userId },
     });
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async getApprovalHistory(requestId: string): Promise<ApprovalAction[]> {
     const response = await apiClient.get<ApprovalAction[]>(`${APPROVAL_URL}/${requestId}/history`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async getMyApprovals(status?: ApprovalStatus): Promise<ApprovalRequest[]> {
     const response = await apiClient.get<ApprovalRequest[]>(`${APPROVAL_URL}/my`, {
       params: { status },
     });
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async delegateApproval(data: DelegationRequest): Promise<Delegation> {
-    const response = await apiClient.post<Delegation>(`${APPROVAL_URL}/delegate`, data);
-    return response.data;
+    const response = await apiClient.post<Delegation>(`${APPROVAL_URL}/delegate`, apiRequestToSnake(data));
+    return apiResponseToSnake(response.data);
   },
 
   async getWorkflowConfigs(): Promise<ApprovalWorkflowConfig[]> {
     const response = await apiClient.get<ApprovalWorkflowConfig[]>(`${APPROVAL_URL}/workflows`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async createWorkflowConfig(config: ApprovalWorkflowConfig): Promise<ApprovalWorkflowConfig> {
     const response = await apiClient.post<ApprovalWorkflowConfig>(
       `${APPROVAL_URL}/workflows`,
-      config
+      apiRequestToSnake(config)
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Access Logs
@@ -560,7 +562,7 @@ export const dataPermissionApi = {
     const response = await apiClient.get<AccessLogListResponse>(ACCESS_LOG_URL, {
       params: filters,
     });
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async exportAccessLogs(filters: AccessLogFilter, format: 'csv' | 'json'): Promise<Blob> {
@@ -568,7 +570,7 @@ export const dataPermissionApi = {
       params: { ...filters, format },
       responseType: 'blob',
     });
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async getAccessStatistics(params?: {
@@ -578,31 +580,31 @@ export const dataPermissionApi = {
     const response = await apiClient.get<AccessStatistics>(`${ACCESS_LOG_URL}/statistics`, {
       params,
     });
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Data Classification
   async autoClassify(datasetId: string, useAI?: boolean): Promise<ClassificationResult> {
     const response = await apiClient.post<ClassificationResult>(
       `${CLASSIFICATION_URL}/auto-classify`,
-      { dataset_id: datasetId, use_ai: useAI }
+      apiRequestToSnake({ dataset_id: datasetId, use_ai: useAI })
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async batchUpdateClassification(updates: ClassificationUpdate[]): Promise<BatchUpdateResult> {
     const response = await apiClient.post<BatchUpdateResult>(
       `${CLASSIFICATION_URL}/batch-update`,
-      { updates }
+      apiRequestToSnake({ updates })
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async getClassificationReport(datasetId?: string): Promise<ClassificationReport> {
     const response = await apiClient.get<ClassificationReport>(`${CLASSIFICATION_URL}/report`, {
       params: { dataset_id: datasetId },
     });
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async listClassifications(params?: {
@@ -615,39 +617,39 @@ export const dataPermissionApi = {
       CLASSIFICATION_URL,
       { params }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async createClassificationRule(rule: ClassificationRule): Promise<ClassificationRule> {
     const response = await apiClient.post<ClassificationRule>(
       `${CLASSIFICATION_URL}/rules`,
-      rule
+      apiRequestToSnake(rule)
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async listClassificationRules(): Promise<ClassificationRule[]> {
     const response = await apiClient.get<ClassificationRule[]>(`${CLASSIFICATION_URL}/rules`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Data Masking
   async listMaskingRules(): Promise<MaskingRule[]> {
     const response = await apiClient.get<MaskingRule[]>(`${MASKING_URL}/rules`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async createMaskingRule(rule: Omit<MaskingRule, 'id' | 'created_at'>): Promise<MaskingRule> {
-    const response = await apiClient.post<MaskingRule>(`${MASKING_URL}/rules`, rule);
-    return response.data;
+    const response = await apiClient.post<MaskingRule>(`${MASKING_URL}/rules`, apiRequestToSnake(rule));
+    return apiResponseToSnake(response.data);
   },
 
   async updateMaskingRule(
     ruleId: string,
     rule: Partial<MaskingRule>
   ): Promise<MaskingRule> {
-    const response = await apiClient.put<MaskingRule>(`${MASKING_URL}/rules/${ruleId}`, rule);
-    return response.data;
+    const response = await apiClient.put<MaskingRule>(`${MASKING_URL}/rules/${ruleId}`, apiRequestToSnake(rule));
+    return apiResponseToSnake(response.data);
   },
 
   async deleteMaskingRule(ruleId: string): Promise<void> {
@@ -659,19 +661,18 @@ export const dataPermissionApi = {
     algorithm: MaskingAlgorithmType,
     config?: Record<string, unknown>
   ): Promise<MaskingPreview> {
-    const response = await apiClient.post<MaskingPreview>(`${MASKING_URL}/preview`, {
-      value,
-      algorithm,
-      config,
-    });
-    return response.data;
+    const response = await apiClient.post<MaskingPreview>(
+      `${MASKING_URL}/preview`,
+      apiRequestToSnake({ value, algorithm, config })
+    );
+    return apiResponseToSnake(response.data);
   },
 
   async getMaskingRulesForUser(userId: string, resource: string): Promise<MaskingRule[]> {
     const response = await apiClient.get<MaskingRule[]>(`${MASKING_URL}/rules/user/${userId}`, {
       params: { resource },
     });
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 };
 

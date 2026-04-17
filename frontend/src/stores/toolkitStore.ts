@@ -8,6 +8,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import apiClient from '@/services/api/client';
+import { apiResponseToSnake } from '@/utils/jsonCase';
 import type { AxiosError } from 'axios';
 import type {
   StrategyCandidate,
@@ -125,16 +126,18 @@ export const useToolkitStore = create<ToolkitStore>()(
           const formData = new FormData();
           formData.append('file', file);
 
-          const { data } = await apiClient.post<UploadResponse>(
+          const uploadRes = await apiClient.post<UploadResponse>(
             `${API_BASE}/upload`,
             formData,
             { headers: { 'Content-Type': 'multipart/form-data' } },
           );
+          const data = apiResponseToSnake<UploadResponse>(uploadRes.data);
 
           // Profile the uploaded file immediately
-          const { data: profile } = await apiClient.post<Record<string, unknown>>(
+          const profileRes = await apiClient.post<Record<string, unknown>>(
             `${API_BASE}/profile/${data.file_id}`,
           );
+          const profile = apiResponseToSnake<Record<string, unknown>>(profileRes.data);
 
           set({
             fileId: data.file_id,
@@ -159,11 +162,12 @@ export const useToolkitStore = create<ToolkitStore>()(
 
         set({ isRouting: true, error: null }, false, 'routeFile/start');
         try {
-          const { data } = await apiClient.post<RouteResponse>(
+          const routeRes = await apiClient.post<RouteResponse>(
             `${API_BASE}/route/${fileId}`,
             null,
             { params: { origin } },
           );
+          const data = apiResponseToSnake<RouteResponse>(routeRes.data);
 
           const topStrategy = data.candidates.length > 0
             ? data.candidates[0].name
@@ -202,11 +206,12 @@ export const useToolkitStore = create<ToolkitStore>()(
         try {
           const strategyParam = mode === 'manual' ? selectedStrategy : null;
 
-          const { data } = await apiClient.post<ExecuteResponse>(
+          const execRes = await apiClient.post<ExecuteResponse>(
             `${API_BASE}/execute/${fileId}`,
             null,
             { params: strategyParam ? { strategy_name: strategyParam } : undefined },
           );
+          const data = apiResponseToSnake<ExecuteResponse>(execRes.data);
 
           set({
             executionStatus: {

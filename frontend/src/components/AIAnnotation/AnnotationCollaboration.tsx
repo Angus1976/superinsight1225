@@ -31,6 +31,7 @@ import {
   Radio,
   Divider,
   Spin,
+  Statistic,
   Empty,
   message,
 } from 'antd';
@@ -49,62 +50,40 @@ import {
   SendOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
+import { fetchJsonBody, fetchJsonResponseToSnake, apiResponseToSnake } from '@/utils/jsonCase';
+import type {
+  ProgressMetrics,
+  ConflictInfo,
+  AnnotationItem,
+  UserInfo,
+} from '@/services/aiAnnotationApi';
 
 // Types
 export interface AISuggestion {
-  id: string;
-  documentId: string;
+  suggestion_id: string;
+  document_id: string;
   text: string;
   annotations: AnnotationItem[];
   confidence: number;
-  latencyMs: number;
+  latency_ms: number;
   timestamp: string;
   status: 'pending' | 'accepted' | 'rejected' | 'modified';
 }
 
-export interface AnnotationItem {
-  label: string;
-  start: number;
-  end: number;
-  text: string;
-  confidence: number;
-}
-
-export interface AnnotationConflict {
-  id: string;
-  documentId: string;
-  conflictType: 'overlap' | 'label_mismatch' | 'boundary';
-  annotations: AnnotationItem[];
-  users: UserInfo[];
-  createdAt: string;
-  status: 'pending' | 'resolved';
-}
-
-export interface UserInfo {
-  id: string;
-  name: string;
-  avatar?: string;
-  role: 'annotator' | 'reviewer' | 'admin';
-}
+export type {
+  AnnotationItem,
+  UserInfo,
+  ProgressMetrics,
+  ConflictInfo as AnnotationConflict,
+} from '@/services/aiAnnotationApi';
 
 export interface CollaborationUser {
   id: string;
   name: string;
   avatar?: string;
   status: 'online' | 'idle' | 'annotating';
-  currentDocument?: string;
-  lastActivity: string;
-}
-
-export interface ProgressMetrics {
-  totalTasks: number;
-  completedTasks: number;
-  inProgressTasks: number;
-  pendingTasks: number;
-  completionRate: number;
-  avgTimePerTaskMinutes: number;
-  activeAnnotators: number;
-  activeReviewers: number;
+  current_document?: string;
+  last_activity?: string;
 }
 
 interface AnnotationCollaborationProps {
@@ -112,9 +91,23 @@ interface AnnotationCollaborationProps {
   documentId?: string;
   onSuggestionAccept?: (suggestion: AISuggestion) => void;
   onSuggestionReject?: (suggestion: AISuggestion, reason?: string) => void;
-  onConflictResolve?: (conflict: AnnotationConflict, resolution: string) => void;
+  onConflictResolve?: (conflict: ConflictInfo, resolution: string) => void;
 }
 
+/** WS/网关可能混用 camelCase 或 `id` 字段；统一为与 REST 一致的 snake_case 形状 */
+function normalizeCollaborationSuggestion(payload: unknown): AISuggestion {
+  const row = apiResponseToSnake(payload) as Record<string, unknown>;
+  return {
+    suggestion_id: String(row.suggestion_id ?? row.id ?? ''),
+    document_id: String(row.document_id ?? ''),
+    text: String(row.text ?? ''),
+    annotations: Array.isArray(row.annotations) ? (row.annotations as AnnotationItem[]) : [],
+    confidence: Number(row.confidence ?? 0),
+    latency_ms: Number(row.latency_ms ?? 0),
+    timestamp: String(row.timestamp ?? ''),
+    status: (row.status as AISuggestion['status']) ?? 'pending',
+  };
+}
 
 const AnnotationCollaboration: React.FC<AnnotationCollaborationProps> = ({
   projectId,
@@ -128,10 +121,10 @@ const AnnotationCollaboration: React.FC<AnnotationCollaborationProps> = ({
   const [connected, setConnected] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [suggestions, setSuggestions] = useState<AISuggestion[]>([]);
-  const [conflicts, setConflicts] = useState<AnnotationConflict[]>([]);
+  const [conflicts, setConflicts] = useState<ConflictInfo[]>([]);
   const [onlineUsers, setOnlineUsers] = useState<CollaborationUser[]>([]);
   const [progress, setProgress] = useState<ProgressMetrics | null>(null);
-  const [selectedConflict, setSelectedConflict] = useState<AnnotationConflict | null>(null);
+  const [selectedConflict, setSelectedConflict] = useState<ConflictInfo | null>(null);
   const [conflictDrawerOpen, setConflictDrawerOpen] = useState(false);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [selectedSuggestion, setSelectedSuggestion] = useState<AISuggestion | null>(null);
@@ -151,11 +144,13 @@ const AnnotationCollaboration: React.FC<AnnotationCollaborationProps> = ({
         setConnected(true);
         setConnecting(false);
         // Authenticate and join project
-        wsRef.current?.send(JSON.stringify({
-          type: 'authenticate',
-          projectId,
-          documentId,
-        }));
+        wsRef.current?.send(
+          fetchJsonBody({
+            type: 'authenticate',
+            project_id: projectId,
+            document_id: documentId,
+          })
+        );
       };
 
       wsRef.current.onmessage = (event) => {
@@ -187,22 +182,31 @@ const AnnotationCollaboration: React.FC<AnnotationCollaborationProps> = ({
   const handleWebSocketMessage = (data: any) => {
     switch (data.type) {
       case 'suggestion':
-        setSuggestions(prev => [data.payload, ...prev].slice(0, 50));
+        setSuggestions(prev => [normalizeCollaborationSuggestion(data.payload), ...prev].slice(0, 50));
         break;
       case 'suggestion_batch':
-        setSuggestions(prev => [...data.payload, ...prev].slice(0, 50));
+        setSuggestions(prev =>
+          [
+            ...(Array.isArray(data.payload) ? data.payload : []).map((p: unknown) => normalizeCollaborationSuggestion(p)),
+            ...prev,
+          ].slice(0, 50)
+        );
         break;
       case 'conflict':
-        setConflicts(prev => [data.payload, ...prev]);
+        setConflicts(prev => [apiResponseToSnake<ConflictInfo>(data.payload), ...prev]);
         break;
-      case 'user_joined':
-        setOnlineUsers(prev => [...prev.filter(u => u.id !== data.payload.id), data.payload]);
+      case 'user_joined': {
+        const user = apiResponseToSnake<CollaborationUser>(data.payload);
+        setOnlineUsers(prev => [...prev.filter(u => u.id !== user.id), user]);
         break;
-      case 'user_left':
-        setOnlineUsers(prev => prev.filter(u => u.id !== data.payload.id));
+      }
+      case 'user_left': {
+        const left = apiResponseToSnake<{ id?: string }>(data.payload);
+        setOnlineUsers(prev => prev.filter(u => u.id !== left.id));
         break;
+      }
       case 'progress_update':
-        setProgress(data.payload);
+        setProgress(apiResponseToSnake<ProgressMetrics>(data.payload));
         break;
       case 'annotation_update':
         // Handle annotation updates from other users
@@ -229,14 +233,14 @@ const AnnotationCollaboration: React.FC<AnnotationCollaborationProps> = ({
       // Load progress metrics
       const progressRes = await fetch(`/api/v1/annotation/progress/${projectId}`);
       if (progressRes.ok) {
-        const progressData = await progressRes.json();
+        const progressData = await fetchJsonResponseToSnake<ProgressMetrics>(progressRes);
         setProgress(progressData);
       }
 
       // Load conflicts
       const conflictsRes = await fetch(`/api/v1/annotation/conflicts/${projectId}`);
       if (conflictsRes.ok) {
-        const conflictsData = await conflictsRes.json();
+        const conflictsData = await fetchJsonResponseToSnake<ConflictInfo[]>(conflictsRes);
         setConflicts(conflictsData);
       }
     } catch (error) {
@@ -249,14 +253,14 @@ const AnnotationCollaboration: React.FC<AnnotationCollaborationProps> = ({
       await fetch('/api/v1/annotation/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          suggestion_id: suggestion.id,
+        body: fetchJsonBody({
+          suggestion_id: suggestion.suggestion_id,
           accepted: true,
         }),
       });
 
       setSuggestions(prev =>
-        prev.map(s => s.id === suggestion.id ? { ...s, status: 'accepted' } : s)
+        prev.map(s => s.suggestion_id === suggestion.suggestion_id ? { ...s, status: 'accepted' } : s)
       );
       onSuggestionAccept?.(suggestion);
       message.success(t('ai_annotation:collaboration.suggestion_accepted'));
@@ -272,15 +276,15 @@ const AnnotationCollaboration: React.FC<AnnotationCollaborationProps> = ({
       await fetch('/api/v1/annotation/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          suggestion_id: selectedSuggestion.id,
+        body: fetchJsonBody({
+          suggestion_id: selectedSuggestion.suggestion_id,
           accepted: false,
           reason: rejectReason,
         }),
       });
 
       setSuggestions(prev =>
-        prev.map(s => s.id === selectedSuggestion.id ? { ...s, status: 'rejected' } : s)
+        prev.map(s => s.suggestion_id === selectedSuggestion.suggestion_id ? { ...s, status: 'rejected' } : s)
       );
       onSuggestionReject?.(selectedSuggestion, rejectReason);
       setRejectModalOpen(false);
@@ -292,22 +296,25 @@ const AnnotationCollaboration: React.FC<AnnotationCollaborationProps> = ({
     }
   };
 
-  const handleResolveConflict = async (resolution: string, resolvedAnnotation?: AnnotationItem) => {
+  const handleResolveConflict = async (
+    resolution: 'accepted' | 'rejected' | 'modified',
+    resolvedAnnotation?: AnnotationItem
+  ) => {
     if (!selectedConflict) return;
 
     try {
       await fetch('/api/v1/annotation/conflicts/resolve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          conflict_id: selectedConflict.id,
+        body: fetchJsonBody({
+          conflict_id: selectedConflict.conflict_id,
           resolution,
           resolved_annotation: resolvedAnnotation,
         }),
       });
 
       setConflicts(prev =>
-        prev.map(c => c.id === selectedConflict.id ? { ...c, status: 'resolved' } : c)
+        prev.map(c => c.conflict_id === selectedConflict.conflict_id ? { ...c, status: 'resolved' } : c)
       );
       onConflictResolve?.(selectedConflict, resolution);
       setConflictDrawerOpen(false);
@@ -392,6 +399,7 @@ const AnnotationCollaboration: React.FC<AnnotationCollaborationProps> = ({
             ) : (
               <List
                 dataSource={suggestions}
+                rowKey="suggestion_id"
                 renderItem={(suggestion) => (
                   <SuggestionItem
                     suggestion={suggestion}
@@ -440,10 +448,10 @@ const AnnotationCollaboration: React.FC<AnnotationCollaborationProps> = ({
                   >
                     <List.Item.Meta
                       avatar={<ExclamationCircleOutlined style={{ fontSize: 24, color: '#faad14' }} />}
-                      title={t(`ai_annotation:collaboration.conflict_types.${conflict.conflictType}`)}
+                      title={t(`ai_annotation:collaboration.conflict_types.${conflict.conflict_type}`)}
                       description={
                         <Space direction="vertical" size="small">
-                          <span>{t('ai_annotation:collaboration.document')}: {conflict.documentId}</span>
+                          <span>{t('ai_annotation:collaboration.document')}: {conflict.document_id}</span>
                           <Space>
                             {conflict.users.map(user => (
                               <Tag key={user.id} icon={<UserOutlined />}>
@@ -490,8 +498,8 @@ const AnnotationCollaboration: React.FC<AnnotationCollaborationProps> = ({
                       }
                       title={user.name}
                       description={
-                        user.currentDocument
-                          ? t('ai_annotation:collaboration.working_on', { doc: user.currentDocument })
+                        user.current_document
+                          ? t('ai_annotation:collaboration.working_on', { doc: user.current_document })
                           : t(`ai_annotation:collaboration.status.${user.status}`)
                       }
                     />
@@ -517,22 +525,22 @@ const AnnotationCollaboration: React.FC<AnnotationCollaborationProps> = ({
                 <div>
                   <span>{t('ai_annotation:collaboration.completion')}</span>
                   <Progress
-                    percent={Math.round(progress.completionRate * 100)}
-                    status={progress.completionRate >= 1 ? 'success' : 'active'}
+                    percent={Math.round(progress.completion_rate * 100)}
+                    status={progress.completion_rate >= 1 ? 'success' : 'active'}
                   />
                 </div>
                 <Row gutter={8}>
                   <Col span={12}>
                     <Statistic
                       title={t('ai_annotation:collaboration.completed')}
-                      value={progress.completedTasks}
-                      suffix={`/ ${progress.totalTasks}`}
+                      value={progress.completed_tasks}
+                      suffix={`/ ${progress.total_tasks}`}
                     />
                   </Col>
                   <Col span={12}>
                     <Statistic
                       title={t('ai_annotation:collaboration.in_progress')}
-                      value={progress.inProgressTasks}
+                      value={progress.in_progress_tasks}
                     />
                   </Col>
                 </Row>
@@ -540,14 +548,14 @@ const AnnotationCollaboration: React.FC<AnnotationCollaborationProps> = ({
                   <Col span={12}>
                     <Statistic
                       title={t('ai_annotation:collaboration.annotators')}
-                      value={progress.activeAnnotators}
+                      value={progress.active_annotators}
                       prefix={<UserOutlined />}
                     />
                   </Col>
                   <Col span={12}>
                     <Statistic
                       title={t('ai_annotation:collaboration.avg_time')}
-                      value={progress.avgTimePerTaskMinutes.toFixed(1)}
+                      value={progress.avg_time_per_task_minutes.toFixed(1)}
                       suffix="min"
                     />
                   </Col>
@@ -604,10 +612,6 @@ const AnnotationCollaboration: React.FC<AnnotationCollaborationProps> = ({
     </div>
   );
 };
-
-// Import Statistic from antd
-import { Statistic } from 'antd';
-
 
 // Suggestion Item Component
 interface SuggestionItemProps {
@@ -685,7 +689,7 @@ const SuggestionItem: React.FC<SuggestionItemProps> = ({
         title={
           <Space>
             <span>{suggestion.text.substring(0, 50)}...</span>
-            <Tag color="blue">{suggestion.latencyMs.toFixed(0)}ms</Tag>
+            <Tag color="blue">{suggestion.latency_ms.toFixed(0)}ms</Tag>
           </Space>
         }
         description={
@@ -704,8 +708,8 @@ const SuggestionItem: React.FC<SuggestionItemProps> = ({
 
 // Conflict Resolution Panel Component
 interface ConflictResolutionPanelProps {
-  conflict: AnnotationConflict;
-  onResolve: (resolution: string, annotation?: AnnotationItem) => void;
+  conflict: ConflictInfo;
+  onResolve: (resolution: 'accepted' | 'rejected' | 'modified', annotation?: AnnotationItem) => void;
   t: any;
 }
 
@@ -731,7 +735,7 @@ const ConflictResolutionPanel: React.FC<ConflictResolutionPanelProps> = ({
   return (
     <Space direction="vertical" style={{ width: '100%' }}>
       <Alert
-        message={t(`ai_annotation:collaboration.conflict_types.${conflict.conflictType}`)}
+        message={t(`ai_annotation:collaboration.conflict_types.${conflict.conflict_type}`)}
         description={t('ai_annotation:collaboration.conflict_description')}
         type="warning"
         showIcon

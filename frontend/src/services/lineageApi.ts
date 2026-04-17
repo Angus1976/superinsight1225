@@ -9,6 +9,7 @@
  */
 
 import apiClient from './api/client';
+import { apiRequestToSnake, apiResponseToSnake } from '@/utils/jsonCase';
 
 // Types
 export interface LineageNode {
@@ -131,9 +132,9 @@ export const lineageApi = {
     
     const response = await apiClient.post(
       `/api/v1/lineage/v2?${searchParams}`,
-      body
+      apiRequestToSnake(body)
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Lineage Queries
@@ -149,7 +150,7 @@ export const lineageApi = {
     const response = await apiClient.get(
       `/api/v1/lineage/v2/${entityType}/${entityId}/upstream?${params}`
     );
-    return response.data as { lineage: LineageGraph };
+    return apiResponseToSnake(response.data) as { lineage: LineageGraph };
   },
 
   getDownstream: async (
@@ -164,7 +165,7 @@ export const lineageApi = {
     const response = await apiClient.get(
       `/api/v1/lineage/v2/${entityType}/${entityId}/downstream?${params}`
     );
-    return response.data as { lineage: LineageGraph };
+    return apiResponseToSnake(response.data) as { lineage: LineageGraph };
   },
 
   getFullLineage: async (
@@ -183,7 +184,7 @@ export const lineageApi = {
     const response = await apiClient.get(
       `/api/v1/lineage/v2/${entityType}/${entityId}/full?${params}`
     );
-    return response.data as { lineage: LineageGraph };
+    return apiResponseToSnake(response.data) as { lineage: LineageGraph };
   },
 
   findPath: async (
@@ -200,7 +201,7 @@ export const lineageApi = {
     const response = await apiClient.get(
       `/api/v1/lineage/v2/${sourceType}/${sourceId}/path/${targetType}/${targetId}?${params}`
     );
-    return response.data as { paths: LineagePath[]; count: number };
+    return apiResponseToSnake(response.data) as { paths: LineagePath[]; count: number };
   },
 
   // Impact Analysis
@@ -216,9 +217,9 @@ export const lineageApi = {
     
     const response = await apiClient.post(
       `/api/v1/lineage/v2/impact/${entityType}/${entityId}/analyze?${params}`,
-      { change_type: changeType, max_depth: maxDepth }
+      apiRequestToSnake({ change_type: changeType, max_depth: maxDepth })
     );
-    return response.data as { impact_report: ImpactReport };
+    return apiResponseToSnake(response.data) as { impact_report: ImpactReport };
   },
 
   getImpactVisualization: async (
@@ -237,14 +238,17 @@ export const lineageApi = {
     const response = await apiClient.get(
       `/api/v1/lineage/v2/impact/${entityType}/${entityId}/visualize?${params}`
     );
-    return response.data as { visualization: ImpactVisualization; risk_level: string };
+    return apiResponseToSnake(response.data) as {
+      visualization: ImpactVisualization;
+      risk_level: string;
+    };
   },
 
   // Statistics
   getStatistics: async (tenantId?: string) => {
     const params = tenantId ? `?tenant_id=${tenantId}` : '';
     const response = await apiClient.get(`/api/v1/lineage/v2/statistics${params}`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 };
 

@@ -1,6 +1,7 @@
 // Dashboard service with multi-tenant support
 import apiClient from './api/client';
 import { API_ENDPOINTS } from '@/constants';
+import { apiResponseToSnake } from '@/utils/jsonCase';
 import type { DashboardSummary, AnnotationEfficiency, UserActivityMetrics, AIModelMetrics, ProjectMetrics } from '@/types';
 
 // Helper to build params with tenant/workspace context
@@ -20,34 +21,34 @@ export const dashboardService = {
     const response = await apiClient.get<DashboardSummary>(API_ENDPOINTS.METRICS.SUMMARY, {
       params: buildParams({}, tenantId, workspaceId),
     });
-    return response.data;
+    return apiResponseToSnake<DashboardSummary>(response.data);
   },
 
   async getAnnotationEfficiency(hours = 24, tenantId?: string, workspaceId?: string): Promise<AnnotationEfficiency> {
     const response = await apiClient.get<AnnotationEfficiency>(API_ENDPOINTS.METRICS.ANNOTATION_EFFICIENCY, {
       params: buildParams({ hours }, tenantId, workspaceId),
     });
-    return response.data;
+    return apiResponseToSnake<AnnotationEfficiency>(response.data);
   },
 
   async getUserActivity(hours = 24, tenantId?: string, workspaceId?: string): Promise<UserActivityMetrics> {
     const response = await apiClient.get<UserActivityMetrics>(API_ENDPOINTS.METRICS.USER_ACTIVITY, {
       params: buildParams({ hours }, tenantId, workspaceId),
     });
-    return response.data;
+    return apiResponseToSnake<UserActivityMetrics>(response.data);
   },
 
   async getAIModels(modelName?: string, hours = 24, tenantId?: string, workspaceId?: string): Promise<AIModelMetrics> {
     const response = await apiClient.get<AIModelMetrics>(API_ENDPOINTS.METRICS.AI_MODELS, {
       params: buildParams({ model_name: modelName, hours }, tenantId, workspaceId),
     });
-    return response.data;
+    return apiResponseToSnake<AIModelMetrics>(response.data);
   },
 
   async getProjects(projectId?: string, hours = 24, tenantId?: string, workspaceId?: string): Promise<ProjectMetrics> {
     const response = await apiClient.get<ProjectMetrics>(API_ENDPOINTS.METRICS.PROJECTS, {
       params: buildParams({ project_id: projectId, hours }, tenantId, workspaceId),
     });
-    return response.data;
+    return apiResponseToSnake<ProjectMetrics>(response.data);
   },
 };

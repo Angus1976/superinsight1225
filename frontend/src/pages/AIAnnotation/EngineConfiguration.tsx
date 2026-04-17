@@ -44,26 +44,27 @@ import LLMProviderConfig from '@/components/AIAnnotation/LLMProviderConfig';
 import QualityThresholds from '@/components/AIAnnotation/QualityThresholds';
 import ABTestingPanel from '@/components/AIAnnotation/ABTestingPanel';
 import EnginePerformanceComparison from '@/components/AIAnnotation/EnginePerformanceComparison';
+import { fetchJsonBody, fetchJsonResponseToSnake } from '@/utils/jsonCase';
 
-// Types
+// Types（与 REST / FastAPI snake_case 对齐）
 export interface EngineConfig {
   id?: string;
-  engineType: 'pre-annotation' | 'mid-coverage' | 'post-validation';
+  engine_type: 'pre-annotation' | 'mid-coverage' | 'post-validation';
   enabled: boolean;
   provider: 'ollama' | 'openai' | 'azure' | 'qwen' | 'zhipu' | 'baidu' | 'hunyuan';
   model: string;
-  confidenceThreshold: number;
-  qualityThresholds: {
+  confidence_threshold: number;
+  quality_thresholds: {
     accuracy: number;
     consistency: number;
     completeness: number;
     recall: number;
   };
-  performanceSettings: {
-    batchSize: number;
-    maxWorkers: number;
+  performance_settings: {
+    batch_size: number;
+    max_workers: number;
     timeout: number;
-    enableCaching: boolean;
+    enable_caching: boolean;
   };
 }
 
@@ -78,12 +79,12 @@ export interface ABTestConfig {
 }
 
 export interface EngineStatus {
-  engineId: string;
-  engineType: string;
+  engine_id: string;
+  engine_type: string;
   status: 'healthy' | 'degraded' | 'unhealthy';
-  lastCheckAt: string;
-  responseTimeMs: number;
-  consecutiveFailures: number;
+  last_check_at: string;
+  response_time_ms: number;
+  consecutive_failures: number;
 }
 
 const EngineConfiguration: React.FC = () => {
@@ -110,7 +111,7 @@ const EngineConfiguration: React.FC = () => {
       setLoading(true);
       const response = await fetch('/api/v1/annotation/engines');
       if (!response.ok) throw new Error('Failed to load engines');
-      const data = await response.json();
+      const data = await fetchJsonResponseToSnake<{ engines?: EngineConfig[] }>(response);
       setEngines(data.engines || []);
     } catch (error) {
       message.error(t('ai_annotation:errors.load_engines_failed'));
@@ -124,7 +125,7 @@ const EngineConfiguration: React.FC = () => {
     try {
       const response = await fetch('/api/v1/annotation/engines/status');
       if (!response.ok) return;
-      const data = await response.json();
+      const data = await fetchJsonResponseToSnake<{ statuses?: EngineStatus[] }>(response);
       setEngineStatuses(data.statuses || []);
     } catch (error) {
       console.error('Failed to load engine statuses:', error);
@@ -142,7 +143,7 @@ const EngineConfiguration: React.FC = () => {
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config),
+        body: fetchJsonBody(config),
       });
 
       if (!response.ok) throw new Error('Failed to save engine');
@@ -182,7 +183,7 @@ const EngineConfiguration: React.FC = () => {
       const response = await fetch(`/api/v1/annotation/engines/${engineId}/toggle`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ enabled }),
+        body: fetchJsonBody({ enabled }),
       });
       if (!response.ok) throw new Error('Failed to toggle engine');
       message.success(
@@ -215,7 +216,7 @@ const EngineConfiguration: React.FC = () => {
   };
 
   const getEngineStatus = (engineId: string): EngineStatus | undefined => {
-    return engineStatuses.find((s) => s.engineId === engineId);
+    return engineStatuses.find((s) => s.engine_id === engineId);
   };
 
   const getStatusColor = (status: string): string => {

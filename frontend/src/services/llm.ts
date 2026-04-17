@@ -5,6 +5,7 @@
  */
 
 import apiClient from './api/client';
+import { apiRequestToSnake, apiResponseToSnake, unwrapApiEnvelope } from '@/utils/jsonCase';
 
 // ==================== Types ====================
 
@@ -158,9 +159,9 @@ export const llmService = {
   async generate(request: GenerateRequest): Promise<LLMResponse> {
     const response = await apiClient.post<ApiResponse<LLMResponse>>(
       `${LLM_API_BASE}/generate`,
-      request
+      apiRequestToSnake(request)
     );
-    return response.data.data;
+    return unwrapApiEnvelope<LLMResponse>(response.data);
   },
 
   /**
@@ -169,9 +170,9 @@ export const llmService = {
   async embed(request: EmbedRequest): Promise<EmbeddingResponse> {
     const response = await apiClient.post<ApiResponse<EmbeddingResponse>>(
       `${LLM_API_BASE}/embed`,
-      request
+      apiRequestToSnake(request)
     );
-    return response.data.data;
+    return unwrapApiEnvelope<EmbeddingResponse>(response.data);
   },
 
   /**
@@ -183,7 +184,7 @@ export const llmService = {
       `${LLM_API_BASE}/config`,
       { params }
     );
-    return response.data.data;
+    return unwrapApiEnvelope<LLMConfig>(response.data);
   },
 
   /**
@@ -193,10 +194,10 @@ export const llmService = {
     const params = tenantId ? { tenant_id: tenantId } : {};
     const response = await apiClient.put<ApiResponse<LLMConfig>>(
       `${LLM_API_BASE}/config`,
-      config,
+      apiRequestToSnake(config),
       { params }
     );
-    return response.data.data;
+    return unwrapApiEnvelope<LLMConfig>(response.data);
   },
 
   /**
@@ -205,9 +206,9 @@ export const llmService = {
   async validateConfig(config: LLMConfig): Promise<ValidationResult> {
     const response = await apiClient.post<ValidationResult>(
       `${LLM_API_BASE}/config/validate`,
-      config
+      apiRequestToSnake(config)
     );
-    return response.data;
+    return apiResponseToSnake<ValidationResult>(response.data);
   },
 
   /**
@@ -216,9 +217,9 @@ export const llmService = {
   async testConnection(method: LLMMethod): Promise<HealthStatus> {
     const response = await apiClient.post<ApiResponse<HealthStatus>>(
       `${LLM_API_BASE}/config/test`,
-      { method }
+      apiRequestToSnake({ method })
     );
-    return response.data.data;
+    return unwrapApiEnvelope<HealthStatus>(response.data);
   },
 
   /**
@@ -230,7 +231,7 @@ export const llmService = {
       `${LLM_API_BASE}/health`,
       { params }
     );
-    return response.data.data;
+    return unwrapApiEnvelope<Record<string, HealthStatus>>(response.data);
   },
 
   /**
@@ -240,7 +241,7 @@ export const llmService = {
     const response = await apiClient.get<ApiResponse<MethodInfo[]>>(
       `${LLM_API_BASE}/methods`
     );
-    return response.data.data;
+    return unwrapApiEnvelope<MethodInfo[]>(response.data);
   },
 
   /**
@@ -250,14 +251,14 @@ export const llmService = {
     const response = await apiClient.get<{ success: boolean; data: { method: LLMMethod } }>(
       `${LLM_API_BASE}/current-method`
     );
-    return response.data.data.method;
+    return unwrapApiEnvelope<{ method: LLMMethod }>(response.data).method;
   },
 
   /**
    * Switch default method
    */
   async switchMethod(method: LLMMethod): Promise<void> {
-    await apiClient.post(`${LLM_API_BASE}/switch-method`, { method });
+    await apiClient.post(`${LLM_API_BASE}/switch-method`, apiRequestToSnake({ method }));
   },
 
   /**
@@ -269,7 +270,7 @@ export const llmService = {
       `${LLM_API_BASE}/models`,
       { params }
     );
-    return response.data.data;
+    return unwrapApiEnvelope<Record<string, string[]> | { method: string; models: string[] }>(response.data);
   },
 
   /**
@@ -282,7 +283,7 @@ export const llmService = {
       null,
       { params }
     );
-    return response.data.data.config;
+    return unwrapApiEnvelope<{ config: LLMConfig }>(response.data).config;
   },
 };
 
@@ -361,7 +362,7 @@ export const llmProviderService = {
     const response = await apiClient.get<ApiResponse<ProviderConfig[]>>(
       `${LLM_API_BASE}/providers`
     );
-    return response.data.data;
+    return unwrapApiEnvelope<ProviderConfig[]>(response.data);
   },
 
   /**
@@ -371,7 +372,7 @@ export const llmProviderService = {
     const response = await apiClient.get<ApiResponse<ProviderConfig>>(
       `${LLM_API_BASE}/providers/${id}`
     );
-    return response.data.data;
+    return unwrapApiEnvelope<ProviderConfig>(response.data);
   },
 
   /**
@@ -380,9 +381,9 @@ export const llmProviderService = {
   async createProvider(data: ProviderConfigCreate): Promise<ProviderConfig> {
     const response = await apiClient.post<ApiResponse<ProviderConfig>>(
       `${LLM_API_BASE}/providers`,
-      data
+      apiRequestToSnake(data)
     );
-    return response.data.data;
+    return unwrapApiEnvelope<ProviderConfig>(response.data);
   },
 
   /**
@@ -391,9 +392,9 @@ export const llmProviderService = {
   async updateProvider(id: string, data: ProviderConfigUpdate): Promise<ProviderConfig> {
     const response = await apiClient.put<ApiResponse<ProviderConfig>>(
       `${LLM_API_BASE}/providers/${id}`,
-      data
+      apiRequestToSnake(data)
     );
-    return response.data.data;
+    return unwrapApiEnvelope<ProviderConfig>(response.data);
   },
 
   /**
@@ -410,7 +411,7 @@ export const llmProviderService = {
     const response = await apiClient.post<ApiResponse<HealthStatus>>(
       `${LLM_API_BASE}/providers/${id}/test`
     );
-    return response.data.data;
+    return unwrapApiEnvelope<HealthStatus>(response.data);
   },
 
   /**
@@ -434,7 +435,7 @@ export const llmProviderService = {
     const response = await apiClient.get<ApiResponse<HealthStatus>>(
       `${LLM_API_BASE}/providers/${id}/health`
     );
-    return response.data.data;
+    return unwrapApiEnvelope<HealthStatus>(response.data);
   },
 };
 

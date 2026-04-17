@@ -6,6 +6,7 @@ import { useLanguageStore, type LabelStudioLanguageMessage } from '@/stores/lang
 import { useTranslation } from 'react-i18next';
 import { useLSWorkspaceContext } from '@/hooks/useLSWorkspaces';
 import apiClient from '@/services/api/client';
+import { apiResponseToSnake } from '@/utils/jsonCase';
 import type { WorkspaceInfo, WorkspaceMessageType } from '@/services/iframe/types';
 
 interface LabelStudioEmbedProps {
@@ -113,10 +114,14 @@ export const LabelStudioEmbed: React.FC<LabelStudioEmbedProps> = ({
             task_id: taskId,
           },
         });
-        
-        if (response.data.sso_enabled && response.data.url) {
+        const loginPayload = apiResponseToSnake(response.data) as {
+          sso_enabled?: boolean;
+          url?: string;
+        };
+
+        if (loginPayload.sso_enabled && loginPayload.url) {
           // SSO is enabled, extract token from URL using regex (more robust than URL parsing)
-          const tokenMatch = response.data.url.match(/[?&]token=([^&]+)/);
+          const tokenMatch = loginPayload.url.match(/[?&]token=([^&]+)/);
           if (tokenMatch && tokenMatch[1]) {
             setSsoToken(tokenMatch[1]);
             console.log('[LabelStudioEmbed] SSO token extracted successfully');

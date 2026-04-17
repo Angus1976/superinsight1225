@@ -10,6 +10,7 @@
 
 import apiClient from './api/client';
 import { API_ENDPOINTS } from '@/constants';
+import { apiRequestToSnake, apiResponseToSnake } from '@/utils/jsonCase';
 import type {
   LSWorkspace,
   LSWorkspaceListResponse,
@@ -44,7 +45,7 @@ export const lsWorkspaceService = {
       API_ENDPOINTS.LS_WORKSPACES.BASE,
       { params: { include_inactive: includeInactive } }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   /**
@@ -56,7 +57,7 @@ export const lsWorkspaceService = {
     const response = await apiClient.get<LSWorkspace>(
       API_ENDPOINTS.LS_WORKSPACES.BY_ID(workspaceId)
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   /**
@@ -67,9 +68,9 @@ export const lsWorkspaceService = {
   async createWorkspace(request: CreateLSWorkspaceRequest): Promise<LSWorkspace> {
     const response = await apiClient.post<LSWorkspace>(
       API_ENDPOINTS.LS_WORKSPACES.BASE,
-      request
+      apiRequestToSnake(request)
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   /**
@@ -84,9 +85,9 @@ export const lsWorkspaceService = {
   ): Promise<LSWorkspace> {
     const response = await apiClient.put<LSWorkspace>(
       API_ENDPOINTS.LS_WORKSPACES.BY_ID(workspaceId),
-      request
+      apiRequestToSnake(request)
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   /**
@@ -119,7 +120,7 @@ export const lsWorkspaceService = {
       API_ENDPOINTS.LS_WORKSPACES.MEMBERS(workspaceId),
       { params: { include_inactive: includeInactive } }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   /**
@@ -134,9 +135,9 @@ export const lsWorkspaceService = {
   ): Promise<LSWorkspaceMember> {
     const response = await apiClient.post<LSWorkspaceMember>(
       API_ENDPOINTS.LS_WORKSPACES.MEMBERS(workspaceId),
-      request
+      apiRequestToSnake(request)
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   /**
@@ -153,9 +154,9 @@ export const lsWorkspaceService = {
   ): Promise<LSWorkspaceMember> {
     const response = await apiClient.put<LSWorkspaceMember>(
       API_ENDPOINTS.LS_WORKSPACES.MEMBER_BY_ID(workspaceId, userId),
-      request
+      apiRequestToSnake(request)
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   /**
@@ -182,7 +183,7 @@ export const lsWorkspaceService = {
     const response = await apiClient.get<LSUserPermissions>(
       API_ENDPOINTS.LS_WORKSPACES.PERMISSIONS(workspaceId)
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // ==========================================================================
@@ -198,7 +199,7 @@ export const lsWorkspaceService = {
     const response = await apiClient.get<LSWorkspaceProjectListResponse>(
       API_ENDPOINTS.LS_WORKSPACES.PROJECTS(workspaceId)
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   /**
@@ -211,7 +212,7 @@ export const lsWorkspaceService = {
     const response = await apiClient.get<LSWorkspaceProject>(
       API_ENDPOINTS.LS_WORKSPACES.PROJECT_BY_ID(workspaceId, projectId)
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   /**
@@ -226,9 +227,9 @@ export const lsWorkspaceService = {
   ): Promise<LSWorkspaceProject> {
     const response = await apiClient.post<LSWorkspaceProject>(
       API_ENDPOINTS.LS_WORKSPACES.PROJECTS(workspaceId),
-      request
+      apiRequestToSnake(request)
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   /**

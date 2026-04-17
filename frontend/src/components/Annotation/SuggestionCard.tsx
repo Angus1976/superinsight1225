@@ -32,12 +32,12 @@ import {
 import { useTranslation } from 'react-i18next';
 
 interface AISuggestion {
-  suggestionId: string;
+  suggestion_id: string;
   label: string;
   confidence: number;
   reasoning?: string;
-  similarExamples: number;
-  engineType: 'pre-annotation' | 'mid-coverage' | 'post-validation';
+  similar_examples: number;
+  engine_type: 'pre-annotation' | 'mid-coverage' | 'post-validation';
   metadata?: {
     patterns?: string[];
     context?: string;
@@ -108,20 +108,20 @@ const SuggestionCard: React.FC<SuggestionCardProps> = ({
           {/* Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Space>
-              <Tag color={getEngineTypeColor(suggestion.engineType)}>
-                {t(`ai_annotation:engine_types.${suggestion.engineType.replace('-', '_')}`)}
+              <Tag color={getEngineTypeColor(suggestion.engine_type)}>
+                {t(`ai_annotation:engine_types.${suggestion.engine_type.replace('-', '_')}`)}
               </Tag>
               <strong style={{ fontSize: 14 }}>{suggestion.label}</strong>
             </Space>
             <Space>
-              {suggestion.similarExamples > 0 && (
+              {suggestion.similar_examples > 0 && (
                 <Tooltip
                   title={t('annotation:tooltips.similar_examples', {
-                    count: suggestion.similarExamples,
+                    count: suggestion.similar_examples,
                   })}
                 >
                   <Tag icon={<EyeOutlined />} color="cyan">
-                    {suggestion.similarExamples}
+                    {suggestion.similar_examples}
                   </Tag>
                 </Tooltip>
               )}

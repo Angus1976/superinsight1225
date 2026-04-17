@@ -39,14 +39,15 @@ import { useTranslation } from 'react-i18next';
 
 import SuggestionCard from './SuggestionCard';
 import { useWebSocket } from '@/hooks/useWebSocket';
+import { fetchJsonBody, fetchJsonResponseToSnake, apiResponseToSnake } from '@/utils/jsonCase';
 
 interface AISuggestion {
-  suggestionId: string;
+  suggestion_id: string;
   label: string;
   confidence: number;
   reasoning?: string;
-  similarExamples: number;
-  engineType: 'pre-annotation' | 'mid-coverage' | 'post-validation';
+  similar_examples: number;
+  engine_type: 'pre-annotation' | 'mid-coverage' | 'post-validation';
   metadata?: {
     patterns?: string[];
     context?: string;
@@ -54,12 +55,12 @@ interface AISuggestion {
 }
 
 interface QualityAlert {
-  alertId: string;
+  alert_id: string;
   type: 'warning' | 'error' | 'info';
   message: string;
   metric?: string;
   threshold?: number;
-  currentValue?: number;
+  current_value?: number;
   timestamp: string;
 }
 
@@ -98,18 +99,21 @@ const AIAssistancePanel: React.FC<AIAssistancePanelProps> = ({
       message.warning(t('annotation:messages.ai_disconnected'));
     });
 
-    ws.on('suggestion', (data: { suggestions: AISuggestion[] }) => {
-      setSuggestions(data.suggestions);
-      if (data.suggestions.length > 0) {
+    ws.on('suggestion', (raw: unknown) => {
+      const data = apiResponseToSnake<{ suggestions?: AISuggestion[] }>(raw);
+      const list = data.suggestions ?? [];
+      setSuggestions(list);
+      if (list.length > 0) {
         message.info(
           t('annotation:messages.ai_suggestions_received', {
-            count: data.suggestions.length,
+            count: list.length,
           })
         );
       }
     });
 
-    ws.on('quality_alert', (data: QualityAlert) => {
+    ws.on('quality_alert', (raw: unknown) => {
+      const data = apiResponseToSnake<QualityAlert>(raw);
       setQualityAlerts((prev) => [data, ...prev].slice(0, 5)); // Keep last 5 alerts
 
       if (data.type === 'error') {
@@ -121,11 +125,15 @@ const AIAssistancePanel: React.FC<AIAssistancePanelProps> = ({
       }
     });
 
-    ws.on('suggestion_updated', (data: { suggestionId: string; updates: Partial<AISuggestion> }) => {
+    ws.on('suggestion_updated', (raw: unknown) => {
+      const data = apiResponseToSnake<{ suggestion_id?: string; suggestionId?: string; updates?: Partial<AISuggestion> }>(
+        raw
+      );
+      const sid = data.suggestion_id ?? data.suggestionId;
+      const updates = data.updates ?? {};
+      if (!sid) return;
       setSuggestions((prev) =>
-        prev.map((s) =>
-          s.suggestionId === data.suggestionId ? { ...s, ...data.updates } : s
-        )
+        prev.map((s) => (s.suggestion_id === sid ? { ...s, ...updates } : s))
       );
     });
 
@@ -144,7 +152,7 @@ const AIAssistancePanel: React.FC<AIAssistancePanelProps> = ({
       const response = await fetch('/api/v1/annotation/suggestion', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: fetchJsonBody({
           task_id: taskId,
           project_id: projectId,
         }),
@@ -152,7 +160,7 @@ const AIAssistancePanel: React.FC<AIAssistancePanelProps> = ({
 
       if (!response.ok) throw new Error('Failed to fetch suggestions');
 
-      const data = await response.json();
+      const data = await fetchJsonResponseToSnake<{ suggestions?: AISuggestion[] }>(response);
       setSuggestions(data.suggestions || []);
       message.success(
         t('annotation:messages.ai_suggestions_loaded', {
@@ -173,8 +181,8 @@ const AIAssistancePanel: React.FC<AIAssistancePanelProps> = ({
       await fetch('/api/v1/annotation/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          suggestion_id: suggestion.suggestionId,
+        body: fetchJsonBody({
+          suggestion_id: suggestion.suggestion_id,
           accepted: true,
           task_id: taskId,
         }),
@@ -182,7 +190,7 @@ const AIAssistancePanel: React.FC<AIAssistancePanelProps> = ({
 
       // Remove from suggestions
       setSuggestions((prev) =>
-        prev.filter((s) => s.suggestionId !== suggestion.suggestionId)
+        prev.filter((s) => s.suggestion_id !== suggestion.suggestion_id)
       );
 
       // Callback to parent
@@ -201,8 +209,8 @@ const AIAssistancePanel: React.FC<AIAssistancePanelProps> = ({
       await fetch('/api/v1/annotation/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          suggestion_id: suggestion.suggestionId,
+        body: fetchJsonBody({
+          suggestion_id: suggestion.suggestion_id,
           accepted: false,
           reason,
           task_id: taskId,
@@ -211,7 +219,7 @@ const AIAssistancePanel: React.FC<AIAssistancePanelProps> = ({
 
       // Remove from suggestions
       setSuggestions((prev) =>
-        prev.filter((s) => s.suggestionId !== suggestion.suggestionId)
+        prev.filter((s) => s.suggestion_id !== suggestion.suggestion_id)
       );
 
       // Callback to parent
@@ -281,7 +289,7 @@ const AIAssistancePanel: React.FC<AIAssistancePanelProps> = ({
                     <Space direction="vertical" style={{ width: '100%' }}>
                       {qualityAlerts.map((alert) => (
                         <Alert
-                          key={alert.alertId}
+                          key={alert.alert_id}
                           message={alert.message}
                           type={getAlertType(alert.type)}
                           icon={getAlertIcon(alert.type)}
@@ -289,13 +297,13 @@ const AIAssistancePanel: React.FC<AIAssistancePanelProps> = ({
                           closable
                           onClose={() =>
                             setQualityAlerts((prev) =>
-                              prev.filter((a) => a.alertId !== alert.alertId)
+                              prev.filter((a) => a.alert_id !== alert.alert_id)
                             )
                           }
                           description={
-                            alert.metric && alert.threshold && alert.currentValue ? (
+                            alert.metric && alert.threshold != null && alert.current_value != null ? (
                               <div style={{ fontSize: 12 }}>
-                                {alert.metric}: {alert.currentValue.toFixed(2)} (
+                                {alert.metric}: {alert.current_value.toFixed(2)} (
                                 {t('ai_annotation:fields.threshold')}: {alert.threshold.toFixed(2)})
                               </div>
                             ) : undefined
@@ -345,7 +353,7 @@ const AIAssistancePanel: React.FC<AIAssistancePanelProps> = ({
           <Space direction="vertical" style={{ width: '100%' }} size="small">
             {suggestions.map((suggestion) => (
               <SuggestionCard
-                key={suggestion.suggestionId}
+                key={suggestion.suggestion_id}
                 suggestion={suggestion}
                 onAccept={() => handleAcceptSuggestion(suggestion)}
                 onReject={(reason) => handleRejectSuggestion(suggestion, reason)}

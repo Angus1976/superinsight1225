@@ -1,5 +1,6 @@
 // System management service
 import apiClient from './api/client';
+import { apiRequestToSnake, apiResponseToSnake } from '@/utils/jsonCase';
 import type {
   SystemTenant,
   TenantUsage,
@@ -17,22 +18,22 @@ export const systemService = {
   // Tenant management
   async getTenants(): Promise<SystemTenant[]> {
     const response = await apiClient.get('/admin/tenants');
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async getTenant(id: string): Promise<SystemTenant> {
     const response = await apiClient.get(`/admin/tenants/${id}`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async createTenant(data: CreateTenantRequest): Promise<SystemTenant> {
-    const response = await apiClient.post('/admin/tenants', data);
-    return response.data;
+    const response = await apiClient.post('/admin/tenants', apiRequestToSnake(data));
+    return apiResponseToSnake(response.data);
   },
 
   async updateTenant(id: string, data: UpdateTenantRequest): Promise<SystemTenant> {
-    const response = await apiClient.put(`/admin/tenants/${id}`, data);
-    return response.data;
+    const response = await apiClient.put(`/admin/tenants/${id}`, apiRequestToSnake(data));
+    return apiResponseToSnake(response.data);
   },
 
   async deleteTenant(id: string): Promise<void> {
@@ -41,13 +42,13 @@ export const systemService = {
 
   async getTenantUsage(query: TenantUsageQuery): Promise<TenantUsage[]> {
     const response = await apiClient.get('/admin/tenants/usage', { params: query });
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // System monitoring
   async getSystemMetrics(query: SystemMetricsQuery): Promise<SystemMetrics[]> {
     const response = await apiClient.get('/admin/system/metrics', { params: query });
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async getSystemHealth(): Promise<{
@@ -56,7 +57,7 @@ export const systemService = {
     uptime: number;
   }> {
     const response = await apiClient.get('/admin/system/health');
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async getSystemAlerts(params?: {
@@ -65,7 +66,7 @@ export const systemService = {
     limit?: number;
   }): Promise<SystemAlert[]> {
     const response = await apiClient.get('/admin/system/alerts', { params });
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async acknowledgeAlert(id: string): Promise<void> {
@@ -90,27 +91,27 @@ export const systemService = {
     total: number;
   }> {
     const response = await apiClient.get('/admin/audit-logs', { params });
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // System configuration
   async getSystemConfig(): Promise<SystemConfig> {
     const response = await apiClient.get('/admin/system/config');
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async updateSystemConfig(config: Partial<SystemConfig>): Promise<SystemConfig> {
-    const response = await apiClient.put('/admin/system/config', config);
-    return response.data;
+    const response = await apiClient.put('/admin/system/config', apiRequestToSnake(config));
+    return apiResponseToSnake(response.data);
   },
 
   // Maintenance operations
   async enableMaintenanceMode(message?: string): Promise<void> {
-    await apiClient.post('/admin/system/maintenance', { enabled: true, message });
+    await apiClient.post('/admin/system/maintenance', apiRequestToSnake({ enabled: true, message }));
   },
 
   async disableMaintenanceMode(): Promise<void> {
-    await apiClient.post('/admin/system/maintenance', { enabled: false });
+    await apiClient.post('/admin/system/maintenance', apiRequestToSnake({ enabled: false }));
   },
 
   async restartService(serviceName: string): Promise<void> {
@@ -134,6 +135,6 @@ export const systemService = {
     total: number;
   }> {
     const response = await apiClient.get('/admin/system/logs', { params });
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 };

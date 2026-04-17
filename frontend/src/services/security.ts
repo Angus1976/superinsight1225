@@ -1,6 +1,7 @@
 // Security audit service
 import apiClient from './api/client';
 import { API_ENDPOINTS } from '@/constants';
+import { apiRequestToSnake, apiResponseToSnake } from '@/utils/jsonCase';
 
 export interface AuditLog {
   id: string;
@@ -70,14 +71,14 @@ export const securityService = {
       API_ENDPOINTS.SECURITY?.AUDIT_LOGS || '/api/security/audit-logs',
       { params }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async getAuditLog(id: string): Promise<AuditLog> {
     const response = await apiClient.get<AuditLog>(
       `${API_ENDPOINTS.SECURITY?.AUDIT_LOGS || '/api/security/audit-logs'}/${id}`
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async exportAuditLogs(params?: AuditLogListParams): Promise<Blob> {
@@ -88,7 +89,7 @@ export const securityService = {
         responseType: 'blob',
       }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Security events
@@ -99,21 +100,21 @@ export const securityService = {
       API_ENDPOINTS.SECURITY?.EVENTS || '/api/security/events',
       { params }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async getSecurityEvent(id: string): Promise<SecurityEvent> {
     const response = await apiClient.get<SecurityEvent>(
       `${API_ENDPOINTS.SECURITY?.EVENTS || '/api/security/events'}/${id}`
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async resolveSecurityEvent(id: string): Promise<SecurityEvent> {
     const response = await apiClient.post<SecurityEvent>(
       `${API_ENDPOINTS.SECURITY?.EVENTS || '/api/security/events'}/${id}/resolve`
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Statistics
@@ -127,7 +128,7 @@ export const securityService = {
     const response = await apiClient.get(
       API_ENDPOINTS.SECURITY?.STATS || '/api/security/stats'
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // IP management
@@ -135,13 +136,13 @@ export const securityService = {
     const response = await apiClient.get<string[]>(
       API_ENDPOINTS.SECURITY?.BLOCKED_IPS || '/api/security/blocked-ips'
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async blockIP(ip: string, reason?: string): Promise<void> {
     await apiClient.post(
       API_ENDPOINTS.SECURITY?.BLOCKED_IPS || '/api/security/blocked-ips',
-      { ip, reason }
+      apiRequestToSnake({ ip, reason })
     );
   },
 
@@ -166,7 +167,7 @@ export const securityService = {
     const response = await apiClient.get(
       API_ENDPOINTS.SECURITY?.SESSIONS || '/api/security/sessions'
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async terminateSession(sessionId: string): Promise<void> {

@@ -7,6 +7,7 @@
  */
 
 import apiClient from './client';
+import { apiRequestToSnake, apiResponseToSnake } from '@/utils/jsonCase';
 import type {
   StructuringJob,
   InferredSchema,
@@ -71,7 +72,7 @@ export async function createJob(file: File): Promise<JobCreateResponse> {
     formData,
     { headers: { 'Content-Type': 'multipart/form-data' } },
   );
-  return data;
+  return apiResponseToSnake<JobCreateResponse>(data);
 }
 
 /** GET /api/structuring/jobs/{id} — fetch current job status and details. */
@@ -79,7 +80,7 @@ export async function getJob(jobId: string): Promise<StructuringJob> {
   const { data } = await apiClient.get<StructuringJob>(
     `${API_BASE}/jobs/${jobId}`,
   );
-  return data;
+  return apiResponseToSnake<StructuringJob>(data);
 }
 
 /** PUT /api/structuring/jobs/{id}/schema — confirm or edit the inferred schema. */
@@ -89,9 +90,9 @@ export async function confirmSchema(
 ): Promise<SchemaConfirmResponse> {
   const { data } = await apiClient.put<SchemaConfirmResponse>(
     `${API_BASE}/jobs/${jobId}/schema`,
-    { confirmed_schema: schema },
+    apiRequestToSnake({ confirmed_schema: schema }),
   );
-  return data;
+  return apiResponseToSnake<SchemaConfirmResponse>(data);
 }
 
 /** POST /api/structuring/jobs/{id}/extract — trigger entity extraction. */
@@ -101,7 +102,7 @@ export async function triggerExtraction(
   const { data } = await apiClient.post<ExtractResponse>(
     `${API_BASE}/jobs/${jobId}/extract`,
   );
-  return data;
+  return apiResponseToSnake<ExtractResponse>(data);
 }
 
 /** GET /api/structuring/jobs/{id}/records — fetch paginated structured records. */
@@ -114,7 +115,7 @@ export async function getRecords(
     `${API_BASE}/jobs/${jobId}/records`,
     { params: { page, size } },
   );
-  return data;
+  return apiResponseToSnake<RecordListResponse>(data);
 }
 
 /** POST /api/structuring/jobs/{id}/create-tasks — create annotation tasks from results. */
@@ -124,5 +125,5 @@ export async function createAnnotationTasks(
   const { data } = await apiClient.post<CreateTaskResponse>(
     `${API_BASE}/jobs/${jobId}/create-tasks`,
   );
-  return data;
+  return apiResponseToSnake<CreateTaskResponse>(data);
 }

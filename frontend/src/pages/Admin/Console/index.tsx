@@ -32,13 +32,13 @@ const AdminConsole: React.FC = () => {
   
   const { data: dashboard, isLoading: dashboardLoading, refetch: refetchDashboard } = useQuery({
     queryKey: ['admin-dashboard'],
-    queryFn: () => adminApi.getDashboard().then(res => res.data),
+    queryFn: () => adminApi.getDashboard(),
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
   const { data: services, isLoading: servicesLoading, refetch: refetchServices } = useQuery({
     queryKey: ['admin-services'],
-    queryFn: () => adminApi.getServices().then(res => res.data),
+    queryFn: () => adminApi.getServices(),
     refetchInterval: 30000,
   });
 

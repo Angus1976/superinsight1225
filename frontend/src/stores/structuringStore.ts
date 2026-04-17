@@ -8,6 +8,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import apiClient from '@/services/api/client';
+import { apiRequestToSnake, apiResponseToSnake } from '@/utils/jsonCase';
 import type { AxiosError } from 'axios';
 
 // ============================================================================
@@ -195,7 +196,7 @@ export const useStructuringStore = create<StructuringStore>()(
           const formData = new FormData();
           formData.append('file', file);
 
-          const { data } = await apiClient.post<JobCreateResponse>(
+          const createRes = await apiClient.post<JobCreateResponse>(
             `${API_BASE}/jobs`,
             formData,
             { 
@@ -203,6 +204,7 @@ export const useStructuringStore = create<StructuringStore>()(
               timeout: 60000, // 60 seconds for file upload
             },
           );
+          const data = apiResponseToSnake<JobCreateResponse>(createRes.data);
 
           const newJob: StructuringJob = {
             job_id: data.job_id,
@@ -237,7 +239,8 @@ export const useStructuringStore = create<StructuringStore>()(
       fetchJob: async (jobId: string): Promise<void> => {
         set({ isLoadingJob: true, error: null }, false, 'fetchJob/start');
         try {
-          const { data } = await apiClient.get<StructuringJob>(`${API_BASE}/jobs/${jobId}`);
+          const jobRes = await apiClient.get<StructuringJob>(`${API_BASE}/jobs/${jobId}`);
+          const data = apiResponseToSnake<StructuringJob>(jobRes.data);
 
           const job: StructuringJob = {
             ...data,
@@ -264,9 +267,10 @@ export const useStructuringStore = create<StructuringStore>()(
       confirmSchema: async (jobId: string, schema: InferredSchema): Promise<void> => {
         set({ isConfirmingSchema: true, error: null }, false, 'confirmSchema/start');
         try {
-          await apiClient.put(`${API_BASE}/jobs/${jobId}/schema`, {
-            confirmed_schema: schema,
-          });
+          await apiClient.put(
+            `${API_BASE}/jobs/${jobId}/schema`,
+            apiRequestToSnake({ confirmed_schema: schema }),
+          );
 
           set((state) => ({
             schema,
@@ -307,10 +311,11 @@ export const useStructuringStore = create<StructuringStore>()(
       fetchRecords: async (jobId: string, page = 1, size = 20): Promise<void> => {
         set({ isLoadingRecords: true, error: null }, false, 'fetchRecords/start');
         try {
-          const { data } = await apiClient.get<RecordListResponse>(
+          const recordsRes = await apiClient.get<RecordListResponse>(
             `${API_BASE}/jobs/${jobId}/records`,
             { params: { page, size } },
           );
+          const data = apiResponseToSnake<RecordListResponse>(recordsRes.data);
 
           set({
             records: data.items,

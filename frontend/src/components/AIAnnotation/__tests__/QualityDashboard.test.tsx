@@ -60,39 +60,39 @@ vi.mock('react-i18next', () => ({
 global.fetch = vi.fn();
 
 const mockQualityMetrics = {
-  aiAccuracy: 0.92,
-  agreementRate: 0.88,
-  totalSamples: 1500,
-  activeAlerts: 2,
+  ai_accuracy: 0.92,
+  agreement_rate: 0.88,
+  total_samples: 1500,
+  active_alerts: 2,
 };
 
 const mockTrendData = [
-  { date: '2026-01-18', aiAccuracy: 0.90, humanAccuracy: 0.94, agreementRate: 0.87, sampleCount: 200 },
-  { date: '2026-01-19', aiAccuracy: 0.91, humanAccuracy: 0.94, agreementRate: 0.88, sampleCount: 210 },
-  { date: '2026-01-20', aiAccuracy: 0.89, humanAccuracy: 0.95, agreementRate: 0.86, sampleCount: 195 },
+  { date: '2026-01-18', ai_accuracy: 0.90, human_accuracy: 0.94, agreement_rate: 0.87, sample_count: 200 },
+  { date: '2026-01-19', ai_accuracy: 0.91, human_accuracy: 0.94, agreement_rate: 0.88, sample_count: 210 },
+  { date: '2026-01-20', ai_accuracy: 0.89, human_accuracy: 0.95, agreement_rate: 0.86, sample_count: 195 },
 ];
 
 const mockDistributionData = [
-  { range: '0.0-0.2', count: 50, acceptanceRate: 0.3 },
-  { range: '0.2-0.4', count: 100, acceptanceRate: 0.5 },
-  { range: '0.4-0.6', count: 200, acceptanceRate: 0.7 },
-  { range: '0.6-0.8', count: 450, acceptanceRate: 0.85 },
-  { range: '0.8-1.0', count: 700, acceptanceRate: 0.95 },
+  { range: '0.0-0.2', count: 50, acceptance_rate: 0.3 },
+  { range: '0.2-0.4', count: 100, acceptance_rate: 0.5 },
+  { range: '0.4-0.6', count: 200, acceptance_rate: 0.7 },
+  { range: '0.6-0.8', count: 450, acceptance_rate: 0.85 },
+  { range: '0.8-1.0', count: 700, acceptance_rate: 0.95 },
 ];
 
 const mockEnginePerformance = [
-  { engineId: 'engine_1', engineName: 'Pre-Annotation', accuracy: 0.92, confidence: 0.88, samples: 500, suggestions: 450, acceptanceRate: 0.85 },
-  { engineId: 'engine_2', engineName: 'Mid-Coverage', accuracy: 0.89, confidence: 0.82, samples: 600, suggestions: 520, acceptanceRate: 0.78 },
+  { engine_id: 'engine_1', engine_name: 'Pre-Annotation', accuracy: 0.92, confidence: 0.88, samples: 500, suggestions: 450, acceptance_rate: 0.85 },
+  { engine_id: 'engine_2', engine_name: 'Mid-Coverage', accuracy: 0.89, confidence: 0.82, samples: 600, suggestions: 520, acceptance_rate: 0.78 },
 ];
 
 const mockInconsistencies = [
   {
-    id: 'inc_1',
+    inconsistency_id: 'inc_1',
     type: 'label_mismatch',
     severity: 'high' as const,
-    affectedDocuments: ['doc_1', 'doc_2', 'doc_3'],
+    affected_documents: ['doc_1', 'doc_2', 'doc_3'],
     description: 'Inconsistent labeling of PERSON entities',
-    suggestedFix: 'Review annotation guidelines for PERSON entity',
+    suggested_fix: 'Review annotation guidelines for PERSON entity',
   },
 ];
 

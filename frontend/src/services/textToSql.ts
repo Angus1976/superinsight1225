@@ -6,6 +6,7 @@
  */
 
 import apiClient from './api/client';
+import { apiRequestToSnake, apiResponseToSnake } from '@/utils/jsonCase';
 
 // ==================== Types ====================
 
@@ -118,16 +119,22 @@ const BASE_URL = '/api/v1/text-to-sql';
  * Generate SQL from natural language query
  */
 export async function generateSQL(request: GenerateRequest): Promise<GenerateResponse> {
-  const response = await apiClient.post<GenerateResponse>(`${BASE_URL}/methods/generate`, request);
-  return response.data;
+  const response = await apiClient.post<GenerateResponse>(
+    `${BASE_URL}/methods/generate`,
+    apiRequestToSnake(request)
+  );
+  return apiResponseToSnake<GenerateResponse>(response.data);
 }
 
 /**
  * Test SQL generation without persisting
  */
 export async function testGenerate(request: TestGenerateRequest): Promise<GenerateResponse> {
-  const response = await apiClient.post<GenerateResponse>(`${BASE_URL}/methods/test`, request);
-  return response.data;
+  const response = await apiClient.post<GenerateResponse>(
+    `${BASE_URL}/methods/test`,
+    apiRequestToSnake(request)
+  );
+  return apiResponseToSnake<GenerateResponse>(response.data);
 }
 
 /**
@@ -135,7 +142,7 @@ export async function testGenerate(request: TestGenerateRequest): Promise<Genera
  */
 export async function getMethods(): Promise<MethodInfo[]> {
   const response = await apiClient.get<MethodInfo[]>(`${BASE_URL}/methods`);
-  return response.data;
+  return apiResponseToSnake<MethodInfo[]>(response.data);
 }
 
 /**
@@ -147,7 +154,7 @@ export async function switchMethod(method: MethodType): Promise<{ success: boole
     null,
     { params: { method } }
   );
-  return response.data;
+  return apiResponseToSnake(response.data);
 }
 
 /**
@@ -155,7 +162,7 @@ export async function switchMethod(method: MethodType): Promise<{ success: boole
  */
 export async function getCurrentMethod(): Promise<{ method: string; description: string }> {
   const response = await apiClient.get<{ method: string; description: string }>(`${BASE_URL}/methods/current`);
-  return response.data;
+  return apiResponseToSnake(response.data);
 }
 
 /**
@@ -163,23 +170,28 @@ export async function getCurrentMethod(): Promise<{ method: string; description:
  */
 export async function getConfig(): Promise<{ success: boolean; config: TextToSQLConfig }> {
   const response = await apiClient.get<{ success: boolean; config: TextToSQLConfig }>(`${BASE_URL}/config`);
-  return response.data;
+  return apiResponseToSnake(response.data);
 }
 
 /**
  * Update Text-to-SQL configuration
  */
 export async function updateConfig(request: ConfigUpdateRequest): Promise<{ success: boolean; message: string }> {
-  const response = await apiClient.put<{ success: boolean; message: string }>(`${BASE_URL}/config`, request);
-  return response.data;
+  const response = await apiClient.put<{ success: boolean; message: string }>(
+    `${BASE_URL}/config`,
+    apiRequestToSnake(request)
+  );
+  return apiResponseToSnake(response.data);
 }
 
 /**
  * Get switcher statistics
  */
 export async function getStatistics(): Promise<{ success: boolean; statistics: SwitcherStatistics }> {
-  const response = await apiClient.get<{ success: boolean; statistics: SwitcherStatistics }>(`${BASE_URL}/statistics`);
-  return response.data;
+  const response = await apiClient.get<{ success: boolean; statistics: SwitcherStatistics }>(
+    `${BASE_URL}/statistics`
+  );
+  return apiResponseToSnake(response.data);
 }
 
 // ==================== Plugin Management ====================
@@ -189,23 +201,26 @@ export async function getStatistics(): Promise<{ success: boolean; statistics: S
  */
 export async function getPlugins(): Promise<PluginInfo[]> {
   const response = await apiClient.get<PluginInfo[]>(`${BASE_URL}/plugins`);
-  return response.data;
+  return apiResponseToSnake<PluginInfo[]>(response.data);
 }
 
 /**
  * Register a new plugin
  */
 export async function registerPlugin(config: PluginConfig): Promise<PluginInfo> {
-  const response = await apiClient.post<PluginInfo>(`${BASE_URL}/plugins`, config);
-  return response.data;
+  const response = await apiClient.post<PluginInfo>(`${BASE_URL}/plugins`, apiRequestToSnake(config));
+  return apiResponseToSnake<PluginInfo>(response.data);
 }
 
 /**
  * Update plugin configuration
  */
 export async function updatePlugin(name: string, config: PluginConfig): Promise<PluginInfo> {
-  const response = await apiClient.put<PluginInfo>(`${BASE_URL}/plugins/${name}`, config);
-  return response.data;
+  const response = await apiClient.put<PluginInfo>(
+    `${BASE_URL}/plugins/${name}`,
+    apiRequestToSnake(config)
+  );
+  return apiResponseToSnake<PluginInfo>(response.data);
 }
 
 /**
@@ -213,23 +228,27 @@ export async function updatePlugin(name: string, config: PluginConfig): Promise<
  */
 export async function unregisterPlugin(name: string): Promise<{ success: boolean; message: string }> {
   const response = await apiClient.delete<{ success: boolean; message: string }>(`${BASE_URL}/plugins/${name}`);
-  return response.data;
+  return apiResponseToSnake(response.data);
 }
 
 /**
  * Enable a plugin
  */
 export async function enablePlugin(name: string): Promise<{ success: boolean; message: string }> {
-  const response = await apiClient.post<{ success: boolean; message: string }>(`${BASE_URL}/plugins/${name}/enable`);
-  return response.data;
+  const response = await apiClient.post<{ success: boolean; message: string }>(
+    `${BASE_URL}/plugins/${name}/enable`
+  );
+  return apiResponseToSnake(response.data);
 }
 
 /**
  * Disable a plugin
  */
 export async function disablePlugin(name: string): Promise<{ success: boolean; message: string }> {
-  const response = await apiClient.post<{ success: boolean; message: string }>(`${BASE_URL}/plugins/${name}/disable`);
-  return response.data;
+  const response = await apiClient.post<{ success: boolean; message: string }>(
+    `${BASE_URL}/plugins/${name}/disable`
+  );
+  return apiResponseToSnake(response.data);
 }
 
 /**
@@ -237,15 +256,17 @@ export async function disablePlugin(name: string): Promise<{ success: boolean; m
  */
 export async function getPluginsHealth(): Promise<{ success: boolean; health: PluginHealthStatus; summary: { total: number; healthy: number; unhealthy: number } }> {
   const response = await apiClient.get<{ success: boolean; health: PluginHealthStatus; summary: { total: number; healthy: number; unhealthy: number } }>(`${BASE_URL}/plugins/health`);
-  return response.data;
+  return apiResponseToSnake(response.data);
 }
 
 /**
  * Check health of a specific plugin
  */
 export async function getPluginHealth(name: string): Promise<{ success: boolean; plugin: string; healthy: boolean }> {
-  const response = await apiClient.get<{ success: boolean; plugin: string; healthy: boolean }>(`${BASE_URL}/plugins/${name}/health`);
-  return response.data;
+  const response = await apiClient.get<{ success: boolean; plugin: string; healthy: boolean }>(
+    `${BASE_URL}/plugins/${name}/health`
+  );
+  return apiResponseToSnake(response.data);
 }
 
 // ==================== Helper Functions ====================

@@ -8,6 +8,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import apiClient from '@/services/api/client';
+import { apiResponseToSnake } from '@/utils/jsonCase';
 import type { AxiosError } from 'axios';
 
 // ============================================================================
@@ -182,11 +183,12 @@ export const useVectorizationStore = create<VectorizationStore>()(
           const formData = new FormData();
           formData.append('file', file);
 
-          const { data } = await apiClient.post<VecJobCreateResponse>(
+          const createRes = await apiClient.post<VecJobCreateResponse>(
             `${API_BASE}/jobs`,
             formData,
             { headers: { 'Content-Type': 'multipart/form-data' } },
           );
+          const data = apiResponseToSnake<VecJobCreateResponse>(createRes.data);
 
           const newJob: VectorizationJob = {
             job_id: data.job_id,
@@ -219,7 +221,8 @@ export const useVectorizationStore = create<VectorizationStore>()(
       fetchJob: async (jobId: string): Promise<void> => {
         set({ isLoadingJob: true, error: null }, false, 'fetchJob/start');
         try {
-          const { data } = await apiClient.get<VectorizationJob>(`${API_BASE}/jobs/${jobId}`);
+          const jobRes = await apiClient.get<VectorizationJob>(`${API_BASE}/jobs/${jobId}`);
+          const data = apiResponseToSnake<VectorizationJob>(jobRes.data);
 
           const job: VectorizationJob = {
             ...data,
@@ -245,7 +248,8 @@ export const useVectorizationStore = create<VectorizationStore>()(
       fetchJobs: async (): Promise<void> => {
         set({ isLoadingJobs: true, error: null }, false, 'fetchJobs/start');
         try {
-          const { data } = await apiClient.get<VecJobListResponse>(`${API_BASE}/jobs`);
+          const listRes = await apiClient.get<VecJobListResponse>(`${API_BASE}/jobs`);
+          const data = apiResponseToSnake<VecJobListResponse>(listRes.data);
 
           const jobs: VectorizationJob[] = data.items.map((item) => ({
             job_id: item.job_id,
@@ -272,10 +276,11 @@ export const useVectorizationStore = create<VectorizationStore>()(
       fetchRecords: async (jobId: string, page = 1, size = 20): Promise<void> => {
         set({ isLoadingRecords: true, error: null }, false, 'fetchRecords/start');
         try {
-          const { data } = await apiClient.get<VecRecordListResponse>(
+          const recordsRes = await apiClient.get<VecRecordListResponse>(
             `${API_BASE}/jobs/${jobId}/records`,
             { params: { page, size } },
           );
+          const data = apiResponseToSnake<VecRecordListResponse>(recordsRes.data);
 
           set({
             records: data.items,

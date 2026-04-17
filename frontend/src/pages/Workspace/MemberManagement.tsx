@@ -41,13 +41,13 @@ const MemberManagement: React.FC = () => {
   // Fetch workspaces for selector
   const { data: workspaces } = useQuery({
     queryKey: ['workspaces'],
-    queryFn: () => workspaceApi.list({ status: 'active' }).then(res => res.data),
+    queryFn: () => workspaceApi.list({ status: 'active' }),
   });
 
   // Fetch members
   const { data: members, isLoading, refetch } = useQuery({
     queryKey: ['workspace-members', selectedWorkspaceId],
-    queryFn: () => memberApi.list(selectedWorkspaceId!).then(res => res.data),
+    queryFn: () => memberApi.list(selectedWorkspaceId!),
     enabled: !!selectedWorkspaceId,
   });
 

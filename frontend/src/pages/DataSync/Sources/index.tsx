@@ -6,25 +6,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/services/api';
 import { useAuthStore } from '@/stores/authStore';
+import {
+  normalizeDataSource,
+  toCreateSourceRequestBody,
+  type DataSyncSource as DataSource,
+} from '@/utils/dataSyncApiNormalize';
 
-type SourceType = 'database' | 'file' | 'api' | 'stream' | 'lifecycle_temp_data' | 'lifecycle_sample' | 'lifecycle_enhancement' | 'lifecycle_annotation' | 'lifecycle_ai_trial';
-
-interface DataSource {
-  id: string;
-  name: string;
-  type: SourceType;
-  status: 'active' | 'inactive' | 'error' | 'syncing';
-  connectionString: string;
-  lastSyncTime: string;
-  nextSyncTime: string;
-  syncInterval: number;
-  totalRecords: number;
-  syncedRecords: number;
-  errorCount: number;
-  enabled: boolean;
-  createdAt: string;
-  config: any;
-}
+type SourceType = DataSource['type'];
 
 /** 数据流转类型与所需权限的映射 */
 const LIFECYCLE_TYPE_PERMISSIONS: Record<string, string> = {
@@ -57,12 +45,14 @@ const DataSyncSources: React.FC = () => {
     queryKey: ['data-sources'],
     queryFn: async () => {
       const res = await api.get('/api/v1/data-sync/sources');
-      return res.data as DataSource[];
+      const list = res.data as Record<string, unknown>[];
+      return Array.isArray(list) ? list.map(normalizeDataSource) : [];
     },
   });
 
   const createSourceMutation = useMutation({
-    mutationFn: (data: any) => api.post('/api/v1/data-sync/sources', data),
+    mutationFn: (data: Record<string, unknown>) =>
+      api.post('/api/v1/data-sync/sources', toCreateSourceRequestBody(data)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['data-sources'] });
       setIsModalVisible(false);
@@ -75,8 +65,8 @@ const DataSyncSources: React.FC = () => {
   });
 
   const updateSourceMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => 
-      api.put(`/api/v1/data-sync/sources/${id}`, data),
+    mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) =>
+      api.put(`/api/v1/data-sync/sources/${id}`, toCreateSourceRequestBody(data)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['data-sources'] });
       setIsModalVisible(false);
@@ -198,7 +188,8 @@ const DataSyncSources: React.FC = () => {
       title: t('dataSource.syncInterval'),
       dataIndex: 'syncInterval',
       key: 'syncInterval',
-      render: (interval: number) => `${interval} ${t('dataSource.minutes')}`,
+      render: (interval: number) =>
+        interval > 0 ? `${interval} ${t('dataSource.minutes')}` : '-',
     },
     {
       title: t('dataSource.lastSync'),

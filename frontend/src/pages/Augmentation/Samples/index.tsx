@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import type { ColumnsType } from 'antd/es/table';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
+import { keysToCamelDeep, keysToSnakeDeep } from '@/utils/jsonCase';
 import { TransferButton } from '@/components/DataLifecycle/TransferButton';
 
 interface AugmentationSample {
@@ -52,13 +53,16 @@ const AugmentationSamples: React.FC = () => {
   const { data: samples, isLoading } = useQuery({
     queryKey: ['augmentation-samples'],
     queryFn: async (): Promise<AugmentationSample[]> => {
-      const res = await api.get<AugmentationSample[]>('/api/v1/augmentation/samples');
-      return res.data;
+      const res = await api.get('/api/v1/augmentation/samples');
+      const raw = res.data;
+      const list = Array.isArray(raw) ? raw : [];
+      return list.map((row) => keysToCamelDeep(row) as AugmentationSample);
     },
   });
 
   const createSampleMutation = useMutation({
-    mutationFn: (data: any) => api.post('/api/v1/augmentation/samples', data),
+    mutationFn: (data: Record<string, unknown>) =>
+      api.post('/api/v1/augmentation/samples', keysToSnakeDeep(data)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['augmentation-samples'] });
       setIsModalVisible(false);

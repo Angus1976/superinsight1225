@@ -80,20 +80,20 @@ const EngineSelector: React.FC<EngineSelectorProps> = ({
     form.resetFields();
     form.setFieldsValue({
       enabled: true,
-      engineType: 'pre-annotation',
+      engine_type: 'pre-annotation',
       provider: 'openai',
-      confidenceThreshold: 0.7,
-      qualityThresholds: {
+      confidence_threshold: 0.7,
+      quality_thresholds: {
         accuracy: 0.85,
         consistency: 0.80,
         completeness: 0.90,
         recall: 0.75,
       },
-      performanceSettings: {
-        batchSize: 100,
-        maxWorkers: 10,
+      performance_settings: {
+        batch_size: 100,
+        max_workers: 10,
         timeout: 300,
-        enableCaching: true,
+        enable_caching: true,
       },
     });
     setModalVisible(true);
@@ -115,7 +115,7 @@ const EngineSelector: React.FC<EngineSelectorProps> = ({
 
   const getEngineStatus = (engineId?: string): EngineStatus | undefined => {
     if (!engineId) return undefined;
-    return engineStatuses.find((s) => s.engineId === engineId);
+    return engineStatuses.find((s) => s.engine_id === engineId);
   };
 
   const getStatusBadge = (status?: string) => {
@@ -183,8 +183,8 @@ const EngineSelector: React.FC<EngineSelectorProps> = ({
   const columns: ColumnsType<EngineConfig> = [
     {
       title: t('ai_annotation:columns.engine_name'),
-      dataIndex: 'engineType',
-      key: 'engineType',
+      dataIndex: 'engine_type',
+      key: 'engine_type',
       render: (type: string, record: EngineConfig) => (
         <Space direction="vertical" size="small">
           {getEngineTypeTag(type)}
@@ -202,8 +202,8 @@ const EngineSelector: React.FC<EngineSelectorProps> = ({
     },
     {
       title: t('ai_annotation:columns.confidence_threshold'),
-      dataIndex: 'confidenceThreshold',
-      key: 'confidenceThreshold',
+      dataIndex: 'confidence_threshold',
+      key: 'confidence_threshold',
       render: (threshold: number) => `${(threshold * 100).toFixed(0)}%`,
     },
     {
@@ -215,7 +215,7 @@ const EngineSelector: React.FC<EngineSelectorProps> = ({
           <Tooltip
             title={
               status
-                ? `${t('ai_annotation:tooltips.response_time')}: ${status.responseTimeMs}ms\n${t('ai_annotation:tooltips.last_check')}: ${status.lastCheckAt}`
+                ? `${t('ai_annotation:tooltips.response_time')}: ${status.response_time_ms}ms\n${t('ai_annotation:tooltips.last_check')}: ${status.last_check_at}`
                 : t('ai_annotation:tooltips.no_status')
             }
           >
@@ -298,7 +298,7 @@ const EngineSelector: React.FC<EngineSelectorProps> = ({
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
-                name="engineType"
+                name="engine_type"
                 label={t('ai_annotation:fields.engine_type')}
                 rules={[{ required: true }]}
               >
@@ -343,7 +343,7 @@ const EngineSelector: React.FC<EngineSelectorProps> = ({
           </Form.Item>
 
           <Form.Item
-            name="confidenceThreshold"
+            name="confidence_threshold"
             label={t('ai_annotation:fields.confidence_threshold')}
             tooltip={t('ai_annotation:tooltips.confidence_threshold')}
           >
@@ -360,7 +360,7 @@ const EngineSelector: React.FC<EngineSelectorProps> = ({
             <Row gutter={16}>
               <Col span={12}>
                 <Form.Item
-                  name={['qualityThresholds', 'accuracy']}
+                  name={['quality_thresholds', 'accuracy']}
                   label={t('ai_annotation:fields.accuracy_threshold')}
                 >
                   <InputNumber min={0} max={1} step={0.05} style={{ width: '100%' }} />
@@ -368,7 +368,7 @@ const EngineSelector: React.FC<EngineSelectorProps> = ({
               </Col>
               <Col span={12}>
                 <Form.Item
-                  name={['qualityThresholds', 'consistency']}
+                  name={['quality_thresholds', 'consistency']}
                   label={t('ai_annotation:fields.consistency_threshold')}
                 >
                   <InputNumber min={0} max={1} step={0.05} style={{ width: '100%' }} />
@@ -378,7 +378,7 @@ const EngineSelector: React.FC<EngineSelectorProps> = ({
             <Row gutter={16}>
               <Col span={12}>
                 <Form.Item
-                  name={['qualityThresholds', 'completeness']}
+                  name={['quality_thresholds', 'completeness']}
                   label={t('ai_annotation:fields.completeness_threshold')}
                 >
                   <InputNumber min={0} max={1} step={0.05} style={{ width: '100%' }} />
@@ -386,7 +386,7 @@ const EngineSelector: React.FC<EngineSelectorProps> = ({
               </Col>
               <Col span={12}>
                 <Form.Item
-                  name={['qualityThresholds', 'recall']}
+                  name={['quality_thresholds', 'recall']}
                   label={t('ai_annotation:fields.recall_threshold')}
                 >
                   <InputNumber min={0} max={1} step={0.05} style={{ width: '100%' }} />
@@ -403,7 +403,7 @@ const EngineSelector: React.FC<EngineSelectorProps> = ({
             <Row gutter={16}>
               <Col span={8}>
                 <Form.Item
-                  name={['performanceSettings', 'batchSize']}
+                  name={['performance_settings', 'batch_size']}
                   label={t('ai_annotation:fields.batch_size')}
                 >
                   <InputNumber min={1} max={1000} style={{ width: '100%' }} />
@@ -411,7 +411,7 @@ const EngineSelector: React.FC<EngineSelectorProps> = ({
               </Col>
               <Col span={8}>
                 <Form.Item
-                  name={['performanceSettings', 'maxWorkers']}
+                  name={['performance_settings', 'max_workers']}
                   label={t('ai_annotation:fields.max_workers')}
                 >
                   <InputNumber min={1} max={50} style={{ width: '100%' }} />
@@ -419,7 +419,7 @@ const EngineSelector: React.FC<EngineSelectorProps> = ({
               </Col>
               <Col span={8}>
                 <Form.Item
-                  name={['performanceSettings', 'timeout']}
+                  name={['performance_settings', 'timeout']}
                   label={t('ai_annotation:fields.timeout_seconds')}
                 >
                   <InputNumber min={10} max={600} style={{ width: '100%' }} />
@@ -427,7 +427,7 @@ const EngineSelector: React.FC<EngineSelectorProps> = ({
               </Col>
             </Row>
             <Form.Item
-              name={['performanceSettings', 'enableCaching']}
+              name={['performance_settings', 'enable_caching']}
               valuePropName="checked"
             >
               <Switch /> {t('ai_annotation:fields.enable_caching')}

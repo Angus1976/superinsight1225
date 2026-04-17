@@ -5,46 +5,13 @@ import type { ColumnsType } from 'antd/es/table';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/services/api';
-
-interface SecurityConfig {
-  encryption: {
-    enabled: boolean;
-    algorithm: string;
-    keyRotationInterval: number;
-  };
-  authentication: {
-    required: boolean;
-    method: string;
-    tokenExpiration: number;
-  };
-  authorization: {
-    enabled: boolean;
-    defaultRole: string;
-    strictMode: boolean;
-  };
-  audit: {
-    enabled: boolean;
-    logLevel: string;
-    retentionDays: number;
-  };
-  dataProtection: {
-    piiDetection: boolean;
-    autoDesensitization: boolean;
-    complianceMode: string;
-  };
-}
-
-interface SecurityRule {
-  id: string;
-  name: string;
-  type: 'encryption' | 'access' | 'audit' | 'compliance';
-  enabled: boolean;
-  description: string;
-  conditions: string[];
-  actions: string[];
-  priority: number;
-  createdAt: string;
-}
+import {
+  denormalizeSecurityConfig,
+  normalizeSecurityConfig,
+  normalizeSecurityRule,
+  type SecurityConfig,
+  type SecurityRule,
+} from '@/utils/dataSyncApiNormalize';
 
 const DataSyncSecurity: React.FC = () => {
   const [form] = Form.useForm();
@@ -54,21 +21,23 @@ const DataSyncSecurity: React.FC = () => {
   const { data: config, isLoading } = useQuery<SecurityConfig>({
     queryKey: ['data-sync-security-config'],
     queryFn: async () => {
-      const res = await api.get<SecurityConfig>('/api/v1/data-sync/security/config');
-      return res.data;
+      const res = await api.get('/api/v1/data-sync/security/config');
+      return normalizeSecurityConfig((res.data ?? {}) as Record<string, unknown>);
     },
   });
 
   const { data: rules = [], isLoading: rulesLoading } = useQuery<SecurityRule[]>({
     queryKey: ['data-sync-security-rules'],
     queryFn: async () => {
-      const res = await api.get<SecurityRule[]>('/api/v1/data-sync/security/rules');
-      return res.data;
+      const res = await api.get('/api/v1/data-sync/security/rules');
+      const list = res.data as Record<string, unknown>[];
+      return Array.isArray(list) ? list.map(normalizeSecurityRule) : [];
     },
   });
 
   const updateConfigMutation = useMutation({
-    mutationFn: (data: SecurityConfig) => api.put('/api/v1/data-sync/security/config', data),
+    mutationFn: (data: SecurityConfig) =>
+      api.put('/api/v1/data-sync/security/config', denormalizeSecurityConfig(data)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['data-sync-security-config'] });
       message.success(t('security.saveSuccess'));

@@ -1,6 +1,7 @@
 // Data augmentation service
 import apiClient from './api/client';
 import { API_ENDPOINTS } from '@/constants';
+import { apiRequestToSnake, apiResponseToSnake } from '@/utils/jsonCase';
 
 export interface AugmentationJob {
   id: string;
@@ -66,36 +67,36 @@ export const augmentationService = {
       API_ENDPOINTS.AUGMENTATION?.JOBS || '/api/augmentation/jobs',
       { params }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async getJob(id: string): Promise<AugmentationJob> {
     const response = await apiClient.get<AugmentationJob>(
       `${API_ENDPOINTS.AUGMENTATION?.JOBS || '/api/augmentation/jobs'}/${id}`
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async createJob(payload: CreateJobPayload): Promise<AugmentationJob> {
     const response = await apiClient.post<AugmentationJob>(
       API_ENDPOINTS.AUGMENTATION?.JOBS || '/api/augmentation/jobs',
-      payload
+      apiRequestToSnake(payload)
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async startJob(id: string): Promise<AugmentationJob> {
     const response = await apiClient.post<AugmentationJob>(
       `${API_ENDPOINTS.AUGMENTATION?.JOBS || '/api/augmentation/jobs'}/${id}/start`
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async pauseJob(id: string): Promise<AugmentationJob> {
     const response = await apiClient.post<AugmentationJob>(
       `${API_ENDPOINTS.AUGMENTATION?.JOBS || '/api/augmentation/jobs'}/${id}/pause`
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async deleteJob(id: string): Promise<void> {
@@ -110,7 +111,7 @@ export const augmentationService = {
       API_ENDPOINTS.AUGMENTATION?.SAMPLES || '/api/augmentation/samples',
       { params }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async uploadSamples(file: File): Promise<{ count: number }> {
@@ -125,7 +126,7 @@ export const augmentationService = {
         },
       }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Statistics
@@ -139,6 +140,6 @@ export const augmentationService = {
     const response = await apiClient.get(
       API_ENDPOINTS.AUGMENTATION?.STATS || '/api/augmentation/stats'
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 };

@@ -4,6 +4,7 @@
  */
 
 import apiClient from '@/services/api/client';
+import { apiRequestToSnake, apiResponseToSnake } from '@/utils/jsonCase';
 import type { AxiosError } from 'axios';
 
 // ============================================================================
@@ -213,7 +214,7 @@ export async function transferDataAPI(
     const response = await retryWithBackoff(
       () => apiClient.post<TransferResponse>(
         '/api/data-lifecycle/transfer',
-        request,
+        apiRequestToSnake(request),
         {
           headers: {
             'Accept-Language': getLanguageHeader(),
@@ -223,7 +224,7 @@ export async function transferDataAPI(
       )
     );
     
-    return response.data;
+    return apiResponseToSnake<TransferResponse>(response.data);
   } catch (error) {
     handleApiError(error);
   }
@@ -239,7 +240,7 @@ export async function batchTransferDataAPI(
     const response = await retryWithBackoff(
       () => apiClient.post<BatchTransferResponse>(
         '/api/data-lifecycle/batch-transfer',
-        { transfers: requests },
+        apiRequestToSnake({ transfers: requests }),
         {
           headers: {
             'Accept-Language': getLanguageHeader(),
@@ -250,7 +251,7 @@ export async function batchTransferDataAPI(
       1 // Only retry once for batch operations
     );
     
-    return response.data;
+    return apiResponseToSnake<BatchTransferResponse>(response.data);
   } catch (error) {
     handleApiError(error);
   }
@@ -273,7 +274,7 @@ export async function checkPermissionAPI(
       }
     );
     
-    return response.data;
+    return apiResponseToSnake<PermissionCheckResponse>(response.data);
   } catch (error) {
     handleApiError(error);
   }
@@ -296,7 +297,7 @@ export async function listApprovalsAPI(
       }
     );
     
-    return response.data;
+    return apiResponseToSnake<ApprovalListResponse>(response.data);
   } catch (error) {
     handleApiError(error);
   }
@@ -313,10 +314,10 @@ export async function approveTransferAPI(
   try {
     const response = await apiClient.post<Approval>(
       `/api/data-lifecycle/approvals/${approvalId}/approve`,
-      {
+      apiRequestToSnake({
         approved,
         comment,
-      },
+      }),
       {
         headers: {
           'Accept-Language': getLanguageHeader(),
@@ -324,7 +325,7 @@ export async function approveTransferAPI(
       }
     );
     
-    return response.data;
+    return apiResponseToSnake<Approval>(response.data);
   } catch (error) {
     handleApiError(error);
   }

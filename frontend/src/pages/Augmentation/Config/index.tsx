@@ -4,6 +4,7 @@ import { SaveOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
+import { keysToCamelDeep, keysToSnakeDeep } from '@/utils/jsonCase';
 
 interface AugmentationConfig {
   textAugmentation: {
@@ -45,11 +46,15 @@ const AugmentationConfig: React.FC = () => {
 
   const { data: config, isLoading } = useQuery({
     queryKey: ['augmentation-config'],
-    queryFn: () => api.get('/api/v1/augmentation/config').then(res => res.data),
+    queryFn: async () => {
+      const res = await api.get('/api/v1/augmentation/config');
+      return keysToCamelDeep(res.data) as AugmentationConfig;
+    },
   });
 
   const updateConfigMutation = useMutation({
-    mutationFn: (data: AugmentationConfig) => api.put('/api/v1/augmentation/config', data),
+    mutationFn: (data: AugmentationConfig) =>
+      api.put('/api/v1/augmentation/config', keysToSnakeDeep(data) as Record<string, unknown>),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['augmentation-config'] });
       message.success(t('config.saveSuccess'));

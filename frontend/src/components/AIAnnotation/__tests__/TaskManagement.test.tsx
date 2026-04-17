@@ -269,7 +269,7 @@ describe('TaskManagement', () => {
     
     expect(defaultProps.onTaskSelect).toHaveBeenCalledWith(
       expect.objectContaining({
-        taskId: 'task_1',
+        task_id: 'task_1',
         title: 'Annotate Customer Reviews',
       })
     );

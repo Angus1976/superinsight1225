@@ -1,5 +1,6 @@
 // Data Lifecycle Management API client
 import apiClient from './api/client';
+import { apiRequestToSnake, apiResponseToSnake } from '@/utils/jsonCase';
 import { API_ENDPOINTS } from '@/constants';
 
 // ============================================================================
@@ -250,22 +251,22 @@ export const dataLifecycleApi = {
       '/api/temp-data',
       { params }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async getTempData(id: string): Promise<TempData> {
     const response = await apiClient.get<TempData>(`/api/temp-data/${id}`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async createTempData(payload: CreateTempDataPayload): Promise<TempData> {
-    const response = await apiClient.post<TempData>('/api/temp-data', payload);
-    return response.data;
+    const response = await apiClient.post<TempData>('/api/temp-data', apiRequestToSnake(payload));
+    return apiResponseToSnake(response.data);
   },
 
   async updateTempData(id: string, payload: UpdateTempDataPayload): Promise<TempData> {
-    const response = await apiClient.put<TempData>(`/api/temp-data/${id}`, payload);
-    return response.data;
+    const response = await apiClient.put<TempData>(`/api/temp-data/${id}`, apiRequestToSnake(payload));
+    return apiResponseToSnake(response.data);
   },
 
   async deleteTempData(id: string): Promise<void> {
@@ -274,12 +275,12 @@ export const dataLifecycleApi = {
 
   async archiveTempData(id: string): Promise<TempData> {
     const response = await apiClient.post<TempData>(`/api/temp-data/${id}/archive`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async restoreTempData(id: string): Promise<TempData> {
     const response = await apiClient.post<TempData>(`/api/temp-data/${id}/restore`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // -------------------------------------------------------------------------
@@ -290,17 +291,17 @@ export const dataLifecycleApi = {
       '/api/samples',
       { params }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async getSample(id: string): Promise<Sample> {
     const response = await apiClient.get<Sample>(`/api/samples/${id}`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async createSample(payload: CreateSamplePayload): Promise<Sample> {
-    const response = await apiClient.post<Sample>('/api/samples', payload);
-    return response.data;
+    const response = await apiClient.post<Sample>('/api/samples', apiRequestToSnake(payload));
+    return apiResponseToSnake(response.data);
   },
 
   async deleteSample(id: string): Promise<void> {
@@ -309,7 +310,7 @@ export const dataLifecycleApi = {
 
   async addToLibrary(dataId: string): Promise<Sample> {
     const response = await apiClient.post<Sample>(`/api/samples/add-from-data/${dataId}`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async removeFromLibrary(id: string): Promise<void> {
@@ -320,7 +321,7 @@ export const dataLifecycleApi = {
     const response = await apiClient.get(`/api/samples/${id}/export`, {
       responseType: 'blob'
     });
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // -------------------------------------------------------------------------
@@ -331,37 +332,41 @@ export const dataLifecycleApi = {
       '/api/reviews',
       { params }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async getReview(id: string): Promise<Review> {
     const response = await apiClient.get<Review>(`/api/reviews/${id}`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async submitForReview(targetType: string, targetId: string): Promise<Review> {
-    const response = await apiClient.post<Review>('/api/reviews', {
-      target_type: targetType,
-      target_id: targetId
-    });
-    return response.data;
+    const response = await apiClient.post<Review>(
+      '/api/reviews',
+      apiRequestToSnake({
+        target_type: targetType,
+        target_id: targetId,
+      })
+    );
+    return apiResponseToSnake(response.data);
   },
 
   async approveReview(id: string): Promise<Review> {
     const response = await apiClient.post<Review>(`/api/reviews/${id}/approve`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async rejectReview(id: string, reason: string): Promise<Review> {
-    const response = await apiClient.post<Review>(`/api/reviews/${id}/reject`, {
-      reason
-    });
-    return response.data;
+    const response = await apiClient.post<Review>(
+      `/api/reviews/${id}/reject`,
+      apiRequestToSnake({ reason })
+    );
+    return apiResponseToSnake(response.data);
   },
 
   async cancelReview(id: string): Promise<Review> {
     const response = await apiClient.post<Review>(`/api/reviews/${id}/cancel`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // -------------------------------------------------------------------------
@@ -372,44 +377,51 @@ export const dataLifecycleApi = {
       '/api/annotation-tasks',
       { params }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async getAnnotationTask(id: string): Promise<AnnotationTask> {
     const response = await apiClient.get<AnnotationTask>(`/api/annotation-tasks/${id}`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async createAnnotationTask(payload: CreateAnnotationTaskPayload): Promise<AnnotationTask> {
-    const response = await apiClient.post<AnnotationTask>('/api/annotation-tasks', payload);
-    return response.data;
+    const response = await apiClient.post<AnnotationTask>(
+      '/api/annotation-tasks',
+      apiRequestToSnake(payload)
+    );
+    return apiResponseToSnake(response.data);
   },
 
   async updateAnnotationTask(id: string, payload: UpdateAnnotationTaskPayload): Promise<AnnotationTask> {
-    const response = await apiClient.put<AnnotationTask>(`/api/annotation-tasks/${id}`, payload);
-    return response.data;
+    const response = await apiClient.put<AnnotationTask>(
+      `/api/annotation-tasks/${id}`,
+      apiRequestToSnake(payload)
+    );
+    return apiResponseToSnake(response.data);
   },
 
   async startAnnotationTask(id: string): Promise<AnnotationTask> {
     const response = await apiClient.post<AnnotationTask>(`/api/annotation-tasks/${id}/start`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async completeAnnotationTask(id: string): Promise<AnnotationTask> {
     const response = await apiClient.post<AnnotationTask>(`/api/annotation-tasks/${id}/complete`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async cancelAnnotationTask(id: string): Promise<AnnotationTask> {
     const response = await apiClient.post<AnnotationTask>(`/api/annotation-tasks/${id}/cancel`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async assignAnnotationTask(id: string, assignee: string): Promise<AnnotationTask> {
-    const response = await apiClient.post<AnnotationTask>(`/api/annotation-tasks/${id}/assign`, {
-      assignee
-    });
-    return response.data;
+    const response = await apiClient.post<AnnotationTask>(
+      `/api/annotation-tasks/${id}/assign`,
+      apiRequestToSnake({ assignee })
+    );
+    return apiResponseToSnake(response.data);
   },
 
   // -------------------------------------------------------------------------
@@ -420,54 +432,55 @@ export const dataLifecycleApi = {
       '/api/enhancements',
       { params }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async getEnhancement(id: string): Promise<EnhancementJob> {
     const response = await apiClient.get<EnhancementJob>(`/api/enhancements/${id}`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async createEnhancement(payload: CreateEnhancementPayload): Promise<EnhancementJob> {
-    const response = await apiClient.post<EnhancementJob>('/api/enhancements', payload);
-    return response.data;
+    const response = await apiClient.post<EnhancementJob>('/api/enhancements', apiRequestToSnake(payload));
+    return apiResponseToSnake(response.data);
   },
 
   async startEnhancement(id: string): Promise<EnhancementJob> {
     const response = await apiClient.post<EnhancementJob>(`/api/enhancements/${id}/start`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async pauseEnhancement(id: string): Promise<EnhancementJob> {
     const response = await apiClient.post<EnhancementJob>(`/api/enhancements/${id}/pause`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async resumeEnhancement(id: string): Promise<EnhancementJob> {
     const response = await apiClient.post<EnhancementJob>(`/api/enhancements/${id}/resume`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async cancelEnhancement(id: string): Promise<EnhancementJob> {
     const response = await apiClient.post<EnhancementJob>(`/api/enhancements/${id}/cancel`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async rollbackEnhancement(id: string, version: number): Promise<EnhancementJob> {
-    const response = await apiClient.post<EnhancementJob>(`/api/enhancements/${id}/rollback`, {
-      version
-    });
-    return response.data;
+    const response = await apiClient.post<EnhancementJob>(
+      `/api/enhancements/${id}/rollback`,
+      apiRequestToSnake({ version })
+    );
+    return apiResponseToSnake(response.data);
   },
 
   async getEnhancementHistory(id: string): Promise<Array<{ version: number; timestamp: string; changes: Record<string, unknown> }>> {
     const response = await apiClient.get(`/api/enhancements/${id}/history`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async addEnhancementToLibrary(id: string): Promise<Sample> {
     const response = await apiClient.post<Sample>(`/api/enhancements/${id}/add-to-library`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // -------------------------------------------------------------------------
@@ -478,27 +491,27 @@ export const dataLifecycleApi = {
       '/api/ai-trials',
       { params }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async getAITrial(id: string): Promise<AITrial> {
     const response = await apiClient.get<AITrial>(`/api/ai-trials/${id}`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async createAITrial(payload: CreateAITrialPayload): Promise<AITrial> {
-    const response = await apiClient.post<AITrial>('/api/ai-trials', payload);
-    return response.data;
+    const response = await apiClient.post<AITrial>('/api/ai-trials', apiRequestToSnake(payload));
+    return apiResponseToSnake(response.data);
   },
 
   async startAITrial(id: string): Promise<AITrial> {
     const response = await apiClient.post<AITrial>(`/api/ai-trials/${id}/start`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async stopAITrial(id: string): Promise<AITrial> {
     const response = await apiClient.post<AITrial>(`/api/ai-trials/${id}/stop`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async getAITrialResults(id: string): Promise<{
@@ -519,14 +532,14 @@ export const dataLifecycleApi = {
     };
   }> {
     const response = await apiClient.get(`/api/ai-trials/${id}/results`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async exportAITrialResults(id: string): Promise<Blob> {
     const response = await apiClient.get(`/api/ai-trials/${id}/export`, {
       responseType: 'blob'
     });
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async compareAITrials(ids: string[]): Promise<{
@@ -537,8 +550,8 @@ export const dataLifecycleApi = {
       avg_duration: Record<string, number>;
     };
   }> {
-    const response = await apiClient.post('/api/ai-trials/compare', { ids });
-    return response.data;
+    const response = await apiClient.post('/api/ai-trials/compare', apiRequestToSnake({ ids }));
+    return apiResponseToSnake(response.data);
   },
 };
 

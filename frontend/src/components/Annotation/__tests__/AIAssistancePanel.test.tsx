@@ -14,6 +14,7 @@ import { render, screen, waitFor } from '@/test/test-utils';
 import userEvent from '@testing-library/user-event';
 import i18n from '@/locales/config';
 import AIAssistancePanel from '../AIAssistancePanel';
+import { fetchJsonBody, apiResponseToSnake } from '@/utils/jsonCase';
 
 // Mock WebSocket hook
 const mockWsOn = vi.fn();
@@ -179,7 +180,7 @@ describe('AIAssistancePanel', () => {
         expect.objectContaining({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+          body: fetchJsonBody({
             task_id: defaultProps.taskId,
             project_id: defaultProps.projectId,
           }),
@@ -214,14 +215,16 @@ describe('AIAssistancePanel', () => {
         '/api/v1/annotation/feedback',
         expect.objectContaining({
           method: 'POST',
-          body: JSON.stringify({
+          body: fetchJsonBody({
             suggestion_id: 'sug_1',
             accepted: true,
             task_id: defaultProps.taskId,
           }),
         })
       );
-      expect(defaultProps.onSuggestionAccept).toHaveBeenCalledWith(mockSuggestions[0]);
+      expect(defaultProps.onSuggestionAccept).toHaveBeenCalledWith(
+        apiResponseToSnake(mockSuggestions[0])
+      );
     });
   });
 

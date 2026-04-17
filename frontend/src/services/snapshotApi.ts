@@ -9,6 +9,7 @@
  */
 
 import apiClient from './api/client';
+import { apiRequestToSnake, apiResponseToSnake } from '@/utils/jsonCase';
 
 // Types
 export interface Snapshot {
@@ -83,14 +84,14 @@ export const snapshotApi = {
     
     const response = await apiClient.post(
       `/api/v1/snapshots/${entityType}/${entityId}?${params}`,
-      {
+      apiRequestToSnake({
         data,
         snapshot_type: snapshotType,
         metadata,
         expires_at: expiresAt,
-      }
+      })
     );
-    return response.data as { snapshot: Snapshot; message: string };
+    return apiResponseToSnake(response.data) as { snapshot: Snapshot; message: string };
   },
 
   listSnapshots: async (params?: {
@@ -108,13 +109,13 @@ export const snapshotApi = {
     }
     
     const response = await apiClient.get(`/api/v1/snapshots?${searchParams}`);
-    return response.data as { snapshots: Snapshot[]; count: number };
+    return apiResponseToSnake(response.data) as { snapshots: Snapshot[]; count: number };
   },
 
   getSnapshot: async (snapshotId: string, tenantId?: string) => {
     const params = tenantId ? `?tenant_id=${tenantId}` : '';
     const response = await apiClient.get(`/api/v1/snapshots/${snapshotId}${params}`);
-    return response.data as { snapshot: Snapshot };
+    return apiResponseToSnake(response.data) as { snapshot: Snapshot };
   },
 
   getLatestSnapshot: async (
@@ -126,7 +127,7 @@ export const snapshotApi = {
     const response = await apiClient.get(
       `/api/v1/snapshots/${entityType}/${entityId}/latest${params}`
     );
-    return response.data as { snapshot: Snapshot };
+    return apiResponseToSnake(response.data) as { snapshot: Snapshot };
   },
 
   restoreSnapshot: async (
@@ -141,7 +142,7 @@ export const snapshotApi = {
     const response = await apiClient.post(
       `/api/v1/snapshots/${snapshotId}/restore?${params}`
     );
-    return response.data as {
+    return apiResponseToSnake(response.data) as {
       restore_result: RestoreResult;
       data: Record<string, unknown>;
       message: string;
@@ -151,7 +152,7 @@ export const snapshotApi = {
   deleteSnapshot: async (snapshotId: string, tenantId?: string) => {
     const params = tenantId ? `?tenant_id=${tenantId}` : '';
     const response = await apiClient.delete(`/api/v1/snapshots/${snapshotId}${params}`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Schedule Management
@@ -172,13 +173,16 @@ export const snapshotApi = {
     if (userId) params.append('user_id', userId);
     if (tenantId) params.append('tenant_id', tenantId);
     
-    const response = await apiClient.post(`/api/v1/snapshots/schedules?${params}`, {
-      schedule,
-      snapshot_type: snapshotType,
-      retention_days: retentionDays,
-      max_snapshots: maxSnapshots,
-    });
-    return response.data as { schedule: SnapshotSchedule; message: string };
+    const response = await apiClient.post(
+      `/api/v1/snapshots/schedules?${params}`,
+      apiRequestToSnake({
+        schedule,
+        snapshot_type: snapshotType,
+        retention_days: retentionDays,
+        max_snapshots: maxSnapshots,
+      })
+    );
+    return apiResponseToSnake(response.data) as { schedule: SnapshotSchedule; message: string };
   },
 
   // Retention Policy
@@ -191,16 +195,16 @@ export const snapshotApi = {
     const params = tenantId ? `?tenant_id=${tenantId}` : '';
     const response = await apiClient.post(
       `/api/v1/snapshots/${entityType}/${entityId}/retention${params}`,
-      policy
+      apiRequestToSnake(policy)
     );
-    return response.data as { deleted_count: number; message: string };
+    return apiResponseToSnake(response.data) as { deleted_count: number; message: string };
   },
 
   // Statistics
   getStatistics: async (tenantId?: string) => {
     const params = tenantId ? `?tenant_id=${tenantId}` : '';
     const response = await apiClient.get(`/api/v1/snapshots/statistics${params}`);
-    return response.data as { statistics: SnapshotStatistics };
+    return apiResponseToSnake(response.data) as { statistics: SnapshotStatistics };
   },
 };
 

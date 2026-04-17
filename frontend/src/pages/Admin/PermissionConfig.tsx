@@ -87,7 +87,7 @@ const PermissionConfig: React.FC = () => {
   // Fetch tenants
   const { data: tenants } = useQuery({
     queryKey: ['tenants'],
-    queryFn: () => tenantApi.list({ status: 'active' }).then(res => res.data),
+    queryFn: () => tenantApi.list({ status: 'active' }),
   });
 
   const getRoleName = (role: string) => {

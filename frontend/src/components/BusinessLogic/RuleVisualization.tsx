@@ -20,6 +20,7 @@ import {
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import * as echarts from 'echarts';
+import { fetchJsonBody, fetchJsonResponseToSnake } from '@/utils/jsonCase';
 
 type EChartsInstance = ReturnType<typeof echarts.init>;
 
@@ -65,7 +66,7 @@ export const RuleVisualization: React.FC<RuleVisualizationProps> = ({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
+        body: fetchJsonBody({
           project_id: projectId,
           visualization_type: type,
           time_range_days: 30,
@@ -73,7 +74,7 @@ export const RuleVisualization: React.FC<RuleVisualizationProps> = ({
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const data = await fetchJsonResponseToSnake<VisualizationData>(response);
         setVisualizationData(data);
         renderVisualization(type, data);
       } else {

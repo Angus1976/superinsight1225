@@ -14,6 +14,7 @@
  */
 
 import apiClient from './api/client';
+import { apiRequestToSnake, apiResponseToSnake } from '@/utils/jsonCase';
 
 const BASE_URL = '/api/v1/ontology-collaboration';
 
@@ -319,18 +320,21 @@ export interface OntologyTranslation {
 export const ontologyExpertApi = {
   // Expert CRUD
   async createExpert(data: ExpertCreateRequest): Promise<ExpertProfile> {
-    const response = await apiClient.post<ExpertProfile>(`${BASE_URL}/experts`, data);
-    return response.data;
+    const response = await apiClient.post<ExpertProfile>(`${BASE_URL}/experts`, apiRequestToSnake(data));
+    return apiResponseToSnake(response.data);
   },
 
   async getExpert(expertId: string): Promise<ExpertProfile> {
     const response = await apiClient.get<ExpertProfile>(`${BASE_URL}/experts/${expertId}`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async updateExpert(expertId: string, data: ExpertUpdateRequest): Promise<ExpertProfile> {
-    const response = await apiClient.put<ExpertProfile>(`${BASE_URL}/experts/${expertId}`, data);
-    return response.data;
+    const response = await apiClient.put<ExpertProfile>(
+      `${BASE_URL}/experts/${expertId}`,
+      apiRequestToSnake(data)
+    );
+    return apiResponseToSnake(response.data);
   },
 
   async deleteExpert(expertId: string): Promise<void> {
@@ -345,7 +349,7 @@ export const ontologyExpertApi = {
     limit?: number;
   }): Promise<ExpertListResponse> {
     const response = await apiClient.get<ExpertListResponse>(`${BASE_URL}/experts`, { params });
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Expert Recommendations
@@ -357,7 +361,7 @@ export const ontologyExpertApi = {
       `${BASE_URL}/experts/recommend`,
       { params: { ontology_area: ontologyArea, limit } }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Expert Metrics
@@ -365,7 +369,7 @@ export const ontologyExpertApi = {
     const response = await apiClient.get<ExpertMetrics>(
       `${BASE_URL}/experts/${expertId}/metrics`
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 };
 
@@ -378,12 +382,12 @@ export const ontologyTemplateApi = {
     limit?: number;
   }): Promise<TemplateListResponse> {
     const response = await apiClient.get<TemplateListResponse>(`${BASE_URL}/templates`, { params });
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async getTemplate(templateId: string): Promise<OntologyTemplate> {
     const response = await apiClient.get<OntologyTemplate>(`${BASE_URL}/templates/${templateId}`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async instantiateTemplate(
@@ -392,9 +396,9 @@ export const ontologyTemplateApi = {
   ): Promise<{ instance_id: string; template_id: string; project_id: string }> {
     const response = await apiClient.post(
       `${BASE_URL}/templates/${templateId}/instantiate`,
-      data
+      apiRequestToSnake(data)
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async customizeTemplate(
@@ -403,9 +407,9 @@ export const ontologyTemplateApi = {
   ): Promise<OntologyTemplate> {
     const response = await apiClient.post<OntologyTemplate>(
       `${BASE_URL}/templates/${templateId}/customize`,
-      data
+      apiRequestToSnake(data)
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async importTemplate(
@@ -414,10 +418,10 @@ export const ontologyTemplateApi = {
   ): Promise<OntologyTemplate> {
     const response = await apiClient.post<OntologyTemplate>(
       `${BASE_URL}/templates/import`,
-      templateData,
+      apiRequestToSnake(templateData),
       { params: { format } }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async exportTemplate(templateId: string, format = 'json'): Promise<Blob> {
@@ -425,7 +429,7 @@ export const ontologyTemplateApi = {
       params: { format },
       responseType: 'blob',
     });
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 };
 
@@ -435,17 +439,17 @@ export const ontologyCollaborationApi = {
   async createSession(ontologyId: string): Promise<CollaborationSession> {
     const response = await apiClient.post<CollaborationSession>(
       `${BASE_URL}/collaboration/sessions`,
-      { ontology_id: ontologyId }
+      apiRequestToSnake({ ontology_id: ontologyId })
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async joinSession(sessionId: string, expertId: string): Promise<CollaborationSession> {
     const response = await apiClient.post<CollaborationSession>(
       `${BASE_URL}/collaboration/sessions/${sessionId}/join`,
-      { expert_id: expertId }
+      apiRequestToSnake({ expert_id: expertId })
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async lockElement(
@@ -455,9 +459,9 @@ export const ontologyCollaborationApi = {
   ): Promise<ElementLock> {
     const response = await apiClient.post<ElementLock>(
       `${BASE_URL}/collaboration/sessions/${sessionId}/lock`,
-      { element_id: elementId, expert_id: expertId }
+      apiRequestToSnake({ element_id: elementId, expert_id: expertId })
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async unlockElement(sessionId: string, elementId: string): Promise<void> {
@@ -475,9 +479,9 @@ export const ontologyCollaborationApi = {
   }): Promise<ChangeRequest> {
     const response = await apiClient.post<ChangeRequest>(
       `${BASE_URL}/collaboration/change-requests`,
-      data
+      apiRequestToSnake(data)
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async resolveConflict(
@@ -485,10 +489,13 @@ export const ontologyCollaborationApi = {
     resolution: 'accept_theirs' | 'accept_mine' | 'manual_merge',
     mergedContent?: Record<string, unknown>
   ): Promise<void> {
-    await apiClient.post(`${BASE_URL}/collaboration/conflicts/${conflictId}/resolve`, {
-      resolution,
-      merged_content: mergedContent,
-    });
+    await apiClient.post(
+      `${BASE_URL}/collaboration/conflicts/${conflictId}/resolve`,
+      apiRequestToSnake({
+        resolution,
+        merged_content: mergedContent,
+      })
+    );
   },
 
   async getSessionParticipants(sessionId: string): Promise<{
@@ -499,7 +506,7 @@ export const ontologyCollaborationApi = {
     const response = await apiClient.get(
       `${BASE_URL}/collaboration/sessions/${sessionId}/participants`
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 };
 
@@ -509,9 +516,9 @@ export const ontologyApprovalApi = {
   async createApprovalChain(data: ApprovalChainCreateRequest): Promise<ApprovalChain> {
     const response = await apiClient.post<ApprovalChain>(
       `${BASE_URL}/workflow/approval-chains`,
-      data
+      apiRequestToSnake(data)
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async listApprovalChains(ontologyArea?: string): Promise<ApprovalChain[]> {
@@ -519,7 +526,7 @@ export const ontologyApprovalApi = {
       `${BASE_URL}/workflow/approval-chains`,
       { params: ontologyArea ? { ontology_area: ontologyArea } : undefined }
     );
-    return response.data.chains;
+    return apiResponseToSnake(response.data).chains;
   },
 
   async approveChangeRequest(
@@ -527,11 +534,14 @@ export const ontologyApprovalApi = {
     expertId: string,
     reason?: string
   ): Promise<void> {
-    await apiClient.post(`${BASE_URL}/workflow/change-requests/${changeRequestId}/approve`, {
-      expert_id: expertId,
-      action: 'approve',
-      reason,
-    });
+    await apiClient.post(
+      `${BASE_URL}/workflow/change-requests/${changeRequestId}/approve`,
+      apiRequestToSnake({
+        expert_id: expertId,
+        action: 'approve',
+        reason,
+      })
+    );
   },
 
   async rejectChangeRequest(
@@ -539,11 +549,14 @@ export const ontologyApprovalApi = {
     expertId: string,
     reason: string
   ): Promise<void> {
-    await apiClient.post(`${BASE_URL}/workflow/change-requests/${changeRequestId}/reject`, {
-      expert_id: expertId,
-      action: 'reject',
-      reason,
-    });
+    await apiClient.post(
+      `${BASE_URL}/workflow/change-requests/${changeRequestId}/reject`,
+      apiRequestToSnake({
+        expert_id: expertId,
+        action: 'reject',
+        reason,
+      })
+    );
   },
 
   async requestChanges(
@@ -553,11 +566,11 @@ export const ontologyApprovalApi = {
   ): Promise<void> {
     await apiClient.post(
       `${BASE_URL}/workflow/change-requests/${changeRequestId}/request-changes`,
-      {
+      apiRequestToSnake({
         expert_id: expertId,
         action: 'request_changes',
         feedback,
-      }
+      })
     );
   },
 
@@ -566,7 +579,7 @@ export const ontologyApprovalApi = {
       `${BASE_URL}/workflow/pending-approvals`,
       { params: { expert_id: expertId } }
     );
-    return response.data.approvals;
+    return apiResponseToSnake(response.data).approvals;
   },
 };
 
@@ -582,15 +595,15 @@ export const ontologyValidationApi = {
       `${BASE_URL}/validation/rules`,
       { params }
     );
-    return response.data.rules;
+    return apiResponseToSnake(response.data).rules;
   },
 
   async createRule(data: Omit<ValidationRule, 'id'>): Promise<ValidationRule> {
     const response = await apiClient.post<ValidationRule>(
       `${BASE_URL}/validation/rules`,
-      data
+      apiRequestToSnake(data)
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async validate(
@@ -601,16 +614,16 @@ export const ontologyValidationApi = {
   ): Promise<ValidationResult> {
     const response = await apiClient.post<ValidationResult>(
       `${BASE_URL}/validation/validate`,
-      { entity, entity_type: entityType, region, industry }
+      apiRequestToSnake({ entity, entity_type: entityType, region, industry })
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async getChineseBusinessValidators(): Promise<ValidationRule[]> {
     const response = await apiClient.get<{ rules: ValidationRule[] }>(
       `${BASE_URL}/validation/chinese-business`
     );
-    return response.data.rules;
+    return apiResponseToSnake(response.data).rules;
   },
 };
 
@@ -625,16 +638,16 @@ export const ontologyImpactApi = {
   }): Promise<ImpactReport> {
     const response = await apiClient.post<ImpactReport>(
       `${BASE_URL}/impact/analyze`,
-      data
+      apiRequestToSnake(data)
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async getImpactReport(changeRequestId: string): Promise<ImpactReport> {
     const response = await apiClient.get<ImpactReport>(
       `${BASE_URL}/impact/reports/${changeRequestId}`
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 };
 
@@ -645,28 +658,28 @@ export const ontologyI18nApi = {
     elementId: string,
     data: { language: string; name: string; description?: string; help_text?: string }
   ): Promise<void> {
-    await apiClient.post(`${BASE_URL}/i18n/ontology/${elementId}/translations`, data);
+    await apiClient.post(`${BASE_URL}/i18n/ontology/${elementId}/translations`, apiRequestToSnake(data));
   },
 
   async getTranslation(elementId: string, language: string): Promise<OntologyTranslation> {
     const response = await apiClient.get<OntologyTranslation>(
       `${BASE_URL}/i18n/ontology/${elementId}/translations/${language}`
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async getMissingTranslations(ontologyId: string, language: string): Promise<string[]> {
     const response = await apiClient.get<{ missing: string[] }>(
       `${BASE_URL}/i18n/ontology/${ontologyId}/missing/${language}`
     );
-    return response.data.missing;
+    return apiResponseToSnake(response.data).missing;
   },
 
   async exportTranslations(ontologyId: string, language: string): Promise<Record<string, unknown>> {
     const response = await apiClient.get(
       `${BASE_URL}/i18n/ontology/${ontologyId}/export/${language}`
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async importTranslations(
@@ -674,10 +687,10 @@ export const ontologyI18nApi = {
     language: string,
     translations: Record<string, Record<string, string>>
   ): Promise<void> {
-    await apiClient.post(`${BASE_URL}/i18n/ontology/${ontologyId}/import/${language}`, {
-      translations,
-      format: 'json',
-    });
+    await apiClient.post(
+      `${BASE_URL}/i18n/ontology/${ontologyId}/import/${language}`,
+      apiRequestToSnake({ translations, format: 'json' })
+    );
   },
 };
 

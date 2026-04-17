@@ -28,6 +28,7 @@ import {
   SoundOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
+import { fetchJsonBody } from '@/utils/jsonCase';
 
 const { Text, Title } = Typography;
 
@@ -211,7 +212,7 @@ export const InsightNotification: React.FC<InsightNotificationProps> = ({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
+        body: fetchJsonBody({
           type: 'business_insight',
           project_id: projectId,
           insight_id: insight.id,
@@ -233,7 +234,7 @@ export const InsightNotification: React.FC<InsightNotificationProps> = ({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
+        body: fetchJsonBody({
           type: 'business_insight',
           project_id: projectId,
           insight_id: insight.id,

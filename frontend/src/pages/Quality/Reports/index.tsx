@@ -6,6 +6,7 @@ import type { ColumnsType } from 'antd/es/table';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/services/api';
+import { keysToCamelDeep } from '@/utils/jsonCase';
 import dayjs from 'dayjs';
 
 const { RangePicker } = DatePicker;
@@ -58,27 +59,38 @@ const QualityReports: React.FC = () => {
   const { data: metrics, isLoading: metricsLoading } = useQuery<QualityMetrics>({
     queryKey: ['quality-metrics', dateRange, reportType],
     queryFn: async () => {
-      const res = await api.get<QualityMetrics>('/api/v1/quality/metrics', {
+      const res = await api.get('/api/v1/quality/metrics', {
         params: {
           startDate: dateRange[0].format('YYYY-MM-DD'),
           endDate: dateRange[1].format('YYYY-MM-DD'),
           type: reportType,
         },
       });
-      return res.data;
+      if (res.data === null || res.data === undefined) {
+        return {} as QualityMetrics;
+      }
+      return keysToCamelDeep(res.data) as QualityMetrics;
     },
   });
 
   const { data: reports, isLoading: reportsLoading } = useQuery<QualityReport[]>({
     queryKey: ['quality-reports', dateRange],
     queryFn: async () => {
-      const res = await api.get<QualityReport[]>('/api/v1/quality/reports', {
+      const res = await api.get('/api/v1/quality/reports', {
         params: {
           startDate: dateRange[0].format('YYYY-MM-DD'),
           endDate: dateRange[1].format('YYYY-MM-DD'),
         },
       });
-      return res.data;
+      const raw = res.data as unknown;
+      if (raw === null || raw === undefined) return [];
+      if (Array.isArray(raw)) {
+        return raw.map((r) => keysToCamelDeep(r) as QualityReport);
+      }
+      if (typeof raw === 'object' && Array.isArray((raw as { items?: unknown }).items)) {
+        return (raw as { items: unknown[] }).items.map((r) => keysToCamelDeep(r) as QualityReport);
+      }
+      return [];
     },
   });
 

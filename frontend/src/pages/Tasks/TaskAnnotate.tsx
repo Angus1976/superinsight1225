@@ -53,6 +53,7 @@ import { useTask, useLazyTask, useUpdateTask } from '@/hooks/useTask';
 import { useLabelStudio, type LabelStudioError } from '@/hooks';
 import { Permission } from '@/utils/permissions';
 import apiClient from '@/services/api/client';
+import { apiResponseToSnake } from '@/utils/jsonCase';
 import { labelStudioService } from '@/services/labelStudioService';
 import type { 
   LabelStudioTask, 
@@ -149,14 +150,18 @@ const TaskAnnotatePage: React.FC = () => {
       const projectResponse = await apiClient.get(`/api/label-studio/projects/${projectId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setProject(projectResponse.data);
+      setProject(apiResponseToSnake(projectResponse.data));
       
       // Step 3: Fetch tasks
       const tasksResponse = await apiClient.get(`/api/label-studio/projects/${projectId}/tasks`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      const tasksList = tasksResponse.data.tasks || tasksResponse.data.results || [];
+      const tasksPayload = apiResponseToSnake(tasksResponse.data) as {
+        tasks?: LabelStudioTask[];
+        results?: LabelStudioTask[];
+      };
+      const tasksList = tasksPayload.tasks || tasksPayload.results || [];
       
       // If no tasks, try to import them
       if (tasksList.length === 0 && id) {
@@ -170,7 +175,11 @@ const TaskAnnotatePage: React.FC = () => {
             headers: { Authorization: `Bearer ${token}` }
           });
           
-          const importedTasks = refetchResponse.data.tasks || refetchResponse.data.results || [];
+          const refetchPayload = apiResponseToSnake(refetchResponse.data) as {
+            tasks?: LabelStudioTask[];
+            results?: LabelStudioTask[];
+          };
+          const importedTasks = refetchPayload.tasks || refetchPayload.results || [];
           setTasks(importedTasks);
           message.success({ content: t('annotate.tasksImportedSuccess'), key: 'task-import' });
           

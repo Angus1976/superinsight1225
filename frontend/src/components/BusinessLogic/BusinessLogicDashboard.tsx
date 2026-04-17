@@ -39,6 +39,7 @@ import { PatternAnalysis } from './PatternAnalysis';
 import { InsightCards } from './InsightCards';
 import { BusinessRuleManager } from './BusinessRuleManager';
 import { InsightNotification } from './InsightNotification';
+import { fetchJsonBody, fetchJsonResponseToSnake } from '@/utils/jsonCase';
 
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
@@ -127,22 +128,22 @@ export const BusinessLogicDashboard: React.FC<BusinessLogicDashboardProps> = ({
       ]);
 
       if (statsRes.ok) {
-        const statsData = await statsRes.json();
+        const statsData = await fetchJsonResponseToSnake<BusinessLogicStats>(statsRes);
         setStats(statsData);
       }
 
       if (rulesRes.ok) {
-        const rulesData = await rulesRes.json();
+        const rulesData = await fetchJsonResponseToSnake<BusinessRule[]>(rulesRes);
         setRules(rulesData);
       }
 
       if (patternsRes.ok) {
-        const patternsData = await patternsRes.json();
+        const patternsData = await fetchJsonResponseToSnake<Pattern[]>(patternsRes);
         setPatterns(patternsData);
       }
 
       if (insightsRes.ok) {
-        const insightsData = await insightsRes.json();
+        const insightsData = await fetchJsonResponseToSnake<BusinessInsight[]>(insightsRes);
         setInsights(insightsData);
       }
     } catch (error) {
@@ -162,7 +163,7 @@ export const BusinessLogicDashboard: React.FC<BusinessLogicDashboardProps> = ({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
+        body: fetchJsonBody({
           project_id: projectId,
           confidence_threshold: values.confidence_threshold || 0.8,
           min_frequency: values.min_frequency || 3,
@@ -171,7 +172,7 @@ export const BusinessLogicDashboard: React.FC<BusinessLogicDashboardProps> = ({
       });
 
       if (response.ok) {
-        const result = await response.json();
+        const result = await fetchJsonResponseToSnake<{ patterns: Pattern[] }>(response);
         message.success(t('analysis.success', { count: result.patterns.length }));
         setPatterns(result.patterns);
         onPatternDetected?.(result.patterns);
@@ -197,14 +198,14 @@ export const BusinessLogicDashboard: React.FC<BusinessLogicDashboardProps> = ({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
+        body: fetchJsonBody({
           project_id: projectId,
           threshold: 0.8,
         }),
       });
 
       if (response.ok) {
-        const result = await response.json();
+        const result = await fetchJsonResponseToSnake<{ rules: BusinessRule[] }>(response);
         message.success(t('analysis.extractSuccess', { count: result.rules.length }));
         setRules(result.rules);
         onRuleExtracted?.(result.rules);
@@ -227,7 +228,7 @@ export const BusinessLogicDashboard: React.FC<BusinessLogicDashboardProps> = ({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
+        body: fetchJsonBody({
           project_id: projectId,
           export_format: values.export_format || 'json',
           include_rules: values.include_rules !== false,
@@ -237,7 +238,7 @@ export const BusinessLogicDashboard: React.FC<BusinessLogicDashboardProps> = ({
       });
 
       if (response.ok) {
-        const result = await response.json();
+        const result = await fetchJsonResponseToSnake<{ download_url: string }>(response);
         message.success(t('export.success'));
         // 可以在这里处理下载链接
         window.open(result.download_url, '_blank');

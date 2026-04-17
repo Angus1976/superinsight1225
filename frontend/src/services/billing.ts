@@ -1,5 +1,6 @@
 // Billing API service
 import apiClient from './api/client';
+import { apiRequestToSnake, apiResponseToSnake } from '@/utils/jsonCase';
 import { API_ENDPOINTS } from '@/constants';
 import type {
   BillingListParams,
@@ -198,7 +199,7 @@ export const billingService = {
     const response = await apiClient.get<BillingRecord>(
       `${API_ENDPOINTS.BILLING.RECORDS(tenantId)}/${id}`
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Get billing analysis
@@ -235,7 +236,7 @@ export const billingService = {
     const response = await apiClient.get<WorkHoursRanking[]>(
       `${API_ENDPOINTS.BILLING.RECORDS(tenantId)}/ranking`
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Export billing data
@@ -247,7 +248,7 @@ export const billingService = {
         responseType: 'blob',
       }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // ============================================================================
@@ -258,9 +259,9 @@ export const billingService = {
   async getEnhancedReport(request: EnhancedReportRequest): Promise<EnhancedBillingReport> {
     const response = await apiClient.post<EnhancedBillingReport>(
       `${BILLING_BASE}/enhanced-report`,
-      request
+      apiRequestToSnake(request)
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Get work hours statistics
@@ -273,7 +274,7 @@ export const billingService = {
       `${BILLING_BASE}/work-hours/${tenantId}`,
       { params: { start_date: startDate, end_date: endDate } }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Get project cost breakdown
@@ -286,7 +287,7 @@ export const billingService = {
       `${BILLING_BASE}/project-breakdown/${tenantId}`,
       { params: { start_date: startDate, end_date: endDate } }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Get department cost allocation
@@ -299,16 +300,16 @@ export const billingService = {
       `${BILLING_BASE}/department-allocation/${tenantId}`,
       { params: { start_date: startDate, end_date: endDate } }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Create billing rule version
   async createRuleVersion(request: BillingRuleVersionRequest): Promise<{ rule: BillingRuleVersion }> {
     const response = await apiClient.post<{ rule: BillingRuleVersion }>(
       `${BILLING_BASE}/rules/versions`,
-      request
+      apiRequestToSnake(request)
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Approve billing rule version
@@ -319,9 +320,9 @@ export const billingService = {
   ): Promise<{ rule: BillingRuleVersion }> {
     const response = await apiClient.post<{ rule: BillingRuleVersion }>(
       `${BILLING_BASE}/rules/versions/${tenantId}/${version}/approve`,
-      { approved_by: approvedBy }
+      apiRequestToSnake({ approved_by: approvedBy })
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Get billing rule history
@@ -335,7 +336,7 @@ export const billingService = {
     }>(
       `${BILLING_BASE}/rules/versions/${tenantId}`
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Configure project mappings
@@ -345,9 +346,9 @@ export const billingService = {
   ): Promise<{ status: string }> {
     const response = await apiClient.post<{ status: string }>(
       `${BILLING_BASE}/mappings/projects`,
-      { tenant_id: tenantId, mappings }
+      apiRequestToSnake({ tenant_id: tenantId, mappings })
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Configure department mappings
@@ -358,13 +359,13 @@ export const billingService = {
   ): Promise<{ status: string }> {
     const response = await apiClient.post<{ status: string }>(
       `${BILLING_BASE}/mappings/departments`,
-      {
+      apiRequestToSnake({
         tenant_id: tenantId,
         project_mappings: projectMappings,
-        user_mappings: userMappings
-      }
+        user_mappings: userMappings,
+      })
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Export to Excel format
@@ -378,7 +379,7 @@ export const billingService = {
       `${BILLING_BASE}/export-excel/${tenantId}`,
       { params: { start_date: startDate, end_date: endDate, report_type: reportType } }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Get cost trends
@@ -387,7 +388,7 @@ export const billingService = {
       `${BILLING_BASE}/analytics/trends/${tenantId}`,
       { params: { days } }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Get user productivity
@@ -396,7 +397,7 @@ export const billingService = {
       `${BILLING_BASE}/analytics/productivity/${tenantId}`,
       { params: { days } }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Get cost forecast
@@ -404,7 +405,7 @@ export const billingService = {
     const response = await apiClient.get<Record<string, unknown>>(
       `${BILLING_BASE}/analytics/forecast/${tenantId}/${targetMonth}`
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Get optimization recommendations
@@ -413,6 +414,6 @@ export const billingService = {
       `${BILLING_BASE}/analytics/recommendations/${tenantId}`,
       { params: { days } }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 };

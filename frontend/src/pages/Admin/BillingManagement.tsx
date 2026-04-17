@@ -49,7 +49,7 @@ const BillingManagement: React.FC = () => {
   // Fetch tenants
   const { data: tenants } = useQuery({
     queryKey: ['tenants'],
-    queryFn: () => tenantApi.list().then(res => res.data),
+    queryFn: () => tenantApi.list(),
   });
 
   // Mock billing data (in real implementation, this would come from API)

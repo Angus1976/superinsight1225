@@ -5,6 +5,7 @@
  */
 
 import apiClient from '@/services/api/client';
+import { apiRequestToSnake, apiResponseToSnake, unwrapApiEnvelope } from '@/utils/jsonCase';
 import { getToken } from '@/utils/token';
 import type { ChatRequest, ChatResponse, StreamChunk, OpenClawStatus, WorkflowItem, TodayStats } from '@/types/aiAssistant';
 
@@ -21,8 +22,8 @@ export interface StreamCallbacks {
  * Non-streaming chat — POST /api/v1/ai-assistant/chat
  */
 export async function sendMessage(request: ChatRequest): Promise<ChatResponse> {
-  const response = await apiClient.post<ChatResponse>(`${API_BASE}/chat`, request);
-  return response.data;
+  const response = await apiClient.post<ChatResponse>(`${API_BASE}/chat`, apiRequestToSnake(request));
+  return apiResponseToSnake(response.data);
 }
 
 /**
@@ -34,7 +35,7 @@ export async function getOpenClawStatus(): Promise<OpenClawStatus> {
   try {
     const response = await apiClient.get<OpenClawStatus>(`${API_BASE}/chat/openclaw-status`);
     console.log('[API] OpenClaw status response:', response.data);
-    return response.data;
+    return apiResponseToSnake(response.data);
   } catch (error) {
     console.error('[API] Failed to fetch OpenClaw status:', error);
     throw error;
@@ -160,7 +161,7 @@ import type { AIDataSource, DataSourceConfigItem } from '@/types/aiAssistant';
  */
 export async function getAvailableDataSources(): Promise<AIDataSource[]> {
   const response = await apiClient.get<AIDataSource[]>(`${API_BASE}/data-sources/available`);
-  return response.data;
+  return apiResponseToSnake(response.data);
 }
 
 /**
@@ -168,7 +169,7 @@ export async function getAvailableDataSources(): Promise<AIDataSource[]> {
  */
 export async function getDataSourceConfig(): Promise<AIDataSource[]> {
   const response = await apiClient.get<AIDataSource[]>(`${API_BASE}/data-sources/config`);
-  return response.data;
+  return apiResponseToSnake(response.data);
 }
 
 /**
@@ -177,10 +178,11 @@ export async function getDataSourceConfig(): Promise<AIDataSource[]> {
 export async function updateDataSourceConfig(
   sources: DataSourceConfigItem[],
 ): Promise<AIDataSource[]> {
-  const response = await apiClient.post<AIDataSource[]>(`${API_BASE}/data-sources/config`, {
-    sources,
-  });
-  return response.data;
+  const response = await apiClient.post<AIDataSource[]>(
+    `${API_BASE}/data-sources/config`,
+    apiRequestToSnake({ sources })
+  );
+  return apiResponseToSnake(response.data);
 }
 
 
@@ -197,15 +199,18 @@ export interface RolePermissionItem {
  */
 export async function getRolePermissions(): Promise<{ permissions: RolePermissionItem[] }> {
   const response = await apiClient.get<{ permissions: RolePermissionItem[] }>(`${API_BASE}/data-sources/role-permissions`);
-  return response.data;
+  return apiResponseToSnake(response.data);
 }
 
 /**
  * Update role-permission mappings (admin only).
  */
 export async function updateRolePermissions(permissions: RolePermissionItem[]): Promise<{ permissions: RolePermissionItem[] }> {
-  const response = await apiClient.post<{ permissions: RolePermissionItem[] }>(`${API_BASE}/data-sources/role-permissions`, { permissions });
-  return response.data;
+  const response = await apiClient.post<{ permissions: RolePermissionItem[] }>(
+    `${API_BASE}/data-sources/role-permissions`,
+    apiRequestToSnake({ permissions })
+  );
+  return apiResponseToSnake(response.data);
 }
 
 
@@ -222,7 +227,7 @@ export interface SkillPermissionItem {
  */
 export async function getAvailableSkills(): Promise<{ skill_ids: string[]; role: string }> {
   const response = await apiClient.get<{ skill_ids: string[]; role: string }>(`${API_BASE}/skills/available`);
-  return response.data;
+  return apiResponseToSnake(response.data);
 }
 
 /**
@@ -230,7 +235,7 @@ export async function getAvailableSkills(): Promise<{ skill_ids: string[]; role:
  */
 export async function getSkillRolePermissions(): Promise<{ permissions: SkillPermissionItem[] }> {
   const response = await apiClient.get<{ permissions: SkillPermissionItem[] }>(`${API_BASE}/skills/role-permissions`);
-  return response.data;
+  return apiResponseToSnake(response.data);
 }
 
 /**
@@ -241,9 +246,9 @@ export async function updateSkillRolePermissions(
 ): Promise<{ permissions: SkillPermissionItem[] }> {
   const response = await apiClient.post<{ permissions: SkillPermissionItem[] }>(
     `${API_BASE}/skills/role-permissions`,
-    { permissions },
+    apiRequestToSnake({ permissions }),
   );
-  return response.data;
+  return apiResponseToSnake(response.data);
 }
 
 /**
@@ -251,7 +256,7 @@ export async function updateSkillRolePermissions(
  */
 export async function initAdminSkillPermissions(): Promise<{ added: number; message: string }> {
   const response = await apiClient.post<{ added: number; message: string }>(`${API_BASE}/skills/init-admin`);
-  return response.data;
+  return apiResponseToSnake(response.data);
 }
 
 
@@ -337,7 +342,7 @@ export interface ServiceStatusResponse {
  */
 export async function getServiceStatus(): Promise<ServiceStatusResponse> {
   const response = await apiClient.get<ServiceStatusResponse>(`${API_BASE}/service-status`);
-  return response.data;
+  return apiResponseToSnake(response.data);
 }
 
 
@@ -352,7 +357,7 @@ export async function getAccessLogs(params?: {
   const response = await apiClient.get<AccessLogResponse>(`${API_BASE}/access-logs`, {
     params,
   });
-  return response.data;
+  return apiResponseToSnake(response.data);
 }
 
 
@@ -364,7 +369,7 @@ export async function getAccessLogs(params?: {
  */
 export async function getWorkflows(): Promise<WorkflowItem[]> {
   const response = await apiClient.get<WorkflowItem[]>(`${API_BASE}/workflows`);
-  return response.data;
+  return apiResponseToSnake(response.data);
 }
 
 /**
@@ -372,8 +377,8 @@ export async function getWorkflows(): Promise<WorkflowItem[]> {
  * POST /api/v1/ai-assistant/workflows
  */
 export async function createWorkflow(data: Omit<WorkflowItem, 'id' | 'status' | 'is_preset' | 'created_at' | 'updated_at'>): Promise<WorkflowItem> {
-  const response = await apiClient.post<WorkflowItem>(`${API_BASE}/workflows`, data);
-  return response.data;
+  const response = await apiClient.post<WorkflowItem>(`${API_BASE}/workflows`, apiRequestToSnake(data));
+  return apiResponseToSnake(response.data);
 }
 
 /**
@@ -381,8 +386,8 @@ export async function createWorkflow(data: Omit<WorkflowItem, 'id' | 'status' | 
  * PUT /api/v1/ai-assistant/workflows/:id
  */
 export async function updateWorkflow(id: string, data: Partial<WorkflowItem>): Promise<WorkflowItem> {
-  const response = await apiClient.put<WorkflowItem>(`${API_BASE}/workflows/${id}`, data);
-  return response.data;
+  const response = await apiClient.put<WorkflowItem>(`${API_BASE}/workflows/${id}`, apiRequestToSnake(data));
+  return apiResponseToSnake(response.data);
 }
 
 /**
@@ -399,7 +404,7 @@ export async function deleteWorkflow(id: string): Promise<void> {
  */
 export async function getTodayStats(): Promise<TodayStats> {
   const response = await apiClient.get<{ success: boolean; data: TodayStats }>(`${API_BASE}/stats/today`);
-  return response.data.data;
+  return unwrapApiEnvelope<TodayStats>(response.data);
 }
 
 /**
@@ -408,7 +413,7 @@ export async function getTodayStats(): Promise<TodayStats> {
  */
 export async function getWorkflowStats(id: string): Promise<Record<string, number>> {
   const response = await apiClient.get<Record<string, number>>(`${API_BASE}/workflows/${id}/stats`);
-  return response.data;
+  return apiResponseToSnake(response.data);
 }
 
 /**
@@ -416,6 +421,9 @@ export async function getWorkflowStats(id: string): Promise<Record<string, numbe
  * POST /api/v1/ai-assistant/workflows/sync-permissions
  */
 export async function syncPermissions(permissionList: Array<{ workflow_id: string; data_source_auth: Array<{ source_id: string; tables: string[] }> }>): Promise<{ updated: number }> {
-  const response = await apiClient.post<{ updated: number }>(`${API_BASE}/workflows/sync-permissions`, { permissions: permissionList });
-  return response.data;
+  const response = await apiClient.post<{ updated: number }>(
+    `${API_BASE}/workflows/sync-permissions`,
+    apiRequestToSnake({ permissions: permissionList })
+  );
+  return apiResponseToSnake(response.data);
 }

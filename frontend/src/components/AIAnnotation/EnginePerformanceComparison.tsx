@@ -41,6 +41,7 @@ import { useTranslation } from 'react-i18next';
 import type { ColumnsType } from 'antd/es/table';
 
 import type { EngineConfig, EngineStatus } from '@/pages/AIAnnotation/EngineConfiguration';
+import { fetchJsonResponseToSnake } from '@/utils/jsonCase';
 
 interface EnginePerformanceComparisonProps {
   engines: EngineConfig[];
@@ -49,21 +50,21 @@ interface EnginePerformanceComparisonProps {
 }
 
 interface PerformanceMetrics {
-  engineId: string;
-  engineName: string;
+  engine_id: string;
+  engine_name: string;
   accuracy: number;
   consistency: number;
   completeness: number;
   recall: number;
-  f1Score: number;
-  avgLatency: number;
-  p95Latency: number;
-  p99Latency: number;
+  f1_score: number;
+  avg_latency: number;
+  p95_latency: number;
+  p99_latency: number;
   throughput: number;
-  errorRate: number;
-  costPer1kSamples: number;
-  totalSamples: number;
-  successRate: number;
+  error_rate: number;
+  cost_per_1k_samples: number;
+  total_samples: number;
+  success_rate: number;
 }
 
 interface ComparisonData {
@@ -97,7 +98,7 @@ const EnginePerformanceComparison: React.FC<EnginePerformanceComparisonProps> = 
     try {
       const response = await fetch('/api/v1/annotation/engines/performance');
       if (!response.ok) return;
-      const data = await response.json();
+      const data = await fetchJsonResponseToSnake<{ metrics?: PerformanceMetrics[] }>(response);
       setMetricsData(data.metrics || generateMockData());
     } catch (error) {
       console.error('Failed to load performance metrics:', error);
@@ -107,32 +108,32 @@ const EnginePerformanceComparison: React.FC<EnginePerformanceComparisonProps> = 
 
   const generateMockData = (): PerformanceMetrics[] => {
     return engines.map((engine) => ({
-      engineId: engine.id || '',
-      engineName: `${engine.engineType} (${engine.model})`,
+      engine_id: engine.id || '',
+      engine_name: `${engine.engine_type} (${engine.model})`,
       accuracy: Math.random() * 0.15 + 0.8,
       consistency: Math.random() * 0.15 + 0.75,
       completeness: Math.random() * 0.1 + 0.85,
       recall: Math.random() * 0.2 + 0.7,
-      f1Score: Math.random() * 0.15 + 0.78,
-      avgLatency: Math.random() * 1000 + 200,
-      p95Latency: Math.random() * 2000 + 500,
-      p99Latency: Math.random() * 3000 + 1000,
+      f1_score: Math.random() * 0.15 + 0.78,
+      avg_latency: Math.random() * 1000 + 200,
+      p95_latency: Math.random() * 2000 + 500,
+      p99_latency: Math.random() * 3000 + 1000,
       throughput: Math.random() * 500 + 100,
-      errorRate: Math.random() * 0.05,
-      costPer1kSamples: Math.random() * 5 + 0.5,
-      totalSamples: Math.floor(Math.random() * 50000) + 10000,
-      successRate: Math.random() * 0.05 + 0.95,
+      error_rate: Math.random() * 0.05,
+      cost_per_1k_samples: Math.random() * 5 + 0.5,
+      total_samples: Math.floor(Math.random() * 50000) + 10000,
+      success_rate: Math.random() * 0.05 + 0.95,
     }));
   };
 
   const getMetricsForEngine = (engineId: string): PerformanceMetrics | null => {
-    return metricsData.find((m) => m.engineId === engineId) || null;
+    return metricsData.find((m) => m.engine_id === engineId) || null;
   };
 
   const getEngineName = (engineId: string | null | undefined): string => {
     if (engineId == null || engineId === '') return '';
     const engine = engines.find((e) => e.id === engineId);
-    return engine ? `${engine.engineType} (${engine.model})` : engineId;
+    return engine ? `${engine.engine_type} (${engine.model})` : engineId;
   };
 
   const calculateComparison = (): ComparisonData[] => {
@@ -186,20 +187,20 @@ const EnginePerformanceComparison: React.FC<EnginePerformanceComparisonProps> = 
       compareMetric(t('ai_annotation:metrics.recall'), metricsA.recall, metricsB.recall),
       compareMetric(
         t('ai_annotation:metrics.f1_score'),
-        metricsA.f1Score,
-        metricsB.f1Score
+        metricsA.f1_score,
+        metricsB.f1_score
       ),
       compareMetric(
         t('ai_annotation:metrics.avg_latency'),
-        metricsA.avgLatency,
-        metricsB.avgLatency,
+        metricsA.avg_latency,
+        metricsB.avg_latency,
         'ms',
         false
       ),
       compareMetric(
         t('ai_annotation:metrics.p95_latency'),
-        metricsA.p95Latency,
-        metricsB.p95Latency,
+        metricsA.p95_latency,
+        metricsB.p95_latency,
         'ms',
         false
       ),
@@ -211,22 +212,22 @@ const EnginePerformanceComparison: React.FC<EnginePerformanceComparisonProps> = 
       ),
       compareMetric(
         t('ai_annotation:metrics.error_rate'),
-        metricsA.errorRate,
-        metricsB.errorRate,
+        metricsA.error_rate,
+        metricsB.error_rate,
         '%',
         false
       ),
       compareMetric(
         t('ai_annotation:metrics.cost_per_1k'),
-        metricsA.costPer1kSamples,
-        metricsB.costPer1kSamples,
+        metricsA.cost_per_1k_samples,
+        metricsB.cost_per_1k_samples,
         '$',
         false
       ),
       compareMetric(
         t('ai_annotation:metrics.success_rate'),
-        metricsA.successRate,
-        metricsB.successRate
+        metricsA.success_rate,
+        metricsB.success_rate
       ),
     ];
   };
@@ -290,8 +291,8 @@ const EnginePerformanceComparison: React.FC<EnginePerformanceComparisonProps> = 
   const rankingColumns: ColumnsType<PerformanceMetrics> = [
     {
       title: t('ai_annotation:columns.engine'),
-      dataIndex: 'engineName',
-      key: 'engineName',
+      dataIndex: 'engine_name',
+      key: 'engine_name',
       fixed: 'left',
       width: 200,
       render: (name: string) => <strong>{name}</strong>,
@@ -315,16 +316,16 @@ const EnginePerformanceComparison: React.FC<EnginePerformanceComparisonProps> = 
     },
     {
       title: t('ai_annotation:metrics.f1_score'),
-      dataIndex: 'f1Score',
-      key: 'f1Score',
-      sorter: (a, b) => a.f1Score - b.f1Score,
+      dataIndex: 'f1_score',
+      key: 'f1_score',
+      sorter: (a, b) => a.f1_score - b.f1_score,
       render: (value: number) => `${(value * 100).toFixed(2)}%`,
     },
     {
       title: t('ai_annotation:metrics.avg_latency'),
-      dataIndex: 'avgLatency',
-      key: 'avgLatency',
-      sorter: (a, b) => a.avgLatency - b.avgLatency,
+      dataIndex: 'avg_latency',
+      key: 'avg_latency',
+      sorter: (a, b) => a.avg_latency - b.avg_latency,
       render: (value: number) => `${value.toFixed(0)}ms`,
     },
     {
@@ -336,16 +337,16 @@ const EnginePerformanceComparison: React.FC<EnginePerformanceComparisonProps> = 
     },
     {
       title: t('ai_annotation:metrics.cost_per_1k'),
-      dataIndex: 'costPer1kSamples',
-      key: 'costPer1kSamples',
-      sorter: (a, b) => a.costPer1kSamples - b.costPer1kSamples,
+      dataIndex: 'cost_per_1k_samples',
+      key: 'cost_per_1k_samples',
+      sorter: (a, b) => a.cost_per_1k_samples - b.cost_per_1k_samples,
       render: (value: number) => `$${value.toFixed(2)}`,
     },
     {
       title: t('ai_annotation:metrics.success_rate'),
-      dataIndex: 'successRate',
-      key: 'successRate',
-      sorter: (a, b) => a.successRate - b.successRate,
+      dataIndex: 'success_rate',
+      key: 'success_rate',
+      sorter: (a, b) => a.success_rate - b.success_rate,
       render: (value: number) => (
         <Tag color={value >= 0.95 ? 'green' : value >= 0.90 ? 'orange' : 'red'}>
           {(value * 100).toFixed(2)}%
@@ -487,7 +488,7 @@ const EnginePerformanceComparison: React.FC<EnginePerformanceComparisonProps> = 
                 />
                 <Statistic
                   title={t('ai_annotation:metrics.cost_per_1k')}
-                  value={metricsA.costPer1kSamples}
+                  value={metricsA.cost_per_1k_samples}
                   precision={2}
                   prefix="$"
                 />
@@ -500,7 +501,7 @@ const EnginePerformanceComparison: React.FC<EnginePerformanceComparisonProps> = 
                       metricsA.recall) /
                       4) *
                       100) /
-                    metricsA.costPer1kSamples
+                    metricsA.cost_per_1k_samples
                   }
                   precision={2}
                   suffix="points/$"
@@ -535,7 +536,7 @@ const EnginePerformanceComparison: React.FC<EnginePerformanceComparisonProps> = 
                 />
                 <Statistic
                   title={t('ai_annotation:metrics.cost_per_1k')}
-                  value={metricsB.costPer1kSamples}
+                  value={metricsB.cost_per_1k_samples}
                   precision={2}
                   prefix="$"
                 />
@@ -548,7 +549,7 @@ const EnginePerformanceComparison: React.FC<EnginePerformanceComparisonProps> = 
                       metricsB.recall) /
                       4) *
                       100) /
-                    metricsB.costPer1kSamples
+                    metricsB.cost_per_1k_samples
                   }
                   precision={2}
                   suffix="points/$"
@@ -577,7 +578,7 @@ const EnginePerformanceComparison: React.FC<EnginePerformanceComparisonProps> = 
         <Table
           columns={rankingColumns}
           dataSource={metricsData}
-          rowKey="engineId"
+          rowKey="engine_id"
           pagination={false}
           scroll={{ x: 1200 }}
           size="small"
@@ -626,7 +627,7 @@ const EnginePerformanceComparison: React.FC<EnginePerformanceComparisonProps> = 
                     {engines.map((engine) => (
                       <Select.Option key={engine.id} value={engine.id}>
                         <Space>
-                          <Tag color="blue">{engine.engineType}</Tag>
+                          <Tag color="blue">{engine.engine_type}</Tag>
                           {engine.model}
                         </Space>
                       </Select.Option>
@@ -648,7 +649,7 @@ const EnginePerformanceComparison: React.FC<EnginePerformanceComparisonProps> = 
                     {engines.map((engine) => (
                       <Select.Option key={engine.id} value={engine.id}>
                         <Space>
-                          <Tag color="green">{engine.engineType}</Tag>
+                          <Tag color="green">{engine.engine_type}</Tag>
                           {engine.model}
                         </Space>
                       </Select.Option>

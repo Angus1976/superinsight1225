@@ -45,28 +45,29 @@ import {
 import { useTranslation } from 'react-i18next';
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
+import { fetchJsonBody, fetchJsonResponseToSnake } from '@/utils/jsonCase';
 
-// Types
+// Types（与列表/进度 API snake_case 对齐）
 export interface AnnotationTask {
-  taskId: string;
+  task_id: string;
   title: string;
-  projectId: string;
-  projectName: string;
-  assignedTo?: string;
-  assignedBy: 'manual' | 'ai';
+  project_id: string;
+  project_name: string;
+  assigned_to?: string;
+  assigned_by: 'manual' | 'ai';
   status: 'pending' | 'in_progress' | 'review' | 'completed';
   priority: 'low' | 'normal' | 'high' | 'urgent';
   deadline?: string;
   metrics: TaskMetrics;
-  createdAt: string;
+  created_at: string;
 }
 
 export interface TaskMetrics {
-  totalItems: number;
-  humanAnnotated: number;
-  aiPreAnnotated: number;
-  aiSuggested: number;
-  reviewRequired: number;
+  total_items: number;
+  human_annotated: number;
+  ai_pre_annotated: number;
+  ai_suggested: number;
+  review_required: number;
 }
 
 export interface Annotator {
@@ -82,13 +83,13 @@ export interface Annotator {
 }
 
 export interface WorkloadStats {
-  totalTasks: number;
-  completedTasks: number;
-  inProgressTasks: number;
-  pendingTasks: number;
-  avgCompletionTime: number;
-  activeAnnotators: number;
-  activeReviewers: number;
+  total_tasks: number;
+  completed_tasks: number;
+  in_progress_tasks: number;
+  pending_tasks: number;
+  avg_completion_time: number;
+  active_annotators: number;
+  active_reviewers: number;
 }
 
 interface TaskManagementProps {
@@ -129,7 +130,7 @@ const TaskManagement: React.FC<TaskManagementProps> = ({
 
       const response = await fetch(`/api/v1/annotation/tasks?${params}`);
       if (response.ok) {
-        const data = await response.json();
+        const data = await fetchJsonResponseToSnake<{ tasks?: AnnotationTask[] }>(response);
         setTasks(data.tasks || []);
       }
     } catch (error) {
@@ -180,15 +181,23 @@ const TaskManagement: React.FC<TaskManagementProps> = ({
       if (projectId) {
         const response = await fetch(`/api/v1/annotation/progress/${projectId}`);
         if (response.ok) {
-          const data = await response.json();
+          const data = await fetchJsonResponseToSnake<{
+            total_tasks?: number;
+            completed_tasks?: number;
+            in_progress_tasks?: number;
+            pending_tasks?: number;
+            avg_time_per_task_minutes?: number;
+            active_annotators?: number;
+            active_reviewers?: number;
+          }>(response);
           setStats({
-            totalTasks: data.total_tasks || data.totalTasks,
-            completedTasks: data.completed_tasks || data.completedTasks,
-            inProgressTasks: data.in_progress_tasks || data.inProgressTasks,
-            pendingTasks: data.pending_tasks || data.pendingTasks,
-            avgCompletionTime: data.avg_time_per_task_minutes || data.avgTimePerTaskMinutes,
-            activeAnnotators: data.active_annotators || data.activeAnnotators,
-            activeReviewers: data.active_reviewers || data.activeReviewers,
+            total_tasks: data.total_tasks ?? 0,
+            completed_tasks: data.completed_tasks ?? 0,
+            in_progress_tasks: data.in_progress_tasks ?? 0,
+            pending_tasks: data.pending_tasks ?? 0,
+            avg_completion_time: data.avg_time_per_task_minutes ?? 0,
+            active_annotators: data.active_annotators ?? 0,
+            active_reviewers: data.active_reviewers ?? 0,
           });
         }
       }
@@ -205,8 +214,8 @@ const TaskManagement: React.FC<TaskManagementProps> = ({
       const response = await fetch('/api/v1/annotation/tasks/assign', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          task_id: selectedTask.taskId,
+        body: fetchJsonBody({
+          task_id: selectedTask.task_id,
           user_id: values.userId,
           priority: values.priority,
           deadline: values.deadline?.toISOString(),
@@ -231,8 +240,8 @@ const TaskManagement: React.FC<TaskManagementProps> = ({
       const response = await fetch('/api/v1/annotation/tasks/assign', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          task_id: task.taskId,
+        body: fetchJsonBody({
+          task_id: task.task_id,
           role: 'annotator',
           priority: task.priority,
         }),
@@ -289,19 +298,19 @@ const TaskManagement: React.FC<TaskManagementProps> = ({
     },
     {
       title: t('ai_annotation:tasks.project'),
-      dataIndex: 'projectName',
-      key: 'projectName',
+      dataIndex: 'project_name',
+      key: 'project_name',
     },
     {
       title: t('ai_annotation:tasks.assigned_to'),
-      dataIndex: 'assignedTo',
-      key: 'assignedTo',
+      dataIndex: 'assigned_to',
+      key: 'assigned_to',
       render: (assignedTo: string | undefined, record: AnnotationTask) => (
         assignedTo ? (
           <Space>
             <Avatar size="small" icon={<UserOutlined />} />
             <span>{assignedTo}</span>
-            {record.assignedBy === 'ai' && (
+            {record.assigned_by === 'ai' && (
               <Tooltip title={t('ai_annotation:tasks.ai_assigned')}>
                 <RobotOutlined style={{ color: '#1890ff' }} />
               </Tooltip>
@@ -340,8 +349,8 @@ const TaskManagement: React.FC<TaskManagementProps> = ({
       title: t('ai_annotation:tasks.progress'),
       key: 'progress',
       render: (_, record: AnnotationTask) => {
-        const total = record.metrics.totalItems;
-        const completed = record.metrics.humanAnnotated + record.metrics.aiPreAnnotated;
+        const total = record.metrics.total_items;
+        const completed = record.metrics.human_annotated + record.metrics.ai_pre_annotated;
         const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
         return (
           <Tooltip title={`${completed}/${total}`}>
@@ -362,7 +371,7 @@ const TaskManagement: React.FC<TaskManagementProps> = ({
       key: 'actions',
       render: (_, record: AnnotationTask) => (
         <Space>
-          {!record.assignedTo && (
+          {!record.assigned_to && (
             <>
               <Button
                 size="small"
@@ -398,7 +407,7 @@ const TaskManagement: React.FC<TaskManagementProps> = ({
             <Card>
               <Statistic
                 title={t('ai_annotation:tasks.total_tasks')}
-                value={stats.totalTasks}
+                value={stats.total_tasks}
                 prefix={<BarChartOutlined />}
               />
             </Card>
@@ -407,7 +416,7 @@ const TaskManagement: React.FC<TaskManagementProps> = ({
             <Card>
               <Statistic
                 title={t('ai_annotation:tasks.completed')}
-                value={stats.completedTasks}
+                value={stats.completed_tasks}
                 prefix={<CheckCircleOutlined />}
                 valueStyle={{ color: '#52c41a' }}
               />
@@ -417,7 +426,7 @@ const TaskManagement: React.FC<TaskManagementProps> = ({
             <Card>
               <Statistic
                 title={t('ai_annotation:tasks.in_progress')}
-                value={stats.inProgressTasks}
+                value={stats.in_progress_tasks}
                 prefix={<SyncOutlined spin />}
                 valueStyle={{ color: '#1890ff' }}
               />
@@ -427,7 +436,7 @@ const TaskManagement: React.FC<TaskManagementProps> = ({
             <Card>
               <Statistic
                 title={t('ai_annotation:tasks.active_annotators')}
-                value={stats.activeAnnotators}
+                value={stats.active_annotators}
                 prefix={<TeamOutlined />}
               />
             </Card>
@@ -452,7 +461,7 @@ const TaskManagement: React.FC<TaskManagementProps> = ({
                 <Table
                   dataSource={tasks}
                   columns={taskColumns}
-                  rowKey="taskId"
+                  rowKey="task_id"
                   loading={loading}
                   pagination={{ pageSize: 10 }}
                 />

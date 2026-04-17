@@ -47,6 +47,7 @@ import {
 import { useTranslation } from 'react-i18next';
 
 import type { EngineConfig } from '@/pages/AIAnnotation/EngineConfiguration';
+import { fetchJsonBody, fetchJsonResponseToSnake } from '@/utils/jsonCase';
 
 interface LLMProviderConfigProps {
   engines: EngineConfig[];
@@ -209,10 +210,16 @@ const LLMProviderConfig: React.FC<LLMProviderConfigProps> = ({
       const response = await fetch('/api/v1/annotation/engines/test-connection', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(testPayload),
+        body: fetchJsonBody(testPayload),
       });
 
-      const result = await response.json();
+      const result = await fetchJsonResponseToSnake<{
+        success?: boolean;
+        message?: string;
+        error?: string;
+        latency?: number;
+        model?: string;
+      }>(response);
 
       if (response.ok && result.success) {
         setConnectionResult({
@@ -616,7 +623,7 @@ const LLMProviderConfig: React.FC<LLMProviderConfigProps> = ({
               {engines.map((engine) => (
                 <Select.Option key={engine.id} value={engine.id}>
                   <Space>
-                    <Tag color="blue">{engine.engineType}</Tag>
+                    <Tag color="blue">{engine.engine_type}</Tag>
                     {engine.model}
                   </Space>
                 </Select.Option>

@@ -3,6 +3,7 @@ import { Card, Form, Input, Select, Switch, Button, Space, message, Tabs, Statis
 import { SaveOutlined, ReloadOutlined, DatabaseOutlined, CloudOutlined, SettingOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
+import { keysToCamelDeep, keysToSnakeDeep } from '@/utils/jsonCase';
 import { useTranslation } from 'react-i18next';
 
 const { TabPane } = Tabs;
@@ -90,22 +91,23 @@ const AdminSystem: React.FC = () => {
   const { data: config, isLoading } = useQuery<SystemConfig>({
     queryKey: ['system-config'],
     queryFn: async () => {
-      const res = await api.get<SystemConfig>('/api/v1/admin/system/config');
-      return res.data;
+      const res = await api.get('/api/v1/admin/system/config');
+      return keysToCamelDeep(res.data) as SystemConfig;
     },
   });
 
   const { data: status, isLoading: statusLoading } = useQuery<SystemStatus>({
     queryKey: ['system-status'],
     queryFn: async () => {
-      const res = await api.get<SystemStatus>('/api/v1/admin/system/status');
-      return res.data;
+      const res = await api.get('/api/v1/admin/system/status');
+      return keysToCamelDeep(res.data) as SystemStatus;
     },
     refetchInterval: 30000, // 每30秒刷新一次
   });
 
   const updateConfigMutation = useMutation({
-    mutationFn: (data: SystemConfig) => api.put('/api/v1/admin/system/config', data),
+    mutationFn: (data: SystemConfig) =>
+      api.put('/api/v1/admin/system/config', keysToSnakeDeep(data) as Record<string, unknown>),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['system-config'] });
       message.success(t('system.configSaveSuccess'));

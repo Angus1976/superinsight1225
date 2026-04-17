@@ -5,6 +5,7 @@
  */
 
 import apiClient from './api/client';
+import { apiRequestToSnake, apiResponseToSnake } from '@/utils/jsonCase';
 
 // ============================================================================
 // Types
@@ -83,8 +84,8 @@ const BASE_URL = '/api/v1/rbac';
 export const rbacApi = {
   // Role Management
   async createRole(data: CreateRoleRequest): Promise<Role> {
-    const response = await apiClient.post<Role>(`${BASE_URL}/roles`, data);
-    return response.data;
+    const response = await apiClient.post<Role>(`${BASE_URL}/roles`, apiRequestToSnake(data));
+    return apiResponseToSnake<Role>(response.data);
   },
 
   async listRoles(params?: {
@@ -93,17 +94,20 @@ export const rbacApi = {
     search?: string;
   }): Promise<Role[]> {
     const response = await apiClient.get<Role[]>(`${BASE_URL}/roles`, { params });
-    return response.data;
+    return apiResponseToSnake<Role[]>(response.data);
   },
 
   async getRole(roleId: string): Promise<Role> {
     const response = await apiClient.get<Role>(`${BASE_URL}/roles/${roleId}`);
-    return response.data;
+    return apiResponseToSnake<Role>(response.data);
   },
 
   async updateRole(roleId: string, data: UpdateRoleRequest): Promise<Role> {
-    const response = await apiClient.put<Role>(`${BASE_URL}/roles/${roleId}`, data);
-    return response.data;
+    const response = await apiClient.put<Role>(
+      `${BASE_URL}/roles/${roleId}`,
+      apiRequestToSnake(data)
+    );
+    return apiResponseToSnake<Role>(response.data);
   },
 
   async deleteRole(roleId: string): Promise<void> {
@@ -114,16 +118,16 @@ export const rbacApi = {
   async assignRoleToUser(userId: string, data: AssignRoleRequest): Promise<UserRoleAssignment> {
     const response = await apiClient.post<UserRoleAssignment>(
       `${BASE_URL}/users/${userId}/roles`,
-      data
+      apiRequestToSnake(data)
     );
-    return response.data;
+    return apiResponseToSnake<UserRoleAssignment>(response.data);
   },
 
   async getUserRoles(userId: string): Promise<UserRoleAssignment[]> {
     const response = await apiClient.get<UserRoleAssignment[]>(
       `${BASE_URL}/users/${userId}/roles`
     );
-    return response.data;
+    return apiResponseToSnake<UserRoleAssignment[]>(response.data);
   },
 
   async revokeRoleFromUser(userId: string, roleId: string): Promise<void> {
@@ -134,9 +138,9 @@ export const rbacApi = {
   async checkPermission(data: CheckPermissionRequest): Promise<PermissionCheckResponse> {
     const response = await apiClient.post<PermissionCheckResponse>(
       `${BASE_URL}/check`,
-      data
+      apiRequestToSnake(data)
     );
-    return response.data;
+    return apiResponseToSnake<PermissionCheckResponse>(response.data);
   },
 
   async checkPermissionsBulk(
@@ -145,16 +149,16 @@ export const rbacApi = {
   ): Promise<{ results: PermissionCheckResponse[] }> {
     const response = await apiClient.post<{ results: PermissionCheckResponse[] }>(
       `${BASE_URL}/check/bulk`,
-      { user_id: userId, checks }
+      apiRequestToSnake({ user_id: userId, checks })
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async getUserPermissions(userId: string): Promise<UserPermissions> {
     const response = await apiClient.get<UserPermissions>(
       `${BASE_URL}/users/${userId}/permissions`
     );
-    return response.data;
+    return apiResponseToSnake<UserPermissions>(response.data);
   },
 };
 

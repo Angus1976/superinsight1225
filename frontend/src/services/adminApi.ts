@@ -12,6 +12,11 @@
  */
 
 import apiClient from './api/client';
+import { keysToSnakeDeep } from '@/utils/jsonCase';
+
+/** 统一为 snake_case，兼容后端或中间层返回 camelCase */
+const snOut = (d: unknown) => keysToSnakeDeep(d);
+const snIn = (d: unknown) => keysToSnakeDeep(d);
 
 // ==================== Types ====================
 
@@ -345,32 +350,32 @@ export const adminApi = {
   // Dashboard
   async getDashboard(): Promise<DashboardData> {
     const response = await apiClient.get<DashboardData>(`${ADMIN_API_BASE}/dashboard`);
-    return response.data;
+    return snOut(response.data) as DashboardData;
   },
 
   // LLM Configuration
   async listLLMConfigs(tenantId?: string, activeOnly = true): Promise<LLMConfigResponse[]> {
     const params = { tenant_id: tenantId, active_only: activeOnly };
     const response = await apiClient.get<LLMConfigResponse[]>(`${ADMIN_API_BASE}/config/llm`, { params });
-    return response.data;
+    return snOut(response.data) as typeof response.data;
   },
 
   async getLLMConfig(configId: string, tenantId?: string): Promise<LLMConfigResponse> {
     const params = { tenant_id: tenantId };
     const response = await apiClient.get<LLMConfigResponse>(`${ADMIN_API_BASE}/config/llm/${configId}`, { params });
-    return response.data;
+    return snOut(response.data) as typeof response.data;
   },
 
   async createLLMConfig(config: LLMConfigCreate, userId: string, userName = 'Unknown', tenantId?: string): Promise<LLMConfigResponse> {
     const params = { user_id: userId, user_name: userName, tenant_id: tenantId };
-    const response = await apiClient.post<LLMConfigResponse>(`${ADMIN_API_BASE}/config/llm`, config, { params });
-    return response.data;
+    const response = await apiClient.post<LLMConfigResponse>(`${ADMIN_API_BASE}/config/llm`, snIn(config), { params });
+    return snOut(response.data) as typeof response.data;
   },
 
   async updateLLMConfig(configId: string, config: LLMConfigUpdate, userId: string, userName = 'Unknown', tenantId?: string): Promise<LLMConfigResponse> {
     const params = { user_id: userId, user_name: userName, tenant_id: tenantId };
-    const response = await apiClient.put<LLMConfigResponse>(`${ADMIN_API_BASE}/config/llm/${configId}`, config, { params });
-    return response.data;
+    const response = await apiClient.put<LLMConfigResponse>(`${ADMIN_API_BASE}/config/llm/${configId}`, snIn(config), { params });
+    return snOut(response.data) as typeof response.data;
   },
 
   async deleteLLMConfig(configId: string, userId: string, userName = 'Unknown', tenantId?: string): Promise<void> {
@@ -380,32 +385,32 @@ export const adminApi = {
 
   async testLLMConnection(configId: string): Promise<ConnectionTestResult> {
     const response = await apiClient.post<ConnectionTestResult>(`${ADMIN_API_BASE}/config/llm/${configId}/test`);
-    return response.data;
+    return snOut(response.data) as typeof response.data;
   },
 
   // Database Configuration
   async listDBConfigs(tenantId?: string, activeOnly = true): Promise<DBConfigResponse[]> {
     const params = { tenant_id: tenantId, active_only: activeOnly };
     const response = await apiClient.get<DBConfigResponse[]>(`${ADMIN_API_BASE}/config/databases`, { params });
-    return response.data;
+    return snOut(response.data) as typeof response.data;
   },
 
   async getDBConfig(configId: string, tenantId?: string): Promise<DBConfigResponse> {
     const params = { tenant_id: tenantId };
     const response = await apiClient.get<DBConfigResponse>(`${ADMIN_API_BASE}/config/databases/${configId}`, { params });
-    return response.data;
+    return snOut(response.data) as typeof response.data;
   },
 
   async createDBConfig(config: DBConfigCreate, userId: string, userName = 'Unknown', tenantId?: string): Promise<DBConfigResponse> {
     const params = { user_id: userId, user_name: userName, tenant_id: tenantId };
-    const response = await apiClient.post<DBConfigResponse>(`${ADMIN_API_BASE}/config/databases`, config, { params });
-    return response.data;
+    const response = await apiClient.post<DBConfigResponse>(`${ADMIN_API_BASE}/config/databases`, snIn(config), { params });
+    return snOut(response.data) as typeof response.data;
   },
 
   async updateDBConfig(configId: string, config: DBConfigUpdate, userId: string, userName = 'Unknown', tenantId?: string): Promise<DBConfigResponse> {
     const params = { user_id: userId, user_name: userName, tenant_id: tenantId };
-    const response = await apiClient.put<DBConfigResponse>(`${ADMIN_API_BASE}/config/databases/${configId}`, config, { params });
-    return response.data;
+    const response = await apiClient.put<DBConfigResponse>(`${ADMIN_API_BASE}/config/databases/${configId}`, snIn(config), { params });
+    return snOut(response.data) as typeof response.data;
   },
 
   async deleteDBConfig(configId: string, userId: string, userName = 'Unknown', tenantId?: string): Promise<void> {
@@ -416,32 +421,32 @@ export const adminApi = {
   async testDBConnection(configId: string, tenantId?: string): Promise<ConnectionTestResult> {
     const params = { tenant_id: tenantId };
     const response = await apiClient.post<ConnectionTestResult>(`${ADMIN_API_BASE}/config/databases/${configId}/test`, null, { params });
-    return response.data;
+    return snOut(response.data) as typeof response.data;
   },
 
   // Sync Strategy
   async listSyncStrategies(tenantId?: string, enabledOnly = false): Promise<SyncStrategyResponse[]> {
     const params = { tenant_id: tenantId, enabled_only: enabledOnly };
     const response = await apiClient.get<SyncStrategyResponse[]>(`${ADMIN_API_BASE}/config/sync`, { params });
-    return response.data;
+    return snOut(response.data) as typeof response.data;
   },
 
   async getSyncStrategy(strategyId: string, tenantId?: string): Promise<SyncStrategyResponse> {
     const params = { tenant_id: tenantId };
     const response = await apiClient.get<SyncStrategyResponse>(`${ADMIN_API_BASE}/config/sync/${strategyId}`, { params });
-    return response.data;
+    return snOut(response.data) as typeof response.data;
   },
 
   async createSyncStrategy(strategy: SyncStrategyCreate, userId: string, userName = 'Unknown', tenantId?: string): Promise<SyncStrategyResponse> {
     const params = { user_id: userId, user_name: userName, tenant_id: tenantId };
-    const response = await apiClient.post<SyncStrategyResponse>(`${ADMIN_API_BASE}/config/sync`, strategy, { params });
-    return response.data;
+    const response = await apiClient.post<SyncStrategyResponse>(`${ADMIN_API_BASE}/config/sync`, snIn(strategy), { params });
+    return snOut(response.data) as typeof response.data;
   },
 
   async updateSyncStrategy(strategyId: string, strategy: SyncStrategyUpdate, userId: string, userName = 'Unknown', tenantId?: string): Promise<SyncStrategyResponse> {
     const params = { user_id: userId, user_name: userName, tenant_id: tenantId };
-    const response = await apiClient.put<SyncStrategyResponse>(`${ADMIN_API_BASE}/config/sync/${strategyId}`, strategy, { params });
-    return response.data;
+    const response = await apiClient.put<SyncStrategyResponse>(`${ADMIN_API_BASE}/config/sync/${strategyId}`, snIn(strategy), { params });
+    return snOut(response.data) as typeof response.data;
   },
 
   async deleteSyncStrategy(strategyId: string, userId: string, userName = 'Unknown', tenantId?: string): Promise<void> {
@@ -452,53 +457,56 @@ export const adminApi = {
   async triggerSync(strategyId: string, userId: string): Promise<SyncJobResponse> {
     const params = { user_id: userId };
     const response = await apiClient.post<SyncJobResponse>(`${ADMIN_API_BASE}/config/sync/${strategyId}/trigger`, null, { params });
-    return response.data;
+    return snOut(response.data) as typeof response.data;
   },
 
   async retrySync(jobId: string, userId: string): Promise<SyncJobResponse> {
     const params = { user_id: userId };
     const response = await apiClient.post<SyncJobResponse>(`${ADMIN_API_BASE}/config/sync/retry/${jobId}`, null, { params });
-    return response.data;
+    return snOut(response.data) as typeof response.data;
   },
 
   async getSyncHistory(strategyId: string, limit = 50): Promise<SyncHistoryResponse[]> {
     const params = { limit };
     const response = await apiClient.get<SyncHistoryResponse[]>(`${ADMIN_API_BASE}/config/sync/${strategyId}/history`, { params });
-    return response.data;
+    return snOut(response.data) as typeof response.data;
   },
 
   // SQL Builder
   async getDBSchema(dbConfigId: string): Promise<DatabaseSchema> {
     const response = await apiClient.get<DatabaseSchema>(`${ADMIN_API_BASE}/sql-builder/schema/${dbConfigId}`);
-    return response.data;
+    return snOut(response.data) as typeof response.data;
   },
 
   async buildSQL(queryConfig: QueryConfig, dbType = 'postgresql'): Promise<{ sql: string; validation: ValidationResult }> {
-    const response = await apiClient.post<{ sql: string; validation: ValidationResult }>(`${ADMIN_API_BASE}/sql-builder/build`, { query_config: queryConfig, db_type: dbType });
-    return response.data;
+    const response = await apiClient.post<{ sql: string; validation: ValidationResult }>(
+      `${ADMIN_API_BASE}/sql-builder/build`,
+      snIn({ query_config: queryConfig, db_type: dbType }),
+    );
+    return snOut(response.data) as typeof response.data;
   },
 
   async validateSQL(sql: string, dbType = 'postgresql'): Promise<ValidationResult> {
     const params = { sql, db_type: dbType };
     const response = await apiClient.post<ValidationResult>(`${ADMIN_API_BASE}/sql-builder/validate`, null, { params });
-    return response.data;
+    return snOut(response.data) as typeof response.data;
   },
 
   async executeSQL(request: ExecuteSQLRequest): Promise<QueryResult> {
-    const response = await apiClient.post<QueryResult>(`${ADMIN_API_BASE}/sql-builder/execute`, request);
-    return response.data;
+    const response = await apiClient.post<QueryResult>(`${ADMIN_API_BASE}/sql-builder/execute`, snIn(request));
+    return snOut(response.data) as typeof response.data;
   },
 
   async listQueryTemplates(dbConfigId?: string, tenantId?: string): Promise<QueryTemplateResponse[]> {
     const params = { db_config_id: dbConfigId, tenant_id: tenantId };
     const response = await apiClient.get<QueryTemplateResponse[]>(`${ADMIN_API_BASE}/sql-builder/templates`, { params });
-    return response.data;
+    return snOut(response.data) as typeof response.data;
   },
 
   async createQueryTemplate(template: QueryTemplateCreate, userId: string, tenantId?: string): Promise<QueryTemplateResponse> {
     const params = { user_id: userId, tenant_id: tenantId };
-    const response = await apiClient.post<QueryTemplateResponse>(`${ADMIN_API_BASE}/sql-builder/templates`, template, { params });
-    return response.data;
+    const response = await apiClient.post<QueryTemplateResponse>(`${ADMIN_API_BASE}/sql-builder/templates`, snIn(template), { params });
+    return snOut(response.data) as typeof response.data;
   },
 
   async deleteQueryTemplate(templateId: string): Promise<void> {
@@ -516,42 +524,46 @@ export const adminApi = {
     offset?: number;
   }): Promise<ConfigHistoryResponse[]> {
     const response = await apiClient.get<ConfigHistoryResponse[]>(`${ADMIN_API_BASE}/config/history`, { params });
-    return response.data;
+    return snOut(response.data) as typeof response.data;
   },
 
   async getConfigHistoryById(historyId: string): Promise<ConfigHistoryResponse> {
     const response = await apiClient.get<ConfigHistoryResponse>(`${ADMIN_API_BASE}/config/history/${historyId}`);
-    return response.data;
+    return snOut(response.data) as typeof response.data;
   },
 
   async getConfigDiff(historyId: string): Promise<ConfigDiff> {
     const response = await apiClient.get<ConfigDiff>(`${ADMIN_API_BASE}/config/history/${historyId}/diff`);
-    return response.data;
+    return snOut(response.data) as typeof response.data;
   },
 
   async rollbackConfig(historyId: string, userId: string, userName = 'Unknown', reason?: string): Promise<{ success: boolean; rolled_back_config: Record<string, unknown> }> {
     const params = { user_id: userId, user_name: userName };
-    const response = await apiClient.post<{ success: boolean; rolled_back_config: Record<string, unknown> }>(`${ADMIN_API_BASE}/config/history/${historyId}/rollback`, { reason }, { params });
-    return response.data;
+    const response = await apiClient.post<{ success: boolean; rolled_back_config: Record<string, unknown> }>(
+      `${ADMIN_API_BASE}/config/history/${historyId}/rollback`,
+      snIn({ reason }),
+      { params },
+    );
+    return snOut(response.data) as typeof response.data;
   },
 
   // Third-Party Tools
   async listThirdPartyConfigs(tenantId?: string): Promise<ThirdPartyConfigResponse[]> {
     const params = { tenant_id: tenantId };
     const response = await apiClient.get<ThirdPartyConfigResponse[]>(`${ADMIN_API_BASE}/config/third-party`, { params });
-    return response.data;
+    return snOut(response.data) as typeof response.data;
   },
 
   async createThirdPartyConfig(config: ThirdPartyConfigCreate, userId: string, tenantId?: string): Promise<ThirdPartyConfigResponse> {
     const params = { user_id: userId, tenant_id: tenantId };
-    const response = await apiClient.post<ThirdPartyConfigResponse>(`${ADMIN_API_BASE}/config/third-party`, config, { params });
-    return response.data;
+    const response = await apiClient.post<ThirdPartyConfigResponse>(`${ADMIN_API_BASE}/config/third-party`, snIn(config), { params });
+    return snOut(response.data) as typeof response.data;
   },
 
   async updateThirdPartyConfig(configId: string, config: ThirdPartyConfigUpdate, userId: string, tenantId?: string): Promise<ThirdPartyConfigResponse> {
     const params = { user_id: userId, tenant_id: tenantId };
-    const response = await apiClient.put<ThirdPartyConfigResponse>(`${ADMIN_API_BASE}/config/third-party/${configId}`, config, { params });
-    return response.data;
+    const response = await apiClient.put<ThirdPartyConfigResponse>(`${ADMIN_API_BASE}/config/third-party/${configId}`, snIn(config), { params });
+    return snOut(response.data) as typeof response.data;
   },
 
   async deleteThirdPartyConfig(configId: string, userId: string): Promise<void> {
@@ -561,23 +573,23 @@ export const adminApi = {
 
   async checkThirdPartyHealth(configId: string): Promise<ConnectionTestResult> {
     const response = await apiClient.post<ConnectionTestResult>(`${ADMIN_API_BASE}/config/third-party/${configId}/health`);
-    return response.data;
+    return snOut(response.data) as typeof response.data;
   },
 
   // Validation
   async validateLLMConfig(config: LLMConfigCreate): Promise<ValidationResult> {
-    const response = await apiClient.post<ValidationResult>(`${ADMIN_API_BASE}/validate/llm`, config);
-    return response.data;
+    const response = await apiClient.post<ValidationResult>(`${ADMIN_API_BASE}/validate/llm`, snIn(config));
+    return snOut(response.data) as typeof response.data;
   },
 
   async validateDBConfig(config: DBConfigCreate): Promise<ValidationResult> {
-    const response = await apiClient.post<ValidationResult>(`${ADMIN_API_BASE}/validate/database`, config);
-    return response.data;
+    const response = await apiClient.post<ValidationResult>(`${ADMIN_API_BASE}/validate/database`, snIn(config));
+    return snOut(response.data) as typeof response.data;
   },
 
   async validateSyncConfig(config: SyncStrategyCreate): Promise<ValidationResult> {
-    const response = await apiClient.post<ValidationResult>(`${ADMIN_API_BASE}/validate/sync`, config);
-    return response.data;
+    const response = await apiClient.post<ValidationResult>(`${ADMIN_API_BASE}/validate/sync`, snIn(config));
+    return snOut(response.data) as typeof response.data;
   },
 };
 

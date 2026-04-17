@@ -5,6 +5,7 @@ import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined, LockOutlined,
 import type { ColumnsType } from 'antd/es/table';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
+import { keysToCamelDeep, keysToSnakeDeep } from '@/utils/jsonCase';
 
 interface User {
   id: string;
@@ -47,35 +48,42 @@ const AdminUsers: React.FC = () => {
   const { data: users, isLoading } = useQuery({
     queryKey: ['admin-users', selectedTenant, selectedRole, selectedStatus],
     queryFn: async (): Promise<User[]> => {
-      const res = await api.get<User[]>('/api/v1/admin/users', {
+      const res = await api.get('/api/v1/admin/users', {
         params: {
           tenant: selectedTenant !== 'all' ? selectedTenant : undefined,
           role: selectedRole !== 'all' ? selectedRole : undefined,
           status: selectedStatus !== 'all' ? selectedStatus : undefined,
         },
       });
-      return res.data;
+      const raw = res.data as unknown;
+      if (!Array.isArray(raw)) return [];
+      return raw.map((u) => keysToCamelDeep(u) as User);
     },
   });
 
   const { data: tenants } = useQuery({
     queryKey: ['tenants-list'],
     queryFn: async (): Promise<TenantListItem[]> => {
-      const res = await api.get<TenantListItem[]>('/api/v1/admin/tenants/list');
-      return res.data;
+      const res = await api.get('/api/v1/admin/tenants/list');
+      const raw = res.data as unknown;
+      if (!Array.isArray(raw)) return [];
+      return raw.map((t) => keysToCamelDeep(t) as TenantListItem);
     },
   });
 
   const { data: roles } = useQuery({
     queryKey: ['roles-list'],
     queryFn: async (): Promise<RoleListItem[]> => {
-      const res = await api.get<RoleListItem[]>('/api/v1/security/roles/list');
-      return res.data;
+      const res = await api.get('/api/v1/security/roles/list');
+      const raw = res.data as unknown;
+      if (!Array.isArray(raw)) return [];
+      return raw.map((r) => keysToCamelDeep(r) as RoleListItem);
     },
   });
 
   const createUserMutation = useMutation({
-    mutationFn: (data: any) => api.post('/api/v1/admin/users', data),
+    mutationFn: (data: Record<string, unknown>) =>
+      api.post('/api/v1/admin/users', keysToSnakeDeep(data)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       setIsModalVisible(false);
@@ -88,8 +96,8 @@ const AdminUsers: React.FC = () => {
   });
 
   const updateUserMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) =>
-      api.put(`/api/v1/admin/users/${id}`, data),
+    mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) =>
+      api.put(`/api/v1/admin/users/${id}`, keysToSnakeDeep(data)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       setIsModalVisible(false);

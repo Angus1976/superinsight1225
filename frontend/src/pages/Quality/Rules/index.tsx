@@ -5,6 +5,7 @@ import type { ColumnsType } from 'antd/es/table';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/services/api';
+import { keysToCamelDeep, keysToSnakeDeep } from '@/utils/jsonCase';
 
 interface QualityRule {
   id: string;
@@ -32,13 +33,22 @@ const QualityRules: React.FC = () => {
   const { data: rules, isLoading } = useQuery<QualityRule[]>({
     queryKey: ['quality-rules'],
     queryFn: async () => {
-      const res = await api.get<QualityRule[]>('/api/v1/quality/rules');
-      return res.data;
+      const res = await api.get('/api/v1/quality/rules');
+      const raw = res.data as unknown;
+      if (raw === null || raw === undefined) return [];
+      if (Array.isArray(raw)) {
+        return raw.map((r) => keysToCamelDeep(r) as QualityRule);
+      }
+      if (typeof raw === 'object' && Array.isArray((raw as { rules?: unknown }).rules)) {
+        return (raw as { rules: unknown[] }).rules.map((r) => keysToCamelDeep(r) as QualityRule);
+      }
+      return [];
     },
   });
 
   const createRuleMutation = useMutation({
-    mutationFn: (data: any) => api.post('/api/v1/quality/rules', data),
+    mutationFn: (data: Record<string, unknown>) =>
+      api.post('/api/v1/quality/rules', keysToSnakeDeep(data)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quality-rules'] });
       setIsModalVisible(false);
@@ -51,8 +61,8 @@ const QualityRules: React.FC = () => {
   });
 
   const updateRuleMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => 
-      api.put(`/api/v1/quality/rules/${id}`, data),
+    mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) =>
+      api.put(`/api/v1/quality/rules/${id}`, keysToSnakeDeep(data)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['quality-rules'] });
       setIsModalVisible(false);

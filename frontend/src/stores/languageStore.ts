@@ -19,6 +19,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import i18n from '@/locales/config';
 import { DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES, type SupportedLanguage } from '@/constants';
+import { fetchJsonBody } from '@/utils/jsonCase';
 
 // Label Studio postMessage types
 export interface LabelStudioLanguageMessage {
@@ -89,7 +90,7 @@ export const useLanguageStore = create<LanguageState>()(
         fetch('/api/settings/language', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ language: lang }),
+          body: fetchJsonBody({ language: lang }),
         }).catch(() => {
           // Silently ignore API errors - language is already saved locally
         });

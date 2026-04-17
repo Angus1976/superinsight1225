@@ -11,6 +11,7 @@
  */
 
 import apiClient from './api/client';
+import { apiRequestToSnake, apiResponseToSnake } from '@/utils/jsonCase';
 
 // ==================== Types ====================
 
@@ -380,56 +381,68 @@ const BASE_URL = '/api/v1/annotation';
 
 // Pre-Annotation APIs
 export async function submitPreAnnotation(request: PreAnnotationRequest): Promise<PreAnnotationResponse> {
-  const response = await apiClient.post<PreAnnotationResponse>(`${BASE_URL}/pre-annotate`, request);
-  return response.data;
+  const response = await apiClient.post<PreAnnotationResponse>(
+    `${BASE_URL}/pre-annotate`,
+    apiRequestToSnake(request)
+  );
+  return apiResponseToSnake(response.data);
 }
 
 export async function getPreAnnotationProgress(taskId: string): Promise<PreAnnotationProgress> {
   const response = await apiClient.get<PreAnnotationProgress>(`${BASE_URL}/pre-annotate/${taskId}/progress`);
-  return response.data;
+  return apiResponseToSnake(response.data);
 }
 
 export async function getPreAnnotationResults(taskId: string): Promise<PreAnnotationResult[]> {
   const response = await apiClient.get<PreAnnotationResult[]>(`${BASE_URL}/pre-annotate/${taskId}/results`);
-  return response.data;
+  return apiResponseToSnake(response.data);
 }
 
 // Suggestion APIs
 export async function getSuggestion(request: SuggestionRequest): Promise<SuggestionResponse> {
-  const response = await apiClient.post<SuggestionResponse>(`${BASE_URL}/suggestion`, request);
-  return response.data;
+  const response = await apiClient.post<SuggestionResponse>(`${BASE_URL}/suggestion`, apiRequestToSnake(request));
+  return apiResponseToSnake(response.data);
 }
 
 export async function submitFeedback(request: FeedbackRequest): Promise<{ status: string; message: string }> {
-  const response = await apiClient.post<{ status: string; message: string }>(`${BASE_URL}/feedback`, request);
-  return response.data;
+  const response = await apiClient.post<{ status: string; message: string }>(
+    `${BASE_URL}/feedback`,
+    apiRequestToSnake(request)
+  );
+  return apiResponseToSnake(response.data);
 }
 
 export async function applyBatchCoverage(request: BatchCoverageRequest): Promise<BatchCoverageResponse> {
-  const response = await apiClient.post<BatchCoverageResponse>(`${BASE_URL}/batch-coverage`, request);
-  return response.data;
+  const response = await apiClient.post<BatchCoverageResponse>(
+    `${BASE_URL}/batch-coverage`,
+    apiRequestToSnake(request)
+  );
+  return apiResponseToSnake(response.data);
 }
 
 export async function getConflicts(projectId: string, status?: string): Promise<ConflictInfo[]> {
   const params = status ? { status } : {};
   const response = await apiClient.get<ConflictInfo[]>(`${BASE_URL}/conflicts/${projectId}`, { params });
-  return response.data;
+  return apiResponseToSnake(response.data);
 }
 
 export async function resolveConflict(request: ConflictResolutionRequest): Promise<{ status: string; message: string }> {
-  const response = await apiClient.post<{ status: string; message: string }>(`${BASE_URL}/conflicts/resolve`, request);
-  return response.data;
+  const response = await apiClient.post<{ status: string; message: string }>(
+    `${BASE_URL}/conflicts/resolve`,
+    apiRequestToSnake(request)
+  );
+  return apiResponseToSnake(response.data);
 }
 
 // Validation APIs
 export async function validateAnnotations(request: ValidationRequest): Promise<ValidationResponse> {
-  const response = await apiClient.post<ValidationResponse>(`${BASE_URL}/validate`, request);
-  return response.data;
+  const response = await apiClient.post<ValidationResponse>(`${BASE_URL}/validate`, apiRequestToSnake(request));
+  return apiResponseToSnake(response.data);
 }
 
 export async function getQualityReport(projectId: string): Promise<QualityReport> {
   const response = await apiClient.get<QualityReport>(`${BASE_URL}/quality-report/${projectId}`);
-  return response.data;
+  return apiResponseToSnake(response.data);
 }
 
 export async function getInconsistencies(projectId: string, severity?: string, limit?: number): Promise<Inconsistency[]> {
@@ -437,7 +450,7 @@ export async function getInconsistencies(projectId: string, severity?: string, l
   if (severity) params.severity = severity;
   if (limit) params.limit = limit;
   const response = await apiClient.get<Inconsistency[]>(`${BASE_URL}/inconsistencies/${projectId}`, { params });
-  return response.data;
+  return apiResponseToSnake(response.data);
 }
 
 export async function createReviewTasks(
@@ -447,56 +460,71 @@ export async function createReviewTasks(
   priority?: string,
   assigneeId?: string
 ): Promise<{ task_ids: string[]; total_created: number }> {
-  const response = await apiClient.post<{ task_ids: string[]; total_created: number }>(`${BASE_URL}/review-tasks`, {
-    project_id: projectId,
-    document_ids: documentIds,
-    review_type: reviewType || 'quality',
-    priority: priority || 'normal',
-    assignee_id: assigneeId,
-  });
-  return response.data;
+  const response = await apiClient.post<{ task_ids: string[]; total_created: number }>(
+    `${BASE_URL}/review-tasks`,
+    apiRequestToSnake({
+      project_id: projectId,
+      document_ids: documentIds,
+      review_type: reviewType || 'quality',
+      priority: priority || 'normal',
+      assignee_id: assigneeId,
+    })
+  );
+  return apiResponseToSnake(response.data);
 }
 
 // Engine APIs
 export async function listEngines(): Promise<{ engines: EngineInfo[]; count: number }> {
   const response = await apiClient.get<{ engines: EngineInfo[]; count: number }>(`${BASE_URL}/engines`);
-  return response.data;
+  return apiResponseToSnake(response.data);
 }
 
 export async function registerEngine(request: EngineRegistrationRequest): Promise<{ engine_id: string; status: string; message: string }> {
-  const response = await apiClient.post<{ engine_id: string; status: string; message: string }>(`${BASE_URL}/engines`, request);
-  return response.data;
+  const response = await apiClient.post<{ engine_id: string; status: string; message: string }>(
+    `${BASE_URL}/engines`,
+    apiRequestToSnake(request)
+  );
+  return apiResponseToSnake(response.data);
 }
 
 export async function compareEngines(request: EngineComparisonRequest): Promise<EngineComparisonResponse> {
-  const response = await apiClient.post<EngineComparisonResponse>(`${BASE_URL}/engines/compare`, request);
-  return response.data;
+  const response = await apiClient.post<EngineComparisonResponse>(
+    `${BASE_URL}/engines/compare`,
+    apiRequestToSnake(request)
+  );
+  return apiResponseToSnake(response.data);
 }
 
 export async function updateEngineConfig(engineId: string, config: Record<string, unknown>): Promise<{ status: string; message: string }> {
-  const response = await apiClient.put<{ status: string; message: string }>(`${BASE_URL}/engines/${engineId}`, config);
-  return response.data;
+  const response = await apiClient.put<{ status: string; message: string }>(
+    `${BASE_URL}/engines/${engineId}`,
+    apiRequestToSnake(config)
+  );
+  return apiResponseToSnake(response.data);
 }
 
 // Task APIs
 export async function assignTask(request: TaskAssignmentRequest): Promise<TaskAssignment> {
-  const response = await apiClient.post<TaskAssignment>(`${BASE_URL}/tasks/assign`, request);
-  return response.data;
+  const response = await apiClient.post<TaskAssignment>(`${BASE_URL}/tasks/assign`, apiRequestToSnake(request));
+  return apiResponseToSnake(response.data);
 }
 
 export async function getTaskDetails(taskId: string): Promise<AnnotationTask> {
   const response = await apiClient.get<AnnotationTask>(`${BASE_URL}/tasks/${taskId}`);
-  return response.data;
+  return apiResponseToSnake(response.data);
 }
 
 export async function submitAnnotation(request: TaskSubmissionRequest): Promise<{ status: string; message: string }> {
-  const response = await apiClient.post<{ status: string; message: string }>(`${BASE_URL}/submit`, request);
-  return response.data;
+  const response = await apiClient.post<{ status: string; message: string }>(
+    `${BASE_URL}/submit`,
+    apiRequestToSnake(request)
+  );
+  return apiResponseToSnake(response.data);
 }
 
 export async function getProgressMetrics(projectId: string): Promise<ProgressMetrics> {
   const response = await apiClient.get<ProgressMetrics>(`${BASE_URL}/progress/${projectId}`);
-  return response.data;
+  return apiResponseToSnake(response.data);
 }
 
 export async function getTasks(params: {
@@ -507,14 +535,14 @@ export async function getTasks(params: {
   page_size?: number;
 }): Promise<TaskListResponse> {
   const response = await apiClient.get<TaskListResponse>(`${BASE_URL}/tasks`, { params });
-  return response.data;
+  return apiResponseToSnake(response.data);
 }
 
 // Metrics APIs
 export async function getAIMetrics(projectId?: string): Promise<AIMetrics> {
   const params = projectId ? { project_id: projectId } : {};
   const response = await apiClient.get<AIMetrics>(`${BASE_URL}/metrics`, { params });
-  return response.data;
+  return apiResponseToSnake(response.data);
 }
 
 export async function getQualityMetrics(projectId: string, dateRange?: string, engineId?: string): Promise<QualityMetrics> {
@@ -522,76 +550,82 @@ export async function getQualityMetrics(projectId: string, dateRange?: string, e
   if (dateRange) params.date_range = dateRange;
   if (engineId) params.engine_id = engineId;
   const response = await apiClient.get<QualityMetrics>(`${BASE_URL}/quality-metrics`, { params });
-  return response.data;
+  return apiResponseToSnake(response.data);
 }
 
 // Routing Config APIs
 export async function getRoutingConfig(): Promise<{ config: RoutingConfig; status: string; message: string }> {
   const response = await apiClient.get<{ config: RoutingConfig; status: string; message: string }>(`${BASE_URL}/routing/config`);
-  return response.data;
+  return apiResponseToSnake(response.data);
 }
 
 export async function updateRoutingConfig(config: RoutingConfig): Promise<{ config: RoutingConfig; status: string; message: string }> {
-  const response = await apiClient.put<{ config: RoutingConfig; status: string; message: string }>(`${BASE_URL}/routing/config`, config);
-  return response.data;
+  const response = await apiClient.put<{ config: RoutingConfig; status: string; message: string }>(
+    `${BASE_URL}/routing/config`,
+    apiRequestToSnake(config)
+  );
+  return apiResponseToSnake(response.data);
 }
 
 // WebSocket Stats
 export async function getWebSocketStats(): Promise<Record<string, unknown>> {
   const response = await apiClient.get<Record<string, unknown>>(`${BASE_URL}/ws/stats`);
-  return response.data;
+  return apiResponseToSnake(response.data);
 }
 
 // Desensitization APIs
 export async function getDesensitizationRules(taskId: string): Promise<DesensitizationRule[]> {
   const response = await apiClient.get<DesensitizationRule[]>(`${BASE_URL}/desensitization/${taskId}/rules`);
-  return response.data;
+  return apiResponseToSnake(response.data);
 }
 
 export async function saveDesensitizationRules(taskId: string, rules: DesensitizationRule[]): Promise<void> {
-  await apiClient.put(`${BASE_URL}/desensitization/${taskId}/rules`, { rules });
+  await apiClient.put(`${BASE_URL}/desensitization/${taskId}/rules`, apiRequestToSnake({ rules }));
 }
 
 export async function previewDesensitization(taskId: string, rules: DesensitizationRule[]): Promise<DesensitizationPreview[]> {
-  const response = await apiClient.post<DesensitizationPreview[]>(`${BASE_URL}/desensitization/${taskId}/preview`, { rules });
-  return response.data;
+  const response = await apiClient.post<DesensitizationPreview[]>(
+    `${BASE_URL}/desensitization/${taskId}/preview`,
+    apiRequestToSnake({ rules })
+  );
+  return apiResponseToSnake(response.data);
 }
 
 // Audit APIs
 export async function getAuditLogs(filter: AuditFilter): Promise<AuditLogEntry[]> {
   const response = await apiClient.get<AuditLogEntry[]>(`${BASE_URL}/desensitization/audit`, { params: filter });
-  return response.data;
+  return apiResponseToSnake(response.data);
 }
 
 // External Annotation APIs
 export async function generateExternalLink(taskId: string): Promise<{ url: string; token: string }> {
   const response = await apiClient.post<{ url: string; token: string }>(`${BASE_URL}/external/${taskId}/link`);
-  return response.data;
+  return apiResponseToSnake(response.data);
 }
 
 export async function getExternalTask(token: string): Promise<{ task: AnnotationTask; data: unknown[] }> {
   const response = await apiClient.get<{ task: AnnotationTask; data: unknown[] }>(`${BASE_URL}/external/task/${token}`);
-  return response.data;
+  return apiResponseToSnake(response.data);
 }
 
 export async function submitExternalAnnotation(token: string, annotations: unknown[]): Promise<void> {
-  await apiClient.post(`${BASE_URL}/external/task/${token}/submit`, { annotations });
+  await apiClient.post(`${BASE_URL}/external/task/${token}/submit`, apiRequestToSnake({ annotations }));
 }
 
 // Rhythm APIs
 export async function updateRhythmConfig(config: RhythmConfig): Promise<void> {
-  await apiClient.put(`${BASE_URL}/rhythm/config`, config);
+  await apiClient.put(`${BASE_URL}/rhythm/config`, apiRequestToSnake(config));
 }
 
 export async function getRhythmStatus(): Promise<RhythmStatus> {
   const response = await apiClient.get<RhythmStatus>(`${BASE_URL}/rhythm/status`);
-  return response.data;
+  return apiResponseToSnake(response.data);
 }
 
 // Annotation Mapping APIs
 export async function mapBackAnnotations(taskId: string): Promise<{ mappedCount: number }> {
   const response = await apiClient.post<{ mappedCount: number }>(`${BASE_URL}/desensitization/${taskId}/map-back`);
-  return response.data;
+  return apiResponseToSnake(response.data);
 }
 
 // ==================== WebSocket Helper ====================

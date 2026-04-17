@@ -8,6 +8,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import apiClient from '@/services/api/client';
+import { apiResponseToSnake } from '@/utils/jsonCase';
 import type { AxiosError } from 'axios';
 
 // ============================================================================
@@ -183,11 +184,12 @@ export const useSemanticStore = create<SemanticStore>()(
           const formData = new FormData();
           formData.append('file', file);
 
-          const { data } = await apiClient.post<SemJobCreateResponse>(
+          const createRes = await apiClient.post<SemJobCreateResponse>(
             `${API_BASE}/jobs`,
             formData,
             { headers: { 'Content-Type': 'multipart/form-data' } },
           );
+          const data = apiResponseToSnake<SemJobCreateResponse>(createRes.data);
 
           const newJob: SemanticJob = {
             job_id: data.job_id,
@@ -220,7 +222,8 @@ export const useSemanticStore = create<SemanticStore>()(
       fetchJob: async (jobId: string): Promise<void> => {
         set({ isLoadingJob: true, error: null }, false, 'fetchJob/start');
         try {
-          const { data } = await apiClient.get<SemanticJob>(`${API_BASE}/jobs/${jobId}`);
+          const jobRes = await apiClient.get<SemanticJob>(`${API_BASE}/jobs/${jobId}`);
+          const data = apiResponseToSnake<SemanticJob>(jobRes.data);
 
           const job: SemanticJob = {
             ...data,
@@ -246,7 +249,8 @@ export const useSemanticStore = create<SemanticStore>()(
       fetchJobs: async (): Promise<void> => {
         set({ isLoadingJobs: true, error: null }, false, 'fetchJobs/start');
         try {
-          const { data } = await apiClient.get<SemJobListResponse>(`${API_BASE}/jobs`);
+          const listRes = await apiClient.get<SemJobListResponse>(`${API_BASE}/jobs`);
+          const data = apiResponseToSnake<SemJobListResponse>(listRes.data);
 
           const jobs: SemanticJob[] = data.items.map((item) => ({
             job_id: item.job_id,
@@ -278,10 +282,11 @@ export const useSemanticStore = create<SemanticStore>()(
             params.record_type = recordType;
           }
 
-          const { data } = await apiClient.get<SemRecordListResponse>(
+          const recordsRes = await apiClient.get<SemRecordListResponse>(
             `${API_BASE}/jobs/${jobId}/records`,
             { params },
           );
+          const data = apiResponseToSnake<SemRecordListResponse>(recordsRes.data);
 
           set({
             records: data.items,

@@ -46,77 +46,60 @@ import {
 import { useTranslation } from 'react-i18next';
 import type { ColumnsType } from 'antd/es/table';
 
-// Types
-interface RoutingConfig {
-  lowConfidenceThreshold: number;
-  highConfidenceThreshold: number;
-  autoAssignHighConfidence: boolean;
-  skillBasedRouting: boolean;
-  workloadBalancing: boolean;
-  reviewLevels: number;
-}
+import type { AIMetrics, RoutingConfig } from '@/services/aiAnnotationApi';
+import { fetchJsonBody, fetchJsonResponseToSnake } from '@/utils/jsonCase';
 
 interface Task {
-  taskId: string;
+  task_id: string;
   title: string;
-  projectId: string;
-  projectName: string;
-  assignedTo?: string;
-  assignedBy: 'ai' | 'manual';
+  project_id: string;
+  project_name: string;
+  assigned_to?: string;
+  assigned_by: 'ai' | 'manual';
   status: 'pending' | 'in_progress' | 'review' | 'completed';
   priority: 'high' | 'medium' | 'low';
-  aiSuggestion?: {
+  ai_suggestion?: {
     confidence: number;
-    suggestedAssignee: string;
+    suggested_assignee: string;
     reasoning: string;
   };
   metrics: {
-    totalItems: number;
-    humanAnnotated: number;
-    aiPreAnnotated: number;
-    aiSuggested: number;
-    reviewRequired: number;
+    total_items: number;
+    human_annotated: number;
+    ai_pre_annotated: number;
+    ai_suggested: number;
+    review_required: number;
   };
-  createdAt: string;
+  created_at: string;
   deadline?: string;
 }
 
 interface TeamMember {
-  userId: string;
+  user_id: string;
   username: string;
   avatar?: string;
   skills: string[];
   workload: {
-    activeTasks: number;
+    active_tasks: number;
     capacity: number;
   };
   performance: {
     accuracy: number;
-    avgSpeed: number; // items per hour
-    aiAgreementRate: number;
-    tasksCompleted: number;
+    avg_speed: number;
+    ai_agreement_rate: number;
+    tasks_completed: number;
   };
-}
-
-interface AIMetrics {
-  totalAnnotations: number;
-  humanAnnotations: number;
-  aiPreAnnotations: number;
-  aiSuggestions: number;
-  aiAcceptanceRate: number;
-  timeSaved: number; // in hours
-  qualityScore: number;
 }
 
 const TaskManagement: React.FC = () => {
   const { t } = useTranslation(['task_management', 'common', 'collaboration']);
   const [routingConfig, setRoutingConfig] = useState<RoutingConfig>({
-    lowConfidenceThreshold: 0.5,
-    highConfidenceThreshold: 0.9,
-    autoAssignHighConfidence: false,
-    skillBasedRouting: true,
-    workloadBalancing: true,
-    reviewLevels: 2,
+    low_confidence_threshold: 0.5,
+    high_confidence_threshold: 0.9,
+    auto_assign_high_confidence: false,
+    skill_based_routing: true,
+    workload_balancing: true,
+    review_levels: 2,
   });
   const [tasks, setTasks] = useState<Task[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
@@ -137,7 +120,7 @@ const TaskManagement: React.FC = () => {
       const params = selectedProject !== 'all' ? `?project_id=${selectedProject}` : '';
       const response = await fetch(`/api/v1/annotation/tasks${params}`);
       if (!response.ok) throw new Error('Failed to fetch tasks');
-      const data = await response.json();
+      const data = await fetchJsonResponseToSnake<{ tasks?: Task[] }>(response);
       setTasks(data.tasks || []);
     } catch (error) {
       message.error(t('task_management:errors.fetch_tasks_failed'));
@@ -151,7 +134,7 @@ const TaskManagement: React.FC = () => {
     try {
       const response = await fetch('/api/v1/users/team');
       if (!response.ok) throw new Error('Failed to fetch team');
-      const data = await response.json();
+      const data = await fetchJsonResponseToSnake<{ members?: TeamMember[] }>(response);
       setTeamMembers(data.members || []);
     } catch (error) {
       console.error('Failed to fetch team members:', error);
@@ -163,7 +146,7 @@ const TaskManagement: React.FC = () => {
       const params = selectedProject !== 'all' ? `?project_id=${selectedProject}` : '';
       const response = await fetch(`/api/v1/annotation/metrics${params}`);
       if (!response.ok) throw new Error('Failed to fetch metrics');
-      const data = await response.json();
+      const data = await fetchJsonResponseToSnake<{ metrics?: AIMetrics }>(response);
       setAIMetrics(data.metrics || null);
     } catch (error) {
       console.error('Failed to fetch AI metrics:', error);
@@ -175,9 +158,9 @@ const TaskManagement: React.FC = () => {
       const response = await fetch('/api/v1/annotation/tasks/assign', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: fetchJsonBody({
           task_id: taskId,
-          assignee_id: assigneeId,
+          user_id: assigneeId,
         }),
       });
 
@@ -199,7 +182,7 @@ const TaskManagement: React.FC = () => {
       const response = await fetch('/api/v1/annotation/routing/config', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newConfig),
+        body: fetchJsonBody(newConfig),
       });
 
       if (!response.ok) throw new Error('Failed to update config');
@@ -238,8 +221,8 @@ const TaskManagement: React.FC = () => {
   const taskColumns: ColumnsType<Task> = [
     {
       title: t('task_management:columns.task_id'),
-      dataIndex: 'taskId',
-      key: 'taskId',
+      dataIndex: 'task_id',
+      key: 'task_id',
       width: 120,
       render: (id) => <a>{id}</a>,
     },
@@ -251,18 +234,18 @@ const TaskManagement: React.FC = () => {
     },
     {
       title: t('task_management:columns.project'),
-      dataIndex: 'projectName',
-      key: 'projectName',
+      dataIndex: 'project_name',
+      key: 'project_name',
     },
     {
       title: t('task_management:columns.assignee'),
-      dataIndex: 'assignedTo',
-      key: 'assignedTo',
+      dataIndex: 'assigned_to',
+      key: 'assigned_to',
       render: (assignee, record) => (
         <Space>
           {assignee ? (
             <>
-              <Badge dot color={record.assignedBy === 'ai' ? '#1890ff' : '#52c41a'}>
+              <Badge dot color={record.assigned_by === 'ai' ? '#1890ff' : '#52c41a'}>
                 <UserOutlined />
               </Badge>
               {assignee}
@@ -275,23 +258,23 @@ const TaskManagement: React.FC = () => {
     },
     {
       title: t('task_management:columns.ai_suggestion'),
-      key: 'aiSuggestion',
+      key: 'ai_suggestion',
       render: (_, record) => {
-        if (!record.aiSuggestion) return '-';
+        if (!record.ai_suggestion) return '-';
         return (
           <Tooltip
             title={
               <div>
-                <div><strong>{t('task_management:labels.suggested_assignee')}:</strong> {record.aiSuggestion.suggestedAssignee}</div>
-                <div><strong>{t('task_management:labels.reasoning')}:</strong> {record.aiSuggestion.reasoning}</div>
+                <div><strong>{t('task_management:labels.suggested_assignee')}:</strong> {record.ai_suggestion.suggested_assignee}</div>
+                <div><strong>{t('task_management:labels.reasoning')}:</strong> {record.ai_suggestion.reasoning}</div>
               </div>
             }
           >
             <Tag
               icon={<RobotOutlined />}
-              color={record.aiSuggestion.confidence >= routingConfig.highConfidenceThreshold ? 'green' : 'blue'}
+              color={record.ai_suggestion.confidence >= routingConfig.high_confidence_threshold ? 'green' : 'blue'}
             >
-              {(record.aiSuggestion.confidence * 100).toFixed(0)}%
+              {(record.ai_suggestion.confidence * 100).toFixed(0)}%
             </Tag>
           </Tooltip>
         );
@@ -301,17 +284,17 @@ const TaskManagement: React.FC = () => {
       title: t('task_management:columns.progress'),
       key: 'progress',
       render: (_, record) => {
-        const total = record.metrics.totalItems;
-        const completed = record.metrics.humanAnnotated + record.metrics.aiPreAnnotated;
+        const total = record.metrics.total_items;
+        const completed = record.metrics.human_annotated + record.metrics.ai_pre_annotated;
         const percentage = total > 0 ? (completed / total) * 100 : 0;
         return (
           <Tooltip
             title={
               <div>
-                <div>{t('task_management:labels.human_annotated')}: {record.metrics.humanAnnotated}</div>
-                <div>{t('task_management:labels.ai_pre_annotated')}: {record.metrics.aiPreAnnotated}</div>
-                <div>{t('task_management:labels.ai_suggested')}: {record.metrics.aiSuggested}</div>
-                <div>{t('task_management:labels.review_required')}: {record.metrics.reviewRequired}</div>
+                <div>{t('task_management:labels.human_annotated')}: {record.metrics.human_annotated}</div>
+                <div>{t('task_management:labels.ai_pre_annotated')}: {record.metrics.ai_pre_annotated}</div>
+                <div>{t('task_management:labels.ai_suggested')}: {record.metrics.ai_suggested}</div>
+                <div>{t('task_management:labels.review_required')}: {record.metrics.review_required}</div>
               </div>
             }
           >
@@ -346,12 +329,12 @@ const TaskManagement: React.FC = () => {
       key: 'actions',
       render: (_, record) => (
         <Space>
-          {!record.assignedTo && record.aiSuggestion && (
+          {!record.assigned_to && record.ai_suggestion && (
             <Button
               type="link"
               size="small"
               icon={<RobotOutlined />}
-              onClick={() => handleAssignTask(record.taskId, record.aiSuggestion!.suggestedAssignee)}
+              onClick={() => handleAssignTask(record.task_id, record.ai_suggestion!.suggested_assignee)}
             >
               {t('task_management:actions.accept_ai_suggestion')}
             </Button>
@@ -360,9 +343,9 @@ const TaskManagement: React.FC = () => {
             size="small"
             placeholder={t('task_management:actions.assign_manually')}
             style={{ width: 150 }}
-            onChange={(value) => handleAssignTask(record.taskId, value)}
+            onChange={(value) => handleAssignTask(record.task_id, value)}
             options={teamMembers.map((member) => ({
-              value: member.userId,
+              value: member.user_id,
               label: member.username,
             }))}
           />
@@ -395,7 +378,7 @@ const TaskManagement: React.FC = () => {
       title: t('task_management:columns.workload'),
       key: 'workload',
       render: (_, record) => {
-        const percentage = (record.workload.activeTasks / record.workload.capacity) * 100;
+        const percentage = (record.workload.active_tasks / record.workload.capacity) * 100;
         return (
           <Space>
             <Progress
@@ -404,7 +387,7 @@ const TaskManagement: React.FC = () => {
               width={40}
               status={percentage > 80 ? 'exception' : 'normal'}
             />
-            <span>{record.workload.activeTasks}/{record.workload.capacity}</span>
+            <span>{record.workload.active_tasks}/{record.workload.capacity}</span>
           </Space>
         );
       },
@@ -421,8 +404,8 @@ const TaskManagement: React.FC = () => {
     },
     {
       title: t('task_management:columns.ai_agreement'),
-      dataIndex: ['performance', 'aiAgreementRate'],
-      key: 'aiAgreementRate',
+      dataIndex: ['performance', 'ai_agreement_rate'],
+      key: 'ai_agreement_rate',
       render: (rate) => (
         <Tag color={rate >= 0.8 ? 'green' : rate >= 0.6 ? 'blue' : 'orange'}>
           {(rate * 100).toFixed(1)}%
@@ -431,13 +414,13 @@ const TaskManagement: React.FC = () => {
     },
     {
       title: t('task_management:columns.tasks_completed'),
-      dataIndex: ['performance', 'tasksCompleted'],
-      key: 'tasksCompleted',
+      dataIndex: ['performance', 'tasks_completed'],
+      key: 'tasks_completed',
     },
     {
       title: t('task_management:columns.avg_speed'),
-      dataIndex: ['performance', 'avgSpeed'],
-      key: 'avgSpeed',
+      dataIndex: ['performance', 'avg_speed'],
+      key: 'avg_speed',
       render: (speed) => `${speed.toFixed(1)} ${t('task_management:labels.items_per_hour')}`,
     },
   ];
@@ -455,7 +438,7 @@ const TaskManagement: React.FC = () => {
             <Card>
               <Statistic
                 title={t('task_management:metrics.total_annotations')}
-                value={aiMetrics.totalAnnotations}
+                value={aiMetrics.total_annotations}
                 prefix={<CheckCircleOutlined />}
               />
             </Card>
@@ -464,7 +447,7 @@ const TaskManagement: React.FC = () => {
             <Card>
               <Statistic
                 title={t('task_management:metrics.human_annotations')}
-                value={aiMetrics.humanAnnotations}
+                value={aiMetrics.human_annotations}
                 prefix={<UserOutlined />}
                 valueStyle={{ color: '#52c41a' }}
               />
@@ -474,7 +457,7 @@ const TaskManagement: React.FC = () => {
             <Card>
               <Statistic
                 title={t('task_management:metrics.ai_annotations')}
-                value={aiMetrics.aiPreAnnotations}
+                value={aiMetrics.ai_pre_annotations}
                 prefix={<RobotOutlined />}
                 valueStyle={{ color: '#1890ff' }}
               />
@@ -484,17 +467,17 @@ const TaskManagement: React.FC = () => {
             <Card>
               <Statistic
                 title={t('task_management:metrics.ai_acceptance_rate')}
-                value={(aiMetrics.aiAcceptanceRate * 100).toFixed(1)}
+                value={(aiMetrics.ai_acceptance_rate * 100).toFixed(1)}
                 suffix="%"
                 prefix={
-                  aiMetrics.aiAcceptanceRate >= 0.7 ? (
+                  aiMetrics.ai_acceptance_rate >= 0.7 ? (
                     <RiseOutlined style={{ color: '#52c41a' }} />
                   ) : (
                     <FallOutlined style={{ color: '#ff4d4f' }} />
                   )
                 }
                 valueStyle={{
-                  color: aiMetrics.aiAcceptanceRate >= 0.7 ? '#52c41a' : '#ff4d4f',
+                  color: aiMetrics.ai_acceptance_rate >= 0.7 ? '#52c41a' : '#ff4d4f',
                 }}
               />
             </Card>
@@ -503,7 +486,7 @@ const TaskManagement: React.FC = () => {
             <Card>
               <Statistic
                 title={t('task_management:metrics.time_saved')}
-                value={aiMetrics.timeSaved.toFixed(1)}
+                value={aiMetrics.time_saved_hours.toFixed(1)}
                 suffix={t('task_management:labels.hours')}
                 prefix={<ClockCircleOutlined />}
                 valueStyle={{ color: '#faad14' }}
@@ -514,11 +497,11 @@ const TaskManagement: React.FC = () => {
             <Card>
               <Statistic
                 title={t('task_management:metrics.quality_score')}
-                value={(aiMetrics.qualityScore * 100).toFixed(1)}
+                value={(aiMetrics.quality_score * 100).toFixed(1)}
                 suffix="%"
                 prefix={<ThunderboltOutlined />}
                 valueStyle={{
-                  color: aiMetrics.qualityScore >= 0.9 ? '#52c41a' : '#1890ff',
+                  color: aiMetrics.quality_score >= 0.9 ? '#52c41a' : '#1890ff',
                 }}
               />
             </Card>
@@ -559,7 +542,7 @@ const TaskManagement: React.FC = () => {
                 <Table
                   columns={taskColumns}
                   dataSource={tasks}
-                  rowKey="taskId"
+                  rowKey="task_id"
                   loading={loading}
                   pagination={{
                     pageSize: 10,
@@ -581,7 +564,7 @@ const TaskManagement: React.FC = () => {
               <Table
                 columns={teamColumns}
                 dataSource={teamMembers}
-                rowKey="userId"
+                rowKey="user_id"
                 pagination={false}
               />
             ),
@@ -613,9 +596,9 @@ const TaskManagement: React.FC = () => {
                           min={0}
                           max={1}
                           step={0.05}
-                          value={routingConfig.lowConfidenceThreshold}
+                          value={routingConfig.low_confidence_threshold}
                           onChange={(value) =>
-                            handleUpdateRoutingConfig({ lowConfidenceThreshold: value })
+                            handleUpdateRoutingConfig({ low_confidence_threshold: value })
                           }
                           marks={{
                             0: '0%',
@@ -635,9 +618,9 @@ const TaskManagement: React.FC = () => {
                           min={0}
                           max={1}
                           step={0.05}
-                          value={routingConfig.highConfidenceThreshold}
+                          value={routingConfig.high_confidence_threshold}
                           onChange={(value) =>
-                            handleUpdateRoutingConfig({ highConfidenceThreshold: value })
+                            handleUpdateRoutingConfig({ high_confidence_threshold: value })
                           }
                           marks={{
                             0: '0%',
@@ -658,9 +641,9 @@ const TaskManagement: React.FC = () => {
                         tooltip={t('task_management:config.auto_assign_tooltip')}
                       >
                         <Switch
-                          checked={routingConfig.autoAssignHighConfidence}
+                          checked={routingConfig.auto_assign_high_confidence}
                           onChange={(checked) =>
-                            handleUpdateRoutingConfig({ autoAssignHighConfidence: checked })
+                            handleUpdateRoutingConfig({ auto_assign_high_confidence: checked })
                           }
                         />
                       </Form.Item>
@@ -672,9 +655,9 @@ const TaskManagement: React.FC = () => {
                         tooltip={t('task_management:config.skill_based_tooltip')}
                       >
                         <Switch
-                          checked={routingConfig.skillBasedRouting}
+                          checked={routingConfig.skill_based_routing}
                           onChange={(checked) =>
-                            handleUpdateRoutingConfig({ skillBasedRouting: checked })
+                            handleUpdateRoutingConfig({ skill_based_routing: checked })
                           }
                         />
                       </Form.Item>
@@ -686,9 +669,9 @@ const TaskManagement: React.FC = () => {
                         tooltip={t('task_management:config.workload_balancing_tooltip')}
                       >
                         <Switch
-                          checked={routingConfig.workloadBalancing}
+                          checked={routingConfig.workload_balancing}
                           onChange={(checked) =>
-                            handleUpdateRoutingConfig({ workloadBalancing: checked })
+                            handleUpdateRoutingConfig({ workload_balancing: checked })
                           }
                         />
                       </Form.Item>

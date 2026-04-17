@@ -10,6 +10,7 @@
  */
 
 import apiClient from './api/client';
+import { apiRequestToSnake, apiResponseToSnake } from '@/utils/jsonCase';
 import { API_ENDPOINTS } from '@/constants';
 import { 
   getAnnotationTemplate, 
@@ -167,7 +168,7 @@ export const labelStudioService = {
       const response = await apiClient.get<ProjectValidationResult>(
         API_ENDPOINTS.LABEL_STUDIO.VALIDATE_PROJECT(projectId)
       );
-      return response.data;
+      return apiResponseToSnake(response.data);
     } catch (error: unknown) {
       // Handle 404 - project not found
       if (error && typeof error === 'object' && 'response' in error) {
@@ -196,9 +197,9 @@ export const labelStudioService = {
   async ensureProject(request: EnsureProjectRequest): Promise<EnsureProjectResponse> {
     const response = await apiClient.post<EnsureProjectResponse>(
       API_ENDPOINTS.LABEL_STUDIO.ENSURE_PROJECT,
-      request
+      apiRequestToSnake(request)
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   /**
@@ -210,9 +211,9 @@ export const labelStudioService = {
   async importTasks(projectId: string, taskId: string): Promise<ImportTasksResponse> {
     const response = await apiClient.post<ImportTasksResponse>(
       API_ENDPOINTS.LABEL_STUDIO.IMPORT_TASKS(projectId),
-      { task_id: taskId }
+      apiRequestToSnake({ task_id: taskId })
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   /**
@@ -226,7 +227,7 @@ export const labelStudioService = {
       API_ENDPOINTS.LABEL_STUDIO.AUTH_URL(projectId),
       { params: { language } }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   /**
@@ -238,7 +239,7 @@ export const labelStudioService = {
     const response = await apiClient.get<LabelStudioProject>(
       API_ENDPOINTS.LABEL_STUDIO.PROJECT_BY_ID(projectId)
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   /**
@@ -389,7 +390,7 @@ export const labelStudioService = {
     const response = await apiClient.post<SyncAnnotationsResponse>(
       API_ENDPOINTS.LABEL_STUDIO.SYNC_ANNOTATIONS(projectId)
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 };
 

@@ -51,6 +51,7 @@ import { useTranslation } from 'react-i18next';
 import type { ColumnsType } from 'antd/es/table';
 
 import type { EngineConfig } from '@/pages/AIAnnotation/EngineConfiguration';
+import { fetchJsonBody, fetchJsonResponseToSnake } from '@/utils/jsonCase';
 
 interface ABTestingPanelProps {
   engines: EngineConfig[];
@@ -60,41 +61,41 @@ interface ABTestingPanelProps {
 interface ABTest {
   id: string;
   name: string;
-  engineA: string;
-  engineB: string;
-  trafficSplit: number;
-  sampleSize: number;
+  engine_a: string;
+  engine_b: string;
+  traffic_split: number;
+  sample_size: number;
   status: 'draft' | 'running' | 'paused' | 'completed' | 'stopped';
   metrics: string[];
-  startedAt?: string;
-  completedAt?: string;
+  started_at?: string;
+  completed_at?: string;
   results?: ABTestResults;
 }
 
 interface ABTestResults {
-  engineA: {
+  engine_a: {
     name: string;
     samples: number;
     accuracy: number;
     consistency: number;
     completeness: number;
     recall: number;
-    avgLatency: number;
-    totalCost: number;
+    avg_latency: number;
+    total_cost: number;
   };
-  engineB: {
+  engine_b: {
     name: string;
     samples: number;
     accuracy: number;
     consistency: number;
     completeness: number;
     recall: number;
-    avgLatency: number;
-    totalCost: number;
+    avg_latency: number;
+    total_cost: number;
   };
   winner?: 'A' | 'B' | 'tie';
   confidence: number;
-  pValue: number;
+  p_value: number;
 }
 
 const ABTestingPanel: React.FC<ABTestingPanelProps> = ({ engines, loading = false }) => {
@@ -123,7 +124,7 @@ const ABTestingPanel: React.FC<ABTestingPanelProps> = ({ engines, loading = fals
     try {
       const response = await fetch('/api/v1/annotation/ab-tests');
       if (!response.ok) return;
-      const data = await response.json();
+      const data = await fetchJsonResponseToSnake<{ tests?: ABTest[] }>(response);
       setTests(data.tests || []);
     } catch (error) {
       console.error('Failed to load A/B tests:', error);
@@ -134,8 +135,8 @@ const ABTestingPanel: React.FC<ABTestingPanelProps> = ({ engines, loading = fals
     setEditingTest(null);
     form.resetFields();
     form.setFieldsValue({
-      trafficSplit: 50,
-      sampleSize: 1000,
+      traffic_split: 50,
+      sample_size: 1000,
       metrics: ['accuracy', 'consistency', 'completeness', 'recall'],
     });
     setModalVisible(true);
@@ -162,7 +163,7 @@ const ABTestingPanel: React.FC<ABTestingPanelProps> = ({ engines, loading = fals
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(testData),
+        body: fetchJsonBody(testData),
       });
 
       if (!response.ok) throw new Error('Failed to save test');
@@ -268,7 +269,7 @@ const ABTestingPanel: React.FC<ABTestingPanelProps> = ({ engines, loading = fals
 
   const getEngineName = (engineId: string): string => {
     const engine = engines.find((e) => e.id === engineId);
-    return engine ? `${engine.engineType} (${engine.model})` : engineId;
+    return engine ? `${engine.engine_type} (${engine.model})` : engineId;
   };
 
   const columns: ColumnsType<ABTest> = [
@@ -291,18 +292,18 @@ const ABTestingPanel: React.FC<ABTestingPanelProps> = ({ engines, loading = fals
       render: (_, record: ABTest) => (
         <Space direction="vertical" size="small">
           <div>
-            <Tag color="blue">A:</Tag> {getEngineName(record.engineA)}
+            <Tag color="blue">A:</Tag> {getEngineName(record.engine_a)}
           </div>
           <div>
-            <Tag color="green">B:</Tag> {getEngineName(record.engineB)}
+            <Tag color="green">B:</Tag> {getEngineName(record.engine_b)}
           </div>
         </Space>
       ),
     },
     {
       title: t('ai_annotation:columns.traffic_split'),
-      dataIndex: 'trafficSplit',
-      key: 'trafficSplit',
+      dataIndex: 'traffic_split',
+      key: 'traffic_split',
       render: (split: number) => (
         <Tooltip title={`A: ${split}% / B: ${100 - split}%`}>
           <Progress
@@ -319,13 +320,13 @@ const ABTestingPanel: React.FC<ABTestingPanelProps> = ({ engines, loading = fals
       key: 'progress',
       render: (_, record: ABTest) => {
         const samplesCollected =
-          (record.results?.engineA.samples || 0) + (record.results?.engineB.samples || 0);
-        const percent = (samplesCollected / record.sampleSize) * 100;
+          (record.results?.engine_a.samples || 0) + (record.results?.engine_b.samples || 0);
+        const percent = (samplesCollected / record.sample_size) * 100;
         return (
           <div>
             <Progress percent={percent} />
             <div style={{ fontSize: 12, color: '#999' }}>
-              {samplesCollected} / {record.sampleSize} {t('ai_annotation:labels.samples')}
+              {samplesCollected} / {record.sample_size} {t('ai_annotation:labels.samples')}
             </div>
           </div>
         );
@@ -345,8 +346,8 @@ const ABTestingPanel: React.FC<ABTestingPanelProps> = ({ engines, loading = fals
           <Tag color="success">
             <CheckCircleOutlined />{' '}
             {record.results.winner === 'A'
-              ? getEngineName(record.engineA)
-              : getEngineName(record.engineB)}
+              ? getEngineName(record.engine_a)
+              : getEngineName(record.engine_b)}
           </Tag>
         );
       },
@@ -511,7 +512,7 @@ const ABTestingPanel: React.FC<ABTestingPanelProps> = ({ engines, loading = fals
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
-                name="engineA"
+                name="engine_a"
                 label={t('ai_annotation:fields.engine_a')}
                 rules={[{ required: true }]}
               >
@@ -526,7 +527,7 @@ const ABTestingPanel: React.FC<ABTestingPanelProps> = ({ engines, loading = fals
             </Col>
             <Col span={12}>
               <Form.Item
-                name="engineB"
+                name="engine_b"
                 label={t('ai_annotation:fields.engine_b')}
                 rules={[{ required: true }]}
               >
@@ -542,7 +543,7 @@ const ABTestingPanel: React.FC<ABTestingPanelProps> = ({ engines, loading = fals
           </Row>
 
           <Form.Item
-            name="trafficSplit"
+            name="traffic_split"
             label={t('ai_annotation:fields.traffic_split')}
             tooltip={t('ai_annotation:tooltips.traffic_split')}
           >
@@ -561,7 +562,7 @@ const ABTestingPanel: React.FC<ABTestingPanelProps> = ({ engines, loading = fals
           </Form.Item>
 
           <Form.Item
-            name="sampleSize"
+            name="sample_size"
             label={t('ai_annotation:fields.sample_size')}
             tooltip={t('ai_annotation:tooltips.sample_size')}
             rules={[{ required: true, type: 'number', min: 100, max: 100000 }]}
@@ -645,11 +646,11 @@ const ABTestingPanel: React.FC<ABTestingPanelProps> = ({ engines, loading = fals
                 <Card>
                   <Statistic
                     title={t('ai_annotation:stats.p_value')}
-                    value={selectedResults.pValue}
+                    value={selectedResults.p_value}
                     precision={4}
                     prefix={<LineChartOutlined />}
                     valueStyle={{
-                      color: selectedResults.pValue < 0.05 ? '#52c41a' : '#faad14',
+                      color: selectedResults.p_value < 0.05 ? '#52c41a' : '#faad14',
                     }}
                   />
                 </Card>
@@ -664,37 +665,37 @@ const ABTestingPanel: React.FC<ABTestingPanelProps> = ({ engines, loading = fals
                   title={
                     <Space>
                       <Tag color="blue">A</Tag>
-                      {selectedResults.engineA.name}
+                      {selectedResults.engine_a.name}
                     </Space>
                   }
                 >
                   <Space direction="vertical" style={{ width: '100%' }}>
                     <Statistic
                       title={t('ai_annotation:metrics.accuracy')}
-                      value={selectedResults.engineA.accuracy * 100}
+                      value={selectedResults.engine_a.accuracy * 100}
                       precision={2}
                       suffix="%"
                     />
                     <Statistic
                       title={t('ai_annotation:metrics.consistency')}
-                      value={selectedResults.engineA.consistency * 100}
+                      value={selectedResults.engine_a.consistency * 100}
                       precision={2}
                       suffix="%"
                     />
                     <Statistic
                       title={t('ai_annotation:metrics.completeness')}
-                      value={selectedResults.engineA.completeness * 100}
+                      value={selectedResults.engine_a.completeness * 100}
                       precision={2}
                       suffix="%"
                     />
                     <Statistic
                       title={t('ai_annotation:metrics.latency')}
-                      value={selectedResults.engineA.avgLatency}
+                      value={selectedResults.engine_a.avg_latency}
                       suffix="ms"
                     />
                     <Statistic
                       title={t('ai_annotation:metrics.total_cost')}
-                      value={selectedResults.engineA.totalCost}
+                      value={selectedResults.engine_a.total_cost}
                       precision={2}
                       prefix="$"
                     />
@@ -706,37 +707,37 @@ const ABTestingPanel: React.FC<ABTestingPanelProps> = ({ engines, loading = fals
                   title={
                     <Space>
                       <Tag color="green">B</Tag>
-                      {selectedResults.engineB.name}
+                      {selectedResults.engine_b.name}
                     </Space>
                   }
                 >
                   <Space direction="vertical" style={{ width: '100%' }}>
                     <Statistic
                       title={t('ai_annotation:metrics.accuracy')}
-                      value={selectedResults.engineB.accuracy * 100}
+                      value={selectedResults.engine_b.accuracy * 100}
                       precision={2}
                       suffix="%"
                     />
                     <Statistic
                       title={t('ai_annotation:metrics.consistency')}
-                      value={selectedResults.engineB.consistency * 100}
+                      value={selectedResults.engine_b.consistency * 100}
                       precision={2}
                       suffix="%"
                     />
                     <Statistic
                       title={t('ai_annotation:metrics.completeness')}
-                      value={selectedResults.engineB.completeness * 100}
+                      value={selectedResults.engine_b.completeness * 100}
                       precision={2}
                       suffix="%"
                     />
                     <Statistic
                       title={t('ai_annotation:metrics.latency')}
-                      value={selectedResults.engineB.avgLatency}
+                      value={selectedResults.engine_b.avg_latency}
                       suffix="ms"
                     />
                     <Statistic
                       title={t('ai_annotation:metrics.total_cost')}
-                      value={selectedResults.engineB.totalCost}
+                      value={selectedResults.engine_b.total_cost}
                       precision={2}
                       prefix="$"
                     />
@@ -745,7 +746,7 @@ const ABTestingPanel: React.FC<ABTestingPanelProps> = ({ engines, loading = fals
               </Col>
             </Row>
 
-            {selectedResults.pValue >= 0.05 && (
+            {selectedResults.p_value >= 0.05 && (
               <Alert
                 message={t('ai_annotation:alerts.not_statistically_significant_title')}
                 description={t('ai_annotation:alerts.not_statistically_significant_desc')}

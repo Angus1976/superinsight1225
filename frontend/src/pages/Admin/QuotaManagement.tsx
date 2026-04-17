@@ -35,7 +35,7 @@ const QuotaManagement: React.FC = () => {
   // Fetch tenants
   const { data: tenants, isLoading: tenantsLoading, refetch } = useQuery({
     queryKey: ['tenants'],
-    queryFn: () => tenantApi.list().then(res => res.data),
+    queryFn: () => tenantApi.list(),
   });
 
   // Fetch quota and usage for each tenant
@@ -46,14 +46,14 @@ const QuotaManagement: React.FC = () => {
       const results = await Promise.all(
         tenants.map(async (tenant) => {
           try {
-            const [quotaRes, usageRes] = await Promise.all([
+            const [quota, usage] = await Promise.all([
               quotaApi.get('tenant', tenant.id),
               quotaApi.getUsage('tenant', tenant.id),
             ]);
             return {
               tenant,
-              quota: quotaRes.data,
-              usage: usageRes.data,
+              quota,
+              usage,
             };
           } catch {
             return { tenant, quota: null, usage: null };

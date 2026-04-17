@@ -27,6 +27,7 @@ import {
   type RequestMetrics,
 } from '@/utils/networkOptimization';
 import apiClient from '@/services/api/client';
+import { apiResponseToSnake } from '@/utils/jsonCase';
 
 // ============================================
 // useNetworkStatus Hook
@@ -350,9 +351,10 @@ export function useRetryRequest<T>(
         },
       });
       
-      setData(response.data);
+      const normalized = apiResponseToSnake<T>(response.data);
+      setData(normalized);
       requestMetricsCollector.recordSuccess(0); // Response time tracked elsewhere
-      return response.data;
+      return normalized;
     } catch (err) {
       setError(err as Error);
       requestMetricsCollector.recordFailure();
@@ -406,8 +408,9 @@ export function useAdaptiveRequest<T>(
     try {
       const adaptedConfig = createAdaptiveRequestConfig(config, { priority });
       const response = await apiClient.request<T>(adaptedConfig);
-      setData(response.data);
-      return response.data;
+      const normalized = apiResponseToSnake<T>(response.data);
+      setData(normalized);
+      return normalized;
     } catch (err) {
       setError(err as Error);
       return null;

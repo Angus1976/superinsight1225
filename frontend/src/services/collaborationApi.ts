@@ -11,6 +11,7 @@
  */
 
 import apiClient from './api/client';
+import { apiRequestToSnake, apiResponseToSnake } from '@/utils/jsonCase';
 
 const BASE_URL = '/api/v1/collaboration';
 
@@ -127,113 +128,113 @@ export interface Platform {
 export const collaborationApi = {
   // Task Assignment
   async assignTask(taskId: string, annotatorId?: string, autoAssign = true, priority = 1) {
-    const response = await apiClient.post<TaskAssignment>(`${BASE_URL}/tasks/assign`, {
-      task_id: taskId,
-      annotator_id: annotatorId,
-      auto_assign: autoAssign,
-      priority,
-    });
-    return response.data;
+    const response = await apiClient.post<TaskAssignment>(
+      `${BASE_URL}/tasks/assign`,
+      apiRequestToSnake({
+        task_id: taskId,
+        annotator_id: annotatorId,
+        auto_assign: autoAssign,
+        priority,
+      })
+    );
+    return apiResponseToSnake(response.data);
   },
 
   async setTaskPriority(taskId: string, priority: number) {
     const response = await apiClient.post(`${BASE_URL}/tasks/${taskId}/priority`, null, {
       params: { priority },
     });
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async setTaskDeadline(taskId: string, deadline: Date) {
     const response = await apiClient.post(`${BASE_URL}/tasks/${taskId}/deadline`, null, {
       params: { deadline: deadline.toISOString() },
     });
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async getTaskAssignment(taskId: string) {
     const response = await apiClient.get<TaskAssignment>(`${BASE_URL}/tasks/${taskId}/assignment`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Collaboration
   async lockTask(taskId: string, userId: string) {
-    const response = await apiClient.post<TaskLock>(`${BASE_URL}/tasks/lock`, {
-      task_id: taskId,
-      user_id: userId,
-    });
-    return response.data;
+    const response = await apiClient.post<TaskLock>(
+      `${BASE_URL}/tasks/lock`,
+      apiRequestToSnake({ task_id: taskId, user_id: userId })
+    );
+    return apiResponseToSnake(response.data);
   },
 
   async unlockTask(taskId: string, userId: string) {
-    const response = await apiClient.post(`${BASE_URL}/tasks/unlock`, {
-      task_id: taskId,
-      user_id: userId,
-    });
-    return response.data;
+    const response = await apiClient.post(
+      `${BASE_URL}/tasks/unlock`,
+      apiRequestToSnake({ task_id: taskId, user_id: userId })
+    );
+    return apiResponseToSnake(response.data);
   },
 
   async saveAnnotationVersion(taskId: string, userId: string, annotation: Record<string, unknown>) {
-    const response = await apiClient.post<AnnotationVersion>(`${BASE_URL}/annotations/version`, {
-      task_id: taskId,
-      user_id: userId,
-      annotation,
-    });
-    return response.data;
+    const response = await apiClient.post<AnnotationVersion>(
+      `${BASE_URL}/annotations/version`,
+      apiRequestToSnake({ task_id: taskId, user_id: userId, annotation })
+    );
+    return apiResponseToSnake(response.data);
   },
 
   async getAnnotationVersions(taskId: string) {
     const response = await apiClient.get<{ versions: AnnotationVersion[] }>(
       `${BASE_URL}/annotations/${taskId}/versions`
     );
-    return response.data.versions;
+    return apiResponseToSnake(response.data).versions;
   },
 
   // Review
   async submitForReview(annotationId: string, annotatorId: string) {
-    const response = await apiClient.post<ReviewTask>(`${BASE_URL}/reviews/submit`, {
-      annotation_id: annotationId,
-      annotator_id: annotatorId,
-    });
-    return response.data;
+    const response = await apiClient.post<ReviewTask>(
+      `${BASE_URL}/reviews/submit`,
+      apiRequestToSnake({ annotation_id: annotationId, annotator_id: annotatorId })
+    );
+    return apiResponseToSnake(response.data);
   },
 
   async approveReview(reviewTaskId: string, reviewerId: string, comment?: string) {
-    const response = await apiClient.post(`${BASE_URL}/reviews/approve`, {
-      review_task_id: reviewTaskId,
-      reviewer_id: reviewerId,
-      comment,
-    });
-    return response.data;
+    const response = await apiClient.post(
+      `${BASE_URL}/reviews/approve`,
+      apiRequestToSnake({ review_task_id: reviewTaskId, reviewer_id: reviewerId, comment })
+    );
+    return apiResponseToSnake(response.data);
   },
 
   async rejectReview(reviewTaskId: string, reviewerId: string, reason: string) {
-    const response = await apiClient.post(`${BASE_URL}/reviews/reject`, {
-      review_task_id: reviewTaskId,
-      reviewer_id: reviewerId,
-      reason,
-    });
-    return response.data;
+    const response = await apiClient.post(
+      `${BASE_URL}/reviews/reject`,
+      apiRequestToSnake({ review_task_id: reviewTaskId, reviewer_id: reviewerId, reason })
+    );
+    return apiResponseToSnake(response.data);
   },
 
   async getReviewHistory(annotationId: string) {
     const response = await apiClient.get<{ history: ReviewHistory[] }>(
       `${BASE_URL}/reviews/${annotationId}/history`
     );
-    return response.data.history;
+    return apiResponseToSnake(response.data).history;
   },
 
   // Conflicts
   async detectConflicts(taskId: string) {
     const response = await apiClient.get<{ conflicts: Conflict[] }>(`${BASE_URL}/conflicts/${taskId}`);
-    return response.data.conflicts;
+    return apiResponseToSnake(response.data).conflicts;
   },
 
   async resolveConflictByVoting(conflictId: string) {
-    const response = await apiClient.post<ConflictResolution>(`${BASE_URL}/conflicts/resolve`, {
-      conflict_id: conflictId,
-      resolution_method: 'voting',
-    });
-    return response.data;
+    const response = await apiClient.post<ConflictResolution>(
+      `${BASE_URL}/conflicts/resolve`,
+      apiRequestToSnake({ conflict_id: conflictId, resolution_method: 'voting' })
+    );
+    return apiResponseToSnake(response.data);
   },
 
   async resolveConflictByExpert(
@@ -241,18 +242,21 @@ export const collaborationApi = {
     expertId: string,
     expertDecision: Record<string, unknown>
   ) {
-    const response = await apiClient.post<ConflictResolution>(`${BASE_URL}/conflicts/resolve`, {
-      conflict_id: conflictId,
-      resolution_method: 'expert',
-      expert_id: expertId,
-      expert_decision: expertDecision,
-    });
-    return response.data;
+    const response = await apiClient.post<ConflictResolution>(
+      `${BASE_URL}/conflicts/resolve`,
+      apiRequestToSnake({
+        conflict_id: conflictId,
+        resolution_method: 'expert',
+        expert_id: expertId,
+        expert_decision: expertDecision,
+      })
+    );
+    return apiResponseToSnake(response.data);
   },
 
   async getConflictReport(taskId: string) {
     const response = await apiClient.get(`${BASE_URL}/conflicts/${taskId}/report`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Quality
@@ -261,27 +265,27 @@ export const collaborationApi = {
       `${BASE_URL}/quality/${annotatorId}/accuracy`,
       { params: projectId ? { project_id: projectId } : undefined }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async checkQualityThreshold(annotatorId: string, threshold = 0.8) {
     const response = await apiClient.post<{ annotator_id: string; passed: boolean }>(
       `${BASE_URL}/quality/threshold/check`,
-      { annotator_id: annotatorId, threshold }
+      apiRequestToSnake({ annotator_id: annotatorId, threshold })
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async getQualityRanking(projectId: string) {
     const response = await apiClient.get<{ ranking: QualityRanking[] }>(
       `${BASE_URL}/quality/${projectId}/ranking`
     );
-    return response.data.ranking;
+    return apiResponseToSnake(response.data).ranking;
   },
 
   async getQualityReport(projectId: string) {
     const response = await apiClient.get(`${BASE_URL}/quality/${projectId}/report`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 };
 
@@ -295,16 +299,16 @@ export const crowdsourceApi = {
     price_per_task?: number;
     max_annotators?: number;
   }) {
-    const response = await apiClient.post<CrowdsourceTask>(`${BASE_URL}/crowdsource/tasks`, {
-      project_id: projectId,
-      ...config,
-    });
-    return response.data;
+    const response = await apiClient.post<CrowdsourceTask>(
+      `${BASE_URL}/crowdsource/tasks`,
+      apiRequestToSnake({ project_id: projectId, ...config })
+    );
+    return apiResponseToSnake(response.data);
   },
 
   async getTask(taskId: string) {
     const response = await apiClient.get<CrowdsourceTask>(`${BASE_URL}/crowdsource/tasks/${taskId}`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async getAvailableTasks(annotatorId: string) {
@@ -312,30 +316,32 @@ export const crowdsourceApi = {
       `${BASE_URL}/crowdsource/tasks/available`,
       { params: { annotator_id: annotatorId } }
     );
-    return response.data.tasks;
+    return apiResponseToSnake(response.data).tasks;
   },
 
   async claimTask(taskId: string, annotatorId: string, durationHours = 2) {
-    const response = await apiClient.post(`${BASE_URL}/crowdsource/tasks/claim`, {
-      task_id: taskId,
-      annotator_id: annotatorId,
-      duration_hours: durationHours,
-    });
-    return response.data;
+    const response = await apiClient.post(
+      `${BASE_URL}/crowdsource/tasks/claim`,
+      apiRequestToSnake({
+        task_id: taskId,
+        annotator_id: annotatorId,
+        duration_hours: durationHours,
+      })
+    );
+    return apiResponseToSnake(response.data);
   },
 
   async submitAnnotation(taskId: string, annotatorId: string, annotation: Record<string, unknown>) {
-    const response = await apiClient.post(`${BASE_URL}/crowdsource/tasks/submit`, {
-      task_id: taskId,
-      annotator_id: annotatorId,
-      annotation,
-    });
-    return response.data;
+    const response = await apiClient.post(
+      `${BASE_URL}/crowdsource/tasks/submit`,
+      apiRequestToSnake({ task_id: taskId, annotator_id: annotatorId, annotation })
+    );
+    return apiResponseToSnake(response.data);
   },
 
   async approveSubmission(submissionId: string) {
     const response = await apiClient.post(`${BASE_URL}/crowdsource/submissions/${submissionId}/approve`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async rejectSubmission(submissionId: string, reason: string) {
@@ -344,7 +350,7 @@ export const crowdsourceApi = {
       null,
       { params: { reason } }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Annotators
@@ -356,25 +362,24 @@ export const crowdsourceApi = {
   }) {
     const response = await apiClient.post<CrowdsourceAnnotator>(
       `${BASE_URL}/crowdsource/annotators/register`,
-      data
+      apiRequestToSnake(data)
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async getAnnotator(annotatorId: string) {
     const response = await apiClient.get<CrowdsourceAnnotator>(
       `${BASE_URL}/crowdsource/annotators/${annotatorId}`
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async verifyIdentity(annotatorId: string, docType: string, docNumber: string) {
-    const response = await apiClient.post(`${BASE_URL}/crowdsource/annotators/verify`, {
-      annotator_id: annotatorId,
-      doc_type: docType,
-      doc_number: docNumber,
-    });
-    return response.data;
+    const response = await apiClient.post(
+      `${BASE_URL}/crowdsource/annotators/verify`,
+      apiRequestToSnake({ annotator_id: annotatorId, doc_type: docType, doc_number: docNumber })
+    );
+    return apiResponseToSnake(response.data);
   },
 
   async conductAbilityTest(annotatorId: string, testTasks: Array<{
@@ -384,9 +389,9 @@ export const crowdsourceApi = {
   }>) {
     const response = await apiClient.post(
       `${BASE_URL}/crowdsource/annotators/${annotatorId}/ability-test`,
-      testTasks
+      apiRequestToSnake(testTasks)
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async updateStarRating(annotatorId: string, rating: number) {
@@ -395,15 +400,15 @@ export const crowdsourceApi = {
       null,
       { params: { rating } }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async addAbilityTags(annotatorId: string, tags: string[]) {
     const response = await apiClient.post(
       `${BASE_URL}/crowdsource/annotators/${annotatorId}/ability-tags`,
-      tags
+      apiRequestToSnake(tags)
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async setAnnotatorStatus(annotatorId: string, status: string) {
@@ -412,17 +417,17 @@ export const crowdsourceApi = {
       null,
       { params: { status } }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Billing
   async configurePricing(projectId: string, pricing: Record<string, unknown>) {
     const response = await apiClient.post(
       `${BASE_URL}/crowdsource/billing/pricing`,
-      pricing,
+      apiRequestToSnake(pricing),
       { params: { project_id: projectId } }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async getEarnings(annotatorId: string, periodStart: Date, periodEnd: Date) {
@@ -435,7 +440,7 @@ export const crowdsourceApi = {
         },
       }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async getSettlementReport(periodStart: Date, periodEnd: Date) {
@@ -445,7 +450,7 @@ export const crowdsourceApi = {
         period_end: periodEnd.toISOString(),
       },
     });
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async generateInvoice(annotatorId: string, period: string) {
@@ -454,7 +459,7 @@ export const crowdsourceApi = {
       null,
       { params: { period } }
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async processWithdrawal(
@@ -463,20 +468,23 @@ export const crowdsourceApi = {
     method: 'bank_transfer' | 'alipay' | 'wechat',
     accountInfo?: Record<string, string>
   ) {
-    const response = await apiClient.post(`${BASE_URL}/crowdsource/billing/withdrawal`, {
-      annotator_id: annotatorId,
-      amount,
-      method,
-      account_info: accountInfo,
-    });
-    return response.data;
+    const response = await apiClient.post(
+      `${BASE_URL}/crowdsource/billing/withdrawal`,
+      apiRequestToSnake({
+        annotator_id: annotatorId,
+        amount,
+        method,
+        account_info: accountInfo,
+      })
+    );
+    return apiResponseToSnake(response.data);
   },
 
   async getBalance(annotatorId: string) {
     const response = await apiClient.get<{ annotator_id: string; balance: number }>(
       `${BASE_URL}/crowdsource/billing/${annotatorId}/balance`
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 };
 
@@ -490,45 +498,48 @@ export const platformApi = {
     api_secret?: string;
     endpoint?: string;
   }) {
-    const response = await apiClient.post<Platform>(`${BASE_URL}/platforms/register`, config);
-    return response.data;
+    const response = await apiClient.post<Platform>(
+      `${BASE_URL}/platforms/register`,
+      apiRequestToSnake(config)
+    );
+    return apiResponseToSnake(response.data);
   },
 
   async unregisterPlatform(platformName: string) {
     const response = await apiClient.delete(`${BASE_URL}/platforms/${platformName}`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async getPlatform(platformName: string) {
     const response = await apiClient.get<Platform>(`${BASE_URL}/platforms/${platformName}`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async getAllPlatforms() {
     const response = await apiClient.get<{ platforms: Platform[] }>(`${BASE_URL}/platforms`);
-    return response.data.platforms;
+    return apiResponseToSnake(response.data).platforms;
   },
 
   async getPlatformStatus(platformName: string) {
     const response = await apiClient.get(`${BASE_URL}/platforms/${platformName}/status`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async testConnection(platformName: string) {
     const response = await apiClient.post(`${BASE_URL}/platforms/${platformName}/test`);
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async syncTask(task: Record<string, unknown>) {
-    const response = await apiClient.post(`${BASE_URL}/platforms/sync-task`, task);
-    return response.data;
+    const response = await apiClient.post(`${BASE_URL}/platforms/sync-task`, apiRequestToSnake(task));
+    return apiResponseToSnake(response.data);
   },
 
   async fetchResults(platformName: string, taskId: string) {
     const response = await apiClient.get<{ results: unknown[] }>(
       `${BASE_URL}/platforms/${platformName}/results/${taskId}`
     );
-    return response.data.results;
+    return apiResponseToSnake(response.data).results;
   },
 };
 

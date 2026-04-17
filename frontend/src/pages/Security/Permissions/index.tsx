@@ -6,6 +6,7 @@ import type { DataNode } from 'antd/es/tree';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/services/api';
+import { keysToCamelDeep, keysToSnakeDeep } from '@/utils/jsonCase';
 
 interface Permission {
   id: string;
@@ -52,8 +53,10 @@ const SecurityPermissions: React.FC = () => {
   const { data: permissions, isLoading: permissionsLoading } = useQuery({
     queryKey: ['permissions'],
     queryFn: async (): Promise<Permission[]> => {
-      const res = await api.get<Permission[]>('/api/v1/security/permissions');
-      return res.data;
+      const res = await api.get('/api/v1/security/permissions');
+      const raw = res.data as unknown;
+      if (!Array.isArray(raw)) return [];
+      return raw.map((p) => keysToCamelDeep(p) as Permission);
     },
   });
 
@@ -61,8 +64,10 @@ const SecurityPermissions: React.FC = () => {
   const { data: roles, isLoading: rolesLoading } = useQuery({
     queryKey: ['roles'],
     queryFn: async (): Promise<Role[]> => {
-      const res = await api.get<Role[]>('/api/v1/security/roles');
-      return res.data;
+      const res = await api.get('/api/v1/security/roles');
+      const raw = res.data as unknown;
+      if (!Array.isArray(raw)) return [];
+      return raw.map((r) => keysToCamelDeep(r) as Role);
     },
   });
 
@@ -70,8 +75,10 @@ const SecurityPermissions: React.FC = () => {
   const { data: userPermissions, isLoading: userPermissionsLoading } = useQuery({
     queryKey: ['user-permissions'],
     queryFn: async (): Promise<UserPermission[]> => {
-      const res = await api.get<UserPermission[]>('/api/v1/security/user-permissions');
-      return res.data;
+      const res = await api.get('/api/v1/security/user-permissions');
+      const raw = res.data as unknown;
+      if (!Array.isArray(raw)) return [];
+      return raw.map((u) => keysToCamelDeep(u) as UserPermission);
     },
   });
 
@@ -79,13 +86,14 @@ const SecurityPermissions: React.FC = () => {
   const { data: permissionTree } = useQuery({
     queryKey: ['permission-tree'],
     queryFn: async (): Promise<DataNode[]> => {
-      const res = await api.get<DataNode[]>('/api/v1/security/permission-tree');
-      return res.data;
+      const res = await api.get('/api/v1/security/permission-tree');
+      return keysToCamelDeep(res.data) as DataNode[];
     },
   });
 
   const createPermissionMutation = useMutation({
-    mutationFn: (data: any) => api.post('/api/v1/security/permissions', data),
+    mutationFn: (data: Record<string, unknown>) =>
+      api.post('/api/v1/security/permissions', keysToSnakeDeep(data)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['permissions'] });
       setIsModalVisible(false);
@@ -98,7 +106,8 @@ const SecurityPermissions: React.FC = () => {
   });
 
   const createRoleMutation = useMutation({
-    mutationFn: (data: any) => api.post('/api/v1/security/roles', data),
+    mutationFn: (data: Record<string, unknown>) =>
+      api.post('/api/v1/security/roles', keysToSnakeDeep(data)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['roles'] });
       setIsModalVisible(false);

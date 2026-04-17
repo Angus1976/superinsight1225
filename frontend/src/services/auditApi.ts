@@ -5,6 +5,7 @@
  */
 
 import apiClient from './api/client';
+import { apiRequestToSnake, apiResponseToSnake } from '@/utils/jsonCase';
 
 // ============================================================================
 // Types
@@ -123,14 +124,14 @@ export const auditApi = {
       `${BASE_URL}/audit/logs`,
       { params }
     );
-    return response.data;
+    return apiResponseToSnake<AuditLogQueryResponse>(response.data);
   },
 
   async exportLogs(data: AuditLogExportRequest): Promise<Blob> {
-    const response = await apiClient.post(`${BASE_URL}/audit/logs/export`, data, {
+    const response = await apiClient.post(`${BASE_URL}/audit/logs/export`, apiRequestToSnake(data), {
       responseType: 'blob',
     });
-    return response.data;
+    return apiResponseToSnake<Blob>(response.data);
   },
 
   async verifyIntegrity(
@@ -138,9 +139,9 @@ export const auditApi = {
   ): Promise<IntegrityVerificationResponse> {
     const response = await apiClient.post<IntegrityVerificationResponse>(
       `${BASE_URL}/audit/verify-integrity`,
-      data
+      apiRequestToSnake(data)
     );
-    return response.data;
+    return apiResponseToSnake<IntegrityVerificationResponse>(response.data);
   },
 
   async getStatistics(params?: {
@@ -151,7 +152,7 @@ export const auditApi = {
       `${BASE_URL}/audit/statistics`,
       { params }
     );
-    return response.data;
+    return apiResponseToSnake<AuditStatistics>(response.data);
   },
 
   async applyRetentionPolicy(retentionDays: number): Promise<{
@@ -162,32 +163,32 @@ export const auditApi = {
     const response = await apiClient.post(`${BASE_URL}/audit/retention`, null, {
       params: { retention_days: retentionDays },
     });
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Compliance Reports
   async generateGDPRReport(data: ComplianceReportRequest): Promise<ComplianceReport> {
     const response = await apiClient.post<ComplianceReport>(
       `${BASE_URL}/compliance/reports/gdpr`,
-      data
+      apiRequestToSnake(data)
     );
-    return response.data;
+    return apiResponseToSnake<ComplianceReport>(response.data);
   },
 
   async generateSOC2Report(data: ComplianceReportRequest): Promise<ComplianceReport> {
     const response = await apiClient.post<ComplianceReport>(
       `${BASE_URL}/compliance/reports/soc2`,
-      data
+      apiRequestToSnake(data)
     );
-    return response.data;
+    return apiResponseToSnake<ComplianceReport>(response.data);
   },
 
   async generateAccessReport(data: AccessReportRequest): Promise<ComplianceReport> {
     const response = await apiClient.post<ComplianceReport>(
       `${BASE_URL}/compliance/reports/access`,
-      data
+      apiRequestToSnake(data)
     );
-    return response.data;
+    return apiResponseToSnake<ComplianceReport>(response.data);
   },
 
   async generatePermissionChangeReport(
@@ -195,9 +196,9 @@ export const auditApi = {
   ): Promise<ComplianceReport> {
     const response = await apiClient.post<ComplianceReport>(
       `${BASE_URL}/compliance/reports/permission-changes`,
-      data
+      apiRequestToSnake(data)
     );
-    return response.data;
+    return apiResponseToSnake<ComplianceReport>(response.data);
   },
 
   async listReports(params?: {
@@ -218,14 +219,14 @@ export const auditApi = {
     limit: number;
   }> {
     const response = await apiClient.get(`${BASE_URL}/compliance/reports`, { params });
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   async getReport(reportId: string): Promise<ComplianceReport> {
     const response = await apiClient.get<ComplianceReport>(
       `${BASE_URL}/compliance/reports/${reportId}`
     );
-    return response.data;
+    return apiResponseToSnake<ComplianceReport>(response.data);
   },
 };
 

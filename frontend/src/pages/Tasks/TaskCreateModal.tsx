@@ -62,6 +62,7 @@ import { useTranslation } from 'react-i18next';
 import { useCreateTask } from '@/hooks/useTask';
 import { useAuthStore } from '@/stores/authStore';
 import { api } from '@/services/api';
+import { mapListToIdName } from '@/utils/jsonCase';
 import labelStudioService from '@/services/labelStudioService';
 import type { AnnotationTemplateConfig } from '@/services/labelStudioService';
 import type { CreateTaskPayload, TaskPriority, AnnotationType } from '@/types';
@@ -259,7 +260,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
     queryKey: ['task-create-sync-sources'],
     queryFn: async () => {
       const res = await api.get('/api/v1/data-sync/sources');
-      return (res.data as any[]).map(s => ({ id: s.id, name: s.name }));
+      return mapListToIdName(res.data);
     },
     enabled: open && availableModuleTypes.includes('ds_sources'),
   });
@@ -269,8 +270,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
     queryKey: ['task-create-temp-data'],
     queryFn: async () => {
       const res = await api.get('/api/temp-data');
-      const data = res.data as any;
-      return ((data?.items ?? data) || []).map((d: any) => ({ id: d.id, name: d.name || d.id }));
+      return mapListToIdName(res.data);
     },
     enabled: open && availableModuleTypes.includes('lc_temp_data'),
   });
@@ -279,8 +279,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
     queryKey: ['task-create-samples'],
     queryFn: async () => {
       const res = await api.get('/api/samples');
-      const data = res.data as any;
-      return ((data?.items ?? data) || []).map((d: any) => ({ id: d.id, name: d.name || d.id }));
+      return mapListToIdName(res.data);
     },
     enabled: open && availableModuleTypes.includes('lc_sample'),
   });
@@ -289,8 +288,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
     queryKey: ['task-create-annotation-tasks'],
     queryFn: async () => {
       const res = await api.get('/api/annotation-tasks');
-      const data = res.data as any;
-      return ((data?.items ?? data) || []).map((d: any) => ({ id: d.id, name: d.name || d.id }));
+      return mapListToIdName(res.data);
     },
     enabled: open && availableModuleTypes.includes('lc_annotation'),
   });
@@ -299,8 +297,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
     queryKey: ['task-create-enhancements'],
     queryFn: async () => {
       const res = await api.get('/api/enhancements');
-      const data = res.data as any;
-      return ((data?.items ?? data) || []).map((d: any) => ({ id: d.id, name: d.name || d.id }));
+      return mapListToIdName(res.data);
     },
     enabled: open && availableModuleTypes.includes('lc_enhancement'),
   });
@@ -309,8 +306,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
     queryKey: ['task-create-ai-trials'],
     queryFn: async () => {
       const res = await api.get('/api/ai-trials');
-      const data = res.data as any;
-      return ((data?.items ?? data) || []).map((d: any) => ({ id: d.id, name: d.name || d.id }));
+      return mapListToIdName(res.data);
     },
     enabled: open && availableModuleTypes.includes('lc_ai_trial'),
   });
@@ -320,8 +316,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
     queryKey: ['task-create-aug-samples'],
     queryFn: async () => {
       const res = await api.get('/api/v1/augmentation/samples');
-      const data = res.data as any;
-      return ((data?.items ?? data) || []).map((d: any) => ({ id: d.id, name: d.name || d.id }));
+      return mapListToIdName(res.data);
     },
     enabled: open && availableModuleTypes.includes('aug_samples'),
   });

@@ -9,6 +9,7 @@
  */
 
 import apiClient from './api/client';
+import { apiRequestToSnake, apiResponseToSnake } from '@/utils/jsonCase';
 
 // Types
 export interface Version {
@@ -96,13 +97,16 @@ export const versioningApi = {
     versionType: 'major' | 'minor' | 'patch' = 'patch',
     metadata?: Record<string, unknown>
   ) => {
-    const response = await apiClient.post(`/api/v1/versioning/${entityType}/${entityId}`, {
-      data,
-      message,
-      version_type: versionType,
-      metadata,
-    });
-    return response.data;
+    const response = await apiClient.post(
+      `/api/v1/versioning/${entityType}/${entityId}`,
+      apiRequestToSnake({
+        data,
+        message,
+        version_type: versionType,
+        metadata,
+      })
+    );
+    return apiResponseToSnake(response.data);
   },
 
   getVersionHistory: async (
@@ -117,7 +121,7 @@ export const versioningApi = {
     const response = await apiClient.get(
       `/api/v1/versioning/${entityType}/${entityId}?${params}`
     );
-    return response.data as { versions: Version[]; count: number };
+    return apiResponseToSnake(response.data) as { versions: Version[]; count: number };
   },
 
   getVersion: async (
@@ -130,7 +134,7 @@ export const versioningApi = {
     const response = await apiClient.get(
       `/api/v1/versioning/${entityType}/${entityId}/${version}${params}`
     );
-    return response.data as { version: Version };
+    return apiResponseToSnake(response.data) as { version: Version };
   },
 
   rollbackVersion: async (
@@ -142,18 +146,18 @@ export const versioningApi = {
     const params = userId ? `?user_id=${userId}` : '';
     const response = await apiClient.post(
       `/api/v1/versioning/${entityType}/${entityId}/rollback${params}`,
-      { target_version: targetVersion }
+      apiRequestToSnake({ target_version: targetVersion })
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   addTag: async (versionId: string, tag: string, userId?: string) => {
     const params = userId ? `?user_id=${userId}` : '';
     const response = await apiClient.post(
       `/api/v1/versioning/${versionId}/tags${params}`,
-      { tag }
+      apiRequestToSnake({ tag })
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Change Tracking
@@ -174,7 +178,7 @@ export const versioningApi = {
     });
     
     const response = await apiClient.get(`/api/v1/versioning/changes?${searchParams}`);
-    return response.data as { changes: ChangeRecord[]; count: number };
+    return apiResponseToSnake(response.data) as { changes: ChangeRecord[]; count: number };
   },
 
   getEntityTimeline: async (
@@ -189,7 +193,7 @@ export const versioningApi = {
     const response = await apiClient.get(
       `/api/v1/versioning/changes/${entityType}/${entityId}/timeline?${params}`
     );
-    return response.data as { timeline: TimelineEntry[]; count: number };
+    return apiResponseToSnake(response.data) as { timeline: TimelineEntry[]; count: number };
   },
 
   getChangeStatistics: async (params?: {
@@ -208,7 +212,7 @@ export const versioningApi = {
     const response = await apiClient.get(
       `/api/v1/versioning/changes/statistics?${searchParams}`
     );
-    return response.data;
+    return apiResponseToSnake(response.data);
   },
 
   // Diff and Merge
@@ -217,12 +221,15 @@ export const versioningApi = {
     newData: Record<string, unknown>,
     diffLevel: 'field' | 'line' = 'field'
   ) => {
-    const response = await apiClient.post('/api/v1/versioning/diff', {
-      old_data: oldData,
-      new_data: newData,
-      diff_level: diffLevel,
-    });
-    return response.data as { diff: DiffResult };
+    const response = await apiClient.post(
+      '/api/v1/versioning/diff',
+      apiRequestToSnake({
+        old_data: oldData,
+        new_data: newData,
+        diff_level: diffLevel,
+      })
+    );
+    return apiResponseToSnake(response.data) as { diff: DiffResult };
   },
 
   threeWayMerge: async (
@@ -230,12 +237,11 @@ export const versioningApi = {
     ours: Record<string, unknown>,
     theirs: Record<string, unknown>
   ) => {
-    const response = await apiClient.post('/api/v1/versioning/merge', {
-      base,
-      ours,
-      theirs,
-    });
-    return response.data as { merge_result: MergeResult };
+    const response = await apiClient.post(
+      '/api/v1/versioning/merge',
+      apiRequestToSnake({ base, ours, theirs })
+    );
+    return apiResponseToSnake(response.data) as { merge_result: MergeResult };
   },
 
   resolveConflict: async (
@@ -245,14 +251,17 @@ export const versioningApi = {
     resolution: 'ours' | 'theirs' | 'base' | 'custom',
     customValue?: unknown
   ) => {
-    const response = await apiClient.post('/api/v1/versioning/merge/resolve', {
-      merged,
-      conflicts,
-      field,
-      resolution,
-      custom_value: customValue,
-    });
-    return response.data as { merge_result: MergeResult };
+    const response = await apiClient.post(
+      '/api/v1/versioning/merge/resolve',
+      apiRequestToSnake({
+        merged,
+        conflicts,
+        field,
+        resolution,
+        custom_value: customValue,
+      })
+    );
+    return apiResponseToSnake(response.data) as { merge_result: MergeResult };
   },
 };
 

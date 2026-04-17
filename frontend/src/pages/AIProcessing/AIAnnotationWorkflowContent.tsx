@@ -33,6 +33,7 @@ import {
   SyncOutlined,
   ReloadOutlined,
 } from '@ant-design/icons';
+import { fetchJsonBody, fetchJsonResponseToSnake } from '@/utils/jsonCase';
 
 const { Title, Paragraph, Text } = Typography;
 const { Option } = Select;
@@ -132,7 +133,7 @@ const AIAnnotationWorkflowContent: React.FC = () => {
     try {
       setLoading(true);
       const response = await fetch('/api/v1/annotation/workflow/data-sources');
-      const data = await response.json();
+      const data = await fetchJsonResponseToSnake<{ data_sources?: DataSource[] }>(response);
       setDataSources(data.data_sources || []);
     } catch (error) {
       message.error(t('workflow.common.load_datasource_failed'));
@@ -147,7 +148,7 @@ const AIAnnotationWorkflowContent: React.FC = () => {
       const response = await fetch(
         `/api/v1/annotation/workflow/annotated-samples?project_id=default&data_source_id=${dataSourceId}`
       );
-      const data = await response.json();
+      const data = await fetchJsonResponseToSnake<SampleInfo>(response);
       setSampleInfo(data);
     } catch (error) {
       message.error(t('workflow.common.load_samples_failed'));
@@ -167,13 +168,13 @@ const AIAnnotationWorkflowContent: React.FC = () => {
       const response = await fetch('/api/v1/annotation/workflow/ai-learn', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: fetchJsonBody({
           project_id: 'default',
           sample_ids: Array.from({ length: sampleInfo.total_count }, (_, i) => `sample_${i}`),
           annotation_type: 'entity',
         }),
       });
-      const data = await response.json();
+      const data = await fetchJsonResponseToSnake<{ job_id: string }>(response);
       setLearningJobId(data.job_id);
       setCurrentStep('learning');
       message.success(t('workflow.learning.started'));
@@ -187,7 +188,7 @@ const AIAnnotationWorkflowContent: React.FC = () => {
   const fetchLearningProgress = async (jobId: string) => {
     try {
       const response = await fetch(`/api/v1/annotation/workflow/ai-learn/${jobId}`);
-      const data = await response.json();
+      const data = await fetchJsonResponseToSnake<LearningProgress>(response);
       setLearningProgress(data);
       
       if (data.status === 'completed') {
@@ -209,7 +210,7 @@ const AIAnnotationWorkflowContent: React.FC = () => {
       const response = await fetch('/api/v1/annotation/workflow/batch-annotate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: fetchJsonBody({
           project_id: 'default',
           learning_job_id: learningJobId,
           target_dataset_id: selectedDataSource || 'ds_1',
@@ -217,7 +218,7 @@ const AIAnnotationWorkflowContent: React.FC = () => {
           confidence_threshold: 0.7,
         }),
       });
-      const data = await response.json();
+      const data = await fetchJsonResponseToSnake<{ job_id: string }>(response);
       setBatchJobId(data.job_id);
       setCurrentStep('annotation');
       message.success(t('workflow.batch.started'));
@@ -231,7 +232,7 @@ const AIAnnotationWorkflowContent: React.FC = () => {
   const fetchBatchProgress = async (jobId: string) => {
     try {
       const response = await fetch(`/api/v1/annotation/workflow/batch-annotate/${jobId}`);
-      const data = await response.json();
+      const data = await fetchJsonResponseToSnake<BatchProgress>(response);
       setBatchProgress(data);
       
       if (data.status === 'completed') {
@@ -253,14 +254,14 @@ const AIAnnotationWorkflowContent: React.FC = () => {
       const response = await fetch('/api/v1/annotation/workflow/validate-effect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        body: fetchJsonBody({
           project_id: 'default',
           batch_job_id: batchJobId,
           test_sample_count: 50,
           test_method: 'random',
         }),
       });
-      const data = await response.json();
+      const data = await fetchJsonResponseToSnake<Record<string, unknown>>(response);
       setValidationResult(data);
       setCurrentStep('validation');
       message.success(t('workflow.validation.completed'));

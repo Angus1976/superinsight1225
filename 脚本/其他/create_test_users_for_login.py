@@ -125,7 +125,7 @@ def create_test_users():
                 print(f"  Email: {user_data['email']}")
                 print()
             
-            print("Frontend Login URL: http://localhost:5173/login")
+            print("Frontend Login URL: http://localhost:15173/login")
             print("Backend API: http://localhost:8000")
             print("-" * 60)
             

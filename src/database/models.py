@@ -4,7 +4,10 @@ SQLAlchemy ORM models for SuperInsight Platform database tables.
 These models define the database schema using SQLAlchemy ORM.
 """
 
+import logging
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 from uuid import uuid4
 from sqlalchemy import String, Text, Float, Integer, DateTime, ForeignKey, Enum as SQLEnum, JSON, Boolean
 from sqlalchemy.dialects.postgresql import UUID, JSONB
@@ -270,16 +273,28 @@ from src.label_studio.workspace_models import (
     WorkspaceProjectModel, ProjectMemberModel
 )
 
-# Import AI integration models to ensure they are registered with SQLAlchemy
-from src.models.ai_integration import (
-    AIGateway, AISkill, AIAuditLog
-)
+# Optional ORM modules (may be absent in trimmed / partial checkouts)
+try:
+    from src.models.ai_integration import (  # noqa: F401
+        AIGateway,
+        AISkill,
+        AIAuditLog,
+    )
+except ImportError as e:
+    logger.warning("Skipping AI integration ORM registration: %s", e)
 
-# Import structuring models to ensure they are registered with SQLAlchemy
-from src.models.structuring import (  # noqa: F401
-    StructuringJob, StructuredRecord, ProcessingType,
-    VectorRecord, SemanticRecord,
-)
+try:
+    from src.models.structuring import (  # noqa: F401
+        StructuringJob,
+        StructuredRecord,
+        ProcessingType,
+        VectorRecord,
+        SemanticRecord,
+    )
+except ImportError as e:
+    logger.warning("Skipping structuring ORM registration: %s", e)
 
-# Import datalake metrics model to ensure it is registered with SQLAlchemy
-from src.sync.connectors.datalake.models import DatalakeMetricsModel  # noqa: F401
+try:
+    from src.sync.connectors.datalake.models import DatalakeMetricsModel  # noqa: F401
+except ImportError as e:
+    logger.warning("Skipping datalake metrics ORM registration: %s", e)

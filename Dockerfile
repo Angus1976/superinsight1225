@@ -56,6 +56,7 @@ RUN pip install --no-cache-dir setuptools wheel && \
 # 复制应用代码
 COPY src/ ./src/
 COPY main.py .
+COPY scripts/ ./scripts/
 
 # 复制数据库迁移文件
 COPY alembic/ ./alembic/

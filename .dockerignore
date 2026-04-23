@@ -46,7 +46,7 @@ habit-tracker/
 
 # Deployment
 deploy/
-scripts/
+# scripts/ 需在镜像内用于 db-migrate（bootstrap_docker.py），勿整目录忽略
 文档/
 脚本/
 

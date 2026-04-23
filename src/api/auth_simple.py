@@ -5,17 +5,18 @@ Provides basic login functionality for testing and development.
 """
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, status, Header
 from pydantic import BaseModel, EmailStr
-from sqlalchemy import text
 from sqlalchemy.orm import Session
 import jwt
 import bcrypt
 
 from src.database.connection import get_db_session
-from src.config.settings import settings
+from src.security.models import UserModel, UserRole
 
 logger = logging.getLogger(__name__)
 
@@ -123,28 +124,32 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    result = db.execute(text(
-        "SELECT id, email, username, name, is_active, is_superuser FROM users WHERE id = :user_id"
-    ), {"user_id": user_id})
-    
-    user_row = result.fetchone()
-    
-    if not user_row:
+    try:
+        uid = UUID(str(user_id))
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token subject",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    user = db.query(UserModel).filter(UserModel.id == uid).first()
+    if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
-    user_id, email, username, name, is_active, is_superuser = user_row
-    
+
+    role_val = user.role.value if isinstance(user.role, UserRole) else str(user.role)
+    is_superuser = role_val == UserRole.ADMIN.value
     return SimpleUser(
-        user_id=str(user_id),
-        email=email,
-        username=username,
-        name=name,
-        is_active=is_active,
-        is_superuser=is_superuser
+        user_id=str(user.id),
+        email=user.email,
+        username=user.username,
+        name=user.full_name,
+        is_active=user.is_active,
+        is_superuser=is_superuser,
     )
 
 
@@ -155,68 +160,57 @@ def login(
 ):
     """Authenticate user and return access token."""
     try:
-        # Query user from database
-        result = db.execute(text(
-            "SELECT id, email, username, name, password_hash, is_active, is_superuser FROM users WHERE email = :email"
-        ), {"email": request.email})
-        
-        user_row = result.fetchone()
-        
-        if not user_row:
+        user = db.query(UserModel).filter(UserModel.email == request.email).first()
+
+        if not user:
             logger.warning(f"Login attempt for non-existent user: {request.email}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid email or password",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-        
-        user_id, email, username, name, password_hash, is_active, is_superuser = user_row
-        
-        if not is_active:
-            logger.warning(f"Login attempt for inactive user: {email}")
+
+        if not user.is_active:
+            logger.warning(f"Login attempt for inactive user: {user.email}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="User account is inactive",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-        
-        # Verify password
-        if not verify_password(request.password, password_hash):
-            logger.warning(f"Failed login attempt for user: {email}")
+
+        if not verify_password(request.password, user.password_hash):
+            logger.warning(f"Failed login attempt for user: {user.email}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid email or password",
                 headers={"WWW-Authenticate": "Bearer"},
             )
-        
-        # Create access token
-        # Include both 'sub' (standard JWT claim) and 'user_id' (for compatibility with auth.py)
+
         access_token = create_access_token(
-            data={"sub": str(user_id), "user_id": str(user_id), "email": email}
+            data={"sub": str(user.id), "user_id": str(user.id), "email": user.email}
         )
-        
-        # Update last login
-        db.execute(text(
-            "UPDATE users SET last_login_at = :now WHERE id = :user_id"
-        ), {"now": datetime.utcnow(), "user_id": user_id})
+
+        user.last_login = datetime.now(timezone.utc)
+        db.add(user)
         db.commit()
-        
-        logger.info(f"Successful login for user: {email}")
-        
-        # Determine user role based on is_superuser flag
+
+        logger.info(f"Successful login for user: {user.email}")
+
+        role_val = user.role.value if isinstance(user.role, UserRole) else str(user.role)
+        is_superuser = role_val == UserRole.ADMIN.value
         user_role = "admin" if is_superuser else "user"
-        
+
         return LoginResponse(
             access_token=access_token,
             user={
-                "id": str(user_id),
-                "email": email,
-                "username": username,
-                "name": name,
-                "role": user_role,  # Add role field for frontend
-                "is_active": is_active,
-                "is_superuser": is_superuser
-            }
+                "id": str(user.id),
+                "email": user.email,
+                "username": user.username,
+                "name": user.full_name,
+                "role": user_role,
+                "is_active": user.is_active,
+                "is_superuser": is_superuser,
+            },
         )
         
     except HTTPException:

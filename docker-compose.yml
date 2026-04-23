@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # ===========================================================================
   # Frontend
@@ -10,7 +8,8 @@ services:
       dockerfile: Dockerfile
     container_name: superinsight-frontend
     ports:
-      - "5173:5173"
+      # 宿主机 15173 → 容器内 Vite 5173（便于与本地其它 5173 服务区分）
+      - "15173:5173"
     environment:
       - VITE_API_BASE_URL=http://localhost:8000
       - NODE_ENV=development
@@ -41,6 +40,8 @@ services:
       - DATABASE_URL=postgresql://superinsight:password@postgres:5432/superinsight
       - REDIS_URL=redis://redis:6379/0
       - LABEL_STUDIO_URL=http://label-studio:8080
+      - LABEL_STUDIO_USERNAME=admin@example.com
+      - LABEL_STUDIO_PASSWORD=admin
       - LABEL_STUDIO_API_TOKEN=${LABEL_STUDIO_API_TOKEN}
       - ARGILLA_URL=http://argilla:6900
       - OLLAMA_BASE_URL=http://ollama:11434
@@ -48,12 +49,21 @@ services:
       - OPENAI_BASE_URL=${OPENAI_BASE_URL}
       - OPENAI_MODEL=${OPENAI_MODEL}
       - LLM_ENCRYPTION_KEY=${LLM_ENCRYPTION_KEY}
+      # 浏览器从宿主机 15173 访问前端时，API 需允许该 Origin
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:5173,http://localhost:15173,http://127.0.0.1:15173,http://127.0.0.1:5173
     depends_on:
-      - postgres
-      - redis
-      - label-studio
-      - argilla
-      - ollama
+      db-migrate:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      label-studio:
+        condition: service_started
+      argilla:
+        condition: service_started
+      ollama:
+        condition: service_started
     volumes:
       - ./src:/app/src
       - ./logs:/var/log/superinsight
@@ -74,6 +84,8 @@ services:
       - DATABASE_URL=postgresql://superinsight:password@postgres:5432/superinsight
       - REDIS_URL=redis://redis:6379/0
       - LABEL_STUDIO_URL=http://label-studio:8080
+      - LABEL_STUDIO_USERNAME=admin@example.com
+      - LABEL_STUDIO_PASSWORD=admin
       - LABEL_STUDIO_API_TOKEN=${LABEL_STUDIO_API_TOKEN}
       - ARGILLA_URL=http://argilla:6900
       - OLLAMA_BASE_URL=http://ollama:11434
@@ -81,10 +93,14 @@ services:
       - OPENAI_BASE_URL=${OPENAI_BASE_URL}
       - OPENAI_MODEL=${OPENAI_MODEL}
       - LLM_ENCRYPTION_KEY=${LLM_ENCRYPTION_KEY}
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:5173,http://localhost:15173,http://127.0.0.1:15173,http://127.0.0.1:5173
     depends_on:
-      - postgres
-      - redis
-      - app
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      app:
+        condition: service_healthy
     volumes:
       - ./src:/app/src
       - ./logs:/var/log/superinsight
@@ -117,6 +133,38 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
+
+  # ===========================================================================
+  # 一次性：迁移 + 幂等种子（保留已有 volume 数据，仅升级 schema / 补缺省数据）
+  # ===========================================================================
+  db-migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: superinsight-db-migrate
+    environment:
+      - DATABASE_URL=postgresql://superinsight:password@postgres:5432/superinsight
+      - APP_ENV=development
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      # env.py 会 import src.database.models → Label Studio；与 app 保持一致以免迁移失败
+      - LABEL_STUDIO_URL=http://label-studio:8080
+      - LABEL_STUDIO_USERNAME=admin@example.com
+      - LABEL_STUDIO_PASSWORD=admin
+      - LABEL_STUDIO_API_TOKEN=${LABEL_STUDIO_API_TOKEN}
+      # 若数据库 alembic_version 指向当前仓库不存在的 revision，自动 stamp 到本仓库 heads（不删数据）
+      - ALEMBIC_AUTO_REPAIR_VERSION=${ALEMBIC_AUTO_REPAIR_VERSION:-true}
+    volumes:
+      - ./src:/app/src
+      - ./scripts:/app/scripts
+      - ./alembic:/app/alembic
+      - ./alembic.ini:/app/alembic.ini
+    working_dir: /app
+    command: ["python", "-u", "scripts/bootstrap_docker.py"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
 
   # ===========================================================================
   # Redis Cache
@@ -283,6 +331,7 @@ services:
 # Volumes
 # =============================================================================
 volumes:
+  # 持久化 PostgreSQL 数据。请勿使用 `docker compose down -v`，否则会删除该卷及所有业务数据。
   postgres_data:
     driver: local
   redis_data:

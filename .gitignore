@@ -167,8 +167,8 @@ Desktop.ini
 # Label Studio data
 label-studio-data/
 
-# AI model files
-models/
+# AI 模型权重等（仅忽略仓库根目录 models/，勿匹配 src/models 源码）
+/models/
 *.pkl
 *.joblib
 *.h5
